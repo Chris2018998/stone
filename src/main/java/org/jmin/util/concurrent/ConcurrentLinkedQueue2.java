@@ -9,6 +9,7 @@ package org.jmin.util.concurrent;
 
 import sun.misc.Unsafe;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -49,7 +50,9 @@ public class ConcurrentLinkedQueue2<E> extends AbstractQueue<E> implements Queue
 
     static {
         try {
-            U = UnsafeUtil.getUnsafe();
+            Field uField = Unsafe.class.getDeclaredField("theUnsafe");
+            uField.setAccessible(true);
+            U = (Unsafe) uField.get(null);
             nextOffSet = U.objectFieldOffset(Node.class.getDeclaredField("next"));
             itemOffSet = U.objectFieldOffset(Node.class.getDeclaredField("item"));
         } catch (Exception e) {
@@ -94,7 +97,7 @@ public class ConcurrentLinkedQueue2<E> extends AbstractQueue<E> implements Queue
     }
 
     //******************************************** link to next ******************************************************//
-    //link next to end node
+    //link next to target node
     private static void linkNextTo(Node startNode, Node endNode) {
         Node curNext = startNode.next;
 
@@ -102,7 +105,7 @@ public class ConcurrentLinkedQueue2<E> extends AbstractQueue<E> implements Queue
         if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
     }
 
-    //physical remove skip node and link to its next node(if its next is null,then link to itself)
+    //physical remove skip node and link to its next node(if its next is null,then link to it)
     private static void linkNextToSkip(Node startNode, Node skipNode) {
         Node next = skipNode.next;
         Node endNode = next != null ? next : skipNode;
@@ -138,9 +141,10 @@ public class ConcurrentLinkedQueue2<E> extends AbstractQueue<E> implements Queue
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
         final Node<E> node = new Node<E>(e);
+        Node<E> t;
 
         do {
-            final Node<E> t = tail;//tail always exists
+            t = tail;//tail always exists
             if (t.next == null && casTailNext(t, node)) {//append to tail.next
                 this.tail = node;//why? only place for tail change
                 return true;

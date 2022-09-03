@@ -214,9 +214,10 @@ public class ConcurrentLinkedDeque2<E> extends AbstractCollection<E> implements 
     public boolean offerFirst(E e) {
         if (e == null) throw new NullPointerException();
         final Node<E> node = new Node<E>(e);
+        Node<E> h;
 
         do {
-            final Node<E> h = head;//head always exists
+            h = head;//head always exists
             if (h.prev == null && casHeadPrev(h, node)) {//append to head.pre
                 node.next = h;
                 this.head = node;//new head
@@ -238,9 +239,10 @@ public class ConcurrentLinkedDeque2<E> extends AbstractCollection<E> implements 
     public boolean offerLast(E e) {
         if (e == null) throw new NullPointerException();
         final Node<E> node = new Node<E>(e);
+        Node<E> t;
 
         do {
-            final Node<E> t = tail;//tail always exists
+            t = tail;//tail always exists
             if (t.next == null && casTailNext(t, node)) {//append to tail.next
                 node.prev = t;
                 this.tail = node;//new tail
