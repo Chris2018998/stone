@@ -11,7 +11,7 @@ package org.jmin.util.concurrent.synchronizer;
  * @author Chris Liao
  * @version 1.0
  * <p>
- * for Lock(radLock/)
+ * for Lock
  */
 public interface SharedPermitPool extends ReusePermitPool {
 
