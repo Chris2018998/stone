@@ -11,17 +11,18 @@ package org.jmin.util.concurrent.synchronizer;
  * @author Chris Liao
  * @version 1.0
  * <p>
- * <p>
- * for Lock
+ * for Lock(radLock/)
  */
 public interface SharedPermitPool extends ReusePermitPool {
+
+    boolean isInSharingState();
 
     boolean isHeldExclusively();
 
     boolean tryReleaseShared();
 
-    boolean tryAcquireSharedUnInterruptibly(int args, long timeoutNs);
+    boolean tryAcquireSharedUnInterruptibly(long timeoutNs);
 
-    boolean tryAcquireSharedInterruptibly(int args, long timeoutNs) throws InterruptedException;
+    boolean tryAcquireSharedInterruptibly(long timeoutNs) throws InterruptedException;
 
 }
