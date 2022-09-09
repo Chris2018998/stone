@@ -7,7 +7,7 @@
  */
 package org.jmin.util.concurrent.synchronizer.impl;
 
-import org.jmin.util.concurrent.synchronizer.chain.SynchronizeNodeChain;
+import org.jmin.util.concurrent.synchronizer.SynchronizeNodeChain;
 
 /**
  * @author Chris Liao

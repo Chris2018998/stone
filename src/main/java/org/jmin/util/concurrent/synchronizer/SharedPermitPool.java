@@ -25,4 +25,5 @@ public interface SharedPermitPool extends ReusePermitPool {
 
     boolean acquireShared(long deadlineNs) throws InterruptedException;
 
+    void afterAcquired(SynchronizeNode node);
 }

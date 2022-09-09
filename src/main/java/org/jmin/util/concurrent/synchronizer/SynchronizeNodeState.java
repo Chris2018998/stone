@@ -22,7 +22,7 @@ public class SynchronizeNodeState {
     //acquired permit
     public static final int ACQUIRED = 3;
 
-    //retry to acquire permit
+    //retry to acquire permit(compete acquire mode)
     public static final int TRY_ACQUIRE = 4;
 
     //node timeout
