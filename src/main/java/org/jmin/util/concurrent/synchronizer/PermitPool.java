@@ -7,8 +7,6 @@
  */
 package org.jmin.util.concurrent.synchronizer;
 
-import org.jmin.util.concurrent.synchronizer.chain.SynchronizeNodeChain;
-
 /**
  * @author Chris Liao
  * @version 1.0
@@ -22,6 +20,5 @@ public interface PermitPool extends SynchronizeNodeChain {
     boolean acquireUninterruptibly(int args, long deadlineNs);
 
     boolean acquire(int args, long deadlineNs) throws InterruptedException;
-
 
 }
