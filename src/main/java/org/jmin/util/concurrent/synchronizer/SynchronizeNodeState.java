@@ -13,17 +13,17 @@ package org.jmin.util.concurrent.synchronizer;
  */
 public class SynchronizeNodeState {
 
-    //wait in exclusive mode
+    //wait for exclusive permit
     public static final int WAIT_FOR_EXCLUSIVE = 1;
 
-    //wait in share mode
+    //wait for shared permit
     public static final int WAIT_FOR_SHARE = 2;
 
-    //permit acquired
+    //acquired permit
     public static final int ACQUIRED = 3;
 
     //retry to acquire permit
-    public static final int ACQUIRE_TRY = 4;
+    public static final int TRY_ACQUIRE = 4;
 
     //node timeout
     public static final int TIMEOUT = 5;
