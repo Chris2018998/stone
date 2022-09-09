@@ -24,7 +24,7 @@ public interface SynchronizeNodeChain {
 
     SynchronizeNode addNode(int state);
 
-    SynchronizeNode addNode(int state, SynchronizeNode node);
+    void addNode(int state, SynchronizeNode node);
 
     void removeNode(SynchronizeNode node);
 
