@@ -17,9 +17,9 @@ public interface PermitPool extends SynchronizeNodeChain {
 
     boolean isFair();
 
-    boolean tryRelease(int args);
+    boolean release(int args);
 
-    boolean tryAcquireUnInterruptibly(int args, long timeoutNs);
+    boolean acquireUninterruptibly(int args, long timeoutNs);
 
-    boolean tryAcquireInterruptibly(int args, long timeoutNs) throws InterruptedException;
+    boolean acquire(int args, long timeoutNs) throws InterruptedException;
 }
