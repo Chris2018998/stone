@@ -18,10 +18,6 @@ public interface SynchronizeNodeChain {
 
     int getLength(int state);
 
-    SynchronizeNode[] getNodes();
-
-    SynchronizeNode[] getNodes(int state);
-
     Thread[] getNodeThreads();
 
     Thread[] getNodeThreads(int state);
