@@ -19,10 +19,10 @@ public interface SharedPermitPool extends ReusePermitPool {
 
     boolean isHeldExclusively();
 
-    boolean tryReleaseShared();
+    boolean releaseShared();
 
-    boolean acquireSharedUninterruptibly(long timeoutNs);
+    boolean acquireSharedUninterruptibly(long deadlineNs);
 
-    boolean acquireShared(long timeoutNs) throws InterruptedException;
+    boolean acquireShared(long deadlineNs) throws InterruptedException;
 
 }
