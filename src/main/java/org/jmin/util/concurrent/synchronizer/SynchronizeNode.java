@@ -12,7 +12,7 @@ package org.jmin.util.concurrent.synchronizer;
  * @version 1.0
  */
 
-public class SynchronizeNode {
+public final class SynchronizeNode {
     private Thread thread;
     private volatile int state;
     private volatile SynchronizeNode prev;

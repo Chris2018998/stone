@@ -17,7 +17,6 @@ import org.jmin.util.concurrent.synchronizer.ReusePermitPool;
  */
 public class SynchronizeReusePermitPool extends SynchronizeWaitQueue implements ReusePermitPool {
 
-
     public int getSize() {
         //@todo
         return 0;

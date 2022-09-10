@@ -11,7 +11,7 @@ package org.jmin.util.concurrent.synchronizer;
  * @author Chris Liao
  * @version 1.0
  */
-public class SynchronizeNodeState {
+public final class SynchronizeNodeState {
 
     //wait for exclusive permit
     public static final int WAIT_FOR_EXCLUSIVE = 1;
