@@ -18,4 +18,33 @@ import org.jmin.util.concurrent.synchronizer.ReusePermitPool;
 public class SynchronizeReusePermitPool extends SynchronizeWaitQueue implements ReusePermitPool {
 
 
+    public int getSize() {
+        //@todo
+        return 0;
+    }
+
+    public int getMaxSize() {
+        //@todo
+        return 0;
+    }
+
+    public boolean isFair() {
+        //@todo
+        return false;
+    }
+
+    public boolean release(int args) {
+        //@todo
+        return false;
+    }
+
+    public boolean acquireUninterruptibly(long deadlineNs) {
+        //@todo
+        return false;
+    }
+
+    public boolean acquire(long deadlineNs) throws InterruptedException {
+        //@todo
+        return false;
+    }
 }
