@@ -9,7 +9,6 @@ package org.jmin.util.concurrent;
 
 import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
 import java.util.*;
 
 /**
@@ -50,9 +49,7 @@ public class ConcurrentLinkedQueue2<E> extends AbstractQueue<E> implements Queue
 
     static {
         try {
-            Field uField = Unsafe.class.getDeclaredField("theUnsafe");
-            uField.setAccessible(true);
-            U = (Unsafe) uField.get(null);
+            U = UnsafeUtil.getUnsafe();
             nextOffSet = U.objectFieldOffset(Node.class.getDeclaredField("next"));
             itemOffSet = U.objectFieldOffset(Node.class.getDeclaredField("item"));
         } catch (Exception e) {

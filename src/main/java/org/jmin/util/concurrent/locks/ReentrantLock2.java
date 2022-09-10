@@ -7,8 +7,6 @@
  */
 package org.jmin.util.concurrent.locks;
 
-import org.jmin.util.concurrent.synchronizer.impl.SingleResourceSynchronizePool;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -18,8 +16,6 @@ import java.util.concurrent.locks.Lock;
  * @version 1.0
  */
 public class ReentrantLock2 implements Lock {
-
-    private SingleResourceSynchronizePool synchronizePool;
 
     /**
      * Acquires the lock.
