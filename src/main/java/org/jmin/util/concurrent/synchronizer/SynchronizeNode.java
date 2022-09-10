@@ -7,37 +7,12 @@
  */
 package org.jmin.util.concurrent.synchronizer;
 
-import org.jmin.util.concurrent.UnsafeUtil;
-import sun.misc.Unsafe;
-
 /**
  * @author Chris Liao
  * @version 1.0
  */
 
 public class SynchronizeNode {
-    //***************************************************************************************************************//
-    //                                           1: CAS Chain info                                                   //
-    //***************************************************************************************************************//
-    private final static Unsafe U;
-    private final static long stateOffSet;
-    private final static long prevOffSet;
-    private final static long nextOffSet;
-
-    static {
-        try {
-            U = UnsafeUtil.getUnsafe();
-            prevOffSet = U.objectFieldOffset(SynchronizeNode.class.getDeclaredField("prev"));
-            nextOffSet = U.objectFieldOffset(SynchronizeNode.class.getDeclaredField("next"));
-            stateOffSet = U.objectFieldOffset(SynchronizeNode.class.getDeclaredField("state"));
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
-    //***************************************************************************************************************//
-    //                                          2: local attributes                                                  //
-    //***************************************************************************************************************//
     private Thread thread;
     private volatile int state;
     private volatile SynchronizeNode prev;
