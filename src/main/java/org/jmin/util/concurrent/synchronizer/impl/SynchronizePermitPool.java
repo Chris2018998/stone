@@ -29,6 +29,7 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
         this.fair = fair;
         this.permitMaxSize = permits;
         this.permitSize = new AtomicInteger(permitMaxSize);
+        this.sharedCount = new AtomicInteger(0);
         if (permits <= 0) throw new IllegalArgumentException("permit size must be greater than zero");
     }
 
