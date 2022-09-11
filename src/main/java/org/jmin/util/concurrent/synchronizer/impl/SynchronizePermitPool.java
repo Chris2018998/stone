@@ -36,6 +36,14 @@ public class SynchronizePermitPool extends SynchronizeWaitQueue implements Permi
         return true;
     }
 
+    //plugin method after permit acquired successful
+    public void afterAcquired(boolean acquiredShare) {
+    }
+
+    //plugin method after permit released successful
+    public void afterReleased(boolean acquiredShare) {
+    }
+
     //release a permit to pool
     public boolean release() {
         return true;
