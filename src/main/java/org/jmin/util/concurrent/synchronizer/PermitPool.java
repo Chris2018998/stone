@@ -40,7 +40,7 @@ public interface PermitPool extends PermitWaitNodeChain {
     //plugin method after permit released successful
     void afterReleased(boolean shareAcquired);
 
-    //release a permit to pool
+    //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
     boolean release();
 
     //if <parameter>acquiredShare</parameter> is true,then try to acquire permit,then share to same acquired others
