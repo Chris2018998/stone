@@ -14,7 +14,7 @@ import org.jmin.util.concurrent.synchronizer.PermitPool;
  * @version 1.0
  * for (ReentrantLock2,Semaphore2)
  */
-public class SynchronizePermitPool extends SynchronizeWaitQueue implements PermitPool {
+public class SynchronizePermitPool extends SynchronizeWaitChain implements PermitPool {
 
     //true,fair mode to acquire permit
     public boolean isFair() {

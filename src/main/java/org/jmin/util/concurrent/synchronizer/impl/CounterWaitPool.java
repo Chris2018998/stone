@@ -13,7 +13,7 @@ package org.jmin.util.concurrent.synchronizer.impl;
  * <p>
  * for(CountDownLatch2,CyclicBarrier2)
  */
-public abstract class CounterWaitPool extends SynchronizeWaitQueue {
+public abstract class CounterWaitPool extends SynchronizeWaitChain {
 
     /**
      * if true,then wakeup all waiters
