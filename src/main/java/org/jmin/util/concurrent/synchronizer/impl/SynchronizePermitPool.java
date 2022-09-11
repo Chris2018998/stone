@@ -20,17 +20,22 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
     private int permitMaxSize;
     private AtomicInteger permitSize;
     private AtomicInteger sharedCount;
+    private ThreadLocal<HoldCount> sharedThreadLocal;
+    private ThreadLocal<HoldCount> exclusiveThreadLocal;
 
     public SynchronizePermitPool(int permits) {
         this(permits, false);
     }
 
     public SynchronizePermitPool(int permits, boolean fair) {
+        if (permits <= 0) throw new IllegalArgumentException("permit size must be greater than zero");
+
         this.fair = fair;
         this.permitMaxSize = permits;
         this.permitSize = new AtomicInteger(permitMaxSize);
         this.sharedCount = new AtomicInteger(0);
-        if (permits <= 0) throw new IllegalArgumentException("permit size must be greater than zero");
+        this.sharedThreadLocal = new ThreadLocal<>();
+        this.exclusiveThreadLocal = new ThreadLocal<>();
     }
 
     //true,fair mode to acquire permit
@@ -58,14 +63,17 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
         return getSharedCount() > 0;
     }
 
+
     //get hold shared count for current thread
     public int getHoldSharedCount() {
-        return 0;
+        HoldCount hold = sharedThreadLocal.get();
+        return hold != null ? hold.count : 0;
     }
 
     //get hold exclusive count for current thread
     public int getHoldExclusiveCount() {
-        return 0;
+        HoldCount hold = exclusiveThreadLocal.get();
+        return hold != null ? hold.count : 0;
     }
 
     //plugin method after permit acquired successful
@@ -89,6 +97,7 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
     public boolean acquire(boolean shareAcquired, long deadlineNs) throws InterruptedException {
         return true;
     }
+
 
     private static class HoldCount {
         private int count;
