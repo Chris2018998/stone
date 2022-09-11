@@ -34,7 +34,7 @@ public interface PermitPool extends PermitWaitNodeChain {
     //release a permit to pool
     boolean release();
 
-    //if acquiredShare is true,then try to acquire permit,then share to same acquired others
+    //if <parameter>acquiredShare</parameter> is true,then try to acquire permit,then share to same acquired others
     boolean acquireUninterruptibly(boolean acquiredShare, long deadlineNs);
 
     //acquire a permit and can throws InterruptedException during acquiring
