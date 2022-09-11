@@ -16,6 +16,9 @@ public interface PermitPool extends PermitWaitNodeChain {
     //true,fair mode to acquire permit
     boolean isFair();
 
+    //permit max size in pool
+    int getPermitMaxSize();
+
     //available permit size in pool
     int getPermitSize();
 
@@ -23,7 +26,7 @@ public interface PermitPool extends PermitWaitNodeChain {
     int getSharedCount();
 
     //permit acquired by shared mode then return true
-    boolean isInShared();
+    boolean hasSharedPermit();
 
     //plugin method after permit acquired successful
     void afterAcquired(boolean acquiredShare);
