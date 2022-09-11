@@ -22,11 +22,11 @@ public interface PermitPool extends PermitWaitNodeChain {
     //available permit size in pool
     int getPermitSize();
 
-    //acquired count with share mode(shareAcquire==true)
-    int getSharedCount();
-
     //permit acquired by shared mode then return true
     boolean hasSharedPermit();
+
+    //acquired count with share mode(shareAcquire==true)
+    int getSharedPermitAcquiredCount();
 
     //get hold shared count for current thread
     int getHoldSharedCount();

@@ -53,14 +53,14 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
         return permitSize.get();
     }
 
-    //acquired count with share mode(shareAcquire==true)
-    public int getSharedCount() {
-        return sharedCount.get();
-    }
-
     //permit acquired by shared mode then return true
     public boolean hasSharedPermit() {
-        return getSharedCount() > 0;
+        return sharedCount.get() > 0;
+    }
+
+    //acquired count with share mode(shareAcquire==true)
+    public int getSharedPermitAcquiredCount() {
+        return sharedCount.get();
     }
 
 
