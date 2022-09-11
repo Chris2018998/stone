@@ -29,18 +29,18 @@ public interface PermitPool extends PermitWaitNodeChain {
     boolean hasSharedPermit();
 
     //plugin method after permit acquired successful
-    void afterAcquired(boolean acquiredShare);
+    void afterAcquired(boolean shareAcquired);
 
     //plugin method after permit released successful
-    void afterReleased(boolean acquiredShare);
+    void afterReleased(boolean shareAcquired);
 
     //release a permit to pool
     boolean release();
 
     //if <parameter>acquiredShare</parameter> is true,then try to acquire permit,then share to same acquired others
-    boolean acquireUninterruptibly(boolean acquiredShare, long deadlineNs);
+    boolean acquireUninterruptibly(boolean shareAcquired, long deadlineNs);
 
     //acquire a permit and can throws InterruptedException during acquiring
-    boolean acquire(boolean acquiredShare, long deadlineNs) throws InterruptedException;
+    boolean acquire(boolean shareAcquired, long deadlineNs) throws InterruptedException;
 
 }

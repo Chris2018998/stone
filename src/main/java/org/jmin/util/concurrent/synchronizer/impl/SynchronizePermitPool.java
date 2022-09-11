@@ -59,12 +59,12 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
     }
 
     //plugin method after permit acquired successful
-    public void afterAcquired(boolean acquiredShare) {
+    public void afterAcquired(boolean shareAcquired) {
 
     }
 
     //plugin method after permit released successful
-    public void afterReleased(boolean acquiredShare) {
+    public void afterReleased(boolean shareAcquired) {
     }
 
     //release a permit to pool
@@ -72,11 +72,11 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
         return true;
     }
 
-    public boolean acquireUninterruptibly(boolean shareAcquire, long deadlineNs) {
+    public boolean acquireUninterruptibly(boolean shareAcquired, long deadlineNs) {
         return true;
     }
 
-    public boolean acquire(boolean shareAcquire, long deadlineNs) throws InterruptedException {
+    public boolean acquire(boolean shareAcquired, long deadlineNs) throws InterruptedException {
         return true;
     }
 }
