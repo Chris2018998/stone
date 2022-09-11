@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author Chris Liao
  * @version 1.0
- * for (ReentrantLock2,Semaphore2)
  */
 public class SynchronizePermitPool extends SynchronizeWaitChain implements PermitPool {
     private boolean fair;
