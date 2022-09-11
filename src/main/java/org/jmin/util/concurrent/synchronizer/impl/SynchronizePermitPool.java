@@ -58,6 +58,16 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
         return getSharedCount() > 0;
     }
 
+    //get hold shared count for current thread
+    public int getHoldSharedCount() {
+        return 0;
+    }
+
+    //get hold exclusive count for current thread
+    public int getHoldExclusiveCount() {
+        return 0;
+    }
+
     //plugin method after permit acquired successful
     public void afterAcquired(boolean shareAcquired) {
 
@@ -78,5 +88,9 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
 
     public boolean acquire(boolean shareAcquired, long deadlineNs) throws InterruptedException {
         return true;
+    }
+
+    private static class HoldCount {
+        private int count;
     }
 }

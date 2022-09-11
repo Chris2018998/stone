@@ -35,7 +35,6 @@ public final class PermitWaitNode {
         this.state = newState;
     }
 
-
     public PermitWaitNode getPrev() {
         return prev;
     }
@@ -43,7 +42,6 @@ public final class PermitWaitNode {
     public void setPrev(PermitWaitNode prev) {
         this.prev = prev;
     }
-
 
     public PermitWaitNode getNext() {
         return next;

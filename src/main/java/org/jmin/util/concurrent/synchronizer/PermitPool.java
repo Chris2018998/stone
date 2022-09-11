@@ -28,6 +28,12 @@ public interface PermitPool extends PermitWaitNodeChain {
     //permit acquired by shared mode then return true
     boolean hasSharedPermit();
 
+    //get hold shared count for current thread
+    int getHoldSharedCount();
+
+    //get hold exclusive count for current thread
+    int getHoldExclusiveCount();
+
     //plugin method after permit acquired successful
     void afterAcquired(boolean shareAcquired);
 
