@@ -23,10 +23,10 @@ public interface ObjectPoolJmxBean {
     //return using size
     int getUsingSize();
 
-    //return permit size taken from semaphore
+    //return synchronizer size taken from semaphore
     int getSemaphoreAcquiredSize();
 
-    //return waiting size to take semaphore permit
+    //return waiting size to take semaphore synchronizer
     int getSemaphoreWaitingSize();
 
     //return waiter size for transferred object

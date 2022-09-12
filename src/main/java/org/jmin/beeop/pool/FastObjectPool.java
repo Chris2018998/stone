@@ -13,7 +13,7 @@ import org.jmin.beeop.pool.exception.ObjectException;
 import org.jmin.beeop.pool.exception.PoolClosedException;
 import org.jmin.beeop.pool.exception.PoolCreateFailedException;
 import org.jmin.beeop.pool.exception.PoolInternalException;
-import org.jmin.util.atomic.IntegerFieldUpdaterImpl;
+import org.jmin.concurrent.atomic.IntegerFieldUpdaterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -278,7 +278,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
 
         long deadline = System.nanoTime();
         try {
-            //1:try to acquire a permit
+            //1:try to acquire a synchronizer
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new ObjectException("Get object timeout");
         } catch (InterruptedException e) {
@@ -633,7 +633,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
         return this.poolConfig.getBorrowSemaphoreSize() - this.semaphore.availablePermits();
     }
 
-    //Method-5.6: using size of semaphore permit
+    //Method-5.6: using size of semaphore synchronizer
     public int getSemaphoreWaitingSize() {
         return this.semaphore.getQueueLength();
     }
