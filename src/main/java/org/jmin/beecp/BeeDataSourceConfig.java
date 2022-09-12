@@ -61,7 +61,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int initialSize;
     //connections max reachable size in pool
     private int maxActive = Math.min(Math.max(10, NCPUS), 50);
-    //max permit size of pool semaphore
+    //max synchronizer size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPUS);
     //milliseconds:max wait time to get one connection from pool<code>ConnectionPool.getConnection()</code>
     private long maxWait = SECONDS.toMillis(8);

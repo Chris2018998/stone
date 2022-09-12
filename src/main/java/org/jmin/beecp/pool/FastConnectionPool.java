@@ -13,7 +13,7 @@ import org.jmin.beecp.pool.exception.PoolClosedException;
 import org.jmin.beecp.pool.exception.PoolCreateFailedException;
 import org.jmin.beecp.pool.exception.PoolInternalException;
 import org.jmin.beecp.pool.exception.TestSQLFailException;
-import org.jmin.util.atomic.IntegerFieldUpdaterImpl;
+import org.jmin.concurrent.atomic.IntegerFieldUpdaterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -409,7 +409,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
         long deadline = System.nanoTime();
         try {
-            //1:try to acquire a permit
+            //1:try to acquire a synchronizer
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new SQLTimeoutException("Get connection timeout");
         } catch (InterruptedException e) {
@@ -780,7 +780,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         return this.semaphore.getQueueLength();
     }
 
-    //Method-5.6: using size of semaphore permit
+    //Method-5.6: using size of semaphore synchronizer
     public int getSemaphoreAcquiredSize() {
         return this.poolConfig.getBorrowSemaphoreSize() - this.semaphore.availablePermits();
     }
