@@ -13,7 +13,7 @@ import org.jmin.beecp.pool.exception.PoolClosedException;
 import org.jmin.beecp.pool.exception.PoolCreateFailedException;
 import org.jmin.beecp.pool.exception.PoolInternalException;
 import org.jmin.beecp.pool.exception.TestSQLFailException;
-import org.jmin.util.concurrent.atomic.IntegerFieldUpdaterImpl;
+import org.jmin.util.atomic.IntegerFieldUpdaterImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
