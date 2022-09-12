@@ -13,25 +13,25 @@ package org.jmin.concurrent.synchronizer;
  */
 public interface PermitPool extends PermitWaitNodeChain {
 
-    //true,fair mode to acquire synchronizer
+    //true,fair mode to acquire permit
     boolean isFair();
 
     //true,reentrant
     boolean isReentrant();
 
-    //synchronizer max size in pool
+    //permit max size in pool
     int getPermitMaxSize();
 
-    //available synchronizer size in pool
+    //available permit size in pool
     int getPermitSize();
 
-    //release a synchronizer to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
-    boolean release();
+    //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
+    void release();
 
-    //if <parameter>acquiredShare</parameter> is true,then try to acquire synchronizer,then share to same acquired others
+    //try to acquire a permit,if interrupted,then ignore it and continue to try
     boolean acquireUninterruptibly(long deadlineNs);
 
-    //acquire a synchronizer and can throws InterruptedException during acquiring
+    //try to acquire a permit,if interrupted,then throws InterruptedException
     boolean acquire(long deadlineNs) throws InterruptedException;
 
 }

@@ -8,7 +8,7 @@
 package org.jmin.concurrent.synchronizer;
 
 /**
- * a type pooled resource
+ * pooled resource
  *
  * @author Chris Liao
  * @version 1.0

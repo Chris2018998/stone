@@ -59,8 +59,8 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
     }
 
     //release a synchronizer to pool
-    public boolean release() {
-        return true;
+    public void release() {
+
     }
 
     public boolean acquireUninterruptibly(long deadlineNs) {
