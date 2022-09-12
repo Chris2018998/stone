@@ -15,6 +15,8 @@ package org.jmin.concurrent.synchronizer;
  */
 public interface Permit {
 
+    int getState();
+
     int getHoldCount();
 
     Thread getHoldThread();
