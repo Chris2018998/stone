@@ -16,7 +16,7 @@
 
 package org.jmin.util.study;
 
-import org.jmin.util.queue.MyTransferQueue;
+import org.jmin.util.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
 import java.util.Queue;
