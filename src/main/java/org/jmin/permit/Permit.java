@@ -13,7 +13,10 @@ package org.jmin.permit;
  * @author Chris Liao
  * @version 1.0
  */
-public class Permit {
+public interface Permit {
 
+    int getHoldCount();
+
+    Thread getHoldThread();
 
 }

@@ -17,30 +17,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SynchronizePermitPool extends SynchronizeWaitChain implements PermitPool {
     private boolean fair;
+    private boolean reentrant;
     private int permitMaxSize;
     private AtomicInteger permitSize;
-    private AtomicInteger sharedCount;
-    private ThreadLocal<HoldCount> sharedThreadLocal;
-    private ThreadLocal<HoldCount> exclusiveThreadLocal;
 
     public SynchronizePermitPool(int permits) {
         this(permits, false);
     }
 
     public SynchronizePermitPool(int permits, boolean fair) {
+        this(permits, fair, true);
+    }
+
+    public SynchronizePermitPool(int permits, boolean fair, boolean reentrant) {
         if (permits <= 0) throw new IllegalArgumentException("permit size must be greater than zero");
 
         this.fair = fair;
+        this.reentrant = reentrant;
         this.permitMaxSize = permits;
         this.permitSize = new AtomicInteger(permitMaxSize);
-        this.sharedCount = new AtomicInteger(0);
-        this.sharedThreadLocal = new ThreadLocal<>();
-        this.exclusiveThreadLocal = new ThreadLocal<>();
     }
 
     //true,fair mode to acquire permit
     public boolean isFair() {
         return fair;
+    }
+
+    //true,reentrant
+    public boolean isReentrant() {
+        return reentrant;
     }
 
     //max size pooled permit
@@ -53,51 +58,18 @@ public class SynchronizePermitPool extends SynchronizeWaitChain implements Permi
         return permitSize.get();
     }
 
-    //permit acquired by shared mode then return true
-    public boolean hasSharedPermit() {
-        return sharedCount.get() > 0;
-    }
-
-    //acquired count with share mode(shareAcquire==true)
-    public int getSharedPermitAcquiredCount() {
-        return sharedCount.get();
-    }
-
-
-    //get hold shared count for current thread
-    public int getHoldSharedCount() {
-        HoldCount hold = sharedThreadLocal.get();
-        return hold != null ? hold.count : 0;
-    }
-
-    //get hold exclusive count for current thread
-    public int getHoldExclusiveCount() {
-        HoldCount hold = exclusiveThreadLocal.get();
-        return hold != null ? hold.count : 0;
-    }
-
-    //plugin method after permit acquired successful
-    public void afterAcquired(boolean shareAcquired) {
-
-    }
-
-    //plugin method after permit released successful
-    public void afterReleased(boolean shareAcquired) {
-    }
-
     //release a permit to pool
     public boolean release() {
         return true;
     }
 
-    public boolean acquireUninterruptibly(boolean shareAcquired, long deadlineNs) {
+    public boolean acquireUninterruptibly(long deadlineNs) {
         return true;
     }
 
-    public boolean acquire(boolean shareAcquired, long deadlineNs) throws InterruptedException {
+    public boolean acquire(long deadlineNs) throws InterruptedException {
         return true;
     }
-
 
     private static class HoldCount {
         private int count;

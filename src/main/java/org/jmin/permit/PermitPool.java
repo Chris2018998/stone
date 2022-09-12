@@ -16,37 +16,22 @@ public interface PermitPool extends PermitWaitNodeChain {
     //true,fair mode to acquire permit
     boolean isFair();
 
+    //true,reentrant
+    boolean isReentrant();
+
     //permit max size in pool
     int getPermitMaxSize();
 
     //available permit size in pool
     int getPermitSize();
 
-    //permit acquired by shared mode then return true
-    boolean hasSharedPermit();
-
-    //acquired count with share mode(shareAcquire==true)
-    int getSharedPermitAcquiredCount();
-
-    //get hold shared count for current thread
-    int getHoldSharedCount();
-
-    //get hold exclusive count for current thread
-    int getHoldExclusiveCount();
-
-    //plugin method after permit acquired successful
-    void afterAcquired(boolean shareAcquired);
-
-    //plugin method after permit released successful
-    void afterReleased(boolean shareAcquired);
-
     //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
     boolean release();
 
     //if <parameter>acquiredShare</parameter> is true,then try to acquire permit,then share to same acquired others
-    boolean acquireUninterruptibly(boolean shareAcquired, long deadlineNs);
+    boolean acquireUninterruptibly(long deadlineNs);
 
     //acquire a permit and can throws InterruptedException during acquiring
-    boolean acquire(boolean shareAcquired, long deadlineNs) throws InterruptedException;
+    boolean acquire(long deadlineNs) throws InterruptedException;
 
 }
