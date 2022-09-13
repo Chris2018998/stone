@@ -10,15 +10,13 @@ package org.jmin.concurrent.synchronizer;
 /**
  * @author Chris Liao
  * @version 1.0
- * <p>
- * design for Semaphore
  */
 public interface PermitPool {
 
     //true,fair mode to acquire permit
     boolean isFair();
 
-    //permit max size in pool
+    //object max size in pool
     int getMaxSize();
 
     //available permit size in pool
