@@ -20,10 +20,6 @@ public interface MutexState {
     //current state
     int getState();
 
-//    boolean beforeAcquire(int state);
-//
-//    boolean afterAcquired(int state);
-
     //try to acquire a permit,if interrupted,then throws InterruptedException
     void release(int state);
 
