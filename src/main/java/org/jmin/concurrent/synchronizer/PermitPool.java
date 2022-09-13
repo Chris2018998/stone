@@ -18,7 +18,7 @@ public interface PermitPool {
     //true,fair mode to acquire permit
     boolean isFair();
 
-    //object max size in pool
+    //permit max size in pool
     int getMaxSize();
 
     //available permit size in pool
