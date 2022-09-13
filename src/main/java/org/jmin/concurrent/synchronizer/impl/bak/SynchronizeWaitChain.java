@@ -8,8 +8,8 @@
 package org.jmin.concurrent.synchronizer.impl.bak;
 
 import org.jmin.concurrent.UnsafeUtil;
+import org.jmin.concurrent.synchronizer.WaitChain;
 import org.jmin.concurrent.synchronizer.WaitNode;
-import org.jmin.concurrent.synchronizer.WaitNodeChain;
 import sun.misc.Unsafe;
 
 import java.util.LinkedList;
@@ -19,7 +19,7 @@ import java.util.List;
  * @author Chris Liao
  * @version 1.0
  */
-public class SynchronizeWaitChain implements WaitNodeChain {
+public class SynchronizeWaitChain implements WaitChain {
     //***************************************************************************************************************//
     //                                           1: CAS Chain info                                                   //
     //***************************************************************************************************************//

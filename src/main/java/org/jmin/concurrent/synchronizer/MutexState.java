@@ -10,6 +10,8 @@ package org.jmin.concurrent.synchronizer;
 /**
  * @author Chris Liao
  * @version 1.0
+ * <p>
+ * design for Lock(ReentrantLock/ReentrantReadWriteLock)
  */
 public interface MutexState {
 
@@ -18,13 +20,17 @@ public interface MutexState {
     //current state
     int getState();
 
+//    boolean beforeAcquire(int state);
+//
+//    boolean afterAcquired(int state);
+
     //try to acquire a permit,if interrupted,then throws InterruptedException
-    void release(int targetState);
+    void release(int state);
 
     //try to acquire a permit,if interrupted,then ignore it and continue to try
-    boolean acquireUninterruptibly(int targetState, long deadlineNs);
+    boolean acquireUninterruptibly(int state, long deadlineNs);
 
     //try to acquire a permit,if interrupted,then throws InterruptedException
-    boolean acquire(int targetState, long deadlineNs) throws InterruptedException;
+    boolean acquire(int state, long deadlineNs) throws InterruptedException;
 
 }

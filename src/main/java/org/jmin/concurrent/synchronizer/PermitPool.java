@@ -10,6 +10,8 @@ package org.jmin.concurrent.synchronizer;
 /**
  * @author Chris Liao
  * @version 1.0
+ * <p>
+ * design for Semaphore
  */
 public interface PermitPool {
 

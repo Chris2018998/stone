@@ -7,13 +7,13 @@
  */
 package org.jmin.concurrent.synchronizer.impl.bak;
 
-import org.jmin.concurrent.synchronizer.WaitNodeChain;
+import org.jmin.concurrent.synchronizer.WaitChain;
 
 /**
  * @author Chris Liao
  * @version 1.0
  */
-public interface Pool extends WaitNodeChain {
+public interface Pool extends WaitChain {
 
     //true,fair mode to acquire permit
     boolean isFair();
