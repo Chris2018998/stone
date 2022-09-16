@@ -75,7 +75,7 @@ public final class RawConnectionPool implements ConnectionPool, ConnectionPoolJm
         }
 
         registerJMX();
-        CommonLog.info("BeeCP({})has been startup{init size:{},max size:{},concurrent size:{},mode:{},max wait:{}ms},driver:{}}",
+        CommonLog.info("BeeCP({})has been startup{init size:{},max size:{},firefly size:{},mode:{},max wait:{}ms},driver:{}}",
                 poolName,
                 0,
                 0,
