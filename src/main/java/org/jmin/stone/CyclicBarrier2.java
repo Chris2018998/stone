@@ -1,0 +1,41 @@
+/*
+ * Copyright(C) Chris2018998
+ *
+ * Contact:Chris2018998@tom.com
+ *
+ * Licensed under GNU Lesser General Public License v2.1
+ */
+package org.jmin.stone;
+
+import org.jmin.stone.synchronizer.impl.SynchronizedWaitPool;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * @author Chris Liao
+ * @version 1.0
+ */
+public class CyclicBarrier2 extends SynchronizedWaitPool {
+    private int size;
+    private AtomicInteger count;
+    private AtomicInteger state;
+
+    public CyclicBarrier2(int size) {
+        if (size < 0) throw new IllegalArgumentException("size < 0");
+        this.size = size;
+        this.state = new AtomicInteger(0);
+        this.count = new AtomicInteger(0);
+    }
+
+    public boolean testCondition() {
+        return count.get() == size; //current barrier reach
+    }
+
+    public void resetCondition() {//for next generation
+        //do nothing
+    }
+
+    public void breakBarrier() {//break barrier
+        //do nothing
+    }
+}

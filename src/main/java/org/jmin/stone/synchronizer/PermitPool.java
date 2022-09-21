@@ -21,7 +21,10 @@ public interface PermitPool {
     //available permit size in pool
     int getPermitSize();
 
-    //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
+    //Threads waiting for permit
+    Thread[] getQueuedThreads();
+
+    //release a permit to pool
     void release();
 
     //try to acquire a permit,if interrupted,then ignore it and continue to try

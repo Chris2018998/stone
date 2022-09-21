@@ -30,12 +30,18 @@ public interface SharableObject {
     //return current thread hold count(reentrant)
     int getHoldCountByCurrentThread();
 
-    //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
+    //Threads waiting for shared lock
+    Thread[] getQueuedSharedThreads();
+
+    //Threads waiting for exclusive lock
+    Thread[] getQueuedExclusiveThreads();
+
+    //release lock to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
     void release(boolean isExclusive);
 
-    //try to acquire a permit,if interrupted,then ignore it and continue to try
+    //try to acquire lock,if interrupted,then ignore it and continue to try
     boolean acquireUninterruptibly(boolean exclusive, long deadlineNs);
 
-    //try to acquire a permit,if interrupted,then throws InterruptedException
+    //try to acquire lock,if interrupted,then throws InterruptedException
     boolean acquire(boolean exclusive, long deadlineNs) throws InterruptedException;
 }

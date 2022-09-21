@@ -8,9 +8,10 @@
 package org.jmin.stone.synchronizer;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
- * Thread wait pool util wake-up,which is the simplest synchronize way
+ * Thread wait pool util wake-up,which is the simplest synchronization way
  *
  * @author Chris Liao
  * @version 1.0
@@ -18,16 +19,16 @@ import java.util.concurrent.TimeUnit;
 
 public interface WaitWakeupPool {
 
-    //Wakeup all blocking threads in pool
-    void wakeupWaiting();
+    //Wakeup all blocking threads in pool,and clean pool
+    //void wakeupWaiting();
 
     /**
      * Condition test method,for example(NEW CountDownLatch Implementation)
-     * <code>
-     * public boolean testCondition(){
-     * return countAtomicInteger.get()==0;
-     * }
-     * </code>
+     * <pre> {@code
+     *  public boolean testCondition(){
+     *   return countAtomicInteger.get()==0;
+     *  }
+     * }</pre>
      *
      * @return true, All block threads should be wakeup and leave pool
      */
@@ -35,9 +36,13 @@ public interface WaitWakeupPool {
 
     /**
      * When true,then can reset condition to initialization state,for example(NEW CountDownLatch Implementation)
+     * <pre> {@code
      * public void resetCondition(){
-     * if(countAtomicInteger.get()==0){ countAtomicInteger.set(10); }
+     *    if(countAtomicInteger.get()==0){
+     *       countAtomicInteger.set(10);
+     *    }
      * }
+     * }</pre>
      */
     void resetCondition();
 
@@ -48,7 +53,7 @@ public interface WaitWakeupPool {
      *
      * @throws InterruptedException interrupted during blocking
      */
-    void await() throws InterruptedException;
+    void doAwait() throws InterruptedException;
 
     /**
      * Block current thread,
@@ -58,5 +63,5 @@ public interface WaitWakeupPool {
      * @return true, the test condition has been true,otherwise return false
      * @throws InterruptedException interrupted during blocking
      */
-    boolean await(long timeout, TimeUnit unit) throws InterruptedException;
+    void doAwait(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException;
 }
