@@ -9,7 +9,6 @@ package org.jmin.stone.synchronizer.impl;
 
 import org.jmin.stone.synchronizer.ResourceAccess;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAIT_EXCLUSIVE;
@@ -95,19 +94,19 @@ public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess
     //current node will append to chain,others share request node will offer to its inner queue
     private static class ShareHoldNode extends ThreadNode {
         //add other acquire share request nodes
-        private ConcurrentLinkedQueue<ShareHoldNode> waitQueue;
+        private ThreadNodeChain waitChain;
 
         private ShareHoldNode() {
             super(WAIT_SHARED);
-            this.waitQueue = new ConcurrentLinkedQueue<>();
+            this.waitChain = new ThreadNodeChain();
         }
 
         public void addNode(ShareHoldNode node) {
-            waitQueue.offer(node);
+            waitChain.addNode(node);
         }
 
         public void removeNode(ShareHoldNode node) {
-            waitQueue.remove(node);
+            waitChain.removeNode(node);
         }
 
         //wakeup other wait node in queue,when current node has gotten a shared access
