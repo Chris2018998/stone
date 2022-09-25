@@ -16,7 +16,7 @@ final class ThreadNodeState {
     //Waiting
     public static final int WAITING = 1;
 
-    //Simple signal to exit waiting(used in class{#link ThreadWaitPool}
+    //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
     public static final int NOTIFIED = 2;
 
     //Has acquired a permit or a access lock
