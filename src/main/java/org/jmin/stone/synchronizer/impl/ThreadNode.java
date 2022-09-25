@@ -12,9 +12,13 @@ package org.jmin.stone.synchronizer.impl;
  * @version 1.0
  */
 
-final class ThreadNode {
+class ThreadNode {
+    //hold count for lock
+    protected int holdCount;
+    //acquiring thread
     private Thread thread;
     private volatile int state;
+
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 
@@ -25,6 +29,14 @@ final class ThreadNode {
 
     public Thread getThread() {
         return thread;
+    }
+
+    protected int getHoldCount() {
+        return holdCount;
+    }
+
+    protected void setHoldCount(int holdCount) {
+        this.holdCount = holdCount;
     }
 
     public int getState() {

@@ -14,7 +14,7 @@ import org.jmin.stone.synchronizer.PermitPool;
  * @version 1.0
  */
 
-public class SynPermitPool implements PermitPool {
+public class SynPermitPool extends ThreadNodeChain implements PermitPool {
 
     //true,fair mode acquisition
     public boolean isFair() {

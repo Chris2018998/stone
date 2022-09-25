@@ -14,6 +14,7 @@ import java.util.concurrent.locks.LockSupport;
  * 1:LockSupport.park
  * 2:LockSupport.parkNanos
  * 3:LockSupport.parkUntil
+ *
  * <p>
  * Class objective:reduce spin similar code (for example:some await methods in class:{@link java.util.concurrent.locks.AbstractQueuedSynchronizer})
  * Usage demo:
