@@ -80,8 +80,8 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
             if (node.getThread().isInterrupted()) {
                 this.removeNode(node);
                 throw new InterruptedException();
-            } else if (node.getState() != ThreadNodeState.ACQUIRED_SUCCESS) {
-                // state == ACQUIRE_SUCCESS value set from<method> wakeupWaiting</method>
+            } else if (node.getState() != ThreadNodeState.NOTIFIED) {
+                // state == NOTIFIED value set from<method> wakeupWaiting</method>
                 this.removeNode(node);
                 throw new TimeoutException();
             }

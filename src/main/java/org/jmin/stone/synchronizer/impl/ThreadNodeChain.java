@@ -140,7 +140,7 @@ class ThreadNodeChain {
         int size = 0;
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             int state = node.getState();
-            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.ACQUIRE_RETRY)
+            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.RE_ACQUIRE)
                 size++;
         }
         return size;
@@ -159,7 +159,7 @@ class ThreadNodeChain {
         List<Thread> threadList = new LinkedList<>();
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             int state = node.getState();
-            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.ACQUIRE_RETRY)
+            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.RE_ACQUIRE)
                 threadList.add(node.getThread());
         }
         return (Thread[]) threadList.toArray();
