@@ -19,11 +19,11 @@ final class ThreadNodeState {
     //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
     public static final int NOTIFIED = 2;
 
-    //Has acquired a permit or a access lock
-    public static final int ACQUIRED = 3;
+    //Signal to re-acquire a permit or a access lock
+    public static final int ACQUIRE = 3;
 
-    //Signal to re-acquire a permit or access lock
-    public static final int RE_ACQUIRE = 4;
+    //Has acquired a permit or a access lock
+    public static final int ACQUIRED = 4;
 
     //Thread waited timeout
     public static final int TIMEOUT = 5;
@@ -31,6 +31,6 @@ final class ThreadNodeState {
     //Thread interrupted during waiting
     public static final int INTERRUPTED = 6;
 
-    //Node mark as empty (NODE has been removed,for example: remove head or tail)
+    //Empty (NODE has been removed,for example: remove head or tail)
     public static final int EMPTY = 7;
 }

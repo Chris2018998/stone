@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.NOTIFIED;
 import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
 
 /**
@@ -38,8 +39,12 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     //****************************************************************************************************************//
     //wakeup all threads in pool and clear pool
     protected void wakeupWaiting() {
-
-
+        ThreadNode node;
+        while ((node = pollFirst()) != null) {
+            if (ThreadNodeChain.casNodeState(node, WAITING, NOTIFIED)) {
+                LockSupport.unpark(node.getThread());
+            }
+        }
     }
 
     /**
@@ -66,9 +71,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     }
 
     private void doWait(long timeoutNs) throws InterruptedException, TimeoutException {
-        if (testCondition()) {//match
-            return;//do nothing
-        } else {
+        if (!testCondition()) {
             ThreadNode node = new ThreadNode(WAITING);
             this.addNode(node);
             if (timeoutNs > 0)
@@ -80,7 +83,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
             if (node.getThread().isInterrupted()) {
                 this.removeNode(node);
                 throw new InterruptedException();
-            } else if (node.getState() != ThreadNodeState.NOTIFIED) {
+            } else if (node.getState() != NOTIFIED) {
                 // state == NOTIFIED value set from<method> wakeupWaiting</method>
                 this.removeNode(node);
                 throw new TimeoutException();

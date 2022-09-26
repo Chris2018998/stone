@@ -17,12 +17,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class CyclicBarrier2 extends ThreadWaitPool {
     private int size;
+    private int tripCount;
     private AtomicInteger count;
-    private AtomicInteger state;
+    private AtomicInteger state;//0-init,1-gather,2-trip,3-broken
+    private Runnable tripAction;
 
     public CyclicBarrier2(int size) {
+        this(size, null);
+    }
+
+    public CyclicBarrier2(int size, Runnable tripAction) {
         if (size < 0) throw new IllegalArgumentException("size < 0");
         this.size = size;
+        this.tripAction = tripAction;
         this.state = new AtomicInteger(0);
         this.count = new AtomicInteger(0);
     }

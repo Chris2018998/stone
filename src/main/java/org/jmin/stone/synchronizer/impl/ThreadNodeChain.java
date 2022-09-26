@@ -43,7 +43,7 @@ class ThreadNodeChain {
     //***************************************************************************************************************//
     //                                          2: CAS Methods                                                       //
     //***************************************************************************************************************//
-    private static boolean casNodeState(ThreadNode node, int expect, int update) {
+    static boolean casNodeState(ThreadNode node, int expect, int update) {
         return U.compareAndSwapObject(node, stateOffSet, expect, update);
     }
 
@@ -140,7 +140,7 @@ class ThreadNodeChain {
         int size = 0;
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             int state = node.getState();
-            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.RE_ACQUIRE)
+            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.ACQUIRE)
                 size++;
         }
         return size;
@@ -159,7 +159,7 @@ class ThreadNodeChain {
         List<Thread> threadList = new LinkedList<>();
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             int state = node.getState();
-            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.RE_ACQUIRE)
+            if (state == ThreadNodeState.WAITING || state == ThreadNodeState.ACQUIRE)
                 threadList.add(node.getThread());
         }
         return (Thread[]) threadList.toArray();
@@ -234,23 +234,24 @@ class ThreadNodeChain {
         return false;
     }
 
-//    /**
-//     * Retrieves and removes the first element of this deque,
-//     * or returns {@code null} if this deque is empty.
-//     *
-//     * @return the head of this deque, or {@code null} if this deque is empty
-//     */
-//    public ThreadNode pollFirst() {
-//        ThreadNode prevNode = null;
-//        final ThreadNode firstNode = this.getFirstNode();
-//        for (ThreadNode curNode = firstNode; curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
-//            if (item != null && casItemToNull(curNode, item)) {//failed means the node has removed by other thread
-//                linkNextToSkip(firstNode, curNode);
-//                return item;
-//            }
-//        }//loop for
-//
-//        if (prevNode != null) linkNextToSkip(firstNode, prevNode);
-//        return null;
-//    }
+    /**
+     * Retrieves and removes the first element of this deque,
+     * or returns {@code null} if this deque is empty.
+     *
+     * @return the head of this deque, or {@code null} if this deque is empty
+     */
+    public ThreadNode pollFirst() {
+        ThreadNode prevNode = null;
+        final ThreadNode firstNode = this.getFirstNode();
+        for (ThreadNode curNode = firstNode; curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+            int state = curNode.getState();
+            if (state != ThreadNodeState.EMPTY && casNodeState(curNode, state, ThreadNodeState.EMPTY)) {//failed means the node has removed by other thread
+                linkNextToSkip(firstNode, curNode);
+                return curNode;
+            }
+        }//loop for
+
+        if (prevNode != null) linkNextToSkip(firstNode, prevNode);
+        return null;
+    }
 }
