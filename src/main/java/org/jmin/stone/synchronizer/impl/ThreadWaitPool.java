@@ -31,9 +31,6 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     //if true,<method>{@link #wakeupWaiting}</method>should be called by manually or auto
     public abstract boolean testCondition();
 
-    //reset condition to initialization state
-    public abstract void resetCondition();
-
     //****************************************************************************************************************//
     //                                           wait/wakeup methods                                                  //
     //****************************************************************************************************************//

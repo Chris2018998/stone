@@ -29,10 +29,6 @@ public class CountDownLatch2 extends ThreadWaitPool {
         return count.get() == 0;
     }
 
-    public void resetCondition() {
-        //do nothing
-    }
-
     public void await() throws InterruptedException {
         super.doWait();
     }
