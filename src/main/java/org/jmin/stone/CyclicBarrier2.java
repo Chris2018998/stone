@@ -17,20 +17,38 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * We can image it's instance as a trip flight,when all passengers be on aboard,it then set out
  * this trip(execute a trip action, finished means trip was over and a new flight will begin,we call it cycle),
- * but one passenger( or some)be late, others would wait util him/them, maybe some aboard passengers be loss of patience
- * during waiting,then abandon this trip,  then the flight marked as canceled(broken) and all aboard passengers
- * will leave this flight and closed, but it can reset to a new flight.
+ * but one passenger(or some)be late,others would wait util him/them, maybe some aboard passengers be loss of patience
+ * during waiting,then abandon this trip,then the flight marked as canceled(broken) and all aboard passengers
+ * will leave,but it can reset to a new flight.
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class CyclicBarrier2 extends ThreadWaitPool {
+    //a new flight
+    private static final int State_New = 0;
+    //passengers can be aboard（set to this value when first passenger aboard）
+    private static final int State_Aboard = 1;
+    //flight set out(execute trip action when it is not null)
+    private static final int State_Flying = 2;
+    //flight over(arrived destination,after trip action executing complete,state quickly changed to new and a new flight was set)
+    private static final int State_Arrived = 3;
+    //flight abandon(some passengers left(timeout or interrupted) before setting out,flight can be reset a new)
+    private static final int State_Abandon = 4;
+
+    //seat count in flight room
     private int seatSize;
+    //passenger count,which have been aboard,flight set out when full(passengerCount == seatSize)
     private AtomicInteger passengerCount;
-    private AtomicInteger tripState;//0-init,1-gather,2-trip,3-broken
-    private int tripCount;//fished trip total count
+    //current flight state(see state static definition)
+    private AtomicInteger tripState;
+    //count of flying times(when arrived,then begin a new flight)
+    private int tripCount;
+    //action execute at setting out
     private Runnable tripAction;
+    //store passenger boarding ordered number(1 -- seat count)
     private ThreadLocal<Integer> arrivalOrder = new ThreadLocal();
+
 
     public CyclicBarrier2(int size) {
         this(size, null);
@@ -40,16 +58,19 @@ public class CyclicBarrier2 extends ThreadWaitPool {
         if (size < 0) throw new IllegalArgumentException("size < 0");
         this.seatSize = size;
         this.tripAction = tripAction;
-        this.tripState = new AtomicInteger(0);
+        this.tripState = new AtomicInteger(State_New);
         this.passengerCount = new AtomicInteger(0);
     }
 
+    //***************************************************************************************************************//
+    //                                          1:monitor methods                                                    //
+    //***************************************************************************************************************//
     public int getTripCount() {
         return tripCount;
     }
 
     public boolean isBroken() {
-        return tripState.get() == 3;
+        return tripState.get() == State_Abandon;
     }
 
     public boolean reset() {
@@ -61,6 +82,9 @@ public class CyclicBarrier2 extends ThreadWaitPool {
         //do nothing
     }
 
+    //***************************************************************************************************************//
+    //                                          2:aboard and wait for trip set out                                   //
+    //***************************************************************************************************************//
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
             return doAwait(0L, TimeUnit.NANOSECONDS);
@@ -75,7 +99,6 @@ public class CyclicBarrier2 extends ThreadWaitPool {
 
     private int doAwait(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (isBroken()) throw new BrokenBarrierException();
-
         try {
             if (testCondition()) {
                 synchronized (this) {
