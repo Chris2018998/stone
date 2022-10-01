@@ -173,8 +173,12 @@ class ThreadNodeChain {
         return (Thread[]) threadList.toArray();
     }
 
-
     public ThreadNode addNode(int state) {
+        ThreadNode node = new ThreadNode(state);
+        return addNode(node);
+    }
+
+    public ThreadNode addNode(int state, long type) {
         ThreadNode node = new ThreadNode(state);
         return addNode(node);
     }

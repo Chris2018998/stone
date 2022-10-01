@@ -13,6 +13,7 @@ package org.jmin.stone.synchronizer.impl;
  */
 
 class ThreadNode {
+    private long type;
     private Thread thread;
     private volatile int state;
     private volatile ThreadNode prev;
@@ -21,6 +22,14 @@ class ThreadNode {
     ThreadNode(int state) {
         this.state = state;
         this.thread = Thread.currentThread();
+    }
+
+    public long getType() {
+        return type;
+    }
+
+    public void setType(long typeCode) {
+        this.type = type;
     }
 
     public Thread getThread() {
@@ -50,4 +59,5 @@ class ThreadNode {
     public void setNext(ThreadNode next) {
         this.next = next;
     }
+
 }

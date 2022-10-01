@@ -9,10 +9,8 @@ package org.jmin.stone.synchronizer.impl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.LockSupport;
 
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.NOTIFIED;
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
 
 /**
  * Wait Pool,threads will leave from pool under three situation
@@ -26,62 +24,76 @@ import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
 
 public abstract class ThreadWaitPool extends ThreadNodeChain {
     //****************************************************************************************************************//
-    //                                          abstract methods                                                      //
+    //                                          1:abstract methods                                                    //
     //****************************************************************************************************************//
     //if true,<method>{@link #wakeupWaiting}</method>should be called by manually or auto
     public abstract boolean testCondition();
 
     //****************************************************************************************************************//
-    //                                           wait/wakeup methods                                                  //
+    //                                          2: wakeup methods                                                     //
     //****************************************************************************************************************//
-    //wakeup all threads in pool and clear pool
-    protected void wakeupWaiting() {
-        ThreadNode node;
-        while ((node = pollFirst()) != null) {
-            if (ThreadNodeChain.casNodeState(node, WAITING, NOTIFIED)) {
-                LockSupport.unpark(node.getThread());
-            }
-        }
+    //wakeup all nodes and clean chain
+    protected void wakeupAll() {
+
     }
 
-    /**
-     * Current thread join pool,then blocked,then waiting util wake-up from other thread
-     *
-     * @throws InterruptedException interrupted during waiting
-     */
+    //wakeup nodes with type value and remove them
+    protected int wakeupByType(int typeCode) {
+        int count = 0;
+
+        return count;
+    }
+
+    //wakeup all nodes and clean chain,count node witch type value
+    protected int wakeupAllAndCountType(int typeCode) {
+        int count = 0;
+
+        return count;
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: wait methods                                                       //
+    //****************************************************************************************************************//
     protected void doWait() throws InterruptedException {
+        this.doWait(0);
+    }
+
+    protected void doWait(long waitType) throws InterruptedException {
         try {
-            doWait(0);
+            doWait(0, waitType);
         } catch (TimeoutException e) {
             //do nothing
         }
     }
 
-    /**
-     * Current thread join pool,then blocked,then waiting util wake-up from other thread
-     *
-     * @throws InterruptedException interrupted during waiting
-     * @throws TimeoutException     wait timeout with specified time value
-     */
+    //time wait
     protected void doWait(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
-        doWait(unit.toNanos(timeout));
+        this.doWait(timeout, unit, 0);
     }
 
-    private void doWait(long timeoutNs) throws InterruptedException, TimeoutException {
-        if (!testCondition()) {
-            ThreadNode node = new ThreadNode(WAITING);
-            this.addNode(node);
-            if (timeoutNs > 0)
-                LockSupport.parkNanos(timeoutNs);
-            else
-                LockSupport.park();
+    //time wait with wait type()
+    protected void doWait(long timeout, TimeUnit unit, long waitType) throws InterruptedException, TimeoutException {
+        doWait(unit.toNanos(timeout), waitType);
+    }
 
-            //interrupted then throws InterruptedException
-            if (node.getThread().isInterrupted()) {
+    //wait implement method
+    private void doWait(long timeoutNs, long waitType) throws InterruptedException, TimeoutException {
+        if (!testCondition()) {
+            //1:create node and add to chain
+            ThreadNode node = new ThreadNode(WAITING);
+            node.setType(waitType);
+            this.addNode(node);
+
+            //2:park current thread(wait)
+            ThreadParker.create(timeoutNs, false).park();
+
+            //3:after exiting park
+            if (node.getThread().isInterrupted()) {//interrupted
+                casNodeState(node, WAITING, INTERRUPTED);
                 this.removeNode(node);
                 throw new InterruptedException();
-            } else if (node.getState() != NOTIFIED) {
-                // state == NOTIFIED value set from<method> wakeupWaiting</method>
+            } else if (node.getState() != NOTIFIED) {//timeout
+                casNodeState(node, WAITING, TIMEOUT);
                 this.removeNode(node);
                 throw new TimeoutException();
             }

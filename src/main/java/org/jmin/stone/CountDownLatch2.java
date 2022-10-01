@@ -14,17 +14,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This class instance can be seem as a theatre,two roles:one actor and one watcher(some watchers),
- * the actor need complete a set of show(times from class constructor),one done and the count value
- * reduce one(call method{@code #countDown}),when the count value reach zero,the show is over,
- * all watchers leave the theatre(exit await).
+ * The class instance can be seem as a theater and a set of(fixed sized)stage programs will perform
+ * inside one by one(method{@link #countDown}called once means one program end),util all stage programs
+ * completed(the atomic counter value reach zero),all watchers(wait threads)leave(exiting method{@link #await}),
+ * then the theater closed and not reopen for ever.Luckly,you can create another new theater(or some)in your code.
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class CountDownLatch2 extends ThreadWaitPool {
 
-    //Times of show(Remaining)
+    //Number of programs(Remaining)
     private AtomicInteger count;
 
     public CountDownLatch2(int count) {
@@ -37,9 +37,8 @@ public class CountDownLatch2 extends ThreadWaitPool {
         return count.get() == 0;
     }
 
-
     //***************************************************************************************************************//
-    //                                          1:wait method(seat down to watch show)                               //
+    //                                      1:wait method(seat down to watch programs)                               //
     //***************************************************************************************************************//
     public void await() throws InterruptedException {
         super.doWait();
@@ -55,15 +54,15 @@ public class CountDownLatch2 extends ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2:Show method(for actor)                                              //
+    //                                          2:Programs method                                                     //
     //***************************************************************************************************************//
-    public void countDown() {//means a show end
+    public void countDown() {
         int c;
         do {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) wakeupWaiting();//reach zero,show is over,then wakeup all viewers leave
+                if (c == 1) wakeupAll();//the last program end,then notify all watchers to leave
                 return;
             }
         } while (true);
