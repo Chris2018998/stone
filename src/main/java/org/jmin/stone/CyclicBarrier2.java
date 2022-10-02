@@ -182,10 +182,14 @@ public class CyclicBarrier2 extends ThreadWaitPool {
 
     //reset flight
     public boolean reset() {
-        this.passengerCount.set(0);
-        this.flightNo = System.currentTimeMillis();
-        this.flightState.set(State_Open);
-        wakeupAll();
-        return true;
+        if (flightState.get() == State_Cancelled) {
+            this.passengerCount.set(0);
+            this.flightNo = System.currentTimeMillis();
+            this.flightState.set(State_Open);
+            wakeupAll();
+            return true;
+        } else {
+            return false;
+        }
     }
 }
