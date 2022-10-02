@@ -38,14 +38,14 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     }
 
     //wakeup nodes with type value and remove them
-    protected int wakeupByType(int typeCode) {
+    protected int wakeupByType(long typeCode) {
         int count = 0;
 
         return count;
     }
 
     //wakeup all nodes and clean chain,count node witch type value
-    protected int wakeupAllAndCountType(int typeCode) {
+    protected int wakeupAllAndCountType(long typeCode) {
         int count = 0;
 
         return count;

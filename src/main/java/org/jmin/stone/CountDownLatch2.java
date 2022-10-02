@@ -1,5 +1,5 @@
 /*
- * Copyright(C) Chris2018998
+ * Copyright(C) Chris20189989(cn)
  *
  * Contact:Chris2018998@tom.com
  *
@@ -14,10 +14,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * The class instance can be seem as a theater and a set of(fixed sized)stage programs will perform
- * inside one by one(method{@link #countDown}called once means one program end),util all stage programs
- * completed(the atomic counter value reach zero),all watchers(wait threads)leave(exiting method{@link #await}),
- * then the theater closed and not reopen for ever.Luckly,you can create another new theater(or some)in your code.
+ * The class instance can be seemed as a theater,and a set of(fixed sized)stage programs perform in its inside,
+ * some people(threads)come into the theater to watch these show(call method{@link #await}).A atomic count property
+ * represent number of the programs,one item of them done then call method{@link #countDown}to reduce one value from
+ * the atomic variable util its value reach zero(all programs completed),then notify automatically all present watchers
+ * to leave from the theater(call method{@link #wakeupAll}),which closed for ever.Luckly,you can create another new
+ * theater(or some)in your code.One word to all:Welcome to my theater,it is open to the world.
  *
  * @author Chris Liao
  * @version 1.0
@@ -32,48 +34,52 @@ public class CountDownLatch2 extends ThreadWaitPool {
         this.count = new AtomicInteger(count);
     }
 
-    //count reach zero,then return true,this method will be called by super
+    //count reach zero,which means all programs over
     public boolean testCondition() {
         return count.get() == 0;
     }
 
-    //***************************************************************************************************************//
-    //                                      1:wait method(seat down to watch programs)                               //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                      1:wait methods(seat down to watch programs)                               //
+    //****************************************************************************************************************//
     public void await() throws InterruptedException {
         super.doWait();
     }
 
+    //true means all programs over
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
             super.doWait(timeout, unit);
-            return testCondition();
         } catch (TimeoutException e) {
-            return false;
+            //do nothing,the last item may be over at timeout point
         }
+        return testCondition();
     }
 
     //****************************************************************************************************************//
-    //                                          2:Programs method                                                     //
-    //***************************************************************************************************************//
+    //                                          2:count method called after one show over                             //
+    //****************************************************************************************************************//
     public void countDown() {
         int c;
         do {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) wakeupAll();//the last program end,then notify all watchers to leave
+                if (c == 1) wakeupAll();//the last item end,then notify all watchers to leave
                 return;
             }
         } while (true);
     }
 
-    //monitor method,return watcher count
+    //****************************************************************************************************************//
+    //                                          3:monitor method and instance desc                                    //
+    //****************************************************************************************************************//
+    //monitor method,return remained number of programs
     public long getCount() {
         return count.get();
     }
 
-    //Description,just return watcher count
+    //Description of instance
     public String toString() {
         return super.toString() + "[Count = " + count.get() + "]";
     }
