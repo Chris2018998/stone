@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 
-public class CyclicBarrier2 extends ThreadWaitPool {
+public final class CyclicBarrier2 extends ThreadWaitPool {
     //A new flight is ready to welcome passengers(door open)
     private static final int State_Open = 0;
     //Flight is on boarding（change to this value from 'State_Open' when first passenger reach）
@@ -82,11 +82,6 @@ public class CyclicBarrier2 extends ThreadWaitPool {
     //true,flight has been cancelled
     public boolean isBroken() {
         return flightState.get() == State_Cancelled;
-    }
-
-    //true,means all passengers be boarding(test validation method called in super class)
-    public boolean testCondition() {
-        return passengerCount.get() == seatSize;
     }
 
     //****************************************************************************************************************//

@@ -24,18 +24,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Chris Liao
  * @version 1.0
  */
-public class CountDownLatch2 extends ThreadWaitPool {
+public final class CountDownLatch2 extends ThreadWaitPool {
     //Number of programs(Remaining)
     private AtomicInteger count;
 
     public CountDownLatch2(int count) {
         if (count < 0) throw new IllegalArgumentException("count < 0");
         this.count = new AtomicInteger(count);
-    }
-
-    //count reach zero,which means all programs over
-    private boolean testCondition() {
-        return count.get() == 0;
     }
 
     //****************************************************************************************************************//
@@ -85,6 +80,11 @@ public class CountDownLatch2 extends ThreadWaitPool {
     //monitor method,return remained number of programs
     public long getCount() {
         return count.get();
+    }
+
+    //count reach zero,which means all programs over
+    private boolean testCondition() {
+        return count.get() == 0;
     }
 
     //Description of instance
