@@ -151,6 +151,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
 
             //3:Waiting for wakeup
             try {
+                //parameter zero means that passengers waiting in lobby of airport
                 super.doWait(unit.toNanos(timeout), seatNo > 0 ? flightNo : 0);
                 if (seatNo > 0) {
                     if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
@@ -190,11 +191,18 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
 
     //reset flight
     public boolean reset() {
-        if (flightState.get() == State_Cancelled) {
+        if (flightState.get() == State_Cancelled) {//reset cancelled to new
             this.passengerCount.set(0);
             this.flightNo = System.currentTimeMillis();
             this.flightState.set(State_Open);
             wakeupAll();
+            return true;
+        } else if (flightState.get() == State_Board) {//reset boarding to new
+            this.flightState.set(State_Cancelled);
+            wakeupAll();
+            this.passengerCount.set(0);
+            this.flightNo = System.currentTimeMillis();
+            this.flightState.set(State_Open);
             return true;
         } else {
             return false;
