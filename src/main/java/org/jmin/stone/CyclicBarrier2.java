@@ -21,10 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * them on boarding,the wakeup count must equal the present seated size(exclude self),if not equal then cancel this
  * flight(broken state,some wait threads timeout or interrupted),or the last passenger still not be boarding during a
  * time period,some passengers be loss of patience and abandon the flight,wakeup automatically some passengers in
- * sleeping to leave.
- * <p>
- * Cancelled flights not accept any new coming passengers(throws exception{@code BrokenBarrierException}),but can be reset
- * to new flights(call method{@link #reset}).
+ * sleeping to leave.Cancelled flights not accept any new coming passengers(throws exception{@code BrokenBarrierException}),
+ * but can be reset as new flights(call method{@link #reset}).
  *
  * @author Chris Liao
  * @version 1.0
@@ -32,27 +30,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class CyclicBarrier2 extends ThreadWaitPool {
     //A new flight is ready to welcome passengers(door open)
-    private static final int State_Open = 0;
+    private static final int State_Open = 1;
     //Flight is on boarding（change to this value from 'State_Open' when first passenger reach）
-    private static final int State_Board = 1;
+    private static final int State_Board = 2;
     //Flight is in flying(execute action's method{@code run()}when the action property value is not null)
-    private static final int State_Flying = 2;
-    //Flight arrive destination(arrived destination,after trip action executing complete,state quickly changed to new and a new flight was set)
-    private static final int State_Arrival = 3;
+    private static final int State_Flying = 3;
+    //Flight arrive destination(arrived destination,after trip action executing complete,state quickly changed to new)
+    private static final int State_Arrival = 4;
     //Flight canceled(some passengers left(timeout or interrupted) before setting out,flight can be reset a new)
-    private static final int State_Cancelled = 4;
+    private static final int State_Cancelled = 5;
 
     //Current flight no(a property in chain node,count by this value when wakeup)
     private long flightNo;
-    //current flight state(see state static definition)
+    //Current flight state(see state static definition)
     private AtomicInteger flightState;
     //Number of seats in flight room
     private int seatSize;
-    //passenger count,which have been aboard,flight set out when full(passengerCount == seatSize)
+    //passenger count in room,which have been aboard,flight set out when full(passengerCount == seatSize)
     private AtomicInteger passengerCount;
     //Number of completed flying
     private int tripCount;
-    //action execute at setting out
+    //Execute when set out
     private Runnable tripAction;
 
     //****************************************************************************************************************//
@@ -79,6 +77,17 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
         return tripCount;
     }
 
+    //return seat size in room(trip on full seated)
+    public int getParties() {
+        return seatSize;
+    }
+
+    //return waiting passengers in flight room
+    public int getNumberWaiting() {
+        int count = passengerCount.get();
+        return count < seatSize ? count : seatSize - 1;
+    }
+
     //true,flight has been cancelled
     public boolean isBroken() {
         return flightState.get() == State_Cancelled;
@@ -99,79 +108,81 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
         return doAwait(timeout, unit);
     }
 
-    //await implement
+    //await implement,return board ticket no(seat no)
     private int doAwait(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
+        if (Thread.interrupted()) throw new InterruptedException();
 
         nextTrip:
         for (; ; ) {
             if (isBroken()) throw new BrokenBarrierException();
-            /*
-             * 1: obtain boarding no of current flight with cas way,if the value is zero,then waiting
-             * in the lobby of airport for next trip(wait in same chain,but wait type is 0).
-             */
-            int boardNo = tryGetBoardingNo();
-            try {
-                //2: the last passenger reach board,then wakeup other sleeping passengers
-                if (boardNo == seatSize) {
-                    //wakeup other passengers in same flight room,
-                    int count = wakeupByType(flightNo);
-                    if (count == seatSize - 1) {
-                        flightState.set(State_Flying);//set out
 
-                        tripCount++;
-                        if (tripAction != null) {
-                            try {
-                                tripAction.run();
-                            } catch (Throwable e) {
-                                //do nothing
-                            }
+            int seatNo = getBoardTicket();
+            if (seatNo == seatSize) {//the last passenger coming
+                //wakeup other boarding passengers(in sleeping)
+                int awakeCount = wakeupByType(flightNo);
+                if (awakeCount == seatSize - 1) {//others are wakeup
+                    if (!flightState.compareAndSet(State_Board, State_Flying))//failed change to flying state
+                        throw new BrokenBarrierException();
+
+                    tripCount++;
+                    if (tripAction != null) {
+                        try {
+                            tripAction.run();
+                        } catch (Throwable e) {
+                            //do nothing
                         }
-                        //assume flight arrival
-                        flightState.set(State_Arrival);
-
-                        //reset to a new flight
-                        this.passengerCount.set(0);
-                        this.flightNo = System.currentTimeMillis();
-                        this.flightState.set(State_Open);
-                        return boardNo;
                     }
+                    //assume flight arrival
+                    flightState.set(State_Arrival);
+
+                    //set flight to new state(next trip begin)
+                    this.passengerCount.set(0);
+                    this.flightNo = System.currentTimeMillis();
+                    this.flightState.set(State_Open);
+                    this.wakeupByType(0);//wakeup passengers in lobby of airport to get ticket of next trip
+                    return seatNo;
+                } else {
+                    if (flightState.get() == State_Board && flightState.compareAndSet(State_Board, State_Cancelled))
+                        this.wakeupByType(0);//tell all passengers in lobby,the flight has cancel
+                    throw new BrokenBarrierException();
+                }
+            }
+
+            //3:Waiting for wakeup
+            try {
+                super.doWait(unit.toNanos(timeout), seatNo > 0 ? flightNo : 0);
+                if (seatNo > 0) {
+                    if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
+                    return seatNo;
+                } else {//zero,waiting in lobby of airport
+                    continue nextTrip;
+                }
+            } catch (Throwable e) {
+                //mark flight state to cancelled(broken)
+                if (seatNo > 0) {//passenger of current flight
+                    if (flightState.get() == State_Board && flightState.compareAndSet(State_Board, State_Cancelled))
+                        this.wakeupByType(0);//tell all passengers in lobby,the flight has cancel
                 }
 
-                //3:Waiting for wakeup
-                try {
-                    super.doWait(unit.toNanos(timeout), boardNo > 0 ? flightNo : 0);
-                    if (boardNo > 0) {
-                        if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
-                        return boardNo;
-                    } else {//zero,waiting in lobby of airport
-                        continue nextTrip;
-                    }
-                } catch (Throwable e) {
-                    //mark flight state to cancelled(broken)
-                    if (boardNo > 0 && flightState.get() == State_Board)
-                        this.flightState.compareAndSet(State_Board, State_Cancelled);
-
-                    if (e instanceof TimeoutException) throw (TimeoutException) e;
-                    if (e instanceof InterruptedException) throw (InterruptedException) e;
-                    BrokenBarrierException brokenBarrierException = new BrokenBarrierException();
-                    brokenBarrierException.initCause(e);
-                    throw brokenBarrierException;
-                }
-            } finally {
-                if (boardNo > 0) wakeupByType(0);//wakeup passengers in lobby of airport
+                if (e instanceof TimeoutException) throw (TimeoutException) e;
+                if (e instanceof InterruptedException) throw (InterruptedException) e;
+                BrokenBarrierException brokenBarrierException = new BrokenBarrierException();
+                brokenBarrierException.initCause(e);
+                throw brokenBarrierException;
             }
         }
     }
 
-    //try to get boarding number,successful,return positive number not greater then seat size value;failed,return 0.
-    private int tryGetBoardingNo() {
+    //take a boarding ticket,success,return a positive number(seat no),failed,return 0
+    private int getBoardTicket() {
         int c;
         do {
             c = this.passengerCount.get();
             if (c == seatSize) return 0;
             if (this.passengerCount.compareAndSet(c, c + 1)) {
-                if (c == 0) flightState.set(State_Board);//is ready to passengers
+                if (c == 0)
+                    flightState.set(State_Board);//sale out first tick of current flight,which set to open state here
                 return c + 1;
             }
         } while (true);
