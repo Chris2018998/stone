@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 public class CountDownLatch2 extends ThreadWaitPool {
-
     //Number of programs(Remaining)
     private AtomicInteger count;
 
@@ -35,21 +34,30 @@ public class CountDownLatch2 extends ThreadWaitPool {
     }
 
     //count reach zero,which means all programs over
-    public boolean testCondition() {
+    private boolean testCondition() {
         return count.get() == 0;
     }
 
     //****************************************************************************************************************//
     //                                      1:wait methods(seat down to watch programs)                               //
     //****************************************************************************************************************//
+    //wait without time
     public void await() throws InterruptedException {
-        super.doWait();
+        if (testCondition()) return;
+        try {
+            super.doWait(0);
+        } catch (TimeoutException e) {
+            //do nothing
+        }
     }
 
     //true means all programs over
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
+        if (testCondition()) return true;
+
         try {
-            super.doWait(timeout, unit);
+            super.doWait(unit.toNanos(timeout));
         } catch (TimeoutException e) {
             //do nothing,the last item may be over at timeout point
         }

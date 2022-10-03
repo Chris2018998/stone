@@ -106,6 +106,8 @@ public class CyclicBarrier2 extends ThreadWaitPool {
 
     //await implement
     private int doAwait(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
+        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
+
         nextTrip:
         for (; ; ) {
             if (isBroken()) throw new BrokenBarrierException();
@@ -143,7 +145,7 @@ public class CyclicBarrier2 extends ThreadWaitPool {
 
                 //3:Waiting for wakeup
                 try {
-                    super.doWait(timeout, unit, boardNo > 0 ? flightNo : 0);
+                    super.doWait(unit.toNanos(timeout), boardNo > 0 ? flightNo : 0);
                     if (boardNo > 0) {
                         if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
                         return boardNo;

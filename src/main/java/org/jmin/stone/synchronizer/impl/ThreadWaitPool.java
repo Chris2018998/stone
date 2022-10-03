@@ -7,7 +7,6 @@
  */
 package org.jmin.stone.synchronizer.impl;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
@@ -24,79 +23,52 @@ import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
 
 public abstract class ThreadWaitPool extends ThreadNodeChain {
     //****************************************************************************************************************//
-    //                                          1:abstract methods                                                    //
+    //                                          1: wait methods                                                       //
     //****************************************************************************************************************//
-    //if true,<method>{@link #wakeupWaiting}</method>should be called by manually or auto
-    public abstract boolean testCondition();
+    protected void doWait(long timeoutNs) throws InterruptedException, TimeoutException {
+        doWait(timeoutNs, 0);
+    }
+
+    protected void doWait(long timeoutNs, long waitType) throws InterruptedException, TimeoutException {
+        //1:create node and add to chain
+        ThreadNode node = new ThreadNode(WAITING);
+        node.setType(waitType);
+        this.addNode(node);
+
+        //2:park current thread(wait)
+        ThreadParker.create(timeoutNs, false).park();
+
+        //3:after exiting park
+        if (node.getThread().isInterrupted()) {//interrupted
+            casNodeState(node, WAITING, INTERRUPTED);
+            this.removeNode(node);
+            throw new InterruptedException();
+        } else if (node.getState() != NOTIFIED) {//timeout
+            casNodeState(node, WAITING, TIMEOUT);
+            this.removeNode(node);
+            throw new TimeoutException();
+        }
+    }
 
     //****************************************************************************************************************//
     //                                          2: wakeup methods                                                     //
     //****************************************************************************************************************//
     //wakeup all nodes and clean chain
     protected void wakeupAll() {
-
+        //@todo
     }
 
     //wakeup nodes with type value and remove them
     protected int wakeupByType(long typeCode) {
         int count = 0;
-
+        //@todo
         return count;
     }
 
     //wakeup all nodes and clean chain,count node witch type value
     protected int wakeupAllAndCountType(long typeCode) {
         int count = 0;
-
+        //@todo
         return count;
-    }
-
-    //****************************************************************************************************************//
-    //                                          3: wait methods                                                       //
-    //****************************************************************************************************************//
-    protected void doWait() throws InterruptedException {
-        this.doWait(0);
-    }
-
-    protected void doWait(long waitType) throws InterruptedException {
-        try {
-            doWait(0, waitType);
-        } catch (TimeoutException e) {
-            //do nothing
-        }
-    }
-
-    //time wait
-    protected void doWait(long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
-        this.doWait(timeout, unit, 0);
-    }
-
-    //time wait with wait type()
-    protected void doWait(long timeout, TimeUnit unit, long waitType) throws InterruptedException, TimeoutException {
-        doWait(unit.toNanos(timeout), waitType);
-    }
-
-    //wait implement method
-    private void doWait(long timeoutNs, long waitType) throws InterruptedException, TimeoutException {
-        if (!testCondition()) {
-            //1:create node and add to chain
-            ThreadNode node = new ThreadNode(WAITING);
-            node.setType(waitType);
-            this.addNode(node);
-
-            //2:park current thread(wait)
-            ThreadParker.create(timeoutNs, false).park();
-
-            //3:after exiting park
-            if (node.getThread().isInterrupted()) {//interrupted
-                casNodeState(node, WAITING, INTERRUPTED);
-                this.removeNode(node);
-                throw new InterruptedException();
-            } else if (node.getState() != NOTIFIED) {//timeout
-                casNodeState(node, WAITING, TIMEOUT);
-                this.removeNode(node);
-                throw new TimeoutException();
-            }
-        }
     }
 }
