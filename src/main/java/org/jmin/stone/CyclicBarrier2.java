@@ -18,10 +18,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The class instance can be seemed as a flight,when passengers are full then begin a happy fly trip to a place,
  * after arriving destination,the flight set automatically as a new flight for next trip,we call it cyclic.
  * The passengers sleep(call method{@link #await} to add wait thread chain)after boarding,the last passenger will wakeup
- * them on boarding,the wakeup count must equal the present seated size(exclude self),which can guarantee 'All-or-none'
- * rule,if not equal then cancel this flight(broken state,some wait threads timeout or interrupted),or the last passenger
- * still not be boarding during a time period,some passengers be loss of patience and abandon the flight,wakeup automatically
- * some passengers in sleeping to leave.
+ * them on boarding,the wakeup count must equal the present seated size(exclude self),if not equal then cancel this
+ * flight(broken state,some wait threads timeout or interrupted),or the last passenger still not be boarding during a
+ * time period,some passengers be loss of patience and abandon the flight,wakeup automatically some passengers in
+ * sleeping to leave.
  * <p>
  * Cancelled flights not accept any new coming passengers(throws exception{@code BrokenBarrierException}),but can be reset
  * to new flights(call method{@link #reset}).
@@ -109,7 +109,6 @@ public class CyclicBarrier2 extends ThreadWaitPool {
         nextTrip:
         for (; ; ) {
             if (isBroken()) throw new BrokenBarrierException();
-
             /*
              * 1: obtain boarding no of current flight with cas way,if the value is zero,then waiting
              * in the lobby of airport for next trip(wait in same chain,but wait type is 0).
@@ -122,6 +121,7 @@ public class CyclicBarrier2 extends ThreadWaitPool {
                     int count = wakeupByType(flightNo);
                     if (count == seatSize - 1) {
                         flightState.set(State_Flying);//set out
+
                         tripCount++;
                         if (tripAction != null) {
                             try {
