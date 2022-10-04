@@ -16,11 +16,13 @@ import java.util.*;
  * ConcurrentLinkedDeque2 Impl
  * <p>
  * 1: snapshot at queue creation(its shape like like a dual cores star system,so we call it binary star queue:双子星队列)
+ * <pre>
  * ({@code
- * +----------+                 +-----------+
- * null<-----------prev| head(null)| next --------> | tail(null)| next -------- > null
- * +-----------+                +-----------+
+ *                       +----------+                 +-----------+
+ *  null<-----------prev| head(null)| next --------> | tail(null)| next --------> null
+ *                      +-----------+                +-----------+
  * })
+ * </pre>
  *
  * @author Chris Liao
  * @version 1.0
