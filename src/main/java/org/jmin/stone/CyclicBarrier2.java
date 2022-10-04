@@ -155,7 +155,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                 if (seatNo > 0) {
                     if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
                     return seatNo;
-                } else {//zero,waiting in lobby of airport
+                } else {
                     continue nextTrip;
                 }
             } catch (Throwable e) {

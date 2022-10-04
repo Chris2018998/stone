@@ -8,6 +8,7 @@
 package org.jmin.stone.synchronizer.impl;
 
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
 
@@ -55,20 +56,45 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     //****************************************************************************************************************//
     //wakeup all nodes and clean chain
     protected void wakeupAll() {
-        //@todo
+        ThreadNode node;
+        while ((node = super.pollFirst()) != null) {
+            if (node.getState() == WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+                if (!node.getThread().isInterrupted()) LockSupport.unpark(node.getThread());
+            }
+        }
     }
 
     //wakeup nodes with type value and remove them
     protected int wakeupByType(long typeCode) {
         int count = 0;
-        //@todo
+        for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
+            int state = node.getState();
+            if (node.getType() == typeCode && state == ThreadNodeState.WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+                if (!node.getThread().isInterrupted()) {
+                    LockSupport.unpark(node.getThread());
+                    if (node.getType() == typeCode) count++;
+                    if (casNodeState(node, NOTIFIED, EMPTY)) {//mark as logic removed
+                        //@todo
+                    }
+                }
+            }
+        }
+
         return count;
     }
 
     //wakeup all nodes and clean chain,count node witch type value
     protected int wakeupAllAndCountType(long typeCode) {
         int count = 0;
-        //@todo
+        ThreadNode node;
+        while ((node = super.pollFirst()) != null) {
+            if (node.getState() == WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+                if (!node.getThread().isInterrupted()) {
+                    LockSupport.unpark(node.getThread());
+                    if (node.getType() == typeCode) count++;
+                }
+            }
+        }
         return count;
     }
 }
