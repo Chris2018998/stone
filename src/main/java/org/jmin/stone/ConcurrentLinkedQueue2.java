@@ -16,25 +16,25 @@ import java.util.*;
  * ConcurrentLinkedQueue2,A FIFO unbounded queue impl based on linked nodes,the queue has a fixed head node and remain a tail node(not physical remove)
  * <p>
  * 1: snapshot at queue creation(its shape like two sticks,so we call it Two-knot-Stick queue:双节棍队列)
- * <pre>
- *    +----------+                 +-----------+
- *   | head(null)| next --------> | tail(null)| next --------> null
- *   +-----------+                +-----------+
- * </pre>
+ * ({@code
+ * +----------+                 +-----------+
+ * | head(null)| next --------> | tail(null)| next --------> null
+ * +-----------+                +-----------+
+ * })
  * <p>
  * 2:snapshot at queue offer one element(new tail node box contains element item)
- * <pre>
- *    +-----------+                +-------------+                  +---------------+
- *   | head(null) | next -------->|old tail(null)| next -------->  |new tail(item)| next --------> null
- *   +-----------+                +-------------+                  +---------------+
- * </pre>
+ * ({@code
+ * +-----------+                +-------------+                  +---------------+
+ * | head(null) | next -------->|old tail(null)| next -------->  |new tail(item)| next --------> null
+ * +-----------+                +-------------+                  +---------------+
+ * })
  * <p>
  * 3:snapshot at queue poll tail node (just clear node item and set to null,then kept as empty box node)
- * <pre>
- *    +-----------+                  +---------------+
- *   | head(null) | next  -------->  |new tail(null) | next --------> null
- *   +-----------+                   +---------------+
- * </pre>
+ * ({@code
+ * +-----------+                  +---------------+
+ * | head(null) | next  -------->  |new tail(null) | next --------> null
+ * +-----------+                   +---------------+
+ * })
  *
  * @author Chris Liao
  * @version 1.0
