@@ -14,23 +14,23 @@ package org.jmin.stone.synchronizer.impl;
 final class ThreadNodeState {
 
     //Waiting
-    public static final int WAITING = 1;
+    static final int WAITING = 1;
 
     //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
-    public static final int NOTIFIED = 2;
+    static final int NOTIFIED = 2;
 
     //Signal to re-acquire a permit or a access lock
-    public static final int ACQUIRE = 3;
+    static final int ACQUIRE = 3;
 
     //Has acquired a permit or a access lock
-    public static final int ACQUIRED = 4;
+    static final int ACQUIRED = 4;
 
     //Thread waited timeout
-    public static final int TIMEOUT = 5;
+    static final int TIMEOUT = 5;
 
     //Thread interrupted during waiting
-    public static final int INTERRUPTED = 6;
+    static final int INTERRUPTED = 6;
 
     //Empty (NODE has been removed,for example: remove head or tail)
-    public static final int EMPTY = 7;
+    static final int EMPTY = 7;
 }

@@ -44,7 +44,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
             casNodeState(node, WAITING, INTERRUPTED);
             this.removeNode(node);
             throw new InterruptedException();
-        } else if (node.getState() != NOTIFIED) {//timeout
+        } else if (node.getState() == WAITING) {//timeout(state not changed)
             casNodeState(node, WAITING, TIMEOUT);
             this.removeNode(node);
             throw new TimeoutException();
@@ -54,7 +54,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     //****************************************************************************************************************//
     //                                          2: wakeup methods                                                     //
     //****************************************************************************************************************//
-    //wakeup all nodes and clean chain
+    //poll all thread nodes and wakeup them if in waiting
     protected void wakeupAll() {
         ThreadNode node;
         while ((node = super.pollFirst()) != null) {
@@ -64,26 +64,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
         }
     }
 
-    //wakeup nodes with type value and remove them
-    protected int wakeupByType(long typeCode) {
-        int count = 0;
-        for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
-            int state = node.getState();
-            if (node.getType() == typeCode && state == ThreadNodeState.WAITING && casNodeState(node, WAITING, NOTIFIED)) {
-                if (!node.getThread().isInterrupted()) {
-                    LockSupport.unpark(node.getThread());
-                    if (node.getType() == typeCode) count++;
-                    if (casNodeState(node, NOTIFIED, EMPTY)) {//mark as logic removed
-                        //@todo
-                    }
-                }
-            }
-        }
-
-        return count;
-    }
-
-    //wakeup all nodes and clean chain,count node witch type value
+    //poll all thread nodes and wakeup them if in waiting and count by specified node type
     protected int wakeupAllAndCountType(long typeCode) {
         int count = 0;
         ThreadNode node;
@@ -92,6 +73,22 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
                 if (!node.getThread().isInterrupted()) {
                     LockSupport.unpark(node.getThread());
                     if (node.getType() == typeCode) count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    //find out all specified type node,if in waiting then wakeup them
+    protected int wakeupByType(long typeCode) {
+        int count = 0;
+        for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
+            int state = node.getState();
+            if (node.getType() == typeCode && state == ThreadNodeState.WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+                if (!node.getThread().isInterrupted()) {
+                    LockSupport.unpark(node.getThread());
+                    if (node.getType() == typeCode) count++;
+                    super.removeNode(node);
                 }
             }
         }

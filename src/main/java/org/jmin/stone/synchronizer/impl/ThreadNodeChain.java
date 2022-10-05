@@ -51,63 +51,25 @@ class ThreadNodeChain {
         return U.compareAndSwapObject(t, nextOffSet, null, newNext);
     }
 
-    private static boolean casHeadPrev(ThreadNode h, ThreadNode newPrev) {
-        return U.compareAndSwapObject(h, prevOffSet, null, newPrev);
+    //link cas node next to new node
+    private static void linkNextTo(ThreadNode casNode, ThreadNode next, boolean skipNext) {
+        ThreadNode newNext;
+        if (skipNext) {
+            newNext = next.getNext();
+            if (newNext == null) newNext = next;
+        } else {
+            newNext = next;
+        }
+
+        //casNode.next ----> newNext
+        ThreadNode curNext = casNode.getNext();
+        if (curNext != newNext) U.compareAndSwapObject(casNode, nextOffSet, curNext, newNext);
+
+        //newNext.prev ------> casNode
+        ThreadNode curPrev = newNext.getPrev();
+        if (curPrev != casNode) U.compareAndSwapObject(newNext, prevOffSet, curPrev, casNode);
     }
 
-    //******************************************** link to next ******************************************************//
-    //link next to target node
-    private static void linkNextTo(ThreadNode startNode, ThreadNode endNode) {
-        //startNode.next ----> endNode
-        ThreadNode curNext = startNode.getNext();
-        if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
-
-        //endNode.prev ------> startNode
-        ThreadNode curPrev = endNode.getPrev();
-        if (curPrev != startNode) U.compareAndSwapObject(endNode, prevOffSet, curPrev, startNode);
-    }
-
-    //physical remove skip node and link to its next node(if its next is null,then link to it)
-    private static void linkNextToSkip(ThreadNode startNode, ThreadNode skipNode) {
-        ThreadNode next = skipNode.getNext();
-        ThreadNode endNode = next != null ? next : skipNode;
-
-        //startNode.next -----> endNode
-        ThreadNode curNext = startNode.getNext();
-        if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
-
-        //endNode.prev  -----> startNode
-        ThreadNode curPrev = endNode.getPrev();
-        if (curPrev != startNode) U.compareAndSwapObject(endNode, prevOffSet, curPrev, startNode);
-    }
-
-    //******************************************** link to prev ******************************************************//
-    //link prev to target node
-    private static void linkPrevTo(ThreadNode startNode, ThreadNode endNode) {
-        //startNode.prev ----> endNode
-        ThreadNode curPrev = startNode.getPrev();
-        if (curPrev != endNode) U.compareAndSwapObject(startNode, prevOffSet, curPrev, endNode);
-
-        //endNode.next ------> startNode
-        ThreadNode curNext = endNode.getNext();
-        if (curNext != startNode) U.compareAndSwapObject(endNode, nextOffSet, curNext, startNode);
-    }
-
-    //physical remove skip node and link to its prev node(if its prev is null,then link to it)
-    private static void linkPrevToSkip(ThreadNode startNode, ThreadNode skipNode) {
-        ThreadNode prev = skipNode.getPrev();
-        ThreadNode endNode = prev != null ? prev : skipNode;
-
-        //startNode.prev ----> endNode
-        ThreadNode curPrev = startNode.getPrev();
-        if (curPrev != endNode) U.compareAndSwapObject(startNode, prevOffSet, curPrev, endNode);
-
-        //endNode.next ------> startNode
-        ThreadNode curNext = endNode.getNext();
-        if (curNext != startNode) U.compareAndSwapObject(endNode, nextOffSet, curNext, startNode);
-    }
-
-    //***************************************** get chain fist node and last node ************************************//
     private ThreadNode getFirstNode() {
         ThreadNode firstNode = head;//assume head is the first node
 
@@ -118,18 +80,6 @@ class ThreadNodeChain {
         } while (true);
 
         return firstNode;
-    }
-
-    private ThreadNode getLastNode() {
-        ThreadNode lastNode = tail;//assume tail is the last node
-
-        do {
-            ThreadNode nextNode = lastNode.getNext();
-            if (nextNode == null) break;
-            lastNode = nextNode;
-        } while (true);
-
-        return lastNode;
     }
 
     //***************************************************************************************************************//
@@ -222,19 +172,19 @@ class ThreadNodeChain {
 
                 if (segStartNode != null) {//end a segment
                     if (find) {
-                        linkNextToSkip(segStartNode, curNode);//link to current node 'next
+                        linkNextTo(segStartNode, curNode, true);//link to current node 'next
                         return removed;
                     } else
-                        linkNextTo(segStartNode, curNode);//link to current node
+                        linkNextTo(segStartNode, curNode, false);//link to current node
                     segStartNode = null;
                 } else if (find) {//preNode is a valid node
-                    if (prevNode != null) linkNextToSkip(prevNode, curNode);
+                    if (prevNode != null) linkNextTo(prevNode, curNode, true);
                     return removed;
                 }
             }
         }//loop
 
-        if (segStartNode != null) linkNextToSkip(segStartNode, prevNode);
+        if (segStartNode != null) linkNextTo(segStartNode, prevNode, true);
         return false;
     }
 
@@ -250,12 +200,12 @@ class ThreadNodeChain {
         for (ThreadNode curNode = firstNode; curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
             int state = curNode.getState();
             if (state != ThreadNodeState.EMPTY && casNodeState(curNode, state, ThreadNodeState.EMPTY)) {//failed means the node has removed by other thread
-                linkNextToSkip(firstNode, curNode);
+                linkNextTo(firstNode, curNode, true);
                 return curNode;
             }
         }//loop for
 
-        if (prevNode != null) linkNextToSkip(firstNode, prevNode);
+        if (prevNode != null) linkNextTo(firstNode, prevNode, true);
         return null;
     }
 }

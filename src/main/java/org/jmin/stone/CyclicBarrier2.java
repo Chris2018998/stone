@@ -21,8 +21,21 @@ import java.util.concurrent.atomic.AtomicInteger;
  * passenger will wakeup them on boarding,the wakeup count must equal the present seated size(exclude self),if not equal
  * then cancel this flight(broken state,some wait threads timeout or interrupted),or the last passenger still not be
  * boarding during a time period,some passengers be loss of patience and exit this trip,wakeup automatically some
- * passengers in sleeping to leave.Cancelled flights not accept any new coming passengers(throws
- * exception{@code BrokenBarrierException}),but can be reset as new flights(call method{@link #reset}).
+ * passengers in sleeping to leave.the Cancelled flight not accept any new coming passengers(throws
+ * exception{@code BrokenBarrierException}),but can be reset (call method{@link #reset}).
+ * <p>
+ * Road lines of state change
+ * <pre>
+ * {@code
+ *  Road A: State_Open(1) ---> State_Boarding(2) ---> State_Flying(3) ---> State_Arrived(4) ---> State_Open(1)
+ * }
+ * </pre>
+ *
+ * <pre>
+ * {@code
+ *   Road B: State_Open(1) ---> State_Boarding(2) ---> State_Cancelled(5) ---> State_Open(1)
+ * }
+ * </pre>
  *
  * @author Chris Liao
  * @version 1.0
@@ -31,13 +44,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class CyclicBarrier2 extends ThreadWaitPool {
     //A new flight is ready to welcome passengers(door open)
     private static final int State_Open = 1;
-    //Flight is in boarding(when the first ticket sold out）
-    private static final int State_Board = 2;
+    //Flight is in boarding(when the first ticket was sold）
+    private static final int State_Boarding = 2;
     //Flight is in flying(when passengers were full)
     private static final int State_Flying = 3;
-    //Flight arrive destination(current trip was over,then flight returned to take other passengers in waiting hall for next trip)
-    private static final int State_Arrival = 4;
-    //Flight is in canceled(some passengers exited the trip)
+    //Flight arrive destination(current trip was over)
+    private static final int State_Arrived = 4;
+    //Flight is in canceled(some passengers has exited the trip)
     private static final int State_Cancelled = 5;
 
     //Flight no(set to a property of chain node,count by this value when wakeup)
@@ -48,7 +61,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
     private final Runnable tripAction;
     //Current flight state(see state static definition)
     private AtomicInteger flightState;
-    //passenger count in room,which have been aboard,flight set out when full(passengerCount == seatSize)
+    //Number of passengers have been boarding
     private AtomicInteger passengerCount;
     //Number of completed flying
     private int tripCount;
@@ -122,7 +135,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                 //wakeup other passengers in room(sleeping)
                 int awakeCount = wakeupByType(flightNo);
                 if (awakeCount == seatSize - 1) {//head count full(last passenger need't wait,so exclude)
-                    if (!flightState.compareAndSet(State_Board, State_Flying))//flying state change failed,means flight cancelled
+                    if (!flightState.compareAndSet(State_Boarding, State_Flying))//flying state change failed,means flight cancelled
                         throw new BrokenBarrierException();
 
                     tripCount++;
@@ -134,7 +147,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                         }
                     }
                     //assume flight arrival
-                    flightState.set(State_Arrival);
+                    flightState.set(State_Arrived);
 
                     //set flight to new state(next trip begin)
                     this.passengerCount.set(0);
@@ -142,7 +155,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                     this.wakeupByType(0);//wakeup the waiting passengers in hall of airport to buy ticket of next trip
                     return seatNo;
                 } else {
-                    if (flightState.get() == State_Board && flightState.compareAndSet(State_Board, State_Cancelled))
+                    if (flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
                         this.wakeupByType(0);//notify all passengers in lobby,the flight has cancelled
                     throw new BrokenBarrierException();
                 }
@@ -161,7 +174,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
             } catch (Throwable e) {
                 //mark flight state to cancelled(broken)
                 if (seatNo > 0) {//passenger of current flight
-                    if (flightState.get() == State_Board && flightState.compareAndSet(State_Board, State_Cancelled))
+                    if (flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
                         this.wakeupAll();//notify all that the flight has cancelled
                 }
 
@@ -182,7 +195,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
             if (c == seatSize) return 0;
             if (this.passengerCount.compareAndSet(c, c + 1)) {
                 if (c == 0)
-                    flightState.set(State_Board);//sale out first tick of current flight,which set to open state here
+                    flightState.set(State_Boarding);//sale out first tick of current flight,which set to open state here
                 return c + 1;
             }
         } while (true);
@@ -195,7 +208,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
             this.flightState.set(State_Open);
             wakeupAll();
             return true;
-        } else if (flightState.get() == State_Board) {//reset boarding to new
+        } else if (flightState.get() == State_Boarding) {//reset boarding to new
             this.flightState.set(State_Cancelled);
             wakeupAll();
             this.passengerCount.set(0);
