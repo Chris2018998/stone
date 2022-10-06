@@ -28,7 +28,7 @@ class ThreadNode {
         return type;
     }
 
-    public void setType(long typeCode) {
+    public void setType(long type) {
         this.type = type;
     }
 

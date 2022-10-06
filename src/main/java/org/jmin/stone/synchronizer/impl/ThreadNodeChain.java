@@ -14,9 +14,12 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
+ * A synchronize implementation base class
+ *
  * @author Chris Liao
  * @version 1.0
  */
+
 class ThreadNodeChain {
     //***************************************************************************************************************//
     //                                           1: CAS Chain info                                                   //
@@ -51,23 +54,22 @@ class ThreadNodeChain {
         return U.compareAndSwapObject(t, nextOffSet, null, newNext);
     }
 
-    //link cas node next to new node
-    private static void linkNextTo(ThreadNode casNode, ThreadNode next, boolean skipNext) {
-        ThreadNode newNext;
-        if (skipNext) {
-            newNext = next.getNext();
-            if (newNext == null) newNext = next;
-        } else {
-            newNext = next;
-        }
+    //******************************************** link to next ******************************************************//
+    //physical remove skip node and link to its next node(if its next is null,then link to it)
+    private static void skipNextTo(ThreadNode startNode, ThreadNode skipNode) {
+        ThreadNode next = skipNode.getNext();
+        linkNextTo(startNode, next != null ? next : skipNode);
+    }
 
-        //casNode.next ----> newNext
-        ThreadNode curNext = casNode.getNext();
-        if (curNext != newNext) U.compareAndSwapObject(casNode, nextOffSet, curNext, newNext);
+    //link next to target node
+    private static void linkNextTo(ThreadNode startNode, ThreadNode endNode) {
+        //startNode.next ----> endNode
+        ThreadNode curNext = startNode.getNext();
+        if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
 
-        //newNext.prev ------> casNode
-        ThreadNode curPrev = newNext.getPrev();
-        if (curPrev != casNode) U.compareAndSwapObject(newNext, prevOffSet, curPrev, casNode);
+        //endNode.prev ------> startNode
+        ThreadNode curPrev = endNode.getPrev();
+        if (curPrev != startNode) U.compareAndSwapObject(endNode, prevOffSet, curPrev, startNode);
     }
 
     private ThreadNode getFirstNode() {
@@ -85,7 +87,6 @@ class ThreadNodeChain {
     //***************************************************************************************************************//
     //                                          4: Interface Methods                                                 //
     //***************************************************************************************************************//
-
     public int getLength() {
         int size = 0;
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
@@ -123,12 +124,8 @@ class ThreadNodeChain {
         return (Thread[]) threadList.toArray();
     }
 
-    public ThreadNode addNode(int state) {
-        ThreadNode node = new ThreadNode(state);
-        return addNode(node);
-    }
 
-    public ThreadNode addNode(int state, long type) {
+    public ThreadNode addNode(int state) {
         ThreadNode node = new ThreadNode(state);
         return addNode(node);
     }
@@ -172,19 +169,19 @@ class ThreadNodeChain {
 
                 if (segStartNode != null) {//end a segment
                     if (find) {
-                        linkNextTo(segStartNode, curNode, true);//link to current node 'next
+                        skipNextTo(segStartNode, curNode);//link to current node 'next
                         return removed;
                     } else
-                        linkNextTo(segStartNode, curNode, false);//link to current node
+                        linkNextTo(segStartNode, curNode);//link to current node
                     segStartNode = null;
                 } else if (find) {//preNode is a valid node
-                    if (prevNode != null) linkNextTo(prevNode, curNode, true);
+                    if (prevNode != null) skipNextTo(prevNode, curNode);
                     return removed;
                 }
             }
         }//loop
 
-        if (segStartNode != null) linkNextTo(segStartNode, prevNode, true);
+        if (segStartNode != null) skipNextTo(segStartNode, prevNode);
         return false;
     }
 
@@ -198,14 +195,14 @@ class ThreadNodeChain {
         ThreadNode prevNode = null;
         final ThreadNode firstNode = this.getFirstNode();
         for (ThreadNode curNode = firstNode; curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
-            int state = curNode.getState();
-            if (state != ThreadNodeState.EMPTY && casNodeState(curNode, state, ThreadNodeState.EMPTY)) {//failed means the node has removed by other thread
-                linkNextTo(firstNode, curNode, true);
+            //@todo state Need re-think
+            if (curNode != null && casNodeState(curNode, 0, 1)) {//failed means the node has removed by other thread
+                skipNextTo(firstNode, curNode);
                 return curNode;
             }
         }//loop for
 
-        if (prevNode != null) linkNextTo(firstNode, prevNode, true);
+        if (prevNode != null) skipNextTo(firstNode, prevNode);
         return null;
     }
 }

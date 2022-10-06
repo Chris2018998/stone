@@ -27,13 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Road lines of state change
  * <pre>
  * {@code
- *  Road A: State_Open(1) ---> State_Boarding(2) ---> State_Flying(3) ---> State_Arrived(4) ---> State_Open(1)
+ *  line A: State_Open(1) ---> State_Boarding(2) ---> State_Flying(3) ---> State_Arrived(4) ---> State_Open(1)
  * }
  * </pre>
  *
  * <pre>
  * {@code
- *   Road B: State_Open(1) ---> State_Boarding(2) ---> State_Cancelled(5) ---> State_Open(1)
+ *   line B: State_Open(1) ---> State_Boarding(2) ---> State_Cancelled(5) ---> State_Open(1)
  * }
  * </pre>
  *
@@ -126,8 +126,8 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
         if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
 
-        nextTrip:
-        for (; ; ) {
+        //hall passengers can continue here for next trip
+        while (true) {
             if (isBroken()) throw new BrokenBarrierException();
 
             int seatNo = buyFlightTicket();//range[1 -- seatSize]
@@ -168,23 +168,19 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                 if (seatNo > 0) {
                     if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
                     return seatNo;
-                } else {
-                    continue nextTrip;
                 }
             } catch (Throwable e) {
                 //mark flight state to cancelled(broken)
-                if (seatNo > 0) {//passenger of current flight
-                    if (flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
-                        this.wakeupAll();//notify all that the flight has cancelled
-                }
+                if (seatNo > 0 && flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
+                    this.wakeupAll();//notify all that the flight has cancelled
 
                 if (e instanceof TimeoutException) throw (TimeoutException) e;
                 if (e instanceof InterruptedException) throw (InterruptedException) e;
-                BrokenBarrierException brokenBarrierException = new BrokenBarrierException();
-                brokenBarrierException.initCause(e);
-                throw brokenBarrierException;
+                BrokenBarrierException brokenException = new BrokenBarrierException();
+                brokenException.initCause(e);
+                throw brokenException;
             }
-        }
+        }//for expression end
     }
 
     //buy a boarding ticket,success,return a positive number(seat no),failed,return 0
