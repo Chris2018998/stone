@@ -30,7 +30,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
         doWait(timeoutNs, 0);
     }
 
-    protected void doWait(long timeoutNs, long waitType) throws InterruptedException, TimeoutException {
+    protected void doWait(long timeoutNs, Object waitType) throws InterruptedException, TimeoutException {
         //1:create node and add to chain
         ThreadNode node = new ThreadNode(waitType);
         this.offer(node);
@@ -57,21 +57,21 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     protected void wakeupAll() {
         ThreadNode node;
         while ((node = super.poll()) != null) {
-            if (node.getState() == WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+            if (node.getValue() != null && casNodeState(node, WAITING, NOTIFIED)) {
                 if (!node.getThread().isInterrupted()) LockSupport.unpark(node.getThread());
             }
         }
     }
 
     //poll all thread nodes and wakeup them if in waiting and count by specified node type
-    protected int wakeupAllAndCountType(Object value) {
+    protected int wakeupAllAndCountType(Object type) {
         int count = 0;
         ThreadNode node;
         while ((node = super.poll()) != null) {
-            if (node.getState() == WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+            if (node.getValue() != null && casNodeState(node, WAITING, NOTIFIED)) {
                 if (!node.getThread().isInterrupted()) {
                     LockSupport.unpark(node.getThread());
-                    if (node.getValue().equals(value)) count++;
+                    if (type.equals(node.getValue())) count++;
                 }
             }
         }
@@ -79,15 +79,15 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     }
 
     //find out all specified type node,if in waiting then wakeup them
-    protected int wakeupByType(Object value) {
+    protected int wakeupByType(Object type) {
         int count = 0;
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             int state = node.getState();
-            if (node.getValue() == value && state == ThreadNodeState.WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+            if (type.equals(node.getValue()) && state == ThreadNodeState.WAITING && casNodeState(node, WAITING, NOTIFIED)) {
                 if (!node.getThread().isInterrupted()) {
                     LockSupport.unpark(node.getThread());
-                    if (node.getValue().equals(value)) count++;
                     super.remove(node);
+                    count++;
                 }
             }
         }

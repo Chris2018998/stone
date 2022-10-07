@@ -74,7 +74,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
     }
 
     public CyclicBarrier2(int size, Runnable tripAction) {
-        if (size < 0) throw new IllegalArgumentException("size < 0");
+        if (size <= 0) throw new IllegalArgumentException("size <= 0");
         this.seatSize = size;
         this.tripAction = tripAction;
         this.flightNo = System.currentTimeMillis();

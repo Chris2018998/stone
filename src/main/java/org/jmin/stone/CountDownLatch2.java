@@ -29,7 +29,7 @@ public final class CountDownLatch2 extends ThreadWaitPool {
     private AtomicInteger count;
 
     public CountDownLatch2(int count) {
-        if (count < 0) throw new IllegalArgumentException("count < 0");
+        if (count <= 0) throw new IllegalArgumentException("count <= 0");
         this.count = new AtomicInteger(count);
     }
 
