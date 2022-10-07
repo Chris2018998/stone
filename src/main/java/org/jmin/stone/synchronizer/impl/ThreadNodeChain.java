@@ -45,29 +45,27 @@ class ThreadNodeChain {
     protected transient volatile ThreadNode head = new ThreadNode();
     protected transient volatile ThreadNode tail = new ThreadNode();
 
-    //***************************************************************************************************************//
-    //                                          2: CAS Methods                                                       //
-    //***************************************************************************************************************//
-    static boolean casNodeState(ThreadNode node, int expect, int update) {
-        return U.compareAndSwapObject(node, stateOffSet, expect, update);
-    }
-
+    //****************************************************************************************************************//
+    //                                          2: CAS methods                                                        //
+    //****************************************************************************************************************//
     static boolean casNodeValue(ThreadNode node, Object expect, Object update) {
         return U.compareAndSwapObject(node, valueOffSet, expect, update);
+    }
+
+    private static boolean casNodeState(ThreadNode node, int expect, int update) {
+        return U.compareAndSwapObject(node, stateOffSet, expect, update);
     }
 
     private static boolean casTailNext(ThreadNode t, ThreadNode newNext) {
         return U.compareAndSwapObject(t, nextOffSet, null, newNext);
     }
 
-    //******************************************** link to next ******************************************************//
-    //physical remove skip node and link to its next node(if its next is null,then link to it)
-    private static void skipNextTo(ThreadNode startNode, ThreadNode skipNode) {
-        ThreadNode next = skipNode.getNext();
-        linkNextTo(startNode, next != null ? next : skipNode);
+    private static void unlinkFromChain(ThreadNode node) {
+        ThreadNode prev = node.getPrev();
+        ThreadNode next = node.getNext();
+        if (prev != null && next != null) linkNextTo(prev, next);
     }
 
-    //link next to target node
     private static void linkNextTo(ThreadNode startNode, ThreadNode endNode) {
         //startNode.next ----> endNode
         ThreadNode curNext = startNode.getNext();
@@ -81,7 +79,6 @@ class ThreadNodeChain {
     //***************************************************************************************************************//
     //                                          4: Interface Methods                                                 //
     //***************************************************************************************************************//
-
     public ThreadNode offer(ThreadNode node) {
         ThreadNode t;
         do {
@@ -97,29 +94,29 @@ class ThreadNodeChain {
     //remove node from chain
     public boolean remove(ThreadNode node) {
         Object value = node.getValue();
-        if (value != null && casNodeValue(node, value, null)) {
-            ThreadNode prevNode = node.getPrev();
-            skipNextTo(prevNode, node);
+        if (value != null && casNodeValue(node, value, null)) {//logic remove firstly
+            unlinkFromChain(node);
             return true;
         }
         return false;
     }
 
+    //poll the valid node from chain
     public ThreadNode poll() {
         ThreadNode prevNode = null;
         final ThreadNode firstNode = this.getFirstNode();
         for (ThreadNode curNode = firstNode; curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
             Object value = curNode.getValue();
-            if (value != null && casNodeValue(curNode, value, null)) {
-                skipNextTo(firstNode, curNode);
+            if (value != null && casNodeValue(curNode, value, null)) {//logic remove
+                unlinkFromChain(curNode);
                 return curNode;
             }
         }//loop for
 
-        if (prevNode != null) skipNextTo(firstNode, prevNode);
         return null;
     }
 
+    //get number of state node
     public int getLength(int state) {
         int size = 0;
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
@@ -129,6 +126,7 @@ class ThreadNodeChain {
         return size;
     }
 
+    //get threads of state node
     public Thread[] getThreads(int state) {
         List<Thread> threadList = new LinkedList<>();
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {

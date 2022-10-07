@@ -17,15 +17,19 @@ import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
  */
 
 class ThreadNode {
-    private static final Object Dummy = new Object();
+    private static final Object DummyValue = new Object();
     private Thread thread;
+    //state value @see{@link ThreadNodeState}
     private volatile int state;
-    private volatile Object value;//may be can use it in<class>SynchronousQueue2</class>?
+    //node value
+    private volatile Object value;
+    //prev node of this node
     private volatile ThreadNode prev;
+    //next node of this node
     private volatile ThreadNode next;
 
     ThreadNode() {
-        this(Dummy);
+        this(DummyValue);
     }
 
     ThreadNode(Object value) {
