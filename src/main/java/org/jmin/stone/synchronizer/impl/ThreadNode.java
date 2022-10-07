@@ -7,29 +7,35 @@
  */
 package org.jmin.stone.synchronizer.impl;
 
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
+
 /**
+ * Wait chain node
+ *
  * @author Chris Liao
  * @version 1.0
  */
 
 class ThreadNode {
-    private long type;
+    private static final Object Dummy = new Object();
     private Thread thread;
     private volatile int state;
+    private volatile Object value;//may be can use it in<class>SynchronousQueue2</class>?
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 
-    ThreadNode(int state) {
-        this.state = state;
+    ThreadNode() {
+        this(Dummy);
+    }
+
+    ThreadNode(Object value) {
+        this.value = value;
+        this.state = WAITING;//default state
         this.thread = Thread.currentThread();
     }
 
-    public long getType() {
-        return type;
-    }
-
-    public void setType(long type) {
-        this.type = type;
+    public Object getValue() {
+        return value;
     }
 
     public Thread getThread() {
@@ -59,5 +65,4 @@ class ThreadNode {
     public void setNext(ThreadNode next) {
         this.next = next;
     }
-
 }

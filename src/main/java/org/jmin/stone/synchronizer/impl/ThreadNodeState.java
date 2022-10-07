@@ -8,6 +8,8 @@
 package org.jmin.stone.synchronizer.impl;
 
 /**
+ * Node state static definition
+ *
  * @author Chris Liao
  * @version 1.0
  */
@@ -30,7 +32,4 @@ final class ThreadNodeState {
 
     //Thread interrupted during waiting
     static final int INTERRUPTED = 6;
-
-    //Empty (NODE has been removed,for example: remove head or tail)
-    static final int EMPTY = 7;
 }

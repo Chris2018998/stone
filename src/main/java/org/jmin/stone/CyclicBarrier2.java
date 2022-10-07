@@ -152,11 +152,11 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                     //set flight to new state(next trip begin)
                     this.passengerCount.set(0);
                     this.flightState.set(State_Open);
-                    this.wakeupByType(0);//wakeup the waiting passengers in hall of airport to buy ticket of next trip
+                    this.wakeupByType(0);//wakeup hall passengers to buy ticket of next trip
                     return seatNo;
                 } else {
                     if (flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
-                        this.wakeupByType(0);//notify all passengers in lobby,the flight has cancelled
+                        this.wakeupByType(0);//notify hall passengers that the flight has cancelled
                     throw new BrokenBarrierException();
                 }
             }
