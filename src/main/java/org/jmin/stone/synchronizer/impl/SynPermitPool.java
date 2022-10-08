@@ -15,15 +15,22 @@ import org.jmin.stone.synchronizer.PermitPool;
  */
 
 public class SynPermitPool extends ThreadNodeChain implements PermitPool {
+    private int permits;
+    private boolean fair;
+
+    public SynPermitPool(int permits, boolean fair) {
+        this.permits = permits;
+        this.fair = fair;
+    }
 
     //true,fair mode acquisition
     public boolean isFair() {
-        return false;
+        return fair;
     }
 
     //available permit size in pool
     public int getPermitSize() {
-        return 1;
+        return permits;
     }
 
     //Threads waiting for permit
