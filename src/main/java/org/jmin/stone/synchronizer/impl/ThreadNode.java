@@ -17,29 +17,24 @@ import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
  */
 
 class ThreadNode {
-    private static final Object DummyValue = new Object();
+    private Object value;
     private Thread thread;
-    //state value @see{@link ThreadNodeState}
     private volatile int state;
-    //node value
-    private volatile Object value;
-    //prev node of this node
+    private volatile int emptyInd;//1:removed
     private volatile ThreadNode prev;
-    //next node of this node
     private volatile ThreadNode next;
 
     ThreadNode() {
-        this(DummyValue);
-    }
-
-    ThreadNode(Object value) {
-        this.value = value;
         this.state = WAITING;//default state
         this.thread = Thread.currentThread();
     }
 
     public Object getValue() {
         return value;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
     }
 
     public Thread getThread() {
@@ -52,6 +47,14 @@ class ThreadNode {
 
     public void setState(int newState) {
         this.state = newState;
+    }
+
+    int getEmptyInd() {
+        return emptyInd;
+    }
+
+    void setEmptyInd(int emptyInd) {
+        this.emptyInd = emptyInd;
     }
 
     public ThreadNode getPrev() {

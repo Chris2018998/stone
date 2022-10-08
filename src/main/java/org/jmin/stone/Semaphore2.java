@@ -75,7 +75,6 @@ public class Semaphore2 {
 
     }
 
-
     public int availablePermits() {
         return 1;
         //todo;

@@ -32,7 +32,8 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
 
     protected void doWait(long timeoutNs, Object waitType) throws InterruptedException, TimeoutException {
         //1:create node and add to chain
-        ThreadNode node = new ThreadNode(waitType);
+        ThreadNode node = new ThreadNode();
+        node.setValue(waitType);
         this.offer(node);
 
         //2:park current thread(wait)
@@ -57,7 +58,9 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
     protected void wakeupAll() {
         ThreadNode node;
         while ((node = super.poll()) != null) {
-            if (node.getValue() != null && casNodeState(node, WAITING, NOTIFIED)) {
+            System.out.println("wakeup node...." + node);
+            if (casNodeState(node, WAITING, NOTIFIED)) {
+                System.out.println("wakeup node...." + node.getThread().isInterrupted());
                 if (!node.getThread().isInterrupted()) LockSupport.unpark(node.getThread());
             }
         }
@@ -68,7 +71,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
         int count = 0;
         ThreadNode node;
         while ((node = super.poll()) != null) {
-            if (node.getValue() != null && casNodeState(node, WAITING, NOTIFIED)) {
+            if (waitType.equals(node.getValue()) && casNodeState(node, WAITING, NOTIFIED)) {
                 if (!node.getThread().isInterrupted()) {
                     LockSupport.unpark(node.getThread());
                     if (waitType.equals(node.getValue())) count++;

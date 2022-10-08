@@ -12,8 +12,6 @@ import org.jmin.stone.synchronizer.ResourceAccess;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
-
 /**
  * A resource access synchronizer implementation
  *
@@ -97,14 +95,14 @@ public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess
     //****************************************************************************************************************//
     private static class ShareHoldNode extends ThreadNode {
         private ShareHoldNode() {
-            super(WAITING);
+            super();
         }
     }
 
     //exclusive acquire node
     private static class ExclusiveHoldNode extends ThreadNode {
         private ExclusiveHoldNode() {
-            super(WAITING);
+            super();
         }
     }
 

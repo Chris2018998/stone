@@ -28,7 +28,7 @@ class ThreadNodeChain {
     private final static long prevOffSet;
     private final static long nextOffSet;
     private final static long stateOffSet;
-    private final static long valueOffSet;
+    private final static long removedIndOffSet;
 
     static {
         try {
@@ -36,7 +36,7 @@ class ThreadNodeChain {
             prevOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("prev"));
             nextOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("next"));
             stateOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("state"));
-            valueOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("value"));
+            removedIndOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("emptyInd"));
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -45,15 +45,25 @@ class ThreadNodeChain {
     protected transient volatile ThreadNode head = new ThreadNode();
     protected transient volatile ThreadNode tail = new ThreadNode();
 
+    //***************************************************************************************************************//
+    //                                          4: Interface Methods                                                 //
+    //***************************************************************************************************************//
+    public ThreadNodeChain() {
+        this.head.setEmptyInd(1);
+        this.tail.setEmptyInd(1);
+        this.head.setNext(tail);
+        this.tail.setPrev(head);
+    }
+
     //****************************************************************************************************************//
     //                                          2: CAS methods                                                        //
     //****************************************************************************************************************//
-    static boolean casNodeState(ThreadNode node, int expect, int update) {
-        return U.compareAndSwapObject(node, stateOffSet, expect, update);
+    static boolean logicRemove(ThreadNode node) {
+        return U.compareAndSwapObject(node, removedIndOffSet, 0, 1);
     }
 
-    static boolean casNodeValue(ThreadNode node, Object expect, Object update) {
-        return U.compareAndSwapObject(node, valueOffSet, expect, update);
+    static boolean casNodeState(ThreadNode node, int expect, int update) {
+        return U.compareAndSwapObject(node, stateOffSet, expect, update);
     }
 
     private static boolean casTailNext(ThreadNode t, ThreadNode newNext) {
@@ -64,6 +74,7 @@ class ThreadNodeChain {
         ThreadNode prev = node.getPrev();
         ThreadNode next = node.getNext();
         if (prev != null && next != null) linkNextTo(prev, next);
+
     }
 
     private static void linkNextTo(ThreadNode startNode, ThreadNode endNode) {
@@ -76,9 +87,6 @@ class ThreadNodeChain {
         if (curPrev != startNode) U.compareAndSwapObject(endNode, prevOffSet, curPrev, startNode);
     }
 
-    //***************************************************************************************************************//
-    //                                          4: Interface Methods                                                 //
-    //***************************************************************************************************************//
     public ThreadNode offer(ThreadNode node) {
         ThreadNode t;
         do {
@@ -91,10 +99,9 @@ class ThreadNodeChain {
         } while (true);
     }
 
-    //remove node from chain
+    //remove node from chain(not remove head and tail @todo)
     public boolean remove(ThreadNode node) {
-        Object value = node.getValue();
-        if (value != null && casNodeValue(node, value, null)) {//logic remove firstly
+        if (logicRemove(node)) {//logic remove firstly
             unlinkFromChain(node);
             return true;
         }
@@ -106,8 +113,7 @@ class ThreadNodeChain {
         ThreadNode prevNode = null;
         final ThreadNode firstNode = this.getFirstNode();
         for (ThreadNode curNode = firstNode; curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
-            Object value = curNode.getValue();
-            if (value != null && casNodeValue(curNode, value, null)) {//logic remove
+            if (logicRemove(curNode)) {//logic remove
                 unlinkFromChain(curNode);
                 return curNode;
             }
@@ -137,7 +143,6 @@ class ThreadNodeChain {
 
     private ThreadNode getFirstNode() {
         ThreadNode firstNode = head;//assume head is the first node
-
         do {
             ThreadNode prevNode = firstNode.getPrev();
             if (prevNode == null) break;
