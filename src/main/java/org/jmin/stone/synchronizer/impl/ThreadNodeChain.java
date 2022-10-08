@@ -48,12 +48,12 @@ class ThreadNodeChain {
     //****************************************************************************************************************//
     //                                          2: CAS methods                                                        //
     //****************************************************************************************************************//
-    static boolean casNodeValue(ThreadNode node, Object expect, Object update) {
-        return U.compareAndSwapObject(node, valueOffSet, expect, update);
+    static boolean casNodeState(ThreadNode node, int expect, int update) {
+        return U.compareAndSwapObject(node, stateOffSet, expect, update);
     }
 
-    private static boolean casNodeState(ThreadNode node, int expect, int update) {
-        return U.compareAndSwapObject(node, stateOffSet, expect, update);
+    static boolean casNodeValue(ThreadNode node, Object expect, Object update) {
+        return U.compareAndSwapObject(node, valueOffSet, expect, update);
     }
 
     private static boolean casTailNext(ThreadNode t, ThreadNode newNext) {

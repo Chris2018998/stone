@@ -170,15 +170,23 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                     return seatNo;
                 }
             } catch (Throwable e) {
-                //mark flight state to cancelled(broken)
-                if (seatNo > 0 && flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
-                    this.wakeupAll();//notify all that the flight has cancelled
+                if (seatNo > 0) {
+                    int state = flightState.get();
+                    if (state == State_Flying || state == State_Arrived) return seatNo;
+                    if (state == State_Boarding && flightState.compareAndSet(state, State_Cancelled)) {
+                        this.wakeupAll();//notify all that the flight has cancelled
+                    }
+                }
 
                 if (e instanceof TimeoutException) throw (TimeoutException) e;
                 if (e instanceof InterruptedException) throw (InterruptedException) e;
-                BrokenBarrierException brokenException = new BrokenBarrierException();
-                brokenException.initCause(e);
-                throw brokenException;
+                if (seatNo > 0) {
+                    BrokenBarrierException brokenException = new BrokenBarrierException();
+                    brokenException.initCause(e);
+                    throw brokenException;
+                } else {
+                    throw new Error(e);
+                }
             }
         }//for expression end
     }
