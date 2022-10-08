@@ -180,6 +180,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
 
                 if (e instanceof TimeoutException) throw (TimeoutException) e;
                 if (e instanceof InterruptedException) throw (InterruptedException) e;
+                if (e instanceof BrokenBarrierException) throw (BrokenBarrierException) e;
                 if (seatNo > 0) {
                     BrokenBarrierException brokenException = new BrokenBarrierException();
                     brokenException.initCause(e);
