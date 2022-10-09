@@ -20,7 +20,7 @@ class ThreadNode {
     private Object value;
     private Thread thread;
     private volatile int state;
-    private volatile int emptyInd;//1:removed
+    private volatile int emptyInd;//1:logic removed
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 

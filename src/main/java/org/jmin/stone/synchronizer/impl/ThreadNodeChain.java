@@ -10,6 +10,7 @@ package org.jmin.stone.synchronizer.impl;
 import org.jmin.util.UnsafeUtil;
 import sun.misc.Unsafe;
 
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,15 +29,28 @@ class ThreadNodeChain {
     private final static long prevOffSet;
     private final static long nextOffSet;
     private final static long stateOffSet;
-    private final static long removedIndOffSet;
+    private final static long emptyIndOffSet;
 
     static {
         try {
             U = UnsafeUtil.getUnsafe();
-            prevOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("prev"));
-            nextOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("next"));
-            stateOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("state"));
-            removedIndOffSet = U.objectFieldOffset(ThreadNode.class.getDeclaredField("emptyInd"));
+            Class nodeClass = ThreadNode.class;
+            //ThreadNode.prev
+            Field prevField = nodeClass.getDeclaredField("prev");
+            prevField.setAccessible(true);
+            prevOffSet = U.objectFieldOffset(prevField);
+            //ThreadNode.next
+            Field nextField = nodeClass.getDeclaredField("next");
+            nextField.setAccessible(true);
+            nextOffSet = U.objectFieldOffset(nextField);
+            //ThreadNode.state
+            Field stateField = nodeClass.getDeclaredField("state");
+            stateField.setAccessible(true);
+            stateOffSet = U.objectFieldOffset(stateField);
+            //ThreadNode.emptyInd
+            Field emptyIndField = nodeClass.getDeclaredField("emptyInd");
+            emptyIndField.setAccessible(true);
+            emptyIndOffSet = U.objectFieldOffset(emptyIndField);
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -59,11 +73,11 @@ class ThreadNodeChain {
     //                                          2: CAS methods                                                        //
     //****************************************************************************************************************//
     static boolean logicRemove(ThreadNode node) {
-        return U.compareAndSwapObject(node, removedIndOffSet, 0, 1);
+        return node.getEmptyInd() == 0 && U.compareAndSwapInt(node, emptyIndOffSet, 0, 1);
     }
 
     static boolean casNodeState(ThreadNode node, int expect, int update) {
-        return U.compareAndSwapObject(node, stateOffSet, expect, update);
+        return U.compareAndSwapInt(node, stateOffSet, expect, update);
     }
 
     private static boolean casTailNext(ThreadNode t, ThreadNode newNext) {
