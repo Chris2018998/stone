@@ -7,6 +7,8 @@
  */
 package org.jmin.stone.synchronizer;
 
+import java.util.Collection;
+
 /**
  * @author Chris Liao
  * @version 1.0
@@ -19,20 +21,20 @@ public interface ResourceAccess {
     //true,if hold by current thread
     boolean isHeldByCurrentThread();
 
+    //return current thread hold count(reentrant)
+    int getHoldCountByCurrentThread();
+
     //true,if hold with shared mode by current thread
     boolean isSharedHeldByCurrentThread();
 
     //true,if hold with exclusive mode by current thread
     boolean isExclusiveHeldByCurrentThread();
 
-    //return current thread hold count(reentrant)
-    int getHoldCountByCurrentThread();
-
     //Threads waiting for shared lock
-    Thread[] getQueuedSharedThreads();
+    Collection<Thread> getQueuedSharedThreads();
 
     //Threads waiting for exclusive lock
-    Thread[] getQueuedExclusiveThreads();
+    Collection<Thread> getQueuedExclusiveThreads();
 
     //release lock to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
     void release(boolean isExclusive);

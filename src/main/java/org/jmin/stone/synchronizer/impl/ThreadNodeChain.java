@@ -7,12 +7,10 @@
  */
 package org.jmin.stone.synchronizer.impl;
 
-import org.jmin.util.UnsafeUtil;
-import sun.misc.Unsafe;
-
-import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
+
+import static org.jmin.stone.synchronizer.impl.ThreadNodeUpdater.*;
 
 /**
  * A synchronize implementation base class
@@ -22,44 +20,10 @@ import java.util.List;
  */
 
 class ThreadNodeChain {
-    //***************************************************************************************************************//
-    //                                           1: CAS Chain info                                                   //
-    //***************************************************************************************************************//
-    private final static Unsafe U;
-    private final static long prevOffSet;
-    private final static long nextOffSet;
-    private final static long stateOffSet;
-    private final static long emptyIndOffSet;
-
-    static {
-        try {
-            U = UnsafeUtil.getUnsafe();
-            Class nodeClass = ThreadNode.class;
-            //ThreadNode.prev
-            Field prevField = nodeClass.getDeclaredField("prev");
-            prevField.setAccessible(true);
-            prevOffSet = U.objectFieldOffset(prevField);
-            //ThreadNode.next
-            Field nextField = nodeClass.getDeclaredField("next");
-            nextField.setAccessible(true);
-            nextOffSet = U.objectFieldOffset(nextField);
-            //ThreadNode.state
-            Field stateField = nodeClass.getDeclaredField("state");
-            stateField.setAccessible(true);
-            stateOffSet = U.objectFieldOffset(stateField);
-            //ThreadNode.emptyInd
-            Field emptyIndField = nodeClass.getDeclaredField("emptyInd");
-            emptyIndField.setAccessible(true);
-            emptyIndOffSet = U.objectFieldOffset(emptyIndField);
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
     protected transient volatile ThreadNode head = new ThreadNode();
     protected transient volatile ThreadNode tail = new ThreadNode();
 
-    //***************************************************************************************************************//
+    //**************************************************************************************************************//
     //                                          4: Interface Methods                                                 //
     //***************************************************************************************************************//
     public ThreadNodeChain() {
@@ -72,34 +36,7 @@ class ThreadNodeChain {
     //****************************************************************************************************************//
     //                                          2: CAS methods                                                        //
     //****************************************************************************************************************//
-    static boolean logicRemove(ThreadNode node) {
-        return node.getEmptyInd() == 0 && U.compareAndSwapInt(node, emptyIndOffSet, 0, 1);
-    }
 
-    static boolean casNodeState(ThreadNode node, int expect, int update) {
-        return U.compareAndSwapInt(node, stateOffSet, expect, update);
-    }
-
-    private static boolean casTailNext(ThreadNode t, ThreadNode newNext) {
-        return U.compareAndSwapObject(t, nextOffSet, null, newNext);
-    }
-
-    private static void unlinkFromChain(ThreadNode node) {
-        ThreadNode prev = node.getPrev();
-        ThreadNode next = node.getNext();
-        if (prev != null && next != null) linkNextTo(prev, next);
-
-    }
-
-    private static void linkNextTo(ThreadNode startNode, ThreadNode endNode) {
-        //startNode.next ----> endNode
-        ThreadNode curNext = startNode.getNext();
-        if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
-
-        //endNode.prev ------> startNode
-        ThreadNode curPrev = endNode.getPrev();
-        if (curPrev != startNode) U.compareAndSwapObject(endNode, prevOffSet, curPrev, startNode);
-    }
 
     public ThreadNode offer(ThreadNode node) {
         ThreadNode t;

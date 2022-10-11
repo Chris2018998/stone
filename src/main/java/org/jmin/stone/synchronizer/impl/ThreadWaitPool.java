@@ -13,6 +13,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeUpdater.casNodeState;
 
 /**
  * Wait Pool,threads will leave from pool under three situation
@@ -92,7 +93,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
             int state = node.getState();
-            if (waitType.equals(node.getValue()) && state == ThreadNodeState.WAITING && casNodeState(node, WAITING, NOTIFIED)) {
+            if (waitType.equals(node.getValue()) && state == WAITING && casNodeState(node, WAITING, NOTIFIED)) {
                 if (!node.getThread().isInterrupted()) {
                     LockSupport.unpark(node.getThread());
                     iterator.remove();

@@ -17,10 +17,12 @@ import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
  */
 
 class ThreadNode {
-    private Object value;
     private Thread thread;
     private volatile int state;
-    private volatile int emptyInd;//1:logic removed
+    private volatile Object value;
+
+    //chain info
+    private volatile int emptyInd;
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 

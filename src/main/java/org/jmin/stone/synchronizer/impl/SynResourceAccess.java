@@ -9,8 +9,16 @@ package org.jmin.stone.synchronizer.impl;
 
 import org.jmin.stone.synchronizer.ResourceAccess;
 
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.EXCLUSIVE_HOLD;
+import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.SHARABLE_HOLD;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.ACQUIRE;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
 
 /**
  * A resource access synchronizer implementation
@@ -20,19 +28,20 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 
 public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess {
-    //true,acquire with fair mode
+    //acquisition mode
     private boolean fairMode;
-    //Acquired count hold by thread,call method{#getHoldCountByCurrentThread} to get value,return 0,if not hold
-    private ThreadLocal holdCountThreadLocal = new ThreadLocal();
-    //Store acquired success node,which can be a exclusive node or first sharable acquired node
-    private AtomicReference<ThreadNode> currentHoldNodeRef = new AtomicReference<>();
-    //First sharable acquire node will fill it with compareAndSet(null,firstNode) and set to null when all sharable node released
-    private AtomicReference<ThreadNode> firstShareNodeRef = new AtomicReference<>();
-    //If set failed to <variable>firstShareNodeRef</variable>,then add to the shared chain and wait notification from the first share node
-    private ThreadNodeChain sharableAccessWaitChain = new ThreadNodeChain();
-    //Acquired success count of a exclusive thread or a set of shared threads.if hold in sharable,the value reach zero,then trigger shared real release.
-    private AtomicInteger acquiredSuccessHoldCount = new AtomicInteger(0);
+    //reentrant count atomic(total count)
+    private AtomicInteger holdCount = new AtomicInteger(0);
+    //accessing node reference(null or exclusive node,first sharable node)
+    private AtomicReference<ThreadNode> currentHolder = new AtomicReference<>();
+    //thread local hold count(reentrant)
+    private ThreadLocal<HoldTraceInfo> holdTrace = new ThreadLocal<HoldTraceInfo>();
+    //wait queue(contains exclusive and share)
+    private ConcurrentLinkedQueue<ThreadNode> waitQueue = new ConcurrentLinkedQueue<>();
 
+    //****************************************************************************************************************//
+    //                                          1: Constructor(2)                                                     //
+    //****************************************************************************************************************//
     public SynResourceAccess() {
     }
 
@@ -40,6 +49,9 @@ public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess
         this.fairMode = isFair;
     }
 
+    //****************************************************************************************************************//
+    //                                          2: monitor methods                                                    //
+    //****************************************************************************************************************//
     //true,fair mode acquisition
     public boolean isFair() {
         return fairMode;
@@ -47,34 +59,52 @@ public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess
 
     //true,if hold by current thread
     public boolean isHeldByCurrentThread() {
-        return false;
-    }
-
-    //true,if hold with shared mode by current thread
-    public boolean isSharedHeldByCurrentThread() {
-        return false;
-    }
-
-    //true,if hold with exclusive mode by current thread
-    public boolean isExclusiveHeldByCurrentThread() {
-        return false;
+        HoldTraceInfo holdInfo = holdTrace.get();
+        return holdInfo != null && holdInfo.holdCount > 0;
     }
 
     //return current thread hold count(reentrant)
     public int getHoldCountByCurrentThread() {
-        return 1;
+        HoldTraceInfo holdInfo = holdTrace.get();
+        return holdInfo != null ? holdInfo.holdCount : 0;
+    }
+
+    //true,if hold with exclusive mode by current thread
+    public boolean isExclusiveHeldByCurrentThread() {
+        ThreadNode node = currentHolder.get();
+        return node != null && node.getThread() == Thread.currentThread();
+    }
+
+    //true,if hold with shared mode by current thread
+    public boolean isSharedHeldByCurrentThread() {
+        HoldTraceInfo holdInfo = holdTrace.get();
+        return holdInfo != null && holdInfo.holdCount > 0 && holdInfo.holdType == SHARABLE_HOLD;
     }
 
     //Threads waiting for shared lock
-    public Thread[] getQueuedSharedThreads() {
-        return null;
+    public Collection<Thread> getQueuedSharedThreads() {
+        return getQueuedThreadsByAcquireType(SHARABLE_HOLD);
     }
 
     //Threads waiting for exclusive lock
-    public Thread[] getQueuedExclusiveThreads() {
-        return null;
+    public Collection<Thread> getQueuedExclusiveThreads() {
+        return getQueuedThreadsByAcquireType(EXCLUSIVE_HOLD);
     }
 
+    //Threads waiting for exclusive lock
+    private Collection<Thread> getQueuedThreadsByAcquireType(int acquireType) {
+        LinkedList<Thread> threadList = new LinkedList<Thread>();
+        for (ThreadNode node : waitQueue) {
+            int state = node.getState();
+            if (acquireType == node.getValue() && state == WAITING || state == ACQUIRE)
+                threadList.add(node.getThread());
+        }
+        return threadList;
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: acquire/release                                                    //
+    //****************************************************************************************************************//
     //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
     public void release(boolean isExclusive) {
 
@@ -90,24 +120,9 @@ public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess
         return false;
     }
 
-    //****************************************************************************************************************//
-    //                                   Access node type define                                                      //
-    //****************************************************************************************************************//
-    private static class ShareHoldNode extends ThreadNode {
-        private ShareHoldNode() {
-            super();
-        }
+    //hold info
+    private static class HoldTraceInfo {
+        private int holdType;
+        private int holdCount;
     }
-
-    //exclusive acquire node
-    private static class ExclusiveHoldNode extends ThreadNode {
-        private ExclusiveHoldNode() {
-            super();
-        }
-    }
-
-//   //Just support exclusive node,condition contains a wait chain,its node can be move to access acquire chain,when call signal and signalAll
-//    private static class ConditionImpl extends ThreadNodeChain implements Condition {
-//
-//    }
 }

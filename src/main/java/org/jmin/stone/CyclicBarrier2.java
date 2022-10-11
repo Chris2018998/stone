@@ -143,7 +143,7 @@ public final class CyclicBarrier2 extends ThreadWaitPool {
                         try {
                             tripAction.run();
                         } catch (Throwable e) {
-                            //do nothing
+                            //don't throw out runtimeException or error from the trip action
                         }
                     }
                     //assume flight arrival
