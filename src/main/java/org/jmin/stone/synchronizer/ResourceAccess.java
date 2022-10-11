@@ -13,10 +13,7 @@ import java.util.Collection;
  * @author Chris Liao
  * @version 1.0
  */
-public interface ResourceAccess {
-
-    //true,fair mode acquisition
-    boolean isFair();
+public interface ResourceAccess extends Acquirable {
 
     //true,if hold by current thread
     boolean isHeldByCurrentThread();

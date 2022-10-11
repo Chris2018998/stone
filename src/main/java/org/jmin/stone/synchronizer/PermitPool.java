@@ -7,20 +7,19 @@
  */
 package org.jmin.stone.synchronizer;
 
+import java.util.Collection;
+
 /**
  * @author Chris Liao
  * @version 1.0
  */
-public interface PermitPool {
-
-    //true,fair mode acquisition
-    boolean isFair();
+public interface PermitPool extends Acquirable {
 
     //available permit size in pool
     int getPermitSize();
 
     //Threads waiting for permit
-    Thread[] getQueuedThreads();
+    Collection<Thread> getQueuedThreads();
 
     //release a permit to pool
     void release();

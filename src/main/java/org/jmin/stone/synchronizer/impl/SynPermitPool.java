@@ -9,6 +9,8 @@ package org.jmin.stone.synchronizer.impl;
 
 import org.jmin.stone.synchronizer.PermitPool;
 
+import java.util.Collection;
+
 /**
  * @author Chris Liao
  * @version 1.0
@@ -34,7 +36,7 @@ public class SynPermitPool extends ThreadNodeChain implements PermitPool {
     }
 
     //Threads waiting for permit
-    public Thread[] getQueuedThreads() {
+    public Collection<Thread> getQueuedThreads() {
         return null;
     }
 
