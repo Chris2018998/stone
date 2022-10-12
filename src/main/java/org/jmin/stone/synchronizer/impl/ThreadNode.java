@@ -18,8 +18,8 @@ import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
 
 class ThreadNode {
     private Thread thread;
-    private volatile int state;
     private volatile Object value;
+    private volatile Object state;
 
     //chain info
     private volatile int emptyInd;
@@ -43,11 +43,11 @@ class ThreadNode {
         return thread;
     }
 
-    public int getState() {
+    public Object getState() {
         return this.state;
     }
 
-    public void setState(int newState) {
+    public void setState(Object newState) {
         this.state = newState;
     }
 

@@ -13,7 +13,7 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
- * node updater
+ * node cas updater
  *
  * @author Chris Liao
  * @version 1.0
@@ -58,8 +58,8 @@ final class ThreadNodeUpdater {
         }
     }
 
-    static boolean casNodeState(ThreadNode node, int expect, int update) {
-        return U.compareAndSwapInt(node, stateOffSet, expect, update);
+    static boolean casNodeState(ThreadNode node, Object expect, Object update) {
+        return U.compareAndSwapObject(node, stateOffSet, expect, update);
     }
 
     static boolean casNodeValue(ThreadNode node, Object expect, Object update) {

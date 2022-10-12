@@ -23,20 +23,12 @@ class ThreadNodeChain {
     protected transient volatile ThreadNode head = new ThreadNode();
     protected transient volatile ThreadNode tail = new ThreadNode();
 
-    //**************************************************************************************************************//
-    //                                          4: Interface Methods                                                 //
-    //***************************************************************************************************************//
     public ThreadNodeChain() {
         this.head.setEmptyInd(1);
         this.tail.setEmptyInd(1);
         this.head.setNext(tail);
         this.tail.setPrev(head);
     }
-
-    //****************************************************************************************************************//
-    //                                          2: CAS methods                                                        //
-    //****************************************************************************************************************//
-
 
     public ThreadNode offer(ThreadNode node) {
         ThreadNode t;
@@ -74,7 +66,7 @@ class ThreadNodeChain {
     }
 
     //get number of state node
-    public int getLength(int state) {
+    public int getLength(Object state) {
         int size = 0;
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             if (state == node.getState())
@@ -84,7 +76,7 @@ class ThreadNodeChain {
     }
 
     //get threads of state node
-    public Thread[] getThreads(int state) {
+    public Thread[] getThreads(Object state) {
         List<Thread> threadList = new LinkedList<>();
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
             if (node.getState() == state) threadList.add(node.getThread());

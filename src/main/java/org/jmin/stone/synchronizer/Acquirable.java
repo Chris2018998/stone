@@ -13,6 +13,6 @@ package org.jmin.stone.synchronizer;
  */
 public interface Acquirable {
 
-    //true,fair mode acquisition
+    //true,fair acquisition mode
     boolean isFair();
 }

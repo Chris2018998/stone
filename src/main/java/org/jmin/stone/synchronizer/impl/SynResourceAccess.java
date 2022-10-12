@@ -10,15 +10,12 @@ package org.jmin.stone.synchronizer.impl;
 import org.jmin.stone.synchronizer.ResourceAccess;
 
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.EXCLUSIVE_HOLD;
 import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.SHARABLE_HOLD;
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.ACQUIRE;
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
 
 /**
  * A resource access synchronizer implementation
@@ -93,13 +90,14 @@ public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess
 
     //Threads waiting for exclusive lock
     private Collection<Thread> getQueuedThreadsByAcquireType(int acquireType) {
-        LinkedList<Thread> threadList = new LinkedList<Thread>();
-        for (ThreadNode node : waitQueue) {
-            int state = node.getState();
-            if (acquireType == node.getValue() && state == WAITING || state == ACQUIRE)
-                threadList.add(node.getThread());
-        }
-        return threadList;
+//        LinkedList<Thread> threadList = new LinkedList<Thread>();
+//        for (ThreadNode node : waitQueue) {
+//            Object state = node.getState();
+//            if (acquireType == node.getValue() && state == WAITING || state == ACQUIRE)
+//                threadList.add(node.getThread());
+//        }
+//        return threadList;
+        return null;
     }
 
     //****************************************************************************************************************//

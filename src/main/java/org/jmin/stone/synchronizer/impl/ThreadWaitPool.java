@@ -43,11 +43,8 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
         node.setValue(waitType);
         waitQueue.offer(node);
 
-        //2:park current thread(wait)
-        ThreadParker.create(timeoutNs, false).park();
-
         //3:after exiting park
-        if (node.getThread().isInterrupted()) {//interrupted
+        if (ThreadParkerFactory.create(timeoutNs, false).park()) {//interrupted
             casNodeState(node, WAITING, INTERRUPTED);
             waitQueue.remove(node);
             throw new InterruptedException();
@@ -92,7 +89,7 @@ public abstract class ThreadWaitPool extends ThreadNodeChain {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            int state = node.getState();
+            Object state = node.getState();
             if (waitType.equals(node.getValue()) && state == WAITING && casNodeState(node, WAITING, NOTIFIED)) {
                 if (!node.getThread().isInterrupted()) {
                     LockSupport.unpark(node.getThread());

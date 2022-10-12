@@ -13,23 +13,23 @@ package org.jmin.stone.synchronizer.impl;
  * @author Chris Liao
  * @version 1.0
  */
-final class ThreadNodeState {
+public final class ThreadNodeState {
 
     //Waiting
-    static final int WAITING = 1;
+    public static final Object WAITING = new Object();
 
     //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
-    static final int NOTIFIED = 2;
+    public static final Object NOTIFIED = new Object();
 
     //Signal to re-acquire a permit or a access lock
-    static final int ACQUIRE = 3;
+    public static final Object ACQUIRE = new Object();
 
     //Has acquired a permit or a access lock
-    static final int ACQUIRED = 4;
+    public static final Object ACQUIRED = new Object();
 
     //Thread waited timeout
-    static final int TIMEOUT = 5;
+    public static final Object TIMEOUT = new Object();
 
     //Thread interrupted during waiting
-    static final int INTERRUPTED = 6;
+    public static final Object INTERRUPTED = new Object();
 }
