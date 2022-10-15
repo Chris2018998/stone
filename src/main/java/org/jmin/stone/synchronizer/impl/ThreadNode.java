@@ -7,7 +7,7 @@
  */
 package org.jmin.stone.synchronizer.impl;
 
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.RUNNING;
 
 /**
  * Wait chain node
@@ -27,7 +27,7 @@ class ThreadNode {
     private volatile ThreadNode next;
 
     ThreadNode() {
-        this.state = WAITING;//default state
+        this.state = RUNNING;//default state
         this.thread = Thread.currentThread();
     }
 

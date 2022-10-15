@@ -7,7 +7,7 @@
  */
 package org.jmin.stone;
 
-import org.jmin.stone.synchronizer.impl.bak.ThreadWaitPool1;
+import org.jmin.stone.synchronizer.impl.WaitConditionPool;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -18,13 +18,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * some people(threads)come into the theater to watch these show(call method{@link #await}).A atomic count property
  * represent number of the programs,one item of them done then call method{@link #countDown}to reduce one value from
  * the atomic variable util its value reach zero(all programs completed),then notify automatically all present watchers
- * to leave from the theater(call method{@link #wakeAll}),which closed for ever.Luckly,you can create another new
+ * to leave from the theater(call method{@link #wakeupAll}),which closed for ever.Luckly,you can create another new
  * theater(or some)in your code.One word to all:Welcome to my theater,it is open to the world.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class CountDownLatch2 extends ThreadWaitPool1 {
+public final class CountDownLatch2 extends WaitConditionPool {
     //Number of programs(Remaining)
     private AtomicInteger count;
 
@@ -39,7 +39,7 @@ public final class CountDownLatch2 extends ThreadWaitPool1 {
     //wait without time
     public void await() throws InterruptedException {
         if (testCondition()) return;
-        super.sleep(0);
+        super.get(0);
     }
 
     //true means all programs over
@@ -48,7 +48,7 @@ public final class CountDownLatch2 extends ThreadWaitPool1 {
         if (testCondition()) return true;
 
         try {
-            super.sleep(0, timeout, unit);
+            super.get(0, timeout, unit);
         } catch (TimeoutException e) {
             //do nothing,the last item may be over at timeout point
         }
@@ -64,7 +64,7 @@ public final class CountDownLatch2 extends ThreadWaitPool1 {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) wakeAll();//the last item end,then notify all watchers to leave
+                if (c == 1) wakeupAll();//the last item end,then notify all watchers to leave
                 return;
             }
         } while (true);
@@ -79,7 +79,7 @@ public final class CountDownLatch2 extends ThreadWaitPool1 {
     }
 
     //count reach zero,which means all programs over
-    private boolean testCondition() {
+    public boolean testCondition() {
         return count.get() == 0;
     }
 

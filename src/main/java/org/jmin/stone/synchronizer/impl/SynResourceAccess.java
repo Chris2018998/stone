@@ -14,9 +14,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.EXCLUSIVE_HOLD;
-import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.SHARABLE_HOLD;
-
 /**
  * A resource access synchronizer implementation
  *
@@ -25,6 +22,11 @@ import static org.jmin.stone.synchronizer.impl.SynAcquireTypes.SHARABLE_HOLD;
  */
 
 public class SynResourceAccess extends ThreadNodeChain implements ResourceAccess {
+    //exclusive hold(default)
+    private static final int EXCLUSIVE_HOLD = 1;
+    //sharable hold
+    private static final int SHARABLE_HOLD = 2;
+
     //acquisition mode
     private boolean fairMode;
     //reentrant count atomic(total count)

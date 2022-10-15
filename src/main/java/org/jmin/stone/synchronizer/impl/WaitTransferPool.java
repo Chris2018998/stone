@@ -17,7 +17,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class WaitTransferPool extends SynThreadWaitPool {
 
-    public Object get(Object arg, ThreadParkerFactory.ThreadParker parker) throws InterruptedException, TimeoutException {
+    public Object get(Object arg, ThreadParker parker) throws InterruptedException, TimeoutException {
         //@todo
         return null;
     }

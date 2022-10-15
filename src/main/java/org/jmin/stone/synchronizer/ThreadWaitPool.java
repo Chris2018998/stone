@@ -7,6 +7,7 @@
  */
 package org.jmin.stone.synchronizer;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -18,7 +19,9 @@ import java.util.concurrent.TimeoutException;
  * @version 1.0
  */
 public interface ThreadWaitPool {
-
+    //****************************************************************************************************************//
+    //                                          1: get Methods                                                        //
+    //****************************************************************************************************************//
     //ignore interruption
     Object getUninterruptibly(Object arg);
 
@@ -31,4 +34,15 @@ public interface ThreadWaitPool {
     //if got failed,then causes the current thread to wait until interrupted or timeout
     Object get(Object arg, long timeOut, TimeUnit unit) throws InterruptedException, TimeoutException;
 
+
+    //****************************************************************************************************************//
+    //                                          2: monitor Methods                                                    //
+    //****************************************************************************************************************//
+    int getQueueLength();
+
+    Collection<Thread> getQueuedThreads();
+
+    int getQueueLength(Object arg);
+
+    Collection<Thread> getQueuedThreads(Object arg);
 }

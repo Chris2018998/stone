@@ -19,7 +19,7 @@ public abstract class WaitAcquirePool extends SynThreadWaitPool {
 
     public abstract int tryAcquire(Object arg);
 
-    public Object get(Object arg, ThreadParkerFactory.ThreadParker parker) throws InterruptedException, TimeoutException {
+    public Object get(Object arg, ThreadParker parker) throws InterruptedException, TimeoutException {
         //@todo
         return null;
     }
