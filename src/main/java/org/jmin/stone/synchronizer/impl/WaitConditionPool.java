@@ -7,12 +7,9 @@
  */
 package org.jmin.stone.synchronizer.impl;
 
-import java.util.Iterator;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.locks.LockSupport;
 
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
-import static org.jmin.stone.synchronizer.impl.ThreadNodeUpdater.casNodeState;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.NOTIFIED;
 
 /**
  * get notification,message,command or other
@@ -58,36 +55,5 @@ public abstract class WaitConditionPool extends SynThreadWaitPool {
                 isInterrupted = parker.park();
             }
         }
-    }
-
-    //****************************************************************************************************************//
-    //                                          2: Wakeup methods                                                     //
-    //****************************************************************************************************************//
-    public int wakeupAll() {
-        int count = 0;
-        ThreadNode node;
-        while ((node = waitQueue.poll()) != null) {
-            Object state = node.getState();
-            if ((state == RUNNING || state == WAITING) && casNodeState(node, state, NOTIFIED)) {
-                count++;
-                if (state == WAITING) LockSupport.unpark(node.getThread());
-            }
-        }
-        return count;
-    }
-
-    public int wakeup(Object arg) {
-        int count = 0;
-        Iterator<ThreadNode> iterator = waitQueue.iterator();
-        while (iterator.hasNext()) {
-            ThreadNode node = iterator.next();
-            Object state = node.getState();
-            if (!arg.equals(node.getValue())) continue;
-            if ((state == RUNNING || state == WAITING) && casNodeState(node, state, NOTIFIED)) {
-                count++;
-                if (state == WAITING) LockSupport.unpark(node.getThread());
-            }
-        }
-        return count;
     }
 }

@@ -13,9 +13,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.locks.LockSupport;
 
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.RUNNING;
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.WAITING;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeUpdater.casNodeState;
 
 /**
  * get notification,message,command or other
@@ -71,7 +72,38 @@ public abstract class SynThreadWaitPool implements ThreadWaitPool {
     public abstract Object get(Object type, ThreadParker parker) throws InterruptedException, TimeoutException;
 
     //****************************************************************************************************************//
-    //                                         2: Monitor Methods(State in(RUNNING,WAITING)                           //
+    //                                          2: Wakeup methods                                                     //
+    //****************************************************************************************************************//
+    public int wakeupAll() {
+        int count = 0;
+        ThreadNode node;
+        while ((node = waitQueue.poll()) != null) {
+            Object state = node.getState();
+            if ((state == RUNNING || state == WAITING) && casNodeState(node, state, NOTIFIED)) {
+                count++;
+                if (state == WAITING) LockSupport.unpark(node.getThread());
+            }
+        }
+        return count;
+    }
+
+    public int wakeup(Object arg) {
+        int count = 0;
+        Iterator<ThreadNode> iterator = waitQueue.iterator();
+        while (iterator.hasNext()) {
+            ThreadNode node = iterator.next();
+            Object state = node.getState();
+            if (!arg.equals(node.getValue())) continue;
+            if ((state == RUNNING || state == WAITING) && casNodeState(node, state, NOTIFIED)) {
+                count++;
+                if (state == WAITING) LockSupport.unpark(node.getThread());
+            }
+        }
+        return count;
+    }
+
+    //****************************************************************************************************************//
+    //                                         3: Monitor Methods(State in(RUNNING,WAITING)                           //
     //****************************************************************************************************************//
     public final int getQueueLength() {
         int count = 0;
