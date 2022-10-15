@@ -102,6 +102,22 @@ public abstract class SynThreadWaitPool implements ThreadWaitPool {
         return count;
     }
 
+    protected int wakeupOne(Object arg, ThreadNode exclusiveNode) {
+        int count = 0;
+        Iterator<ThreadNode> iterator = waitQueue.iterator();
+        while (iterator.hasNext()) {
+            ThreadNode node = iterator.next();
+            if (node == exclusiveNode) continue;
+            Object state = node.getState();
+            if (!arg.equals(node.getValue())) continue;
+            if ((state == RUNNING || state == WAITING) && casNodeState(node, state, NOTIFIED)) {
+                count++;
+                if (state == WAITING) LockSupport.unpark(node.getThread());
+            }
+        }
+        return count;
+    }
+
     //****************************************************************************************************************//
     //                                         3: Monitor Methods(State in(RUNNING,WAITING)                           //
     //****************************************************************************************************************//
