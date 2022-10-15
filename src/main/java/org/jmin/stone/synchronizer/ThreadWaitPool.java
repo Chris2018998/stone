@@ -34,7 +34,6 @@ public interface ThreadWaitPool {
     //if got failed,then causes the current thread to wait until interrupted or timeout
     Object get(Object arg, long timeOut, TimeUnit unit) throws InterruptedException, TimeoutException;
 
-
     //****************************************************************************************************************//
     //                                          2: monitor Methods                                                    //
     //****************************************************************************************************************//

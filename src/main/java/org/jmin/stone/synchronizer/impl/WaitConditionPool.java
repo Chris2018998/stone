@@ -9,7 +9,8 @@ package org.jmin.stone.synchronizer.impl;
 
 import java.util.concurrent.TimeoutException;
 
-import static org.jmin.stone.synchronizer.impl.ThreadNodeState.NOTIFIED;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeState.*;
+import static org.jmin.stone.synchronizer.impl.ThreadNodeUpdater.casNodeState;
 
 /**
  * get notification,message,command or other
@@ -51,8 +52,16 @@ public abstract class WaitConditionPool extends SynThreadWaitPool {
             parker.calNextParkTime();
             if (parker.isTimeout()) {
                 isTimeout = true;
-            } else {
-                isInterrupted = parker.park();
+                if (casNodeState(node, state, TIMEOUT)) {
+                    waitQueue.remove(node);
+                    throw new TimeoutException();
+                }
+            } else if (parker.park()) {
+                isInterrupted = true;
+                if (allowThrowInterruptedException && casNodeState(node, state, INTERRUPTED)) {
+                    waitQueue.remove(node);
+                    throw new InterruptedException();
+                }
             }
         }
     }
