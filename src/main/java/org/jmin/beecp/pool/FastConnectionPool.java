@@ -458,10 +458,9 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                             if (thd.isInterrupted()) {
                                 failed = true;
                                 cause = new SQLException("Interrupted during getting connection");
-                                BorrowStUpd.compareAndSet(b, BOWER_WAITING, cause);
-                            } else if (b.state == BOWER_WAITING && BorrowStUpd.compareAndSet(b, BOWER_WAITING, BOWER_NORMAL)) {//timeout,give it one chance again
-                                yield();
                             }
+                            if (b.state == BOWER_WAITING && BorrowStUpd.compareAndSet(b, BOWER_WAITING, failed ? cause : BOWER_NORMAL) && !failed)
+                                Thread.yield();
                         }
                     } else {//timeout
                         failed = true;
