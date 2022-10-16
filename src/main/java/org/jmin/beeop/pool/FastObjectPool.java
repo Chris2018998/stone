@@ -326,10 +326,9 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
                             if (thd.isInterrupted()) {
                                 failed = true;
                                 cause = new ObjectException("Interrupted during getting object");
-                                BorrowStUpd.compareAndSet(b, BOWER_WAITING, cause);
-                            } else if (b.state == BOWER_WAITING && BorrowStUpd.compareAndSet(b, BOWER_WAITING, BOWER_NORMAL)) {//timeout,give it one chance again
-                                Thread.yield();
                             }
+                            if (b.state == BOWER_WAITING && BorrowStUpd.compareAndSet(b, BOWER_WAITING, failed ? cause : BOWER_NORMAL) && !failed)
+                                Thread.yield();
                         }
                     } else {//timeout
                         failed = true;
