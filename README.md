@@ -1,2 +1,1 @@
-# jmin
 Java toolkit
