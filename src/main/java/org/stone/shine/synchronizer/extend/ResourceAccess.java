@@ -1,0 +1,233 @@
+/*
+ * Copyright(C) Chris2018998,All rights reserved
+ *
+ * Contact:Chris2018998@tom.com
+ *
+ * Licensed under GNU Lesser General Public License v2.1
+ */
+package org.stone.shine.synchronizer.extend;
+
+import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.base.ResultCall;
+import org.stone.shine.synchronizer.base.ResultWaitPool;
+import org.stone.shine.synchronizer.base.SignalWaitPool;
+
+import java.util.Date;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+
+/**
+ * A resource access synchronizer implementation
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+
+public final class ResourceAccess extends ResultWaitPool {
+    //reentrant count atomic(total count)
+    private final AtomicInteger state = new AtomicInteger(0);//0 - no hold
+    //thread local hold count(reentrant)
+    private final ThreadLocal<HoldCounter> threadHoldTrace = new HoldThreadLocal();
+
+    //sharable acquire action(a plugin used in result wait pool)
+    private AcquireAction sharableAcquireAction = new SharableAcquireAction();
+    //exclusive acquire action(a plugin used in result wait pool)
+    private AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
+
+    //current hold type
+    private boolean isExclusiveHold;
+    //hold thread(exclusive thread or sharable first thread)
+    private Thread currentHoldThread;
+
+    //****************************************************************************************************************//
+    //                                          1: Constructor(2)                                                     //
+    //****************************************************************************************************************//
+    public ResourceAccess() {
+        this(false);
+    }
+
+    public ResourceAccess(boolean fair) {
+        super(fair);
+    }
+
+    //****************************************************************************************************************//
+    //                                          2: acquire/release(4)                                                 //
+    //****************************************************************************************************************//
+    //2.1:release with exclusive mode
+    public void release() {
+        exclusiveAcquireAction.release();
+    }
+
+    //2.2:try to acquire with exclusive mode
+    public boolean tryAcquire() {
+        return exclusiveAcquireAction.tryAcquire();
+    }
+
+    //2.3: acquire with exclusive mode
+    public boolean acquire(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        return acquireByAction(sharableAcquireAction, parker, throwsIE);
+    }
+
+    //2.4: create a new lock condition
+    public Condition newCondition() {
+        if (state.get() > 0 && isExclusiveHold)
+            return new LockConditionImpl();
+        else
+            throw new IllegalMonitorStateException();
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: acquire shareable/release(4)                                       //
+    //****************************************************************************************************************//
+    //3.1:release with sharable mode
+    public void releaseShared() {
+        sharableAcquireAction.release();
+    }
+
+    //3.2:try to acquire with sharable mode
+    public boolean tryAcquireShared() {
+        return sharableAcquireAction.tryAcquire();
+    }
+
+    //3.3: acquire with sharable mode
+    public boolean acquireShared(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        return acquireByAction(sharableAcquireAction, parker, throwsIE);
+    }
+
+    //3.4: acquire implementation method by acquire action
+    private boolean acquireByAction(AcquireAction action, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        try {
+            super.doCall(action, 1, true, parker, throwsIE);
+            return true;
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                          4: monitor methods                                                    //
+    //****************************************************************************************************************//
+    public boolean isHeld() {
+        return state.get() > 0;
+    }
+
+    public Thread getHeldThread() {
+        return this.currentHoldThread;
+    }
+
+    //true,if hold with exclusive mode by current thread
+    public boolean isExclusiveHeldByCurrentThread() {
+        return isExclusiveHold && currentHoldThread == Thread.currentThread();
+    }
+
+    //true,if hold with shared mode by current thread
+    public boolean isSharedHeldByCurrentThread() {
+        HoldCounter holdInfo = threadHoldTrace.get();
+        return !isExclusiveHold && holdInfo != null && holdInfo.holdCount > 0;
+    }
+
+    //true,if hold by current thread
+    public boolean isHeldByCurrentThread() {
+        if (isExclusiveHold) {
+            return currentHoldThread == Thread.currentThread();
+        } else {
+            HoldCounter holdInfo = threadHoldTrace.get();
+            return holdInfo != null && holdInfo.holdCount > 0;
+        }
+    }
+
+    //return current thread hold count(reentrant)
+    public int getHoldCountByCurrentThread() {
+        if (isExclusiveHold) {
+            return state.get();
+        } else {
+            HoldCounter holdInfo = threadHoldTrace.get();
+            return holdInfo != null ? holdInfo.holdCount : 0;
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                  4:inner interface/class(2)                                                    //                                                                                  //
+    //****************************************************************************************************************//
+    private static class HoldCounter {
+        private int holdCount = 0;
+    }
+
+    //sharable hold ThreadLocal
+    private static class HoldThreadLocal extends ThreadLocal<HoldCounter> {
+        protected HoldCounter initialValue() {
+            return new HoldCounter();
+        }
+    }
+
+    private static abstract class AcquireAction implements ResultCall {
+        abstract void release();
+
+        public boolean tryAcquire() {
+            try {
+                return Objects.equals(this.call(1), true);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+    }
+
+    private static class SharableAcquireAction extends AcquireAction {
+
+        public Object call(Object arg) {
+            return true;
+        }
+
+        public void release() {
+
+        }
+    }
+
+    private static class ExclusiveAcquireAction extends AcquireAction {
+        public Object call(Object arg) {
+            return true;
+        }
+
+        public void release() {
+
+        }
+    }
+
+    private static class LockConditionImpl extends SignalWaitPool implements Condition {
+
+        public void await() throws InterruptedException {
+            //@todo
+        }
+
+        public void awaitUninterruptibly() {
+            //@todo
+        }
+
+        public long awaitNanos(long nanosTimeout) throws InterruptedException {
+            //@todo
+            return 0;
+        }
+
+        public boolean await(long time, TimeUnit unit) throws InterruptedException {
+            //@todo
+            return true;
+        }
+
+        public boolean awaitUntil(Date deadline) throws InterruptedException {
+            //@todo
+            return true;
+        }
+
+        public void signal() {
+            //@todo
+        }
+
+        public void signalAll() {
+            //@todo
+        }
+    }
+}
