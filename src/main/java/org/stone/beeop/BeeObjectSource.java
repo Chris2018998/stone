@@ -1,0 +1,123 @@
+/*
+ * Copyright(C) Chris2018998,All rights reserved
+ *
+ * Contact:Chris2018998@tom.com
+ *
+ * Licensed under GNU Lesser General Public License v2.1
+ */
+package org.stone.beeop;
+
+import org.stone.beeop.pool.ObjectPool;
+import org.stone.beeop.pool.ObjectPoolMonitorVo;
+import org.stone.beeop.pool.ObjectPoolStatics;
+import org.stone.beeop.pool.exception.PoolNotCreateException;
+
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+/**
+ * Bee Object object source
+ * <p>
+ * Email:  Chris2018998@tom.com
+ * Project: https://github.com/Chris2018998/stone
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+public class BeeObjectSource extends BeeObjectSourceConfig {
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private ObjectPool pool;
+    private boolean ready;
+    private Exception failedCause;
+
+    //***************************************************************************************************************//
+    //                                             1:constructors(2)                                                 //
+    //***************************************************************************************************************//
+    public BeeObjectSource() {
+    }
+
+    public BeeObjectSource(BeeObjectSourceConfig config) {
+        try {
+            config.copyTo(this);
+            createPool(this);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void createPool(BeeObjectSource os) throws Exception {
+        Class<?> poolClass = Class.forName(os.getPoolImplementClassName());
+        ObjectPool pool = (ObjectPool) ObjectPoolStatics.createClassInstance(poolClass, ObjectPool.class, "pool");
+
+        pool.init(os);
+        os.pool = pool;
+        os.ready = true;
+    }
+
+    //***************************************************************************************************************//
+    //                                        2: object take methods(1)                                              //
+    //***************************************************************************************************************//
+    public final BeeObjectHandle getObject() throws Exception {
+        if (ready) return pool.getObject();
+
+        if (writeLock.tryLock()) {
+            try {
+                if (!ready) {
+                    failedCause = null;
+                    createPool(this);
+                }
+            } catch (Exception e) {
+                failedCause = e;
+            } finally {
+                writeLock.unlock();
+            }
+        } else {
+            try {
+                readLock.lock();
+            } finally {
+                readLock.unlock();
+            }
+        }
+
+        if (failedCause != null) throw failedCause;
+        return pool.getObject();
+    }
+
+    //***************************************************************************************************************//
+    //                                          3: pool other methods(6)                                             //
+    //***************************************************************************************************************//
+    public void clear() throws Exception {
+        clear(false);
+    }
+
+    public void clear(boolean force) throws Exception {
+        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        pool.clear(force);
+    }
+
+    public boolean isClosed() {
+        return pool == null || pool.isClosed();
+    }
+
+    public void close() {
+        if (pool != null) {
+            try {
+                pool.close();
+            } catch (Throwable e) {
+                ObjectPoolStatics.CommonLog.error("Error at closing pool,cause:", e);
+            }
+        }
+    }
+
+    public void setPrintRuntimeLog(boolean printRuntimeLog) {
+        if (pool != null) pool.setPrintRuntimeLog(printRuntimeLog);
+    }
+
+    public ObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
+        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        return pool.getPoolMonitorVo();
+    }
+}
