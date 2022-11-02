@@ -208,15 +208,16 @@ public abstract class ThreadWaitPool {
     //                                         7: Park methods(2)                                                     //
     //****************************************************************************************************************//
     protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        this.parkNodeThread(node, support, throwsIE, SIGNAL);
-    }
-
-    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE, Object targetState) throws InterruptedException {
         if (support.calculateParkTime()) {//before deadline
             if (support.park() && throwsIE) {//interrupted
-                Object state = node.getState();
-                if (state == null) ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED);
-                if (state == targetState || node.getState() == targetState) wakeupOne(node);//exclude current node
+                if (node.getState() == null) {
+                    //try cas state to interrupted,failed means the state has been setted by a wakeup thread
+                    if (ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED))
+                        throw new InterruptedException();
+                }
+
+                //if not null,then wakeup a waiter in queue
+                if (node.getState() != null) wakeupOne(node);//exclude current node
                 throw new InterruptedException();
             }
         }

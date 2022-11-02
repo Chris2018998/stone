@@ -10,7 +10,7 @@ package org.stone.shine.synchronizer.base;
 import org.stone.shine.synchronizer.*;
 
 /**
- * wait util SIGNAL wakeup
+ * wait util wakeup
  *
  * @author Chris Liao
  * @version 1.0
@@ -25,20 +25,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
      */
     public final boolean await(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        return await(support, throwsIE, ThreadNodeState.SIGNAL, null);
-    }
-
-
-    /**
-     * add to inner queue and wait util wakeup by other thread with expected signal state
-     *
-     * @param support  thread park support
-     * @param throwsIE true,throws InterruptedException when interrupted
-     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
-     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
-     */
-    public final boolean await(ThreadParkSupport support, boolean throwsIE, Object expectSignal) throws InterruptedException {
-        return await(support, throwsIE, expectSignal, null);
+        return await(support, throwsIE, null);
     }
 
     /**
@@ -50,7 +37,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return boolean value,true means wakeup with expect signal state,false,wait timeout
      * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
      */
-    public final boolean await(ThreadParkSupport support, boolean throwsIE, Object expectSignal, Object nodeValue) throws InterruptedException {
+    public final boolean await(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
         //1:create wait node and offer to wait queue
         ThreadNode node = super.appendNewNode(nodeValue);
 
@@ -58,18 +45,16 @@ public class SignalWaitPool extends ThreadWaitPool {
         try {
             do {
                 //2.1:read state
-                Object state = node.getState();
-                if (equals(state, expectSignal)) return true;
+                Object state = node.getState();//any not null value regard as wakeup signal
+                if (state != null) return true;
 
+                //here:null state
                 if (support.getParkTime() <= 0) {//timeout
                     //two types(1:null state 2:invalid state,not expected state)
-                    if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
-                } else if (state != null) {//although state value is not null,but is not expect state,so reset to null
-                    node.setState(null);
-                    Thread.yield();
+                    if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return false;
                 } else {
                     //2.2: park current thread
-                    parkNodeThread(node, support, throwsIE, expectSignal);
+                    parkNodeThread(node, support, throwsIE);
                 }
             } while (true);
         } finally {

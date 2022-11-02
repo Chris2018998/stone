@@ -82,7 +82,7 @@ public class ResultWaitPool extends ThreadWaitPool {
             do {
                 //3.1:execute resultCall
                 if (equals(call.call(arg), expect)) return true;
-                if (node.getState() != null) {//although state value is not null,but is not expect state,so reset to null
+                if (node.getState() != null) {//any not null value regard as wakeup signal
                     node.setState(null);
                     Thread.yield();
                 }
