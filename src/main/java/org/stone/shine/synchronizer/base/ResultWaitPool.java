@@ -38,7 +38,6 @@ public class ResultWaitPool extends ThreadWaitPool {
     //****************************************************************************************************************//
     //                                          2: call method(3)                                                     //
     //****************************************************************************************************************//
-
     /**
      * execute result call
      *
@@ -53,7 +52,6 @@ public class ResultWaitPool extends ThreadWaitPool {
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE) throws Exception {
         return doCall(call, arg, expect, support, throwsIE, null);
     }
-
 
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws Exception {
         //1:check call parameter
@@ -88,7 +86,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 }
 
                 //3.2:park current thread
-                parkNodeThread(node, support, throwsIE);//using
+                parkNodeThread(node, support, throwsIE);
             } while (true);
         } finally {
             super.removeNode(node);

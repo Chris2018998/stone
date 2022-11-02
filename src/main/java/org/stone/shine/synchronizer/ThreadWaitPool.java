@@ -205,7 +205,7 @@ public abstract class ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                         7: Park methods(2)                                                     //
+    //                                         7: Park methods(1)                                                     //
     //****************************************************************************************************************//
     protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
         if (support.calculateParkTime()) {//before deadline
