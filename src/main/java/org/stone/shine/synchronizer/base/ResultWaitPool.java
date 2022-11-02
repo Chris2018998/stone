@@ -38,26 +38,38 @@ public class ResultWaitPool extends ThreadWaitPool {
     //****************************************************************************************************************//
     //                                          2: call method(3)                                                     //
     //****************************************************************************************************************//
-    public final void doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE) throws Exception {
-        doCall(call, arg, expect, support, throwsIE, null);
+
+    /**
+     * execute result call
+     *
+     * @param call     plugin call action
+     * @param arg      call arguments
+     * @param expect   compare to the call result
+     * @param support  thread park support
+     * @param throwsIE true,throws InterruptedException when interrupted
+     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @throws Exception exception from call or InterruptedException after thread park
+     */
+    public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE) throws Exception {
+        return doCall(call, arg, expect, support, throwsIE, null);
     }
 
-    public final void doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws Exception {
+
+    public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
 
         //2:execute call
         if (fair) { //fair mode
-            if (!this.hasQueuedThreads() && equals(call.call(arg), expect)) return;
-        } else if (equals(call.call(arg), expect))
-            return;
+            if (!this.hasQueuedThreads() && equals(call.call(arg), expect)) return true;
+        } else if (equals(call.call(arg), expect)) return true;
 
         //3:call inner method
-        doCallByNode(call, arg, expect, support, throwsIE, createNode(nodeValue));
+        return doCallByNode(call, arg, expect, support, throwsIE, createNode(nodeValue));
     }
 
     //do resultCall with node(used in lock-condition queue?)
-    public final void doCallByNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws Exception {
+    public final boolean doCallByNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
         if (node == null) throw new IllegalArgumentException("wait node can't be null");
@@ -69,9 +81,14 @@ public class ResultWaitPool extends ThreadWaitPool {
         try {
             do {
                 //3.1:execute resultCall
-                if (equals(call.call(arg), expect)) return;
+                if (equals(call.call(arg), expect)) return true;
+                if (node.getState() != null) {//although state value is not null,but is not expect state,so reset to null
+                    node.setState(null);
+                    Thread.yield();
+                }
+
                 //3.2:park current thread
-                parkNodeThread(node, support, throwsIE);
+                parkNodeThread(node, support, throwsIE);//using
             } while (true);
         } finally {
             super.removeNode(node);

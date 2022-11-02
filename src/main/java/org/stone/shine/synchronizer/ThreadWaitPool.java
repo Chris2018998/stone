@@ -11,10 +11,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.synchronizer.ThreadNodeState.*;
+import static org.stone.shine.synchronizer.ThreadNodeState.INTERRUPTED;
+import static org.stone.shine.synchronizer.ThreadNodeState.SIGNAL;
 
 /**
  * @author Chris Liao
@@ -207,20 +207,18 @@ public abstract class ThreadWaitPool {
     //****************************************************************************************************************//
     //                                         7: Park methods(2)                                                     //
     //****************************************************************************************************************//
-    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE) throws InterruptedException, TimeoutException {
+    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
         this.parkNodeThread(node, support, throwsIE, SIGNAL);
     }
 
-    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE, Object targetState) throws InterruptedException, TimeoutException {
+    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE, Object targetState) throws InterruptedException {
         if (support.calculateParkTime()) {//before deadline
-            if (support.park() && throwsIE) {
+            if (support.park() && throwsIE) {//interrupted
                 Object state = node.getState();
                 if (state == null) ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED);
                 if (state == targetState || node.getState() == targetState) wakeupOne(node);//exclude current node
                 throw new InterruptedException();
             }
-        } else if (ThreadNodeUpdater.casNodeState(node, null, TIMEOUT)) {//timeout
-            throw new TimeoutException();
         }
     }
 }

@@ -7,12 +7,7 @@
  */
 package org.stone.shine.synchronizer.base;
 
-import org.stone.shine.synchronizer.ThreadNode;
-import org.stone.shine.synchronizer.ThreadNodeState;
-import org.stone.shine.synchronizer.ThreadParkSupport;
-import org.stone.shine.synchronizer.ThreadWaitPool;
-
-import java.util.concurrent.TimeoutException;
+import org.stone.shine.synchronizer.*;
 
 /**
  * wait util SIGNAL wakeup
@@ -22,13 +17,40 @@ import java.util.concurrent.TimeoutException;
  */
 public class SignalWaitPool extends ThreadWaitPool {
 
-    //wait util wakeup or timeout
-    public final void await(ThreadParkSupport support, boolean throwsIE) throws InterruptedException, TimeoutException {
-        await(support, throwsIE, null);
+    /**
+     * add to inner queue and wait util wakeup by other thread with default signal state
+     *
+     * @param throwsIE true,throws InterruptedException when interrupted
+     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
+     */
+    public final boolean await(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+        return await(support, throwsIE, ThreadNodeState.SIGNAL, null);
     }
 
-    //wait util wakeup or timeout
-    public final void await(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException, TimeoutException {
+
+    /**
+     * add to inner queue and wait util wakeup by other thread with expected signal state
+     *
+     * @param support  thread park support
+     * @param throwsIE true,throws InterruptedException when interrupted
+     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
+     */
+    public final boolean await(ThreadParkSupport support, boolean throwsIE, Object expectSignal) throws InterruptedException {
+        return await(support, throwsIE, expectSignal, null);
+    }
+
+    /**
+     * add to inner queue and wait util wakeup by other thread with expect signal state
+     *
+     * @param support   thread park support(@see #ThreadParkSupport)
+     * @param nodeValue a property value in ThreadNode
+     * @param throwsIE  true,throws InterruptedException when interrupted
+     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
+     */
+    public final boolean await(ThreadParkSupport support, boolean throwsIE, Object expectSignal, Object nodeValue) throws InterruptedException {
         //1:create wait node and offer to wait queue
         ThreadNode node = super.appendNewNode(nodeValue);
 
@@ -36,9 +58,19 @@ public class SignalWaitPool extends ThreadWaitPool {
         try {
             do {
                 //2.1:read state
-                if (node.getState() == ThreadNodeState.SIGNAL) return;
-                //2.2: park current thread
-                parkNodeThread(node, support, throwsIE);
+                Object state = node.getState();
+                if (equals(state, expectSignal)) return true;
+
+                if (support.getParkTime() <= 0) {//timeout
+                    //two types(1:null state 2:invalid state,not expected state)
+                    if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
+                } else if (state != null) {//although state value is not null,but is not expect state,so reset to null
+                    node.setState(null);
+                    Thread.yield();
+                } else {
+                    //2.2: park current thread
+                    parkNodeThread(node, support, throwsIE, expectSignal);
+                }
             } while (true);
         } finally {
             super.removeNode(node);
