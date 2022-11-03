@@ -19,4 +19,5 @@ import org.stone.shine.synchronizer.ThreadWaitPool;
  */
 public class TransferWaitPool extends ThreadWaitPool {
 
+
 }

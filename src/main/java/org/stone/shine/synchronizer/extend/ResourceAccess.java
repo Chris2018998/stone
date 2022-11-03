@@ -272,10 +272,12 @@ public final class ResourceAccess extends ResultWaitPool {
         }
 
         public void signal() {
+            if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
             super.wakeupOne();//node wait(step2) in awaitWithSupport
         }
 
         public void signalAll() {
+            if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
             super.wakeupAll();//node wait(step2) in awaitWithSupport
         }
     }
