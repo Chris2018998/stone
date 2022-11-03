@@ -73,7 +73,7 @@ public final class ResourceAccess extends ResultWaitPool {
     //2.4: create a new lock condition
     public Condition newCondition() {
         if (state.get() > 0 && isExclusiveHold)
-            return new LockConditionImpl();
+            return new LockConditionImpl(this);
         else
             throw new IllegalMonitorStateException();
     }
@@ -198,28 +198,43 @@ public final class ResourceAccess extends ResultWaitPool {
     }
 
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
+        private ResourceAccess access;
+
+        LockConditionImpl(ResourceAccess access) {
+            this.access = access;
+        }
 
         public void await() throws InterruptedException {
-            //@todo
+            ThreadParkSupport support = ThreadParkSupport.create(0, false);
+            awaitWithSupport(support, true);
         }
 
         public void awaitUninterruptibly() {
-            //@todo
+            ThreadParkSupport support = ThreadParkSupport.create(0, false);
+            awaitWithSupport(support, false);
         }
 
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
-            //@todo
-            return 0;
+            ThreadParkSupport support = ThreadParkSupport.create(nanosTimeout, false);
+            awaitWithSupport(support, true);
+            return support.getParkTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
-            //@todo
-            return true;
+            ThreadParkSupport support = ThreadParkSupport.create(unit.toNanos(time), false);
+            awaitWithSupport(support, true);
+            return support.isTimeout();
         }
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
-            //@todo
-            return true;
+            ThreadParkSupport support = ThreadParkSupport.create(deadline.getTime(), true);
+            awaitWithSupport(support, true);
+            return support.isTimeout();
+        }
+
+        private void awaitWithSupport(ThreadParkSupport support, boolean throwsIE) {
+            //check lock holder == Thread.currentThread();
+            
         }
 
         public void signal() {

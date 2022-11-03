@@ -67,6 +67,7 @@ public class ThreadParkSupport {
 
     ThreadParkSupport(Object blocker) {
         this.blocker = blocker;
+        this.parkTime = 1;//set for not time park
     }
 
     //****************************************************************************************************************//
@@ -104,6 +105,10 @@ public class ThreadParkSupport {
 
     public long getParkTime() {
         return parkTime;
+    }
+
+    public boolean isTimeout() {
+        return parkTime > 0;
     }
 
     //true,thread can be parked
