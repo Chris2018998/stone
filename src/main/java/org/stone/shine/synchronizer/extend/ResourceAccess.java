@@ -222,14 +222,12 @@ public final class ResourceAccess extends ResultWaitPool {
         }
 
         public void await() throws InterruptedException {
-            ThreadParkSupport support = ThreadParkSupport.create(0, false);
-            this.awaitWithSupport(support, true);
+            this.awaitWithSupport(ThreadParkSupport.create(0, false), true);
         }
 
         public void awaitUninterruptibly() {
             try {
-                ThreadParkSupport support = ThreadParkSupport.create(0, false);
-                this.awaitWithSupport(support, false);
+                this.awaitWithSupport(ThreadParkSupport.create(0, false), false);
             } catch (InterruptedException e) {
                 //in fact,InterruptedException never throws here
             }
