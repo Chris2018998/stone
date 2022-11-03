@@ -24,8 +24,8 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return boolean value,true means wakeup with expect signal state,false,wait timeout
      * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
      */
-    public final boolean await(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        return await(support, throwsIE, null);
+    public final boolean doWait(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+        return doWait(support, throwsIE, null);
     }
 
     /**
@@ -37,7 +37,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return boolean value,true means wakeup with expect signal state,false,wait timeout
      * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
      */
-    public final boolean await(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
+    public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
         //1:create wait node and offer to wait queue
         ThreadNode node = super.appendNewNode(nodeValue);
 

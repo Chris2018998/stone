@@ -7,6 +7,7 @@
  */
 package org.stone.shine.synchronizer.extend;
 
+import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.ResultCall;
 import org.stone.shine.synchronizer.base.ResultWaitPool;
@@ -67,7 +68,7 @@ public final class ResourceAccess extends ResultWaitPool {
 
     //2.3: acquire with exclusive mode
     public boolean acquire(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return acquireByAction(sharableAcquireAction, parker, throwsIE);
+        return acquireByAction(exclusiveAcquireAction, parker, throwsIE);
     }
 
     //2.4: create a new lock condition
@@ -107,6 +108,19 @@ public final class ResourceAccess extends ResultWaitPool {
             return false;
         }
     }
+
+    //for condition acquire(@todo some need optimize <method>parkNodeThread</method>after thread interrupted)
+    private boolean acquireByAction(AcquireAction action, ThreadParkSupport parker, boolean throwsIE, ThreadNode node) throws InterruptedException {
+        try {
+            super.doCall(action, 1, true, parker, throwsIE, node);
+            return true;
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 
     //****************************************************************************************************************//
     //                                          4: monitor methods                                                    //
@@ -206,43 +220,61 @@ public final class ResourceAccess extends ResultWaitPool {
 
         public void await() throws InterruptedException {
             ThreadParkSupport support = ThreadParkSupport.create(0, false);
-            awaitWithSupport(support, true);
+            this.awaitWithSupport(support, true);
         }
 
         public void awaitUninterruptibly() {
-            ThreadParkSupport support = ThreadParkSupport.create(0, false);
-            awaitWithSupport(support, false);
+            try {
+                ThreadParkSupport support = ThreadParkSupport.create(0, false);
+                this.awaitWithSupport(support, false);
+            } catch (InterruptedException e) {
+                //in fact,InterruptedException never throws here
+            }
         }
 
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
             ThreadParkSupport support = ThreadParkSupport.create(nanosTimeout, false);
-            awaitWithSupport(support, true);
+            this.awaitWithSupport(support, true);
             return support.getParkTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
             ThreadParkSupport support = ThreadParkSupport.create(unit.toNanos(time), false);
-            awaitWithSupport(support, true);
+            this.awaitWithSupport(support, true);
             return support.isTimeout();
         }
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             ThreadParkSupport support = ThreadParkSupport.create(deadline.getTime(), true);
-            awaitWithSupport(support, true);
+            this.awaitWithSupport(support, true);
             return support.isTimeout();
         }
 
-        private void awaitWithSupport(ThreadParkSupport support, boolean throwsIE) {
-            //check lock holder == Thread.currentThread();
-            
+        //do wait
+        private void awaitWithSupport(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+            //1:release lock(state==0)
+            this.access.release();//(inside check:thread == hold thread,if not equals then throws IllegalMonitorStateException)
+
+            //2:offer to condition queue and wait for signal from other thread
+            ThreadNode conditionNode = super.createNode();
+            //we dont't care timeout from this,but interrupted then throws InterruptedException
+            super.doWait(support, throwsIE, conditionNode);
+
+            //3:add to syn  wait queue to lock(notify from other)
+            try {
+                ThreadParkSupport acquireSupport = ThreadParkSupport.create(0, false);
+                access.acquireByAction(access.exclusiveAcquireAction, acquireSupport, true, conditionNode);//if failed,not notify wait node in syn queue(@todo.....)
+            } catch (InterruptedException e) {
+                super.wakeupOne();//wake up a condition wait node(why? because the node has got a condition signal)
+            }
         }
 
         public void signal() {
-            //@todo
+            super.wakeupOne();//node wait(step2) in awaitWithSupport
         }
 
         public void signalAll() {
-            //@todo
+            super.wakeupAll();//node wait(step2) in awaitWithSupport
         }
     }
 }
