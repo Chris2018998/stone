@@ -213,6 +213,7 @@ public final class ResourceAccess extends ResultWaitPool {
         }
     }
 
+    //Lock Condition Implementation
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
         private ResourceAccess access;
 
