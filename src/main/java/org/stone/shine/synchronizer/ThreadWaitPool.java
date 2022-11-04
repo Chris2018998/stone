@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * Copyright(C) Chris2018998,All rights reserved.
+ * Copyright(C) Chris2018998(cn),All rights reserved.
  *
  * Project owner contact:Chris2018998@tom.com.
  *
@@ -220,7 +220,7 @@ public abstract class ThreadWaitPool {
         if (support.calculateParkTime()) {//before deadline
             if (support.park() && throwsIE) {//interrupted
                 if (node.getState() == null) {
-                    //try cas state to interrupted,failed means the state has been setted by a wakeup thread
+                    //try cas state to INTERRUPTED,failed means the state has been set by a wakeup thread
                     if (ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED))
                         throw new InterruptedException();
                 }
