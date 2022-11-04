@@ -210,9 +210,13 @@ public abstract class ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                         7: Park methods(1)                                                     //
+    //                                         7: Park methods(2)                                                     //
     //****************************************************************************************************************//
     protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+        parkNodeThread(node, support, throwsIE, true);
+    }
+
+    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
         if (support.calculateParkTime()) {//before deadline
             if (support.park() && throwsIE) {//interrupted
                 if (node.getState() == null) {
@@ -222,7 +226,7 @@ public abstract class ThreadWaitPool {
                 }
 
                 //if not null,then wakeup a waiter in queue
-                if (node.getState() != null) wakeupOne(node);//exclude current node
+                if (node.getState() != null && wakeupOtherOnIE) wakeupOne(node);//exclude current node
                 throw new InterruptedException();
             }
         }
