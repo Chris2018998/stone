@@ -1,9 +1,11 @@
 /*
- * Copyright(C) Chris2018998,All rights reserved
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * Contact:Chris2018998@tom.com
+ * Copyright(C) Chris2018998,All rights reserved.
  *
- * Licensed under GNU Lesser General Public License v2.1
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
  */
 package org.stone.beecp.pool;
 
@@ -190,8 +192,9 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
      * @throws SQLException error occurred in creating connections
      */
     private void createInitConnections(int initSize) throws SQLException {
+        int size = initSize > 0 ? initSize : 1;
+        if (size > 1) this.pooledArrayLock.lock();
         try {
-            int size = initSize > 0 ? initSize : 1;
             for (int i = 0; i < size; i++)
                 this.createPooledConn(CON_IDLE);
         } catch (Throwable e) {
@@ -199,6 +202,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 this.removePooledConn(p, DESC_RM_INIT);
             if (e instanceof TestSQLFailException) throw (TestSQLFailException) e;
             if (initSize > 0) throw e instanceof SQLException ? (SQLException) e : new PoolInternalException(e);
+        } finally {
+            if (size > 1) this.pooledArrayLock.unlock();
         }
     }
 

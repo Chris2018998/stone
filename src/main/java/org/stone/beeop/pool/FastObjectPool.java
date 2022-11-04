@@ -1,9 +1,11 @@
 /*
- * Copyright(C) Chris2018998,All rights reserved
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * Contact:Chris2018998@tom.com
+ * Copyright(C) Chris2018998,All rights reserved.
  *
- * Licensed under GNU Lesser General Public License v2.1
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
  */
 package org.stone.beeop.pool;
 
@@ -174,8 +176,10 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
      * @throws Exception error occurred in creating objects
      */
     private void createInitObjects(int initSize) throws Exception {
+        int size = initSize > 0 ? initSize : 1;
+        if (size > 1) this.pooledArrayLock.lock();
+
         try {
-            int size = initSize > 0 ? initSize : 1;
             for (int i = 0; i < size; i++)
                 this.createPooledEntry(OBJECT_IDLE);
         } catch (Throwable e) {
@@ -187,6 +191,8 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
                 else
                     throw new Exception(e);
             }
+        } finally {
+            if (size > 1) this.pooledArrayLock.unlock();
         }
     }
 
