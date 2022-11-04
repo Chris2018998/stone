@@ -36,15 +36,18 @@ public abstract class ThreadWaitPool {
     }
 
     //wake wait node by iterator
-    private static void wakeup(Iterator<ThreadNode> iterator, Object state, Object equalsValue, boolean justOne, ThreadNode skipNode) {
+    private static int wakeup(Iterator<ThreadNode> iterator, Object state, Object equalsValue, boolean justOne, ThreadNode skipNode) {
+        int count = 0;
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
             if (node == skipNode) continue;
             if (equals(node.getValue(), equalsValue) && ThreadNodeUpdater.casNodeState(node, null, state)) {
                 LockSupport.unpark(node.getThread());
+                count++;
                 if (justOne) break;
             }
         }
+        return count;
     }
 
     //****************************************************************************************************************//
@@ -79,70 +82,70 @@ public abstract class ThreadWaitPool {
     //****************************************************************************************************************//
     //                                          3: Wakeup to default state: SIGNAL(5)                                 //
     //****************************************************************************************************************//
-    public final void wakeupAll() {
-        wakeupAllToState(SIGNAL);
+    public final int wakeupAll() {
+        return wakeupAllToState(SIGNAL);
     }
 
-    public final void wakeupOne() {
-        wakeupOneToState(SIGNAL);
+    public final int wakeupOne() {
+        return wakeupOneToState(SIGNAL);
     }
 
-    public final void wakeupOne(ThreadNode skipNode) {
-        wakeupOneToState(SIGNAL, skipNode);
+    public final int wakeupOne(ThreadNode skipNode) {
+        return wakeupOneToState(SIGNAL, skipNode);
     }
 
-    public final void wakeupOne(boolean fromHead) {
-        wakeupOneToState(SIGNAL, fromHead);
+    public final int wakeupOne(boolean fromHead) {
+        return wakeupOneToState(SIGNAL, fromHead);
     }
 
-    public final void wakeupOne(boolean fromHead, ThreadNode skipNode) {
-        wakeupOneToState(SIGNAL, fromHead, skipNode);
+    public final int wakeupOne(boolean fromHead, ThreadNode skipNode) {
+        return wakeupOneToState(SIGNAL, fromHead, skipNode);
     }
 
     //****************************************************************************************************************//
     //                                          4: Wakeup to specified state(5)                                       //
     //****************************************************************************************************************//
-    public final void wakeupAllToState(Object state) {
-        wakeup(waitQueue.iterator(), state, null, false, null);
+    public final int wakeupAllToState(Object state) {
+        return wakeup(waitQueue.iterator(), state, null, false, null);
     }
 
-    public final void wakeupOneToState(Object state) {
-        wakeup(waitQueue.iterator(), state, null, true, null);
+    public final int wakeupOneToState(Object state) {
+        return wakeup(waitQueue.iterator(), state, null, true, null);
     }
 
-    public final void wakeupOneToState(Object state, ThreadNode skipNode) {
-        wakeup(waitQueue.iterator(), state, null, true, skipNode);
+    public final int wakeupOneToState(Object state, ThreadNode skipNode) {
+        return wakeup(waitQueue.iterator(), state, null, true, skipNode);
     }
 
-    public final void wakeupOneToState(Object state, boolean fromHead) {
-        wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, null, true, null);
+    public final int wakeupOneToState(Object state, boolean fromHead) {
+        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, null, true, null);
     }
 
-    public final void wakeupOneToState(Object state, boolean fromHead, ThreadNode skipNode) {
-        wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, null, true, skipNode);
+    public final int wakeupOneToState(Object state, boolean fromHead, ThreadNode skipNode) {
+        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, null, true, skipNode);
     }
 
     //****************************************************************************************************************//
     //                                          5: Wakeup to state by node value(5)                                   //
     //****************************************************************************************************************//
-    public final void wakeupAllToState(Object state, Object equalsValue) {
-        wakeup(waitQueue.iterator(), equalsValue, state, false, null);
+    public final int wakeupAllToState(Object state, Object equalsValue) {
+        return wakeup(waitQueue.iterator(), equalsValue, state, false, null);
     }
 
-    public final void wakeupOneToState(Object state, Object equalsValue) {
-        wakeup(waitQueue.iterator(), state, equalsValue, true, null);
+    public final int wakeupOneToState(Object state, Object equalsValue) {
+        return wakeup(waitQueue.iterator(), state, equalsValue, true, null);
     }
 
-    public final void wakeupOneToState(Object state, Object equalsValue, ThreadNode skipNode) {
-        wakeup(waitQueue.iterator(), state, equalsValue, true, skipNode);
+    public final int wakeupOneToState(Object state, Object equalsValue, ThreadNode skipNode) {
+        return wakeup(waitQueue.iterator(), state, equalsValue, true, skipNode);
     }
 
-    public final void wakeupOneToState(Object state, Object equalsValue, boolean fromHead) {
-        wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, equalsValue, true, null);
+    public final int wakeupOneToState(Object state, Object equalsValue, boolean fromHead) {
+        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, equalsValue, true, null);
     }
 
-    public final void wakeupOneToState(Object state, Object equalsValue, boolean fromHead, ThreadNode skipNode) {
-        wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, equalsValue, true, skipNode);
+    public final int wakeupOneToState(Object state, Object equalsValue, boolean fromHead, ThreadNode skipNode) {
+        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, equalsValue, true, skipNode);
     }
 
     //****************************************************************************************************************//
