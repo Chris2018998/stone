@@ -58,16 +58,15 @@ public class SignalWaitPool extends ThreadWaitPool {
         //2:spin control
         try {
             do {
-                //2.1:read state
+                //2.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) return true;
 
-                //here:null state
                 if (support.getParkTime() <= 0) {//timeout
-                    //two types(1:null state 2:invalid state,not expected state)
+                    //2.2: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return false;
                 } else {
-                    //2.2: park current thread
+                    //2.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
                     parkNodeThread(node, support, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
@@ -75,5 +74,4 @@ public class SignalWaitPool extends ThreadWaitPool {
             super.removeNode(node);
         }
     }
-
 }

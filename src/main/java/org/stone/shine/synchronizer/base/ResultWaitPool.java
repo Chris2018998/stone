@@ -9,9 +9,7 @@
  */
 package org.stone.shine.synchronizer.base;
 
-import org.stone.shine.synchronizer.ThreadNode;
-import org.stone.shine.synchronizer.ThreadParkSupport;
-import org.stone.shine.synchronizer.ThreadWaitPool;
+import org.stone.shine.synchronizer.*;
 
 /**
  * get result from call and compare with expected value,if true,then leave from pool
@@ -81,15 +79,25 @@ public class ResultWaitPool extends ThreadWaitPool {
         //3:spin control
         try {
             do {
-                //3.1:execute resultCall
-                if (equals(call.call(arg), expect)) return true;
-                if (node.getState() != null) {//any not null value regard as wakeup signal
-                    node.setState(null);
-                    Thread.yield();
-                }
+                //3.1: read node state
+                Object state = node.getState();
 
-                //3.2:park current thread
-                parkNodeThread(node, support, throwsIE);
+                //3.2:got a signal,then try to execute call
+                if (state != null && equals(call.call(arg), expect)) return true;
+
+                //3.3:test park time is whether timeout
+                if (support.getParkTime() <= 0) {//timeout
+                    //3.4: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
+                    if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
+                } else {//not timeout,need park
+                    if (state != null) {//3.5: reach here means not got expected value from call,then rest to continue waiting
+                        node.setState(null);
+                        Thread.yield();
+                    }
+
+                    //3.6: park current thread(if interrupted then transfer the got state value to another waiter)
+                    parkNodeThread(node, support, throwsIE, true);
+                }
             } while (true);
         } finally {
             super.removeNode(node);
