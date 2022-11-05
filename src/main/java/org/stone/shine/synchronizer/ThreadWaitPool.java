@@ -222,7 +222,7 @@ public abstract class ThreadWaitPool {
         if (support.calculateParkTime()) {//before deadline
             if (support.park() && throwsIE) {//interrupted
                 if (node.getState() == null) {
-                    //try to cas state to INTERRUPTED,if failed,will reach step2
+                    //step1:try to cas state to INTERRUPTED,if failed,the step2 can be reach
                     if (ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED))
                         throw new InterruptedException();
                 }
