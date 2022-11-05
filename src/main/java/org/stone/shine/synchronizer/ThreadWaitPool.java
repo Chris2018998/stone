@@ -230,7 +230,7 @@ public abstract class ThreadWaitPool {
                 //step2:send signal state to other when got
                 Object state = node.getState();
                 if (state != null && wakeupOtherOnIE)
-                    wakeupOneToState(state, node);//send the signal state to another waiter(skip over the current node during wakeup iterator)
+                    wakeupOneToState(state, node);//send the got signal state to another waiter(skip over the current node during wakeup iterator)
                 throw new InterruptedException();
             }
         }
