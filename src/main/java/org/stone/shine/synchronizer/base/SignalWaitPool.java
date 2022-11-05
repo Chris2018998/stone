@@ -12,7 +12,7 @@ package org.stone.shine.synchronizer.base;
 import org.stone.shine.synchronizer.*;
 
 /**
- * Signal Wait Pool,caller expect getting  a signal,if not,then wait for it util timeout
+ * Signal Wait Pool,caller expect to get a signal from pool,if not get,then wait for it util timeout
  *
  * @author Chris Liao
  * @version 1.0
