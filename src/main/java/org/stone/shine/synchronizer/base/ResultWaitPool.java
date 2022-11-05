@@ -82,7 +82,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 //3.1: read node state
                 Object state = node.getState();
 
-                //3.2:got a signal,then try to execute call
+                //3.2:if got a signal then execute call
                 if (state != null && equals(call.call(arg), expect)) return true;
 
                 //3.3:test park time is whether timeout
