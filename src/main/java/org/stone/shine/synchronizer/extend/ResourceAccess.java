@@ -29,20 +29,25 @@ import java.util.concurrent.locks.Condition;
  */
 
 public final class ResourceAccess extends ResultWaitPool {
+    //Exclusive(set as acquire type of wait node)
+    private static final Object Exclusive = new Object();
+    //Sharable(set as acquire type of wait node)
+    private static final Object Sharable = new Object();
+
+    //sharable acquire action(a plugin used in result wait pool)
+    private final AcquireAction sharableAcquireAction = new SharableAcquireAction();
+    //exclusive acquire action(a plugin used in result wait pool)
+    private final AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
     //reentrant count atomic(total count)
     private final AtomicInteger state = new AtomicInteger(0);//0 - no hold
     //thread local hold count(reentrant)
     private final ThreadLocal<HoldCounter> threadHoldTrace = new HoldThreadLocal();
 
-    //sharable acquire action(a plugin used in result wait pool)
-    private AcquireAction sharableAcquireAction = new SharableAcquireAction();
-    //exclusive acquire action(a plugin used in result wait pool)
-    private AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
-
     //current hold type
-    private boolean isExclusiveHold;
+    private Object currentHoldType;
     //hold thread(exclusive thread or sharable first thread)
     private Thread currentHoldThread;
+
 
     //****************************************************************************************************************//
     //                                          1: Constructor(2)                                                     //
@@ -75,9 +80,10 @@ public final class ResourceAccess extends ResultWaitPool {
 
     //2.4: create a new lock condition
     public Condition newCondition() {
-        if (state.get() > 0 && isExclusiveHold)
+        if (currentHoldType == Exclusive && state.get() > 0) {
+            if (!this.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
             return new LockConditionImpl(this);
-        else
+        } else
             throw new IllegalMonitorStateException();
     }
 
@@ -137,18 +143,18 @@ public final class ResourceAccess extends ResultWaitPool {
 
     //true,if hold with exclusive mode by current thread
     public boolean isExclusiveHeldByCurrentThread() {
-        return isExclusiveHold && currentHoldThread == Thread.currentThread();
+        return currentHoldType == Exclusive && currentHoldThread == Thread.currentThread();
     }
 
     //true,if hold with shared mode by current thread
     public boolean isSharedHeldByCurrentThread() {
         HoldCounter holdInfo = threadHoldTrace.get();
-        return !isExclusiveHold && holdInfo != null && holdInfo.holdCount > 0;
+        return !isExclusiveHeldByCurrentThread() && holdInfo != null && holdInfo.holdCount > 0;
     }
 
     //true,if hold by current thread
     public boolean isHeldByCurrentThread() {
-        if (isExclusiveHold) {
+        if (isExclusiveHeldByCurrentThread()) {
             return currentHoldThread == Thread.currentThread();
         } else {
             HoldCounter holdInfo = threadHoldTrace.get();
@@ -158,7 +164,7 @@ public final class ResourceAccess extends ResultWaitPool {
 
     //return current thread hold count(reentrant)
     public int getHoldCountByCurrentThread() {
-        if (isExclusiveHold) {
+        if (isExclusiveHeldByCurrentThread()) {
             return state.get();
         } else {
             HoldCounter holdInfo = threadHoldTrace.get();
