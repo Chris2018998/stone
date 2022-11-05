@@ -12,7 +12,7 @@ package org.stone.shine.synchronizer.base;
 import org.stone.shine.synchronizer.*;
 
 /**
- * wait util wakeup
+ * Signal Wait Pool,caller expect getting  a signal,if not,then wait for it util timeout
  *
  * @author Chris Liao
  * @version 1.0
@@ -20,26 +20,38 @@ import org.stone.shine.synchronizer.*;
 public class SignalWaitPool extends ThreadWaitPool {
 
     /**
-     * add to inner queue and wait util wakeup by other thread with default signal state
+     * caller expect getting a signal,if not get,then wait until signal wakeup or wait timeout.
      *
-     * @param throwsIE true,throws InterruptedException when interrupted
-     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
-     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
+     * @param throwsIE true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
+     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
+     * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        return doWait(support, throwsIE, null);
+        return doWait(support, throwsIE, null, true);
     }
 
     /**
-     * add to inner queue and wait util wakeup by other thread with expect signal state
+     * caller expect getting a signal,if not get,then wait until signal wakeup or wait timeout.
      *
-     * @param support   thread park support(@see #ThreadParkSupport)
-     * @param nodeValue a property value in ThreadNode
-     * @param throwsIE  true,throws InterruptedException when interrupted
-     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
-     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
+     * @param throwsIE  true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
+     * @param nodeValue a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
+     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
+     * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
+        return doWait(support, throwsIE, nodeValue, true);
+    }
+
+    /**
+     * caller expect getting a signal,if not get,then wait until signal wakeup or wait timeout.
+     *
+     * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
+     * @param nodeValue       a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
+     * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
+     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
+     * @throws InterruptedException caller waiting interrupted,then throws it
+     */
+    public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws InterruptedException {
         //1:create wait node and offer to wait queue
         ThreadNode node = super.appendNewNode(nodeValue);
 
@@ -56,11 +68,12 @@ public class SignalWaitPool extends ThreadWaitPool {
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return false;
                 } else {
                     //2.2: park current thread
-                    parkNodeThread(node, support, throwsIE);
+                    parkNodeThread(node, support, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
         } finally {
             super.removeNode(node);
         }
     }
+
 }

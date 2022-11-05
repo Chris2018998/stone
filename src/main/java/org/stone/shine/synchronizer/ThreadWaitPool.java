@@ -222,13 +222,15 @@ public abstract class ThreadWaitPool {
         if (support.calculateParkTime()) {//before deadline
             if (support.park() && throwsIE) {//interrupted
                 if (node.getState() == null) {
-                    //try cas state to INTERRUPTED,failed means the state has been set by a wakeup thread
+                    //try to cas state to INTERRUPTED,if failed,will reach step2
                     if (ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED))
                         throw new InterruptedException();
                 }
 
-                //if not null,then wakeup a waiter in queue
-                if (node.getState() != null && wakeupOtherOnIE) wakeupOne(node);//exclude current node
+                //step2:send signal state to other when got
+                Object state = node.getState();
+                if (state != null && wakeupOtherOnIE)
+                    wakeupOneToState(state, node);//send the signal state to another waiter(skip over the current node during wakeup iterator)
                 throw new InterruptedException();
             }
         }

@@ -10,7 +10,7 @@
 package org.stone.shine.synchronizer.base;
 
 /**
- * Object work as a plugin class to @link{ResultWaitPool}
+ * Object work as a plugin of class {@link ResultWaitPool}
  *
  * @author Chris Liao
  * @version 1.0
