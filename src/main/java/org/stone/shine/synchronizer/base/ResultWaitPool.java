@@ -89,7 +89,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 if (support.getParkTime() <= 0) {//timeout
                     //3.4: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
-                } else {//not timeout,need park
+                } else {//not timeout then park
                     if (state != null) {//3.5: reach here means not got expected value from call,then rest to continue waiting
                         node.setState(null);
                         Thread.yield();
