@@ -25,7 +25,7 @@ public class TransferWaitPool extends ThreadWaitPool {
     }
 
     /**
-     * get an transferred object from pool
+     * try to get an transferred object from pool
      *
      * @param throwsIE true,throws InterruptedException when interrupted
      * @return boolean value,true means wakeup with expect signal state,false,wait timeout

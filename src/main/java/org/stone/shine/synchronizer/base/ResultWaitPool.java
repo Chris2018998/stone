@@ -12,7 +12,8 @@ package org.stone.shine.synchronizer.base;
 import org.stone.shine.synchronizer.*;
 
 /**
- * get result from call and compare with expected value,if true,then leave from pool
+ * Result call executed inside pool and compare result of call with expected parameter,if equals,return true
+ * and leave from pool,not equals,then join in wait queue util wakeup from other and execute call again and compare.
  *
  * @author Chris Liao
  * @version 1.0
@@ -40,20 +41,34 @@ public class ResultWaitPool extends ThreadWaitPool {
     //****************************************************************************************************************//
 
     /**
-     * execute result call
+     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
+     * method return true,not equals that wait timeout and return false.
      *
-     * @param call     plugin call action
-     * @param arg      call arguments
+     * @param call     executed in pool to get result
+     * @param arg      call argument
      * @param expect   compare to the call result
      * @param support  thread park support
      * @param throwsIE true,throws InterruptedException when interrupted
-     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @return true, call result equals to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE) throws Exception {
         return doCall(call, arg, expect, support, throwsIE, null);
     }
 
+    /**
+     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
+     * method return true,not equals that wait timeout and return false.
+     *
+     * @param call      executed in pool to get result
+     * @param arg       call argument
+     * @param expect    compare to the call result
+     * @param support   thread park support
+     * @param throwsIE  true,throws InterruptedException when interrupted
+     * @param nodeValue property of wait node
+     * @return true, call result equals to the expect parameter,false wait timeout in pool
+     * @throws Exception exception from call or InterruptedException after thread park
+     */
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
@@ -67,7 +82,19 @@ public class ResultWaitPool extends ThreadWaitPool {
         return doCallByNode(call, arg, expect, support, throwsIE, createNode(nodeValue));
     }
 
-    //do resultCall with node(used in lock-condition queue?)
+    /**
+     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
+     * method return true,not equals that wait timeout and return false.
+     *
+     * @param call     executed in pool to get result
+     * @param arg      call argument
+     * @param expect   compare to the call result
+     * @param support  thread park support
+     * @param throwsIE true,throws InterruptedException when interrupted
+     * @param node     preCreated wait node(for example: nodes wait in lock condition queue,at finally,them need removed and offered to syn queue to get lock)
+     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @throws Exception exception from call or InterruptedException after thread park
+     */
     public final boolean doCallByNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
