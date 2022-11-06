@@ -34,9 +34,9 @@ public final class ResourceAccess extends ResultWaitPool {
     //Sharable acquisition type(set to wait node value)
     private static final Object Sharable = new Object();
 
-    //sharable acquire action(drove in result wait pool to get access permit)
+    //sharable acquire action(drove by result wait pool)
     private static final AcquireAction sharableAcquireAction = new SharableAcquireAction();
-    //exclusive acquire action(drove in result wait pool)
+    //exclusive acquire action(drove by result wait pool)
     private static final AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
 
     //access permit hold state(0:not held,1:first held,greater than 1:reentrant count)
