@@ -69,12 +69,12 @@ public final class ResourceAccess extends ResultWaitPool {
         exclusiveAcquireAction.release();
     }
 
-    //2.2:try to acquire as exclusive permit
+    //2.2:try to acquire as exclusive permit(@todo need add reentrant logic before call exclusiveAcquireAction)
     public boolean tryAcquire() {
         return exclusiveAcquireAction.tryAcquire();
     }
 
-    //2.3: acquire with exclusive mode
+    //2.3: acquire with exclusive mode(@todo need add reentrant logic before call acquireByAction method)
     public boolean acquire(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
         return acquireByAction(exclusiveAcquireAction, parker, throwsIE, Exclusive);
     }
@@ -117,12 +117,12 @@ public final class ResourceAccess extends ResultWaitPool {
         sharableAcquireAction.release();
     }
 
-    //3.2:try to acquire with sharable mode
+    //3.2:try to acquire with sharable mode(@todo need add reentrant logic before call sharableAcquireAction)
     public boolean tryAcquireShared() {
         return sharableAcquireAction.tryAcquire();
     }
 
-    //3.3: acquire with sharable mode
+    //3.3: acquire with sharable mode(@todo need add reentrant logic before call acquireByAction method)
     public boolean acquireShared(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
         return acquireByAction(sharableAcquireAction, parker, throwsIE, Sharable);
     }
@@ -225,12 +225,12 @@ public final class ResourceAccess extends ResultWaitPool {
         }
 
         public void await() throws InterruptedException {
-            this.await(ThreadParkSupport.create(0, false), true);
+            this.doAwait(ThreadParkSupport.create(0, false), true);
         }
 
         public void awaitUninterruptibly() {
             try {
-                this.await(ThreadParkSupport.create(0, false), false);
+                this.doAwait(ThreadParkSupport.create(0, false), false);
             } catch (InterruptedException e) {
                 //in fact,InterruptedException never throws here
             }
@@ -238,26 +238,26 @@ public final class ResourceAccess extends ResultWaitPool {
 
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
             ThreadParkSupport support = ThreadParkSupport.create(nanosTimeout, false);
-            this.await(support, true);
+            this.doAwait(support, true);
             return support.getParkTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
             if (unit == null) throw new IllegalArgumentException("time unit can't be null");
             ThreadParkSupport support = ThreadParkSupport.create(unit.toNanos(time), false);
-            this.await(support, true);
+            this.doAwait(support, true);
             return support.isTimeout();
         }
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
             ThreadParkSupport support = ThreadParkSupport.create(deadline.getTime(), true);
-            this.await(support, true);
+            this.doAwait(support, true);
             return support.isTimeout();
         }
 
-        //do wait
-        private void await(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+        //do await
+        private void doAwait(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
             //1:release the single permit under exclusive mode to pool
             this.access.release();
 
@@ -287,12 +287,12 @@ public final class ResourceAccess extends ResultWaitPool {
 
         public void signal() {
             if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            super.wakeupOne();//node wait(step2) in awaitWithSupport
+            super.wakeupOne();//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
             if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            super.wakeupAll();//node wait(step2) in awaitWithSupport
+            super.wakeupAll();//node wait(step2) in the doAwait method
         }
     }
 }
