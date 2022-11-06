@@ -27,7 +27,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        return doWait(support, throwsIE, null, true);
+        return doWait(support, throwsIE, super.createNode(null), true);
     }
 
     /**
@@ -39,7 +39,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
-        return doWait(support, throwsIE, nodeValue, true);
+        return doWait(support, throwsIE, super.createNode(nodeValue), true);
     }
 
     /**
