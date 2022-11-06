@@ -62,8 +62,9 @@ public class SignalWaitPool extends ThreadWaitPool {
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) return true;
 
-                if (support.getParkTime() <= 0) {//timeout
-                    //2.2: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
+                //2.2: timeout test
+                if (support.isTimeout()) {
+                    //2.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return false;
                 } else {
                     //2.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)

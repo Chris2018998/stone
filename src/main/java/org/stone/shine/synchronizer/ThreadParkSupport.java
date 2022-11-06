@@ -57,7 +57,7 @@ import java.util.concurrent.locks.LockSupport;
 public class ThreadParkSupport {
     private static final long spinForTimeoutThreshold = 1000L;
     protected long deadline;
-    protected long parkTime;//timeout check: this value less than zero or equals zero
+    protected long parkTime = 1L;//a dummy value for no time-park;this value less than zero or equals zero means timeout
     protected Object blocker;
     protected boolean interrupted;
 
@@ -69,7 +69,6 @@ public class ThreadParkSupport {
 
     ThreadParkSupport(Object blocker) {
         this.blocker = blocker;
-        this.parkTime = 1;//set dummy value for park(),which means never timeout
     }
 
     //****************************************************************************************************************//
@@ -110,7 +109,7 @@ public class ThreadParkSupport {
     }
 
     public boolean isTimeout() {
-        return parkTime > 0;
+        return parkTime <= 0;
     }
 
     //true,thread can be parked

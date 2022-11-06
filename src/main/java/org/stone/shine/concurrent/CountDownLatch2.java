@@ -46,7 +46,7 @@ public final class CountDownLatch2 implements ResultCall {
     //wait without parkTime
     public void await() throws InterruptedException {
         try {
-            waitPool.doCall(this, null, true, ThreadParkSupport.create(0, false), true);
+            waitPool.doCall(this, null, Boolean.TRUE, ThreadParkSupport.create(0, false), true);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -59,7 +59,7 @@ public final class CountDownLatch2 implements ResultCall {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
 
         try {
-            waitPool.doCall(this, null, true, ThreadParkSupport.create(unit.toNanos(timeout), false), true);
+            waitPool.doCall(this, null, Boolean.TRUE, ThreadParkSupport.create(unit.toNanos(timeout), false), true);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -77,7 +77,7 @@ public final class CountDownLatch2 implements ResultCall {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) waitPool.wakeupAll();//the last item end,then notify all watchers to leave
+                if (c == 1) waitPool.wakeupAll();//the last item over,then notify all waiters(threads)to leave
                 return;
             }
         } while (true);

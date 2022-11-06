@@ -42,8 +42,9 @@ public class TransferWaitPool extends ThreadWaitPool {
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) return state;
 
-                if (support.getParkTime() <= 0) {//timeout
-                    //2.2: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
+                //2.2: timeout test
+                if (support.isTimeout()) {
+                    //2.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return null;
                 } else {
                     //2.3: park current thread(if interrupted then transfer the got state value to another waiter)
