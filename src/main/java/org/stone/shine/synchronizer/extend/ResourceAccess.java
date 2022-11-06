@@ -130,47 +130,46 @@ public final class ResourceAccess extends ResultWaitPool {
         }
     }
 
-
     //****************************************************************************************************************//
-    //                                          4: monitor methods                                                    //
+    //                                          4: monitor methods(8)                                                 //
     //****************************************************************************************************************//
     public boolean isHeld() {
         return state.get() > 0;
     }
 
+    public boolean isExclusiveHeld() {
+        return currentHoldType == Exclusive && state.get() > 0;
+    }
+
+    public boolean isSharableHeld() {
+        return currentHoldType == Sharable && state.get() > 0;
+    }
 
     public Thread getHeldThread() {
         return this.currentHoldThread;
     }
 
-    //true,if hold with exclusive mode by current thread
-    public boolean isExclusiveHeldByCurrentThread() {
-        return currentHoldType == Exclusive && currentHoldThread == Thread.currentThread();
-    }
-
-    //true,if hold with shared mode by current thread
-    public boolean isSharedHeldByCurrentThread() {
-        HoldCounter holdInfo = sharableHoldInfo.get();
-        return !isExclusiveHeldByCurrentThread() && holdInfo != null && holdInfo.holdCount > 0;
-    }
-
-    //true,if hold by current thread
     public boolean isHeldByCurrentThread() {
-        if (isExclusiveHeldByCurrentThread()) {
-            return currentHoldThread == Thread.currentThread();
-        } else {
-            HoldCounter holdInfo = sharableHoldInfo.get();
-            return holdInfo != null && holdInfo.holdCount > 0;
-        }
+        return isExclusiveHeldByCurrentThread() || isSharableHeldByCurrentThread();
     }
 
-    //return current thread hold count(reentrant)
+    public boolean isExclusiveHeldByCurrentThread() {
+        return isExclusiveHeld() && currentHoldThread == Thread.currentThread();
+    }
+
+    public boolean isSharableHeldByCurrentThread() {
+        HoldCounter holdInfo = sharableHoldInfo.get();
+        return isSharableHeld() && holdInfo != null && holdInfo.holdCount > 0;
+    }
+
     public int getHoldCountByCurrentThread() {
         if (isExclusiveHeldByCurrentThread()) {
             return state.get();
-        } else {
+        } else if (isSharableHeldByCurrentThread()) {
             HoldCounter holdInfo = sharableHoldInfo.get();
             return holdInfo != null ? holdInfo.holdCount : 0;
+        } else {
+            return 0;
         }
     }
 
