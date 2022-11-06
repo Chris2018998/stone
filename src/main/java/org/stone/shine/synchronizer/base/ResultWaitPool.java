@@ -79,7 +79,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         } else if (equals(call.call(arg), expect)) return true;
 
         //3:call inner method
-        return doCallByNode(call, arg, expect, support, throwsIE, createNode(nodeValue));
+        return doCallForNode(call, arg, expect, support, throwsIE, createNode(nodeValue), true);
     }
 
     /**
@@ -95,7 +95,25 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
-    public final boolean doCallByNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws Exception {
+    public final boolean doCallForNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws Exception {
+        return doCallForNode(call, arg, expect, support, throwsIE, node, true);
+    }
+
+    /**
+     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
+     * method return true,not equals that wait timeout and return false.
+     *
+     * @param call            executed in pool to get result
+     * @param arg             call argument
+     * @param expect          compare to the call result
+     * @param support         thread park support
+     * @param throwsIE        true,throws InterruptedException when interrupted
+     * @param node            preCreated wait node(for example: nodes wait in lock condition queue,at finally,them need removed and offered to syn queue to get lock)
+     * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
+     * @return true, call result equaled to the expect parameter,false wait timeout in pool
+     * @throws Exception exception from call or InterruptedException after thread park
+     */
+    public final boolean doCallForNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
         if (node == null) throw new IllegalArgumentException("wait node can't be null");
@@ -114,6 +132,7 @@ public class ResultWaitPool extends ThreadWaitPool {
 
                 //3.3: timeout test
                 if (support.isTimeout()) {
+                    System.out.println("...isTimeout...");
                     //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
@@ -122,7 +141,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                     //jump to next read
                 } else {//here: state == null
                     //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
-                    parkNodeThread(node, support, throwsIE, true);
+                    parkNodeThread(node, support, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
         } finally {

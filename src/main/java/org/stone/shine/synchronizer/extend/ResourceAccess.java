@@ -64,28 +64,49 @@ public final class ResourceAccess extends ResultWaitPool {
     //****************************************************************************************************************//
     //                                          2: acquire/release(4)                                                 //
     //****************************************************************************************************************//
-    //2.1:release with exclusive mode
+    //2.1:release exclusive permit to pool
     public void release() {
         exclusiveAcquireAction.release();
     }
 
-    //2.2:try to acquire with exclusive mode
+    //2.2:try to acquire as exclusive permit
     public boolean tryAcquire() {
         return exclusiveAcquireAction.tryAcquire();
     }
 
     //2.3: acquire with exclusive mode
     public boolean acquire(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return acquireByAction(exclusiveAcquireAction, parker, throwsIE);
+        return acquireByAction(exclusiveAcquireAction, parker, throwsIE, Exclusive);
     }
 
-    //2.4: create a new lock condition
+    //2.4: create a new lock condition(just support exclusive mode)
     public Condition newCondition() {
-        if (currentHoldType == Exclusive && state.get() > 0) {
-            if (!this.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
+        if (this.isExclusiveHeldByCurrentThread())
             return new LockConditionImpl(this);
-        } else
+        else
             throw new IllegalMonitorStateException();
+    }
+
+    //2.5: acquire as exclusive permit for condition node
+    private void acquireForConditionNode(ThreadParkSupport support, ThreadNode conditionNode) {
+        try {
+            super.doCallForNode(exclusiveAcquireAction, 1, true, support, false, conditionNode, false);
+        } catch (Exception e) {
+            //do nothing
+        }
+    }
+
+    //2.6: acquisition core drove method by result wait pool
+    private boolean acquireByAction(AcquireAction action, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
+        try {
+            return super.doCall(action, 1, true, support, throwsIE, acquisitionType);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            //this exception caught just fit super's method invocation
+            //in fact,only InterruptedException can be thrown out,so return false;
+            return false;
+        }
     }
 
     //****************************************************************************************************************//
@@ -103,31 +124,7 @@ public final class ResourceAccess extends ResultWaitPool {
 
     //3.3: acquire with sharable mode
     public boolean acquireShared(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return acquireByAction(sharableAcquireAction, parker, throwsIE);
-    }
-
-    //3.4: acquire implementation method by acquire action
-    private boolean acquireByAction(AcquireAction action, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        try {
-            super.doCall(action, 1, true, parker, throwsIE);
-            return true;
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    //for condition acquire(@todo some need optimize <method>parkNodeThread</method>after thread interrupted)
-    private boolean acquireByAction(AcquireAction action, ThreadParkSupport parker, boolean throwsIE, ThreadNode node) throws InterruptedException {
-        try {
-            super.doCall(action, 1, true, parker, throwsIE, node);
-            return true;
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            return false;
-        }
+        return acquireByAction(sharableAcquireAction, parker, throwsIE, Sharable);
     }
 
     //****************************************************************************************************************//
@@ -180,7 +177,6 @@ public final class ResourceAccess extends ResultWaitPool {
         private int holdCount = 0;
     }
 
-    //sharable hold ThreadLocal
     private static class HoldThreadLocal extends ThreadLocal<HoldCounter> {
         protected HoldCounter initialValue() {
             return new HoldCounter();
@@ -229,12 +225,12 @@ public final class ResourceAccess extends ResultWaitPool {
         }
 
         public void await() throws InterruptedException {
-            this.awaitWithSupport(ThreadParkSupport.create(0, false), true);
+            this.await(ThreadParkSupport.create(0, false), true);
         }
 
         public void awaitUninterruptibly() {
             try {
-                this.awaitWithSupport(ThreadParkSupport.create(0, false), false);
+                this.await(ThreadParkSupport.create(0, false), false);
             } catch (InterruptedException e) {
                 //in fact,InterruptedException never throws here
             }
@@ -242,39 +238,51 @@ public final class ResourceAccess extends ResultWaitPool {
 
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
             ThreadParkSupport support = ThreadParkSupport.create(nanosTimeout, false);
-            this.awaitWithSupport(support, true);
+            this.await(support, true);
             return support.getParkTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
+            if (unit == null) throw new IllegalArgumentException("time unit can't be null");
             ThreadParkSupport support = ThreadParkSupport.create(unit.toNanos(time), false);
-            this.awaitWithSupport(support, true);
+            this.await(support, true);
             return support.isTimeout();
         }
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
+            if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
             ThreadParkSupport support = ThreadParkSupport.create(deadline.getTime(), true);
-            this.awaitWithSupport(support, true);
+            this.await(support, true);
             return support.isTimeout();
         }
 
         //do wait
-        private void awaitWithSupport(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-            //1:release lock(state==0)
-            this.access.release();//(inside check:thread == hold thread,if not equals then throws IllegalMonitorStateException)
+        private void await(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+            //1:release the single permit under exclusive mode to pool
+            this.access.release();
 
-            //2:offer to condition queue and wait for signal from other thread
-            ThreadNode conditionNode = super.createNode();
-            //we dont't care timeout from this,but interrupted then throws InterruptedException
-            super.doWait(support, throwsIE, conditionNode);
-
-            //3:add to syn  wait queue to lock(notify from other)
+            //2:join in the condition queue and wait a wakeup-signal from other
+            InterruptedException waitInterruptedException = null;
+            ThreadNode conditionNode = super.createNode(Exclusive);//condition just support Exclusive mode
             try {
-                ThreadParkSupport acquireSupport = ThreadParkSupport.create(0, false);
-                access.acquireByAction(exclusiveAcquireAction, acquireSupport, true, conditionNode);//if failed,not notify wait node in syn queue(@todo.....)
+                //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
+                super.doWait(support, throwsIE, conditionNode, false);
             } catch (InterruptedException e) {
-                super.wakeupOne();//wake up a condition wait node(why? because the node has got a condition signal)
+                waitInterruptedException = e;
             }
+
+            //3:reacquire the single permit with exclusive mode and ignore interruption(must get success)
+            conditionNode.setState(null);//reset to null(need filled by other)
+            access.acquireForConditionNode(ThreadParkSupport.create(0, false), conditionNode);
+
+            //4:throw occurred interrupt exception on condition wait
+            if (waitInterruptedException != null) throw waitInterruptedException;
+
+            /**
+             * my individual view:throw InterruptedException may be a better schema at step2 (different to professor Doug Lea)
+             * 1: not need't join in syn queue to get lock
+             * 2: it add chance to take the lock for other threads
+             */
         }
 
         public void signal() {

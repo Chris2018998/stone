@@ -52,8 +52,21 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws InterruptedException {
+        return doWait(support, throwsIE, super.createNode(nodeValue), wakeupOtherOnIE);
+    }
+
+    /**
+     * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
+     *
+     * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
+     * @param node            preCreated thread wait node
+     * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
+     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
+     * @throws InterruptedException caller waiting interrupted,then throws it
+     */
+    public final boolean doWait(ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         //1:create wait node and offer to wait queue
-        ThreadNode node = super.appendNewNode(nodeValue);
+        super.appendNode(node);
 
         //2:spin control
         try {
