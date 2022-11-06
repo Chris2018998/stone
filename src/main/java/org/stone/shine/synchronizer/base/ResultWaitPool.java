@@ -49,7 +49,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param expect   compare to the call result
      * @param support  thread park support
      * @param throwsIE true,throws InterruptedException when interrupted
-     * @return true, call result equals to the expect parameter,false wait timeout in pool
+     * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE) throws Exception {
@@ -66,7 +66,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param support   thread park support
      * @param throwsIE  true,throws InterruptedException when interrupted
      * @param nodeValue property of wait node
-     * @return true, call result equals to the expect parameter,false wait timeout in pool
+     * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws Exception {
@@ -92,7 +92,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param support  thread park support
      * @param throwsIE true,throws InterruptedException when interrupted
      * @param node     preCreated wait node(for example: nodes wait in lock condition queue,at finally,them need removed and offered to syn queue to get lock)
-     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
+     * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final boolean doCallByNode(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws Exception {

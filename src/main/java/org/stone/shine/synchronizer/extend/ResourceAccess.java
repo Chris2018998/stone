@@ -22,32 +22,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 
 /**
- * A resource access synchronizer implementation
+ * A resource access synchronizer implementation,whose instance can be regards as single permit.
  *
  * @author Chris Liao
  * @version 1.0
  */
 
 public final class ResourceAccess extends ResultWaitPool {
-    //Exclusive(set as acquire type of wait node)
+    //Exclusive acquisition type(set to wait node value)
     private static final Object Exclusive = new Object();
-    //Sharable(set as acquire type of wait node)
+    //Sharable acquisition type(set to wait node value)
     private static final Object Sharable = new Object();
 
-    //sharable acquire action(a plugin used in result wait pool)
-    private final AcquireAction sharableAcquireAction = new SharableAcquireAction();
-    //exclusive acquire action(a plugin used in result wait pool)
-    private final AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
-    //reentrant count atomic(total count)
-    private final AtomicInteger state = new AtomicInteger(0);//0 - no hold
-    //thread local hold count(reentrant)
-    private final ThreadLocal<HoldCounter> threadHoldTrace = new HoldThreadLocal();
+    //sharable acquire action(drove in result wait pool to get access permit)
+    private static final AcquireAction sharableAcquireAction = new SharableAcquireAction();
+    //exclusive acquire action(drove in result wait pool)
+    private static final AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
 
-    //current hold type
+    //access permit hold state(0:not held,1:first held,greater than 1:reentrant count)
+    //reentrant:hold count of an exclusive thread,or total hold count of all threads under sharable hold mode
+    private final AtomicInteger state = new AtomicInteger(0);
+    //trace sharable hold count of access threads(support reentrant of a thread in sharable hold mode)
+    private final ThreadLocal<HoldCounter> sharableHoldInfo = new HoldThreadLocal();
+
+    //current hold type(Exclusive or Sharable,@see static definition,first row and second row in this file body)
     private Object currentHoldType;
-    //hold thread(exclusive thread or sharable first thread)
+    //hold thread(an exclusive thread or first thread success acquired under sharable mode)
     private Thread currentHoldThread;
-
 
     //****************************************************************************************************************//
     //                                          1: Constructor(2)                                                     //
@@ -137,6 +138,7 @@ public final class ResourceAccess extends ResultWaitPool {
         return state.get() > 0;
     }
 
+
     public Thread getHeldThread() {
         return this.currentHoldThread;
     }
@@ -148,7 +150,7 @@ public final class ResourceAccess extends ResultWaitPool {
 
     //true,if hold with shared mode by current thread
     public boolean isSharedHeldByCurrentThread() {
-        HoldCounter holdInfo = threadHoldTrace.get();
+        HoldCounter holdInfo = sharableHoldInfo.get();
         return !isExclusiveHeldByCurrentThread() && holdInfo != null && holdInfo.holdCount > 0;
     }
 
@@ -157,7 +159,7 @@ public final class ResourceAccess extends ResultWaitPool {
         if (isExclusiveHeldByCurrentThread()) {
             return currentHoldThread == Thread.currentThread();
         } else {
-            HoldCounter holdInfo = threadHoldTrace.get();
+            HoldCounter holdInfo = sharableHoldInfo.get();
             return holdInfo != null && holdInfo.holdCount > 0;
         }
     }
@@ -167,7 +169,7 @@ public final class ResourceAccess extends ResultWaitPool {
         if (isExclusiveHeldByCurrentThread()) {
             return state.get();
         } else {
-            HoldCounter holdInfo = threadHoldTrace.get();
+            HoldCounter holdInfo = sharableHoldInfo.get();
             return holdInfo != null ? holdInfo.holdCount : 0;
         }
     }
@@ -270,7 +272,7 @@ public final class ResourceAccess extends ResultWaitPool {
             //3:add to syn  wait queue to lock(notify from other)
             try {
                 ThreadParkSupport acquireSupport = ThreadParkSupport.create(0, false);
-                access.acquireByAction(access.exclusiveAcquireAction, acquireSupport, true, conditionNode);//if failed,not notify wait node in syn queue(@todo.....)
+                access.acquireByAction(exclusiveAcquireAction, acquireSupport, true, conditionNode);//if failed,not notify wait node in syn queue(@todo.....)
             } catch (InterruptedException e) {
                 super.wakeupOne();//wake up a condition wait node(why? because the node has got a condition signal)
             }
