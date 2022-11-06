@@ -89,13 +89,12 @@ public class ResultWaitPool extends ThreadWaitPool {
                 if (support.isTimeout()) {
                     //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
-                } else {//3.4: park the node thread
-                    if (state != null) {//3.4.1: reach here means not got expected value from call,then rest to continue waiting
-                        node.setState(null);
-                        Thread.yield();
-                    }
-
-                    //3.4.2: park current thread(if interrupted then transfer the got state value to another waiter)
+                } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
+                    node.setState(null);
+                    Thread.yield();
+                    //jump to next read
+                } else {//here: state == null
+                    //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, support, throwsIE, true);
                 }
             } while (true);

@@ -57,7 +57,7 @@ import java.util.concurrent.locks.LockSupport;
 public class ThreadParkSupport {
     private static final long spinForTimeoutThreshold = 1000L;
     protected long deadline;
-    protected long parkTime = 1L;//a dummy value for no time-park;this value less than zero or equals zero means timeout
+    protected long parkTime = 1L;//a initialized value,calculated before park,if less than zero or equals zero means timeout
     protected Object blocker;
     protected boolean interrupted;
 
