@@ -35,15 +35,15 @@ public final class ResourceLock extends ResultWaitPool {
     private static final Object Sharable = new Object();
 
     //sharable acquire action(drove by result wait pool)
-    private static final AcquireAction sharableAcquireAction = new SharableAcquireAction();
+    private static final LockAction sharableLockAction = new SharableLockAction();
     //exclusive acquire action(drove by result wait pool)
-    private static final AcquireAction exclusiveAcquireAction = new ExclusiveAcquireAction();
+    private static final LockAction exclusiveLockAction = new ExclusiveLockAction();
 
     //access permit hold state(0:not held,1:first held,greater than 1:reentrant count)
     //reentrant:hold count of an exclusive thread,or total hold count of all threads under sharable hold mode
     private final AtomicInteger state = new AtomicInteger(0);
     //trace sharable hold count of access threads(support reentrant of a thread in sharable hold mode)
-    private final ThreadLocal<HoldCounter> sharableHoldInfo = new HoldThreadLocal();
+    private final ThreadLocal<SharedHoldCounter> sharableHoldInfo = new SharedHoldThreadLocal();
 
     //current hold type(Exclusive or Sharable,@see static definition,first row and second row in this file body)
     private Object currentHoldType;
@@ -51,7 +51,7 @@ public final class ResourceLock extends ResultWaitPool {
     private Thread currentHoldThread;
 
     //****************************************************************************************************************//
-    //                                          1: Constructor(2)                                                     //
+    //                                          1: constructor(2)                                                     //
     //****************************************************************************************************************//
     public ResourceLock() {
         this(false);
@@ -66,17 +66,17 @@ public final class ResourceLock extends ResultWaitPool {
     //****************************************************************************************************************//
     //2.1:release exclusive permit to pool
     public void release() {
-        exclusiveAcquireAction.release();
+        exclusiveLockAction.release();
     }
 
     //2.2:try to acquire as exclusive permit
     public boolean tryAcquire() {
-        return exclusiveAcquireAction.tryReentrant() || exclusiveAcquireAction.tryAcquire();
+        return exclusiveLockAction.tryReentrant() || exclusiveLockAction.tryAcquire();
     }
 
     //2.3: acquire with exclusive mode
     public boolean acquire(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return exclusiveAcquireAction.tryReentrant() || acquireByAction(exclusiveAcquireAction, parker, throwsIE, Exclusive);
+        return exclusiveLockAction.tryReentrant() || acquireByAction(exclusiveLockAction, parker, throwsIE, Exclusive);
     }
 
     //2.4: create a new lock condition(just support exclusive mode)
@@ -90,14 +90,14 @@ public final class ResourceLock extends ResultWaitPool {
     //2.5: acquire as exclusive permit for condition node
     private void acquireForConditionNode(ThreadParkSupport support, ThreadNode conditionNode) {
         try {
-            super.doCallForNode(exclusiveAcquireAction, 1, true, support, false, conditionNode, false);
+            super.doCallForNode(exclusiveLockAction, 1, true, support, false, conditionNode, false);
         } catch (Exception e) {
             //do nothing
         }
     }
 
     //2.6: acquisition core drove method by result wait pool
-    private boolean acquireByAction(AcquireAction action, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
+    private boolean acquireByAction(LockAction action, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
         try {
             return super.doCall(action, 1, true, support, throwsIE, acquisitionType);
         } catch (InterruptedException e) {
@@ -114,17 +114,17 @@ public final class ResourceLock extends ResultWaitPool {
     //****************************************************************************************************************//
     //3.1:release with sharable mode
     public void releaseShared() {
-        sharableAcquireAction.release();
+        sharableLockAction.release();
     }
 
     //3.2:try to acquire with sharable mode
     public boolean tryAcquireShared() {
-        return sharableAcquireAction.tryReentrant() || sharableAcquireAction.tryAcquire();
+        return sharableLockAction.tryReentrant() || sharableLockAction.tryAcquire();
     }
 
     //3.3: acquire with sharable mode
     public boolean acquireShared(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return sharableAcquireAction.tryReentrant() || acquireByAction(sharableAcquireAction, parker, throwsIE, Sharable);
+        return sharableLockAction.tryReentrant() || acquireByAction(sharableLockAction, parker, throwsIE, Sharable);
     }
 
     //****************************************************************************************************************//
@@ -155,7 +155,7 @@ public final class ResourceLock extends ResultWaitPool {
     }
 
     public boolean isSharableHeldByCurrentThread() {
-        HoldCounter holdInfo = sharableHoldInfo.get();
+        SharedHoldCounter holdInfo = sharableHoldInfo.get();
         return isSharableHeld() && holdInfo != null && holdInfo.holdCount > 0;
     }
 
@@ -163,7 +163,7 @@ public final class ResourceLock extends ResultWaitPool {
         if (isExclusiveHeldByCurrentThread()) {
             return state.get();
         } else if (isSharableHeldByCurrentThread()) {
-            HoldCounter holdInfo = sharableHoldInfo.get();
+            SharedHoldCounter holdInfo = sharableHoldInfo.get();
             return holdInfo != null ? holdInfo.holdCount : 0;
         } else {
             return 0;
@@ -171,24 +171,30 @@ public final class ResourceLock extends ResultWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                  4:inner interface/class(2)                                                    //                                                                                  //
+    //                                  5:inner interface/class(6)                                                    //                                                                                  //
     //****************************************************************************************************************//
-    private static class HoldCounter {
+    //5.1:hold lock count of a thread in sharable mode
+    private static class SharedHoldCounter {
         private int holdCount = 0;
     }
 
-    private static class HoldThreadLocal extends ThreadLocal<HoldCounter> {
-        protected HoldCounter initialValue() {
-            return new HoldCounter();
+    //5.2:store sharable hold count of threads
+    private static class SharedHoldThreadLocal extends ThreadLocal<SharedHoldCounter> {
+        protected SharedHoldCounter initialValue() {
+            return new SharedHoldCounter();
         }
     }
 
-    private static abstract class AcquireAction implements ResultCall {
+    //5.3:lock action abstract class(drove plugin by result call pool)
+    private static abstract class LockAction implements ResultCall {
+        //release lock hold
         abstract void release();
 
+        //try to reentrant lock under held
         abstract boolean tryReentrant();
 
-        public boolean tryAcquire() {
+        //try to acquire lock
+        boolean tryAcquire() {
             try {
                 return Objects.equals(this.call(1), true);
             } catch (Exception e) {
@@ -197,7 +203,24 @@ public final class ResourceLock extends ResultWaitPool {
         }
     }
 
-    private static class SharableAcquireAction extends AcquireAction {
+    //5.4: Exclusive lock action Implementation
+    private static class ExclusiveLockAction extends LockAction {
+        public Object call(Object arg) {
+            return true;
+        }
+
+        public void release() {
+
+        }
+
+        public boolean tryReentrant() {
+            //@todo
+            return true;
+        }
+    }
+
+    //5.5: Sharable lock action Implementation
+    private static class SharableLockAction extends LockAction {
 
         public Object call(Object arg) {
             return true;
@@ -213,22 +236,7 @@ public final class ResourceLock extends ResultWaitPool {
         }
     }
 
-    private static class ExclusiveAcquireAction extends AcquireAction {
-        public Object call(Object arg) {
-            return true;
-        }
-
-        public void release() {
-
-        }
-
-        public boolean tryReentrant() {
-            //@todo
-            return true;
-        }
-    }
-
-    //Lock Condition Implementation
+    //5.6: Lock Condition Implementation
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
         private ResourceLock access;
 
