@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.locks;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
-import org.stone.shine.synchronizer.extend.ResourceAccess;
+import org.stone.shine.synchronizer.extend.ResourceLock;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
@@ -24,7 +24,7 @@ import java.util.concurrent.locks.Lock;
 public class ReentrantLock2 implements Lock {
 
     //resource access
-    private ResourceAccess access;
+    private ResourceLock access;
 
     //****************************************************************************************************************//
     //                                          1: Constructor(2)                                                     //
@@ -34,7 +34,7 @@ public class ReentrantLock2 implements Lock {
     }
 
     public ReentrantLock2(boolean fair) {
-        this.access = new ResourceAccess(fair);
+        this.access = new ResourceLock(fair);
     }
 
     //****************************************************************************************************************//
