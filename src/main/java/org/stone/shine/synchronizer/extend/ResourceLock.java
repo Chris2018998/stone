@@ -34,16 +34,16 @@ public final class ResourceLock extends ResultWaitPool {
     //Sharable acquisition type(set to wait node value)
     private static final Object Sharable = new Object();
 
-    //sharable acquire action(drove by result wait pool)
-    private final LockAction sharableLockAction = new SharableLockAction(this);
-    //exclusive acquire action(drove by result wait pool)
-    private final LockAction exclusiveLockAction = new ExclusiveLockAction(this);
-
     //access permit hold state(0:not held,1:first held,greater than 1:reentrant count)
     //reentrant:hold count of an exclusive thread,or total hold count of all threads under sharable hold mode
     private final AtomicInteger state = new AtomicInteger(0);
     //trace sharable hold count of access threads(support reentrant of a thread in sharable hold mode)
     private final ThreadLocal<SharedHoldCounter> sharableHoldInfo = new SharedHoldThreadLocal();
+
+    //sharable acquire action(drove by result wait pool)
+    private final LockAction sharableLockAction = new SharableLockAction(this);
+    //exclusive acquire action(drove by result wait pool)
+    private final LockAction exclusiveLockAction = new ExclusiveLockAction(this);
 
     //current hold type(Exclusive or Sharable,@see static definition,first row and second row in this file body)
     private Object currentHoldType;
