@@ -35,9 +35,9 @@ public final class ResourceLock extends ResultWaitPool {
     private static final Object Sharable = new Object();
 
     //sharable acquire action(drove by result wait pool)
-    private static final LockAction sharableLockAction = new SharableLockAction();
+    private final LockAction sharableLockAction = new SharableLockAction(this);
     //exclusive acquire action(drove by result wait pool)
-    private static final LockAction exclusiveLockAction = new ExclusiveLockAction();
+    private final LockAction exclusiveLockAction = new ExclusiveLockAction(this);
 
     //access permit hold state(0:not held,1:first held,greater than 1:reentrant count)
     //reentrant:hold count of an exclusive thread,or total hold count of all threads under sharable hold mode
@@ -185,58 +185,7 @@ public final class ResourceLock extends ResultWaitPool {
         }
     }
 
-    //5.3:lock action abstract class(drove plugin by result call pool)
-    private static abstract class LockAction implements ResultCall {
-        //release lock hold
-        abstract void release();
-
-        //try to reentrant lock under held
-        abstract boolean tryReentrant();
-
-        //try to acquire lock
-        boolean tryAcquire() {
-            try {
-                return Objects.equals(this.call(1), true);
-            } catch (Exception e) {
-                return false;
-            }
-        }
-    }
-
-    //5.4: Exclusive lock action Implementation
-    private static class ExclusiveLockAction extends LockAction {
-        public Object call(Object arg) {
-            return true;
-        }
-
-        public void release() {
-
-        }
-
-        public boolean tryReentrant() {
-            //@todo
-            return true;
-        }
-    }
-
-    //5.5: Sharable lock action Implementation
-    private static class SharableLockAction extends LockAction {
-
-        public Object call(Object arg) {
-            return true;
-        }
-
-        public void release() {
-
-        }
-
-        public boolean tryReentrant() {
-            //@todo
-            return true;
-        }
-    }
-
-    //5.6: Lock Condition Implementation
+    //5.3: Lock Condition Implementation
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
         private ResourceLock access;
 
@@ -313,6 +262,104 @@ public final class ResourceLock extends ResultWaitPool {
         public void signalAll() {
             if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
             super.wakeupAll();//node wait(step2) in the doAwait method
+        }
+    }
+
+    //5.4:lock action abstract class(drove plugin by result call pool)
+    private abstract class LockAction implements ResultCall {
+        protected ResourceLock access;
+
+        public LockAction(ResourceLock access) {
+            this.access = access;
+        }
+
+        //release lock hold
+        abstract void release();
+
+        //try to reentrant lock under held
+        abstract boolean tryReentrant();
+
+        //try to acquire lock
+        boolean tryAcquire() {
+            try {
+                return Objects.equals(this.call(1), true);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+    }
+
+    //5.5: Exclusive lock action Implementation
+    private class ExclusiveLockAction extends LockAction {
+        ExclusiveLockAction(ResourceLock access) {
+            super(access);
+        }
+
+        //5.5.1: acquire lock(drove by result pool)
+        public Object call(Object arg) {
+            if (state.compareAndSet(0, 1)) {
+                currentHoldThread = Thread.currentThread();
+                currentHoldType = Exclusive;
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        //5.5.2: try reentrant acquire
+        public boolean tryReentrant() {
+            if (isExclusiveHeldByCurrentThread()) {
+                int c = state.get();
+                c++;
+
+                if (c <= 0) throw new Error("Maximum lock count exceeded");
+                state.set(c);//because the lock held by current thread,so need't cas state
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        //5.5.3: release lock
+        public void release() {
+            if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
+
+            int c;
+            do {
+                c = state.get();
+                if (c > 0) {
+                    c = c - 1;
+                    if (c == 0) {
+                        currentHoldType = null;
+                        currentHoldThread = null;
+
+                        state.set(c);
+                        access.wakeupOne();//the wakeup maybe a sharable waiter or an exclusive waiter
+                    }
+                } else {
+                    return;
+                }
+            } while (true);
+        }
+    }
+
+    //5.6: Sharable lock action Implementation
+    private class SharableLockAction extends LockAction {
+        SharableLockAction(ResourceLock access) {
+            super(access);
+        }
+
+        public Object call(Object arg) {
+            return true;
+        }
+
+        public void release() {
+
+        }
+
+        public boolean tryReentrant() {
+            //@todo
+            return true;
         }
     }
 }
