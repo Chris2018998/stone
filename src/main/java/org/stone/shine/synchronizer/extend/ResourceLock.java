@@ -171,21 +171,8 @@ public final class ResourceLock extends ResultWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                  5:inner interface/class(6)                                                    //                                                                                  //
+    //                                        5: Lock Condition Impl                                                  //                                                                                  //
     //****************************************************************************************************************//
-    //5.1:hold lock count of a thread in sharable mode
-    private static class SharedHoldCounter {
-        private int holdCount = 0;
-    }
-
-    //5.2:store sharable hold count of threads
-    private static class SharedHoldThreadLocal extends ThreadLocal<SharedHoldCounter> {
-        protected SharedHoldCounter initialValue() {
-            return new SharedHoldCounter();
-        }
-    }
-
-    //5.3: Lock Condition Implementation
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
         private ResourceLock access;
 
@@ -265,12 +252,17 @@ public final class ResourceLock extends ResultWaitPool {
         }
     }
 
-    //5.4:lock action abstract class(drove plugin by result call pool)
-    private abstract class LockAction implements ResultCall {
-        protected ResourceLock access;
+    //****************************************************************************************************************//
+    //                                        6: Lock Action define(5)                                                //                                                                                  //
+    //****************************************************************************************************************//
+    //6.1:lock action abstract class(drove plugin by result call pool)
+    private static abstract class LockAction implements ResultCall {
+        protected ResourceLock lock;
+        protected AtomicInteger state;
 
-        public LockAction(ResourceLock access) {
-            this.access = access;
+        public LockAction(ResourceLock lock) {
+            this.lock = lock;
+            this.state = lock.state;
         }
 
         //release lock hold
@@ -289,26 +281,26 @@ public final class ResourceLock extends ResultWaitPool {
         }
     }
 
-    //5.5: Exclusive lock action Implementation
-    private class ExclusiveLockAction extends LockAction {
+    //6.2: Exclusive lock action Implementation
+    private static class ExclusiveLockAction extends LockAction {
         ExclusiveLockAction(ResourceLock access) {
             super(access);
         }
 
-        //5.5.1: acquire lock(drove by result pool)
+        //6.2.1: acquire lock(drove by result pool)
         public Object call(Object arg) {
             if (state.compareAndSet(0, 1)) {
-                currentHoldThread = Thread.currentThread();
-                currentHoldType = Exclusive;
+                lock.currentHoldThread = Thread.currentThread();
+                lock.currentHoldType = Exclusive;
                 return true;
             } else {
                 return false;
             }
         }
 
-        //5.5.2: try reentrant acquire
+        //6.2.2: try reentrant acquire
         public boolean tryReentrant() {
-            if (isExclusiveHeldByCurrentThread()) {
+            if (lock.isExclusiveHeldByCurrentThread()) {
                 int c = state.get();
                 c++;
 
@@ -320,9 +312,9 @@ public final class ResourceLock extends ResultWaitPool {
             }
         }
 
-        //5.5.3: release lock
+        //6.2.3: release lock
         public void release() {
-            if (!access.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
+            if (!lock.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
             int c;
             do {
@@ -330,11 +322,11 @@ public final class ResourceLock extends ResultWaitPool {
                 if (c > 0) {
                     c = c - 1;
                     if (c == 0) {
-                        currentHoldType = null;
-                        currentHoldThread = null;
+                        lock.currentHoldType = null;
+                        lock.currentHoldThread = null;
 
                         state.set(c);
-                        access.wakeupOne();//the wakeup maybe a sharable waiter or an exclusive waiter
+                        lock.wakeupOne();//the wakeup maybe a sharable waiter or an exclusive waiter
                     }
                 } else {
                     return;
@@ -343,8 +335,20 @@ public final class ResourceLock extends ResultWaitPool {
         }
     }
 
-    //5.6: Sharable lock action Implementation
-    private class SharableLockAction extends LockAction {
+    //6.3:hold lock count of a thread in sharable mode
+    private static class SharedHoldCounter {
+        private int holdCount = 0;
+    }
+
+    //6.4:store sharable hold count of threads
+    private static class SharedHoldThreadLocal extends ThreadLocal<SharedHoldCounter> {
+        protected SharedHoldCounter initialValue() {
+            return new SharedHoldCounter();
+        }
+    }
+
+    //6.5: Sharable lock action Implementation
+    private static class SharableLockAction extends LockAction {
         SharableLockAction(ResourceLock access) {
             super(access);
         }
