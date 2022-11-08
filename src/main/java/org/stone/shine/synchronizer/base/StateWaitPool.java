@@ -66,6 +66,8 @@ public class StateWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+        if (expect == null) throw new IllegalArgumentException("expect state can't be null");
+
         //1:create wait node and offer to wait queue
         super.appendNode(node);
 
