@@ -19,7 +19,7 @@ import org.stone.shine.synchronizer.*;
  * @version 1.0
  */
 public class ResultWaitPool extends ThreadWaitPool {
-    //true,use fair mode to execute action
+    //true,use fair mode to execute call
     private boolean fair;
 
     //****************************************************************************************************************//
@@ -132,7 +132,6 @@ public class ResultWaitPool extends ThreadWaitPool {
 
                 //3.3: timeout test
                 if (support.isTimeout()) {
-                    System.out.println("...isTimeout...");
                     //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
