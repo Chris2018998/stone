@@ -314,24 +314,26 @@ public final class ResourceLock extends ResultWaitPool {
 
         //6.2.3: release lock
         public void release() {
-            if (!lock.isExclusiveHeldByCurrentThread()) throw new IllegalMonitorStateException();
+            if (lock.isExclusiveHeldByCurrentThread()) {
+                int c;
+                do {
+                    c = state.get();
+                    if (c > 0) {
+                        c = c - 1;
+                        if (c == 0) {
+                            lock.currentHoldType = null;
+                            lock.currentHoldThread = null;
 
-            int c;
-            do {
-                c = state.get();
-                if (c > 0) {
-                    c = c - 1;
-                    if (c == 0) {
-                        lock.currentHoldType = null;
-                        lock.currentHoldThread = null;
-
-                        state.set(c);
-                        lock.wakeupOne();//the wakeup maybe a sharable waiter or an exclusive waiter
+                            state.set(c);
+                            lock.wakeupOne();//the wakeup maybe a sharable waiter or an exclusive waiter
+                        }
+                    } else {
+                        return;
                     }
-                } else {
-                    return;
-                }
-            } while (true);
+                } while (true);
+            } else {//if support interruptException thrown out condition await,the 'else' block should be disabled
+                throw new IllegalMonitorStateException();
+            }
         }
     }
 
@@ -358,10 +360,8 @@ public final class ResourceLock extends ResultWaitPool {
         }
 
         public boolean tryReentrant() {
-            //@todo
             return true;
         }
-
 
         public void release() {
 
