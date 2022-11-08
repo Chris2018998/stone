@@ -357,13 +357,14 @@ public final class ResourceLock extends ResultWaitPool {
             return true;
         }
 
-        public void release() {
-
-        }
-
         public boolean tryReentrant() {
             //@todo
             return true;
+        }
+
+
+        public void release() {
+
         }
     }
 }

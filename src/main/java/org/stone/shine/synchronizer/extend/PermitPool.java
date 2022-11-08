@@ -33,18 +33,4 @@ public final class PermitPool extends ResultWaitPool {
         return permits;
     }
 
-    //release a permit to pool,if hold shared count is greater zero,then reduce its value util zero,then release really
-    public void release() {
-
-    }
-
-    //try to acquire a permit,if interrupted,then ignore it and continue to try
-    public boolean acquireUninterruptibly(long deadlineNs) {
-        return false;
-    }
-
-    //try to acquire a permit,if interrupted,then throws InterruptedException
-    public boolean acquire(long deadlineNs) throws InterruptedException {
-        return false;
-    }
 }
