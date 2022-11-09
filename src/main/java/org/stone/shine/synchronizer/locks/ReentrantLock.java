@@ -10,7 +10,6 @@
 package org.stone.shine.synchronizer.locks;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
-import org.stone.shine.synchronizer.extend.ResourceLock;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
