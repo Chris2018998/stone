@@ -13,8 +13,6 @@ import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.ResultWaitPool;
 
-import java.util.concurrent.locks.Lock;
-
 /**
  * work as lock core driver
  * <p>
@@ -24,7 +22,7 @@ import java.util.concurrent.locks.Lock;
  * @version 1.0
  */
 
-abstract class LockCoreDriver implements Lock {
+abstract class LockCoreDriver {
 
     //result call pool
     private ResultWaitPool callPool;
