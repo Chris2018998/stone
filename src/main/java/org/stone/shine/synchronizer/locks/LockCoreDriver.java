@@ -16,7 +16,7 @@ import org.stone.shine.synchronizer.base.ResultWaitPool;
 /**
  * work as lock core driver
  * <p>
- * Design a common driver with plugin for most lock types
+ * Design a common driver with plugin
  *
  * @author Chris Liao
  * @version 1.0
