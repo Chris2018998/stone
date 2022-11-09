@@ -34,18 +34,21 @@ abstract class LockCoreDriver {
     //****************************************************************************************************************//
     //                                          2: lock methods                                                       //
     //****************************************************************************************************************//
-
-    protected void acquireForConditionNode(LockAction action, ThreadParkSupport support, ThreadNode conditionNode) {
+    protected boolean acquire(LockAction action, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
         try {
-            callPool.doCallForNode(action, 1, true, support, false, conditionNode, false);
+            return callPool.doCall(action, 1, true, support, throwsIE, acquisitionType);
+        } catch (InterruptedException e) {
+            throw e;
         } catch (Exception e) {
-            //do nothing
+            //this exception caught just fit super's method invocation
+            //in fact,only InterruptedException can be thrown out,so return false;
+            return false;
         }
     }
 
-    protected boolean acquireByAction(LockAction action, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
+    protected boolean acquire(LockAction action, ThreadParkSupport support, boolean throwsIE, ThreadNode conditionNode) throws InterruptedException {
         try {
-            return callPool.doCall(action, 1, true, support, throwsIE, acquisitionType);
+            return callPool.doCall(action, 1, true, support, throwsIE, conditionNode);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
