@@ -19,6 +19,9 @@ import java.util.Objects;
  */
 public abstract class ResourceAction implements ResultCall {
 
+    //try release
+    abstract boolean tryRelease(int size);
+
     //try to acquire lock or permit
     public boolean tryAcquire(int size) {
         try {

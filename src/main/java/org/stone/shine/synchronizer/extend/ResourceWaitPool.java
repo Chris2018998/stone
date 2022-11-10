@@ -25,7 +25,7 @@ import java.util.Collection;
 public abstract class ResourceWaitPool {
 
     //result call pool
-    protected ResultWaitPool callPool;
+    private ResultWaitPool callPool;
 
     //constructor with a result call pool
     public ResourceWaitPool(ResultWaitPool callPool) {
@@ -56,14 +56,14 @@ public abstract class ResourceWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: acquire methods(3)                                                 //
+    //                                          2: acquire/release methods(4)                                         //
     //****************************************************************************************************************//
-    protected boolean tryAcquire(ResourceAction action, int size) {
+    protected final boolean tryAcquire(ResourceAction action, int size) {
         return action.tryAcquire(size);
     }
 
-    //acquire type method
-    protected boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
+    //acquire
+    protected final boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return callPool.doCall(action, size, true, support, throwsIE, acquisitionType, wakeupOtherOnIE);
         } catch (InterruptedException e) {
@@ -75,8 +75,8 @@ public abstract class ResourceWaitPool {
         }
     }
 
-    //acquire type method
-    protected boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    //acquire
+    protected final boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return callPool.doCallForNode(action, size, true, support, throwsIE, node, wakeupOtherOnIE);
         } catch (InterruptedException e) {
@@ -84,6 +84,16 @@ public abstract class ResourceWaitPool {
         } catch (Exception e) {
             //this exception caught just fit super's method invocation
             //in fact,only InterruptedException can be thrown out,so return false;
+            return false;
+        }
+    }
+
+    //release
+    protected final boolean release(ResourceAction action, int size) {
+        if (action.tryRelease(size)) {
+            callPool.wakeupOne();
+            return true;
+        } else {
             return false;
         }
     }
