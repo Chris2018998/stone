@@ -14,10 +14,6 @@ import org.stone.shine.synchronizer.base.ResultCall;
 import java.util.Objects;
 
 /**
- * Acquire Action(plugin)
- * <p>
- * Forbidden throws Exception from <method>call</method>
- *
  * @author Chris Liao
  * @version 1.0
  */
@@ -31,6 +27,4 @@ public abstract class ResourceAction implements ResultCall {
             return false;
         }
     }
-
-
 }

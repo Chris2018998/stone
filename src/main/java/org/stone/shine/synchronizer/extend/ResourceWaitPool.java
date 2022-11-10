@@ -13,6 +13,8 @@ import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.ResultWaitPool;
 
+import java.util.Collection;
+
 /**
  * resource wait pool
  *
@@ -30,13 +32,40 @@ public abstract class ResourceWaitPool {
         this.callPool = callPool;
     }
 
+    //****************************************************************************************************************//
+    //                                          1: monitor Methods(5)                                                 //
+    //****************************************************************************************************************//
+    public final boolean isFair() {
+        return callPool.isFair();
+    }
+
+    public final boolean hasQueuedThreads() {
+        return callPool.hasQueuedThreads();
+    }
+
+    public final boolean hasQueuedThread(Thread thread) {
+        return callPool.hasQueuedThread(thread);
+    }
+
+    public final int getQueueLength() {
+        return callPool.getQueueLength();
+    }
+
+    public final Collection<Thread> getQueuedThreads() {
+        return callPool.getQueuedThreads();
+    }
+
+    //****************************************************************************************************************//
+    //                                          2: acquire methods(3)                                                 //
+    //****************************************************************************************************************//
     protected boolean tryAcquire(ResourceAction action, int size) {
         return action.tryAcquire(size);
     }
 
-    protected boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
+    //acquire type method
+    protected boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
-            return callPool.doCall(action, size, true, support, throwsIE, acquisitionType);
+            return callPool.doCall(action, size, true, support, throwsIE, acquisitionType, wakeupOtherOnIE);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -46,6 +75,7 @@ public abstract class ResourceWaitPool {
         }
     }
 
+    //acquire type method
     protected boolean acquire(ResourceAction action, int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return callPool.doCallForNode(action, size, true, support, throwsIE, node, wakeupOtherOnIE);
