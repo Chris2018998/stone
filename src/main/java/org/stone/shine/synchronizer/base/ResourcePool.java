@@ -29,9 +29,11 @@ public abstract class ResourcePool {
         this.callPool = callPool;
     }
 
-    //****************************************************************************************************************//
-    //                                          2: acquire methods                                                    //
-    //****************************************************************************************************************//
+
+    protected boolean tryAcquire(AcquireAction action, int size) {
+        return action.tryAcquire(size);
+    }
+
     protected boolean acquire(AcquireAction action, int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType) throws InterruptedException {
         try {
             return callPool.doCall(action, size, true, support, throwsIE, acquisitionType);
@@ -44,9 +46,9 @@ public abstract class ResourcePool {
         }
     }
 
-    protected boolean acquire(AcquireAction action, int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node) throws InterruptedException {
+    protected boolean acquire(AcquireAction action, int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
-            return callPool.doCall(action, size, true, support, throwsIE, node);
+            return callPool.doCallForNode(action, size, true, support, throwsIE, node, wakeupOtherOnIE);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
