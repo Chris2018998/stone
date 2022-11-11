@@ -30,7 +30,14 @@ public abstract class ResourceWaitPool {
     //result call pool
     private ResultWaitPool callPool;
 
-    //constructor with a result call pool
+    public ResourceWaitPool(ResourceAction action) {
+        this(action, false);
+    }
+    
+    public ResourceWaitPool(ResourceAction action, boolean fair) {
+        this(action, new ResultWaitPool(fair));
+    }
+
     public ResourceWaitPool(ResourceAction action, ResultWaitPool callPool) {
         if (action == null) throw new IllegalArgumentException("resource action can't be null");
         if (callPool == null) throw new IllegalArgumentException("call result pool can't be null");
@@ -69,9 +76,9 @@ public abstract class ResourceWaitPool {
     }
 
     //acquire
-    protected final boolean acquire(int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
+    protected final boolean acquire(int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
-            return callPool.doCall(action, size, true, support, throwsIE, acquisitionType, wakeupOtherOnIE);
+            return callPool.doCallForNode(action, size, true, support, throwsIE, node, wakeupOtherOnIE);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -82,9 +89,9 @@ public abstract class ResourceWaitPool {
     }
 
     //acquire
-    protected final boolean acquire(int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    protected final boolean acquire(int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
-            return callPool.doCallForNode(action, size, true, support, throwsIE, node, wakeupOtherOnIE);
+            return callPool.doCall(action, size, true, support, throwsIE, acquisitionType, wakeupOtherOnIE);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
