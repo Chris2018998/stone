@@ -214,13 +214,13 @@ public abstract class ThreadWaitPool {
     //****************************************************************************************************************//
     //                                         7: Park methods(2)                                                     //
     //****************************************************************************************************************//
-    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        parkNodeThread(node, support, throwsIE, true);
+    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        parkNodeThread(node, parker, throwsIE, true);
     }
 
-    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport support, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
-        if (support.calculateParkTime()) {//before deadline
-            if (support.park() && throwsIE) {//interrupted
+    protected final void parkNodeThread(ThreadNode node, ThreadParkSupport parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
+        if (parker.calculateParkTime()) {//before deadline
+            if (parker.park() && throwsIE) {//interrupted
                 if (node.getState() == null) {
                     //step1:try to cas state to INTERRUPTED,if failed,the step2 can be reach
                     if (ThreadNodeUpdater.casNodeState(node, null, INTERRUPTED))

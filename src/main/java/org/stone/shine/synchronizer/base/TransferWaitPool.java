@@ -31,7 +31,7 @@ public class TransferWaitPool extends ThreadWaitPool {
      * @return boolean value,true means wakeup with expect signal state,false,wait timeout
      * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
      */
-    public final Object get(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
+    public final Object get(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
         //1:create wait node and offer to wait queue
         ThreadNode node = super.appendNewNode();
 
@@ -43,12 +43,12 @@ public class TransferWaitPool extends ThreadWaitPool {
                 if (state != null) return state;
 
                 //2.2: timeout test
-                if (support.isTimeout()) {
+                if (parker.isTimeout()) {
                     //2.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return null;
                 } else {
                     //2.3: park current thread(if interrupted then transfer the got state value to another waiter)
-                    parkNodeThread(node, support, throwsIE, true);
+                    parkNodeThread(node, parker, throwsIE, true);
                 }
             } while (true);
         } finally {

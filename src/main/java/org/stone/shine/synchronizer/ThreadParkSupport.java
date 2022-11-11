@@ -23,7 +23,7 @@ import java.util.concurrent.locks.LockSupport;
  * <pre>{@code
  * class ConditionX {
  *    public final void await() throws InterruptedException {
- *       ThreadParkSupport parker = ThreadParkSupport.create(0,false);
+ *       ThreadParkSupport parker = ThreadParkSupport.create();
  *       await(parker):
  *    }
  *    public final void await(long nanosTimeout) throws InterruptedException {
@@ -72,7 +72,7 @@ public class ThreadParkSupport {
     }
 
     //****************************************************************************************************************//
-    //                                           Factory  methods(begin)                                              //
+    //                                           Factory  methods(4)                                                  //
     //****************************************************************************************************************//
     public static ThreadParkSupport create() {
         return new ThreadParkSupport();

@@ -26,8 +26,8 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        return doWait(support, throwsIE, super.createNode(null), true);
+    public final boolean doWait(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        return doWait(parker, throwsIE, super.createNode(null), true);
     }
 
     /**
@@ -38,8 +38,8 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
-        return doWait(support, throwsIE, super.createNode(nodeValue), true);
+    public final boolean doWait(ThreadParkSupport parker, boolean throwsIE, Object nodeValue) throws InterruptedException {
+        return doWait(parker, throwsIE, super.createNode(nodeValue), true);
     }
 
     /**
@@ -51,8 +51,8 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(ThreadParkSupport support, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws InterruptedException {
-        return doWait(support, throwsIE, super.createNode(nodeValue), wakeupOtherOnIE);
+    public final boolean doWait(ThreadParkSupport parker, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws InterruptedException {
+        return doWait(parker, throwsIE, super.createNode(nodeValue), wakeupOtherOnIE);
     }
 
     /**
@@ -64,7 +64,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    public final boolean doWait(ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         //1:create wait node and offer to wait queue
         super.appendNode(node);
 
@@ -76,12 +76,12 @@ public class SignalWaitPool extends ThreadWaitPool {
                 if (state != null) return true;
 
                 //2.2: timeout test
-                if (support.isTimeout()) {
+                if (parker.isTimeout()) {
                     //2.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return false;
                 } else {
                     //2.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
-                    parkNodeThread(node, support, throwsIE, wakeupOtherOnIE);
+                    parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
         } finally {

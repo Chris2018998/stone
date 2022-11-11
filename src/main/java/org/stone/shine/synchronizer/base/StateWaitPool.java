@@ -27,8 +27,8 @@ public class StateWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(Object expect, ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-        return doWait(expect, support, throwsIE, super.createNode(null), true);
+    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        return doWait(expect, parker, throwsIE, super.createNode(null), true);
     }
 
     /**
@@ -39,8 +39,8 @@ public class StateWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws InterruptedException {
-        return doWait(expect, support, throwsIE, super.createNode(nodeValue), true);
+    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, Object nodeValue) throws InterruptedException {
+        return doWait(expect, parker, throwsIE, super.createNode(nodeValue), true);
     }
 
     /**
@@ -52,8 +52,8 @@ public class StateWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws InterruptedException {
-        return doWait(expect, support, throwsIE, super.createNode(nodeValue), wakeupOtherOnIE);
+    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws InterruptedException {
+        return doWait(expect, parker, throwsIE, super.createNode(nodeValue), wakeupOtherOnIE);
     }
 
     /**
@@ -65,7 +65,7 @@ public class StateWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(Object expect, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         if (expect == null) throw new IllegalArgumentException("expect state can't be null");
 
         //1:create wait node and offer to wait queue
@@ -81,7 +81,7 @@ public class StateWaitPool extends ThreadWaitPool {
                 if (state != null && equals(state, expect)) return true;
 
                 //3.3: timeout test
-                if (support.isTimeout()) {
+                if (parker.isTimeout()) {
                     //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
@@ -90,7 +90,7 @@ public class StateWaitPool extends ThreadWaitPool {
                     //jump to next read
                 } else {//here: state == null
                     //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
-                    parkNodeThread(node, support, throwsIE, wakeupOtherOnIE);
+                    parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
         } finally {

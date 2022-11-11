@@ -77,9 +77,9 @@ public abstract class ResourceWaitPool {
     }
 
     //acquire
-    protected final boolean acquire(int size, ThreadParkSupport support, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    protected final boolean acquire(int size, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
-            return tryAcquire(size) || callPool.doCallForNode(action, size, true, support, throwsIE, node, wakeupOtherOnIE);
+            return tryAcquire(size) || callPool.doCallForNode(action, size, true, parker, throwsIE, node, wakeupOtherOnIE);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -90,9 +90,9 @@ public abstract class ResourceWaitPool {
     }
 
     //acquire
-    protected final boolean acquire(int size, ThreadParkSupport support, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
+    protected final boolean acquire(int size, ThreadParkSupport parker, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
-            return tryAcquire(size) || callPool.doCall(action, size, true, support, throwsIE, acquisitionType, wakeupOtherOnIE);
+            return tryAcquire(size) || callPool.doCall(action, size, true, parker, throwsIE, acquisitionType, wakeupOtherOnIE);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
