@@ -22,7 +22,7 @@ import java.util.Collection;
  * @version 1.0
  */
 
-public class ResourceWaitPool {
+public abstract class ResourceWaitPool {
 
     //acquire action
     private ResourceAction action;
@@ -30,6 +30,9 @@ public class ResourceWaitPool {
     //result call pool
     private ResultWaitPool callPool;
 
+    //****************************************************************************************************************//
+    //                                          1: constructors(3)                                                    //
+    //****************************************************************************************************************//
     public ResourceWaitPool(ResourceAction action) {
         this(action, false);
     }
@@ -46,7 +49,7 @@ public class ResourceWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          1: monitor Methods(5)                                                 //
+    //                                          2: monitor Methods(5)                                                 //
     //****************************************************************************************************************//
     public final boolean isFair() {
         return callPool.isFair();
@@ -69,7 +72,7 @@ public class ResourceWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: acquire/release methods(4)                                         //
+    //                                          3: acquire/release methods(4)                                         //
     //****************************************************************************************************************//
     protected final boolean tryAcquire(int size) {
         return action.tryAcquire(size);
