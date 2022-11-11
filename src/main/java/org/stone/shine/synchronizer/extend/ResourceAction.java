@@ -14,6 +14,8 @@ import org.stone.shine.synchronizer.base.ResultCall;
 import java.util.Objects;
 
 /**
+ * call method can regarded as
+ *
  * @author Chris Liao
  * @version 1.0
  */
