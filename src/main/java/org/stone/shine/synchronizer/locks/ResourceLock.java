@@ -22,10 +22,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 
 /**
- * A resource lock synchronizer implementation,whose instance can be regards as single PermitPool.
- *
  * @author Chris Liao
  * @version 1.0
+ * @deprecated to be removed
+ * <p>
+ * A resource lock synchronizer implementation,whose instance can be regards as single PermitPool.
  */
 
 public final class ResourceLock extends ResultWaitPool {
