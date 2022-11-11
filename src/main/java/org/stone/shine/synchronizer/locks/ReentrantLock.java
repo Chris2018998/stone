@@ -10,9 +10,11 @@
 package org.stone.shine.synchronizer.locks;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
@@ -22,20 +24,23 @@ import java.util.concurrent.locks.Lock;
  * @author Chris Liao
  * @version 1.0
  */
-public class ReentrantLock implements Lock {
+public final class ReentrantLock extends ResourceWaitPool implements Lock {
+    //hold count of owner thread
+    private int holdCount = 0;
 
-    //resource access
-    private ResourceLock access;
+    //I hope to create difference,so try{@code AtomicReference}
+    private AtomicReference<Thread> ownerRef = new AtomicReference<>(null);
 
     //****************************************************************************************************************//
-    //                                          1: Constructor(2)                                                     //
+    //                                          1: constructors(2)                                                    //
     //****************************************************************************************************************//
     public ReentrantLock() {
         this(false);
     }
 
     public ReentrantLock(boolean fair) {
-        this.access = new ResourceLock(fair);
+        super(null, fair);
+
     }
 
     //****************************************************************************************************************//
@@ -43,81 +48,59 @@ public class ReentrantLock implements Lock {
     //****************************************************************************************************************//
     public void lock() {
         try {
-            access.acquire(ThreadParkSupport.create(0, false), false);
+            ThreadParkSupport support = ThreadParkSupport.create(0, false);
+            super.acquire(1, support, true, null, true);
         } catch (Exception e) {
             //do nothing
         }
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        try {
-            access.acquire(ThreadParkSupport.create(0, false), true);
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            //do nothing
-        }
+        ThreadParkSupport support = ThreadParkSupport.create(0, false);
+        super.acquire(1, support, true, null, true);
     }
+
 
     public boolean tryLock() {
-        return access.tryAcquire();
+        return super.tryAcquire(1);
     }
+
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        try {
-            return access.acquire(ThreadParkSupport.create(unit.toNanos(time), false), true);
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            return false;
-        }
+        ThreadParkSupport support = ThreadParkSupport.create(unit.toNanos(time), false);
+        return super.acquire(1, support, true, null, true);
     }
+
 
     public void unlock() {
-        access.release();
+        super.release(1);
     }
 
+
     public Condition newCondition() {
-        return access.newCondition();
+        //@todo
+        return null;
+        // return access.newCondition();
     }
 
     //****************************************************************************************************************//
     //                                          3: monitor methods                                                    //
     //****************************************************************************************************************//
-    public int getHoldCount() {
-        return access.getHoldCountByCurrentThread();
-    }
 
-    public boolean isHeldByCurrentThread() {
-        return access.isHeldByCurrentThread();
+    public int getHoldCount() {
+        return holdCount;
     }
 
     public boolean isLocked() {
-        return access.isHeld();
+        return ownerRef.get() != null;
     }
 
-    public boolean isFair() {
-        return access.isFair();
+    public boolean isHeldByCurrentThread() {
+        return ownerRef.get() == Thread.currentThread();
     }
 
     protected Thread getOwner() {
-        return access.getHeldThread();
-    }
-
-    public final boolean hasQueuedThreads() {
-        return access.hasQueuedThreads();
-    }
-
-    public final boolean hasQueuedThread(Thread thread) {
-        return access.hasQueuedThread(thread);
-    }
-
-    public final int getQueueLength() {
-        return access.getQueueLength();
-    }
-
-    protected Collection<Thread> getQueuedThreads() {
-        return access.getQueuedThreads();
+        return ownerRef.get();
     }
 
     public boolean hasWaiters(Condition condition) {
@@ -133,7 +116,7 @@ public class ReentrantLock implements Lock {
     }
 
     public String toString() {
-        Thread o = access.getHeldThread();
+        Thread o = ownerRef.get();
         return super.toString() + ((o == null) ?
                 "[Unlocked]" :
                 "[Locked by thread " + o.getName() + "]");
