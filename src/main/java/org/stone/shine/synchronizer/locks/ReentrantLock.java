@@ -27,7 +27,6 @@ import java.util.concurrent.locks.Lock;
 public final class ReentrantLock extends ResourceWaitPool implements Lock {
     //hold count of owner thread
     private int holdCount = 0;
-
     //I hope to create difference,so try{@code AtomicReference}
     private AtomicReference<Thread> ownerRef = new AtomicReference<>(null);
 
@@ -38,9 +37,9 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
         this(false);
     }
 
+    //@todo ResourceAction implementation of lock need be created here(soon)
     public ReentrantLock(boolean fair) {
         super(null, fair);
-
     }
 
     //****************************************************************************************************************//
@@ -49,7 +48,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     public void lock() {
         try {
             ThreadParkSupport support = ThreadParkSupport.create(0, false);
-            super.acquire(1, support, true, null, true);
+            super.acquire(1, support, false, null, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -60,22 +59,19 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
         super.acquire(1, support, true, null, true);
     }
 
-
     public boolean tryLock() {
         return super.tryAcquire(1);
     }
 
-
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport support = ThreadParkSupport.create(unit.toNanos(time), false);
         return super.acquire(1, support, true, null, true);
     }
 
-
     public void unlock() {
         super.release(1);
     }
-
 
     public Condition newCondition() {
         //@todo
@@ -102,6 +98,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     protected Thread getOwner() {
         return ownerRef.get();
     }
+
 
     public boolean hasWaiters(Condition condition) {
         return true;
