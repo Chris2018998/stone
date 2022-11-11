@@ -70,6 +70,23 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue) throws Exception {
+        return doCall(call, arg, expect, support, throwsIE, nodeValue, true);
+    }
+
+    /**
+     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
+     * method return true,not equals that wait timeout and return false.
+     *
+     * @param call      executed in pool to get result
+     * @param arg       call argument
+     * @param expect    compare to the call result
+     * @param support   thread park support
+     * @param throwsIE  true,throws InterruptedException when interrupted
+     * @param nodeValue property of wait node
+     * @return true, call result equaled to the expect parameter,false wait timeout in pool
+     * @throws Exception exception from call or InterruptedException after thread park
+     */
+    public final boolean doCall(ResultCall call, Object arg, Object expect, ThreadParkSupport support, boolean throwsIE, Object nodeValue, boolean wakeupOtherOnIE) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
 
@@ -79,7 +96,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         } else if (equals(call.call(arg), expect)) return true;
 
         //3:call inner method
-        return doCallForNode(call, arg, expect, support, throwsIE, createNode(nodeValue), true);
+        return doCallForNode(call, arg, expect, support, throwsIE, createNode(nodeValue), wakeupOtherOnIE);
     }
 
     /**

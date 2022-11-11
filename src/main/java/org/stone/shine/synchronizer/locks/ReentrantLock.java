@@ -47,7 +47,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     //****************************************************************************************************************//
     public void lock() {
         try {
-            ThreadParkSupport support = ThreadParkSupport.create(0, false);
+            ThreadParkSupport support = ThreadParkSupport.create();
             super.acquire(1, support, false, null, true);
         } catch (Exception e) {
             //do nothing
@@ -55,7 +55,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        ThreadParkSupport support = ThreadParkSupport.create(0, false);
+        ThreadParkSupport support = ThreadParkSupport.create();
         super.acquire(1, support, true, null, true);
     }
 

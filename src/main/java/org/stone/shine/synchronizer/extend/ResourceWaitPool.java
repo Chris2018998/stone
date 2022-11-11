@@ -23,10 +23,8 @@ import java.util.Collection;
  */
 
 public abstract class ResourceWaitPool {
-
     //acquire action
     private ResourceAction action;
-
     //result call pool
     private ResultWaitPool callPool;
 
