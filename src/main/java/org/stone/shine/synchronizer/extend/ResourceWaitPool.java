@@ -22,7 +22,7 @@ import java.util.Collection;
  * @version 1.0
  */
 
-public abstract class ResourceWaitPool {
+public class ResourceWaitPool {
 
     //acquire action
     private ResourceAction action;
@@ -33,7 +33,7 @@ public abstract class ResourceWaitPool {
     public ResourceWaitPool(ResourceAction action) {
         this(action, false);
     }
-    
+
     public ResourceWaitPool(ResourceAction action, boolean fair) {
         this(action, new ResultWaitPool(fair));
     }
