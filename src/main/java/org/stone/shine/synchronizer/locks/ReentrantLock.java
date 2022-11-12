@@ -27,6 +27,7 @@ import java.util.concurrent.locks.Lock;
  * @version 1.0
  */
 public final class ReentrantLock extends ResourceWaitPool implements Lock {
+
     //hold count of owner thread
     private int holdCount = 0;
     //I hope to create difference,so try{@code AtomicReference}

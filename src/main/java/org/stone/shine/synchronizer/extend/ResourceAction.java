@@ -14,7 +14,11 @@ import org.stone.shine.synchronizer.base.ResultCall;
 import java.util.Objects;
 
 /**
- * call method can regarded as
+ * Work as a plugin of {@code ResourceWaitPool},two abstract methods need be implemented in its sub classes
+ * <p>
+ * Method {@link #call} :acquire resource(for example; lock,permit)
+ * <p>
+ * Method {@link #tryRelease}:release acquired resource
  *
  * @author Chris Liao
  * @version 1.0

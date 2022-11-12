@@ -18,8 +18,8 @@ package org.stone.shine.synchronizer;
 
 public final class ThreadNode {
     private final Thread thread;
-    private volatile Object value;
     private volatile Object state;
+    private volatile Object value;
 
     //chain info
     private volatile int emptyInd;
