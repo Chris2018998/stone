@@ -10,6 +10,8 @@
 package org.stone.shine.synchronizer.locks;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.base.ResultWaitPool;
+import org.stone.shine.synchronizer.extend.ResourceAction;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
@@ -40,6 +42,11 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     //@todo ResourceAction implementation of lock need be created here(soon)
     public ReentrantLock(boolean fair) {
         super(null, fair);
+    }
+
+    //may be work as a Write Lock
+    ReentrantLock(ResourceAction action, ResultWaitPool callPool) {
+        super(action, callPool);
     }
 
     //****************************************************************************************************************//

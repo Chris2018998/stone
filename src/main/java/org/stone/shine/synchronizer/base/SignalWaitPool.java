@@ -22,6 +22,7 @@ public class SignalWaitPool extends ThreadWaitPool {
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param parker   thread parker
      * @param throwsIE true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
@@ -33,6 +34,7 @@ public class SignalWaitPool extends ThreadWaitPool {
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param parker    thread parker
      * @param throwsIE  true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @param nodeValue a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
@@ -45,6 +47,7 @@ public class SignalWaitPool extends ThreadWaitPool {
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param parker          thread parker
      * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @param nodeValue       a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
      * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
@@ -58,6 +61,7 @@ public class SignalWaitPool extends ThreadWaitPool {
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param parker          thread parker
      * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @param node            preCreated thread wait node
      * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter

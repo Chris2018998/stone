@@ -47,7 +47,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param call     executed in pool to get result
      * @param arg      call argument
      * @param expect   compare to the call result
-     * @param parker   thread park parker
+     * @param parker   thread parker
      * @param throwsIE true,throws InterruptedException when interrupted
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
@@ -63,7 +63,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param call      executed in pool to get result
      * @param arg       call argument
      * @param expect    compare to the call result
-     * @param parker    thread park parker
+     * @param parker    thread parker
      * @param throwsIE  true,throws InterruptedException when interrupted
      * @param nodeValue property of wait node
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
@@ -80,7 +80,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param call      executed in pool to get result
      * @param arg       call argument
      * @param expect    compare to the call result
-     * @param parker    thread park parker
+     * @param parker    thread parker
      * @param throwsIE  true,throws InterruptedException when interrupted
      * @param nodeValue property of wait node
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
@@ -106,7 +106,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param call     executed in pool to get result
      * @param arg      call argument
      * @param expect   compare to the call result
-     * @param parker   thread park parker
+     * @param parker   thread parker
      * @param throwsIE true,throws InterruptedException when interrupted
      * @param node     preCreated wait node(for example: nodes wait in lock condition queue,at finally,them need removed and offered to syn queue to get lock)
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
@@ -123,7 +123,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param call            executed in pool to get result
      * @param arg             call argument
      * @param expect          compare to the call result
-     * @param parker          thread park parker
+     * @param parker          thread parker
      * @param throwsIE        true,throws InterruptedException when interrupted
      * @param node            preCreated wait node(for example: nodes wait in lock condition queue,at finally,them need removed and offered to syn queue to get lock)
      * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
