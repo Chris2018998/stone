@@ -35,9 +35,15 @@ abstract class AbstractLock implements Lock {
     static final Object Sharable = new Object();
 
     //Lock Acquire Action(ReentrantAction,WriteLockAction,ReadLockAction)
-    private ResourceAction lockAction;
+    private final ResourceAction lockAction;
     //resource wait Pool
-    private ResourceWaitPool resourceWaitPool;
+    private final ResourceWaitPool resourceWaitPool;
+
+    //constructor
+    public AbstractLock(boolean fair, ResourceAction lockAction) {
+        this.lockAction = lockAction;
+        this.resourceWaitPool = new ResourceWaitPool(fair);
+    }
 
     //constructor
     public AbstractLock(ResourceAction lockAction, ResourceWaitPool resourceWaitPool) {
