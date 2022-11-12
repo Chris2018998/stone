@@ -20,15 +20,15 @@ public final class ResourceAtomicState {
 
     private final AtomicInteger state = new AtomicInteger();
 
-    protected final int getState() {
+    public final int getState() {
         return state.get();
     }
 
-    protected final void setState(int newState) {
+    public final void setState(int newState) {
         state.set(newState);
     }
 
-    protected final boolean compareAndSetState(int expect, int update) {
+    public final boolean compareAndSetState(int expect, int update) {
         return state.compareAndSet(expect, update);
     }
 }
