@@ -84,7 +84,6 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     //****************************************************************************************************************//
     //                                          3: monitor methods                                                    //
     //****************************************************************************************************************//
-
     public int getHoldCount() {
         return holdCount;
     }
