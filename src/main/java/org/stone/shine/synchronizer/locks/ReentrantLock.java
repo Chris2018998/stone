@@ -27,11 +27,11 @@ import java.util.concurrent.locks.Lock;
  * @version 1.0
  */
 public final class ReentrantLock extends ResourceWaitPool implements Lock {
-
-    //hold count of owner thread
+    //hold count of accessed thread
     private int holdCount = 0;
-    //I hope to create difference,so try{@code AtomicReference}
     private AtomicReference<Thread> ownerRef = new AtomicReference<>(null);
+    //exclusive lock action
+    private ResourceAction lockAction;
 
     //****************************************************************************************************************//
     //                                          1: constructors(2)                                                    //
@@ -40,14 +40,13 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
         this(false);
     }
 
-    //@todo ResourceAction implementation of lock need be created here(soon)
     public ReentrantLock(boolean fair) {
-        super(null, fair);
+        super(fair);
     }
 
     //may be work as a Write Lock
     ReentrantLock(ResourceAction action, ResultWaitPool callPool) {
-        super(action, callPool);
+        super(callPool);
     }
 
     //****************************************************************************************************************//
@@ -56,7 +55,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     public void lock() {
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            super.acquire(1, parker, false, null, true);
+            super.acquire(lockAction, 1, parker, false, null, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -64,21 +63,21 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
 
     public void lockInterruptibly() throws InterruptedException {
         ThreadParkSupport parker = ThreadParkSupport.create();
-        super.acquire(1, parker, true, null, true);
+        super.acquire(lockAction, 1, parker, true, null, true);
     }
 
     public boolean tryLock() {
-        return super.tryAcquire(1);
+        return super.tryAcquire(lockAction, 1);
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(time), false);
-        return super.acquire(1, parker, true, null, true);
+        return super.acquire(lockAction, 1, parker, true, null, true);
     }
 
     public void unlock() {
-        super.release(1);
+        super.release(lockAction, 1);
     }
 
     public Condition newCondition() {
@@ -106,7 +105,6 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     protected Thread getOwner() {
         return ownerRef.get();
     }
-
 
     public boolean hasWaiters(Condition condition) {
         return true;
