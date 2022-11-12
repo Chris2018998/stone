@@ -22,7 +22,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
- * Base Lock,which can be super class(ReentrantLock,WriteLock,ReadLock)
+ * Lock super class(ReentrantLock,WriteLock,ReadLock)
  *
  * @author Chris Liao
  * @version 1.0
@@ -30,9 +30,9 @@ import java.util.concurrent.locks.Lock;
 
 abstract class AbstractLock implements Lock {
     //Exclusive acquisition type(set to wait node value)
-    private static final Object Exclusive = new Object();
+    static final Object Exclusive = new Object();
     //Sharable acquisition type(set to wait node value)
-    private static final Object Sharable = new Object();
+    static final Object Sharable = new Object();
 
     //Lock Acquire Action(ReentrantAction,WriteLockAction,ReadLockAction)
     private ResourceAction lockAction;
