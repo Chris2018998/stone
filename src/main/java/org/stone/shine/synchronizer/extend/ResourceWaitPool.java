@@ -22,23 +22,21 @@ import java.util.Collection;
  * @version 1.0
  */
 
-public abstract class ResourceWaitPool {
+public class ResourceWaitPool {
     //result call pool
     private ResultWaitPool callPool;
 
     //****************************************************************************************************************//
-    //                                          1: constructors(3)                                                    //
+    //                                          1: constructors(2)                                                    //
     //****************************************************************************************************************//
-    protected ResourceWaitPool(boolean fair) {
+    public ResourceWaitPool(boolean fair) {
         this(new ResultWaitPool(fair));
     }
 
-    protected ResourceWaitPool(ResultWaitPool callPool) {
+    public ResourceWaitPool(ResultWaitPool callPool) {
         if (callPool == null) throw new IllegalArgumentException("call result pool can't be null");
         this.callPool = callPool;
-
     }
-
 
     //****************************************************************************************************************//
     //                                          2: monitor Methods(5)                                                 //
@@ -66,12 +64,12 @@ public abstract class ResourceWaitPool {
     //****************************************************************************************************************//
     //                                          3: acquire/release methods(4)                                         //
     //****************************************************************************************************************//
-    protected final boolean tryAcquire(ResourceAction action, int size) {
+    public final boolean tryAcquire(ResourceAction action, int size) {
         return action.tryAcquire(size);
     }
 
     //acquire
-    protected final boolean acquire(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    public final boolean acquire(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return tryAcquire(action, size) || callPool.doCallForNode(action, size, true, parker, throwsIE, node, wakeupOtherOnIE);
         } catch (InterruptedException e) {
@@ -84,7 +82,7 @@ public abstract class ResourceWaitPool {
     }
 
     //acquire
-    protected final boolean acquire(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
+    public final boolean acquire(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return tryAcquire(action, size) || callPool.doCall(action, size, true, parker, throwsIE, acquisitionType, wakeupOtherOnIE);
         } catch (InterruptedException e) {
@@ -97,7 +95,7 @@ public abstract class ResourceWaitPool {
     }
 
     //release
-    protected final boolean release(ResourceAction action, int size) {
+    public final boolean release(ResourceAction action, int size) {
         if (action.tryRelease(size)) {
             callPool.wakeupOne();
             return true;

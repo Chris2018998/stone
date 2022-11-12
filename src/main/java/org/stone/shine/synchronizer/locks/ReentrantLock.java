@@ -10,7 +10,6 @@
 package org.stone.shine.synchronizer.locks;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
-import org.stone.shine.synchronizer.base.ResultWaitPool;
 import org.stone.shine.synchronizer.extend.ResourceAction;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
@@ -27,9 +26,9 @@ import java.util.concurrent.locks.Lock;
  * @version 1.0
  */
 public final class ReentrantLock extends ResourceWaitPool implements Lock {
-    //hold count of accessed thread
     private int holdCount = 0;
     private AtomicReference<Thread> ownerRef = new AtomicReference<>(null);
+
     //exclusive lock action
     private ResourceAction lockAction;
 
@@ -42,11 +41,6 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
 
     public ReentrantLock(boolean fair) {
         super(fair);
-    }
-
-    //may be work as a Write Lock
-    ReentrantLock(ResourceAction action, ResultWaitPool callPool) {
-        super(callPool);
     }
 
     //****************************************************************************************************************//
@@ -79,6 +73,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     public void unlock() {
         super.release(lockAction, 1);
     }
+
 
     public Condition newCondition() {
         //@todo
