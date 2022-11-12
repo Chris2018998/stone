@@ -31,15 +31,15 @@ public abstract class ResourceWaitPool {
     //****************************************************************************************************************//
     //                                          1: constructors(3)                                                    //
     //****************************************************************************************************************//
-    public ResourceWaitPool(ResourceAction action) {
+    protected ResourceWaitPool(ResourceAction action) {
         this(action, false);
     }
 
-    public ResourceWaitPool(ResourceAction action, boolean fair) {
+    protected ResourceWaitPool(ResourceAction action, boolean fair) {
         this(action, new ResultWaitPool(fair));
     }
 
-    public ResourceWaitPool(ResourceAction action, ResultWaitPool callPool) {
+    protected ResourceWaitPool(ResourceAction action, ResultWaitPool callPool) {
         if (action == null) throw new IllegalArgumentException("resource action can't be null");
         if (callPool == null) throw new IllegalArgumentException("call result pool can't be null");
         this.action = action;
