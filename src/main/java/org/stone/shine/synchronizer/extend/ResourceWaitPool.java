@@ -29,13 +29,12 @@ public class ResourceWaitPool {
     //****************************************************************************************************************//
     //                                          1: constructors(2)                                                    //
     //****************************************************************************************************************//
-    public ResourceWaitPool(boolean fair) {
-        this(new ResultWaitPool(fair));
+    public ResourceWaitPool() {
+        this(false);
     }
 
-    public ResourceWaitPool(ResultWaitPool callPool) {
-        if (callPool == null) throw new IllegalArgumentException("call result pool can't be null");
-        this.callPool = callPool;
+    public ResourceWaitPool(boolean fair) {
+        this.callPool = new ResultWaitPool(fair);
     }
 
     //****************************************************************************************************************//
