@@ -18,14 +18,17 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Semaphore implementation
+ * Semaphore implementation by wait Pool
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class Semaphore {
+
     private final ResourceWaitPool waitPool;
+
     private final ResourceAtomicState permitSize;
+
     private final ResourceAction semaphoreAction = null;
 
     /**
@@ -240,7 +243,7 @@ public class Semaphore {
      * @throws IllegalArgumentException if {@code permits} is negative
      */
     public void acquire(int permits) throws InterruptedException {
-        if (permits < 0) throw new IllegalArgumentException();
+        if (permits <= 0) throw new IllegalArgumentException();
         ThreadParkSupport parker = ThreadParkSupport.create();
         this.waitPool.acquire(semaphoreAction, permits, parker, false, null, true);
     }
@@ -268,7 +271,7 @@ public class Semaphore {
      * @throws IllegalArgumentException if {@code permits} is negative
      */
     public void acquireUninterruptibly(int permits) {
-        if (permits < 0) throw new IllegalArgumentException();
+        if (permits <= 0) throw new IllegalArgumentException();
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
             this.waitPool.acquire(semaphoreAction, permits, parker, false, null, true);
@@ -305,7 +308,7 @@ public class Semaphore {
      * @throws IllegalArgumentException if {@code permits} is negative
      */
     public boolean tryAcquire(int permits) {
-        if (permits < 0) throw new IllegalArgumentException();
+        if (permits <= 0) throw new IllegalArgumentException();
         return this.waitPool.tryAcquire(semaphoreAction, permits);
     }
 
@@ -361,7 +364,7 @@ public class Semaphore {
      */
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit)
             throws InterruptedException {
-        if (permits < 0) throw new IllegalArgumentException();
+        if (permits <= 0) throw new IllegalArgumentException();
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
@@ -391,7 +394,7 @@ public class Semaphore {
      * @throws IllegalArgumentException if {@code permits} is negative
      */
     public void release(int permits) {
-        if (permits < 0) throw new IllegalArgumentException();
+        if (permits <= 0) throw new IllegalArgumentException();
         waitPool.release(semaphoreAction, permits);
     }
 
@@ -412,7 +415,14 @@ public class Semaphore {
      * @return the number of permits acquired
      */
     public int drainPermits() {
-        return sync.drainPermits();
+        int drainPermits = 0;
+        do {
+            drainPermits = permitSize.getState();
+            if (drainPermits == 0 || permitSize.compareAndSetState(drainPermits, 0))
+                break;
+        } while (true);
+
+        return drainPermits;
     }
 
     /**
@@ -428,7 +438,14 @@ public class Semaphore {
     protected void reducePermits(int reduction) {
         if (reduction < 0) throw new IllegalArgumentException();
 
-        sync.reducePermits(reduction);
+        int availablePermits = 0;
+        int updAvailablePermits = 0;
+        do {
+            availablePermits = permitSize.getState();
+            updAvailablePermits = availablePermits - reduction;
+            if (updAvailablePermits <= 0 || permitSize.compareAndSetState(availablePermits, updAvailablePermits))
+                break;
+        } while (true);
     }
 
     /**
