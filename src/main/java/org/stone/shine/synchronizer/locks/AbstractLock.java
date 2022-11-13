@@ -23,7 +23,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
- * Lock super class(ReentrantLock,WriteLock,ReadLock)
+ * Lock super class(ReentrantLock,WriteLockImpl,ReadLockImpl)
  *
  * @author Chris Liao
  * @version 1.0
