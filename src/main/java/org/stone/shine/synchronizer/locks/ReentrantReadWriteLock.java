@@ -43,20 +43,12 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState));
     }
 
-    /**
-     * Returns the lock used for reading.
-     *
-     * @return the lock used for reading
-     */
+    //Returns the lock used for reading.
     public Lock readLock() {
         return readerLock;
     }
 
-    /**
-     * Returns the lock used for writing.
-     *
-     * @return the lock used for writing
-     */
+    //Returns the lock used for writing.
     public Lock writeLock() {
         return writerLock;
     }
