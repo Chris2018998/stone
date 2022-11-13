@@ -24,7 +24,7 @@ import java.util.Collection;
 
 public class ResourceWaitPool {
     //result call pool
-    private ResultWaitPool callPool;
+    private final ResultWaitPool callPool;
 
     //****************************************************************************************************************//
     //                                          1: constructors(2)                                                    //

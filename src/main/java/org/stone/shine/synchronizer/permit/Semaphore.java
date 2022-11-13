@@ -10,6 +10,7 @@
 package org.stone.shine.synchronizer.permit;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.extend.AcquireTypes;
 import org.stone.shine.synchronizer.extend.ResourceAction;
 import org.stone.shine.synchronizer.extend.ResourceAtomicState;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
@@ -246,7 +247,7 @@ public class Semaphore {
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-        this.waitPool.acquire(permitAction, permits, parker, true, null, true);
+        this.waitPool.acquire(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
     }
 
     /**
@@ -275,7 +276,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            this.waitPool.acquire(permitAction, permits, parker, false, null, true);
+            this.waitPool.acquire(permitAction, permits, parker, false, AcquireTypes.TYPE_Exclusive, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -368,7 +369,7 @@ public class Semaphore {
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-        return this.waitPool.acquire(permitAction, permits, parker, true, null, true);
+        return this.waitPool.acquire(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
     }
 
     /**

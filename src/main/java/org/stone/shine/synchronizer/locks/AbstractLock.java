@@ -12,6 +12,7 @@ package org.stone.shine.synchronizer.locks;
 import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.SignalWaitPool;
+import org.stone.shine.synchronizer.extend.AcquireTypes;
 import org.stone.shine.synchronizer.extend.ResourceAction;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
@@ -29,49 +30,44 @@ import java.util.concurrent.locks.Lock;
  */
 
 abstract class AbstractLock implements Lock {
-    //Exclusive acquisition type(set to wait node value)
-    static final Object Exclusive = new Object();
-    //Sharable acquisition type(set to wait node value)
-    static final Object Sharable = new Object();
-
     //Lock Acquire Action(ReentrantAction,WriteLockAction,ReadLockAction)
     private final ResourceAction lockAction;
     //resource wait Pool
-    private final ResourceWaitPool resourceWaitPool;
+    private final ResourceWaitPool waitPool;
 
     //constructor
     public AbstractLock(boolean fair, ResourceAction lockAction) {
         this.lockAction = lockAction;
-        this.resourceWaitPool = new ResourceWaitPool(fair);
+        this.waitPool = new ResourceWaitPool(fair);
     }
 
     //constructor
-    public AbstractLock(ResourceAction lockAction, ResourceWaitPool resourceWaitPool) {
+    public AbstractLock(ResourceAction lockAction, ResourceWaitPool waitPool) {
         this.lockAction = lockAction;
-        this.resourceWaitPool = resourceWaitPool;
+        this.waitPool = waitPool;
     }
 
     //****************************************************************************************************************//
     //                                          1: monitor Methods(5)                                                 //
     //****************************************************************************************************************//
     public final boolean isFair() {
-        return resourceWaitPool.isFair();
+        return waitPool.isFair();
     }
 
     public final int getQueueLength() {
-        return resourceWaitPool.getQueueLength();
+        return waitPool.getQueueLength();
     }
 
     public final boolean hasQueuedThreads() {
-        return resourceWaitPool.hasQueuedThreads();
+        return waitPool.hasQueuedThreads();
     }
 
     public final Collection<Thread> getQueuedThreads() {
-        return resourceWaitPool.getQueuedThreads();
+        return waitPool.getQueuedThreads();
     }
 
     public final boolean hasQueuedThread(Thread thread) {
-        return resourceWaitPool.hasQueuedThread(thread);
+        return waitPool.hasQueuedThread(thread);
     }
 
     public abstract Thread getHoldThread();
@@ -82,7 +78,7 @@ abstract class AbstractLock implements Lock {
     public void lock() {
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            resourceWaitPool.acquire(lockAction, 1, parker, false, null, true);
+            waitPool.acquire(lockAction, 1, parker, false, null, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -90,21 +86,21 @@ abstract class AbstractLock implements Lock {
 
     public void lockInterruptibly() throws InterruptedException {
         ThreadParkSupport parker = ThreadParkSupport.create();
-        resourceWaitPool.acquire(lockAction, 1, parker, true, null, true);
+        waitPool.acquire(lockAction, 1, parker, true, null, true);
     }
 
     public boolean tryLock() {
-        return resourceWaitPool.tryAcquire(lockAction, 1);
+        return waitPool.tryAcquire(lockAction, 1);
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(time), false);
-        return resourceWaitPool.acquire(lockAction, 1, parker, true, null, true);
+        return waitPool.acquire(lockAction, 1, parker, true, null, true);
     }
 
     public void unlock() {
-        resourceWaitPool.release(lockAction, 1);
+        waitPool.release(lockAction, 1);
     }
 
     public Condition newCondition() {
@@ -160,7 +156,7 @@ abstract class AbstractLock implements Lock {
 
             //2:join in the condition queue and wait a wakeup-signal from other
             InterruptedException waitInterruptedException = null;
-            ThreadNode conditionNode = super.createNode(Exclusive);//condition just support Exclusive mode
+            ThreadNode conditionNode = super.createNode(AcquireTypes.TYPE_Exclusive);//condition just support Exclusive mode
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
                 super.doWait(support, throwsIE, conditionNode, false);
@@ -170,7 +166,7 @@ abstract class AbstractLock implements Lock {
 
             //3:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             conditionNode.setState(null);//reset to null(need filled by other)
-            lock.resourceWaitPool.acquire(lock.lockAction, 1, ThreadParkSupport.create(), false, conditionNode, false);
+            lock.waitPool.acquire(lock.lockAction, 1, ThreadParkSupport.create(), false, conditionNode, false);
 
             //4:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;

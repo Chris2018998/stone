@@ -43,7 +43,8 @@ public abstract class ThreadWaitPool {
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
             if (node == skipNode) continue;
-            if (equals(node.getValue(), equalsValue) && ThreadNodeUpdater.casNodeState(node, null, state)) {
+            if (equalsValue != null && !equals(node.getValue(), equalsValue)) continue;
+            if (ThreadNodeUpdater.casNodeState(node, null, state)) {
                 LockSupport.unpark(node.getThread());
                 count++;
                 if (justOne) break;

@@ -158,10 +158,9 @@ public class ThreadParkSupport {
         public boolean park() {
             if (parkTime > spinForTimeoutThreshold) {
                 LockSupport.parkNanos(parkTime);
-                return interrupted = Thread.interrupted();
-            } else {
-                return interrupted;
+                this.interrupted = Thread.interrupted();
             }
+            return interrupted;
         }
     }
 

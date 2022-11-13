@@ -18,17 +18,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public final class ResourceAtomicState {
 
-    private final AtomicInteger state = new AtomicInteger();
+    private final AtomicInteger atomicState = new AtomicInteger();
+
+    public ResourceAtomicState(int state) {
+        atomicState.set(state);
+    }
 
     public final int getState() {
-        return state.get();
+        return atomicState.get();
     }
 
     public final void setState(int newState) {
-        state.set(newState);
+        atomicState.set(newState);
     }
 
     public final boolean compareAndSetState(int expect, int update) {
-        return state.compareAndSet(expect, update);
+        return atomicState.compareAndSet(expect, update);
     }
 }
