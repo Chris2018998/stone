@@ -18,11 +18,8 @@ import org.stone.shine.synchronizer.extend.ResourceAtomicState;
  * @version 1.0
  */
 public final class ReentrantLock extends AbstractLock {
-    //lock state
-    private ResourceAtomicState lockState;
-    //lock state
-    private ResourceAtomicState lockState;
-
+    //
+    private final ResourceAtomicState lockState = new ResourceAtomicState(0);
 
     //****************************************************************************************************************//
     //                                          1: constructors(2)                                                    //
@@ -39,21 +36,24 @@ public final class ReentrantLock extends AbstractLock {
     //                                          3: monitor methods                                                    //
     //****************************************************************************************************************//
     public int getHoldCount() {
-        return holdCount;
+        return lockState.getState();
     }
 
     public boolean isLocked() {
-        return ownerRef.get() != null;
-    }
-
-    public boolean isHeldByCurrentThread() {
-        return ownerRef.get() == Thread.currentThread();
+        return lockState.getState() != 0;
     }
 
     protected Thread getOwner() {
         return ownerRef.get();
     }
 
+    public Thread getHoldThread() {
+        return null;
+    }
+
+    public boolean isHeldByCurrentThread() {
+        return ownerRef.get() == Thread.currentThread();
+    }
 
     public String toString() {
         Thread o = ownerRef.get();
