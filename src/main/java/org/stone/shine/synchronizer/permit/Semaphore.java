@@ -24,12 +24,12 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class Semaphore {
-
+    //resource wait pool
     private final ResourceWaitPool waitPool;
-
+    //permit acquisition action driven by wait pool
+    private final ResourceAction permitAction;
+    //permit size definition
     private final ResourceAtomicState permitSize;
-
-    private final ResourceAction semaphoreAction = null;
 
     /**
      * Creates a {@code Semaphore} with the given number of
@@ -59,6 +59,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException("permits <= 0");
         this.waitPool = new ResourceWaitPool(fair);
         this.permitSize = new ResourceAtomicState(permits);
+        this.permitAction = new PermitResourceAction(permitSize);
     }
 
     /**
@@ -245,7 +246,7 @@ public class Semaphore {
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-        this.waitPool.acquire(semaphoreAction, permits, parker, false, null, true);
+        this.waitPool.acquire(permitAction, permits, parker, false, null, true);
     }
 
     /**
@@ -274,7 +275,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            this.waitPool.acquire(semaphoreAction, permits, parker, false, null, true);
+            this.waitPool.acquire(permitAction, permits, parker, false, null, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -309,7 +310,7 @@ public class Semaphore {
      */
     public boolean tryAcquire(int permits) {
         if (permits <= 0) throw new IllegalArgumentException();
-        return this.waitPool.tryAcquire(semaphoreAction, permits);
+        return this.waitPool.tryAcquire(permitAction, permits);
     }
 
     /**
@@ -368,7 +369,7 @@ public class Semaphore {
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-        return this.waitPool.acquire(semaphoreAction, permits, parker, false, null, true);
+        return this.waitPool.acquire(permitAction, permits, parker, false, null, true);
     }
 
     /**
@@ -395,7 +396,7 @@ public class Semaphore {
      */
     public void release(int permits) {
         if (permits <= 0) throw new IllegalArgumentException();
-        waitPool.release(semaphoreAction, permits);
+        waitPool.release(permitAction, permits);
     }
 
     /**
@@ -503,5 +504,39 @@ public class Semaphore {
      */
     public String toString() {
         return super.toString() + "[Permits = " + permitSize.getState() + "]";
+    }
+
+    //Permit Action driven by wait pool
+    private static class PermitResourceAction extends ResourceAction {
+        private ResourceAtomicState permitSize;
+
+        public PermitResourceAction(ResourceAtomicState permitSize) {
+            this.permitSize = permitSize;
+        }
+
+        public Object call(Object size) {
+            int acquireSize = (int) size;
+
+            int availablePermits;
+            int updAvailablePermits;
+            do {
+                availablePermits = this.permitSize.getState();
+                updAvailablePermits = availablePermits - acquireSize;
+
+                if (updAvailablePermits <= 0) return false;
+                if (this.permitSize.compareAndSetState(availablePermits, updAvailablePermits)) return true;
+            } while (true);
+        }
+
+        public boolean tryRelease(int size) {
+            int availablePermits;
+            int updAvailablePermits;
+            do {
+                availablePermits = this.permitSize.getState();
+                updAvailablePermits = availablePermits + size;
+                if (this.permitSize.compareAndSetState(availablePermits, updAvailablePermits))
+                    return true;
+            } while (true);
+        }
     }
 }
