@@ -510,7 +510,7 @@ public class Semaphore {
     private static class PermitResourceAction extends ResourceAction {
         private ResourceAtomicState permitSize;
 
-        public PermitResourceAction(ResourceAtomicState permitSize) {
+        PermitResourceAction(ResourceAtomicState permitSize) {
             this.permitSize = permitSize;
         }
 
