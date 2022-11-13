@@ -43,8 +43,8 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     public ReentrantReadWriteLock(boolean fair) {
         this.waitPool = new ResourceWaitPool(fair);
         this.lockState = new ResourceAtomicState(0);
-        this.writerLock = new WriteLock(waitPool, null);
-        this.readerLock = new ReadLock(waitPool, null);
+        this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState));
+        this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState));
     }
 
     /**
@@ -68,13 +68,13 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     //****************************************************************************************************************//
     //                                       2: WriteLock/ReadLock Impl                                               //                                                                                  //
     //****************************************************************************************************************//
-    private class WriteLock extends AbstractLock {
+    private static class WriteLock extends AbstractLock {
         WriteLock(ResourceWaitPool waitPool, BaseLockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
         }
     }
 
-    private class ReadLock extends AbstractLock {
+    private static class ReadLock extends AbstractLock {
         ReadLock(ResourceWaitPool waitPool, BaseLockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
         }
@@ -85,8 +85,37 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       3: Lock Action Impl                                                      //                                                                                  //
+    //                                       3: Lock Action Impl                                                      //
     //****************************************************************************************************************//
+    private static class WriteLockAction extends BaseLockAction {
+        WriteLockAction(ResourceAtomicState lockState) {
+            super(lockState);
+        }
 
+        public Object call(Object size) {
+            //@todo
+            return true;
+        }
 
+        public boolean tryRelease(int size) {
+            //@todo
+            return true;
+        }
+    }
+
+    private static class ReadLockAction extends BaseLockAction {
+        ReadLockAction(ResourceAtomicState lockState) {
+            super(lockState);
+        }
+
+        public Object call(Object size) {
+            //@todo
+            return true;
+        }
+
+        public boolean tryRelease(int size) {
+            //@todo
+            return true;
+        }
+    }
 }

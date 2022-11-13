@@ -82,7 +82,12 @@ public final class ReentrantLock extends AbstractLock {
                 int curState = this.getAtomicStateValue();
                 if (curState > 0) {
                     this.getLockState().setState(curState - 1);
-                    return curState == 1;//return true,then wakeup another
+                    if (curState == 1) {
+                        this.setHoldThread(null);
+                        return true;
+                    } else {
+                        return false;
+                    }
                 } else {
                     return false;
                 }
