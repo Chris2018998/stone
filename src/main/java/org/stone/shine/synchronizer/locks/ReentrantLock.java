@@ -9,15 +9,7 @@
  */
 package org.stone.shine.synchronizer.locks;
 
-import org.stone.shine.synchronizer.ThreadParkSupport;
-import org.stone.shine.synchronizer.extend.ResourceAction;
-import org.stone.shine.synchronizer.extend.ResourceWaitPool;
-
-import java.util.Collection;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
+import org.stone.shine.synchronizer.extend.ResourceAtomicState;
 
 /**
  * Reentrant Lock Implementation
@@ -25,12 +17,12 @@ import java.util.concurrent.locks.Lock;
  * @author Chris Liao
  * @version 1.0
  */
-public final class ReentrantLock extends ResourceWaitPool implements Lock {
-    private int holdCount = 0;
-    private AtomicReference<Thread> ownerRef = new AtomicReference<>(null);
+public final class ReentrantLock extends AbstractLock {
+    //lock state
+    private ResourceAtomicState lockState;
+    //lock state
+    private ResourceAtomicState lockState;
 
-    //exclusive lock action
-    private ResourceAction lockAction;
 
     //****************************************************************************************************************//
     //                                          1: constructors(2)                                                    //
@@ -40,45 +32,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     }
 
     public ReentrantLock(boolean fair) {
-        super(fair);
-    }
-
-    //****************************************************************************************************************//
-    //                                          2: lock methods                                                       //
-    //****************************************************************************************************************//
-    public void lock() {
-        try {
-            ThreadParkSupport parker = ThreadParkSupport.create();
-            super.acquireWithType(lockAction, 1, parker, false, null, true);
-        } catch (Exception e) {
-            //do nothing
-        }
-    }
-
-    public void lockInterruptibly() throws InterruptedException {
-        ThreadParkSupport parker = ThreadParkSupport.create();
-        super.acquireWithType(lockAction, 1, parker, true, null, true);
-    }
-
-    public boolean tryLock() {
-        return super.tryAcquire(lockAction, 1);
-    }
-
-    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(time), false);
-        return super.acquireWithType(lockAction, 1, parker, true, null, true);
-    }
-
-    public void unlock() {
-        super.release(lockAction, 1);
-    }
-
-
-    public Condition newCondition() {
-        //@todo
-        return null;
-        // return access.newCondition();
+        super(fair, null);
     }
 
     //****************************************************************************************************************//
@@ -100,17 +54,6 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
         return ownerRef.get();
     }
 
-    public boolean hasWaiters(Condition condition) {
-        return true;
-    }
-
-    public int getWaitQueueLength(Condition condition) {
-        return 1;
-    }
-
-    protected Collection<Thread> getWaitingThreads(Condition condition) {
-        return null;
-    }
 
     public String toString() {
         Thread o = ownerRef.get();

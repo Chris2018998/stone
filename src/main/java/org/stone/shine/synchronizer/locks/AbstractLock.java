@@ -293,7 +293,28 @@ abstract class AbstractLock implements Lock {
     public abstract Thread getHoldThread();
 
     //****************************************************************************************************************//
-    //                                        4: Lock Condition Impl                                                  //                                                                                  //
+    //                                          4: Condition Methods(4)                                               //
+    //****************************************************************************************************************//
+    public boolean hasWaiters(Condition condition) {
+        return castConditionToLocal(condition).hasQueuedThreads();
+    }
+
+    public int getWaitQueueLength(Condition condition) {
+        return castConditionToLocal(condition).getQueueLength();
+    }
+
+    protected Collection<Thread> getWaitingThreads(Condition condition) {
+        return castConditionToLocal(condition).getQueuedThreads();
+    }
+
+    private LockConditionImpl castConditionToLocal(Condition condition) {
+        if (condition == null) throw new NullPointerException();
+        if (!(condition instanceof LockConditionImpl)) throw new IllegalArgumentException("not owner");
+        return (LockConditionImpl) condition;
+    }
+
+    //****************************************************************************************************************//
+    //                                       5: Lock Condition Impl                                                  //                                                                                  //
     //****************************************************************************************************************//
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
         private AbstractLock lock;
