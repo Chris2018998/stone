@@ -12,7 +12,7 @@ package org.stone.shine.synchronizer.base;
 import org.stone.shine.synchronizer.*;
 
 /**
- * wait expected state
+ * Expected state wait pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -23,6 +23,7 @@ public class StateWaitPool extends ThreadWaitPool {
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param expect   if the got signal state equal the expected argument,then left from pool
      * @param parker   thread parker
      * @param throwsIE true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
@@ -35,6 +36,7 @@ public class StateWaitPool extends ThreadWaitPool {
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param expect    if the got signal state equal the expected argument,then left from pool
      * @param parker    thread parker
      * @param throwsIE  true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @param nodeValue a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
@@ -48,6 +50,7 @@ public class StateWaitPool extends ThreadWaitPool {
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param expect          if the got signal state equal the expected argument,then left from pool
      * @param parker          thread parker
      * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @param nodeValue       a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
@@ -62,6 +65,7 @@ public class StateWaitPool extends ThreadWaitPool {
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
+     * @param expect          if the got signal state equal the expected argument,then left from pool
      * @param parker          thread parker
      * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
      * @param node            preCreated thread wait node

@@ -37,7 +37,7 @@ public class ResultWaitPool extends ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: call method(3)                                                     //
+    //                                          2: call method(5)                                                     //
     //****************************************************************************************************************//
 
     /**
@@ -77,12 +77,13 @@ public class ResultWaitPool extends ThreadWaitPool {
      * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
      * method return true,not equals that wait timeout and return false.
      *
-     * @param call      executed in pool to get result
-     * @param arg       call argument
-     * @param expect    compare to the call result
-     * @param parker    thread parker
-     * @param throwsIE  true,throws InterruptedException when interrupted
-     * @param nodeValue property of wait node
+     * @param call            executed in pool to get result
+     * @param arg             call argument
+     * @param expect          compare to the call result
+     * @param parker          thread parker
+     * @param throwsIE        true,throws InterruptedException when interrupted
+     * @param wakeupOtherOnIE true,if got a wakeup signal at interrupted,then transfer the state to other
+     * @param nodeValue       property of wait node
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
@@ -126,7 +127,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param parker          thread parker
      * @param throwsIE        true,throws InterruptedException when interrupted
      * @param node            preCreated wait node(for example: nodes wait in lock condition queue,at finally,them need removed and offered to syn queue to get lock)
-     * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
+     * @param wakeupOtherOnIE true,if got a wakeup signal at interrupted,then transfer the state to other
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */

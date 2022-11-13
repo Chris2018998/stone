@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Semaphore implementation by wait Pool
+ * Semaphore implementation with wait Pool
  *
  * @author Chris Liao
  * @version 1.0
