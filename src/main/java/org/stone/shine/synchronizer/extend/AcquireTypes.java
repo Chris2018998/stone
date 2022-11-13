@@ -14,7 +14,7 @@ package org.stone.shine.synchronizer.extend;
  * @version 1.0
  */
 
-public class AcquireTypes {
+public final class AcquireTypes {
 
     //Exclusive acquisition type
     public static final Object TYPE_Exclusive = new Object();
