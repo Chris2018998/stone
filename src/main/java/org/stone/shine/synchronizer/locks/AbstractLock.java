@@ -13,7 +13,6 @@ import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.SignalWaitPool;
 import org.stone.shine.synchronizer.extend.AcquireTypes;
-import org.stone.shine.synchronizer.extend.ResourceAction;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
@@ -30,25 +29,25 @@ import java.util.concurrent.locks.Lock;
  */
 
 abstract class AbstractLock implements Lock {
+    //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
+    protected final BaseLockAction lockAction;
     //resource acquire type
     private final Object acquireType;
     //resource wait Pool
     private final ResourceWaitPool waitPool;
-    //Lock Acquire Action(ReentrantAction,WriteLockAction,ReadLockAction)
-    private final ResourceAction lockAction;
 
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//
     //constructor1(extend by ReentrantLock)
-    AbstractLock(boolean fair, ResourceAction lockAction) {
+    AbstractLock(boolean fair, BaseLockAction lockAction) {
         this.lockAction = lockAction;
         this.waitPool = new ResourceWaitPool(fair);
         this.acquireType = AcquireTypes.TYPE_Exclusive;
     }
 
     //constructor2(extend by WriteLockImpl,ReadLockImpl)
-    AbstractLock(ResourceWaitPool waitPool, ResourceAction lockAction, Object acquireType) {
+    AbstractLock(ResourceWaitPool waitPool, BaseLockAction lockAction, Object acquireType) {
         this.waitPool = waitPool;
         this.lockAction = lockAction;
         this.acquireType = acquireType;
@@ -290,8 +289,6 @@ abstract class AbstractLock implements Lock {
         return waitPool.hasQueuedThread(thread);
     }
 
-    public abstract Thread getHoldThread();
-
     //****************************************************************************************************************//
     //                                          4: Condition Methods(4)                                               //
     //****************************************************************************************************************//
@@ -317,10 +314,12 @@ abstract class AbstractLock implements Lock {
     //                                       5: Lock Condition Impl                                                  //                                                                                  //
     //****************************************************************************************************************//
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
-        private AbstractLock lock;
+        private final AbstractLock lock;
+        private final BaseLockAction lockAction;
 
         LockConditionImpl(AbstractLock lock) {
             this.lock = lock;
+            this.lockAction = lock.lockAction;
         }
 
         public void await() throws InterruptedException {
@@ -385,12 +384,12 @@ abstract class AbstractLock implements Lock {
         }
 
         public void signal() {
-            if (lock.getHoldThread() != Thread.currentThread()) throw new IllegalMonitorStateException();
+            if (lockAction.getHoldThread() != Thread.currentThread()) throw new IllegalMonitorStateException();
             super.wakeupOne();//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
-            if (lock.getHoldThread() != Thread.currentThread()) throw new IllegalMonitorStateException();
+            if (lockAction.getHoldThread() != Thread.currentThread()) throw new IllegalMonitorStateException();
             super.wakeupAll();//node wait(step2) in the doAwait method
         }
     }

@@ -9,6 +9,8 @@
  */
 package org.stone.shine.synchronizer.locks;
 
+import org.stone.shine.synchronizer.extend.ResourceWaitPool;
+
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -19,6 +21,16 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @version 1.0
  */
 public class ReentrantReadWriteLock implements ReadWriteLock {
+    //resource wait Pool
+    private final ResourceWaitPool waitPool;
+
+    public ReentrantReadWriteLock() {
+        this(false);
+    }
+
+    public ReentrantReadWriteLock(boolean fair) {
+        this.waitPool = new ResourceWaitPool(fair);
+    }
 
     /**
      * Returns the lock used for reading.

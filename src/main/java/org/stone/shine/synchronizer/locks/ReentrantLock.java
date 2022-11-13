@@ -18,47 +18,60 @@ import org.stone.shine.synchronizer.extend.ResourceAtomicState;
  * @version 1.0
  */
 public final class ReentrantLock extends AbstractLock {
-    //
-    private final ResourceAtomicState lockState = new ResourceAtomicState(0);
 
     //****************************************************************************************************************//
-    //                                          1: constructors(2)                                                    //
+    //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//
     public ReentrantLock() {
         this(false);
     }
 
     public ReentrantLock(boolean fair) {
-        super(fair, null);
+        super(fair, new ReentrantLockAction(new ResourceAtomicState(0)));
     }
 
-    //****************************************************************************************************************//
-    //                                          3: monitor methods                                                    //
-    //****************************************************************************************************************//
-    public int getHoldCount() {
-        return lockState.getState();
-    }
 
+    //****************************************************************************************************************//
+    //                                          2: monitor methods(4)                                                 //
+    //****************************************************************************************************************//
     public boolean isLocked() {
-        return lockState.getState() != 0;
+        return lockAction.getAtomicStateValue() != 0;
+    }
+
+    public int getHoldCount() {
+        return lockAction.getAtomicStateValue();
     }
 
     protected Thread getOwner() {
-        return ownerRef.get();
-    }
-
-    public Thread getHoldThread() {
-        return null;
+        return lockAction.getHoldThread();
     }
 
     public boolean isHeldByCurrentThread() {
-        return ownerRef.get() == Thread.currentThread();
+        return lockAction.getHoldThread() == Thread.currentThread();
     }
 
     public String toString() {
-        Thread o = ownerRef.get();
+        Thread o = lockAction.getHoldThread();
         return super.toString() + ((o == null) ?
                 "[Unlocked]" :
                 "[Locked by thread " + o.getName() + "]");
+    }
+
+    //Reentrant Action
+    private static class ReentrantLockAction extends BaseLockAction {
+
+        ReentrantLockAction(ResourceAtomicState lockState) {
+            super(lockState);
+        }
+
+        public Object call(Object size) {
+            //@toto
+            return true;
+        }
+
+        public boolean tryRelease(int size) {
+            //@toto
+            return true;
+        }
     }
 }
