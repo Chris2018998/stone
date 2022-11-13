@@ -28,7 +28,6 @@ abstract class BaseLockAction extends ResourceAction {
         this.lockState = lockState;
     }
 
-
     public int getAtomicStateValue() {
         return lockState.getState();
     }

@@ -9,9 +9,11 @@
  */
 package org.stone.shine.synchronizer.locks;
 
+import org.stone.shine.synchronizer.extend.AcquireTypes;
 import org.stone.shine.synchronizer.extend.ResourceAtomicState;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -26,6 +28,10 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     private final ResourceWaitPool waitPool;
     //lockState(share to WriteLockImpl,ReadLockImpl)
     private final ResourceAtomicState lockState;
+    //Inner class providing readLock
+    private final ReentrantReadWriteLock.ReadLock readerLock;
+    //Inner class providing writeLock
+    private final ReentrantReadWriteLock.WriteLock writerLock;
 
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
@@ -37,6 +43,8 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     public ReentrantReadWriteLock(boolean fair) {
         this.waitPool = new ResourceWaitPool(fair);
         this.lockState = new ResourceAtomicState(0);
+        this.writerLock = new WriteLock(waitPool, null);
+        this.readerLock = new ReadLock(waitPool, null);
     }
 
     /**
@@ -45,8 +53,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
      * @return the lock used for reading
      */
     public Lock readLock() {
-        //@todo
-        return null;
+        return readerLock;
     }
 
     /**
@@ -55,7 +62,31 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
      * @return the lock used for writing
      */
     public Lock writeLock() {
-        //@todo
-        return null;
+        return writerLock;
     }
+
+    //****************************************************************************************************************//
+    //                                       2: WriteLock/ReadLock Impl                                               //                                                                                  //
+    //****************************************************************************************************************//
+    private class WriteLock extends AbstractLock {
+        WriteLock(ResourceWaitPool waitPool, BaseLockAction lockAction) {
+            super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
+        }
+    }
+
+    private class ReadLock extends AbstractLock {
+        ReadLock(ResourceWaitPool waitPool, BaseLockAction lockAction) {
+            super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
+        }
+
+        public Condition newCondition() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                       3: Lock Action Impl                                                      //                                                                                  //
+    //****************************************************************************************************************//
+
+
 }
