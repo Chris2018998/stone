@@ -12,6 +12,8 @@ package org.stone.shine.synchronizer.extend;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * resource state,which be similar to atomic field in {@link java.util.concurrent.locks.AbstractQueuedSynchronizer}class
+ *
  * @author Chris Liao
  * @version 1.0
  */
@@ -19,6 +21,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class ResourceAtomicState {
 
     private final AtomicInteger atomicState = new AtomicInteger();
+
+    public ResourceAtomicState() {
+    }
 
     public ResourceAtomicState(int state) {
         atomicState.set(state);
