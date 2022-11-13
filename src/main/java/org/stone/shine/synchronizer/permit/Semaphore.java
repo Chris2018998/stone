@@ -246,7 +246,7 @@ public class Semaphore {
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-        this.waitPool.acquire(permitAction, permits, parker, false, null, true);
+        this.waitPool.acquire(permitAction, permits, parker, true, null, true);
     }
 
     /**
@@ -363,13 +363,12 @@ public class Semaphore {
      * @throws InterruptedException     if the current thread is interrupted
      * @throws IllegalArgumentException if {@code permits} is negative
      */
-    public boolean tryAcquire(int permits, long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-        return this.waitPool.acquire(permitAction, permits, parker, false, null, true);
+        return this.waitPool.acquire(permitAction, permits, parker, true, null, true);
     }
 
     /**
@@ -522,8 +521,7 @@ public class Semaphore {
             do {
                 availablePermits = this.permitSize.getState();
                 updAvailablePermits = availablePermits - acquireSize;
-
-                if (updAvailablePermits <= 0) return false;
+                if (availablePermits <= 0 || updAvailablePermits < 0) return false;
                 if (this.permitSize.compareAndSetState(availablePermits, updAvailablePermits)) return true;
             } while (true);
         }
