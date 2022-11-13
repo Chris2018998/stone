@@ -30,7 +30,7 @@ import java.util.concurrent.locks.Lock;
  */
 
 abstract class AbstractLock implements Lock {
-    //resource wait Pool
+    //resource acquire type
     private final Object acquireType;
     //resource wait Pool
     private final ResourceWaitPool waitPool;
