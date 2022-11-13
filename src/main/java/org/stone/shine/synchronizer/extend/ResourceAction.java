@@ -16,7 +16,7 @@ import java.util.Objects;
 /**
  * Work as a plugin of {@code ResourceWaitPool},two abstract methods need be implemented in its sub classes
  * <p>
- * Method {@link #call} :acquire resource(lock,permit,and so on)
+ * Method {@link #call} :acquireWithType resource(lock,permit,and so on)
  * <p>
  * Method {@link #tryRelease}:release acquired resource
  *
@@ -28,7 +28,7 @@ public abstract class ResourceAction implements ResultCall {
     //try release
     public abstract boolean tryRelease(int size);
 
-    //try to acquire lock or permit
+    //try to acquireWithType lock or permit
     public boolean tryAcquire(int size) {
         try {
             return Objects.equals(this.call(size), true);

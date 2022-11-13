@@ -76,7 +76,7 @@ abstract class AbstractLock implements Lock {
     public void lock() {
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            waitPool.acquire(lockAction, 1, parker, false, acquireType, true);
+            waitPool.acquireWithType(lockAction, 1, parker, false, acquireType, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -130,7 +130,7 @@ abstract class AbstractLock implements Lock {
      */
     public void lockInterruptibly() throws InterruptedException {
         ThreadParkSupport parker = ThreadParkSupport.create();
-        waitPool.acquire(lockAction, 1, parker, true, acquireType, true);
+        waitPool.acquireWithType(lockAction, 1, parker, true, acquireType, true);
     }
 
     /**
@@ -224,7 +224,7 @@ abstract class AbstractLock implements Lock {
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(time), false);
-        return waitPool.acquire(lockAction, 1, parker, true, acquireType, true);
+        return waitPool.acquireWithType(lockAction, 1, parker, true, acquireType, true);
     }
 
     /**
@@ -250,7 +250,7 @@ abstract class AbstractLock implements Lock {
      * <p>Before waiting on the condition the lock must be held by the
      * current thread.
      * A call to {@link Condition#await()} will atomically release the lock
-     * before waiting and re-acquire the lock before the wait returns.
+     * before waiting and re-acquireWithType the lock before the wait returns.
      *
      * <p><b>Implementation Considerations</b>
      *
@@ -351,7 +351,7 @@ abstract class AbstractLock implements Lock {
 
             //3:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             conditionNode.setState(null);//reset to null(need filled by other)
-            lock.waitPool.acquire(lock.lockAction, 1, ThreadParkSupport.create(), false, conditionNode, false);
+            lock.waitPool.acquireWithNode(lock.lockAction, 1, ThreadParkSupport.create(), false, conditionNode, false);
 
             //4:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;

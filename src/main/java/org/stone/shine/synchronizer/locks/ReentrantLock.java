@@ -49,7 +49,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     public void lock() {
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            super.acquire(lockAction, 1, parker, false, null, true);
+            super.acquireWithType(lockAction, 1, parker, false, null, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -57,7 +57,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
 
     public void lockInterruptibly() throws InterruptedException {
         ThreadParkSupport parker = ThreadParkSupport.create();
-        super.acquire(lockAction, 1, parker, true, null, true);
+        super.acquireWithType(lockAction, 1, parker, true, null, true);
     }
 
     public boolean tryLock() {
@@ -67,7 +67,7 @@ public final class ReentrantLock extends ResourceWaitPool implements Lock {
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(time), false);
-        return super.acquire(lockAction, 1, parker, true, null, true);
+        return super.acquireWithType(lockAction, 1, parker, true, null, true);
     }
 
     public void unlock() {

@@ -61,14 +61,14 @@ public class ResourceWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          3: acquire/release methods(4)                                         //
+    //                                          3: acquireWithType/release methods(4)                                         //
     //****************************************************************************************************************//
     public final boolean tryAcquire(ResourceAction action, int size) {
         return action.tryAcquire(size);
     }
 
-    //acquire
-    public final boolean acquire(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    //acquireWithType
+    public final boolean acquireWithNode(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return tryAcquire(action, size) || callPool.doCallForNode(action, size, true, parker, throwsIE, node, wakeupOtherOnIE);
         } catch (InterruptedException e) {
@@ -80,8 +80,8 @@ public class ResourceWaitPool {
         }
     }
 
-    //acquire
-    public final boolean acquire(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
+    //acquireWithType
+    public final boolean acquireWithType(ResourceAction action, int size, ThreadParkSupport parker, boolean throwsIE, Object acquisitionType, boolean wakeupOtherOnIE) throws InterruptedException {
         try {
             return tryAcquire(action, size) || callPool.doCall(action, size, true, parker, throwsIE, acquisitionType, wakeupOtherOnIE);
         } catch (InterruptedException e) {

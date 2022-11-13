@@ -131,7 +131,7 @@ public class Semaphore {
      *
      * <p>Even when this semaphore has been set to use a
      * fair ordering policy, a call to {@code tryAcquire()} <em>will</em>
-     * immediately acquire a permit if one is available, whether or not
+     * immediately acquireWithType a permit if one is available, whether or not
      * other threads are currently waiting.
      * This &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to honor
@@ -172,7 +172,7 @@ public class Semaphore {
      * <ul>
      * <li>has its interrupted status set on entry to this method; or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
-     * to acquire a permit,
+     * to acquireWithType a permit,
      * </ul>
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
@@ -195,7 +195,7 @@ public class Semaphore {
      * Releases a permit, returning it to the semaphore.
      *
      * <p>Releases a permit, increasing the number of available permits by
-     * one.  If any threads are trying to acquire a permit, then one is
+     * one.  If any threads are trying to acquireWithType a permit, then one is
      * selected and given the permit that was just released.  That thread
      * is (re)enabled for thread scheduling purposes.
      *
@@ -237,17 +237,17 @@ public class Semaphore {
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
      * Any permits that were to be assigned to this thread are instead
-     * assigned to other threads trying to acquire permits, as if
+     * assigned to other threads trying to acquireWithType permits, as if
      * permits had been made available by a call to {@link #release()}.
      *
-     * @param permits the number of permits to acquire
+     * @param permits the number of permits to acquireWithType
      * @throws InterruptedException     if the current thread is interrupted
      * @throws IllegalArgumentException if {@code permits} is negative
      */
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-        this.waitPool.acquire(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
+        this.waitPool.acquireWithType(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
     }
 
     /**
@@ -269,14 +269,14 @@ public class Semaphore {
      * position in the queue is not affected.  When the thread does return
      * from this method its interrupt status will be set.
      *
-     * @param permits the number of permits to acquire
+     * @param permits the number of permits to acquireWithType
      * @throws IllegalArgumentException if {@code permits} is negative
      */
     public void acquireUninterruptibly(int permits) {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            this.waitPool.acquire(permitAction, permits, parker, false, AcquireTypes.TYPE_Exclusive, true);
+            this.waitPool.acquireWithType(permitAction, permits, parker, false, AcquireTypes.TYPE_Exclusive, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -296,7 +296,7 @@ public class Semaphore {
      *
      * <p>Even when this semaphore has been set to use a fair ordering
      * policy, a call to {@code tryAcquire} <em>will</em>
-     * immediately acquire a permit if one is available, whether or
+     * immediately acquireWithType a permit if one is available, whether or
      * not other threads are currently waiting.  This
      * &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to
@@ -304,7 +304,7 @@ public class Semaphore {
      * long, TimeUnit) tryAcquire(permits, 0, TimeUnit.SECONDS) }
      * which is almost equivalent (it also detects interruption).
      *
-     * @param permits the number of permits to acquire
+     * @param permits the number of permits to acquireWithType
      * @return {@code true} if the permits were acquired and
      * {@code false} otherwise
      * @throws IllegalArgumentException if {@code permits} is negative
@@ -341,22 +341,22 @@ public class Semaphore {
      * <ul>
      * <li>has its interrupted status set on entry to this method; or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
-     * to acquire the permits,
+     * to acquireWithType the permits,
      * </ul>
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
      * Any permits that were to be assigned to this thread, are instead
-     * assigned to other threads trying to acquire permits, as if
+     * assigned to other threads trying to acquireWithType permits, as if
      * the permits had been made available by a call to {@link #release()}.
      *
      * <p>If the specified waiting time elapses then the value {@code false}
      * is returned.  If the time is less than or equal to zero, the method
      * will not wait at all.  Any permits that were to be assigned to this
-     * thread, are instead assigned to other threads trying to acquire
+     * thread, are instead assigned to other threads trying to acquireWithType
      * permits, as if the permits had been made available by a call to
      * {@link #release()}.
      *
-     * @param permits the number of permits to acquire
+     * @param permits the number of permits to acquireWithType
      * @param timeout the maximum time to wait for the permits
      * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if all permits were acquired and {@code false}
@@ -369,7 +369,7 @@ public class Semaphore {
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-        return this.waitPool.acquire(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
+        return this.waitPool.acquireWithType(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
     }
 
     /**
@@ -377,17 +377,17 @@ public class Semaphore {
      *
      * <p>Releases the given number of permits, increasing the number of
      * available permits by that amount.
-     * If any threads are trying to acquire permits, then one
+     * If any threads are trying to acquireWithType permits, then one
      * is selected and given the permits that were just released.
      * If the number of available permits satisfies that thread's request
      * then that thread is (re)enabled for thread scheduling purposes;
      * otherwise the thread will wait until sufficient permits are available.
      * If there are still permits available
      * after this thread's request has been satisfied, then those permits
-     * are assigned in turn to other threads trying to acquire permits.
+     * are assigned in turn to other threads trying to acquireWithType permits.
      *
      * <p>There is no requirement that a thread that releases a permit must
-     * have acquired that permit by calling {@link Semaphore#acquire acquire}.
+     * have acquired that permit by calling {@link Semaphore#acquire acquireWithType}.
      * Correct usage of a semaphore is established by programming convention
      * in the application.
      *
@@ -428,7 +428,7 @@ public class Semaphore {
      * Shrinks the number of available permits by the indicated
      * reduction. This method can be useful in subclasses that use
      * semaphores to track resources that become unavailable. This
-     * method differs from {@code acquire} in that it does not block
+     * method differs from {@code acquireWithType} in that it does not block
      * waiting for permits to become available.
      *
      * @param reduction the number of permits to remove
@@ -455,21 +455,21 @@ public class Semaphore {
     }
 
     /**
-     * Queries whether any threads are waiting to acquire. Note that
+     * Queries whether any threads are waiting to acquireWithType. Note that
      * because cancellations may occur at any time, a {@code true}
      * return does not guarantee that any other thread will ever
-     * acquire.  This method is designed primarily for use in
+     * acquireWithType.  This method is designed primarily for use in
      * monitoring of the system state.
      *
      * @return {@code true} if there may be other threads waiting to
-     * acquire the lock
+     * acquireWithType the lock
      */
     public final boolean hasQueuedThreads() {
         return waitPool.hasQueuedThreads();
     }
 
     /**
-     * Returns an estimate of the number of threads waiting to acquire.
+     * Returns an estimate of the number of threads waiting to acquireWithType.
      * The value is only an estimate because the number of threads may
      * change dynamically while this method traverses internal data
      * structures.  This method is designed for use in monitoring of the
@@ -482,7 +482,7 @@ public class Semaphore {
     }
 
     /**
-     * Returns a collection containing threads that may be waiting to acquire.
+     * Returns a collection containing threads that may be waiting to acquireWithType.
      * Because the actual set of threads may change dynamically while
      * constructing this result, the returned collection is only a best-effort
      * estimate.  The elements of the returned collection are in no particular
