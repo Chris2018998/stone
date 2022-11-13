@@ -19,14 +19,15 @@ import org.stone.shine.synchronizer.extend.ResourceAtomicState;
  * @version 1.0
  */
 abstract class BaseLockAction extends ResourceAction {
-
+    //lock state(similar to AQS state)
+    protected ResourceAtomicState lockState;
+    //exclusive hold thread
     private Thread holdThread;
-
-    private ResourceAtomicState lockState;
 
     BaseLockAction(ResourceAtomicState lockState) {
         this.lockState = lockState;
     }
+
 
     public int getAtomicStateValue() {
         return lockState.getState();

@@ -58,19 +58,37 @@ public final class ReentrantLock extends AbstractLock {
 
     //Reentrant Action
     private static class ReentrantLockAction extends BaseLockAction {
-
         ReentrantLockAction(ResourceAtomicState lockState) {
             super(lockState);
         }
 
         public Object call(Object size) {
-            //@toto
-            return true;
+            if (this.getHoldThread() == Thread.currentThread()) {//reentrant
+                int curState = this.getAtomicStateValue();
+                curState++;
+                if (curState <= 0) throw new Error("Maximum lock count exceeded");
+                this.getLockState().setState(curState);
+                return true;
+            } else if (lockState.compareAndSetState(0, 1)) {
+                this.setHoldThread(Thread.currentThread());
+                return true;
+            } else {
+                return false;
+            }
         }
 
         public boolean tryRelease(int size) {
-            //@toto
-            return true;
+            if (this.getHoldThread() == Thread.currentThread()) {
+                int curState = this.getAtomicStateValue();
+                if (curState > 0) {
+                    this.getLockState().setState(curState - 1);
+                    return curState == 1;//return true,then wakeup another
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
         }
     }
 }
