@@ -12,7 +12,7 @@ package org.stone.shine.synchronizer;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * Time parker class,supply three implementation by park methods of LockSupport class
+ * Time parker class,supply three implementation by park methods of {@link LockSupport} class
  * 1:LockSupport.park
  * 2:LockSupport.parkNanos
  * 3:LockSupport.parkUntil
@@ -52,7 +52,7 @@ import java.util.concurrent.locks.LockSupport;
  */
 
 //********************************************************************************************************************//
-//                                           1:LockSupport.park                                                       //
+//                          1:implementation based on park method{@code LockSupport.park}                             //
 //********************************************************************************************************************//
 public class ThreadParkSupport {
     private static final long spinForTimeoutThreshold = 1000L;
@@ -99,10 +99,10 @@ public class ThreadParkSupport {
         else
             return new NanoSecondsObjectParkSupport(time, blocker);
     }
+
     //****************************************************************************************************************//
     //                                           Factory  methods(end)                                                //
     //****************************************************************************************************************//
-
     public boolean park() {
         LockSupport.park();
         return interrupted = Thread.interrupted();
@@ -120,7 +120,7 @@ public class ThreadParkSupport {
         return parkTime <= 0;
     }
 
-    //true,thread can be parked
+    //calculate park time for{@code LockSupport.park},true time value is valid
     public boolean calculateParkTime() {
         return true;
     }
@@ -129,7 +129,7 @@ public class ThreadParkSupport {
         return interrupted;
     }
 
-    //blocker implementation sub class
+    //Thead Park with block object for{@code LockSupport.park(blocker)}
     private static class ThreadObjectParkSupport extends ThreadParkSupport {
         ThreadObjectParkSupport(Object blocker) {
             super(blocker);
@@ -142,7 +142,7 @@ public class ThreadParkSupport {
     }
 
     //****************************************************************************************************************//
-    //                                           2: LockSupport.parkNanos                                             //
+    //                     2: implementation based on park method{@code LockSupport.parkNanos}                        //
     //****************************************************************************************************************//
     private static class NanoSecondsParkSupport extends ThreadParkSupport {
         NanoSecondsParkSupport(long nanoTime) {
@@ -181,7 +181,7 @@ public class ThreadParkSupport {
     }
 
     //****************************************************************************************************************//
-    //                                           3: LockSupport.parkUntil                                             //
+    //                        3: implementation based on park method{@code LockSupport.parkUntil}                     //
     //****************************************************************************************************************//
     private static class MillisecondsUtilParkSupport extends ThreadParkSupport {
         MillisecondsUtilParkSupport(long deadline) {
