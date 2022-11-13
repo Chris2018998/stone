@@ -415,12 +415,10 @@ public class Semaphore {
      * @return the number of permits acquired
      */
     public int drainPermits() {
-        int drainPermits = 0;
+        int drainPermits;
         do {
-            drainPermits = permitSize.getState();
-            if (drainPermits == 0 || permitSize.compareAndSetState(drainPermits, 0))
-                break;
-        } while (true);
+            drainPermits = this.permitSize.getState();
+        } while (drainPermits != 0 && !this.permitSize.compareAndSetState(drainPermits, 0));
 
         return drainPermits;
     }
@@ -436,16 +434,14 @@ public class Semaphore {
      * @throws IllegalArgumentException if {@code reduction} is negative
      */
     protected void reducePermits(int reduction) {
-        if (reduction < 0) throw new IllegalArgumentException();
+        if (reduction <= 0) throw new IllegalArgumentException();
 
-        int availablePermits = 0;
-        int updAvailablePermits = 0;
+        int availablePermits;
+        int updAvailablePermits;
         do {
-            availablePermits = permitSize.getState();
+            availablePermits = this.permitSize.getState();
             updAvailablePermits = availablePermits - reduction;
-            if (updAvailablePermits <= 0 || permitSize.compareAndSetState(availablePermits, updAvailablePermits))
-                break;
-        } while (true);
+        } while (updAvailablePermits > 0 && !this.permitSize.compareAndSetState(availablePermits, updAvailablePermits));
     }
 
     /**
