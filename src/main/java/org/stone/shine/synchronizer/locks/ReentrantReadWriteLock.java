@@ -24,10 +24,6 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @version 1.0
  */
 public class ReentrantReadWriteLock implements ReadWriteLock {
-    //resource wait Pool(share to WriteLockImpl,ReadLockImpl)
-    private final ResourceWaitPool waitPool;
-    //lockState(share to WriteLockImpl,ReadLockImpl)
-    private final ResourceAtomicState lockState;
     //Inner class providing readLock
     private final ReentrantReadWriteLock.ReadLock readerLock;
     //Inner class providing writeLock
@@ -41,8 +37,8 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public ReentrantReadWriteLock(boolean fair) {
-        this.waitPool = new ResourceWaitPool(fair);
-        this.lockState = new ResourceAtomicState(0);
+        ResourceWaitPool waitPool = new ResourceWaitPool(fair);
+        ResourceAtomicState lockState = new ResourceAtomicState(0);
         this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState));
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState));
     }
