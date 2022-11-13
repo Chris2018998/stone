@@ -30,7 +30,6 @@ public final class ReentrantLock extends AbstractLock {
         super(fair, new ReentrantLockAction(new ResourceAtomicState(0)));
     }
 
-
     //****************************************************************************************************************//
     //                                          2: monitor methods(4)                                                 //
     //****************************************************************************************************************//
