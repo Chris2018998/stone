@@ -55,13 +55,13 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     //****************************************************************************************************************//
     //                                       2: WriteLock/ReadLock Impl                                               //                                                                                  //
     //****************************************************************************************************************//
-    private static class WriteLock extends AbstractLock {
+    private static class WriteLock extends BaseLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
         }
     }
 
-    private static class ReadLock extends AbstractLock {
+    private static class ReadLock extends BaseLock {
         ReadLock(ResourceWaitPool waitPool, LockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
         }

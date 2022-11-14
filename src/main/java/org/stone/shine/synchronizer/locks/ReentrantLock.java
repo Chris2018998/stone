@@ -15,7 +15,7 @@ package org.stone.shine.synchronizer.locks;
  * @author Chris Liao
  * @version 1.0
  */
-public final class ReentrantLock extends AbstractLock {
+public final class ReentrantLock extends BaseLock {
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//

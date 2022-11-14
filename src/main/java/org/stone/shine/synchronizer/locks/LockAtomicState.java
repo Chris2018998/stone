@@ -17,22 +17,21 @@ import org.stone.shine.synchronizer.extend.ResourceAtomicState;
  * @author Chris Liao
  * @version 1.0
  */
-public final class LockAtomicState extends ResourceAtomicState {
+final class LockAtomicState extends ResourceAtomicState {
     private Thread holdThread;
 
     public LockAtomicState() {
     }
 
-    public LockAtomicState(int state) {
+    LockAtomicState(int state) {
         super(state);
     }
 
-    public Thread getHoldThread() {
+    Thread getHoldThread() {
         return holdThread;
     }
 
-    public void setHoldThread(Thread holdThread) {
+    void setHoldThread(Thread holdThread) {
         this.holdThread = holdThread;
     }
-
 }
