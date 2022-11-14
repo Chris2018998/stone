@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 
-public final class ResourceAtomicState {
+public class ResourceAtomicState {
 
     private final AtomicInteger atomicState = new AtomicInteger();
 
