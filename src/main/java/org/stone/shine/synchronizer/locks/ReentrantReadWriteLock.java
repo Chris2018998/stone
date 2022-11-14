@@ -36,7 +36,7 @@ public class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public ReentrantReadWriteLock(boolean fair) {
-        LockAtomicState lockState = new LockAtomicState(0);
+        LockAtomicState lockState = new LockAtomicState();
         ResourceWaitPool waitPool = new ResourceWaitPool(fair);
         this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState));
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState));

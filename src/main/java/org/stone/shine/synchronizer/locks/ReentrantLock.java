@@ -24,7 +24,7 @@ public final class ReentrantLock extends BaseLock {
     }
 
     public ReentrantLock(boolean fair) {
-        super(fair, new ReentrantLockAction(new LockAtomicState(0)));
+        super(fair, new ReentrantLockAction(new LockAtomicState()));
     }
 
     //****************************************************************************************************************//
