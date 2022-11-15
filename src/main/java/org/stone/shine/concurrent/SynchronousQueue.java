@@ -46,6 +46,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         this.waitPool = new TransferWaitPool<E>(fair);
     }
 
+    //****************************************************************************************************************//
+    //                                     1: get/transfer methods                                                    //
+    //****************************************************************************************************************//
+
     /**
      * Adds the specified element to this queue, waiting if necessary for
      * another thread to receive it.
