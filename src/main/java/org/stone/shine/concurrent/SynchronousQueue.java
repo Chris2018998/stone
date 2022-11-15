@@ -1,0 +1,238 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
+ */
+package org.stone.shine.concurrent;
+
+import java.util.AbstractQueue;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * SynchronousQueue implementation with wait Pool
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQueue<E>, java.io.Serializable {
+
+    private Transferer transferer;
+
+    public SynchronousQueue() {
+        this(false);
+    }
+
+    public SynchronousQueue(boolean fair) {
+
+    }
+
+    /**
+     * Adds the specified element to this queue, waiting if necessary for
+     * another thread to receive it.
+     *
+     * @throws InterruptedException {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public void put(E e) throws InterruptedException {
+        if (e == null) throw new NullPointerException();
+        if (transferer.transfer(e, false, 0) == null) {
+            Thread.interrupted();
+            throw new InterruptedException();
+        }
+    }
+
+    /**
+     * Inserts the specified element into this queue, waiting if necessary
+     * up to the specified wait time for another thread to receive it.
+     *
+     * @return {@code true} if successful, or {@code false} if the
+     * specified waiting time elapses before a consumer appears
+     * @throws InterruptedException {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     */
+    public boolean offer(E e, long timeout, TimeUnit unit)
+            throws InterruptedException {
+        if (e == null) throw new NullPointerException();
+        if (transferer.transfer(e, true, unit.toNanos(timeout)) != null)
+            return true;
+        if (!Thread.interrupted())
+            return false;
+        throw new InterruptedException();
+    }
+
+    /**
+     * Inserts the specified element into this queue, if another thread is
+     * waiting to receive it.
+     *
+     * @param e the element to add
+     * @return {@code true} if the element was added to this queue, else
+     * {@code false}
+     * @throws NullPointerException if the specified element is null
+     */
+    public boolean offer(E e) {
+        if (e == null) throw new NullPointerException();
+        return transferer.transfer(e, true, 0) != null;
+    }
+
+    /**
+     * Retrieves and removes the head of this queue, waiting if necessary
+     * for another thread to insert it.
+     *
+     * @return the head of this queue
+     * @throws InterruptedException {@inheritDoc}
+     */
+    public E take() throws InterruptedException {
+        //E e = transferer.transfer(null, false, 0);
+        //if (e != null) return e;
+        Thread.interrupted();
+        throw new InterruptedException();
+    }
+
+    /**
+     * Retrieves and removes the head of this queue, waiting
+     * if necessary up to the specified wait time, for another thread
+     * to insert it.
+     *
+     * @return the head of this queue, or {@code null} if the
+     * specified waiting time elapses before an element is present
+     * @throws InterruptedException {@inheritDoc}
+     */
+    public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        //E e = transferer.transfer(null, true, unit.toNanos(timeout));
+        //if (e != null || !Thread.interrupted()) return e;
+        //throw new InterruptedException();
+
+        return null;
+    }
+
+    /**
+     * Retrieves and removes the head of this queue, if another thread
+     * is currently making an element available.
+     *
+     * @return the head of this queue, or {@code null} if no
+     * element is available
+     */
+    public E poll() {
+        // return transferer.transfer(null, true, 0);
+
+        return null;
+    }
+
+
+    //****************************************************************************************************************//
+    //                                      2:queue methods(copy from JDK)                                            //
+    //****************************************************************************************************************//
+    public boolean isEmpty() {
+        return true;
+    }
+
+    public int size() {
+        return 0;
+    }
+
+    public int remainingCapacity() {
+        return 0;
+    }
+
+    public void clear() {
+    }
+
+    public boolean contains(Object o) {
+        return false;
+    }
+
+    public boolean remove(Object o) {
+        return false;
+    }
+
+    public boolean containsAll(Collection<?> c) {
+        return c.isEmpty();
+    }
+
+    public boolean removeAll(Collection<?> c) {
+        return false;
+    }
+
+    public boolean retainAll(Collection<?> c) {
+        return false;
+    }
+
+    public E peek() {
+        return null;
+    }
+
+    public Iterator<E> iterator() {
+        return Collections.emptyIterator();
+    }
+
+    public Object[] toArray() {
+        return new Object[0];
+    }
+
+    public <T> T[] toArray(T[] a) {
+        if (a.length > 0)
+            a[0] = null;
+        return a;
+    }
+
+    public int drainTo(Collection<? super E> c) {
+        if (c == null)
+            throw new NullPointerException();
+        if (c == this)
+            throw new IllegalArgumentException();
+        int n = 0;
+        for (E e; (e = poll()) != null; ) {
+            c.add(e);
+            ++n;
+        }
+        return n;
+    }
+
+    public int drainTo(Collection<? super E> c, int maxElements) {
+        if (c == null)
+            throw new NullPointerException();
+        if (c == this)
+            throw new IllegalArgumentException();
+        int n = 0;
+        for (E e; n < maxElements && (e = poll()) != null; ) {
+            c.add(e);
+            ++n;
+        }
+        return n;
+    }
+
+    //****************************************************************************************************************//
+    //                                      3:Transfer Interface(copy from JDK)                                       //
+    //****************************************************************************************************************//
+    interface Transferer<E> {
+
+        E transfer(E e, boolean timed, long nanos);
+    }
+
+    //****************************************************************************************************************//
+    //                                      4:Transfer Interface Implementation by wait pool                          //
+    //****************************************************************************************************************//
+    private static class QueueTransfer<E> implements Transferer<E> {
+
+        public E transfer(E e, boolean timed, long nanos) {
+            return null;
+            //@return null;
+        }
+    }
+
+    private static class StackTransfer<E> implements Transferer<E> {
+
+        public E transfer(E e, boolean timed, long nanos) {
+            return null;
+            //@return null;
+        }
+    }
+}
