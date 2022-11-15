@@ -136,7 +136,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     }
 
     //****************************************************************************************************************//
-    //                                      2:queue methods(copy from JDK)                                            //
+    //                                      2:queue other methods                                                     //
     //****************************************************************************************************************//
     public boolean isEmpty() {
         return true;
