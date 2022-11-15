@@ -53,7 +53,20 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       2: WriteLock/ReadLock Impl                                               //                                                                                  //
+    //                                       2: SharedHoldCounter Impl                                               //                                                                                  //
+    //****************************************************************************************************************//
+    private static class SharedHoldCounter {
+        private int holdCount = 0;
+    }
+
+    private static class SharedHoldThreadLocal extends ThreadLocal<SharedHoldCounter> {
+        protected SharedHoldCounter initialValue() {
+            return new SharedHoldCounter();
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                       3: WriteLock/ReadLock Impl                                               //                                                                                  //
     //****************************************************************************************************************//
     private static class WriteLock extends BaseLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
@@ -72,7 +85,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       3: Lock Action Impl                                                      //
+    //                                       4: Lock Action Impl                                                      //
     //****************************************************************************************************************//
     private static class WriteLockAction extends LockAction {
         WriteLockAction(LockAtomicState lockState) {
@@ -105,4 +118,6 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             return true;
         }
     }
+
+
 }
