@@ -34,7 +34,7 @@ public final class ThreadNode {
     }
 
     public Thread getThread() {
-        return thread;
+        return this.thread;
     }
 
     public Object getState() {
@@ -46,11 +46,11 @@ public final class ThreadNode {
     }
 
     public Object getType() {
-        return type;
+        return this.type;
     }
 
     public Object getValue() {
-        return value;
+        return this.value;
     }
 
     public void setValue(Object value) {

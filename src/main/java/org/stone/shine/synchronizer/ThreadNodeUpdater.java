@@ -23,7 +23,6 @@ import java.lang.reflect.Field;
 public final class ThreadNodeUpdater {
     private final static Unsafe U;
     private final static long stateOffSet;
-    private final static long valueOffSet;
 
     //chain field offset
     private final static long prevOffSet;
@@ -38,10 +37,6 @@ public final class ThreadNodeUpdater {
             Field stateField = nodeClass.getDeclaredField("state");
             stateField.setAccessible(true);
             stateOffSet = U.objectFieldOffset(stateField);
-            //ThreadNode.value
-            Field valueField = nodeClass.getDeclaredField("value");
-            valueField.setAccessible(true);
-            valueOffSet = U.objectFieldOffset(valueField);
 
             //ThreadNode.prev
             Field prevField = nodeClass.getDeclaredField("prev");
@@ -62,10 +57,6 @@ public final class ThreadNodeUpdater {
 
     public static boolean casNodeState(ThreadNode node, Object expect, Object update) {
         return U.compareAndSwapObject(node, stateOffSet, expect, update);
-    }
-
-    static boolean casNodeValue(ThreadNode node, Object expect, Object update) {
-        return U.compareAndSwapObject(node, valueOffSet, expect, update);
     }
 
     static boolean casTailNext(ThreadNode t, ThreadNode newNext) {
