@@ -9,6 +9,8 @@
  */
 package org.stone.shine.concurrent;
 
+import org.stone.shine.synchronizer.ThreadParkSupport;
+
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,7 +19,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * SynchronousQueue implementation with wait Pool
+ * SynchronousQueue implementation by wait Pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -43,6 +45,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
+        ThreadParkSupport parker = ThreadParkSupport.create();
+
+
         if (transferer.transfer(e, false, 0) == null) {
             Thread.interrupted();
             throw new InterruptedException();
@@ -58,9 +63,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    public boolean offer(E e, long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
+        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
+        ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
+
+
         if (transferer.transfer(e, true, unit.toNanos(timeout)) != null)
             return true;
         if (!Thread.interrupted())
@@ -79,6 +87,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
+        ThreadParkSupport parker = ThreadParkSupport.create();
+
         return transferer.transfer(e, true, 0) != null;
     }
 
@@ -90,6 +100,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
+        ThreadParkSupport parker = ThreadParkSupport.create();
+
         //E e = transferer.transfer(null, false, 0);
         //if (e != null) return e;
         Thread.interrupted();
@@ -106,6 +118,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
+        ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
+
         //E e = transferer.transfer(null, true, unit.toNanos(timeout));
         //if (e != null || !Thread.interrupted()) return e;
         //throw new InterruptedException();
@@ -121,11 +136,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * element is available
      */
     public E poll() {
-        // return transferer.transfer(null, true, 0);
+        ThreadParkSupport parker = ThreadParkSupport.create();
 
+        // return transferer.transfer(null, true, 0);
         return null;
     }
-
 
     //****************************************************************************************************************//
     //                                      2:queue methods(copy from JDK)                                            //
