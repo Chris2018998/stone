@@ -29,10 +29,19 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     //transfer wait pool
     private TransferWaitPool<E> waitPool;
 
+    /**
+     * Creates a {@code SynchronousQueue} with non-fair access policy.
+     */
     public SynchronousQueue() {
         this(false);
     }
 
+    /**
+     * Creates a {@code SynchronousQueue} with the specified fairness policy.
+     *
+     * @param fair if true, waiting threads contend in FIFO order for
+     *             access; otherwise the order is unspecified.
+     */
     public SynchronousQueue(boolean fair) {
         this.waitPool = new TransferWaitPool<E>(fair);
     }

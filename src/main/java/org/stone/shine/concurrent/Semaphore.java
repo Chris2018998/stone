@@ -19,7 +19,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Semaphore implementation with wait Pool
+ * Semaphore implementation by wait Pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -34,7 +34,7 @@ public class Semaphore {
 
     /**
      * Creates a {@code Semaphore} with the given number of
-     * permits and nonfair fairness setting.
+     * permits and non-fair fairness setting.
      *
      * @param permits the initial number of permits available.
      *                This value may be negative, in which case releases
