@@ -10,6 +10,7 @@
 package org.stone.shine.concurrent;
 
 import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.base.TransferWaitPool;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
@@ -25,15 +26,15 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQueue<E>, java.io.Serializable {
-
-    private Transferer transferer;
+    //transfer wait pool
+    private TransferWaitPool<E> waitPool;
 
     public SynchronousQueue() {
         this(false);
     }
 
     public SynchronousQueue(boolean fair) {
-
+        this.waitPool = new TransferWaitPool<E>(fair);
     }
 
     /**
@@ -46,12 +47,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-
-
-        if (transferer.transfer(e, false, 0) == null) {
-            Thread.interrupted();
-            throw new InterruptedException();
-        }
+        this.waitPool.transfer(e, parker, true);
     }
 
     /**
@@ -68,12 +64,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
 
-
-        if (transferer.transfer(e, true, unit.toNanos(timeout)) != null)
-            return true;
-        if (!Thread.interrupted())
-            return false;
-        throw new InterruptedException();
+        return this.waitPool.transfer(e, parker, true);
     }
 
     /**
@@ -88,8 +79,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-
-        return transferer.transfer(e, true, 0) != null;
+        return this.waitPool.transfer(e, parker, true);
     }
 
     /**
@@ -101,11 +91,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E take() throws InterruptedException {
         ThreadParkSupport parker = ThreadParkSupport.create();
-
-        //E e = transferer.transfer(null, false, 0);
-        //if (e != null) return e;
-        Thread.interrupted();
-        throw new InterruptedException();
+        return this.waitPool.get(parker, true);
     }
 
     /**
@@ -120,12 +106,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-
-        //E e = transferer.transfer(null, true, unit.toNanos(timeout));
-        //if (e != null || !Thread.interrupted()) return e;
-        //throw new InterruptedException();
-
-        return null;
+        return this.waitPool.get(parker, true);
     }
 
     /**
@@ -137,9 +118,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E poll() {
         ThreadParkSupport parker = ThreadParkSupport.create();
-
-        // return transferer.transfer(null, true, 0);
-        return null;
+        try {
+            return this.waitPool.get(parker, false);
+        } catch (Exception e) {
+            //do nothing
+            return null;
+        }
     }
 
     //****************************************************************************************************************//
@@ -222,32 +206,5 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
             ++n;
         }
         return n;
-    }
-
-    //****************************************************************************************************************//
-    //                                      3:Transfer Interface(copy from JDK)                                       //
-    //****************************************************************************************************************//
-    interface Transferer<E> {
-
-        E transfer(E e, boolean timed, long nanos);
-    }
-
-    //****************************************************************************************************************//
-    //                                      4:Transfer Interface Implementation by wait pool                          //
-    //****************************************************************************************************************//
-    private static class QueueTransfer<E> implements Transferer<E> {
-
-        public E transfer(E e, boolean timed, long nanos) {
-            return null;
-            //@return null;
-        }
-    }
-
-    private static class StackTransfer<E> implements Transferer<E> {
-
-        public E transfer(E e, boolean timed, long nanos) {
-            return null;
-            //@return null;
-        }
     }
 }

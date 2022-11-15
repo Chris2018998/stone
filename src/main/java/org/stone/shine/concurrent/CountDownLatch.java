@@ -21,8 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * some people(threads)come into the theater to watch these show(call method{@link #await}).A atomic count property
  * represent number of the programs,one item of them done then call method{@link #countDown}to reduce one value from
  * the atomic variable util its value reach zero(all programs completed),then notify automatically all present watchers
- * to leave from the theater(call method{@link org.stone.shine.synchronizer.ThreadWaitPool#wakeupAll}),which closed for ever.Luckly,you can create another new
- * theater(or some)in your code.One word to all:Welcome to my theater,it is open to the world.
+ * to leave from the theater(call method{@link org.stone.shine.synchronizer.ThreadWaitPool#wakeupAll}),which closed for ever.
+ * Luckly,you can create another new theater(or some)in your code.One word to all:Welcome to my theater,it is open to the world.
  *
  * @author Chris Liao
  * @version 1.0
