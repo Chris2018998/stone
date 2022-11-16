@@ -19,9 +19,9 @@ import org.stone.shine.synchronizer.*;
  */
 public class TransferWaitPool<E> extends ThreadWaitPool {
     //Request
-    private static final Object Action_Get = new Object();
+    private static final Object Node_Type_Get = new Object();
     //Data
-    private static final Object Action_Transfer = new Object();
+    private static final Object Node_Type_Transfer = new Object();
 
     //true,use fair mode to execute call
     private boolean fair;
