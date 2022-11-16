@@ -45,21 +45,27 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     //****************************************************************************************************************//
     //                                          2: transfer methods                                                   //
     //****************************************************************************************************************//
-    public final boolean tryTransfer(E object) {
-        return true;
+    public final boolean tryTransfer(E e) {
+        if (e == null) throw new NullPointerException();
+        return this.wakeupOne(fair, e, Node_Type_Get) == 1;
     }
 
     //transfer a object to waiter
-    public final boolean transfer(E object, ThreadParkSupport parker, boolean throwsIE) {
-        return super.wakeupOne(object) == 1;
-    }
+    public final boolean transfer(E e, ThreadParkSupport parker, boolean throwsIE) {
+        if (e == null) throw new NullPointerException();
 
+        if (this.tryTransfer(e)) return true;
+
+
+        
+    }
 
     //****************************************************************************************************************//
     //                                          3: get methods                                                        //
     //****************************************************************************************************************//
     public final E tryGet() {
-        return null;
+        ThreadNode node = this.getWokenUpNode(fair, ThreadNodeState.SIGNAL, Node_Type_Transfer);
+        return node != null ? (E) node.getValue() : null;
     }
 
     /**
