@@ -59,8 +59,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        ThreadParkSupport parker = ThreadParkSupport.create();
-        this.waitPool.transfer(e, parker, true);
+        this.waitPool.transfer(e, ThreadParkSupport.create(), true);
     }
 
     /**
@@ -75,9 +74,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
 
-        return this.waitPool.transfer(e, parker, true);
+        return this.waitPool.transfer(e, ThreadParkSupport.create(unit.toNanos(timeout), false), true);
     }
 
     /**
@@ -91,8 +89,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
-        ThreadParkSupport parker = ThreadParkSupport.create();
-        return this.waitPool.transfer(e, parker, true);
+        return this.waitPool.tryTransfer(e);
     }
 
     /**
@@ -103,8 +100,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        ThreadParkSupport parker = ThreadParkSupport.create();
-        return this.waitPool.get(parker, true);
+        return this.waitPool.get(ThreadParkSupport.create(), true);
     }
 
     /**
@@ -118,8 +114,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-        return this.waitPool.get(parker, true);
+        return this.waitPool.get(ThreadParkSupport.create(unit.toNanos(timeout), false), true);
     }
 
     /**
@@ -130,13 +125,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * element is available
      */
     public E poll() {
-        ThreadParkSupport parker = ThreadParkSupport.create();
-        try {
-            return this.waitPool.get(parker, false);
-        } catch (Exception e) {
-            //do nothing
-            return null;
-        }
+        return this.waitPool.tryGet();
     }
 
     //****************************************************************************************************************//
