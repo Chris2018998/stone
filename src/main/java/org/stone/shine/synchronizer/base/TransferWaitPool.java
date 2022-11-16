@@ -38,11 +38,23 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: get/transfer methods                                               //
+    //                                          2: transfer methods                                                   //
     //****************************************************************************************************************//
+    public final boolean tryTransfer(E object) {
+        return true;
+    }
+
     //transfer a object to waiter
     public final boolean transfer(E object, ThreadParkSupport parker, boolean throwsIE) {
         return super.wakeupOne(object) == 1;
+    }
+
+
+    //****************************************************************************************************************//
+    //                                          3: get methods                                                        //
+    //****************************************************************************************************************//
+    public final E tryGet() {
+        return null;
     }
 
     /**

@@ -31,24 +31,34 @@ public abstract class ThreadWaitPool {
     private final ConcurrentLinkedDeque<ThreadNode> waitQueue = new ConcurrentLinkedDeque<>();
 
     //****************************************************************************************************************//
-    //                                          1: static Methods(2)                                                  //
+    //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
     protected static boolean equals(Object a, Object b) {
         return (a == b) || (a != null && a.equals(b));
     }
 
-    //wake wait node by iterator
-    private static int wakeup(Iterator<ThreadNode> iterator, Object toState, ThreadNode skipNode, boolean justOne, Object nodeType) {
+    //wakeup one
+    private static ThreadNode wakeupOne(Iterator<ThreadNode> iterator, Object toState, Object nodeType) {
+        while (iterator.hasNext()) {
+            ThreadNode node = iterator.next();
+            if (nodeType != null && !equals(node.getType(), nodeType)) continue;
+            if (ThreadNodeUpdater.casNodeState(node, null, toState)) {
+                LockSupport.unpark(node.getThread());
+                return node;
+            }
+        }
+        return null;
+    }
+
+    //wakeup All
+    private static int wakeupAll(Iterator<ThreadNode> iterator, Object toState, Object nodeType) {
         int count = 0;
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            if (node == skipNode) continue;
             if (nodeType != null && !equals(node.getType(), nodeType)) continue;
-
             if (ThreadNodeUpdater.casNodeState(node, null, toState)) {
                 LockSupport.unpark(node.getThread());
                 count++;
-                if (justOne) break;
             }
         }
         return count;
@@ -87,66 +97,38 @@ public abstract class ThreadWaitPool {
     //                                          3: Wakeup All                                                         //
     //****************************************************************************************************************//
     public final int wakeupAll() {
-        return wakeupAll(SIGNAL);
+        return wakeupAll(waitQueue.iterator(), SIGNAL, null);
     }
 
     public final int wakeupAll(Object toState) {
-        return wakeup(waitQueue.iterator(), toState, null, false, null);
+        return wakeupAll(waitQueue.iterator(), toState, null);
     }
 
-    public final int wakeupAll(Object toState, Object nodeType) {
-        return wakeup(waitQueue.iterator(), toState, null, false, nodeType);
+    public final int wakeupAll(Object toState, Object byType) {
+        return wakeupAll(waitQueue.iterator(), toState, byType);
     }
 
     //****************************************************************************************************************//
     //                                          4: Wakeup One                                                         //
     //****************************************************************************************************************//
     public final int wakeupOne() {
-        return wakeupOne(SIGNAL);
-    }
-
-    public final int wakeupOne(boolean fromHead) {
-        return wakeupOne(SIGNAL, fromHead);
-    }
-
-    public final int wakeupOne(ThreadNode skipNode) {
-        return wakeupOne(SIGNAL, skipNode);
-    }
-
-    public final int wakeupOne(boolean fromHead, ThreadNode skipNode) {
-        return wakeupOne(SIGNAL, fromHead, skipNode);
+        return wakeupOne(waitQueue.iterator(), SIGNAL, null) != null ? 1 : 0;
     }
 
     public final int wakeupOne(Object toState) {
-        return wakeup(waitQueue.iterator(), toState, null, true, null);
+        return wakeupOne(waitQueue.iterator(), toState, null) != null ? 1 : 0;
     }
 
-    public final int wakeupOne(Object toState, boolean fromHead) {
-        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, null, true, null);
+    public final int wakeupOne(Object toState, Object byType) {
+        return wakeupOne(waitQueue.iterator(), toState, byType) != null ? 1 : 0;
     }
 
-    public final int wakeupOne(Object toState, ThreadNode skipNode) {
-        return wakeup(waitQueue.iterator(), toState, skipNode, true, null);
+    public final int wakeupOne(boolean fromHead, Object toState, Object byType) {
+        return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType) != null ? 1 : 0;
     }
 
-    public final int wakeupOne(Object toState, boolean fromHead, ThreadNode skipNode) {
-        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, skipNode, true, null);
-    }
-
-    public final int wakeupOne(Object toState, Object nodeType) {
-        return wakeup(waitQueue.iterator(), toState, null, true, nodeType);
-    }
-
-    public final int wakeupOne(Object state, Object nodeType, ThreadNode skipNode) {
-        return wakeup(waitQueue.iterator(), state, skipNode, true, nodeType);
-    }
-
-    public final int wakeupOne(Object state, Object nodeType, boolean fromHead) {
-        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, null, true, nodeType);
-    }
-
-    public final int wakeupOne(Object state, Object nodeType, boolean fromHead, ThreadNode skipNode) {
-        return wakeup(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), state, skipNode, true, nodeType);
+    public final ThreadNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
+        return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType);
     }
 
     //****************************************************************************************************************//
@@ -233,7 +215,7 @@ public abstract class ThreadWaitPool {
                 //step2:send signal state to other when got
                 Object state = node.getState();
                 if (state != null && wakeupOtherOnIE)
-                    wakeupOne(state, node);//send the got signal state to another waiter(skip over the current node during wakeup iterator)
+                    wakeupOne(state);//send the got signal state to another waiter(skip over the current node during wakeup iterator)
                 throw new InterruptedException();
             }
         }
