@@ -51,13 +51,17 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     }
 
     //transfer a object to waiter
-    public final boolean transfer(E e, ThreadParkSupport parker, boolean throwsIE) {
+    public final boolean transfer(E e, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
         if (e == null) throw new NullPointerException();
 
+        //step1: try to transfer
         if (this.tryTransfer(e)) return true;
 
+        //step2:create wait node(then to wait)
+        ThreadNode node = super.createNode(Node_Type_Transfer);
 
-        
+        //step3:create wait node(then to wait)
+        return doWait(node, parker, throwsIE) != null;
     }
 
     //****************************************************************************************************************//
@@ -68,31 +72,42 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
         return node != null ? (E) node.getValue() : null;
     }
 
-    /**
-     * try to get an transferred object from pool
-     *
-     * @param parker   thread parker
-     * @param throwsIE true,throws InterruptedException when interrupted
-     * @return boolean value,true means wakeup with expect signal state,false,wait timeout
-     * @throws InterruptedException throw it when throwsIE parameter is true and thread interrupted
-     */
     public final E get(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        //1:create wait node and offer to wait queue
-        ThreadNode node = super.appendNewNode();
+        //step1: try to get
+        E e = tryGet();
+        if (e != null) return e;
 
-        //2:spin control
+        //step2:create wait node(then to wait)
+        ThreadNode node = super.createNode(Node_Type_Get);
+
+        //step3:create wait node(then to wait)
+        return (E) doWait(node, parker, throwsIE);
+    }
+
+    //****************************************************************************************************************//
+    //                                          4: core methods                                                       //
+    //****************************************************************************************************************//
+    private final Object doWait(ThreadNode node, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        super.appendNode(node);
+
         try {
             do {
-                //2.1: read node state
+                //1.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
-                if (state != null) return (E) state;
+                if (state != null) {//wokenUp
+                    if (node.getType() == Node_Type_Transfer) {
+                        return node;//that means transferred object has been got by other
+                    } else {//state==Node_Type_Get
+                        return state;
+                    }
+                }
 
-                //2.2: timeout test
+                //1.2: timeout test
                 if (parker.isTimeout()) {
-                    //2.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
+                    //1.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
                     if (ThreadNodeUpdater.casNodeState(node, null, ThreadNodeState.TIMEOUT)) return null;
                 } else {
-                    //2.3: park current thread(if interrupted then transfer the got state value to another waiter)
+                    //1.3: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, true);
                 }
             } while (true);
