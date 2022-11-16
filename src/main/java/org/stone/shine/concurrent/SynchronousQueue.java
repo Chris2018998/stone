@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQueue<E>, java.io.Serializable {
+
     //transfer wait pool
     private TransferWaitPool<E> waitPool;
 
@@ -51,6 +52,19 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     //****************************************************************************************************************//
 
     /**
+     * Inserts the specified element into this queue, if another thread is
+     * waiting to receive it.
+     *
+     * @param e the element to add
+     * @return {@code true} if the element was added to this queue, else
+     * {@code false}
+     * @throws NullPointerException if the specified element is null
+     */
+    public boolean offer(E e) {
+        return this.waitPool.tryTransfer(e);
+    }
+
+    /**
      * Adds the specified element to this queue, waiting if necessary for
      * another thread to receive it.
      *
@@ -72,25 +86,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws NullPointerException {@inheritDoc}
      */
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        if (e == null) throw new NullPointerException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
 
         return this.waitPool.transfer(e, ThreadParkSupport.create(unit.toNanos(timeout), false), true);
     }
 
-    /**
-     * Inserts the specified element into this queue, if another thread is
-     * waiting to receive it.
-     *
-     * @param e the element to add
-     * @return {@code true} if the element was added to this queue, else
-     * {@code false}
-     * @throws NullPointerException if the specified element is null
-     */
-    public boolean offer(E e) {
-        if (e == null) throw new NullPointerException();
-        return this.waitPool.tryTransfer(e);
-    }
 
     /**
      * Retrieves and removes the head of this queue, waiting if necessary
