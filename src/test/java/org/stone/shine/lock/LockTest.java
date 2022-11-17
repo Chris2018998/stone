@@ -5,24 +5,31 @@ import org.stone.shine.synchronizer.locks.ReentrantLock;
 public class LockTest {
 
     public static void main(String[] sgs) {
+        int size = 10;
         ReentrantLock lock = new ReentrantLock();
+        LockTestThread[] testThread = new LockTestThread[size];
+        for (int i = 0; i < size; i++)
+            testThread[i] = new LockTestThread("Thread" + i, lock);
 
-        lock.lock();
-        try {
-            System.out.println("Lock1");
-            System.out.println("is Locked1" + lock.isLocked());
-            System.out.println("is Locked1" + lock.isHeldByCurrentThread());
-        } finally {
-            lock.unlock();
+        for (int i = 0; i < size; i++)
+            testThread[i].start();
+    }
+
+    private static class LockTestThread extends Thread {
+        private ReentrantLock lock;
+
+        public LockTestThread(String threadName, ReentrantLock lock) {
+            this.lock = lock;
+            this.setName(threadName);
         }
 
-        System.out.println("is Locked2" + lock.isLocked());
-        System.out.println("is Locked2" + lock.isHeldByCurrentThread());
-        lock.lock();
-        try {
-            System.out.println("Lock2");
-        } finally {
-            lock.unlock();
+        public void run() {
+            lock.lock();
+            try {
+                System.out.println(this.getName() + " is Working");
+            } finally {
+                lock.unlock();
+            }
         }
     }
 }
