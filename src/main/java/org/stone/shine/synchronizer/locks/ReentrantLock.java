@@ -77,17 +77,12 @@ public final class ReentrantLock extends BaseLock {
         public boolean tryRelease(int size) {
             if (this.getHoldThread() == Thread.currentThread()) {
                 int curState = lockState.getState();
-                if (curState > 0) {
-                    this.getLockState().setState(curState - 1);
-                    if (curState == 1) {
-                        lockState.setHoldThread(null);
-                        return true;
-                    } else {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
+                int newState = curState - 1;
+                if (newState < 0) return false;
+
+                lockState.setState(newState);
+                if (newState == 0) lockState.setHoldThread(null);
+                return newState == 0;
             } else {
                 return false;
             }

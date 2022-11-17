@@ -30,6 +30,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     //                                          1: constructors(2)                                                    //
     //****************************************************************************************************************//
     public TransferWaitPool() {
+        this(true);
     }
 
     public TransferWaitPool(boolean fair) {
