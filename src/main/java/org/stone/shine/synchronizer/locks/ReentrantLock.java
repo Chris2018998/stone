@@ -60,7 +60,6 @@ public final class ReentrantLock extends BaseLock {
         }
 
         public Object call(Object size) {
-            System.out.println("Thread acquire:" + Thread.currentThread());
             int state = lockState.getState();
             if (state == 0) {
                 if (lockState.compareAndSetState(0, 1)) {

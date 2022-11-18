@@ -142,22 +142,21 @@ public class ResultWaitPool extends ThreadWaitPool {
         //3:spin control
         try {
             do {
-                //3.1: read node state
+                //3.1:if got a signal then execute call
+                if (equals(call.call(arg), expect)) return true;
+
+                //3.2:read node state
                 Object state = node.getState();
 
-                //3.2:if got a signal then execute call
-                if (state != null && equals(call.call(arg), expect)) return true;
-
-                //3.3: timeout test
+                //3.3:timeout test
                 if (parker.isTimeout()) {
-                    //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
+                    //3.3.1:try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
-                } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
+                } else if (state != null) {//3.4:reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);
                     Thread.yield();
-                    //jump to next read
                 } else {//here: state == null
-                    //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
+                    //3.5:park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
