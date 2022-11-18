@@ -32,7 +32,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         this.fair = fair;
     }
 
-    public boolean isFair() {
+    public final boolean isFair() {
         return this.fair;
     }
 
