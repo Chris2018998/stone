@@ -1,4 +1,4 @@
-*/*
+/*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * Copyright(C) Chris2018998,All rights reserved.
@@ -155,6 +155,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);
                     Thread.yield();
+                    //jump to next read
                 } else {//here: state == null
                     //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);

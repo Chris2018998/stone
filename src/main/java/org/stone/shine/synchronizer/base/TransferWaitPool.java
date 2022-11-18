@@ -39,7 +39,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
         //false:transfer from tail,which similar to{@link java.util.concurrent.SynchronousQueue#TransferStack}
     }
 
-    public boolean isFair() {
+    public final boolean isFair() {
         return this.fair;
     }
 
