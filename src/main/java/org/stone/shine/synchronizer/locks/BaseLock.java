@@ -76,7 +76,7 @@ class BaseLock implements Lock {
     public void lock() {
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            waitPool.acquireWithType(lockAction, 1, parker, false, acquireType, true);
+            waitPool.acquireWithType(lockAction, 1, parker, false, acquireType, false);
         } catch (Exception e) {
             //do nothing
         }
