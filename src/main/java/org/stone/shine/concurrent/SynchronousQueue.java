@@ -48,7 +48,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     }
 
     //****************************************************************************************************************//
-    //                                     1: get/transfer methods                                                    //
+    //                                     1: transfer methods                                                        //
     //****************************************************************************************************************//
 
     /**
@@ -86,11 +86,16 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws NullPointerException {@inheritDoc}
      */
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        if (e == null) throw new NullPointerException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
 
         return this.waitPool.transfer(e, ThreadParkSupport.create(unit.toNanos(timeout), false), true);
     }
 
+
+    //****************************************************************************************************************//
+    //                                          2: get methods                                                        //
+    //****************************************************************************************************************//
 
     /**
      * Retrieves and removes the head of this queue, waiting if necessary
