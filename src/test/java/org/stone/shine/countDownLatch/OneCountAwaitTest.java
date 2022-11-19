@@ -16,7 +16,7 @@ import org.stone.test.TestCase;
 import org.stone.test.TestUtil;
 
 /**
- * 1001 Threads to await
+ * 1001 Threads to await for one count value
  *
  * @author Chris Liao
  * @version 1.0

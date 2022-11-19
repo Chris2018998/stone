@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class GeneralAwaitThread extends BaseThread {
     private long timeout;
     private TimeUnit timeUnit;
-    private InterruptedException cause;
+    private InterruptedException interruptedException;
 
     public GeneralAwaitThread(CountDownLatch latch) {
         super(latch);
@@ -35,8 +35,8 @@ public class GeneralAwaitThread extends BaseThread {
         this.timeUnit = timeUnit;
     }
 
-    public InterruptedException getCause() {
-        return cause;
+    public InterruptedException getInterruptedException() {
+        return interruptedException;
     }
 
     public void run() {
@@ -44,13 +44,13 @@ public class GeneralAwaitThread extends BaseThread {
             try {
                 latch.await();
             } catch (InterruptedException e) {
-                cause = e;
+                this.interruptedException = e;
             }
         } else {
             try {
                 latch.await(timeout, timeUnit);
             } catch (InterruptedException e) {
-                cause = e;
+                this.interruptedException = e;
             }
         }
     }
