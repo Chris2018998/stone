@@ -15,8 +15,6 @@ import org.stone.shine.countDownLatch.runnable.CountWaitRunnable;
 import org.stone.test.TestCase;
 import org.stone.test.TestUtil;
 
-import java.util.Objects;
-
 /**
  * CountDownLatch Test Case
  *
@@ -28,6 +26,7 @@ public class AwaitTest extends TestCase {
     public void test() throws Exception {
         int count = 100;
         CountDownLatch latch = new CountDownLatch(count);
+
 
         //1;create countdown Threads
         CountDownRunnable[] runs = new CountDownRunnable[count];
@@ -48,8 +47,6 @@ public class AwaitTest extends TestCase {
         latch.await();//block main thread
 
         //count value should be zero
-        int latchCount = (int) latch.getCount();
-        if (!Objects.equals(0, latchCount))
-            TestUtil.assertError("password expect value:%s,actual value:%s", 0, latchCount);
+        TestUtil.assertError("final count value expect value:%s,actual value:%s", 0, (int) latch.getCount());
     }
 }

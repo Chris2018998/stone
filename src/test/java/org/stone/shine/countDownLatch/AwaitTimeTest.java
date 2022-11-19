@@ -15,7 +15,6 @@ import org.stone.shine.countDownLatch.runnable.CountTimeWaitRunnable;
 import org.stone.test.TestCase;
 import org.stone.test.TestUtil;
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -30,20 +29,18 @@ public class AwaitTimeTest extends TestCase {
         int count = 100;
         CountDownLatch latch = new CountDownLatch(count);
 
-        //1;create countdown Threads
+        //1: create countdown Threads
         CountDownRunnable[] runs = new CountDownRunnable[count];
         for (int i = 0; i < count; i++) runs[i] = new CountDownRunnable(latch);
         Thread[] countThreads = new Thread[count];
         for (int i = 0; i < count; i++) countThreads[i] = new Thread(runs[i]);
 
-        //2;create wait Threads
+        //2:create wait Threads
         long timeout = 10l;
         TimeUnit unit = TimeUnit.SECONDS;
+
         Thread[] waitThreads = new Thread[count];
         for (int i = 0; i < count; i++) waitThreads[i] = new Thread(new CountTimeWaitRunnable(latch, timeout, unit));
-
-        //3: run Wait
-        for (int i = 0; i < count; i++) waitThreads[i].start();
 
         //4;run count down
         for (int i = 0; i < count; i++) countThreads[i].start();
@@ -51,8 +48,6 @@ public class AwaitTimeTest extends TestCase {
         latch.await();//block main thread
 
         //count value should be zero
-        int latchCount = (int) latch.getCount();
-        if (!Objects.equals(0, latchCount))
-            TestUtil.assertError("password expect value:%s,actual value:%s", 0, latchCount);
+        TestUtil.assertError("final count value expect value:%s,actual value:%s", 0, (int) latch.getCount());
     }
 }
