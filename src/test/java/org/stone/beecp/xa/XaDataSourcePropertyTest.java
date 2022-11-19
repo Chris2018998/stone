@@ -17,8 +17,8 @@ import org.stone.test.TestUtil;
 import java.util.Properties;
 
 public class XaDataSourcePropertyTest extends TestCase {
-    private final String url = "jdbc:mock:test";
-    private final String user = "mock";
+    private final String url = "jdbc:runnable:test";
+    private final String user = "runnable";
     private final String password = "root";
     private final String property_Key = "key1";
     private final String property_Value = "value1";
@@ -45,14 +45,10 @@ public class XaDataSourcePropertyTest extends TestCase {
         RawXaConnectionFactory rawXaConnFactory = (RawXaConnectionFactory) TestUtil.getFieldValue(pool, "rawXaConnFactory");
         MockXaDataSource xaDs = (MockXaDataSource) TestUtil.getFieldValue(rawXaConnFactory, "dataSource");
 
-        if (!user.equals(xaDs.getUser()))
-            TestUtil.assertError("user expect value:%s,actual value:%s", user, xaDs.getUser());
-        if (!password.equals(xaDs.getPassword()))
-            TestUtil.assertError("password expect value:%s,actual value:%s", password, xaDs.getPassword());
-        if (!url.equals(xaDs.getURL()))
-            TestUtil.assertError("url expect value:%s,actual value:%s", url, xaDs.getURL());
+        TestUtil.assertError("user expect value:%s,actual value:%s", user, xaDs.getUser());
+        TestUtil.assertError("password expect value:%s,actual value:%s", password, xaDs.getPassword());
+        TestUtil.assertError("url expect value:%s,actual value:%s", url, xaDs.getURL());
         Properties properties = xaDs.getProperties();
-        if (!property_Value.equals(properties.getProperty(property_Key)))
-            TestUtil.assertError("property expect value:%s,actual value:%s", property_Value, properties.getProperty(property_Key));
+        TestUtil.assertError("property expect value:%s,actual value:%s", property_Value, properties.getProperty(property_Key));
     }
 }

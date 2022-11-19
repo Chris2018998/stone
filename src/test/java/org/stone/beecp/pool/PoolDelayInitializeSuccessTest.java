@@ -36,8 +36,7 @@ public class PoolDelayInitializeSuccessTest extends TestCase {
         try {
             con = ds.getConnection();
             FastConnectionPool pool = (FastConnectionPool) TestUtil.getFieldValue(ds, "pool");
-            if (pool.getTotalSize() != initSize)
-                TestUtil.assertError("Total connections expected:%s,current is s%", initSize, pool.getTotalSize());
+            TestUtil.assertError("Total connections expected:%s,current is s%", initSize, pool.getTotalSize());
         } catch (ExceptionInInitializerError e) {
             e.getCause().printStackTrace();
         } finally {

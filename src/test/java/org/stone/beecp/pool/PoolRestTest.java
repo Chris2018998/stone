@@ -32,16 +32,11 @@ public class PoolRestTest extends TestCase {
 
     public void test() throws Exception {
         FastConnectionPool pool = (FastConnectionPool) TestUtil.getFieldValue(ds, "pool");
-        if (pool.getTotalSize() != initSize)
-            TestUtil.assertError("Total connections expected:%s,current is:%s", initSize, pool.getTotalSize());
-        if (pool.getIdleSize() != initSize)
-            TestUtil.assertError("connections expected:%s,current is:%s", initSize, pool.getIdleSize());
-
+        TestUtil.assertError("Total connections expected:%s,current is:%s", initSize, pool.getTotalSize());
+        TestUtil.assertError("connections expected:%s,current is:%s", initSize, pool.getIdleSize());
         pool.clear();
 
-        if (pool.getTotalSize() != 0)
-            TestUtil.assertError("Total connections not as expected 0,but current is:%s", pool.getTotalSize(), "");
-        if (pool.getIdleSize() != 0)
-            TestUtil.assertError("Idle connections not as expected 0,but current is:%s", pool.getIdleSize(), "");
+        TestUtil.assertError("Total connections not as expected:%s,but current is:%s", 0, pool.getTotalSize());
+        TestUtil.assertError("Idle connections not as expected:%s,but current is:%s", 0, pool.getIdleSize());
     }
 }

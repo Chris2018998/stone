@@ -42,13 +42,9 @@ public class DriverConnectPropertiesTest extends TestCase {
         ConnectionFactoryByDriver rawConnFactory = (ConnectionFactoryByDriver) TestUtil.getFieldValue(pool, "rawConnFactory");
         Properties properties = (Properties) TestUtil.getFieldValue(rawConnFactory, "properties");
 
-        if (!JdbcConfig.JDBC_USER.equals(properties.get("user")))
-            TestUtil.assertError("user expect value:%s,actual value:%s", JdbcConfig.JDBC_USER, properties.get("user"));
-        if (!JdbcConfig.JDBC_PASSWORD.equals(properties.get("password")))
-            TestUtil.assertError("password expect value:%s,actual value:%s", JdbcConfig.JDBC_PASSWORD, properties.get("password"));
-        if (!new Integer(3000).equals(properties.get(key1)))
-            TestUtil.assertError("CONNECT_TIMEOUT expect value:%s,actual value:%s", 3000, properties.get(key1));
-        if (!new Integer(6000).equals(properties.get(key2)))
-            TestUtil.assertError("oracle.jdbc.ReadTimeout expect value:%s,actual value:%s", 6000, properties.get(key2));
+        TestUtil.assertError("user expect value:%s,actual value:%s", JdbcConfig.JDBC_USER, properties.get("user"));
+        TestUtil.assertError("password expect value:%s,actual value:%s", JdbcConfig.JDBC_PASSWORD, properties.get("password"));
+        TestUtil.assertError("CONNECT_TIMEOUT expect value:%s,actual value:%s", new Integer(3000), properties.get(key1));
+        TestUtil.assertError("oracle.jdbc.ReadTimeout expect value:%s,actual value:%s", new Integer(6000), properties.get(key2));
     }
 }
