@@ -37,20 +37,15 @@ public class PoolRestTest extends TestCase {
         int idleSize = monitorVo.getIdleSize();
         int totalSize = usingSize + idleSize;
 
-        if (totalSize != initSize)
-            TestUtil.assertError("Total size expected:%s,current is:%s", initSize, totalSize);
-        if (idleSize != initSize)
-            TestUtil.assertError("idle expected:%s,current is:%s", initSize, idleSize);
-
+        TestUtil.assertError("Total size expected:%s,current is:%s", initSize, totalSize);
+        TestUtil.assertError("idle expected:%s,current is:%s", initSize, idleSize);
         obs.clear();
 
         monitorVo = obs.getPoolMonitorVo();
         usingSize = monitorVo.getUsingSize();
         idleSize = monitorVo.getIdleSize();
         totalSize = usingSize + idleSize;
-        if (totalSize != 0)
-            TestUtil.assertError("Total size not as expected 0,but current is:%s", totalSize, "");
-        if (idleSize != 0)
-            TestUtil.assertError("Idle size not as expected 0,but current is:%s", idleSize, "");
+        TestUtil.assertError("Total size not as expected:%s,but current is:%s", 0, totalSize);
+        TestUtil.assertError("Idle size not as expected:%s,but current is:%s", 0, idleSize);
     }
 }
