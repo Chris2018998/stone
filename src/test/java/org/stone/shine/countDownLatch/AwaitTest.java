@@ -11,12 +11,11 @@ package org.stone.shine.countDownLatch;
 
 import org.stone.shine.concurrent.CountDownLatch;
 import org.stone.shine.countDownLatch.runnable.CountDownRunnable;
-import org.stone.shine.countDownLatch.runnable.CountTimeWaitRunnable;
+import org.stone.shine.countDownLatch.runnable.CountWaitRunnable;
 import org.stone.test.TestCase;
 import org.stone.test.TestUtil;
 
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 /**
  * CountDownLatch Test Case
@@ -24,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  * @version 1.0
  */
-public class AwaitTimeTest extends TestCase {
+public class AwaitTest extends TestCase {
 
     public void test() throws Exception {
         int count = 100;
@@ -37,16 +36,14 @@ public class AwaitTimeTest extends TestCase {
         for (int i = 0; i < count; i++) countThreads[i] = new Thread(runs[i]);
 
         //2;create wait Threads
-        long timeout = 10l;
-        TimeUnit unit = TimeUnit.SECONDS;
         Thread[] waitThreads = new Thread[count];
-        for (int i = 0; i < count; i++) waitThreads[i] = new Thread(new CountTimeWaitRunnable(latch, timeout, unit));
+        for (int i = 0; i < count; i++) waitThreads[i] = new Thread(new CountWaitRunnable(latch));
 
-        //3: run Wait
-        for (int i = 0; i < count; i++) waitThreads[i].start();
-
-        //4;run count down
+        //3;run count down
         for (int i = 0; i < count; i++) countThreads[i].start();
+
+        //4;run wait
+        for (int i = 0; i < count; i++) waitThreads[i].start();
 
         latch.await();//block main thread
 
