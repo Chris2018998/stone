@@ -43,7 +43,7 @@ public final class ReentrantLock extends BaseLock {
     }
 
     public boolean isHeldByCurrentThread() {
-        return lockState.getHoldThread() == Thread.currentThread();
+        return lockState.isHeldByCurrentThread();
     }
 
     public String toString() {

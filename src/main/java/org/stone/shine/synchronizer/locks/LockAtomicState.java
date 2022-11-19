@@ -27,4 +27,8 @@ final class LockAtomicState extends ResourceAtomicState {
     void setHoldThread(Thread holdThread) {
         this.holdThread = holdThread;
     }
+
+    boolean isHeldByCurrentThread() {
+        return holdThread == Thread.currentThread();
+    }
 }

@@ -356,10 +356,13 @@ class BaseLock implements Lock {
 
         //do await
         private void doAwait(ThreadParkSupport support, boolean throwsIE) throws InterruptedException {
-            //1:release the single PermitPool under exclusive mode to pool
+            //1:condition wait under current thread must hold the lock
+            if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
+
+            //2:release the single PermitPool under exclusive mode to pool
             this.lock.unlock();
 
-            //2:join in the condition queue and wait a wakeup-signal from other
+            //3:create condition node to wait for wakeup signal and the node will be moved to syn queue to wait lock
             InterruptedException waitInterruptedException = null;
             ThreadNode conditionNode = super.createNode(AcquireTypes.TYPE_Exclusive);//condition just support Exclusive mode
             try {
@@ -369,11 +372,11 @@ class BaseLock implements Lock {
                 waitInterruptedException = e;
             }
 
-            //3:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
+            //4:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             conditionNode.setState(null);//reset to null(need filled by other)
             lock.waitPool.acquireWithNode(lockAction, 1, ThreadParkSupport.create(), false, conditionNode, false);
 
-            //4:throw occurred interrupt exception on condition wait
+            //5:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;
 
             /**
@@ -384,14 +387,16 @@ class BaseLock implements Lock {
         }
 
         public void signal() {
-            if (lockAction.getHoldThread() != Thread.currentThread()) throw new IllegalMonitorStateException();
+            if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
             super.wakeupOne();//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
-            if (lockAction.getHoldThread() != Thread.currentThread()) throw new IllegalMonitorStateException();
+            if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
             super.wakeupAll();//node wait(step2) in the doAwait method
         }
+
+
     }
 }
 
