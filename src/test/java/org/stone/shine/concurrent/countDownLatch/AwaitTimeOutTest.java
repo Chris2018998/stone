@@ -28,13 +28,13 @@ public class AwaitTimeOutTest extends TestCase {
         CountDownLatch latch = new CountDownLatch(1);
 
         //1:create a wait thread
-        long timeout = 5L;
+        long timeout = 2L;
         TimeUnit timeUnit = TimeUnit.SECONDS;
         GeneralAwaitThread waitThread = new GeneralAwaitThread(latch, timeout, timeUnit);
         waitThread.start();
 
         //2:park main thread 5 seconds
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(6));
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
 
         //3:check timeout == true
         if (latch.getCount() == 0) TestUtil.assertError("Await timeout test failed ");

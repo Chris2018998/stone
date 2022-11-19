@@ -35,11 +35,11 @@ public class AwaitAtSameTimePointTest2 extends TestCase {
         for (int i = 0; i < count; i++) countDownThreads[i] = new CountDownThread(latch);
 
         //2:cal the expect time point value to wait(5 seconds)
-        long timePointToAWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        long timePointToAWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         long timePointToWakeAll = timePointToAWait + TimeUnit.SECONDS.toNanos(2);
 
         //3:create countWait threads and block them
-        long timeout = 5L;
+        long timeout = 3L;
         TimeUnit timeUnit = TimeUnit.SECONDS;
         SameTimePointToAwaitThread[] sameTimePointWaitThreads = new SameTimePointToAwaitThread[count];
         for (int i = 0; i < count; i++) {
@@ -48,7 +48,7 @@ public class AwaitAtSameTimePointTest2 extends TestCase {
         }
 
         //4:crate count down threads
-        LockSupport.parkNanos(timePointToWakeAll - System.nanoTime());//wait for the same time(delay 7 seconds(5+2))
+        LockSupport.parkNanos(timePointToWakeAll - System.nanoTime());//wait for the same time(delay 4 seconds(2+2))
         for (int i = 0; i < count; i++) {
             countDownThreads[i].start();
         }

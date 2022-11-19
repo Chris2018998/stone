@@ -34,7 +34,7 @@ public class GeneralAwaitTest2 extends TestCase {
         for (int i = 0; i < count; i++) countDownThreads[i] = new CountDownThread(latch);
 
         //2:create countWait threads and block them
-        long timeout = 5L;
+        long timeout = 3L;
         TimeUnit timeUnit = TimeUnit.SECONDS;
         GeneralAwaitThread[] waitThreads = new GeneralAwaitThread[count];
         for (int i = 0; i < count; i++) {
