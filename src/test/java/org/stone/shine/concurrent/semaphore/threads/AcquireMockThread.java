@@ -11,16 +11,57 @@ package org.stone.shine.concurrent.semaphore.threads;
 
 import org.stone.shine.concurrent.Semaphore;
 
+import java.util.concurrent.TimeUnit;
+
 /**
- * Semaphore Test case
+ * Semaphore mock thread
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class AcquireMockThread extends Thread {
     private Semaphore semaphore;
+    private String acquireMethodName;
+    private boolean acquireSuccess;
+    private InterruptedException interruptedException;
+    private long timeout;
+    private TimeUnit unit;
 
-    public AcquireMockThread(Semaphore semaphore) {
+    public AcquireMockThread(Semaphore semaphore, String acquireMethodName) {
         this.semaphore = semaphore;
+        this.acquireMethodName = acquireMethodName;
+    }
+
+    public AcquireMockThread(Semaphore semaphore, String acquireMethodName, long timeout, TimeUnit unit) {
+        this.semaphore = semaphore;
+        this.acquireMethodName = acquireMethodName;
+        this.timeout = timeout;
+        this.unit = unit;
+    }
+
+    public boolean isAcquireSuccess() {
+        return acquireSuccess;
+    }
+
+    public InterruptedException getInterruptedException() {
+        return interruptedException;
+    }
+
+    public void run() {
+        try {
+            if ("acquire".equals(acquireMethodName)) {
+                semaphore.acquire();
+                this.acquireSuccess = true;
+            } else if ("acquireUninterruptibly".equals(acquireMethodName)) {
+                semaphore.acquireUninterruptibly();
+                this.acquireSuccess = true;
+            } else if ("tryAcquire".equals(acquireMethodName)) {
+                this.acquireSuccess = semaphore.tryAcquire();
+            } else if ("tryAcquire".equals(acquireMethodName)) {
+                this.acquireSuccess = semaphore.tryAcquire(timeout, unit);
+            }
+        } catch (InterruptedException e) {
+            this.interruptedException = e;
+        }
     }
 }
