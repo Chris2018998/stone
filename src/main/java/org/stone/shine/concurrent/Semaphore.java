@@ -132,7 +132,7 @@ public class Semaphore {
      * <p>Even when this semaphore has been set to use a
      * fair ordering policy, a call to {@code tryAcquire()} <em>will</em>
      * immediately acquireWithType a permit if one is available, whether or not
-     * other threads are currently waiting.
+     * other runnable are currently waiting.
      * This &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to honor
      * the fairness setting, then use
@@ -195,7 +195,7 @@ public class Semaphore {
      * Releases a permit, returning it to the semaphore.
      *
      * <p>Releases a permit, increasing the number of available permits by
-     * one.  If any threads are trying to acquireWithType a permit, then one is
+     * one.  If any runnable are trying to acquireWithType a permit, then one is
      * selected and given the permit that was just released.  That thread
      * is (re)enabled for thread scheduling purposes.
      *
@@ -237,7 +237,7 @@ public class Semaphore {
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
      * Any permits that were to be assigned to this thread are instead
-     * assigned to other threads trying to acquireWithType permits, as if
+     * assigned to other runnable trying to acquireWithType permits, as if
      * permits had been made available by a call to {@link #release()}.
      *
      * @param permits the number of permits to acquireWithType
@@ -297,7 +297,7 @@ public class Semaphore {
      * <p>Even when this semaphore has been set to use a fair ordering
      * policy, a call to {@code tryAcquire} <em>will</em>
      * immediately acquireWithType a permit if one is available, whether or
-     * not other threads are currently waiting.  This
+     * not other runnable are currently waiting.  This
      * &quot;barging&quot; behavior can be useful in certain
      * circumstances, even though it breaks fairness. If you want to
      * honor the fairness setting, then use {@link #tryAcquire(int,
@@ -346,13 +346,13 @@ public class Semaphore {
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.
      * Any permits that were to be assigned to this thread, are instead
-     * assigned to other threads trying to acquireWithType permits, as if
+     * assigned to other runnable trying to acquireWithType permits, as if
      * the permits had been made available by a call to {@link #release()}.
      *
      * <p>If the specified waiting time elapses then the value {@code false}
      * is returned.  If the time is less than or equal to zero, the method
      * will not wait at all.  Any permits that were to be assigned to this
-     * thread, are instead assigned to other threads trying to acquireWithType
+     * thread, are instead assigned to other runnable trying to acquireWithType
      * permits, as if the permits had been made available by a call to
      * {@link #release()}.
      *
@@ -377,14 +377,14 @@ public class Semaphore {
      *
      * <p>Releases the given number of permits, increasing the number of
      * available permits by that amount.
-     * If any threads are trying to acquireWithType permits, then one
+     * If any runnable are trying to acquireWithType permits, then one
      * is selected and given the permits that were just released.
      * If the number of available permits satisfies that thread's request
      * then that thread is (re)enabled for thread scheduling purposes;
      * otherwise the thread will wait until sufficient permits are available.
      * If there are still permits available
      * after this thread's request has been satisfied, then those permits
-     * are assigned in turn to other threads trying to acquireWithType permits.
+     * are assigned in turn to other runnable trying to acquireWithType permits.
      *
      * <p>There is no requirement that a thread that releases a permit must
      * have acquired that permit by calling {@link Semaphore#acquire acquireWithType}.
@@ -440,7 +440,7 @@ public class Semaphore {
         int availablePermits;
         do {
             availablePermits = this.permitSize.getState();
-        } while (availablePermits > reduction && !this.permitSize.compareAndSetState(availablePermits, availablePermits - reduction));
+        } while (availablePermits >= reduction && !this.permitSize.compareAndSetState(availablePermits, availablePermits - reduction));
     }
 
     /**
@@ -453,13 +453,13 @@ public class Semaphore {
     }
 
     /**
-     * Queries whether any threads are waiting to acquireWithType. Note that
+     * Queries whether any runnable are waiting to acquireWithType. Note that
      * because cancellations may occur at any time, a {@code true}
      * return does not guarantee that any other thread will ever
      * acquireWithType.  This method is designed primarily for use in
      * monitoring of the system state.
      *
-     * @return {@code true} if there may be other threads waiting to
+     * @return {@code true} if there may be other runnable waiting to
      * acquireWithType the lock
      */
     public final boolean hasQueuedThreads() {
@@ -467,27 +467,27 @@ public class Semaphore {
     }
 
     /**
-     * Returns an estimate of the number of threads waiting to acquireWithType.
-     * The value is only an estimate because the number of threads may
+     * Returns an estimate of the number of runnable waiting to acquireWithType.
+     * The value is only an estimate because the number of runnable may
      * change dynamically while this method traverses internal data
      * structures.  This method is designed for use in monitoring of the
      * system state, not for synchronization control.
      *
-     * @return the estimated number of threads waiting for this lock
+     * @return the estimated number of runnable waiting for this lock
      */
     public final int getQueueLength() {
         return waitPool.getQueueLength();
     }
 
     /**
-     * Returns a collection containing threads that may be waiting to acquireWithType.
-     * Because the actual set of threads may change dynamically while
+     * Returns a collection containing runnable that may be waiting to acquireWithType.
+     * Because the actual set of runnable may change dynamically while
      * constructing this result, the returned collection is only a best-effort
      * estimate.  The elements of the returned collection are in no particular
      * order.  This method is designed to facilitate construction of
      * subclasses that provide more extensive monitoring facilities.
      *
-     * @return the collection of threads
+     * @return the collection of runnable
      */
     protected Collection<Thread> getQueuedThreads() {
         return waitPool.getQueuedThreads();
