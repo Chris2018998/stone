@@ -14,6 +14,7 @@ import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.Objects;
 
 /**
  * @author Chris Liao
@@ -27,7 +28,8 @@ public class TestUtil {
     }
 
     public static void assertError(String message, Object expect, Object current) {
-        throw new AssertionError(String.format(message, String.valueOf(expect), String.valueOf(current)));
+        if (!Objects.equals(expect, current))
+            throw new AssertionError(String.format(message, String.valueOf(expect), String.valueOf(current)));
     }
 
     public static Object getFieldValue(Object ob, String fieldName) throws Exception {
