@@ -33,13 +33,12 @@ public class AwaitInterruptededTest extends TestCase {
         GeneralAwaitThread waitThread = new GeneralAwaitThread(latch, timeout, timeUnit);
         waitThread.start();
 
-        //2:park main thread 5 seconds
+        //2:park main thread 3 seconds
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(3));
         waitThread.interrupt();//interrupt the wait thread
 
         //3:get timeout indicator from await thread
-        Exception e = waitThread.getCause();
-        if (e == null || !(e instanceof InterruptedException))
-            TestUtil.assertError("Await Interrupteded Test failed ");
+        InterruptedException e = waitThread.getCause();
+        if (e == null || latch.getCount() == 0) TestUtil.assertError("Await Interrupteded Test failed ");
     }
 }

@@ -36,10 +36,7 @@ public class AwaitTimeOutTest extends TestCase {
         //2:park main thread 5 seconds
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(6));
 
-        //3:get timeout indicator from await thread
-        boolean isTimeout = waitThread.isHasTimeout();
-
-        //4:check timeout == true
-        TestUtil.assertError("final count value expect value:%s,actual value:%s", true, isTimeout);
+        //3:check timeout == true
+        if (latch.getCount() == 0) TestUtil.assertError("Await timeout test failed ");
     }
 }
