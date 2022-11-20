@@ -9,6 +9,7 @@
  */
 package org.stone.shine.concurrent.locks.reentrantLock;
 
+import org.stone.shine.synchronizer.locks.ReentrantLock;
 import org.stone.test.TestCase;
 
 /**
@@ -20,6 +21,12 @@ import org.stone.test.TestCase;
 
 public class LockInterruptiblyTest extends TestCase {
     public void test() throws Exception {
+        ReentrantLock lock = new ReentrantLock();
+
+        
+
+
+
 
     }
 }
