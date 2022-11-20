@@ -382,7 +382,7 @@ class BaseLock implements Lock {
             /**
              * my individual view:throw InterruptedException may be a better schema at step2 (different to professor Doug Lea)
              * 1: not need't join in syn queue to get lock
-             * 2: it add chance to take the lock for other threads
+             * 2: it add chance to take the lock for other runnable
              */
         }
 
@@ -395,8 +395,6 @@ class BaseLock implements Lock {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
             super.wakeupAll();//node wait(step2) in the doAwait method
         }
-
-
     }
 }
 
