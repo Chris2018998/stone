@@ -28,11 +28,13 @@ public class LockAcquireThread extends ConcurrentMockThread {
     public LockAcquireThread(Lock lock, String methodName) {
         super(methodName);
         this.lock = lock;
+        this.result = false;
     }
 
     public LockAcquireThread(ReentrantLock lock, String methodName, long timeout, TimeUnit timeUnit) {
         super(methodName, timeout, timeUnit);
         this.lock = lock;
+        this.result = false;
     }
 
     public void run() {
