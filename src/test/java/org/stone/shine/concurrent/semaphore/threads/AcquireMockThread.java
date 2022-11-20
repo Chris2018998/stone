@@ -55,10 +55,10 @@ public class AcquireMockThread extends Thread {
             } else if ("acquireUninterruptibly".equals(acquireMethodName)) {
                 semaphore.acquireUninterruptibly();
                 this.acquireSuccess = true;
+            } else if ("tryAcquire".equals(acquireMethodName) && unit != null) {
+                this.acquireSuccess = semaphore.tryAcquire(timeout, unit);
             } else if ("tryAcquire".equals(acquireMethodName)) {
                 this.acquireSuccess = semaphore.tryAcquire();
-            } else if ("tryAcquire".equals(acquireMethodName)) {
-                this.acquireSuccess = semaphore.tryAcquire(timeout, unit);
             }
         } catch (InterruptedException e) {
             this.interruptedException = e;

@@ -74,7 +74,5 @@ public class SingleThreadAcquireTest extends TestCase {
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 0, semaphore.availablePermits());
         semaphore.release();
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 1, semaphore.availablePermits());
-
-
     }
 }
