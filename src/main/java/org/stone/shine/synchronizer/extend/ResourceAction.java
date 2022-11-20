@@ -32,7 +32,7 @@ public abstract class ResourceAction implements ResultCall {
     public boolean tryAcquire(int size) {
         try {
             return Objects.equals(this.call(size), true);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
     }
