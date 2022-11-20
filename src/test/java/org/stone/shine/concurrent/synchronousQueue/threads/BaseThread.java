@@ -7,20 +7,21 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.shine.concurrent.synchronousQueue;
+package org.stone.shine.concurrent.synchronousQueue.threads;
 
-import org.stone.test.TestCase;
+import org.stone.shine.concurrent.SynchronousQueue;
 
 /**
- * synchronousQueue Test case
+ * mock thread
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-public class OfferToOneWaiter extends TestCase {
+public class BaseThread extends Thread {
+    protected SynchronousQueue queue;
 
-    public void test() throws Exception {
-
+    public BaseThread(SynchronousQueue queue) {
+        this.queue = queue;
     }
 }

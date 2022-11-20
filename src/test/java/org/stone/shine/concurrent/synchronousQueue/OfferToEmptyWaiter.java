@@ -18,7 +18,7 @@ import org.stone.test.TestCase;
  * @version 1.0
  */
 
-public class OfferToOneWaiter extends TestCase {
+public class OfferToEmptyWaiter extends TestCase {
 
     public void test() throws Exception {
 

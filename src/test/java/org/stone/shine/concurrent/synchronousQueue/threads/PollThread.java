@@ -7,20 +7,20 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.shine.concurrent.synchronousQueue;
+package org.stone.shine.concurrent.synchronousQueue.threads;
 
-import org.stone.test.TestCase;
+import org.stone.shine.concurrent.SynchronousQueue;
 
 /**
- * synchronousQueue Test case
+ * mock thread
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-public class OfferToOneWaiter extends TestCase {
-
-    public void test() throws Exception {
-
+public class PollThread extends BaseThread {
+    public PollThread(SynchronousQueue queue) {
+        super(queue);
     }
 }
+
