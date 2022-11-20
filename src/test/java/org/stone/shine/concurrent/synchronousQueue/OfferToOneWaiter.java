@@ -27,7 +27,7 @@ import java.util.concurrent.locks.LockSupport;
 public class OfferToOneWaiter extends TestCase {
 
     public void test() throws Exception {
-        SynchronousQueue queue = new SynchronousQueue(true);
+        SynchronousQueue<Object> queue = new SynchronousQueue<>(true);
 
         //1: create a poll thread to take transferred object
         PollThread pollThread = new PollThread(queue, "take");
