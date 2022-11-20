@@ -11,6 +11,8 @@ package org.stone.shine.concurrent.synchronousQueue.threads;
 
 import org.stone.shine.concurrent.SynchronousQueue;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * mock thread
  *
@@ -20,8 +22,22 @@ import org.stone.shine.concurrent.SynchronousQueue;
 
 public class BaseThread extends Thread {
     protected SynchronousQueue queue;
+    protected String methodName;
+    protected long timeout;
+    protected TimeUnit unit;
 
-    public BaseThread(SynchronousQueue queue) {
+    protected Object result;
+    protected InterruptedException interruptedException;
+
+    public BaseThread(SynchronousQueue queue, String methodName) {
         this.queue = queue;
+        this.methodName = methodName;
+    }
+
+    public BaseThread(SynchronousQueue queue, String methodName, long timeout, TimeUnit unit) {
+        this.queue = queue;
+        this.methodName = methodName;
+        this.timeout = timeout;
+        this.unit = unit;
     }
 }

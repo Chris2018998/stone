@@ -11,6 +11,8 @@ package org.stone.shine.concurrent.synchronousQueue.threads;
 
 import org.stone.shine.concurrent.SynchronousQueue;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * mock thread
  *
@@ -19,8 +21,27 @@ import org.stone.shine.concurrent.SynchronousQueue;
  */
 
 public class PollThread extends BaseThread {
-    public PollThread(SynchronousQueue queue) {
-        super(queue);
+
+    public PollThread(SynchronousQueue queue, String methodName) {
+        super(queue, methodName);
+    }
+
+    public PollThread(SynchronousQueue queue, String methodName, long timeout, TimeUnit unit) {
+        super(queue, methodName, timeout, unit);
+    }
+
+    public void run() {
+        try {
+            if ("poll".equals(methodName) && unit != null) {
+                this.result = queue.poll(timeout, unit);
+            } else if ("poll".equals(methodName)) {
+                this.result = queue.poll();
+            } else if ("take".equals(methodName)) {
+                this.result = queue.take();
+            }
+        } catch (InterruptedException e) {
+            this.interruptedException = e;
+        }
     }
 }
 

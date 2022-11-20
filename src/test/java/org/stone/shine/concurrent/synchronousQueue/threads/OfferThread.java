@@ -11,6 +11,8 @@ package org.stone.shine.concurrent.synchronousQueue.threads;
 
 import org.stone.shine.concurrent.SynchronousQueue;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * mock thread
  *
@@ -18,7 +20,29 @@ import org.stone.shine.concurrent.SynchronousQueue;
  * @version 1.0
  */
 public class OfferThread extends BaseThread {
-    public OfferThread(SynchronousQueue queue) {
-        super(queue);
+    private Object offerObject;
+
+    public OfferThread(SynchronousQueue queue, String methodName, Object offerObject) {
+        super(queue, methodName);
+        this.offerObject = offerObject;
+    }
+
+    public OfferThread(SynchronousQueue queue, String methodName, Object offerObject, long timeout, TimeUnit unit) {
+        super(queue, methodName, timeout, unit);
+        this.offerObject = offerObject;
+    }
+
+    public void run() {
+        try {
+            if ("offer".equals(methodName) && unit != null) {
+                this.result = queue.offer(offerObject, timeout, unit);
+            } else if ("offer".equals(methodName)) {
+                this.result = queue.offer(offerObject);
+            } else if ("put".equals(methodName)) {
+                queue.put(offerObject);
+            }
+        } catch (InterruptedException e) {
+            this.interruptedException = e;
+        }
     }
 }
