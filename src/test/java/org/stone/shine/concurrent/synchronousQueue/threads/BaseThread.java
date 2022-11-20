@@ -40,4 +40,12 @@ public class BaseThread extends Thread {
         this.timeout = timeout;
         this.unit = unit;
     }
+
+    public Object getResult() {
+        return result;
+    }
+
+    public InterruptedException getInterruptedException() {
+        return interruptedException;
+    }
 }

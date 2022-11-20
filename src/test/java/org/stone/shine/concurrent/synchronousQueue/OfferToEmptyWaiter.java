@@ -9,7 +9,9 @@
  */
 package org.stone.shine.concurrent.synchronousQueue;
 
+import org.stone.shine.concurrent.SynchronousQueue;
 import org.stone.test.TestCase;
+import org.stone.test.TestUtil;
 
 /**
  * synchronousQueue Test case
@@ -22,5 +24,8 @@ public class OfferToEmptyWaiter extends TestCase {
 
     public void test() throws Exception {
 
+        SynchronousQueue queue = new SynchronousQueue(true);
+
+        TestUtil.assertError("test failed expect value:%s,actual value:%s", false, queue.offer(new Object()));
     }
 }
