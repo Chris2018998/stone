@@ -9,7 +9,13 @@
  */
 package org.stone.shine.concurrent.locks.reentrantLock;
 
+import org.stone.shine.concurrent.locks.reentrantLock.threads.LockAcquireThread;
+import org.stone.shine.synchronizer.locks.ReentrantLock;
 import org.stone.test.TestCase;
+import org.stone.test.TestUtil;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * ReentrantLock test case
@@ -21,6 +27,35 @@ import org.stone.test.TestCase;
 public class LockUninterruptedTest extends TestCase {
 
     public void test() throws Exception {
+        //1: create lock and acquire in main thread
+        boolean isUnlock = false;
+        ReentrantLock lock = new ReentrantLock();
+        lock.lock();
 
+        try {
+            //2: create mock thread
+            LockAcquireThread mockThread = new LockAcquireThread(lock, "lock");
+            mockThread.start();
+
+            //3: park main thread 1 second
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+
+            //4: interrupt the mock thread
+            mockThread.interrupt();
+
+            //5: park the main thread 1 second and check mock state
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+            if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");
+
+            //6: unlock from main
+            lock.unlock();
+            isUnlock = true;
+
+            //7: check mock thead
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+            TestUtil.assertError("Lock test fail, expect value:%s,actual value:%s", true, mockThread.getResult());
+        } finally {
+            if (!isUnlock) lock.unlock();
+        }
     }
 }

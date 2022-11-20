@@ -9,8 +9,13 @@
  */
 package org.stone.shine.concurrent.locks.reentrantLock;
 
+import org.stone.shine.concurrent.locks.reentrantLock.threads.LockAcquireThread;
 import org.stone.shine.synchronizer.locks.ReentrantLock;
 import org.stone.test.TestCase;
+import org.stone.test.TestUtil;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * ReentrantLock test case
@@ -21,12 +26,25 @@ import org.stone.test.TestCase;
 
 public class LockInterruptiblyTest extends TestCase {
     public void test() throws Exception {
+        //1: create lock and acquire in main thread
         ReentrantLock lock = new ReentrantLock();
+        lock.lock();
+        try {
+            //2: create mock thread
+            LockAcquireThread mockThread = new LockAcquireThread(lock, "lockInterruptibly");
+            mockThread.start();
 
-        
+            //3: park main thread 1 second
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
 
+            //4: interrupt the mock thread
+            mockThread.interrupt();
 
-
-
+            //check InterruptedException in mock thread
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+            if (mockThread.getInterruptedException() == null) TestUtil.assertError("mock thread not interrupted");
+        } finally {
+            lock.unlock();
+        }
     }
 }
