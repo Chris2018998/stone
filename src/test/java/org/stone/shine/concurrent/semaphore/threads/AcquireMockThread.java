@@ -22,10 +22,10 @@ import java.util.concurrent.TimeUnit;
 public class AcquireMockThread extends Thread {
     private Semaphore semaphore;
     private String acquireMethodName;
-    private boolean acquireSuccess;
-    private InterruptedException interruptedException;
     private long timeout;
     private TimeUnit unit;
+    private boolean acquireSuccess;
+    private InterruptedException interruptedException;
 
     public AcquireMockThread(Semaphore semaphore, String acquireMethodName) {
         this.semaphore = semaphore;
