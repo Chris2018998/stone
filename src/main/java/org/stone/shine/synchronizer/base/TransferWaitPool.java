@@ -60,6 +60,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
 
         //step2:create wait node(then to wait)
         ThreadNode node = super.createNode(Node_Type_Transfer);
+        node.setValue(e);
 
         //step3:create wait node(then to wait)
         return doWait(node, parker, throwsIE) != null;
