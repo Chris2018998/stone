@@ -53,7 +53,7 @@ public class LockAcquireThread extends ConcurrentMockThread {
         }
     }
 
-    public void un() {
+    public void unlock() {
         if (Objects.equals(result, true)) {
             lock.unlock();
             this.result = false;
