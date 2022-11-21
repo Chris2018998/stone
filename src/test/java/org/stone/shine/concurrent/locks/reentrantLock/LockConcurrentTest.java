@@ -34,7 +34,7 @@ public class LockConcurrentTest extends TestCase {
         int size = 1000;
         LockTestThread[] testThread = new LockTestThread[size];
         for (int i = 0; i < size; i++)
-            testThread[i] = new LockTestThread("Thread" + i, lock,timePointToAWait);
+            testThread[i] = new LockTestThread("Thread" + i, lock, timePointToAWait);
         for (int i = 0; i < size; i++)
             testThread[i].start();
 
@@ -51,10 +51,10 @@ public class LockConcurrentTest extends TestCase {
         private ReentrantLock lock;
         private long timePointToLock;
 
-        public LockTestThread(String threadName, ReentrantLock lock,long timePointToLock) {
+        public LockTestThread(String threadName, ReentrantLock lock, long timePointToLock) {
             this.lock = lock;
             this.setName(threadName);
-            this.timePointToLock=timePointToLock;
+            this.timePointToLock = timePointToLock;
         }
 
         public boolean isAcquired() {

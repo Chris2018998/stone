@@ -10,9 +10,11 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock.threads;
 
 import org.stone.shine.concurrent.ConcurrentMockThread;
-import org.stone.shine.synchronizer.locks.ReentrantReadWriteLock;
+import org.stone.shine.synchronizer.locks.ReentrantLock;
 
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 /**
  * mock thread
@@ -21,15 +23,40 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class LockAcquireThread extends ConcurrentMockThread {
-    private ReentrantReadWriteLock lock;
+    private Lock lock;
 
-    public LockAcquireThread(ReentrantReadWriteLock lock, String methodName) {
+    public LockAcquireThread(Lock lock, String methodName) {
         super(methodName);
         this.lock = lock;
     }
 
-    public LockAcquireThread(ReentrantReadWriteLock lock, String methodName, long timeout, TimeUnit timeUnit) {
+    public LockAcquireThread(ReentrantLock lock, String methodName, long timeout, TimeUnit timeUnit) {
         super(methodName, timeout, timeUnit);
         this.lock = lock;
+    }
+
+    public void run() {
+        try {
+            if ("tryLock".equals(methodName) && timeUnit != null) {
+                this.result = lock.tryLock(timeout, timeUnit);
+            } else if ("tryLock".equals(methodName)) {
+                this.result = lock.tryLock();
+            } else if ("lock".equals(methodName)) {
+                lock.lock();
+                this.result = true;
+            } else if ("lockInterruptibly".equals(methodName)) {
+                lock.lockInterruptibly();
+                this.result = true;
+            }
+        } catch (InterruptedException e) {
+            this.interruptedException = e;
+        }
+    }
+
+    public void un() {
+        if (Objects.equals(result, true)) {
+            lock.unlock();
+            this.result = false;
+        }
     }
 }

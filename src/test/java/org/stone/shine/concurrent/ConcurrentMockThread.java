@@ -12,7 +12,7 @@ package org.stone.shine.concurrent;
 import java.util.concurrent.TimeUnit;
 
 /**
- * synchronousQueue Test case
+ * base Test thread
  *
  * @author Chris Liao
  * @version 1.0

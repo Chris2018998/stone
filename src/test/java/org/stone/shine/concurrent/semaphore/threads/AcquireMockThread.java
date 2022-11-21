@@ -26,11 +26,13 @@ public class AcquireMockThread extends ConcurrentMockThread {
     public AcquireMockThread(Semaphore semaphore, String methodName) {
         super(methodName);
         this.semaphore = semaphore;
+        this.result = false;
     }
 
     public AcquireMockThread(Semaphore semaphore, String methodName, long timeout, TimeUnit timeUnit) {
         super(methodName, timeout, timeUnit);
         this.semaphore = semaphore;
+        this.result = false;
     }
 
     public void run() {
