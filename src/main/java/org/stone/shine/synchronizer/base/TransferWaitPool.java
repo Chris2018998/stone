@@ -21,7 +21,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     //Request
     private static final Object Node_Type_Get = new Object();
     //Data
-    private static final Object Node_Type_Transfer = new Object();
+    private static final Object Node_Type_Data = new Object();
 
     //true,use fair mode to execute call
     private boolean fair;
@@ -59,7 +59,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
         if (this.tryTransfer(e)) return true;
 
         //step2:create wait node(then to wait)
-        ThreadNode node = super.createNode(Node_Type_Transfer);
+        ThreadNode node = super.createNode(Node_Type_Data);
         node.setValue(e);
 
         //step3:create wait node(then to wait)
@@ -70,7 +70,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     //                                          3: get methods                                                        //
     //****************************************************************************************************************//
     public final E tryGet() {
-        ThreadNode node = this.getWokenUpNode(fair, ThreadNodeState.SIGNAL, Node_Type_Transfer);
+        ThreadNode node = this.getWokenUpNode(fair, ThreadNodeState.SIGNAL, Node_Type_Data);
         return node != null ? (E) node.getValue() : null;
     }
 
@@ -97,7 +97,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
                 //1.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) {//wokenUp
-                    if (node.getType() == Node_Type_Transfer) {
+                    if (node.getType() == Node_Type_Data) {
                         return node;//that means transferred object has been got by other
                     } else {//state==Node_Type_Get
                         return state;
