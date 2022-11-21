@@ -18,7 +18,9 @@ import java.util.concurrent.locks.Condition;
  * @version 1.0
  */
 public class SignalThread extends BaseThread {
-    public SignalThread(Condition condition) {
-        super(condition);
+
+    public SignalThread(Condition condition, String methodName) {
+        super(condition, methodName);
     }
+
 }

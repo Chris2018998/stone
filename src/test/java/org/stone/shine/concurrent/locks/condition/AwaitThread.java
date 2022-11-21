@@ -9,6 +9,7 @@
  */
 package org.stone.shine.concurrent.locks.condition;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 /**
@@ -19,8 +20,11 @@ import java.util.concurrent.locks.Condition;
  */
 public class AwaitThread extends BaseThread {
 
-    public AwaitThread(Condition condition) {
-        super(condition);
+    public AwaitThread(Condition condition, String methodName) {
+        super(condition, methodName);
     }
 
+    public AwaitThread(Condition condition, String methodName, long timeout, TimeUnit timeUnit) {
+        super(condition, methodName, timeout, timeUnit);
+    }
 }
