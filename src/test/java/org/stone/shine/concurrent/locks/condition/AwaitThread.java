@@ -9,6 +9,7 @@
  */
 package org.stone.shine.concurrent.locks.condition;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -19,12 +20,36 @@ import java.util.concurrent.locks.Condition;
  * @version 1.0
  */
 public class AwaitThread extends BaseThread {
+    private Date deadline;
 
     public AwaitThread(Condition condition, String methodName) {
         super(condition, methodName);
     }
 
+    public AwaitThread(Condition condition, String methodName, Date deadline) {
+        super(condition, methodName);
+        this.deadline = deadline;
+    }
+
     public AwaitThread(Condition condition, String methodName, long timeout, TimeUnit timeUnit) {
         super(condition, methodName, timeout, timeUnit);
+    }
+
+    public void run() {
+        try {
+            if ("await".equals(methodName) && timeUnit != null) {
+                this.result = condition.await(timeout, timeUnit);
+            } else if ("await".equals(methodName)) {
+                condition.await();
+            } else if ("awaitUninterruptibly".equals(methodName)) {
+                condition.awaitUninterruptibly();
+            } else if ("awaitNanos".equals(methodName)) {
+                this.result = condition.awaitNanos(timeout);
+            } else if ("awaitUntil".equals(methodName)) {
+                this.result = condition.awaitUntil(deadline);
+            }
+        } catch (InterruptedException e) {
+            this.interruptedException = e;
+        }
     }
 }
