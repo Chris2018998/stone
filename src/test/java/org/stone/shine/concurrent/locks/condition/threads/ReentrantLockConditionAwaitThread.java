@@ -66,10 +66,10 @@ public class ReentrantLockConditionAwaitThread extends BaseThread {
             } else if ("awaitUntil".equals(methodName)) {
                 this.result = condition.awaitUntil(deadline);
             }
-            locked2 = lock.isHeldByCurrentThread();
         } catch (InterruptedException e) {
             this.interruptedException = e;
         } finally {
+            locked2 = lock.isHeldByCurrentThread();
             lock.unlock();
         }
     }
