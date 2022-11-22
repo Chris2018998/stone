@@ -45,7 +45,5 @@ public class ReentrantLockConditionAwaitInterruptedTest extends ReentrantLockCon
         //4:check time
         LockSupport.parkNanos(ParkDelayNanos);
         if (awaitThread.getInterruptedException() == null) TestUtil.assertError("test failed");
-        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked1());
-        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked2());
     }
 }
