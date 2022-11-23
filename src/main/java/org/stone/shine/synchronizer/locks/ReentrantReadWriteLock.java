@@ -130,7 +130,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         public Object call(Object size) {
             int state = lockState.getState();
             if (state == 0) {
-                if (lockState.compareAndSetState(0, 1)) {
+                state = incrementExclusiveCount(state);
+                if (lockState.compareAndSetState(0, state)) {
                     lockState.setExclusiveOwnerThread(Thread.currentThread());
                     return true;
                 } else {
@@ -171,10 +172,13 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
         public Object call(Object size) {
             int state = lockState.getState();
+            int writeCount = exclusiveCount(state);
 
-            if (state == 0) {
-                state = incrementSharedCount(state);
-                if (lockState.compareAndSetState(0, state)) {//success by first read(0-1)
+            //step1:test current is whether in exclusive mode
+            if (writeCount > 0) {
+                if (Thread.currentThread() == lockState.getExclusiveOwnerThread()) {
+                    state = incrementSharedCount(state);
+                    lockState.setState(state);
                     SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                     holdCounter.holdCount++;
                     return true;
@@ -183,19 +187,30 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 }
             }
 
-            int writeCount = exclusiveCount(state);
-            int sharedCount = sharedCount(state);
-            if(writeCount>0 && Thread.currentThread() == lockState.getExclusiveOwnerThread()){
-
-
+            //step2:try to cas new state(share mode)
+            int newState = incrementSharedCount(state);//share count +1
+            if (lockState.compareAndSetState(state, newState)) {
+                SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
+                holdCounter.holdCount++;
+                return true;
             }
-
-            return true;
+            return false;
         }
 
         public boolean tryRelease(int size) {
+            SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
+            if (--holdCounter.holdCount == 0) sharedHoldThreadLocal.remove();
 
-            return true;
+            int state, updState, readCount;
+            do {
+                state = lockState.getState();
+                readCount = sharedCount(state);
+                if (readCount == 0) return false;
+                updState = decrementSharedCount(state);
+                if (lockState.compareAndSetState(state, updState))
+                    return true;
+
+            } while (true);
         }
     }
 }
