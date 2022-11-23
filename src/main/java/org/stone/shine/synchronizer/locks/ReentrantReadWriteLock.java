@@ -128,13 +128,35 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public Object call(Object size) {
-            //@todo
-            return true;
+            int state = lockState.getState();
+            if (state == 0) {
+                if (lockState.compareAndSetState(0, 1)) {
+                    lockState.setExclusiveOwnerThread(Thread.currentThread());
+                    return true;
+                } else {
+                    return false;
+                }
+            } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
+                state = incrementExclusiveCount(state);
+                if (state > MAX_COUNT) throw new Error("Maximum lock count exceeded");
+                lockState.setState(state);
+                return true;
+            } else {
+                return false;
+            }
         }
 
         public boolean tryRelease(int size) {
-            //@todo
-            return true;
+            if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
+                int curState = lockState.getState();
+                int writeCount = exclusiveCount(curState);
+
+                if (writeCount == 1) lockState.setExclusiveOwnerThread(null);
+                if (writeCount > 0) lockState.setState(decrementExclusiveCount(curState));
+                return writeCount == 1;
+            } else {
+                return false;
+            }
         }
     }
 
