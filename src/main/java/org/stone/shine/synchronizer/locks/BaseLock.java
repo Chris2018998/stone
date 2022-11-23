@@ -266,8 +266,28 @@ class BaseLock implements Lock {
         return new LockConditionImpl(this);
     }
 
+
     //****************************************************************************************************************//
-    //                                          3: monitor Methods(5)                                                 //
+    //                                          3: monitor1 methods(4)                                                 //
+    //****************************************************************************************************************//
+    public boolean isLocked() {
+        return lockState.getState() != 0;
+    }
+
+    public int getHoldCount() {
+        return lockState.getState();
+    }
+
+    protected Thread getOwner() {
+        return lockState.getExclusiveOwnerThread();
+    }
+
+    public boolean isHeldByCurrentThread() {
+        return lockState.isHeldByCurrentThread();
+    }
+
+    //****************************************************************************************************************//
+    //                                          4: monitor2 Methods(5)                                                 //
     //****************************************************************************************************************//
     public final boolean isFair() {
         return waitPool.isFair();
@@ -290,7 +310,7 @@ class BaseLock implements Lock {
     }
 
     //****************************************************************************************************************//
-    //                                          4: Condition Methods(4)                                               //
+    //                                          5: Condition Methods(4)                                               //
     //****************************************************************************************************************//
     public boolean hasWaiters(Condition condition) {
         return castConditionToLocal(condition).hasQueuedThreads();
@@ -311,7 +331,7 @@ class BaseLock implements Lock {
     }
 
     //****************************************************************************************************************//
-    //                                       5: Lock Condition Impl                                                  //                                                                                  //
+    //                                       6: Lock Condition Impl                                                  //                                                                                  //
     //****************************************************************************************************************//
     private static class LockConditionImpl extends SignalWaitPool implements Condition {
         private final BaseLock lock;

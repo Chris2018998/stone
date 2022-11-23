@@ -107,11 +107,19 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
         }
+
+        public int getHoldCount() {
+            return exclusiveCount(lockState.getState());
+        }
     }
 
     private static class ReadLock extends BaseLock {
         ReadLock(ResourceWaitPool waitPool, LockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_Sharable);
+        }
+
+        public int getHoldCount() {
+            return sharedCount(lockState.getState());
         }
 
         public Condition newCondition() {

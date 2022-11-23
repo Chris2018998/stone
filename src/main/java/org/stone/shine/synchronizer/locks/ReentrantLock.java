@@ -27,25 +27,6 @@ public final class ReentrantLock extends BaseLock {
         super(fair, new ReentrantLockAction(new LockAtomicState()));
     }
 
-    //****************************************************************************************************************//
-    //                                          2: monitor methods(4)                                                 //
-    //****************************************************************************************************************//
-    public boolean isLocked() {
-        return lockState.getState() != 0;
-    }
-
-    public int getHoldCount() {
-        return lockState.getState();
-    }
-
-    protected Thread getOwner() {
-        return lockState.getExclusiveOwnerThread();
-    }
-
-    public boolean isHeldByCurrentThread() {
-        return lockState.isHeldByCurrentThread();
-    }
-
     public String toString() {
         Thread o = lockState.getExclusiveOwnerThread();
         return super.toString() + ((o == null) ?
