@@ -89,7 +89,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     //****************************************************************************************************************//
     //                                          4: core methods                                                       //
     //****************************************************************************************************************//
-    private final Object doWait(ThreadNode node, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+    private Object doWait(ThreadNode node, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
         super.appendNode(node);
 
         try {
