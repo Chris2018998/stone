@@ -111,7 +111,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
     private static class ReadLock extends BaseLock {
         ReadLock(ResourceWaitPool waitPool, LockAction lockAction) {
-            super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
+            super(waitPool, lockAction, AcquireTypes.TYPE_Sharable);
         }
 
         public Condition newCondition() {
@@ -161,17 +161,40 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     private static class ReadLockAction extends LockAction {
+        //cache shared hold count
+        private final SharedHoldThreadLocal sharedHoldThreadLocal;
+
         ReadLockAction(LockAtomicState lockState) {
             super(lockState);
+            this.sharedHoldThreadLocal = new SharedHoldThreadLocal();
         }
 
         public Object call(Object size) {
-            //@todo
+            int state = lockState.getState();
+
+            if (state == 0) {
+                state = incrementSharedCount(state);
+                if (lockState.compareAndSetState(0, state)) {//success by first read(0-1)
+                    SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
+                    holdCounter.holdCount++;
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            int writeCount = exclusiveCount(state);
+            int sharedCount = sharedCount(state);
+            if(writeCount>0 && Thread.currentThread() == lockState.getExclusiveOwnerThread()){
+
+
+            }
+
             return true;
         }
 
         public boolean tryRelease(int size) {
-            //@todo
+
             return true;
         }
     }
