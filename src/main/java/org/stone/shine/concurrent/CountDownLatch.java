@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The class instance can be seemed as a theater,and a set of(fixed sized)stage programs perform in its inside,
- * some people(threads)come into the theater to watch these show(call method{@link #await}).A atomic count property
+ * some people(runnable)come into the theater to watch these show(call method{@link #await}).A atomic count property
  * represent number of the programs,one item of them done then call method{@link #countDown}to reduce one value from
  * the atomic variable util its value reach zero(all programs completed),then notify automatically all present watchers
  * to leave from the theater(call method{@code org.stone.shine.synchronizer.ThreadWaitPool.wakeupAll}),which closed for ever.
@@ -77,7 +77,7 @@ public final class CountDownLatch implements ResultCall {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) waitPool.wakeupAll();//the last item over,then notify all waiters(threads)to leave
+                if (c == 1) waitPool.wakeupAll();//the last item over,then notify all waiters(runnable)to leave
                 return;
             }
         } while (true);

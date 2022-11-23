@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQueue<E>, java.io.Serializable {
 
     //transfer wait pool
-    private TransferWaitPool<E> waitPool;
+    private final TransferWaitPool<E> waitPool;
 
     /**
      * Creates a {@code SynchronousQueue} with non-fair access policy.
@@ -40,11 +40,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     /**
      * Creates a {@code SynchronousQueue} with the specified fairness policy.
      *
-     * @param fair if true, waiting threads contend in FIFO order for
+     * @param fair if true, waiting runnable contend in FIFO order for
      *             access; otherwise the order is unspecified.
      */
     public SynchronousQueue(boolean fair) {
-        this.waitPool = new TransferWaitPool<E>(fair);
+        this.waitPool = new TransferWaitPool<>(fair);
     }
 
     //****************************************************************************************************************//
