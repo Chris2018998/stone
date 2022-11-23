@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.XAConnection;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -39,6 +40,17 @@ public class TestUtil {
         Field field = ob.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         return field.get(ob);
+    }
+
+    public static Object invokeMethod(Object ob, String methodName) {
+        try {
+            Method method = ob.getClass().getMethod(methodName);
+            method.setAccessible(true);
+            return method.invoke(ob);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public static void oclose(ResultSet r) {
