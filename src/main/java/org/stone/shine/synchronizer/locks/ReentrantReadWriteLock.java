@@ -23,6 +23,11 @@ import java.util.concurrent.locks.ReadWriteLock;
  * @version 1.0
  */
 public final class ReentrantReadWriteLock implements ReadWriteLock {
+    private static final int SHARED_SHIFT = 16;
+    private static final int SHARED_UNIT = (1 << SHARED_SHIFT);
+    private static final int MAX_COUNT = (1 << SHARED_SHIFT) - 1;
+    private static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
+
     //Inner class providing readLock
     private final ReentrantReadWriteLock.ReadLock readerLock;
     //Inner class providing writeLock
@@ -42,6 +47,36 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState));
     }
 
+    //****************************************************************************************************************//
+    //                                          2:static methods(6)                                                   //
+    //****************************************************************************************************************//
+    private static int sharedCount(int c) {
+        return c >>> SHARED_SHIFT;
+    }
+
+    private static int exclusiveCount(int c) {
+        return c & EXCLUSIVE_MASK;
+    }
+
+    private static int incrementExclusiveCount(int c) {
+        return c + 1;
+    }
+
+    private static int decrementExclusiveCount(int c) {
+        return c - 1;
+    }
+
+    private static int incrementSharedCount(int c) {
+        return c + SHARED_UNIT;
+    }
+
+    private static int decrementSharedCount(int c) {
+        return c - SHARED_UNIT;
+    }
+
+    //****************************************************************************************************************//
+    //                                       3:readLock/writeLock                                                     //                                                                                  //
+    //****************************************************************************************************************//
     //Returns the lock used for reading.
     public Lock readLock() {
         return readerLock;
@@ -53,7 +88,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       2: SharedHoldCounter Impl                                               //                                                                                  //
+    //                                      4: SharedHoldCounter Impl                                                 //                                                                                  //
     //****************************************************************************************************************//
     private static class SharedHoldCounter {
         private int holdCount = 0;
@@ -66,7 +101,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       3: WriteLock/ReadLock Impl                                               //                                                                                  //
+    //                                      5: WriteLock/ReadLock Impl                                                //                                                                                  //
     //****************************************************************************************************************//
     private static class WriteLock extends BaseLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
@@ -85,7 +120,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       4: Lock Action Impl                                                      //
+    //                                       6: Lock Action Impl                                                      //
     //****************************************************************************************************************//
     private static class WriteLockAction extends LockAction {
         WriteLockAction(LockAtomicState lockState) {

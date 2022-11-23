@@ -33,7 +33,7 @@ abstract class LockAction extends ResourceAction {
         return lockState.isHeldByCurrentThread();
     }
 
-//    Thread getHoldThread() {
-//        return lockState.getHoldThread();
+//    Thread getExclusiveOwnerThread() {
+//        return lockState.getExclusiveOwnerThread();
 //    }
 }

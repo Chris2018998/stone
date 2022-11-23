@@ -39,7 +39,7 @@ public final class ReentrantLock extends BaseLock {
     }
 
     protected Thread getOwner() {
-        return lockState.getHoldThread();
+        return lockState.getExclusiveOwnerThread();
     }
 
     public boolean isHeldByCurrentThread() {
@@ -47,7 +47,7 @@ public final class ReentrantLock extends BaseLock {
     }
 
     public String toString() {
-        Thread o = lockState.getHoldThread();
+        Thread o = lockState.getExclusiveOwnerThread();
         return super.toString() + ((o == null) ?
                 "[Unlocked]" :
                 "[Locked by thread " + o.getName() + "]");
@@ -63,12 +63,12 @@ public final class ReentrantLock extends BaseLock {
             int state = lockState.getState();
             if (state == 0) {
                 if (lockState.compareAndSetState(0, 1)) {
-                    lockState.setHoldThread(Thread.currentThread());
+                    lockState.setExclusiveOwnerThread(Thread.currentThread());
                     return true;
                 } else {
                     return false;
                 }
-            } else if (lockState.getHoldThread() == Thread.currentThread()) {//Reentrant
+            } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
                 state++;
                 if (state <= 0) throw new Error("Maximum lock count exceeded");
                 lockState.setState(state);
@@ -79,9 +79,9 @@ public final class ReentrantLock extends BaseLock {
         }
 
         public boolean tryRelease(int size) {
-            if (lockState.getHoldThread() == Thread.currentThread()) {
+            if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
                 int curState = lockState.getState();
-                if (curState == 1) lockState.setHoldThread(null);
+                if (curState == 1) lockState.setExclusiveOwnerThread(null);
                 if (curState > 0) lockState.setState(curState - 1);
                 return curState == 1;
             } else {

@@ -18,17 +18,17 @@ import org.stone.shine.synchronizer.extend.ResourceAtomicState;
  * @version 1.0
  */
 final class LockAtomicState extends ResourceAtomicState {
-    private Thread holdThread;
+    private Thread exclusiveOwnerThread;
 
-    Thread getHoldThread() {
-        return holdThread;
+    Thread getExclusiveOwnerThread() {
+        return exclusiveOwnerThread;
     }
 
-    void setHoldThread(Thread holdThread) {
-        this.holdThread = holdThread;
+    void setExclusiveOwnerThread(Thread exclusiveOwnerThread) {
+        this.exclusiveOwnerThread = exclusiveOwnerThread;
     }
 
     boolean isHeldByCurrentThread() {
-        return holdThread == Thread.currentThread();
+        return exclusiveOwnerThread == Thread.currentThread();
     }
 }

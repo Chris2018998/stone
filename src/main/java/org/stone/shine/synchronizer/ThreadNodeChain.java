@@ -77,7 +77,7 @@ class ThreadNodeChain {
         return size;
     }
 
-    //get threads of state node
+    //get runnable of state node
     public Thread[] getThreads(Object state) {
         List<Thread> threadList = new LinkedList<>();
         for (ThreadNode node = head.getNext(); node != null; node = node.getNext()) {
