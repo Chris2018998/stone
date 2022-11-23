@@ -139,7 +139,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 }
             } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
                 state = incrementExclusiveCount(state);
-                if (state > MAX_COUNT) throw new Error("Maximum lock count exceeded");
+                if (exclusiveCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
                 lockState.setState(state);
                 return true;
             } else {
@@ -178,6 +178,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             if (writeCount > 0) {
                 if (Thread.currentThread() == lockState.getExclusiveOwnerThread()) {
                     state = incrementSharedCount(state);
+                    if (sharedCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
+
                     lockState.setState(state);
                     SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                     holdCounter.holdCount++;
@@ -188,7 +190,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             }
 
             //step2:try to cas new state(share mode)
-            int newState = incrementSharedCount(state);//share count +1
+            int newState = incrementSharedCount(state);
+            if (sharedCount(newState) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
             if (lockState.compareAndSetState(state, newState)) {
                 SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                 holdCounter.holdCount++;
@@ -209,7 +212,6 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 updState = decrementSharedCount(state);
                 if (lockState.compareAndSetState(state, updState))
                     return true;
-
             } while (true);
         }
     }
