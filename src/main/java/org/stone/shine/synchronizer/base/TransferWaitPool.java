@@ -17,7 +17,7 @@ import org.stone.shine.synchronizer.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class TransferWaitPool<E> extends ThreadWaitPool {
+public final class TransferWaitPool<E> extends ThreadWaitPool {
     //Request
     private static final Object Node_Type_Get = new Object();
     //Data
@@ -49,22 +49,14 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     public final boolean offer(E e) {
         if (tryTransfer(e)) return true;
 
-        appendAsDataNode(e);
+        this.appendDataNode(Node_Type_Data, e);
         return false;
     }
 
     public final boolean offer(E e, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
         if (transfer(e, parker, throwsIE)) return true;
-
-        appendAsDataNode(e);
+        this.appendDataNode(Node_Type_Data, e);
         return false;
-    }
-
-    private void appendAsDataNode(E e) {
-        ThreadNode node = super.createNode(Node_Type_Data);
-        node.setValue(e);
-        node.setThreadToNull();
-        this.appendNode(node);
     }
 
     //****************************************************************************************************************//
@@ -83,7 +75,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
         if (this.tryTransfer(e)) return true;
 
         //step2:create wait node(then to wait)
-        ThreadNode node = super.createNode(Node_Type_Data);
+        ThreadNode node = super.createWaitNode(Node_Type_Data);
         node.setValue(e);
 
         //step3:create wait node(then to wait)
@@ -104,7 +96,7 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
         if (e != null) return e;
 
         //step2:create wait node(then to wait)
-        ThreadNode node = super.createNode(Node_Type_Get);
+        ThreadNode node = super.createWaitNode(Node_Type_Get);
 
         //step3:create wait node(then to wait)
         return (E) doWait(node, parker, throwsIE);

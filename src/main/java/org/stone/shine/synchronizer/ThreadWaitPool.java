@@ -65,30 +65,40 @@ public abstract class ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: queue Methods(6)                                                   //
+    //                                          2: queue Methods(8)                                                   //
     //****************************************************************************************************************//
-    protected final ThreadNode createNode() {
-        return createNode(null);
-    }
-
-    protected final ThreadNode createNode(Object type) {
-        return new ThreadNode(type);
+    protected final void appendNode(ThreadNode node) {
+        waitQueue.offer(node);
     }
 
     protected final void removeNode(ThreadNode node) {
         waitQueue.remove(node);
     }
 
-    protected final void appendNode(ThreadNode node) {
-        waitQueue.offer(node);
+    protected final ThreadNode createWaitNode() {
+        return createWaitNode(null);
     }
 
-    protected final ThreadNode appendNewNode() {
-        return appendNewNode(null);
+    protected final ThreadNode createWaitNode(Object type) {
+        return new ThreadNode(type);
     }
 
-    protected final ThreadNode appendNewNode(Object type) {
+    protected final ThreadNode appendWaitNode() {
+        return appendWaitNode(null);
+    }
+
+    protected final ThreadNode appendWaitNode(Object type) {
         ThreadNode node = new ThreadNode(type);
+        waitQueue.offer(node);
+        return node;
+    }
+
+    protected final ThreadNode createDataNode(Object type, Object value) {
+        return new ThreadNode(type, value);
+    }
+
+    protected final ThreadNode appendDataNode(Object type, Object value) {
+        ThreadNode node = new ThreadNode(type, value);
         waitQueue.offer(node);
         return node;
     }
@@ -134,6 +144,14 @@ public abstract class ThreadWaitPool {
     //****************************************************************************************************************//
     //                                         5: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
+    public Iterator<ThreadNode> iterator() {
+        return waitQueue.iterator();
+    }
+
+    public Iterator<ThreadNode> descendingIterator() {
+        return waitQueue.descendingIterator();
+    }
+
     public boolean hasQueuedThreads() {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
@@ -172,7 +190,7 @@ public abstract class ThreadWaitPool {
         return threadList;
     }
 
-    public int getQueueLength(Object nodeType) {
+    protected int getQueueLength(Object nodeType) {
         if (nodeType == null) return getQueueLength();
 
         int count = 0;
@@ -184,7 +202,7 @@ public abstract class ThreadWaitPool {
         return count;
     }
 
-    public Collection<Thread> getQueuedThreads(Object nodeType) {
+    protected Collection<Thread> getQueuedThreads(Object nodeType) {
         if (nodeType == null) return getQueuedThreads();
 
         LinkedList<Thread> threadList = new LinkedList<>();
@@ -195,6 +213,7 @@ public abstract class ThreadWaitPool {
         }
         return threadList;
     }
+
 
     //****************************************************************************************************************//
     //                                         6: Park methods(2)                                                     //

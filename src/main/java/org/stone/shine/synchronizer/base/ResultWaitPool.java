@@ -97,7 +97,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         } else if (equals(call.call(arg), expect)) return true;
 
         //3:call inner method
-        return doCallForNode(call, arg, expect, parker, throwsIE, createNode(nodeType), wakeupOtherOnIE);
+        return doCallForNode(call, arg, expect, parker, throwsIE, createWaitNode(nodeType), wakeupOtherOnIE);
     }
 
     /**

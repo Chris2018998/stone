@@ -388,7 +388,7 @@ class BaseLock implements Lock {
 
             //3:create condition node to wait for wakeup signal and the node will be moved to syn queue to wait lock
             InterruptedException waitInterruptedException = null;
-            ThreadNode conditionNode = super.createNode(AcquireTypes.TYPE_EXCLUSIVE);//condition just support Exclusive mode
+            ThreadNode conditionNode = super.createWaitNode(AcquireTypes.TYPE_EXCLUSIVE);//condition just support Exclusive mode
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
                 super.doWait(support, throwsIE, conditionNode, false);

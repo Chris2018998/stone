@@ -30,7 +30,7 @@ public class StateWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return doWait(expect, parker, throwsIE, super.createNode(null), true);
+        return doWait(expect, parker, throwsIE, super.createWaitNode(null), true);
     }
 
     /**
@@ -44,7 +44,7 @@ public class StateWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, Object nodeType) throws InterruptedException {
-        return doWait(expect, parker, throwsIE, super.createNode(nodeType), true);
+        return doWait(expect, parker, throwsIE, super.createWaitNode(nodeType), true);
     }
 
     /**
@@ -59,7 +59,7 @@ public class StateWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, Object nodeType, boolean wakeupOtherOnIE) throws InterruptedException {
-        return doWait(expect, parker, throwsIE, super.createNode(nodeType), wakeupOtherOnIE);
+        return doWait(expect, parker, throwsIE, super.createWaitNode(nodeType), wakeupOtherOnIE);
     }
 
     /**

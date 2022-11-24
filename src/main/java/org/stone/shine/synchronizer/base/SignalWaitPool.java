@@ -28,7 +28,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return doWait(parker, throwsIE, super.createNode(null), true);
+        return doWait(parker, throwsIE, super.createWaitNode(null), true);
     }
 
     /**
@@ -41,7 +41,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport parker, boolean throwsIE, Object nodeType) throws InterruptedException {
-        return doWait(parker, throwsIE, super.createNode(nodeType), true);
+        return doWait(parker, throwsIE, super.createWaitNode(nodeType), true);
     }
 
     /**
@@ -55,7 +55,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final boolean doWait(ThreadParkSupport parker, boolean throwsIE, Object nodeType, boolean wakeupOtherOnIE) throws InterruptedException {
-        return doWait(parker, throwsIE, super.createNode(nodeType), wakeupOtherOnIE);
+        return doWait(parker, throwsIE, super.createWaitNode(nodeType), wakeupOtherOnIE);
     }
 
     /**

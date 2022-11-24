@@ -27,17 +27,24 @@ public final class ThreadNode {
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 
+    //wait node
     ThreadNode(Object type) {
         this.type = type;
         this.thread = Thread.currentThread();
+    }
+
+    //data node
+    ThreadNode(Object type, Object value) {
+        this.type = type;
+        this.value = value;
     }
 
     public Thread getThread() {
         return this.thread;
     }
 
-    public void setThreadToNull() {
-        this.thread = null;
+    public void setThread(Thread thread) {
+        this.thread = thread;
     }
 
     public Object getState() {
