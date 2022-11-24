@@ -44,7 +44,31 @@ public class TransferWaitPool<E> extends ThreadWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: transfer methods                                                   //
+    //                                          1: offer methods(3)                                                   //
+    //****************************************************************************************************************//
+    public final boolean offer(E e) {
+        if (tryTransfer(e)) return true;
+
+        appendAsDataNode(e);
+        return false;
+    }
+
+    public final boolean offer(E e, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+        if (transfer(e, parker, throwsIE)) return true;
+
+        appendAsDataNode(e);
+        return false;
+    }
+
+    private void appendAsDataNode(E e) {
+        ThreadNode node = super.createNode(Node_Type_Data);
+        node.setValue(e);
+        node.setThreadToNull();
+        this.appendNode(node);
+    }
+
+    //****************************************************************************************************************//
+    //                                          2:transfer methods                                                    //
     //****************************************************************************************************************//
     public final boolean tryTransfer(E e) {
         if (e == null) throw new NullPointerException();
