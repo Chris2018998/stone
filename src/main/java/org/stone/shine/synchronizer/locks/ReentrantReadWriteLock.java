@@ -44,7 +44,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         LockAtomicState lockState = new LockAtomicState();
         ResourceWaitPool waitPool = new ResourceWaitPool(fair);
         this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState));
-        this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState));
+        this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState, waitPool));
     }
 
     //****************************************************************************************************************//
@@ -58,19 +58,19 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         return c & EXCLUSIVE_MASK;
     }
 
-    private static int incrementExclusiveCount(int c) {
+    private static int incrementExclusivePart(int c) {
         return c + 1;
     }
 
-    private static int decrementExclusiveCount(int c) {
+    private static int decrementExclusivePart(int c) {
         return c - 1;
     }
 
-    private static int incrementSharedCount(int c) {
+    private static int incrementSharedPart(int c) {
         return c + SHARED_UNIT;
     }
 
-    private static int decrementSharedCount(int c) {
+    private static int decrementSharedPart(int c) {
         return c - SHARED_UNIT;
     }
 
@@ -105,21 +105,21 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //****************************************************************************************************************//
     private static class WriteLock extends BaseLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
-            super(waitPool, lockAction, AcquireTypes.TYPE_Exclusive);
+            super(waitPool, lockAction, AcquireTypes.TYPE_EXCLUSIVE);
         }
 
         public int getHoldCount() {
-            return exclusiveCount(lockState.getState());
+            return exclusiveCount(getLockAtomicState());
         }
     }
 
     private static class ReadLock extends BaseLock {
         ReadLock(ResourceWaitPool waitPool, LockAction lockAction) {
-            super(waitPool, lockAction, AcquireTypes.TYPE_Sharable);
+            super(waitPool, lockAction, AcquireTypes.TYPE_SHARED);
         }
 
         public int getHoldCount() {
-            return sharedCount(lockState.getState());
+            return sharedCount(getLockAtomicState());
         }
 
         public Condition newCondition() {
@@ -138,7 +138,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         public Object call(Object size) {
             int state = lockState.getState();
             if (state == 0) {
-                state = incrementExclusiveCount(state);
+                state = incrementExclusivePart(state);
                 if (lockState.compareAndSetState(0, state)) {
                     lockState.setExclusiveOwnerThread(Thread.currentThread());
                     return true;
@@ -146,7 +146,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                     return false;
                 }
             } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
-                state = incrementExclusiveCount(state);
+                state = incrementExclusivePart(state);
                 if (exclusiveCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
                 lockState.setState(state);
                 return true;
@@ -161,7 +161,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 int writeCount = exclusiveCount(curState);
 
                 if (writeCount == 1) lockState.setExclusiveOwnerThread(null);
-                if (writeCount > 0) lockState.setState(decrementExclusiveCount(curState));
+                if (writeCount > 0) lockState.setState(decrementExclusivePart(curState));
                 return writeCount == 1;
             } else {
                 return false;
@@ -170,11 +170,13 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     private static class ReadLockAction extends LockAction {
+        private final ResourceWaitPool waitPool;
         //cache shared hold count
         private final SharedHoldThreadLocal sharedHoldThreadLocal;
 
-        ReadLockAction(LockAtomicState lockState) {
+        ReadLockAction(LockAtomicState lockState, ResourceWaitPool waitPool) {
             super(lockState);
+            this.waitPool = waitPool;
             this.sharedHoldThreadLocal = new SharedHoldThreadLocal();
         }
 
@@ -185,7 +187,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             //step1:test current is whether in exclusive mode
             if (writeCount > 0) {
                 if (Thread.currentThread() == lockState.getExclusiveOwnerThread()) {
-                    state = incrementSharedCount(state);
+                    state = incrementSharedPart(state);//+1
                     if (sharedCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
 
                     lockState.setState(state);
@@ -198,12 +200,15 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             }
 
             //step2:try to cas new state(share mode)
-            int newState = incrementSharedCount(state);
-            if (sharedCount(newState) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
+            int newState = incrementSharedPart(state);//+1
+            int sharedCount = sharedCount(newState);
+            if (sharedCount > MAX_COUNT) throw new Error("Maximum lock count exceeded");
             if (lockState.compareAndSetState(state, newState)) {
                 SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                 holdCounter.holdCount++;
-                //@todo if(sharedCount(newState)==1 wakeUpAll(AcquireTypes.TYPE_Sharable);
+
+                //first read head then wakeup others wait in share node
+                if (sharedCount == 1) waitPool.wakeupAll(AcquireTypes.TYPE_SHARED);
                 return true;
             }
             return false;
@@ -218,7 +223,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 state = lockState.getState();
                 readCount = sharedCount(state);
                 if (readCount == 0) return false;
-                updState = decrementSharedCount(state);
+                updState = decrementSharedPart(state);
                 if (lockState.compareAndSetState(state, updState))
                     return true;
             } while (true);

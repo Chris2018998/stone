@@ -28,7 +28,7 @@ public final class ReentrantLock extends BaseLock {
     }
 
     public String toString() {
-        Thread o = lockState.getExclusiveOwnerThread();
+        Thread o = this.getOwner();
         return super.toString() + ((o == null) ?
                 "[Unlocked]" :
                 "[Locked by thread " + o.getName() + "]");

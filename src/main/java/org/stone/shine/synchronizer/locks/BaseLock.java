@@ -29,21 +29,21 @@ import java.util.concurrent.locks.Lock;
  */
 
 class BaseLock implements Lock {
-    //Lock State
-    protected final LockAtomicState lockState;
     //resource acquire type
     private final Object acquireType;
     //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
     private final LockAction lockAction;
     //resource wait Pool
     private final ResourceWaitPool waitPool;
+    //Lock State
+    private final LockAtomicState lockState;
 
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//
     //constructor1(extend by ReentrantLock)
     BaseLock(boolean fair, LockAction lockAction) {
-        this(new ResourceWaitPool(fair), lockAction, AcquireTypes.TYPE_Exclusive);
+        this(new ResourceWaitPool(fair), lockAction, AcquireTypes.TYPE_EXCLUSIVE);
     }
 
     //constructor2(extend by WriteLockImpl,ReadLockImpl)
@@ -286,6 +286,10 @@ class BaseLock implements Lock {
         return lockState.isHeldByCurrentThread();
     }
 
+    public int getLockAtomicState() {
+        return lockState.getState();
+    }
+
     //****************************************************************************************************************//
     //                                          4: monitor2 Methods(5)                                                 //
     //****************************************************************************************************************//
@@ -384,7 +388,7 @@ class BaseLock implements Lock {
 
             //3:create condition node to wait for wakeup signal and the node will be moved to syn queue to wait lock
             InterruptedException waitInterruptedException = null;
-            ThreadNode conditionNode = super.createNode(AcquireTypes.TYPE_Exclusive);//condition just support Exclusive mode
+            ThreadNode conditionNode = super.createNode(AcquireTypes.TYPE_EXCLUSIVE);//condition just support Exclusive mode
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
                 super.doWait(support, throwsIE, conditionNode, false);

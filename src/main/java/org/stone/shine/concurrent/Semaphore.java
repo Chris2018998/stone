@@ -247,7 +247,7 @@ public class Semaphore {
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
         ThreadParkSupport parker = ThreadParkSupport.create();
-        this.waitPool.acquireWithType(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
+        this.waitPool.acquireWithType(permitAction, permits, parker, true, AcquireTypes.TYPE_EXCLUSIVE, true);
     }
 
     /**
@@ -276,7 +276,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             ThreadParkSupport parker = ThreadParkSupport.create();
-            this.waitPool.acquireWithType(permitAction, permits, parker, false, AcquireTypes.TYPE_Exclusive, true);
+            this.waitPool.acquireWithType(permitAction, permits, parker, false, AcquireTypes.TYPE_EXCLUSIVE, true);
         } catch (Exception e) {
             //do nothing
         }
@@ -369,7 +369,7 @@ public class Semaphore {
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false);
-        return this.waitPool.acquireWithType(permitAction, permits, parker, true, AcquireTypes.TYPE_Exclusive, true);
+        return this.waitPool.acquireWithType(permitAction, permits, parker, true, AcquireTypes.TYPE_EXCLUSIVE, true);
     }
 
     /**

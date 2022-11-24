@@ -15,6 +15,8 @@ import org.stone.shine.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
 
+import static org.stone.shine.synchronizer.ThreadNodeState.SIGNAL;
+
 /**
  * resource wait pool
  *
@@ -58,6 +60,10 @@ public class ResourceWaitPool {
 
     public final boolean hasQueuedThread(Thread thread) {
         return callPool.hasQueuedThread(thread);
+    }
+
+    public final int wakeupAll(Object nodeType) {
+        return callPool.wakeupAll(SIGNAL, nodeType);
     }
 
     //****************************************************************************************************************//

@@ -16,9 +16,10 @@ package org.stone.shine.synchronizer.extend;
 
 public final class AcquireTypes {
 
-    //Exclusive acquisition type
-    public static final Object TYPE_Exclusive = new Object();
-
     //Sharable acquisition type
-    public static final Object TYPE_Sharable = new Object();
+    public static final Object TYPE_SHARED = new Object();
+
+    //Exclusive acquisition type
+    public static final Object TYPE_EXCLUSIVE = new Object();
+
 }
