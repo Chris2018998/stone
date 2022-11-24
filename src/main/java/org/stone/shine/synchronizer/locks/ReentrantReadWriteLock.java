@@ -203,6 +203,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             if (lockState.compareAndSetState(state, newState)) {
                 SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                 holdCounter.holdCount++;
+                //@todo if(sharedCount(newState)==1 wakeUpAll(AcquireTypes.TYPE_Sharable);
                 return true;
             }
             return false;
