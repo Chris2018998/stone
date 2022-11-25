@@ -19,7 +19,8 @@ public class TestRunner {
 
     public static void main(String[] ags) throws Throwable {
         if (ags != null && ags.length == 2) {
-            TestRunner.run(ags[0], getTestCaseClasses(ags[1]));
+            printTestInfo(ags[0]);
+            TestRunner.run(getTestCaseClasses(ags[1]));
         }
     }
 
@@ -63,7 +64,7 @@ public class TestRunner {
         }
     }
 
-    public static void run(String moduleName, Class[] testClass) throws Throwable {
+    private static void printTestInfo(String moduleName) {
         StringBuffer buf = new StringBuffer(100);
         buf.append("********************************************************************************\n");
         buf.append("*                                                                              *\n");
@@ -73,6 +74,9 @@ public class TestRunner {
         buf.append("*                                                     All rights reserved      *\n");
         buf.append("*******************************************************************************\n");
         System.out.print(buf);
+    }
+
+    public static void run(Class[] testClass) throws Throwable {
         if (testClass != null) {
             for (int i = 0; i < testClass.length; i++)
                 run(testClass[i]);
