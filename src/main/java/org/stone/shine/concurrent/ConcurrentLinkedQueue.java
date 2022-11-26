@@ -146,7 +146,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
         do {
             t = tail;//tail always exists
             if (t.next == null && casTailNext(t, node)) {//append to tail.next
-                this.tail = node;//why? only place for tail change
+                this.tail = node;
                 return true;
             }
         } while (true);
@@ -373,7 +373,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
         private Node<E> startNode = head;
 
         public boolean hasNext() {
-            curNode = searchNextNode(startNode);
+            curNode = getNextNode(startNode);
             startNode = curNode;
             return curNode != null;
         }
@@ -389,7 +389,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
             casItemToNull(curNode, curNode.iteratorItem);
         }
 
-        private Node<E> searchNextNode(Node<E> startNode) {
+        private Node<E> getNextNode(Node<E> startNode) {
             if (startNode == null) return null;
 
             Node<E> segStartNode = null;//segment start node
