@@ -35,7 +35,7 @@ public class AwaitInterruptededTest extends TestCase {
         //2:park main thread 2 seconds
         LockSupport.parkNanos(ParkDelayNanos);
         waitThread.interrupt();
-        LockSupport.parkNanos(ParkDelayNanos);//wait for 'interruptedException' be set
+        LockSupport.parkNanos(Global_TimeoutNanos);//wait for 'interruptedException' be set
 
         //3:get timeout indicator from await thread
         InterruptedException e = waitThread.getInterruptedException();
