@@ -54,7 +54,7 @@ import java.util.concurrent.locks.LockSupport;
 //********************************************************************************************************************//
 //                          1:implementation based on park method{@code LockSupport.park}                             //
 //********************************************************************************************************************//
-public class ThreadParkSupport {
+public class ThreadParkSupport implements Cloneable {
     private static final long spinForTimeoutThreshold = 1000L;
     protected long deadline;
     protected long parkTime = 1L;//a initialized value,calculated before park,if less than zero or equals zero means timeout
@@ -108,15 +108,15 @@ public class ThreadParkSupport {
         return interrupted = Thread.interrupted();
     }
 
-    public long getDeadline() {
+    public final long getDeadline() {
         return deadline;
     }
 
-    public long getParkTime() {
+    public final long getParkTime() {
         return parkTime;
     }
 
-    public boolean isTimeout() {
+    public final boolean isTimeout() {
         return parkTime <= 0;
     }
 
@@ -125,7 +125,7 @@ public class ThreadParkSupport {
         return true;
     }
 
-    public boolean isInterrupted() {
+    public final boolean isInterrupted() {
         return interrupted;
     }
 
@@ -150,7 +150,7 @@ public class ThreadParkSupport {
         }
 
         //true means that time point before deadline
-        public boolean calculateParkTime() {
+        public final boolean calculateParkTime() {
             this.parkTime = deadline - System.nanoTime();
             return parkTime > 0;
         }
@@ -170,7 +170,7 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public boolean park() {
+        public final boolean park() {
             if (parkTime > spinForTimeoutThreshold) {
                 LockSupport.parkNanos(parkTime);
                 return interrupted = Thread.interrupted();
@@ -188,7 +188,7 @@ public class ThreadParkSupport {
             this.deadline = deadline;
         }
 
-        public boolean calculateParkTime() {
+        public final boolean calculateParkTime() {
             this.parkTime = deadline - System.currentTimeMillis();
             return parkTime > 0;
         }
@@ -205,7 +205,7 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public boolean park() {
+        public final boolean park() {
             LockSupport.parkUntil(blocker, deadline);
             return interrupted = Thread.interrupted();
         }

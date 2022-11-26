@@ -34,7 +34,7 @@ public abstract class ThreadWaitPool {
     //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
     protected static boolean equals(Object a, Object b) {
-        return (a == b) || (a != null && a.equals(b));
+        return a == b || a != null && a.equals(b);
     }
 
     //wakeup one

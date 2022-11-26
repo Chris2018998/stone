@@ -39,31 +39,31 @@ public final class ThreadNode {
         this.value = value;
     }
 
-    public Thread getThread() {
+    public final Thread getThread() {
         return this.thread;
     }
 
-    public void setThread(Thread thread) {
+    public final void setThread(Thread thread) {
         this.thread = thread;
     }
 
-    public Object getState() {
+    public final Object getState() {
         return this.state;
     }
 
-    public void setState(Object newState) {
+    public final void setState(Object newState) {
         this.state = newState;
     }
 
-    public Object getType() {
+    public final Object getType() {
         return this.type;
     }
 
-    public Object getValue() {
+    public final Object getValue() {
         return this.value;
     }
 
-    public void setValue(Object value) {
+    public final void setValue(Object value) {
         this.value = value;
     }
 
