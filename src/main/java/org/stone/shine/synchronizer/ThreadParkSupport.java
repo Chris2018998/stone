@@ -74,14 +74,6 @@ public class ThreadParkSupport implements Cloneable {
     //****************************************************************************************************************//
     //                                           Factory  methods(4)                                                  //
     //****************************************************************************************************************//
-    public static ThreadParkSupport create() {
-        return new ThreadParkSupport();
-    }
-
-    public static ThreadParkSupport create(Object blocker) {
-        return new ThreadObjectParkSupport(blocker);
-    }
-
     public static ThreadParkSupport create(long time, boolean isMilliseconds) {
         if (time <= 0)
             return new ThreadParkSupport();
