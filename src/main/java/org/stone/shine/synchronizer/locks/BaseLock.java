@@ -10,7 +10,6 @@
 package org.stone.shine.synchronizer.locks;
 
 import org.stone.shine.synchronizer.ThreadNode;
-import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.ThreadWaitConfig;
 import org.stone.shine.synchronizer.base.SignalWaitPool;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
@@ -141,7 +140,6 @@ class BaseLock implements Lock {
      *                              of lock acquisition is supported)
      */
     public void lockInterruptibly() throws InterruptedException {
-        ThreadParkSupport parker = ThreadParkSupport.create();
         waitPool.acquireWithType(lockAction, 1, acquireType, new ThreadWaitConfig());
     }
 
@@ -235,7 +233,6 @@ class BaseLock implements Lock {
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(time), false);
         return waitPool.acquireWithType(lockAction, 1, acquireType, new ThreadWaitConfig(time, unit));
     }
 
