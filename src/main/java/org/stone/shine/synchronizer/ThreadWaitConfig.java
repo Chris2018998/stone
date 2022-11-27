@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 
-public final class ThreadWaitConfig implements java.io.Serializable, java.lang.Cloneable {
+public final class ThreadWaitConfig implements java.io.Serializable {
     //************************************************A: wait node config*********************************************//
     //node type
     private Object nodeType;

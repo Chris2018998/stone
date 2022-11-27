@@ -10,7 +10,7 @@
 package org.stone.shine.synchronizer.locks;
 
 /**
- * Stamped Lock Implementation
+ * Stamped Lock Implementation By Wait pool
  *
  * @author Chris Liao
  * @version 1.0
