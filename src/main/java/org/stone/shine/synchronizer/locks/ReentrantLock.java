@@ -62,6 +62,7 @@ public final class ReentrantLock extends BaseLock {
                 int curState = lockState.getState();
                 if (curState == 1) lockState.setExclusiveOwnerThread(null);
                 if (curState > 0) lockState.setState(curState - 1);
+
                 return curState == 1;
             } else {
                 return false;

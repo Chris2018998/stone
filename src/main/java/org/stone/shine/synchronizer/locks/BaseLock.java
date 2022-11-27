@@ -12,7 +12,6 @@ package org.stone.shine.synchronizer.locks;
 import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.SignalWaitPool;
-import org.stone.shine.synchronizer.extend.AcquireTypes;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
@@ -20,6 +19,8 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+
+import static org.stone.shine.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
 
 /**
  * Lock super class(ReentrantLock,WriteLockImpl,ReadLockImpl)
@@ -29,6 +30,8 @@ import java.util.concurrent.locks.Lock;
  */
 
 class BaseLock implements Lock {
+    //node type change from TYPE_EXCLUSIVE to this value
+    private static final Object TYPE_CONDITION = new Object();
     //resource acquire type
     private final Object acquireType;
     //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
@@ -38,12 +41,13 @@ class BaseLock implements Lock {
     //Lock State
     private final LockAtomicState lockState;
 
+
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//
     //constructor1(extend by ReentrantLock)
     BaseLock(boolean fair, LockAction lockAction) {
-        this(new ResourceWaitPool(fair), lockAction, AcquireTypes.TYPE_EXCLUSIVE);
+        this(new ResourceWaitPool(fair), lockAction, TYPE_EXCLUSIVE);
     }
 
     //constructor2(extend by WriteLockImpl,ReadLockImpl)
@@ -382,22 +386,32 @@ class BaseLock implements Lock {
             //1:condition wait under current thread must hold the lock
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
-            //2:release the single PermitPool under exclusive mode to pool
+            //2:release the single PermitPool under exclusive mode to pool(
+            //@todo this node need't leave from syn queue under unlock,but how to get the origin node? so need more think
             this.lock.unlock();
+
+            //ThreadNode synNode = this.lock.unlock(boolean leaveQueueInd);
 
             //3:create condition node to wait for wakeup signal and the node will be moved to syn queue to wait lock
             InterruptedException waitInterruptedException = null;
-            ThreadNode conditionNode = createWaitNode(AcquireTypes.TYPE_EXCLUSIVE);//condition just support Exclusive mode
+
+            /**
+             * @todo this node should be from resource wait node
+             */
+            ThreadNode synNode = createWaitNode(TYPE_EXCLUSIVE);//condition just support Exclusive mode
+            synNode.setType(TYPE_CONDITION);
+
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
-                super.doWait(support, throwsIE, conditionNode, false);
+                super.doWait(support, throwsIE, synNode, false);
             } catch (InterruptedException e) {
                 waitInterruptedException = e;
             }
 
             //4:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
-            conditionNode.setState(null);//reset to null(need filled by other)
-            lock.waitPool.acquireWithNode(lockAction, 1, ThreadParkSupport.create(), false, conditionNode, false);
+            synNode.setState(null);
+            synNode.setType(TYPE_EXCLUSIVE);
+            lock.waitPool.acquireWithNode(lockAction, 1, ThreadParkSupport.create(), false, synNode, false);
 
             //5:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;
@@ -416,7 +430,7 @@ class BaseLock implements Lock {
 
         public void signalAll() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            super.wakeupAll();//node wait(step2) in the doAwait method
+            int count = super.wakeupAll();//node wait(step2) in the doAwait method
         }
     }
 }

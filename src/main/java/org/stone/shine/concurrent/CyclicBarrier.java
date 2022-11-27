@@ -13,6 +13,7 @@ import org.stone.shine.synchronizer.ThreadParkSupport;
 import org.stone.shine.synchronizer.base.ResultCall;
 import org.stone.shine.synchronizer.base.ResultWaitPool;
 
+import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -112,7 +113,7 @@ public final class CyclicBarrier implements ResultCall {
 
     //count reach zero,which means all programs over
     public Object call(Object arg) {
-        return passengerCount.get() == seatSize;
+        return Objects.equals(flightNo, arg) && passengerCount.get() == seatSize;
     }
 
     //true,flight has been cancelled
@@ -125,19 +126,20 @@ public final class CyclicBarrier implements ResultCall {
     //****************************************************************************************************************//
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
-            return doAwait(0L, TimeUnit.NANOSECONDS);
+            return doAwait(ThreadParkSupport.create());
         } catch (TimeoutException e) {
             throw new Error(e);
         }
     }
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
-        return doAwait(timeout, unit);
+        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
+        return doAwait(ThreadParkSupport.create(unit.toNanos(timeout), false));
     }
 
+
     //await implement,return board ticket no(seat no)
-    private int doAwait(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
-        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
+    private int doAwait(ThreadParkSupport parker) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //hall passengers can continue here for next trip
@@ -147,45 +149,42 @@ public final class CyclicBarrier implements ResultCall {
             int seatNo = buyFlightTicket();//range[1 -- seatSize],0 means that not got a ticket
             if (seatNo == seatSize) {//the last passenger coming
                 //wakeup other passengers in room(sleeping)
-                int awakeCount = waitPool.wakeupAll(SIGNAL, flightNo);
+                waitPool.wakeupAll(SIGNAL, flightNo);
 
-                if (awakeCount == seatSize - 1) {//head count full(last passenger need't wait,so exclude)
-                    if (!flightState.compareAndSet(State_Boarding, State_Flying))//flying state change failed,means flight cancelled
-                        throw new BrokenBarrierException();
-
-                    tripCount++;
-                    if (tripAction != null) {
-                        try {
-                            tripAction.run();
-                        } catch (Throwable e) {
-                            //don't throw out runtimeException or error from the trip action
-                        }
-                    }
-                    //assume flight arrival
-                    flightState.set(State_Arrived);
-
-                    //set flight to new state(next trip begin)
-                    this.passengerCount.set(0);
-                    this.flightState.set(State_Open);
-                    waitPool.wakeupAll(SIGNAL, 0);//wakeup hall passengers to buy ticket of next trip
-                    return seatNo;
-                } else {
-                    if (flightState.get() == State_Boarding && flightState.compareAndSet(State_Boarding, State_Cancelled))
-                        waitPool.wakeupAll(SIGNAL, 0);//notify hall passengers that the flight has cancelled
+                if (!flightState.compareAndSet(State_Boarding, State_Flying))//flying state change failed,means flight cancelled
                     throw new BrokenBarrierException();
+
+                tripCount++;
+                if (tripAction != null) {
+                    try {
+                        tripAction.run();
+                    } catch (Throwable e) {
+                        //don't throw out runtimeException or error from the trip action
+                    }
                 }
+                //assume flight arrival
+                flightState.set(State_Arrived);
+
+                //set flight to new state(next trip begin)
+                this.passengerCount.set(0);
+                this.flightState.set(State_Open);
+                waitPool.wakeupAll(SIGNAL);//wakeup hall passengers to buy ticket of next trip
+                return seatNo;
             }
 
             //3:Waiting for wakeup
             try {
                 //parameter zero means that passengers is in waiting hall(no ticket)
-                ThreadParkSupport parker = ThreadParkSupport.create(unit.toNanos(timeout), false, seatNo > 0 ? flightNo : 0);
-                waitPool.doCall(this, null, Boolean.TRUE, parker, true);
+                Object callParameter = seatNo > 0 ? flightNo : 0;
+                if (!waitPool.doCall(this, callParameter, Boolean.TRUE, parker, true, callParameter))
+                    throw new TimeoutException();
+
                 if (seatNo > 0) {
                     if (flightState.get() == State_Cancelled) throw new BrokenBarrierException();
                     return seatNo;
                 }
             } catch (Throwable e) {
+                e.printStackTrace();
                 if (seatNo > 0) {
                     int state = flightState.get();
                     if (state == State_Flying || state == State_Arrived) return seatNo;
