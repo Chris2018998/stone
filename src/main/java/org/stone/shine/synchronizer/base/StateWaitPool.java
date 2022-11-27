@@ -23,85 +23,49 @@ public class StateWaitPool extends ThreadWaitPool {
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
-     * @param expect   if the got signal state equal the expected argument,then left from pool
-     * @param parker   thread parker
-     * @param throwsIE true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
+     * @param expect if the got signal state equal the expected argument,then left from pool
+     * @param config thread parker
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
-        return doWait(expect, parker, throwsIE, createWaitNode(null), true);
-    }
-
-    /**
-     * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
-     *
-     * @param expect   if the got signal state equal the expected argument,then left from pool
-     * @param parker   thread parker
-     * @param throwsIE true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
-     * @param nodeType a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
-     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
-     * @throws InterruptedException caller waiting interrupted,then throws it
-     */
-    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, Object nodeType) throws InterruptedException {
-        return doWait(expect, parker, throwsIE, createWaitNode(nodeType), true);
-    }
-
-    /**
-     * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
-     *
-     * @param expect          if the got signal state equal the expected argument,then left from pool
-     * @param parker          thread parker
-     * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
-     * @param nodeType        a property of wait node and can be regarded as node waiting type,and using in some wakeup methods
-     * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
-     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
-     * @throws InterruptedException caller waiting interrupted,then throws it
-     */
-    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, Object nodeType, boolean wakeupOtherOnIE) throws InterruptedException {
-        return doWait(expect, parker, throwsIE, createWaitNode(nodeType), wakeupOtherOnIE);
-    }
-
-    /**
-     * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
-     *
-     * @param expect          if the got signal state equal the expected argument,then left from pool
-     * @param parker          thread parker
-     * @param throwsIE        true if interrupted during waiting then throw exception{@link InterruptedException},false,ignore interruption
-     * @param node            preCreated thread wait node
-     * @param wakeupOtherOnIE true,if interrupted and has got a signal,then transfer the signal to another waiter
-     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
-     * @throws InterruptedException caller waiting interrupted,then throws it
-     */
-    public final boolean doWait(Object expect, ThreadParkSupport parker, boolean throwsIE, ThreadNode node, boolean wakeupOtherOnIE) throws InterruptedException {
+    public final boolean doWait(Object expect, ThreadWaitConfig config) throws InterruptedException {
         if (expect == null) throw new IllegalArgumentException("expect state can't be null");
+        if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //1:create wait node and offer to wait queue
-        super.appendNode(node);
+        ThreadNode node = config.getWaitNode();
+        if (config.isNeedAddWaitPool()) super.appendNode(config.getWaitNode());
 
-        //2:spin control
+        //2:get control parameters from config
+        boolean throwsIE = config.isThrowsIE();
+        boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
+
+        //3:create thread parker
+        ThreadParkSupport parker = config.createThreadParkSupport();
+
+        //4:spin control
         try {
             do {
-                //3.1: read node state
+                //4.1: read node state
                 Object state = node.getState();
 
-                //3.2:if got a signal then execute call
+                //4.2:if got a signal then execute call
                 if (state != null && equals(state, expect)) return true;
 
-                //3.3: timeout test
+                //4.3: timeout test
                 if (parker.isTimeout()) {
-                    //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
+                    //4.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);
                     Thread.yield();
                 } else {//here: state == null
-                    //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
+                    //4.5: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
         } finally {
-            super.removeNode(node);
+            if (config.isNeedRemoveOnLeave()) super.removeNode(node);
         }
     }
 }

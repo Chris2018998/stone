@@ -27,6 +27,10 @@ public final class ThreadWaitConfig {
     private Object nodeValue;
     //node value
     private ThreadNode waitNode;
+    //need add into queue of wait pool
+    private boolean needAddWaitPool = true;
+    //indicator of whether remove wait node on leaving from pool
+    private boolean needRemoveOnLeave = true;
 
     //***********************************************B: wait time config**********************************************//
     //wait time value(Nanoseconds or Milliseconds)
@@ -36,16 +40,14 @@ public final class ThreadWaitConfig {
     //time block object(using in LockSupport.park,LockSupport.parkNanos)
     private Object waitBlocker;
 
-    //***********************************************C: other config**************************************************//
+    //***********************************************C: IE config*****************************************************//
     //indicator of throw interruptException when interrupted
     private boolean throwsIE = true;
     //transfer got signal to other when got transfer signal but interrupted
     private boolean transferSignalOnIE = true;
-    //indicator of whether remove wait node on leaving from pool
-    private boolean removeOnLeave = true;
 
     //****************************************************************************************************************//
-    //                                              1: node methods(3)                                                //
+    //                                              1: node methods(7)                                                //
     //****************************************************************************************************************//
     public void setNodeValue(Object nodeType, Object nodeValue) {
         this.nodeType = nodeType;
@@ -59,6 +61,22 @@ public final class ThreadWaitConfig {
 
     public void setWaitNode(ThreadNode waitNode) {
         this.waitNode = waitNode;
+    }
+
+    public boolean isNeedAddWaitPool() {
+        return needAddWaitPool;
+    }
+
+    public void setNeedAddWaitPool(boolean needAddWaitPool) {
+        this.needAddWaitPool = needAddWaitPool;
+    }
+
+    public boolean isNeedRemoveOnLeave() {
+        return needRemoveOnLeave;
+    }
+
+    public void setNeedRemoveOnLeave(boolean needRemoveOnLeave) {
+        this.needRemoveOnLeave = needRemoveOnLeave;
     }
 
     //****************************************************************************************************************//
@@ -94,7 +112,7 @@ public final class ThreadWaitConfig {
     }
 
     //****************************************************************************************************************//
-    //                                              3: others(6)                                                      //
+    //                                              3: others(4)                                                      //
     //****************************************************************************************************************//
     public boolean isThrowsIE() {
         return throwsIE;
@@ -110,14 +128,6 @@ public final class ThreadWaitConfig {
 
     public void setTransferSignalOnIE(boolean transferSignalOnIE) {
         this.transferSignalOnIE = transferSignalOnIE;
-    }
-
-    public boolean isRemoveOnLeave() {
-        return removeOnLeave;
-    }
-
-    public void setRemoveOnLeave(boolean removeOnLeave) {
-        this.removeOnLeave = removeOnLeave;
     }
 
 }

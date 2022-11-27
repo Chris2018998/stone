@@ -415,12 +415,6 @@ class BaseLock implements Lock {
 
             //5:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;
-
-            /**
-             * my individual view:throw InterruptedException may be a better schema at step2 (different to professor Doug Lea)
-             * 1: not need't join in syn queue to get lock
-             * 2: it add chance to take the lock for other runnable
-             */
         }
 
         public void signal() {
