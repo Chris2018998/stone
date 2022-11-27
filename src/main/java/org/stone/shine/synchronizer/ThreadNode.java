@@ -33,8 +33,27 @@ public final class ThreadNode {
         if (needPark) thread = Thread.currentThread();
     }
 
+    //****************************************************************************************************************//
+    //                                           set/get of chain node                                                //
+    //****************************************************************************************************************//
+    public final Object getType() {
+        return type;
+    }
+
+    public final void setType(Object type) {
+        this.type = type;
+    }
+
+    public final Object getValue() {
+        return value;
+    }
+
+    public final void setValue(Object value) {
+        this.value = value;
+    }
+
     public final Thread getThread() {
-        return this.thread;
+        return thread;
     }
 
     public final void setThread(Thread thread) {
@@ -42,27 +61,11 @@ public final class ThreadNode {
     }
 
     public final Object getState() {
-        return this.state;
+        return state;
     }
 
     public final void setState(Object newState) {
         this.state = newState;
-    }
-
-    public final Object getType() {
-        return this.type;
-    }
-
-    public void setType(Object type) {
-        this.type = type;
-    }
-
-    public final Object getValue() {
-        return this.value;
-    }
-
-    public final void setValue(Object value) {
-        this.value = value;
     }
 
     //****************************************************************************************************************//
