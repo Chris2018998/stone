@@ -135,7 +135,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             super(lockState);
         }
 
-        public int getHoldSize() {
+        public int getHoldCount() {
             return exclusiveCount(lockState.getState());
         }
 
@@ -185,7 +185,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             this.sharedHoldThreadLocal = new SharedHoldThreadLocal();
         }
 
-        public int getHoldSize() {
+        public int getHoldCount() {
             return sharedCount(lockState.getState());
         }
 

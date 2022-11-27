@@ -38,7 +38,7 @@ public final class ReentrantLock extends BaseLock {
             super(lockState);
         }
 
-        public int getHoldSize() {
+        public int getHoldCount() {
             return lockState.getState();
         }
 
