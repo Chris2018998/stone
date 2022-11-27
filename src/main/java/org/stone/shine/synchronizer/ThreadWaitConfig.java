@@ -33,7 +33,7 @@ public final class ThreadWaitConfig {
     private long maxWaitTime;
     //wait time unit
     private TimeUnit waitTimeUnit;
-    //time block object(using in LockSupport.park)
+    //time block object(using in LockSupport.park,LockSupport.parkNanos)
     private Object waitBlocker;
     //wait util deadline(using in LockSupport.parkUtil)
     private Date waitDeadline;
