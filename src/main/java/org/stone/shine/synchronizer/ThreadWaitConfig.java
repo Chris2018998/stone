@@ -26,7 +26,7 @@ public class ThreadWaitConfig {
 
     //indicator of throw interruptException when interrupted
     private boolean throwsIE = true;
-    //transfer got signal to other when wakeup by
+    //transfer got signal to other when got transfer signal but interrupted
     private boolean transferSignalOnIE = true;
     //indicator of whether remove wait node on leaving from pool
     private boolean removeOnLeave = true;
