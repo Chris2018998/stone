@@ -16,6 +16,7 @@ import org.stone.test.TestUtil;
 
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeoutNanos;
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 /**
@@ -31,13 +32,14 @@ public class AcquireQueuedTest extends TestCase {
 
         //1:take out the only one permit by main thread
         semaphore.acquire();
+        TestUtil.assertError("test fail,expect value:%s,actual value:%s", 0, semaphore.availablePermits());
 
         //2:create one mock Thread
         AcquireMockThread mockThread = new AcquireMockThread(semaphore, "acquire");
         mockThread.start();
 
-        //3:park main thread 1 second
-        LockSupport.parkNanos(ParkDelayNanos);
+        //3:park main thread 2 second
+        LockSupport.parkNanos(Global_TimeoutNanos);
 
         //4:mock interrupt
         TestUtil.assertError("test fail,expect value:%s,actual value:%s", true, semaphore.hasQueuedThreads());

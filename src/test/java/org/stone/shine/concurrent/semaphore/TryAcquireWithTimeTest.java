@@ -45,7 +45,7 @@ public class TryAcquireWithTimeTest extends TestCase {
         semaphore.release();
 
         //5: check mock thread acquire
-        LockSupport.parkNanos(ParkDelayNanos);
+        LockSupport.parkNanos(Global_TimeoutNanos);
         TestUtil.assertError("TryAcquire test expect value:%s,actual value:%s", true, mockThread.getResult());
     }
 }

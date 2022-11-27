@@ -18,9 +18,9 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class ConcurrentTimeUtil {
-    public static final long Global_Timeout = 1;
+    public static final long Global_Timeout = 2;
     public static final TimeUnit Global_TimeUnit = TimeUnit.SECONDS;
-    public static final long Global_TimeoutNanos = Global_TimeUnit.toNanos(Global_Timeout + 1);
+    public static final long Global_TimeoutNanos = Global_TimeUnit.toNanos(Global_Timeout+1);
 
     public static final long ParkDelayNanos = TimeUnit.SECONDS.toNanos(1);
 

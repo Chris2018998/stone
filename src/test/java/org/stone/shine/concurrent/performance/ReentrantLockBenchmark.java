@@ -29,7 +29,8 @@ import java.util.concurrent.locks.Lock;
 public class ReentrantLockBenchmark {
     public static Lock lock;
 
-    @Param({"JDK-Lock", "Stone-Lock"})
+    //@Param({"JDK-Lock", "Stone-Lock"})
+    @Param({"Stone-Lock"})
     public String lockType;
 
     public static void main(String[] args) throws Exception {

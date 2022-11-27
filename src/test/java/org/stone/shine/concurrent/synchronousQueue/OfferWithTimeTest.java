@@ -42,7 +42,7 @@ public class OfferWithTimeTest extends TestCase {
 
         //4:poll object from queue
         Object pollObject = queue.poll();
-        LockSupport.parkNanos(ParkDelayNanos);
+        LockSupport.parkNanos(Global_TimeoutNanos);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", offerObject, pollObject);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
     }
