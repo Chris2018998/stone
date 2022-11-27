@@ -16,9 +16,9 @@ package org.stone.shine.synchronizer;
  * @version 1.0
  */
 
-public final class ThreadNode {
+public final class ThreadNode<E> {
     private Object type;//node type
-    private Object value;//node value
+    private E value;//node value
     private Thread thread;//node thread
     private volatile Object state;//cas field
 
@@ -27,7 +27,7 @@ public final class ThreadNode {
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 
-    ThreadNode(Object type, Object value, boolean needPark) {
+    ThreadNode(Object type, E value, boolean needPark) {
         this.type = type;
         this.value = value;
         if (needPark) thread = Thread.currentThread();
@@ -44,11 +44,11 @@ public final class ThreadNode {
         this.type = type;
     }
 
-    public final Object getValue() {
+    public final E getValue() {
         return value;
     }
 
-    public final void setValue(Object value) {
+    public final void setValue(E value) {
         this.value = value;
     }
 

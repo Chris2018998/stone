@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 
-public final class ThreadWaitConfig {
+public final class ThreadWaitConfig implements java.io.Serializable, java.lang.Cloneable {
     //************************************************A: wait node config*********************************************//
     //node type
     private Object nodeType;
@@ -153,5 +153,4 @@ public final class ThreadWaitConfig {
     public void setTransferSignalOnIE(boolean transferSignalOnIE) {
         this.transferSignalOnIE = transferSignalOnIE;
     }
-
 }
