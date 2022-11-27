@@ -10,7 +10,7 @@
 package org.stone.shine.synchronizer;
 
 /**
- * Thread wait control parameter in wait pool
+ * Thread wait control parameter for wait pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -27,7 +27,7 @@ public class ThreadWaitConfig {
     //indicator of throw interruptException when interrupted
     private boolean throwsIE = true;
     //transfer got signal to other when wakeup by
-    private boolean wakeupOtherOnIE = true;
+    private boolean transferSignalOnIE = true;
     //indicator of whether remove wait node on leaving from pool
     private boolean removeOnLeave = true;
 
@@ -82,12 +82,12 @@ public class ThreadWaitConfig {
         this.throwsIE = throwsIE;
     }
 
-    public boolean isWakeupOtherOnIE() {
-        return wakeupOtherOnIE;
+    public boolean isTransferSignalOnIE() {
+        return transferSignalOnIE;
     }
 
-    public void setWakeupOtherOnIE(boolean wakeupOtherOnIE) {
-        this.wakeupOtherOnIE = wakeupOtherOnIE;
+    public void setTransferSignalOnIE(boolean transferSignalOnIE) {
+        this.transferSignalOnIE = transferSignalOnIE;
     }
 
     public boolean isRemoveOnLeave() {
