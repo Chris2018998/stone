@@ -7,7 +7,7 @@
  */
 package org.stone.shine.concurrent.cyclicBarrier;
 
-import org.stone.shine.concurrent.CyclicBarrier;
+import org.stone.shine.concurrent.CyclicBarrier2;
 
 import java.util.concurrent.BrokenBarrierException;
 
@@ -21,7 +21,7 @@ public class CyclicBarrierTest {
 
     public static void main(String[] args) throws Exception {
         int count = 5;
-        CyclicBarrier barrier = new CyclicBarrier(count, new TripAction());
+        CyclicBarrier2 barrier = new CyclicBarrier2(count, new TripAction());
         PassengerThread[] runnable = new PassengerThread[count];
         for (int i = 0; i < count; i++) {
             runnable[i] = new PassengerThread(barrier);
@@ -43,9 +43,9 @@ public class CyclicBarrierTest {
     }
 
     static class PassengerThread extends Thread {
-        private CyclicBarrier barrier2;
+        private CyclicBarrier2 barrier2;
 
-        public PassengerThread(CyclicBarrier barrier2) {
+        public PassengerThread(CyclicBarrier2 barrier2) {
             this.barrier2 = barrier2;
         }
 
@@ -59,5 +59,4 @@ public class CyclicBarrierTest {
             }
         }
     }
-
 }

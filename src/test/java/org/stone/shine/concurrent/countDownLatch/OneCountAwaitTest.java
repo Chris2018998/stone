@@ -22,6 +22,11 @@ import org.stone.test.TestUtil;
  * @version 1.0
  */
 public class OneCountAwaitTest extends TestCase {
+
+    public static void main(String[]atgs)throws Exception{
+        OneCountAwaitTest test = new OneCountAwaitTest();
+        test.test();
+    }
     public void test() throws Exception {
         int count = 1;
         CountDownLatch latch = new CountDownLatch(count);
