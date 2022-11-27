@@ -29,7 +29,7 @@ public final class ThreadWaitConfig {
     private ThreadNode waitNode;
 
     //***********************************************B: wait time config**********************************************//
-    //wait time value
+    //wait time value(Nanoseconds or Milliseconds)
     private long maxWaitTime;
     //wait util deadline(using in LockSupport.parkUtil)
     private boolean isMilliseconds;
