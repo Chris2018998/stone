@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 
-public class ThreadWaitConfig {
+public final class ThreadWaitConfig {
     //************************************************A: wait node config*********************************************//
     //node type
     private Object nodeType;
