@@ -9,6 +9,9 @@
  */
 package org.stone.shine.synchronizer;
 
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Thread wait control parameter for wait pool
  *
@@ -17,6 +20,7 @@ package org.stone.shine.synchronizer;
  */
 
 public class ThreadWaitConfig {
+    //************************************************A: wait node config*********************************************//
     //node type
     private Object nodeType;
     //node value
@@ -24,6 +28,17 @@ public class ThreadWaitConfig {
     //node value
     private ThreadNode waitNode;
 
+    //***********************************************B: wait time config**********************************************//
+    //wait time value
+    private long maxWaitTime;
+    //wait time unit
+    private TimeUnit waitTimeUnit;
+    //time block object(using in LockSupport.park)
+    private Object waitBlocker;
+    //wait util deadline(using in LockSupport.parkUtil)
+    private Date waitDeadline;
+
+    //***********************************************C: other config**************************************************//
     //indicator of throw interruptException when interrupted
     private boolean throwsIE = true;
     //transfer got signal to other when got transfer signal but interrupted
@@ -32,23 +47,7 @@ public class ThreadWaitConfig {
     private boolean removeOnLeave = true;
 
     //****************************************************************************************************************//
-    //                                              1: constructors(3)                                                //
-    //****************************************************************************************************************//
-    public ThreadWaitConfig(ThreadNode waitNode) {
-        this.waitNode = waitNode;
-    }
-
-    public ThreadWaitConfig(Object nodeType) {
-        this.nodeType = nodeType;
-    }
-
-    public ThreadWaitConfig(Object nodeType, Object nodeValue) {
-        this.nodeType = nodeType;
-        this.nodeValue = nodeValue;
-    }
-
-    //****************************************************************************************************************//
-    //                                              2: get/set                                                        //
+    //                                              1: node methods(7)                                                //
     //****************************************************************************************************************//
     public Object getNodeType() {
         return nodeType;
@@ -74,6 +73,53 @@ public class ThreadWaitConfig {
         this.waitNode = waitNode;
     }
 
+    public void setNodeValue(Object nodeType, Object nodeValue) {
+        this.nodeType = nodeType;
+        this.nodeValue = nodeValue;
+    }
+
+    //****************************************************************************************************************//
+    //                                              2: wait time config(8)                                            //
+    //****************************************************************************************************************//
+    public void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit) {
+        this.maxWaitTime = maxWaitTime;
+    }
+
+    public void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit, Object waitBlocker) {
+        this.maxWaitTime = maxWaitTime;
+        this.waitTimeUnit = waitTimeUnit;
+        this.waitBlocker = waitBlocker;
+    }
+
+    public void setWaitDeadline(Date waitDeadline, Object waitBlocker) {
+        this.waitDeadline = waitDeadline;
+        this.waitBlocker = waitBlocker;
+    }
+
+    public long getMaxWaitTime() {
+        return maxWaitTime;
+    }
+
+    public TimeUnit getWaitTimeUnit() {
+        return waitTimeUnit;
+    }
+
+    public Object getWaitBlocker() {
+        return waitBlocker;
+    }
+
+    public Date getWaitDeadline() {
+        return waitDeadline;
+    }
+
+    public void setWaitDeadline(Date waitDeadline) {
+        this.waitDeadline = waitDeadline;
+    }
+
+    //****************************************************************************************************************//
+    //                                              3: others(6)                                                      //
+    //****************************************************************************************************************//
+
     public boolean isThrowsIE() {
         return throwsIE;
     }
@@ -97,4 +143,5 @@ public class ThreadWaitConfig {
     public void setRemoveOnLeave(boolean removeOnLeave) {
         this.removeOnLeave = removeOnLeave;
     }
+
 }
