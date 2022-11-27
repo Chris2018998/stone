@@ -31,12 +31,10 @@ public final class ThreadWaitConfig {
     //***********************************************B: wait time config**********************************************//
     //wait time value
     private long maxWaitTime;
-    //wait time unit
-    private TimeUnit waitTimeUnit;
+    //wait util deadline(using in LockSupport.parkUtil)
+    private boolean isMilliseconds;
     //time block object(using in LockSupport.park,LockSupport.parkNanos)
     private Object waitBlocker;
-    //wait util deadline(using in LockSupport.parkUtil)
-    private Date waitDeadline;
 
     //***********************************************C: other config**************************************************//
     //indicator of throw interruptException when interrupted
@@ -47,73 +45,52 @@ public final class ThreadWaitConfig {
     private boolean removeOnLeave = true;
 
     //****************************************************************************************************************//
-    //                                              1: node methods(7)                                                //
+    //                                              1: node methods(3)                                                //
     //****************************************************************************************************************//
-    public Object getNodeType() {
-        return nodeType;
-    }
-
-    public void setNodeType(Object nodeType) {
+    public void setNodeValue(Object nodeType, Object nodeValue) {
         this.nodeType = nodeType;
-    }
-
-    public Object getNodeValue() {
-        return nodeValue;
-    }
-
-    public void setNodeValue(Object nodeValue) {
         this.nodeValue = nodeValue;
     }
 
     public ThreadNode getWaitNode() {
-        return waitNode;
+        if (waitNode != null) return waitNode;
+        return this.waitNode = ThreadWaitPool.createDataNode(nodeType, nodeValue);
     }
 
     public void setWaitNode(ThreadNode waitNode) {
         this.waitNode = waitNode;
     }
 
-    public void setNodeValue(Object nodeType, Object nodeValue) {
-        this.nodeType = nodeType;
-        this.nodeValue = nodeValue;
-    }
-
     //****************************************************************************************************************//
-    //                                              2: wait time config(8)                                            //
+    //                                              2: wait time config(5)                                            //
     //****************************************************************************************************************//
     public void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit) {
-        this.maxWaitTime = maxWaitTime;
+        this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
     }
 
     public void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit, Object waitBlocker) {
-        this.maxWaitTime = maxWaitTime;
-        this.waitTimeUnit = waitTimeUnit;
+        if (waitTimeUnit == null) throw new IllegalArgumentException("timeUnit can't be null");
+        this.maxWaitTime = waitTimeUnit.toNanos(maxWaitTime);
         this.waitBlocker = waitBlocker;
-    }
-
-    public void setWaitDeadline(Date waitDeadline, Object waitBlocker) {
-        this.waitDeadline = waitDeadline;
-        this.waitBlocker = waitBlocker;
-    }
-
-    public long getMaxWaitTime() {
-        return maxWaitTime;
-    }
-
-    public TimeUnit getWaitTimeUnit() {
-        return waitTimeUnit;
-    }
-
-    public Object getWaitBlocker() {
-        return waitBlocker;
-    }
-
-    public Date getWaitDeadline() {
-        return waitDeadline;
     }
 
     public void setWaitDeadline(Date waitDeadline) {
-        this.waitDeadline = waitDeadline;
+        this.setWaitDeadline(waitDeadline, null);
+    }
+
+    public void setWaitDeadline(Date waitDeadline, Object waitBlocker) {
+        if (waitDeadline == null) throw new IllegalArgumentException("deadline can't be null");
+        this.maxWaitTime = waitDeadline.getTime();
+        this.waitBlocker = waitBlocker;
+        this.isMilliseconds = true;
+    }
+
+    public ThreadParkSupport createThreadParkSupport() {
+        if (waitBlocker != null) {
+            return ThreadParkSupport.create(maxWaitTime, isMilliseconds, waitBlocker);
+        } else {
+            return ThreadParkSupport.create(maxWaitTime, isMilliseconds);
+        }
     }
 
     //****************************************************************************************************************//
