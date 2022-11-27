@@ -102,7 +102,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool {
         if (e != null) return e;
 
         //step2:create wait node(then to wait)
-        config.setNodeValue(Node_Type_Data, null, true);
+        config.setNodeValue(Node_Type_Get, null, true);
 
         //step3:create wait node(then to wait)
         return (E) doWait(config);

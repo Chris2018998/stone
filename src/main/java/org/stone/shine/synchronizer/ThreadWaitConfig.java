@@ -70,10 +70,10 @@ public final class ThreadWaitConfig {
         this.setNodeValue(nodeType, nodeValue, false);
     }
 
-    public void setNodeValue(Object nodeType, Object nodeValue, boolean nodeNeedPark) {
+    public void setNodeValue(Object nodeType, Object nodeValue, boolean needPark) {
         this.nodeType = nodeType;
         this.nodeValue = nodeValue;
-        this.nodeNeedPark = nodeNeedPark;
+        this.nodeNeedPark = needPark;
     }
 
     public ThreadNode getThreadNode() {
@@ -136,7 +136,7 @@ public final class ThreadWaitConfig {
     }
 
     //****************************************************************************************************************//
-    //                                              4: others(4)                                                      //
+    //                                              4: Interrupt Config(4)                                            //
     //****************************************************************************************************************//
     public boolean isThrowsIE() {
         return throwsIE;

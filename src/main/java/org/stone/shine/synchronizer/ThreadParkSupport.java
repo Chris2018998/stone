@@ -12,7 +12,7 @@ package org.stone.shine.synchronizer;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * Time parker class,supply three implementation by park methods of {@link LockSupport} class
+ * Time parker class,supply three Implementation with park methods of {@link LockSupport} class
  * 1:LockSupport.park
  * 2:LockSupport.parkNanos
  * 3:LockSupport.parkUntil
@@ -52,7 +52,7 @@ import java.util.concurrent.locks.LockSupport;
  */
 
 //********************************************************************************************************************//
-//                          1:implementation based on park method{@code LockSupport.park}                             //
+//                          1:Implementation based on park method{@code LockSupport.park}                             //
 //********************************************************************************************************************//
 public class ThreadParkSupport implements Cloneable {
     private static final long spinForTimeoutThreshold = 1000L;
@@ -130,7 +130,7 @@ public class ThreadParkSupport implements Cloneable {
     }
 
     public String toString() {
-        return "implementation by LockSupport.park()";
+        return "Implementation with LockSupport.park()";
     }
 
     //Thead Park with block object for{@code LockSupport.park(blocker)}
@@ -145,12 +145,12 @@ public class ThreadParkSupport implements Cloneable {
         }
 
         public String toString() {
-            return "implementation by LockSupport.park(blocker)";
+            return "Implementation with LockSupport.park(blocker)";
         }
     }
 
     //****************************************************************************************************************//
-    //                     2: implementation based on park method{@code LockSupport.parkNanos}                        //
+    //                     2: Implementation based on park method{@code LockSupport.parkNanos}                        //
     //****************************************************************************************************************//
     private static class NanoSecondsParkSupport extends ThreadParkSupport {
         NanoSecondsParkSupport(long nanoTime) {
@@ -172,7 +172,7 @@ public class ThreadParkSupport implements Cloneable {
         }
 
         public String toString() {
-            return "implementation by LockSupport.parkNanos(time)";
+            return "Implementation with LockSupport.parkNanos(time)";
         }
     }
 
@@ -192,12 +192,12 @@ public class ThreadParkSupport implements Cloneable {
         }
 
         public String toString() {
-            return "implementation by LockSupport.parkNanos(time,blocker)";
+            return "Implementation with LockSupport.parkNanos(time,blocker)";
         }
     }
 
     //****************************************************************************************************************//
-    //                        3: implementation based on park method{@code LockSupport.parkUntil}                     //
+    //                        3: Implementation based on park method{@code LockSupport.parkUntil}                     //
     //****************************************************************************************************************//
     private static class MillisecondsUtilParkSupport extends ThreadParkSupport {
         MillisecondsUtilParkSupport(long deadline) {
@@ -215,7 +215,7 @@ public class ThreadParkSupport implements Cloneable {
         }
 
         public String toString() {
-            return "implementation by LockSupport.parkUntil(deadline)";
+            return "Implementation with LockSupport.parkUntil(deadline)";
         }
     }
 
@@ -231,7 +231,7 @@ public class ThreadParkSupport implements Cloneable {
         }
 
         public String toString() {
-            return "implementation by LockSupport.parkUntil(deadline,blocker)";
+            return "Implementation with LockSupport.parkUntil(deadline,blocker)";
         }
     }
 }
