@@ -23,6 +23,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
      *
      * @param config thread wait config
+     * @return true, if get a signal then return true,timeout return false
      */
     public final boolean doWait(ThreadWaitConfig config) throws InterruptedException {
         //1:check call parameter

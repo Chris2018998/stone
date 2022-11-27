@@ -43,6 +43,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @param call   executed in pool to get result
      * @param arg    call argument
      * @param expect compare to the call result
+     * @param config thread wait config
      * @return true, call result equaled to the expect parameter,false wait timeout in pool
      * @throws Exception exception from call or InterruptedException after thread park
      */
