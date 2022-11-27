@@ -38,6 +38,10 @@ public final class ReentrantLock extends BaseLock {
             super(lockState);
         }
 
+        public int getHoldSize() {
+            return lockState.getState();
+        }
+
         public Object call(Object size) {
             int state = lockState.getState();
             if (state == 0) {
@@ -60,10 +64,11 @@ public final class ReentrantLock extends BaseLock {
         public boolean tryRelease(int size) {
             if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
                 int curState = lockState.getState();
-                if (curState == 1) lockState.setExclusiveOwnerThread(null);
-                if (curState > 0) lockState.setState(curState - 1);
+                curState = curState - size;//full release(occur in condition wait)
 
-                return curState == 1;
+                if (curState == 0) lockState.setExclusiveOwnerThread(null);
+                lockState.setState(curState);
+                return curState == 0;
             } else {
                 return false;
             }

@@ -91,7 +91,7 @@ public class ResourceWaitPool {
     //acquireWithType
     public final boolean acquireWithType(ResourceAction action, int size, Object acquisitionType, ThreadWaitConfig config) throws InterruptedException {
         try {
-            config.setNodeValue(acquisitionType, null, true);
+            config.setNodeValue(acquisitionType, null);
             return callPool.doCall(action, size, true, config);
         } catch (InterruptedException e) {
             throw e;

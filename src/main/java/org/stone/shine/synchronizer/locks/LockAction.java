@@ -29,8 +29,9 @@ abstract class LockAction extends ResourceAction {
         return lockState;
     }
 
+    abstract int getHoldSize();
+
     boolean isHeldByCurrentThread() {
         return lockState.isHeldByCurrentThread();
     }
-
 }

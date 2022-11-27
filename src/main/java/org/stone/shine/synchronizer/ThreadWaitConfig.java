@@ -67,7 +67,7 @@ public final class ThreadWaitConfig implements java.io.Serializable, java.lang.C
     //                                              2: node methods(7)                                                //
     //****************************************************************************************************************//
     public void setNodeValue(Object nodeType, Object nodeValue) {
-        this.setNodeValue(nodeType, nodeValue, false);
+        this.setNodeValue(nodeType, nodeValue, true);
     }
 
     public void setNodeValue(Object nodeType, Object nodeValue, boolean needPark) {

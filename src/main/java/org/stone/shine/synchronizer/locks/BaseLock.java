@@ -41,7 +41,6 @@ class BaseLock implements Lock {
     //Lock State
     private final LockAtomicState lockState;
 
-
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//
@@ -377,7 +376,7 @@ class BaseLock implements Lock {
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
-            ThreadWaitConfig config = new ThreadWaitConfig();
+            ThreadWaitConfig config = new ThreadWaitConfig(deadline);
             this.doAwait(config);
             return config.getThreadParkSupport().isTimeout();
         }
@@ -387,37 +386,32 @@ class BaseLock implements Lock {
             //1:condition wait under current thread must hold the lock
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
-            //2:release the single PermitPool under exclusive mode to pool(
-            //@todo this node need't leave from syn queue under unlock,but how to get the origin node? so need more think
-            this.lock.unlock();
+            //2:create a condition and append to condition queue(why before unlock?)
+            config.setNodeValue(TYPE_CONDITION, null, true);
+            ThreadNode conditionNode = config.getThreadNode();
+            super.appendNode(conditionNode);
 
-            //ThreadNode synNode = this.lock.unlock(boolean leaveQueueInd);
+            //3:full release(exclusive count should be zero):support full release for reentrant
+            lock.waitPool.release(lockAction, lockAction.getHoldSize());
 
-            //3:create condition node to wait for wakeup signal and the node will be moved to syn queue to wait lock
+            //4:execute condition waiting
             InterruptedException waitInterruptedException = null;
-
-            /**
-             * @todo this node should be from resource wait node
-             */
-            ThreadNode synNode = null; //createWaitNode(TYPE_EXCLUSIVE);//condition just support Exclusive mode
-            synNode.setType(TYPE_CONDITION);
-            config.setThreadNode(synNode);
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
+                config.setNeedAddWaitPool(false);
                 super.doWait(config);
             } catch (InterruptedException e) {
                 waitInterruptedException = e;
             }
 
-            //4:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
-            synNode.setState(null);
-            synNode.setType(TYPE_EXCLUSIVE);
-
+            //5:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
+            conditionNode.setState(null);
+            conditionNode.setType(TYPE_EXCLUSIVE);
             ThreadWaitConfig lockConfig = new ThreadWaitConfig();
-            lockConfig.setThreadNode(synNode);
-            lock.waitPool.acquireWithNode(lockAction, 1, synNode, lockConfig);
+            lockConfig.setThreadNode(conditionNode);//reuse the condition node
+            lock.waitPool.acquireWithNode(lockAction, 1, conditionNode, lockConfig);
 
-            //5:throw occurred interrupt exception on condition wait
+            //6:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;
         }
 

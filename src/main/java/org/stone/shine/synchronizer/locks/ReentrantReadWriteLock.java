@@ -62,8 +62,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         return c + 1;
     }
 
-    private static int decrementExclusivePart(int c) {
-        return c - 1;
+    private static int decrementExclusivePart(int c, int size) {
+        return c - size;
     }
 
     private static int incrementSharedPart(int c) {
@@ -135,6 +135,10 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             super(lockState);
         }
 
+        public int getHoldSize() {
+            return exclusiveCount(lockState.getState());
+        }
+
         public Object call(Object size) {
             int state = lockState.getState();
             if (state == 0) {
@@ -159,10 +163,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
                 int curState = lockState.getState();
                 int writeCount = exclusiveCount(curState);
+                writeCount = writeCount - size;//support full release for reentrant
 
-                if (writeCount == 1) lockState.setExclusiveOwnerThread(null);
-                if (writeCount > 0) lockState.setState(decrementExclusivePart(curState));
-                return writeCount == 1;
+                lockState.setState(decrementExclusivePart(curState, size));
+                if (writeCount == 0) lockState.setExclusiveOwnerThread(null);
+                return writeCount == 0;
             } else {
                 return false;
             }
@@ -178,6 +183,10 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             super(lockState);
             this.waitPool = waitPool;
             this.sharedHoldThreadLocal = new SharedHoldThreadLocal();
+        }
+
+        public int getHoldSize() {
+            return sharedCount(lockState.getState());
         }
 
         public Object call(Object size) {

@@ -24,6 +24,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      *
      * @param config thread wait config
      * @return true, if get a signal then return true,timeout return false
+     * @throws Exception exception from call or InterruptedException after thread park
      */
     public final boolean doWait(ThreadWaitConfig config) throws InterruptedException {
         //1:check call parameter
