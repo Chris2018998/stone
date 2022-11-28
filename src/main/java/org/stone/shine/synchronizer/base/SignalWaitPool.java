@@ -32,7 +32,7 @@ public class SignalWaitPool extends ThreadWaitPool {
 
         //2:create wait node and offer to wait queue
         ThreadNode node = config.getThreadNode();
-        if (config.isNeedAddWaitPool()) super.appendNode(node);
+        if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //3:get control parameters from config
         boolean throwsIE = config.isThrowsIE();
@@ -58,7 +58,7 @@ public class SignalWaitPool extends ThreadWaitPool {
                 }
             } while (true);
         } finally {
-            if (config.isNeedRemoveOnLeave()) super.removeNode(node);
+            super.removeNode(node);
         }
     }
 }
