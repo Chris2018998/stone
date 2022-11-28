@@ -25,15 +25,13 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     private Object nodeType;
     //node value
     private Object nodeValue;
-    //node value
+    //node object
     private ThreadNode threadNode;
     //indicator of node whether park
     private boolean nodeNeedPark = true;
     //need add into queue of wait pool
-    private boolean needAddWaitPool = true;
-    //indicator of whether remove wait node on leaving from pool
-    private boolean needRemoveOnLeave = true;
-
+    private boolean outsideOfWaitPool= true;
+    
     //***********************************************B: wait time config**********************************************//
     //wait time value(Nanoseconds or Milliseconds)
     private long maxWaitTime;
@@ -64,7 +62,7 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              2: node methods(7)                                                //
+    //                                              2: node methods(6)                                                //
     //****************************************************************************************************************//
     public void setNodeValue(Object nodeType, Object nodeValue) {
         this.setNodeValue(nodeType, nodeValue, true);
@@ -85,20 +83,12 @@ public final class ThreadWaitConfig implements java.io.Serializable {
         this.threadNode = threadNode;
     }
 
-    public boolean isNeedAddWaitPool() {
+    public boolean isOutsideOfWaitPool() {
         return needAddWaitPool;
     }
 
-    public void setNeedAddWaitPool(boolean needAddWaitPool) {
-        this.needAddWaitPool = needAddWaitPool;
-    }
-
-    public boolean isNeedRemoveOnLeave() {
-        return needRemoveOnLeave;
-    }
-
-    public void setNeedRemoveOnLeave(boolean needRemoveOnLeave) {
-        this.needRemoveOnLeave = needRemoveOnLeave;
+    public void setOutsideOfWaitPool(boolean outsideOfWaitPool) {
+        this.outsideOfWaitPool= outsideOfWaitPool;
     }
 
     //****************************************************************************************************************//
