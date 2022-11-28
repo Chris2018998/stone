@@ -84,7 +84,7 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     }
 
     public boolean isOutsideOfWaitPool() {
-        return needAddWaitPool;
+       return outsideOfWaitPool;
     }
 
     public void setOutsideOfWaitPool(boolean outsideOfWaitPool) {
