@@ -25,5 +25,6 @@ abstract class CollectionValidator extends BaseValidator {
     CollectionValidator(Collection collection, Object resultOnTimeout) {
         super(resultOnTimeout);
         this.collection = collection;
+        if (collection == null) throw new IllegalArgumentException("collection can't be null");
     }
 }

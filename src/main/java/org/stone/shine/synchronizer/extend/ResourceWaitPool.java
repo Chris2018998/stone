@@ -78,7 +78,7 @@ public class ResourceWaitPool {
 
         try {
             config.setThreadNode(waitNode);
-            return callPool.doCall(action, size, true, config);
+            return (boolean) callPool.doCall(action, size, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -92,7 +92,7 @@ public class ResourceWaitPool {
     public final boolean acquireWithType(ResourceAction action, int size, Object acquisitionType, ThreadWaitConfig config) throws InterruptedException {
         try {
             config.setNodeValue(acquisitionType, null);
-            return callPool.doCall(action, size, true, config);
+            return (boolean) callPool.doCall(action, size, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {

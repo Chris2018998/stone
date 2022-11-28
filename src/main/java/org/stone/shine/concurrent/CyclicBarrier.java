@@ -177,7 +177,7 @@ public final class CyclicBarrier implements ResultCall {
                 Object callParameter = seatNo > 0 ? flightNo : 0;
                 config.setNodeValue(callParameter, seatNo);
 
-                if (!waitPool.doCall(this, callParameter, Boolean.TRUE, config))
+                if (!(boolean) waitPool.doCall(this, callParameter, config))
                     throw new TimeoutException();
 
                 if (seatNo > 0) {

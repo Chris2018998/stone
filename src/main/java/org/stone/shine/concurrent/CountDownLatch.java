@@ -46,7 +46,7 @@ public final class CountDownLatch implements ResultCall {
     //wait without parkTime
     public void await() throws InterruptedException {
         try {
-            waitPool.doCall(this, null, Boolean.TRUE, new ThreadWaitConfig());
+            waitPool.doCall(this, null, new ThreadWaitConfig());
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -59,7 +59,7 @@ public final class CountDownLatch implements ResultCall {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
 
         try {
-            waitPool.doCall(this, null, Boolean.TRUE, new ThreadWaitConfig(timeout, unit));
+            waitPool.doCall(this, null, new ThreadWaitConfig(timeout, unit));
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
