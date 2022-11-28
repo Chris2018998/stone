@@ -76,6 +76,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
+        if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
         //2:try to execute call
         if (config.isOutsideOfWaitPool()) {
