@@ -51,15 +51,18 @@ public class ResultWaitPool extends ThreadWaitPool {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
+        
+        if(config.isOutsideOfWaitPool())｛
+          //2:try to execute call
+          if (fair) { //fair mode
+             if (!this.hasQueuedThreads() && equals(call.call(arg), expect)) return true;
+          } else if (equals(call.call(arg), expect)) return true;
 
-        //2:try to execute call
-        if (fair) { //fair mode
-            if (!this.hasQueuedThreads() && equals(call.call(arg), expect)) return true;
-        } else if (equals(call.call(arg), expect)) return true;
+          super.appendNode(config.getThreadNode())；
+        }
 
         //3:create wait node and offer to wait queue
         ThreadNode node = config.getThreadNode();
-        if (config.isNeedAddWaitPool()) super.appendNode(node);
 
         //4:get control parameters from config
         boolean throwsIE = config.isThrowsIE();
@@ -90,7 +93,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 }
             } while (true);
         } finally {
-            if (config.isNeedRemoveOnLeave()) super.removeNode(node);
+            super.removeNode(node);
         }
     }
 }
