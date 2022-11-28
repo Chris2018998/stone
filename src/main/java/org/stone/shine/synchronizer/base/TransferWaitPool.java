@@ -116,7 +116,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool {
 
         //1:create wait node and offer to wait queue
         ThreadNode node = config.getThreadNode();
-        if (config.isNeedAddWaitPool()) super.appendNode(node);
+        if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config
         boolean throwsIE = config.isThrowsIE();
@@ -148,7 +148,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool {
                 }
             } while (true);
         } finally {
-            if (config.isNeedRemoveOnLeave()) super.removeNode(node);
+            super.removeNode(node);
         }
     }
 
