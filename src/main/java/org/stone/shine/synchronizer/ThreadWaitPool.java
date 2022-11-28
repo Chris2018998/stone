@@ -19,7 +19,7 @@ import static org.stone.shine.synchronizer.ThreadNodeState.INTERRUPTED;
 import static org.stone.shine.synchronizer.ThreadNodeState.SIGNAL;
 
 /**
- * base wait pool,work in Wait-Wakeup Mode
+ * Base Wait-Wakeup Pool
  *
  * @author Chris Liao
  * @version 1.0
