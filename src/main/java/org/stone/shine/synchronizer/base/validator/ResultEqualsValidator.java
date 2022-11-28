@@ -23,7 +23,7 @@ public final class ResultEqualsValidator extends ObjectValidator {
         super(compareValue, resultOnTimeout);
     }
 
-    public final boolean validate(Object result) {
+    public final boolean match(Object result) {
         return Objects.equals(result, compareValue);
     }
 }

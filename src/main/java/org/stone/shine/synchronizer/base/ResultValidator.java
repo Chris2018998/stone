@@ -17,8 +17,10 @@ package org.stone.shine.synchronizer.base;
  */
 public interface ResultValidator {
 
+    //return this value on wait timeout in pool
     Object resultOnTimeout();
 
-    boolean validate(Object result);
+    //check result is whether match expect
+    boolean match(Object result);
 
 }

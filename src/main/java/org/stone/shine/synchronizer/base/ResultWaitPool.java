@@ -82,7 +82,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         if (config.isOutsideOfWaitPool()) {
             if (!fair || !this.hasQueuedThreads()) {
                 Object result = call.call(arg);
-                if (validator.validate(result)) return result;
+                if (validator.match(result)) return result;
             }
             super.appendNode(config.getThreadNode());
         }
@@ -102,7 +102,7 @@ public class ResultWaitPool extends ThreadWaitPool {
             do {
                 //6.1:if got a signal then execute call
                 Object result = call.call(arg);
-                if (validator.validate(result)) return result;
+                if (validator.match(result)) return result;
 
                 //6.2:read node state
                 Object state = node.getState();

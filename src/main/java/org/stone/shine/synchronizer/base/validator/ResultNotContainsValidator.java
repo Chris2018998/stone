@@ -24,7 +24,7 @@ public final class ResultNotContainsValidator extends CollectionValidator {
         super(collection, resultOnTimeout);
     }
 
-    public final boolean validate(Object result) {
+    public final boolean match(Object result) {
         return !collection.contains(result);
     }
 }
