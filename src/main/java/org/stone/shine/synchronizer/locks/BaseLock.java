@@ -398,7 +398,7 @@ class BaseLock implements Lock {
             InterruptedException waitInterruptedException = null;
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
-                config.setNeedAddWaitPool(false);
+                config.setOutsideOfWaitPool(false);
                 super.doWait(config);
             } catch (InterruptedException e) {
                 waitInterruptedException = e;
