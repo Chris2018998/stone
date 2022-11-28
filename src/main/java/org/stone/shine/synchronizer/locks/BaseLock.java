@@ -30,8 +30,6 @@ import static org.stone.shine.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
  */
 
 class BaseLock implements Lock {
-    //node type change from TYPE_EXCLUSIVE to this value
-    private static final Object TYPE_CONDITION = new Object();
     //resource acquire type
     private final Object acquireType;
     //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
@@ -386,8 +384,7 @@ class BaseLock implements Lock {
             //1:condition wait under current thread must hold the lock
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
-            //2:create a condition and append to condition queue(why before unlock?)
-            config.setNodeValue(TYPE_CONDITION, null, true);
+            //2:create a reusable node(why before unlock?)
             ThreadNode conditionNode = config.getThreadNode();
             super.appendNode(conditionNode);
 
