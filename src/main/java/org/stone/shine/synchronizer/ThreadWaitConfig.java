@@ -73,58 +73,58 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              2: node methods(6)                                                //
     //****************************************************************************************************************//
-    public void setNodeValue(Object nodeType, Object nodeValue) {
+    public final void setNodeValue(Object nodeType, Object nodeValue) {
         this.setNodeValue(nodeType, nodeValue, true);
     }
 
-    public void setNodeValue(Object nodeType, Object nodeValue, boolean needPark) {
+    public final void setNodeValue(Object nodeType, Object nodeValue, boolean needPark) {
         this.nodeType = nodeType;
         this.nodeValue = nodeValue;
         this.nodeNeedPark = needPark;
     }
 
-    public ThreadNode getThreadNode() {
+    public final ThreadNode getThreadNode() {
         if (threadNode != null) return threadNode;
         return this.threadNode = new ThreadNode(nodeType, nodeValue, nodeNeedPark);
     }
 
-    public void setThreadNode(ThreadNode threadNode) {
+    public final void setThreadNode(ThreadNode threadNode) {
         this.threadNode = threadNode;
     }
 
-    public boolean isOutsideOfWaitPool() {
+    public final boolean isOutsideOfWaitPool() {
         return outsideOfWaitPool;
     }
 
-    public void setOutsideOfWaitPool(boolean outsideOfWaitPool) {
+    public final void setOutsideOfWaitPool(boolean outsideOfWaitPool) {
         this.outsideOfWaitPool = outsideOfWaitPool;
     }
 
     //****************************************************************************************************************//
     //                                              3: wait time config(5)                                            //
     //****************************************************************************************************************//
-    public void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit) {
+    public final void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit) {
         this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
     }
 
-    public void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit, Object waitBlocker) {
+    public final void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit, Object waitBlocker) {
         if (waitTimeUnit == null) throw new IllegalArgumentException("timeUnit can't be null");
         this.maxWaitTime = waitTimeUnit.toNanos(maxWaitTime);
         this.waitBlocker = waitBlocker;
     }
 
-    public void setWaitDeadline(Date waitDeadline) {
+    public final void setWaitDeadline(Date waitDeadline) {
         this.setWaitDeadline(waitDeadline, null);
     }
 
-    public void setWaitDeadline(Date waitDeadline, Object waitBlocker) {
+    public final void setWaitDeadline(Date waitDeadline, Object waitBlocker) {
         if (waitDeadline == null) throw new IllegalArgumentException("deadline can't be null");
         this.maxWaitTime = waitDeadline.getTime();
         this.waitBlocker = waitBlocker;
         this.isMilliseconds = true;
     }
 
-    public ThreadParkSupport getThreadParkSupport() {
+    public final ThreadParkSupport getThreadParkSupport() {
         if (parkSupport != null) return parkSupport;
 
         if (waitBlocker != null) {
@@ -137,19 +137,19 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              4: Interrupt Config(4)                                            //
     //****************************************************************************************************************//
-    public boolean isThrowsIE() {
+    public final boolean isThrowsIE() {
         return throwsIE;
     }
 
-    public void setThrowsIE(boolean throwsIE) {
+    public final void setThrowsIE(boolean throwsIE) {
         this.throwsIE = throwsIE;
     }
 
-    public boolean isTransferSignalOnIE() {
+    public final boolean isTransferSignalOnIE() {
         return transferSignalOnIE;
     }
 
-    public void setTransferSignalOnIE(boolean transferSignalOnIE) {
+    public final void setTransferSignalOnIE(boolean transferSignalOnIE) {
         this.transferSignalOnIE = transferSignalOnIE;
     }
 }
