@@ -61,7 +61,7 @@ public class ResultWaitPool extends ThreadWaitPool {
           super.appendNode(config.getThreadNode())；
         }
 
-        //3:create wait node and offer to wait queue
+        //3:get wait node from config object
         ThreadNode node = config.getThreadNode();
 
         //4:get control parameters from config
