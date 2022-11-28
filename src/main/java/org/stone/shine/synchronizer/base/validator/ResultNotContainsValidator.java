@@ -18,13 +18,13 @@ import java.util.Collection;
  * @version 1.0
  */
 
-public class ResultNotContainsValidator extends CollectionValidator {
+public final class ResultNotContainsValidator extends CollectionValidator {
 
     public ResultNotContainsValidator(Collection collection, Object resultOnTimeout) {
         super(collection, resultOnTimeout);
     }
 
-    public boolean validate(Object result) {
+    public final boolean validate(Object result) {
         return !collection.contains(result);
     }
 }

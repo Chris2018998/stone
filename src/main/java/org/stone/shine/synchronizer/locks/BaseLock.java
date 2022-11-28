@@ -82,9 +82,9 @@ class BaseLock implements Lock {
      */
     public void lock() {
         try {
-            ThreadWaitConfig config = new ThreadWaitConfig();
+            ThreadWaitConfig config = new ThreadWaitConfig(acquireType);
             config.setThrowsIE(false);
-            waitPool.acquireWithType(lockAction, 1, acquireType, config);
+            waitPool.acquire(lockAction, 1, config);
         } catch (Exception e) {
             //do nothing
         }
@@ -137,7 +137,7 @@ class BaseLock implements Lock {
      *                              of lock acquisition is supported)
      */
     public void lockInterruptibly() throws InterruptedException {
-        waitPool.acquireWithType(lockAction, 1, acquireType, new ThreadWaitConfig());
+        waitPool.acquire(lockAction, 1, new ThreadWaitConfig(acquireType));
     }
 
     /**
@@ -230,7 +230,7 @@ class BaseLock implements Lock {
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        return waitPool.acquireWithType(lockAction, 1, acquireType, new ThreadWaitConfig(time, unit));
+        return waitPool.acquire(lockAction, 1, new ThreadWaitConfig(time, unit, acquireType));
     }
 
     /**
@@ -405,8 +405,8 @@ class BaseLock implements Lock {
             conditionNode.setState(null);
             conditionNode.setType(TYPE_EXCLUSIVE);
             ThreadWaitConfig lockConfig = new ThreadWaitConfig();
-            lockConfig.setThreadNode(conditionNode);//reuse the condition node
-            lock.waitPool.acquireWithNode(lockAction, 1, conditionNode, lockConfig);
+            lockConfig.setThreadNode(conditionNode);
+            lock.waitPool.acquire(lockAction, 1, lockConfig);
 
             //6:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;

@@ -48,9 +48,13 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     private boolean transferSignalOnIE = true;
 
     //****************************************************************************************************************//
-    //                                              1: constructors methods(3)                                        //
+    //                                              1: constructors methods(5)                                        //
     //****************************************************************************************************************//
     public ThreadWaitConfig() {
+    }
+
+    public ThreadWaitConfig(Object nodeType) {
+        this.nodeType = nodeType;
     }
 
     public ThreadWaitConfig(Date waitDeadline) {
@@ -59,6 +63,11 @@ public final class ThreadWaitConfig implements java.io.Serializable {
 
     public ThreadWaitConfig(long maxWaitTime, TimeUnit waitTimeUnit) {
         this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
+    }
+
+    public ThreadWaitConfig(long maxWaitTime, TimeUnit waitTimeUnit, Object nodeType) {
+        this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
+        this.nodeType = nodeType;
     }
 
     //****************************************************************************************************************//

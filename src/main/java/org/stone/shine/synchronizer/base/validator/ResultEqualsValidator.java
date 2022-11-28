@@ -17,14 +17,13 @@ import java.util.Objects;
  * @author Chris Liao
  * @version 1.0
  */
-public class ResultEqualsValidator extends ObjectValidator {
+public final class ResultEqualsValidator extends ObjectValidator {
 
     public ResultEqualsValidator(Object compareValue, Object resultOnTimeout) {
         super(compareValue, resultOnTimeout);
     }
 
-    public boolean validate(Object result) {
-
+    public final boolean validate(Object result) {
         return Objects.equals(result, compareValue);
     }
 }

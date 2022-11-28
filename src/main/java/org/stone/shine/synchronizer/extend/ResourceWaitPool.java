@@ -9,7 +9,6 @@
  */
 package org.stone.shine.synchronizer.extend;
 
-import org.stone.shine.synchronizer.ThreadNode;
 import org.stone.shine.synchronizer.ThreadWaitConfig;
 import org.stone.shine.synchronizer.base.ResultWaitPool;
 
@@ -74,24 +73,8 @@ public class ResourceWaitPool {
     }
 
     //acquireWithType
-    public final boolean acquireWithNode(ResourceAction action, int size, ThreadNode waitNode, ThreadWaitConfig config) throws InterruptedException {
-
+    public final boolean acquire(ResourceAction action, int size, ThreadWaitConfig config) throws InterruptedException {
         try {
-            config.setThreadNode(waitNode);
-            return (boolean) callPool.doCall(action, size, config);
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            //this exception caught just fit super's method invocation
-            //in fact,only InterruptedException can be thrown out,so return false;
-            return false;
-        }
-    }
-
-    //acquireWithType
-    public final boolean acquireWithType(ResourceAction action, int size, Object acquisitionType, ThreadWaitConfig config) throws InterruptedException {
-        try {
-            config.setNodeValue(acquisitionType, null);
             return (boolean) callPool.doCall(action, size, config);
         } catch (InterruptedException e) {
             throw e;

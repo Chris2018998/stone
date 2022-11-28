@@ -10,7 +10,6 @@
 package org.stone.shine.concurrent;
 
 import org.stone.shine.synchronizer.ThreadWaitConfig;
-import org.stone.shine.synchronizer.extend.AcquireTypes;
 import org.stone.shine.synchronizer.extend.ResourceAction;
 import org.stone.shine.synchronizer.extend.ResourceAtomicState;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
@@ -247,7 +246,7 @@ public class Semaphore {
      */
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
-        this.waitPool.acquireWithType(permitAction, permits, AcquireTypes.TYPE_EXCLUSIVE, new ThreadWaitConfig());
+        this.waitPool.acquire(permitAction, permits, new ThreadWaitConfig());
     }
 
     /**
@@ -277,7 +276,7 @@ public class Semaphore {
         try {
             ThreadWaitConfig config = new ThreadWaitConfig();
             config.setThrowsIE(false);
-            this.waitPool.acquireWithType(permitAction, permits, AcquireTypes.TYPE_EXCLUSIVE, config);
+            this.waitPool.acquire(permitAction, permits, config);
         } catch (Exception e) {
             //do nothing
         }
@@ -369,7 +368,8 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         if (timeout < 0) throw new IllegalArgumentException();
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        return this.waitPool.acquireWithType(permitAction, permits, AcquireTypes.TYPE_EXCLUSIVE, new ThreadWaitConfig(timeout, unit));
+
+        return this.waitPool.acquire(permitAction, permits, new ThreadWaitConfig(timeout, unit));
     }
 
     /**
