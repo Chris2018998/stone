@@ -76,16 +76,6 @@ public abstract class ThreadWaitPool {
         return waitQueue.remove(node);
     }
 
-    protected final boolean containsNode(ThreadNode node) {
-        return waitQueue.contains(node);
-    }
-
-    protected final ThreadNode appendWaitNode(Object type, Object value) {
-        ThreadNode node = new ThreadNode(type, value);
-        waitQueue.offer(node);
-        return node;
-    }
-
     protected final ThreadNode appendDataNode(Object type, Object value) {
         ThreadNode node = new ThreadNode(type, value);
         node.setThread(null);
