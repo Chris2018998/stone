@@ -27,10 +27,10 @@ public final class ThreadNode<E> {
     private volatile ThreadNode prev;
     private volatile ThreadNode next;
 
-    ThreadNode(Object type, E value, boolean needPark) {
+    ThreadNode(Object type, E value) {
         this.type = type;
         this.value = value;
-        if (needPark) thread = Thread.currentThread();
+        this.thread = Thread.currentThread();
     }
 
     //****************************************************************************************************************//
@@ -56,7 +56,7 @@ public final class ThreadNode<E> {
         return thread;
     }
 
-    public final void setThread(Thread thread) {
+    final void setThread(Thread thread) {
         this.thread = thread;
     }
 
