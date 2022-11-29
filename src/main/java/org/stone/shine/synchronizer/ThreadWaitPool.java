@@ -81,13 +81,13 @@ public abstract class ThreadWaitPool {
     }
 
     protected final ThreadNode appendWaitNode(Object type, Object value) {
-        ThreadNode node = new ThreadNode(type, value, true);
+        ThreadNode node = new ThreadNode(type, value);
         waitQueue.offer(node);
         return node;
     }
 
     protected final ThreadNode appendDataNode(Object type, Object value) {
-        ThreadNode node = new ThreadNode(type, value, false);
+        ThreadNode node = new ThreadNode(type, value);
         node.setThread(null);
         waitQueue.offer(node);
         return node;
