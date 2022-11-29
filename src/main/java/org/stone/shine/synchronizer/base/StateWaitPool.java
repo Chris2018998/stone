@@ -21,7 +21,7 @@ import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
 
 public class StateWaitPool extends ThreadWaitPool {
 
-    //call result validator(equals validator is default)
+    //state validator
     private final ResultValidator validator;
 
     public StateWaitPool(ResultValidator validator) {
