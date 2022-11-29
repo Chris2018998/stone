@@ -25,7 +25,7 @@ import static org.stone.shine.synchronizer.ThreadNodeState.SIGNAL;
  * @version 1.0
  */
 
-public abstract class ThreadWaitPool {
+public abstract class ThreadWaitPool<E> {
 
     //temp util ThreadNodeChain is stable
     private final ConcurrentLinkedDeque<ThreadNode> waitQueue = new ConcurrentLinkedDeque<>();
@@ -41,7 +41,7 @@ public abstract class ThreadWaitPool {
     private static ThreadNode wakeupOne(Iterator<ThreadNode> iterator, Object toState, Object nodeType) {
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            if (nodeType != null && !equals(node.getType(), nodeType)) continue;
+            if (nodeType != null && !equals(nodeType, node.getType())) continue;
             if (ThreadNodeUpdater.casNodeState(node, null, toState)) {
                 LockSupport.unpark(node.getThread());
                 return node;
@@ -55,7 +55,7 @@ public abstract class ThreadWaitPool {
         int count = 0;
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            if (nodeType != null && !equals(node.getType(), nodeType)) continue;
+            if (nodeType != null && !equals(nodeType, node.getType())) continue;
             if (ThreadNodeUpdater.casNodeState(node, null, toState)) {
                 LockSupport.unpark(node.getThread());
                 count++;
@@ -136,7 +136,7 @@ public abstract class ThreadWaitPool {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            if (equals(node.getType(), nodeType)) return true;
+            if (equals(nodeType, node.getType())) return true;
         }
         return false;
     }
@@ -186,7 +186,7 @@ public abstract class ThreadWaitPool {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            if (equals(node.getType(), nodeType) && node.getState() == null) count++;
+            if (equals(nodeType, node.getType()) && node.getState() == null) count++;
         }
         return count;
     }
@@ -198,7 +198,7 @@ public abstract class ThreadWaitPool {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
-            if (equals(node.getType(), nodeType) && node.getState() == null && node.getThread() != null)
+            if (equals(nodeType, node.getType()) && node.getState() == null && node.getThread() != null)
                 threadList.add(node.getThread());
         }
         return threadList;

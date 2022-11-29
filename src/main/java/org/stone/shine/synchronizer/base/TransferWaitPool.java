@@ -19,7 +19,7 @@ import java.util.Iterator;
  * @author Chris Liao
  * @version 1.0
  */
-public final class TransferWaitPool<E> extends ThreadWaitPool {
+public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     //Request
     private static final Object Node_Type_Get = new Object();
     //Data
@@ -92,8 +92,8 @@ public final class TransferWaitPool<E> extends ThreadWaitPool {
     //                                          3: get methods                                                        //
     //****************************************************************************************************************//
     public final E tryGet() {
-        ThreadNode node = this.getWokenUpNode(fair, ThreadNodeState.SIGNAL, Node_Type_Data);
-        return node != null ? (E) node.getValue() : null;
+        ThreadNode<E> node = this.getWokenUpNode(fair, ThreadNodeState.SIGNAL, Node_Type_Data);
+        return node != null ? node.getValue() : null;
     }
 
     public final E get(ThreadWaitConfig config) throws InterruptedException {
