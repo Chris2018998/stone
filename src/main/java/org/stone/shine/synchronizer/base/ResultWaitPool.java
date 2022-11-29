@@ -58,7 +58,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final Object doCall(ResultCall call, Object arg, ThreadWaitConfig config) throws Exception {
-        return this.doCall(call, arg, config, validator);
+        return this.doCall(call, arg, validator, config);
     }
 
     /**
@@ -67,12 +67,12 @@ public class ResultWaitPool extends ThreadWaitPool {
      *
      * @param call      executed in pool to get result
      * @param arg       call argument
-     * @param config    thread wait config
      * @param validator result call validator
+     * @param config    thread wait config
      * @return object, if call result check passed by validator
      * @throws Exception exception from call or InterruptedException after thread park
      */
-    public final Object doCall(ResultCall call, Object arg, ThreadWaitConfig config, ResultValidator validator) throws Exception {
+    public final Object doCall(ResultCall call, Object arg, ResultValidator validator, ThreadWaitConfig config) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("call can't be null");
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
