@@ -10,7 +10,7 @@
 package org.stone.shine.synchronizer.base;
 
 /**
- * Result Validator
+ * Wait result validator(call result or wait state)
  *
  * @author Chris Liao
  * @version 1.0

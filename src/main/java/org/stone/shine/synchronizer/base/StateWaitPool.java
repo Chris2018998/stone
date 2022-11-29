@@ -10,6 +10,7 @@
 package org.stone.shine.synchronizer.base;
 
 import org.stone.shine.synchronizer.*;
+import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
 
 /**
  * Expected state wait pool
@@ -20,17 +21,39 @@ import org.stone.shine.synchronizer.*;
 
 public class StateWaitPool extends ThreadWaitPool {
 
+    //call result validator(equals validator is default)
+    private final ResultValidator validator;
+
+    public StateWaitPool(ResultValidator validator) {
+        this.validator = validator;
+    }
+
+    public StateWaitPool(Object expectState) {
+        this.validator = new ResultEqualsValidator(expectState, false);
+    }
+
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
-     * @param expect if the got signal state equal the expected argument,then left from pool
      * @param config thread wait config
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final boolean doWait(Object expect, ThreadWaitConfig config) throws InterruptedException {
-        if (expect == null) throw new IllegalArgumentException("expect state can't be null");
+    public final Object doWait(ThreadWaitConfig config) throws InterruptedException {
+        return doWait(config, validator);
+    }
+
+    /**
+     * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
+     *
+     * @param validator result call validator
+     * @param config    thread wait config
+     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
+     * @throws InterruptedException caller waiting interrupted,then throws it
+     */
+    public final Object doWait(ThreadWaitConfig config, ResultValidator validator) throws InterruptedException {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
+        if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
         //1:create wait node and offer to wait queue
         ThreadNode node = config.getThreadNode();
@@ -50,12 +73,13 @@ public class StateWaitPool extends ThreadWaitPool {
                 Object state = node.getState();
 
                 //4.2: if got a signal then execute call
-                if (state != null && equals(state, expect)) return true;
+                if (state != null && validator.match(state)) return state;
 
                 //4.3: timeout test
                 if (parker.isTimeout()) {
                     //4.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
-                    if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT)) return false;
+                    if (ThreadNodeUpdater.casNodeState(node, state, ThreadNodeState.TIMEOUT))
+                        return validator.resultOnTimeout();
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);
                     Thread.yield();
