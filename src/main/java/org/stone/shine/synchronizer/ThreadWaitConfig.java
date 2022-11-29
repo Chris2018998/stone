@@ -27,8 +27,6 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     private Object nodeValue;
     //node object
     private ThreadNode threadNode;
-    //indicator of node whether park
-    private boolean nodeNeedPark = true;
     //need add into queue of wait pool
     private boolean outsideOfWaitPool = true;
 
@@ -71,21 +69,16 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              2: node methods(6)                                                //
+    //                                              2: node methods(5)                                                //
     //****************************************************************************************************************//
     public final void setNodeValue(Object nodeType, Object nodeValue) {
-        this.setNodeValue(nodeType, nodeValue, true);
-    }
-
-    public final void setNodeValue(Object nodeType, Object nodeValue, boolean needPark) {
         this.nodeType = nodeType;
         this.nodeValue = nodeValue;
-        this.nodeNeedPark = needPark;
     }
 
     public final ThreadNode getThreadNode() {
         if (threadNode != null) return threadNode;
-        return this.threadNode = new ThreadNode(nodeType, nodeValue, nodeNeedPark);
+        return this.threadNode = new ThreadNode(nodeType, nodeValue);
     }
 
     public final void setThreadNode(ThreadNode threadNode) {
