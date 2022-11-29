@@ -18,7 +18,7 @@ package org.stone.shine.synchronizer.base.validator;
 
 public class ResultClassTypeValidator extends BaseValidator {
 
-    private Class classType;
+    private final Class classType;
 
     public ResultClassTypeValidator(Class classType, Object resultOnTimeout) {
         super(resultOnTimeout);

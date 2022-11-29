@@ -17,7 +17,7 @@ package org.stone.shine.synchronizer.base.validator;
  */
 abstract class ObjectValidator extends BaseValidator {
 
-    protected Object compareValue;
+    protected final Object compareValue;
 
     ObjectValidator(Object compareValue, Object resultOnTimeout) {
         super(resultOnTimeout);

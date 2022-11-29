@@ -20,7 +20,7 @@ import java.util.Collection;
 
 abstract class CollectionValidator extends BaseValidator {
 
-    protected Collection collection;
+    protected final Collection collection;
 
     CollectionValidator(Collection collection, Object resultOnTimeout) {
         super(resultOnTimeout);
