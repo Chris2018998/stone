@@ -88,6 +88,7 @@ public abstract class ThreadWaitPool {
 
     protected final ThreadNode appendDataNode(Object type, Object value) {
         ThreadNode node = new ThreadNode(type, value, false);
+        node.setThread(null);
         waitQueue.offer(node);
         return node;
     }
