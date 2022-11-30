@@ -1,0 +1,97 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
+ */
+package org.stone.shine.synchronizer;
+
+/**
+ * Wait chain node
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+
+public final class ThreadNode<E> {
+    private Object type;//node type
+    private E value;//node value
+    private Thread thread;//node thread
+    private volatile Object state;//cas field
+
+    //chain info(unusable fields at present)
+    private volatile int emptyInd;
+    private volatile ThreadNode prev;
+    private volatile ThreadNode next;
+
+    ThreadNode(Object type, E value) {
+        this.type = type;
+        this.value = value;
+        this.thread = Thread.currentThread();
+    }
+
+    //****************************************************************************************************************//
+    //                                           set/get of chain node                                                //
+    //****************************************************************************************************************//
+    public final Object getType() {
+        return type;
+    }
+
+    public final void setType(Object type) {
+        this.type = type;
+    }
+
+    public final E getValue() {
+        return value;
+    }
+
+    public final void setValue(E value) {
+        this.value = value;
+    }
+
+    public final Thread getThread() {
+        return thread;
+    }
+
+    final void setThread(Thread thread) {
+        this.thread = thread;
+    }
+
+    public final Object getState() {
+        return state;
+    }
+
+    public final void setState(Object newState) {
+        this.state = newState;
+    }
+
+    //****************************************************************************************************************//
+    //                                          unusable fields                                                       //
+    //****************************************************************************************************************//
+    int getEmptyInd() {
+        return emptyInd;
+    }
+
+    void setEmptyInd(int emptyInd) {
+        this.emptyInd = emptyInd;
+    }
+
+    public ThreadNode getPrev() {
+        return prev;
+    }
+
+    public void setPrev(ThreadNode prev) {
+        this.prev = prev;
+    }
+
+    public ThreadNode getNext() {
+        return next;
+    }
+
+    public void setNext(ThreadNode next) {
+        this.next = next;
+    }
+}
