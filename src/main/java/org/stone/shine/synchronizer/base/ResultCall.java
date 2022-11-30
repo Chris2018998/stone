@@ -17,6 +17,6 @@ package org.stone.shine.synchronizer.base;
  */
 public interface ResultCall {
 
-    //do some thing
+    //do some thing(fill short or fast code,don't use thread block method in implementation)
     Object call(Object arg) throws Exception;
 }

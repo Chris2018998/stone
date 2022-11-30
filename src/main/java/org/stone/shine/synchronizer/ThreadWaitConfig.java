@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Thread wait control parameter for wait pool
+ * Thread wait control parameter for wait pool,which is once-only use object
  *
  * @author Chris Liao
  * @version 1.0
