@@ -23,11 +23,11 @@ public interface UnsafeAdaptor {
     //                                            field offset                                                        //
     //****************************************************************************************************************//
 
-    long objectFieldOffset(Field field) throws Exception;
+    long objectFieldOffset(Field field);
 
-    long staticFieldOffset(Field field) throws Exception;
+    long staticFieldOffset(Field field);
 
-    Object staticFieldBase(Field field) throws Exception;
+    Object staticFieldBase(Field field);
 
     //****************************************************************************************************************//
     //                                            volatile(int)                                                       //
