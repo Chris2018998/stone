@@ -9,7 +9,8 @@
  */
 package org.stone.shine.synchronizer.extend;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import org.stone.util.UnsafeAdaptor;
+import org.stone.util.UnsafeAdaptorFactory;
 
 /**
  * resource state,which be similar to atomic field in {@link java.util.concurrent.locks.AbstractQueuedSynchronizer}class
@@ -19,26 +20,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class ResourceAtomicState {
+    private final static UnsafeAdaptor U = UnsafeAdaptorFactory.get();
+    private final static long offset;
 
-    private final AtomicInteger atomicState;
+    static {
+        try {
+            offset = U.objectFieldOffset(ResourceAtomicState.class.getDeclaredField("state"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+
+    private volatile int state;
 
     public ResourceAtomicState() {
-        this(0);
     }
 
     public ResourceAtomicState(int state) {
-        this.atomicState = new AtomicInteger(state);
+        this.state = state;
     }
 
     public final int getState() {
-        return atomicState.get();
+        return state;
     }
 
     public final void setState(int newState) {
-        atomicState.set(newState);
+        U.putIntVolatile(this, offset, newState);
     }
 
     public final boolean compareAndSetState(int expect, int update) {
-        return atomicState.compareAndSet(expect, update);
+        return U.compareAndSwapInt(this, offset, expect, update);
     }
 }
