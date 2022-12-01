@@ -70,8 +70,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         return c + SHARED_UNIT;
     }
 
-    private static int decrementSharedPart(int c) {
-        return c - SHARED_UNIT;
+    private static int decrementSharedPart(int c, int size) {
+        return c - SHARED_UNIT * size;
     }
 
     //****************************************************************************************************************//
@@ -88,20 +88,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                      4: SharedHoldCounter Impl                                                 //                                                                                  //
-    //****************************************************************************************************************//
-    private static class SharedHoldCounter {
-        private int holdCount = 0;
-    }
-
-    private static class SharedHoldThreadLocal extends ThreadLocal<SharedHoldCounter> {
-        protected SharedHoldCounter initialValue() {
-            return new SharedHoldCounter();
-        }
-    }
-
-    //****************************************************************************************************************//
-    //                                      5: WriteLock/ReadLock Impl                                                //                                                                                  //
+    //                                      4: WriteLock/ReadLock Impl                                                //                                                                                  //
     //****************************************************************************************************************//
     private static class WriteLock extends BaseLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
@@ -128,7 +115,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     //****************************************************************************************************************//
-    //                                       6: Lock Action Impl                                                      //
+    //                                       5: Write Lock Action Impl                                                //
     //****************************************************************************************************************//
     private static class WriteLockAction extends LockAction {
         WriteLockAction(LockAtomicState lockState) {
@@ -174,15 +161,22 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
     }
 
+    //****************************************************************************************************************//
+    //                                       6: Read Lock Action Impl                                                 //
+    //****************************************************************************************************************//
+    private static class SharedHoldCounter {
+        private int holdCount = 0;
+    }
+
     private static class ReadLockAction extends LockAction {
         private final ResourceWaitPool waitPool;
         //cache shared hold count
-        private final SharedHoldThreadLocal sharedHoldThreadLocal;
+        private final ThreadLocal<SharedHoldCounter> sharedHoldThreadLocal;
 
         ReadLockAction(LockAtomicState lockState, ResourceWaitPool waitPool) {
             super(lockState);
             this.waitPool = waitPool;
-            this.sharedHoldThreadLocal = new SharedHoldThreadLocal();
+            this.sharedHoldThreadLocal = new ThreadLocal<>();
         }
 
         public int getHoldCount() {
@@ -201,6 +195,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
                     lockState.setState(state);
                     SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
+                    if (holdCounter == null) {
+                        holdCounter = new SharedHoldCounter();
+                        sharedHoldThreadLocal.set(holdCounter);
+                    }
+
                     holdCounter.holdCount++;
                     return true;
                 } else {
@@ -214,6 +213,10 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             if (sharedCount > MAX_COUNT) throw new Error("Maximum lock count exceeded");
             if (lockState.compareAndSetState(state, newState)) {
                 SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
+                if (holdCounter == null) {
+                    holdCounter = new SharedHoldCounter();
+                    sharedHoldThreadLocal.set(holdCounter);
+                }
                 holdCounter.holdCount++;
 
                 //first read head then wakeup others wait in share node
@@ -225,14 +228,16 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
         public boolean tryRelease(int size) {
             SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
-            if (--holdCounter.holdCount == 0) sharedHoldThreadLocal.remove();
+            if (holdCounter == null) return false;
+            holdCounter.holdCount -= size;
+            if (holdCounter.holdCount <= 0) sharedHoldThreadLocal.remove();
 
             int state, updState, readCount;
             do {
                 state = lockState.getState();
                 readCount = sharedCount(state);
                 if (readCount == 0) return false;
-                updState = decrementSharedPart(state);
+                updState = decrementSharedPart(state, size);
                 if (lockState.compareAndSetState(state, updState))
                     return true;
             } while (true);
