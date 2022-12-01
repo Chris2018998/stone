@@ -45,14 +45,14 @@ public final class ReentrantLock extends BaseLock {
         public Object call(Object size) {
             int state = lockState.getState();
             if (state == 0) {
-                if (lockState.compareAndSetState(0, 1)) {
+                if (lockState.compareAndSetState(0, (int) size)) {
                     lockState.setExclusiveOwnerThread(Thread.currentThread());
                     return true;
                 } else {
                     return false;
                 }
             } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
-                state++;
+                state += (int) size;
                 if (state <= 0) throw new Error("Maximum lock count exceeded");
                 lockState.setState(state);
                 return true;

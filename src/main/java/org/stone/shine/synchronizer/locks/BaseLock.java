@@ -389,7 +389,8 @@ class BaseLock implements Lock {
             super.appendNode(conditionNode);
 
             //3:full release(exclusive count should be zero):support full release for reentrant
-            lock.waitPool.release(lockAction, lockAction.getHoldCount());
+            int holdCount = lockAction.getHoldCount();
+            lock.waitPool.release(lockAction, holdCount);
 
             //4:execute condition waiting
             InterruptedException waitInterruptedException = null;
@@ -406,7 +407,7 @@ class BaseLock implements Lock {
             conditionNode.setType(TYPE_EXCLUSIVE);
             ThreadWaitConfig lockConfig = new ThreadWaitConfig();
             lockConfig.setThreadNode(conditionNode);
-            lock.waitPool.acquire(lockAction, 1, lockConfig);
+            lock.waitPool.acquire(lockAction, holdCount, lockConfig);//restore hold size before unlock
 
             //6:throw occurred interrupt exception on condition wait
             if (waitInterruptedException != null) throw waitInterruptedException;
