@@ -124,11 +124,11 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                         5: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
-    public Iterator<ThreadNode> ascendingIterator() {
+    public final Iterator<ThreadNode> ascendingIterator() {
         return waitQueue.iterator();
     }
 
-    public Iterator<ThreadNode> descendingIterator() {
+    public final Iterator<ThreadNode> descendingIterator() {
         return waitQueue.descendingIterator();
     }
 
@@ -141,7 +141,7 @@ public abstract class ThreadWaitPool<E> {
         return false;
     }
 
-    public boolean hasQueuedThreads() {
+    public final boolean hasQueuedThreads() {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
@@ -150,7 +150,7 @@ public abstract class ThreadWaitPool<E> {
         return false;
     }
 
-    public boolean hasQueuedThread(Thread thread) {
+    public final boolean hasQueuedThread(Thread thread) {
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             ThreadNode node = iterator.next();
@@ -159,7 +159,7 @@ public abstract class ThreadWaitPool<E> {
         return false;
     }
 
-    public int getQueueLength() {
+    public final int getQueueLength() {
         int count = 0;
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
@@ -169,7 +169,7 @@ public abstract class ThreadWaitPool<E> {
         return count;
     }
 
-    public Collection<Thread> getQueuedThreads() {
+    public final Collection<Thread> getQueuedThreads() {
         LinkedList<Thread> threadList = new LinkedList<>();
         Iterator<ThreadNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
