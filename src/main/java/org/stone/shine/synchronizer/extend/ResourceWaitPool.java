@@ -19,7 +19,7 @@ import static org.stone.shine.synchronizer.ThreadNodeState.SIGNAL;
 /**
  * resource wait pool
  *
- * @author Chris Liaos
+ * @author Chris Liao
  * @version 1.0
  */
 
