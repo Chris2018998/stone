@@ -27,9 +27,11 @@ public class StampedLock implements java.io.Serializable {
     private static final long SBITS = ~RBITS; // note overlap with ABITS
     // Initial value for lock state; avoid failure value zero
     private static final long ORIGIN = WBIT << 1;
+
     private final AtomicLongState lockState;
 
     public StampedLock() {
-        lockState = new AtomicLongState(ORIGIN);
+        this.lockState = new AtomicLongState(ORIGIN);
     }
+
 }
