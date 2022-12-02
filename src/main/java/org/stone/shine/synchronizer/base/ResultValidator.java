@@ -20,7 +20,7 @@ public interface ResultValidator {
     //return this value on wait timeout in pool
     Object resultOnTimeout();
 
-    //check result is whether isExpect expect
+    //check call result or state is whether expected
     boolean isExpect(Object result);
 
 }
