@@ -42,23 +42,22 @@ public class WriteLockMutiTimesLockBeforeAwaitTest extends WriteLockConditionTes
 
         //3:check mock thread
         LockSupport.parkNanos(ParkDelayNanos);
-        if (awaitThread.assertionError != null) TestUtil.assertError("test failed");
+        if (awaitThread.getAssertionError() != null) TestUtil.assertError("test failed");
     }
 
     private static class ReentrantLockConditionAwaitThread extends Thread {
-        protected Object result;
-        protected AssertionError assertionError;
-        protected InterruptedException interruptedException;
-        protected Lock lock;
-        protected Condition lockCondition;
+        private AssertionError assertionError;
+        private InterruptedException interruptedException;
+        private Lock lock;
+        private Condition lockCondition;
 
-        public ReentrantLockConditionAwaitThread(Lock lock, Condition lockCondition) {
+        ReentrantLockConditionAwaitThread(Lock lock, Condition lockCondition) {
             this.lock = lock;
             this.lockCondition = lockCondition;
         }
 
-        public Object getResult() {
-            return result;
+        AssertionError getAssertionError() {
+            return assertionError;
         }
 
         public InterruptedException getInterruptedException() {

@@ -42,23 +42,22 @@ public class ReentrantMutiTimesLockBeforeAwaitTest extends ReentrantLockConditio
 
         //3:check mock thread
         LockSupport.parkNanos(ParkDelayNanos);
-        if (awaitThread.assertionError != null) TestUtil.assertError("test failed");
+        if (awaitThread.getAssertionError() != null) TestUtil.assertError("test failed");
     }
 
     private static class ReentrantLockConditionAwaitThread extends Thread {
-        protected Object result;
-        protected AssertionError assertionError;
-        protected InterruptedException interruptedException;
+        private AssertionError assertionError;
+        private InterruptedException interruptedException;
         private ReentrantLock lock;
         private Condition condition;
 
-        public ReentrantLockConditionAwaitThread(ReentrantLock lock, Condition condition) {
+        ReentrantLockConditionAwaitThread(ReentrantLock lock, Condition condition) {
             this.lock = lock;
             this.condition = condition;
         }
 
-        public Object getResult() {
-            return result;
+        AssertionError getAssertionError() {
+            return assertionError;
         }
 
         public InterruptedException getInterruptedException() {
