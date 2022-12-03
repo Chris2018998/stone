@@ -29,7 +29,7 @@ public class LockConcurrentTest extends TestCase {
     public void test() throws Exception {
         //1: create lock and acquire in main thread
         ReentrantLock lock = new ReentrantLock();
-        long timePointToAWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        long timePointToAWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
 
         int size = 1000;
         LockTestThread[] testThread = new LockTestThread[size];
