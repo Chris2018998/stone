@@ -6,12 +6,12 @@
  */
 package org.stone.beeop.pool;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBook;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 /**
  * @author Chris.Liao

@@ -6,12 +6,12 @@
  */
 package org.stone.beeop.config;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBookFactory;
 import org.stone.beeop.pool.FastObjectPool;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 public class PassedConfigUnchangeableTest extends TestCase {
     private final int initSize = 5;

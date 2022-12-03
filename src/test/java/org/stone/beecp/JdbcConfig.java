@@ -6,7 +6,7 @@
  */
 package org.stone.beecp;
 
-import org.stone.test.TestException;
+import org.stone.base.TestException;
 
 import java.io.IOException;
 import java.io.InputStream;

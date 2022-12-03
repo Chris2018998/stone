@@ -6,10 +6,10 @@
  */
 package org.stone.beecp.config;
 
+import org.stone.base.TestCase;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beecp.pool.ConnectionPoolStatics;
-import org.stone.test.TestCase;
 
 import java.lang.reflect.Field;
 import java.net.URL;

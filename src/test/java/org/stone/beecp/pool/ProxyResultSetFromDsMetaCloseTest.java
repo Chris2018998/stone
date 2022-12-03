@@ -6,11 +6,11 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.JdbcConfig;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;

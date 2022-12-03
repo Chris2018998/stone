@@ -6,10 +6,10 @@
  */
 package org.stone.beeop.config;
 
+import org.stone.base.TestCase;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
 import org.stone.beeop.pool.ObjectPoolStatics;
-import org.stone.test.TestCase;
 
 import java.net.URL;
 

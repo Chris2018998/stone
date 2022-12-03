@@ -14,12 +14,12 @@ public class TestRunner {
     private static final String defaultFilename = "beeop/testCase.properties";
 
     public static void main(String[] ags) throws Throwable {
-        org.stone.test.TestRunner.main(new String[]{"beeop", defaultFilename});
+        org.stone.base.TestRunner.main(new String[]{"beeop", defaultFilename});
     }
 
     public void testRun() throws Throwable {
         long beginTime = System.currentTimeMillis();
-        org.stone.test.TestRunner.main(new String[]{"beeop", defaultFilename});
+        org.stone.base.TestRunner.main(new String[]{"beeop", defaultFilename});
         System.out.println("Took time:(" + (System.currentTimeMillis() - beginTime) + ")ms");
     }
 }

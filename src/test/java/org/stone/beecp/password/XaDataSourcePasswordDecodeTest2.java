@@ -6,13 +6,13 @@
  */
 package org.stone.beecp.password;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.RawXaConnectionFactory;
 import org.stone.beecp.mock.MockXaDataSource;
 import org.stone.beecp.pool.FastConnectionPool;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 public class XaDataSourcePasswordDecodeTest2 extends TestCase {
     private final String url = "jdbc:mock:test";

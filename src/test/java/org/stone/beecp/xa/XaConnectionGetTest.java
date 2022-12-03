@@ -6,10 +6,10 @@
  */
 package org.stone.beecp.xa;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import javax.sql.XAConnection;
 

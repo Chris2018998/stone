@@ -6,11 +6,11 @@
  */
 package org.stone.beeop.config;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
 import org.stone.beeop.object.JavaBook;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.lang.reflect.Field;
 import java.util.LinkedList;

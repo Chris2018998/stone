@@ -10,12 +10,12 @@ public class TestRunner {
     private static final String defaultFilename = "beecp/testCase.properties";
 
     public static void main(String[] ags) throws Throwable {
-        org.stone.test.TestRunner.main(new String[]{"beecp", defaultFilename});
+        org.stone.base.TestRunner.main(new String[]{"beecp", defaultFilename});
     }
 
     public void testRun() throws Throwable {
         long beginTime = System.currentTimeMillis();
-        org.stone.test.TestRunner.main(new String[]{"beecp", defaultFilename});
+        org.stone.base.TestRunner.main(new String[]{"beecp", defaultFilename});
         System.out.println("Took time:(" + (System.currentTimeMillis() - beginTime) + ")ms");
     }
 }
