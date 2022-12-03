@@ -9,9 +9,9 @@
  */
 package org.stone.shine.concurrent.synchronousQueue;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.SynchronousQueue;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 /**
  * synchronousQueue Test case

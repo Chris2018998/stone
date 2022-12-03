@@ -9,8 +9,8 @@
  */
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock;
 
+import org.stone.base.TestCase;
 import org.stone.shine.synchronizer.locks.ReentrantReadWriteLock;
-import org.stone.test.TestCase;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;

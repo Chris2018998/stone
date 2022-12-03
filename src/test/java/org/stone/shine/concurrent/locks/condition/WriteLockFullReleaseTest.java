@@ -9,7 +9,7 @@
  */
 package org.stone.shine.concurrent.locks.condition;
 
-import org.stone.test.TestUtil;
+import org.stone.base.TestUtil;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;

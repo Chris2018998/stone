@@ -9,9 +9,9 @@
  */
 package org.stone.shine.concurrent.locks.reentrantLock;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.synchronizer.locks.ReentrantLock;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;

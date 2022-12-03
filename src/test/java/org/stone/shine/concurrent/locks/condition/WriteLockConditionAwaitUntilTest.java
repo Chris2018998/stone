@@ -9,8 +9,8 @@
  */
 package org.stone.shine.concurrent.locks.condition;
 
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantWriteLockConditionAwaitThread;
-import org.stone.test.TestUtil;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;

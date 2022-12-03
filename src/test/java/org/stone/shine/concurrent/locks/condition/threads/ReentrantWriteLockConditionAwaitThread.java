@@ -9,7 +9,7 @@
  */
 package org.stone.shine.concurrent.locks.condition.threads;
 
-import org.stone.test.TestUtil;
+import org.stone.base.TestUtil;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;

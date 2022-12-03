@@ -9,9 +9,9 @@
  */
 package org.stone.shine.concurrent.semaphore;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.Semaphore;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.lang.reflect.Method;
 

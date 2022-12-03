@@ -9,8 +9,8 @@
  */
 package org.stone.shine.concurrent.locks.condition;
 
+import org.stone.base.TestUtil;
 import org.stone.shine.synchronizer.locks.ReentrantLock;
-import org.stone.test.TestUtil;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.LockSupport;

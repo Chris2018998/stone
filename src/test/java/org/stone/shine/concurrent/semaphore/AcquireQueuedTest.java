@@ -9,15 +9,14 @@
  */
 package org.stone.shine.concurrent.semaphore;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.Semaphore;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeoutNanos;
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 /**
  * Semaphore Test case

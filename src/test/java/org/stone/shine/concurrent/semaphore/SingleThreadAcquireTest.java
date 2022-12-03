@@ -9,9 +9,9 @@
  */
 package org.stone.shine.concurrent.semaphore;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.Semaphore;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;
