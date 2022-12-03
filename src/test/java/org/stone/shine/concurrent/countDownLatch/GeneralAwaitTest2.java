@@ -9,11 +9,11 @@
  */
 package org.stone.shine.concurrent.countDownLatch;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.CountDownLatch;
 import org.stone.shine.concurrent.countDownLatch.threads.CountDownThread;
 import org.stone.shine.concurrent.countDownLatch.threads.GeneralAwaitThread;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;

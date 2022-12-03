@@ -9,9 +9,9 @@
  */
 package org.stone.shine.concurrent.concurrentLinkedQueue;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.ConcurrentLinkedQueue;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.util.Iterator;
 

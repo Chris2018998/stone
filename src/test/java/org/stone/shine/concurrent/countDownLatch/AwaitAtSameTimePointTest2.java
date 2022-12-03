@@ -9,12 +9,12 @@
  */
 package org.stone.shine.concurrent.countDownLatch;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.CountDownLatch;
 import org.stone.shine.concurrent.countDownLatch.threads.CountDownThread;
 import org.stone.shine.concurrent.countDownLatch.threads.SameTimePointToAwaitThread;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;

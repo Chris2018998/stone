@@ -9,8 +9,8 @@
  */
 package org.stone.shine.concurrent.linkedTransferQueue;
 
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.OfferThread;
-import org.stone.test.TestUtil;
 
 import java.util.concurrent.locks.LockSupport;
 

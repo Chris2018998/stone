@@ -9,11 +9,11 @@
  */
 package org.stone.shine.concurrent.countDownLatch;
 
+import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.CountDownLatch;
 import org.stone.shine.concurrent.countDownLatch.threads.CountDownThread;
 import org.stone.shine.concurrent.countDownLatch.threads.GeneralAwaitThread;
-import org.stone.test.TestCase;
-import org.stone.test.TestUtil;
 
 /**
  * 1001 Threads to await for one count value
@@ -23,10 +23,11 @@ import org.stone.test.TestUtil;
  */
 public class OneCountAwaitTest extends TestCase {
 
-    public static void main(String[]atgs)throws Exception{
+    public static void main(String[] atgs) throws Exception {
         OneCountAwaitTest test = new OneCountAwaitTest();
         test.test();
     }
+
     public void test() throws Exception {
         int count = 1;
         CountDownLatch latch = new CountDownLatch(count);
