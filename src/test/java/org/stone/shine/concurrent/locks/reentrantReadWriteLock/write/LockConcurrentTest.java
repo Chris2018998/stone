@@ -30,7 +30,7 @@ public class LockConcurrentTest extends TestCase {
     public void test() throws Exception {
         //1: create writeLock and acquire in main thread
         Lock lock = new ReentrantReadWriteLock().writeLock();
-        long timePointToAWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        long timePointToAWait = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
 
         int size = 1000;
         LockTestThread[] testThread = new LockTestThread[size];
