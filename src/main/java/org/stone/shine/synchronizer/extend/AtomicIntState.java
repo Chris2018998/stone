@@ -9,8 +9,8 @@
  */
 package org.stone.shine.synchronizer.extend;
 
-import org.stone.util.UnsafeAdaptor;
-import org.stone.util.UnsafeAdaptorFactory;
+import org.stone.util.atomic.UnsafeAdaptor;
+import org.stone.util.atomic.UnsafeAdaptorFactory;
 
 /**
  * resource state,which be similar to atomic field in {@link java.util.concurrent.locks.AbstractQueuedSynchronizer}class
