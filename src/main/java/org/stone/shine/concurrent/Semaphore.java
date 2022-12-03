@@ -10,8 +10,8 @@
 package org.stone.shine.concurrent;
 
 import org.stone.shine.synchronizer.ThreadWaitConfig;
+import org.stone.shine.synchronizer.extend.AtomicIntState;
 import org.stone.shine.synchronizer.extend.ResourceAction;
-import org.stone.shine.synchronizer.extend.ResourceAtomicState;
 import org.stone.shine.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ public class Semaphore {
     //permit acquisition action driven by wait pool
     private final ResourceAction permitAction;
     //permit size
-    private final ResourceAtomicState permitSize;
+    private final AtomicIntState permitSize;
 
     /**
      * Creates a {@code Semaphore} with the given number of
@@ -59,7 +59,7 @@ public class Semaphore {
     public Semaphore(int permits, boolean fair) {
         if (permits <= 0) throw new IllegalArgumentException("permits <= 0");
         this.waitPool = new ResourceWaitPool(fair);
-        this.permitSize = new ResourceAtomicState(permits);
+        this.permitSize = new AtomicIntState(permits);
         this.permitAction = new PermitResourceAction(permitSize);
     }
 
@@ -506,9 +506,9 @@ public class Semaphore {
 
     //Permit Action driven by wait pool
     private static class PermitResourceAction extends ResourceAction {
-        private final ResourceAtomicState permitSize;
+        private final AtomicIntState permitSize;
 
-        PermitResourceAction(ResourceAtomicState permitSize) {
+        PermitResourceAction(AtomicIntState permitSize) {
             this.permitSize = permitSize;
         }
 

@@ -9,8 +9,8 @@
  */
 package org.stone.shine.concurrent;
 
-import org.stone.util.UnsafeAdaptor;
-import org.stone.util.UnsafeAdaptorFactory;
+import org.stone.util.atomic.UnsafeAdaptor;
+import org.stone.util.atomic.UnsafeAdaptorFactory;
 
 import java.util.*;
 
