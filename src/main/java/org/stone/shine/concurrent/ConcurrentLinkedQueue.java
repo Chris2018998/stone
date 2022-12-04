@@ -78,8 +78,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
                 if (e == null) throw new NullPointerException();
                 Node<E> newNode = new Node<E>(e);
                 prevNode.next = newNode;
-                this.tail = newNode;
                 prevNode = newNode;
+                this.tail = newNode;
             }
         }
     }
