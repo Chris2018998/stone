@@ -20,11 +20,12 @@ import org.stone.util.atomic.UnsafeAdaptorFactory;
  */
 
 public class AtomicIntState {
-    private final static UnsafeAdaptor U = UnsafeAdaptorFactory.get();
     private final static long offset;
+    private final static UnsafeAdaptor U;
 
     static {
         try {
+            U = UnsafeAdaptorFactory.get();
             offset = U.objectFieldOffset(AtomicIntState.class.getDeclaredField("state"));
         } catch (Exception e) {
             throw new Error(e);
