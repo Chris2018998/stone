@@ -21,13 +21,13 @@ import java.lang.reflect.Field;
  */
 public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
 
-    private static final Unsafe u;
+    private static final Unsafe U;
 
     static {
         try {
             Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
             theUnsafe.setAccessible(true);
-            u = (Unsafe) theUnsafe.get(null);
+            U = (Unsafe) theUnsafe.get(null);
         } catch (Exception e) {
             throw new Error("Failed to get Unsafe", e);
         }
@@ -37,71 +37,71 @@ public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
     //                                            field offset                                                        //
     //****************************************************************************************************************//
     public final long objectFieldOffset(Field field) {
-        return u.objectFieldOffset(field);
+        return U.objectFieldOffset(field);
     }
 
     public final long staticFieldOffset(Field field) {
-        return u.staticFieldOffset(field);
+        return U.staticFieldOffset(field);
     }
 
     public final Object staticFieldBase(Field field) {
-        return u.staticFieldBase(field);
+        return U.staticFieldBase(field);
     }
 
     //****************************************************************************************************************//
     //                                            volatile(int)                                                       //
     //****************************************************************************************************************//
     public final int getIntVolatile(Object object, long offset) {
-        return u.getIntVolatile(object, offset);
+        return U.getIntVolatile(object, offset);
     }
 
     public final void putIntVolatile(Object object, long offset, int update) {
-        u.putIntVolatile(object, offset, update);
+        U.putIntVolatile(object, offset, update);
     }
 
     public final void putOrderedInt(Object object, long offset, int update) {
-        u.putOrderedInt(object, offset, update);
+        U.putOrderedInt(object, offset, update);
     }
 
     public final boolean compareAndSwapInt(Object object, long offset, int expect, int update) {
-        return u.compareAndSwapInt(object, offset, expect, update);
+        return U.compareAndSwapInt(object, offset, expect, update);
     }
 
     //****************************************************************************************************************//
     //                                            volatile(long)                                                      //
     //****************************************************************************************************************//
     public final long getLongVolatile(Object object, long offset) {
-        return u.getLongVolatile(object, offset);
+        return U.getLongVolatile(object, offset);
     }
 
     public final void putLongVolatile(Object object, long offset, long update) {
-        u.putLongVolatile(object, offset, update);
+        U.putLongVolatile(object, offset, update);
     }
 
     public final void putOrderedLong(Object object, long offset, long update) {
-        u.putOrderedLong(object, offset, update);
+        U.putOrderedLong(object, offset, update);
     }
 
     public final boolean compareAndSwapLong(Object object, long offset, long expect, long update) {
-        return u.compareAndSwapLong(object, offset, expect, update);
+        return U.compareAndSwapLong(object, offset, expect, update);
     }
 
     //****************************************************************************************************************//
     //                                            volatile(Object)                                                    //
     //****************************************************************************************************************//
     public final Object getObjectVolatile(Object object, long offset) {
-        return u.getObjectVolatile(object, offset);
+        return U.getObjectVolatile(object, offset);
     }
 
     public final void putObjectVolatile(Object object, long offset, Object update) {
-        u.putObjectVolatile(object, offset, update);
+        U.putObjectVolatile(object, offset, update);
     }
 
     public final void putOrderedObject(Object object, long offset, Object update) {
-        u.putOrderedObject(object, offset, update);
+        U.putOrderedObject(object, offset, update);
     }
 
     public final boolean compareAndSwapObject(Object object, long offset, Object expect, Object update) {
-        return u.compareAndSwapObject(object, offset, expect, update);
+        return U.compareAndSwapObject(object, offset, expect, update);
     }
 }

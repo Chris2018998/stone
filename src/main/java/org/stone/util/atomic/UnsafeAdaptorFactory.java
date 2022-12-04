@@ -43,7 +43,7 @@ public final class UnsafeAdaptorFactory {
         } catch (IllegalAccessException e) {
             throw new Error("Failed to create unsafe adaptor by class:" + adaptorImplClassName, e);
         } catch (ClassNotFoundException e) {
-            throw new Error("Not found to load Unsafe by class:" + adaptorImplClassName);
+            throw new Error("Not found unsafe adaptor class:" + adaptorImplClassName);
         }
     }
 
