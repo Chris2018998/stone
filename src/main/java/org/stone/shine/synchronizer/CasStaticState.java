@@ -17,9 +17,6 @@ package org.stone.shine.synchronizer;
  */
 public final class CasStaticState {
 
-    //****************************************************************************************************************//
-    //                                              1: thread node state(3)                                           //
-    //****************************************************************************************************************//
     //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
     public static final Object SIGNAL = new Object();
 
@@ -29,9 +26,7 @@ public final class CasStaticState {
     //Thread interrupted during waiting
     public static final Object INTERRUPTED = new Object();
 
-    //****************************************************************************************************************//
-    //                                              2: data node state(1)                                             //
-    //****************************************************************************************************************//
+    //node removed state
     public static final Object REMOVED = new Object();
 
 }
