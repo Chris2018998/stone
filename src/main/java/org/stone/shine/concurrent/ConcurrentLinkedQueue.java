@@ -9,10 +9,12 @@
  */
 package org.stone.shine.concurrent;
 
-import org.stone.util.atomic.UnsafeAdaptor;
-import org.stone.util.atomic.UnsafeAdaptorFactory;
+import org.stone.shine.synchronizer.CasNode;
 
 import java.util.*;
+
+import static org.stone.shine.synchronizer.CasNodeUpdater.*;
+import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
  * ConcurrentLinkedQueue,A FIFO unbounded queue impl based on linked nodes,the queue has a fixed head node and remain a tail node(not physical remove)
@@ -43,76 +45,28 @@ import java.util.*;
  */
 
 public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<E>, java.io.Serializable {
-    //***************************************************************************************************************//
-    //                                           1: CAS Chain info                                                   //
-    //***************************************************************************************************************//
-    private final static UnsafeAdaptor U;
-    private final static long itemOffSet;
-    private final static long nextOffSet;
-
-    static {
-        try {
-            U = UnsafeAdaptorFactory.get();
-            nextOffSet = U.objectFieldOffset(Node.class.getDeclaredField("next"));
-            itemOffSet = U.objectFieldOffset(Node.class.getDeclaredField("item"));
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
-    private transient final Node<E> head = new Node<E>(null);//fixed head
-    private transient volatile Node<E> tail = new Node<E>(null);
+    private transient final CasNode head = new CasNode(null);//fixed head
+    private transient volatile CasNode tail = new CasNode(null);
 
     //***************************************************************************************************************//
-    //                                          2: Constructors                                                      //
+    //                                          1: Constructors                                                      //
     //***************************************************************************************************************//
     public ConcurrentLinkedQueue() {
-        this.head.next = tail;
+        this.head.setNext(tail);
     }
 
     public ConcurrentLinkedQueue(Collection<? extends E> c) {
-        this.head.next = tail;
+        this.head.setNext(tail);
         if (c != null && c.size() > 0) {
-            Node<E> prevNode = head;
+            CasNode prevNode = head;
             for (E e : c) {
                 if (e == null) throw new NullPointerException();
-                Node<E> newNode = new Node<E>(e);
-                prevNode.next = newNode;
+                CasNode newNode = new CasNode(e);
+                prevNode.setNext(newNode);
                 prevNode = newNode;
                 this.tail = newNode;
             }
         }
-    }
-
-    //***************************************************************************************************************//
-    //                                          3: CAS Methods                                                       //
-    //***************************************************************************************************************//
-    //logic remove node
-    private static boolean casItemToNull(Node node, Object cmp) {
-        return U.compareAndSwapObject(node, itemOffSet, cmp, null);
-    }
-
-    private static boolean casTailNext(Node t, Node newNext) {
-        return U.compareAndSwapObject(t, nextOffSet, null, newNext);
-    }
-
-    //******************************************** link to next ******************************************************//
-    //link next to target node
-    private static void linkNextTo(Node startNode, Node endNode) {
-        Node curNext = startNode.next;
-
-        //startNode.next -----> endNode
-        if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
-    }
-
-    //physical remove skip node and link to its next node(if its next is null,then link to it)
-    private static void linkNextToSkip(Node startNode, Node skipNode) {
-        Node next = skipNode.next;
-        Node endNode = next != null ? next : skipNode;
-
-        //startNode.next -----> endNode
-        Node curNext = startNode.next;
-        if (curNext != endNode) U.compareAndSwapObject(startNode, nextOffSet, curNext, endNode);
     }
 
     //***************************************************************************************************************//
@@ -140,12 +94,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
-        final Node<E> node = new Node<E>(e);
-        Node<E> t;
+        final CasNode node = new CasNode(e);
+        CasNode t;
 
         do {
             t = tail;//tail always exists
-            if (t.next == null && casTailNext(t, node)) {//append to tail.next
+            if (t.getNext() == null && casNext(t, null, node)) {//append to tail.next
                 this.tail = node;
                 return true;
             }
@@ -159,12 +113,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      * @return the head of this queue, or {@code null} if this queue is empty
      */
     public E poll() {
-        Node<E> prevNode = head;
-        for (Node<E> curNode = prevNode.next; curNode != null; prevNode = curNode, curNode = curNode.next) {
-            E item = curNode.item;
-            if (item != null && casItemToNull(curNode, item)) {//failed means the node has removed by other thread
+        CasNode prevNode = head;
+        for (CasNode curNode = prevNode.getNext(); curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+            Object item = curNode.getState();
+            if (item != REMOVED && logicRemove(curNode)) {//failed means the node has removed by other thread
                 linkNextToSkip(head, curNode);
-                return item;
+                return (E) item;
             }
         }//loop for
 
@@ -180,12 +134,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      * @return the head of this queue, or {@code null} if this queue is empty
      */
     public E peek() {
-        Node<E> prevNode = head;
-        for (Node<E> curNode = prevNode.next; curNode != null; prevNode = curNode, curNode = curNode.next) {
-            E item = curNode.item;
-            if (item != null) {
-                linkNextTo(head, curNode);
-                return item;
+        CasNode prevNode = head;
+        for (CasNode curNode = prevNode.getNext(); curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+            Object item = curNode.getState();
+            if (item != REMOVED) {//failed means the node has removed by other thread
+                linkNextToSkip(head, curNode);
+                return (E) item;
             }
         }//loop for
 
@@ -210,8 +164,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      */
     public int size() {
         int size = 0;
-        for (Node node = head.next; node != null; node = node.next) {
-            if (node.item != null) size++;
+        for (CasNode node = head.getNext(); node != null; node = node.getNext()) {
+            if (node.getState() != REMOVED) size++;
             if (size == Integer.MAX_VALUE) break;
         }
         return size;
@@ -223,9 +177,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      */
     public boolean contains(Object o) {
         if (o == null) return false;
-        for (Node<E> node = head.next; node != null; node = node.next) {
-            E item = node.item;
-            if (item != null && (item == o || o.equals(item))) return true;
+        for (CasNode node = head.getNext(); node != null; node = node.getNext()) {
+            Object item = node.getState();
+            if (item != REMOVED && (item == o || o.equals(item))) return true;
         }
         return false;
     }
@@ -245,17 +199,18 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
     public boolean remove(Object o) {
         if (o == null) throw new NullPointerException();
 
-        Node<E> segStartNode = null;//segment start node(reduce next cas)
+        CasNode segStartNode = null;//segment start node(reduce next cas)
         boolean find = false, removed = false;
-        for (Node<E> prevNode = head, curNode = prevNode.next; curNode != null; prevNode = curNode, curNode = curNode.next) {
-            E item = curNode.item;
-            if (item == null) {
+        for (CasNode prevNode = head, curNode = prevNode.getNext(); curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+            Object item = curNode.getState();
+
+            if (item == REMOVED) {
                 if (segStartNode == null) segStartNode = prevNode;//mark as start node of a segment
             } else {
                 if (item == o || item.equals(o)) {
                     find = true;
                     //false,logic removed or polled by other thread,whether true or false,the current node has become invalid,so need physical remove from chain
-                    removed = casItemToNull(curNode, item);//logic remove
+                    removed = logicRemove(curNode);//logic remove
                 }
 
                 if (segStartNode != null) {//end of a segment
@@ -293,9 +248,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      */
     public Object[] toArray() {
         List elementList = new LinkedList();
-        for (Node node = head.next; node != null; node = node.next) {
-            Object item = node.item;
-            if (item != null) elementList.add(item);
+        for (CasNode node = head.getNext(); node != null; node = node.getNext()) {
+            Object item = node.getState();
+            if (item != REMOVED) elementList.add(item);
         }
         return elementList.toArray();
     }
@@ -339,9 +294,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
         if (a == null) throw new NullPointerException();
         int i = 0;
         int arraySize = a.length;
-        for (Node node = head.next; node != null; node = node.next) {
-            Object item = node.item;
-            if (item != null) a[i++] = (T) node.item;
+        for (CasNode node = head.getNext(); node != null; node = node.getNext()) {
+            Object item = node.getState();
+            if (item != REMOVED) a[i++] = (T) item;
             if (i == arraySize) break;
         }
         return a;
@@ -360,7 +315,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
     //***************************************************************************************************************//
     private static class Node<E> {
         volatile E item;//null means abandon and need remove from chain(exclude tail)
-        volatile Node<E> next;
+        volatile CasNode next;
         E iteratorItem;//next call in iterator,then copy item to this field
 
         Node(E e) {
@@ -369,8 +324,8 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
     }
 
     private class Itr implements Iterator<E> {
-        private Node<E> curNode;
-        private Node<E> startNode = head;
+        private CasNode curNode;
+        private CasNode startNode = head;
 
         public boolean hasNext() {
             curNode = getNextNode(startNode);
@@ -380,25 +335,33 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
 
         public E next() {
             if (curNode == null) throw new NoSuchElementException();
-            if (curNode.item == null) throw new ConcurrentModificationException();
-            return curNode.iteratorItem;
+            if (curNode.getState() == REMOVED) throw new ConcurrentModificationException();
+
+            //@todo
+            return null;
+            //return curNode.iteratorItem;
         }
 
         public void remove() {
             if (curNode == null) throw new NoSuchElementException();
-            casItemToNull(curNode, curNode.iteratorItem);
+            logicRemove(curNode);
         }
 
-        private Node<E> getNextNode(Node<E> startNode) {
+        private CasNode getNextNode(CasNode startNode) {
             if (startNode == null) return null;
 
-            Node<E> segStartNode = null;//segment start node
-            for (Node<E> prevNode = startNode, curNode = prevNode.next; curNode != null; prevNode = curNode, curNode = curNode.next) {
-                E item = curNode.item;
-                if (item == null) {
+            CasNode segStartNode = null;//segment start node
+            for (CasNode prevNode = startNode, curNode = prevNode.getNext(); curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+                Object item = curNode.getState();
+
+                if (item == REMOVED) {
                     if (segStartNode == null) segStartNode = prevNode;//mark as start node of a segment
                 } else {//end a segment
-                    curNode.iteratorItem = item;
+                    // curNode.iteratorItem = item;
+                    //@todo
+
+                    //return curNode.iteratorItem;
+
                     if (segStartNode != null) linkNextTo(segStartNode, curNode);//link next to current node
 
                     return curNode;
