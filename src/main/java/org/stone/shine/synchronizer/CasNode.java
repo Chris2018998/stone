@@ -1,0 +1,98 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
+ */
+package org.stone.shine.synchronizer;
+
+/**
+ * common cas node class
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+
+public final class CasNode<E> {
+    private Object type;//node type
+    private E value;//node value
+    private Thread thread;//node thread
+    private volatile Object state;//cas field
+
+    //chain info(unusable fields at present)
+    private volatile CasNode prev;
+    private volatile CasNode next;
+
+    //****************************************************************************************************************//
+    //                                                1: constructor(2)                                               //
+    //****************************************************************************************************************//
+    //A: data node work in outside queue or chain(for example:ConcurrentLinkedQueue,ConcurrentLinkedDeque)
+    public CasNode(Object state) {
+        this.state = state;
+    }
+
+    //B: thread node in syn chain/queue(work inside the package of synchronizer)
+    CasNode(Object type, E value) {
+        this.type = type;
+        this.value = value;
+        this.thread = Thread.currentThread();
+    }
+
+    //****************************************************************************************************************//
+    //                                           set/get of chain node                                                //
+    //****************************************************************************************************************//
+    public final Object getType() {
+        return type;
+    }
+
+    public final void setType(Object type) {
+        this.type = type;
+    }
+
+    public final E getValue() {
+        return value;
+    }
+
+    public final void setValue(E value) {
+        this.value = value;
+    }
+
+    public final Thread getThread() {
+        return thread;
+    }
+
+    final void setThread(Thread thread) {
+        this.thread = thread;
+    }
+
+    public final Object getState() {
+        return state;
+    }
+
+    public final void setState(Object newState) {
+        this.state = newState;
+    }
+
+    //****************************************************************************************************************//
+    //                                          unusable fields                                                       //
+    //****************************************************************************************************************//
+
+    public CasNode getPrev() {
+        return prev;
+    }
+
+    public void setPrev(CasNode prev) {
+        this.prev = prev;
+    }
+
+    public CasNode getNext() {
+        return next;
+    }
+
+    public void setNext(CasNode next) {
+        this.next = next;
+    }
+}
