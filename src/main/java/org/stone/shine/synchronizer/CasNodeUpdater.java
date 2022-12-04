@@ -14,7 +14,7 @@ import org.stone.util.atomic.UnsafeAdaptorFactory;
 
 import java.lang.reflect.Field;
 
-import static org.stone.shine.synchronizer.CasNodeState.REMOVED;
+import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
  * node cas updater

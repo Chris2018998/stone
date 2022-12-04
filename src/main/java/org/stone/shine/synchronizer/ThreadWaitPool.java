@@ -15,8 +15,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.synchronizer.CasNodeState.INTERRUPTED;
-import static org.stone.shine.synchronizer.CasNodeState.SIGNAL;
+import static org.stone.shine.synchronizer.CasStaticState.INTERRUPTED;
+import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 /**
  * Base Wait-Wakeup Pool

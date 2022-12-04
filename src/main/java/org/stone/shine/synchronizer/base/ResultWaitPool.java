@@ -110,7 +110,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 //6.3:timeout test
                 if (parker.isTimeout()) {
                     //6.3.1:try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
-                    if (CasNodeUpdater.casNodeState(node, state, CasNodeState.TIMEOUT))
+                    if (CasNodeUpdater.casNodeState(node, state, CasStaticState.TIMEOUT))
                         return validator.resultOnTimeout();
                 } else if (state != null) {//6.4:reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);

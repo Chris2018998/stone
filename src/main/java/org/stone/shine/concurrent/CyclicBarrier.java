@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.stone.shine.synchronizer.CasNodeState.SIGNAL;
+import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 /**
  * The class instance can be seemed as a flight,when passengers are full then begin a happy fly trip to a place(then

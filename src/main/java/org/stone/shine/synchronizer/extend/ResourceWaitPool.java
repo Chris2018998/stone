@@ -14,7 +14,7 @@ import org.stone.shine.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
 
-import static org.stone.shine.synchronizer.CasNodeState.SIGNAL;
+import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 /**
  * resource wait pool
