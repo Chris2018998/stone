@@ -19,25 +19,25 @@ import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 /**
  * ConcurrentLinkedQueue,A FIFO unbounded queue impl based on linked nodes,the queue has a fixed head node and remain a tail node(not physical remove)
  * <p>
- * 1: snapshot at queue creation(its shape like two sticks,so we call it Two-knot-Stick queue:双节棍队列)
+ * 1: snapshot at queue creation
  * ({@code
- * +----------+                 +-----------+
- * | head(null)| next --------> | tail(null)| next --------> null
- * +-----------+                +-----------+
+ * +----------+
+ * | head(null)| next --------> null
+ * +-----------+
  * })
  * <p>
  * 2:snapshot at queue offer one element(new tail node box contains element item)
  * ({@code
- * +-----------+                +-------------+                  +---------------+
- * | head(null) | next -------->|old tail(null)| next -------->  |new tail(item)| next --------> null
- * +-----------+                +-------------+                  +---------------+
+ * +-----------+                   +---------------+
+ * | head(null) | next -------->  |new tail(item)  | next --------> null
+ * +-----------+                  +---------------+
  * })
  * <p>
  * 3:snapshot at queue poll tail node (just clear node item and set to null,then kept as empty box node)
  * ({@code
- * +-----------+                  +---------------+
- * | head(null) | next  -------->  |new tail(null) | next --------> null
- * +-----------+                   +---------------+
+ * +----------+
+ * | head(null)| next --------> null
+ * +-----------+
  * })
  *
  * @author Chris Liao
@@ -46,17 +46,15 @@ import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<E>, java.io.Serializable {
     private transient final CasNode head = new CasNode(null);//fixed head
-    private transient volatile CasNode tail = new CasNode(null);
+    private transient volatile CasNode tail = head;
 
     //***************************************************************************************************************//
     //                                          1: Constructors                                                      //
     //***************************************************************************************************************//
     public ConcurrentLinkedQueue() {
-        this.head.setNext(tail);
     }
 
     public ConcurrentLinkedQueue(Collection<? extends E> c) {
-        this.head.setNext(tail);
         if (c != null && c.size() > 0) {
             CasNode prevNode = head;
             for (E e : c) {
@@ -113,18 +111,30 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      * @return the head of this queue, or {@code null} if this queue is empty
      */
     public E poll() {
-        CasNode prevNode = head;
-        for (CasNode curNode = prevNode.getNext(); curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+        CasNode curNode = head.getNext();
+        if (curNode == null) return null;
+
+        do {
+            //1: node cas check
             Object item = curNode.getState();
-            if (item != REMOVED && logicRemove(curNode)) {//failed means the node has removed by other thread
-                linkNextToSkip(head, curNode);
+            if (item != REMOVED && casNodeState(curNode, item, REMOVED)) {//logic removed success
+                CasNode oldFirstNode = head.getNext();
+                CasNode newFirstNode = curNode.getNext();
+                if (casNext(head, oldFirstNode, newFirstNode) && newFirstNode == null)
+                    this.tail = head;
                 return (E) item;
             }
-        }//loop for
 
-        //poll fail,then try to clean logic deleted nodes between head and prevNode(the last node in loop)
-        linkNextToSkip(head, prevNode);
-        return null;
+            //2: chain last node check
+            CasNode nextNode = curNode.getNext();
+            if (nextNode == null) {//reach last node
+                CasNode oldFirstNode = head.getNext();
+                if (casNext(head, oldFirstNode, null))
+                    this.tail = head;
+                return null;
+            }
+            curNode = nextNode;
+        } while (true);
     }
 
     /**
@@ -134,18 +144,28 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
      * @return the head of this queue, or {@code null} if this queue is empty
      */
     public E peek() {
-        CasNode prevNode = head;
-        for (CasNode curNode = prevNode.getNext(); curNode != null; prevNode = curNode, curNode = curNode.getNext()) {
+        CasNode curNode = head.getNext();
+        if (curNode == null) return null;
+
+        do {
+            //1: node cas check
             Object item = curNode.getState();
-            if (item != REMOVED) {//failed means the node has removed by other thread
-                linkNextToSkip(head, curNode);
+            if (item != REMOVED) {//logic removed success
+                CasNode oldFirstNode = head.getNext();
+                if (oldFirstNode != curNode) casNext(head, oldFirstNode, curNode);
                 return (E) item;
             }
-        }//loop for
 
-        //peek fail,try link to last node in loop
-        linkNextToSkip(head, prevNode);
-        return null;
+            //2: chain last node check
+            CasNode nextNode = curNode.getNext();
+            if (nextNode == null) {//reach last node
+                CasNode oldFirstNode = head.getNext();
+                if (casNext(head, oldFirstNode, null))
+                    this.tail = head;
+                return null;
+            }
+            curNode = nextNode;
+        } while (true);
     }
 
     //***************************************************************************************************************//
