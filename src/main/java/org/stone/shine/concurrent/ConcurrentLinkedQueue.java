@@ -249,7 +249,6 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
         }//loop
 
         if (segStartNode != null) linkNextToSkip(segStartNode, tail);//link to tail
-
         return false;
     }
 
@@ -329,20 +328,9 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E> implements Queue<
         return new Itr();
     }
 
-
-    //***************************************************************************************************************//
-    //                                          6: Inner class                                                       //
-    //***************************************************************************************************************//
-    private static class Node<E> {
-        volatile E item;//null means abandon and need remove from chain(exclude tail)
-        volatile CasNode next;
-        E iteratorItem;//next call in iterator,then copy item to this field
-
-        Node(E e) {
-            this.item = e;
-        }
-    }
-
+    //****************************************************************************************************************//
+    //                                          6: Iterator impl                                                      //
+    //****************************************************************************************************************//
     private class Itr implements Iterator<E> {
         private CasNode curNode;
         private CasNode startNode = head;
