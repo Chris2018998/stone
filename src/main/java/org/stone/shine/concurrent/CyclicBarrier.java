@@ -73,8 +73,7 @@ public final class CyclicBarrier {
 
     //result call wait pool
     private ResultWaitPool waitPool;
-    private RoomWaitAction roomWaitAction;
-    private HallWaitAction hallWaitAction;
+    private FlightWaitAction flightWaitAction;
 
     //****************************************************************************************************************//
     //                                         1:constructors                                                         //
@@ -90,9 +89,9 @@ public final class CyclicBarrier {
         this.flightNo = System.currentTimeMillis();
         this.flightState = new AtomicInteger(State_Open);
         this.passengerCount = new AtomicInteger(0);
+
         this.waitPool = new ResultWaitPool();
-        this.roomWaitAction = new RoomWaitAction(seatSize, passengerCount);
-        this.hallWaitAction = new HallWaitAction(passengerCount);
+        this.flightWaitAction = new FlightWaitAction(seatSize, passengerCount);
     }
 
     //****************************************************************************************************************//
@@ -161,13 +160,11 @@ public final class CyclicBarrier {
                 }
                 //assume flight arrival
                 flightState.set(State_Arrived);
-                //set flight to new state(next trip begin)
-                this.passengerCount.set(0);
+                this.passengerCount.set(-1);
 
                 //new flight set:begin
                 this.passengerCount = new AtomicInteger(0);
-                this.roomWaitAction = new RoomWaitAction(seatSize, passengerCount);
-                this.hallWaitAction = new HallWaitAction(passengerCount);
+                this.flightWaitAction = new FlightWaitAction(seatSize, passengerCount);
                 this.flightState.set(State_Open);
                 //new flight set:end
 
@@ -178,11 +175,9 @@ public final class CyclicBarrier {
             //3:Waiting for wakeup
             try {
                 //parameter zero means that passengers is in waiting hall(no ticket)
-                Object callParameter = seatNo > 0 ? flightNo : 0;
-                config.setNodeValue(callParameter, seatNo);
-                ResultCall call = seatNo > 0 ? roomWaitAction : hallWaitAction;
-
-                if (!(boolean) waitPool.doCall(call, callParameter, config))
+                long curFlightNo = seatNo > 0 ? flightNo : 0;
+                config.setNodeValue(curFlightNo, seatNo);
+                if (!(boolean) waitPool.doCall(this.flightWaitAction, seatNo, config))
                     throw new TimeoutException();
 
                 if (seatNo > 0) {
@@ -194,10 +189,10 @@ public final class CyclicBarrier {
                     int state = flightState.get();
                     if (state == State_Flying || state == State_Arrived) return seatNo;
                     if (state == State_Boarding && flightState.compareAndSet(state, State_Cancelled)) {
+                        this.passengerCount.set(-1);
                         //new flight set:begin
                         this.passengerCount = new AtomicInteger(0);
-                        this.roomWaitAction = new RoomWaitAction(seatSize, passengerCount);
-                        this.hallWaitAction = new HallWaitAction(passengerCount);
+                        this.flightWaitAction = new FlightWaitAction(seatSize, passengerCount);
                         //new flight set:end
                         waitPool.wakeupAll();//notify all that the flight has cancelled
                     }
@@ -252,30 +247,20 @@ public final class CyclicBarrier {
     //****************************************************************************************************************//
     //                                          4: ResultCall Implement                                               //
     //****************************************************************************************************************//
-    private class RoomWaitAction implements ResultCall {//for board passenger
+    private class FlightWaitAction implements ResultCall {//for board passenger
         private final int seatSize;
         private final AtomicInteger passengerCount;
 
-        RoomWaitAction(int seatSize, AtomicInteger passengerCount) {
+        FlightWaitAction(int seatSize, AtomicInteger passengerCount) {
             this.seatSize = seatSize;
             this.passengerCount = passengerCount;
         }
 
         public Object call(Object arg) {
             int count = passengerCount.get();
-            return seatSize == count || count == 0;//full seated or flight reset
-        }
-    }
+            if (count < 0) return true;//flight has reset
 
-    private class HallWaitAction implements ResultCall {//for hall wait passenger
-        private final AtomicInteger passengerCount;
-
-        HallWaitAction(AtomicInteger passengerCount) {
-            this.passengerCount = passengerCount;
-        }
-
-        public Object call(Object arg) {
-            return passengerCount.get() == 0;//flight has reset
+            return seatSize == count;//full seated
         }
     }
 }
