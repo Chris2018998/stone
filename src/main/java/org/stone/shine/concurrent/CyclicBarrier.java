@@ -13,7 +13,6 @@ import org.stone.shine.synchronizer.ThreadWaitConfig;
 import org.stone.shine.synchronizer.base.ResultCall;
 import org.stone.shine.synchronizer.base.ResultWaitPool;
 
-import java.util.Objects;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -48,7 +47,7 @@ import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
  * @version 1.0
  */
 
-public final class CyclicBarrier implements ResultCall {
+public final class CyclicBarrier {
     //A new flight is ready to welcome passengers(door open)
     private static final int State_Open = 1;
     //Flight is in boarding(when the first ticket was sold）
@@ -74,6 +73,8 @@ public final class CyclicBarrier implements ResultCall {
 
     //result call wait pool
     private ResultWaitPool waitPool;
+    private RoomWaitAction roomWaitAction;
+    private HallWaitAction hallWaitAction;
 
     //****************************************************************************************************************//
     //                                         1:constructors                                                         //
@@ -90,6 +91,8 @@ public final class CyclicBarrier implements ResultCall {
         this.flightState = new AtomicInteger(State_Open);
         this.passengerCount = new AtomicInteger(0);
         this.waitPool = new ResultWaitPool();
+        this.roomWaitAction = new RoomWaitAction(seatSize, passengerCount);
+        this.hallWaitAction = new HallWaitAction(passengerCount);
     }
 
     //****************************************************************************************************************//
@@ -109,11 +112,6 @@ public final class CyclicBarrier implements ResultCall {
     public int getNumberWaiting() {
         int count = passengerCount.get();
         return count < seatSize ? count : seatSize - 1;
-    }
-
-    //count reach zero,which means all programs over
-    public Object call(Object arg) {
-        return Objects.equals(flightNo, arg) && passengerCount.get() == seatSize;
     }
 
     //true,flight has been cancelled
@@ -163,11 +161,17 @@ public final class CyclicBarrier implements ResultCall {
                 }
                 //assume flight arrival
                 flightState.set(State_Arrived);
-
                 //set flight to new state(next trip begin)
                 this.passengerCount.set(0);
+
+                //new flight set:begin
+                this.passengerCount = new AtomicInteger(0);
+                this.roomWaitAction = new RoomWaitAction(seatSize, passengerCount);
+                this.hallWaitAction = new HallWaitAction(passengerCount);
                 this.flightState.set(State_Open);
-                waitPool.wakeupAll(SIGNAL);//wakeup hall passengers to buy ticket of next trip
+                //new flight set:end
+
+                waitPool.wakeupAll(SIGNAL, 0);//wakeup hall passengers to buy ticket of next trip
                 return seatNo;
             }
 
@@ -176,8 +180,9 @@ public final class CyclicBarrier implements ResultCall {
                 //parameter zero means that passengers is in waiting hall(no ticket)
                 Object callParameter = seatNo > 0 ? flightNo : 0;
                 config.setNodeValue(callParameter, seatNo);
+                ResultCall call = seatNo > 0 ? roomWaitAction : hallWaitAction;
 
-                if (!(boolean) waitPool.doCall(this, callParameter, config))
+                if (!(boolean) waitPool.doCall(call, callParameter, config))
                     throw new TimeoutException();
 
                 if (seatNo > 0) {
@@ -185,11 +190,15 @@ public final class CyclicBarrier implements ResultCall {
                     return seatNo;
                 }
             } catch (Throwable e) {
-                e.printStackTrace();
                 if (seatNo > 0) {
                     int state = flightState.get();
                     if (state == State_Flying || state == State_Arrived) return seatNo;
                     if (state == State_Boarding && flightState.compareAndSet(state, State_Cancelled)) {
+                        //new flight set:begin
+                        this.passengerCount = new AtomicInteger(0);
+                        this.roomWaitAction = new RoomWaitAction(seatSize, passengerCount);
+                        this.hallWaitAction = new HallWaitAction(passengerCount);
+                        //new flight set:end
                         waitPool.wakeupAll();//notify all that the flight has cancelled
                     }
                 }
@@ -225,18 +234,48 @@ public final class CyclicBarrier implements ResultCall {
     //reset flight
     public boolean reset() {
         if (flightState.get() == State_Cancelled) {//reset cancelled to new
-            this.passengerCount.set(0);
             this.flightState.set(State_Open);
+            this.passengerCount.set(0);
             waitPool.wakeupAll();
             return true;
         } else if (flightState.get() == State_Boarding) {//reset boarding to new
             this.flightState.set(State_Cancelled);
-            waitPool.wakeupAll();
             this.passengerCount.set(0);
+            waitPool.wakeupAll();
             this.flightState.set(State_Open);
             return true;
         } else {
             return false;
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                          4: ResultCall Implement                                               //
+    //****************************************************************************************************************//
+    private class RoomWaitAction implements ResultCall {//for board passenger
+        private final int seatSize;
+        private final AtomicInteger passengerCount;
+
+        RoomWaitAction(int seatSize, AtomicInteger passengerCount) {
+            this.seatSize = seatSize;
+            this.passengerCount = passengerCount;
+        }
+
+        public Object call(Object arg) {
+            int count = passengerCount.get();
+            return seatSize == count || count == 0;//full seated or flight reset
+        }
+    }
+
+    private class HallWaitAction implements ResultCall {//for hall wait passenger
+        private final AtomicInteger passengerCount;
+
+        HallWaitAction(AtomicInteger passengerCount) {
+            this.passengerCount = passengerCount;
+        }
+
+        public Object call(Object arg) {
+            return passengerCount.get() == 0;//flight has reset
         }
     }
 }
