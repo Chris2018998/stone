@@ -58,6 +58,9 @@ public final class CyclicBarrier {
     private static final int State_Arrived = 4;
     //Flight is in canceled(some passengers has exited the trip)
     private static final int State_Cancelled = 5;
+    //wake up all passengers
+    private static final int WAKE_UP_ALL = -1;
+
     //Flight no(set to a property of chain node,count by this value when wakeup)
     private final long flightNo;
     //Number of seats in flight room
@@ -65,14 +68,15 @@ public final class CyclicBarrier {
     //Execute when set out
     private final Runnable tripAction;
     //Current flight state(see state static definition)
-    private AtomicInteger flightState;
-    //Number of passengers have been boarding
-    private AtomicInteger passengerCount;
+    private final AtomicInteger flightState;
+    //result call wait pool
+    private final ResultWaitPool waitPool;
+
     //Number of completed flying
     private int tripCount;
-
-    //result call wait pool
-    private ResultWaitPool waitPool;
+    //Number of passengers have been boarding
+    private AtomicInteger passengerCount;
+    //result call implementation(instance recreated after flight over)
     private FlightWaitAction flightWaitAction;
 
     //****************************************************************************************************************//
@@ -88,9 +92,9 @@ public final class CyclicBarrier {
         this.tripAction = tripAction;
         this.flightNo = System.currentTimeMillis();
         this.flightState = new AtomicInteger(State_Open);
-        this.passengerCount = new AtomicInteger(0);
-
         this.waitPool = new ResultWaitPool();
+
+        this.passengerCount = new AtomicInteger(0);
         this.flightWaitAction = new FlightWaitAction(seatSize, passengerCount);
     }
 
@@ -160,7 +164,7 @@ public final class CyclicBarrier {
                 }
                 //assume flight arrival
                 flightState.set(State_Arrived);
-                this.passengerCount.set(-1);
+                this.passengerCount.set(WAKE_UP_ALL);
 
                 //new flight set:begin
                 this.passengerCount = new AtomicInteger(0);
@@ -189,11 +193,11 @@ public final class CyclicBarrier {
                     int state = flightState.get();
                     if (state == State_Flying || state == State_Arrived) return seatNo;
                     if (state == State_Boarding && flightState.compareAndSet(state, State_Cancelled)) {
-                        this.passengerCount.set(-1);
+                        this.passengerCount.set(WAKE_UP_ALL);
+
                         //new flight set:begin
                         this.passengerCount = new AtomicInteger(0);
                         this.flightWaitAction = new FlightWaitAction(seatSize, passengerCount);
-                        //new flight set:end
                         waitPool.wakeupAll();//notify all that the flight has cancelled
                     }
                 }
@@ -230,14 +234,12 @@ public final class CyclicBarrier {
     public boolean reset() {
         if (flightState.get() == State_Cancelled) {//reset cancelled to new
             this.flightState.set(State_Open);
-            this.passengerCount.set(0);
-            waitPool.wakeupAll();
             return true;
         } else if (flightState.get() == State_Boarding) {//reset boarding to new
             this.flightState.set(State_Cancelled);
-            this.passengerCount.set(0);
-            waitPool.wakeupAll();
+            this.passengerCount.set(WAKE_UP_ALL);
             this.flightState.set(State_Open);
+            waitPool.wakeupAll();
             return true;
         } else {
             return false;
