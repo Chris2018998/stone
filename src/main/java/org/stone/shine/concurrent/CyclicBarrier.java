@@ -106,14 +106,15 @@ public final class CyclicBarrier {
     }
 
     //return state of current flight
-    public int getState(){
+    public int getState() {
         return generationFlight.getState();
     }
-     
+
     //true,flight has been cancelled
     public boolean isBroken() {
         return generationFlight.isBroken();
     }
+
     //****************************************************************************************************************//
     //                                          3: board methods                                                      //
     //****************************************************************************************************************//
