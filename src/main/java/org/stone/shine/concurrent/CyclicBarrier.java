@@ -49,13 +49,13 @@ import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 public final class CyclicBarrier {
     //A new flight is ready to welcome passengers(door open)
-    private static final int State_Open = 1;
+    public static final int State_Open = 1;
     //Flight is in flying(when passengers were full)
-    private static final int State_Flying = 2;
+    public static final int State_Flying = 2;
     //Flight arrive destination(current trip was over)
-    private static final int State_Arrived = 3;
+    public static final int State_Arrived = 3;
     //Flight is in canceled(some passengers has exited the trip)
-    private static final int State_Cancelled = 4;
+    public static final int State_Cancelled = 4;
 
     //Flight no(set to a property of chain node,count by this value when wakeup)
     private final long flightNo;
@@ -105,11 +105,15 @@ public final class CyclicBarrier {
         return generationFlight.getWaitingCount();
     }
 
+    //return state of current flight
+    public int getState(){
+        return generationFlight.getState();
+    }
+     
     //true,flight has been cancelled
     public boolean isBroken() {
         return generationFlight.isBroken();
     }
-
     //****************************************************************************************************************//
     //                                          3: board methods                                                      //
     //****************************************************************************************************************//
