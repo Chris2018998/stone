@@ -72,34 +72,27 @@ public class ThreadParkSupport implements Cloneable {
     }
 
     //****************************************************************************************************************//
-    //                                           Factory  methods(4)                                                  //
+    //                                           Factory  methods(2)                                                  //
     //****************************************************************************************************************//
     public static ThreadParkSupport create(long time, boolean isMilliseconds) {
-        if (time <= 0)
-            return new ThreadParkSupport();
-        else if (isMilliseconds)
-            return new MillisecondsUtilParkSupport(time);
-        else
-            return new NanoSecondsParkSupport(time);
+        if (time <= 0) return new ThreadParkSupport();
+
+        if (isMilliseconds) return new MillisecondsUtilParkSupport(time);
+
+        return new NanoSecondsParkSupport(time);
     }
 
     public static ThreadParkSupport create(long time, boolean isMilliseconds, Object blocker) {
-        if (time <= 0)
-            return new ThreadObjectParkSupport(blocker);
-        else if (isMilliseconds)
-            return new MillisecondsObjectUtilParkSupport(time, blocker);
-        else
-            return new NanoSecondsObjectParkSupport(time, blocker);
+        if (time <= 0) return new ThreadObjectParkSupport(blocker);
+
+        if (isMilliseconds) return new MillisecondsObjectUtilParkSupport(time, blocker);
+
+        return new NanoSecondsObjectParkSupport(time, blocker);
     }
 
     //****************************************************************************************************************//
-    //                                           Factory  methods(end)                                                //
+    //                                           get methods(4)                                                       //
     //****************************************************************************************************************//
-    public boolean park() {
-        LockSupport.park();
-        return interrupted = Thread.interrupted();
-    }
-
     public final long getDeadline() {
         return deadline;
     }
@@ -112,11 +105,6 @@ public class ThreadParkSupport implements Cloneable {
         return parkTime <= 0;
     }
 
-    //calculate park time for{@code LockSupport.park},true time value is valid
-    public boolean calculateParkTime() {
-        return true;
-    }
-
     public final boolean isInterrupted() {
         return interrupted;
     }
@@ -125,13 +113,27 @@ public class ThreadParkSupport implements Cloneable {
         return "Implementation with LockSupport.park()";
     }
 
+    //****************************************************************************************************************//
+    //                                           park methods(2) need be override                                     //
+    //****************************************************************************************************************//
+    //calculate park time for{@code LockSupport.park},true that time value is not timeout
+    public boolean calculateParkTime() {
+        return true;
+    }
+
+    public boolean park() {
+        LockSupport.park();
+        return interrupted = Thread.interrupted();
+    }
+
+
     //Thead Park with block object for{@code LockSupport.park(blocker)}
     private static class ThreadObjectParkSupport extends ThreadParkSupport {
         ThreadObjectParkSupport(Object blocker) {
             super(blocker);
         }
 
-        public boolean park() {
+        public final boolean park() {
             LockSupport.park(blocker);
             return interrupted = Thread.interrupted();
         }
