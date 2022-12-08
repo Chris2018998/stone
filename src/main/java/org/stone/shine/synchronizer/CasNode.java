@@ -34,7 +34,7 @@ public final class CasNode<E> {
         this.state = state;
     }
 
-    //B: thread node in syn chain/queue(work inside the package of synchronizer)
+    //B: thread node in syn chain/queue(for synchronizer package)
     CasNode(Object type, E value) {
         this.type = type;
         this.value = value;

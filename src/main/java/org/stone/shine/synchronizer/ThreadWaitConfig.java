@@ -19,12 +19,12 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 
-public final class ThreadWaitConfig implements java.io.Serializable {
+public final class ThreadWaitConfig<E> implements java.io.Serializable {
     //************************************************A: wait node config*********************************************//
     //node type
     private Object nodeType;
     //node value
-    private Object nodeValue;
+    private E nodeValue;
     //node object
     private CasNode threadNode;
     //need add into queue of wait pool
@@ -70,14 +70,14 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              2: node methods(5)                                                //
     //****************************************************************************************************************//
-    public final void setNodeValue(Object nodeType, Object nodeValue) {
+    public final void setNodeValue(Object nodeType, E nodeValue) {
         this.nodeType = nodeType;
         this.nodeValue = nodeValue;
     }
 
     public final CasNode getThreadNode() {
         if (threadNode != null) return threadNode;
-        return this.threadNode = new CasNode(nodeType, nodeValue);
+        return this.threadNode = new CasNode<>(nodeType, nodeValue);
     }
 
     public final void setThreadNode(CasNode threadNode) {
@@ -119,11 +119,10 @@ public final class ThreadWaitConfig implements java.io.Serializable {
     public final ThreadParkSupport getThreadParkSupport() {
         if (parkSupport != null) return parkSupport;
 
-        if (waitBlocker != null) {
+        if (waitBlocker != null)
             return parkSupport = ThreadParkSupport.create(maxWaitTime, isMilliseconds, waitBlocker);
-        } else {
-            return parkSupport = ThreadParkSupport.create(maxWaitTime, isMilliseconds);
-        }
+
+        return parkSupport = ThreadParkSupport.create(maxWaitTime, isMilliseconds);
     }
 
     //****************************************************************************************************************//

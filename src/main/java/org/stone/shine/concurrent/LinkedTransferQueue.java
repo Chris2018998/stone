@@ -161,7 +161,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        return this.waitPool.get(new ThreadWaitConfig());
+        return this.waitPool.get(new ThreadWaitConfig<E>());
     }
 
     /**
@@ -187,7 +187,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
 
-        return this.waitPool.get(new ThreadWaitConfig(timeout, unit));
+        return this.waitPool.get(new ThreadWaitConfig<E>(timeout, unit));
     }
 
 

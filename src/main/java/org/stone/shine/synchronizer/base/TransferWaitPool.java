@@ -24,9 +24,8 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     private static final Object Node_Type_Get = new Object();
     //Data
     private static final Object Node_Type_Data = new Object();
-
     //true,use fair mode to execute call
-    private boolean fair;
+    private final boolean fair;
 
     //****************************************************************************************************************//
     //                                          1: constructors(2)                                                    //
@@ -55,7 +54,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         return false;
     }
 
-    public final boolean offer(E e, ThreadWaitConfig config) {
+    public final boolean offer(E e, ThreadWaitConfig<E> config) {
         try {
             if (transfer(e, config)) return true;
         } catch (InterruptedException ex) {
@@ -75,7 +74,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     }
 
     //transfer a object to waiter
-    public final boolean transfer(E e, ThreadWaitConfig config) throws InterruptedException {
+    public final boolean transfer(E e, ThreadWaitConfig<E> config) throws InterruptedException {
         if (e == null) throw new NullPointerException();
 
         //step1: try to transfer
@@ -96,7 +95,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         return node != null ? node.getValue() : null;
     }
 
-    public final E get(ThreadWaitConfig config) throws InterruptedException {
+    public final E get(ThreadWaitConfig<E> config) throws InterruptedException {
         //step1: try to get
         E e = tryGet();
         if (e != null) return e;
@@ -111,7 +110,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                          4: core methods                                                       //
     //****************************************************************************************************************//
-    private Object doWait(ThreadWaitConfig config) throws InterruptedException {
+    private Object doWait(ThreadWaitConfig<E> config) throws InterruptedException {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //1:create wait node and offer to wait queue
