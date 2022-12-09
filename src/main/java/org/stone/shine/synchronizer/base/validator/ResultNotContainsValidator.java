@@ -19,6 +19,10 @@ import java.util.Collection;
  */
 
 public final class ResultNotContainsValidator extends CollectionValidator {
+    
+    public ResultNotContainsValidator(Collection collection) {
+        super(collection);
+    }
 
     public ResultNotContainsValidator(Collection collection, Object resultOnTimeout) {
         super(collection, resultOnTimeout);
