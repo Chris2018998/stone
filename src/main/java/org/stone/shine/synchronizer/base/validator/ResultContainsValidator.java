@@ -21,7 +21,7 @@ import java.util.Collection;
 public final class ResultContainsValidator extends CollectionValidator {
 
     public ResultContainsValidator(Collection collection){
-       this(collection);
+       super(collection);
     }
     
     public ResultContainsValidator(Collection collection, Object resultOnTimeout) {
