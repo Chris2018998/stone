@@ -25,8 +25,4 @@ public class ResultNumberTypeValidator extends ResultClassTypeValidator {
     public ResultNumberTypeValidator(Class<Number> classType, Object resultOnTimeout) {
         super(classType, resultOnTimeout);
     }
-
-    public boolean isExpect(Object result) {
-        return result instanceof Number;
-    }
 }
