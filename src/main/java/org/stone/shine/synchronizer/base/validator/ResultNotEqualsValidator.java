@@ -18,7 +18,11 @@ import java.util.Objects;
  * @version 1.0
  */
 public final class ResultNotEqualsValidator extends EquivalentValidator {
-
+    
+    public ResultNotEqualsValidator(Object compareValue) {
+        super(compareValue);
+    }
+    
     public ResultNotEqualsValidator(Object compareValue, Object resultOnTimeout) {
         super(compareValue, resultOnTimeout);
     }
