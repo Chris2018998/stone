@@ -19,6 +19,7 @@ import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolInternalException;
 import org.stone.beecp.pool.exception.TestSQLFailException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
+import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -50,7 +51,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
  */
 public final class FastConnectionPool extends Thread implements ConnectionPool, ConnectionPoolJmxBean, PooledConnectionValidTest, PooledConnectionTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
-    private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = IntegerFieldUpdaterImpl.AtomicReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
+    private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
     private static final Logger Log = LoggerFactory.getLogger(FastConnectionPool.class);
 
