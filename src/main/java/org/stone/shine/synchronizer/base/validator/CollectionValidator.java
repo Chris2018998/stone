@@ -21,6 +21,10 @@ import java.util.Collection;
 abstract class CollectionValidator extends BaseValidator {
 
     protected final Collection collection;
+  
+    CollectionValidator(Collection collection)｛
+       this(collection);
+    ｝
 
     CollectionValidator(Collection collection, Object resultOnTimeout) {
         super(resultOnTimeout);
