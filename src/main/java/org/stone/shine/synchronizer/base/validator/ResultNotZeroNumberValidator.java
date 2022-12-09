@@ -30,8 +30,7 @@ public class ResultNotZeroNumberValidator extends ResultNumberTypeValidator {
         if (super.isExpect(result)){
             Number value = (Number) result;
             return value.doubleValue() != 0;
-        } else {
-            return true;
         }
+        return true;
     }
 }
