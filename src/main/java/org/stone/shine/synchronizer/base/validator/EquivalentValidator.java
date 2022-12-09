@@ -20,7 +20,7 @@ abstract class EquivalentValidator extends BaseValidator {
     protected final Object compareValue;
 
     EquivalentValidator(Object compareValue){
-       this(compareValue);
+       super(compareValue);
     }
    
     EquivalentValidator(Object compareValue, Object resultOnTimeout) {
