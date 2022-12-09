@@ -20,6 +20,10 @@ public class ResultClassTypeValidator extends BaseValidator {
 
     private final Class classType;
 
+    public ResultClassTypeValidator(Class classType){
+       this(classType);
+    }
+
     public ResultClassTypeValidator(Class classType, Object resultOnTimeout) {
         super(resultOnTimeout);
         this.classType = classType;
