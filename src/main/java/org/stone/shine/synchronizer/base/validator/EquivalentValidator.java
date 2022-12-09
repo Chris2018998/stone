@@ -26,7 +26,5 @@ abstract class EquivalentValidator extends BaseValidator {
     EquivalentValidator(Object compareValue, Object resultOnTimeout) {
         super(resultOnTimeout);
         this.compareValue = compareValue;
-      
-        if (compareValue== null) throw new IllegalArgumentException("compareValue can't be null");
     }
 }
