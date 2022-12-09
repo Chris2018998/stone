@@ -18,7 +18,8 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Objects;
+
+import static org.stone.util.CommonUtil.objectEquals;
 
 /**
  * @author Chris Liao
@@ -32,7 +33,7 @@ public class TestUtil {
     }
 
     public static void assertError(String message, Object expect, Object current) {
-        if (!Objects.equals(expect, current))
+        if (!objectEquals(expect, current))
             throw new AssertionError(String.format(message, String.valueOf(expect), String.valueOf(current)));
     }
 
