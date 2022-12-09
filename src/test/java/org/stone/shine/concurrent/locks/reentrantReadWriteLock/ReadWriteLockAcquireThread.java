@@ -11,9 +11,10 @@ package org.stone.shine.concurrent.locks.reentrantReadWriteLock;
 
 import org.stone.shine.concurrent.ConcurrentMockThread;
 
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
+
+import static org.stone.util.CommonUtil.objectEquals;
 
 /**
  * mock thread
@@ -53,7 +54,7 @@ public class ReadWriteLockAcquireThread extends ConcurrentMockThread {
     }
 
     public void unlock() {
-        if (Objects.equals(result, true)) {
+        if (objectEquals(result, true)) {
             lock.unlock();
             this.result = false;
         }

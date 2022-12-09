@@ -13,10 +13,10 @@ import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.shine.synchronizer.locks.ReentrantLock;
 
-import java.util.Objects;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.util.CommonUtil.objectEquals;
 
 /**
  * ReentrantLock test case
@@ -45,7 +45,7 @@ public class TryLockTest extends TestCase {
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", 1, lock.getHoldCount());
         } finally {
             //5: unlock
-            if (Objects.equals(mockThread.getResult(), true)) lock.unlock();
+            if (objectEquals(mockThread.getResult(), true)) lock.unlock();
         }
     }
 }
