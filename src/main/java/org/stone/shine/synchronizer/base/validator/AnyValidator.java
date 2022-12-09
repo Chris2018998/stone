@@ -17,7 +17,8 @@ package org.stone.shine.synchronizer.base.validator;
  */
 public final class AnyValidator extends BaseValidator {
 
-    public AnyValidator() {}
+    public AnyValidator() {
+    }
 
     public AnyValidator(Object resultOnTimeout) {
         super(resultOnTimeout);

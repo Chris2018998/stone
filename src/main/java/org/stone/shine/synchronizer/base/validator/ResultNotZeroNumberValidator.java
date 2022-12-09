@@ -17,17 +17,17 @@ package org.stone.shine.synchronizer.base.validator;
  */
 
 public class ResultNotZeroNumberValidator extends ResultNumberTypeValidator {
-    
+
     public ResultNotZeroNumberValidator(Class<Number> classType) {
         super(classType);
     }
-   
+
     public ResultNotZeroNumberValidator(Class<Number> classType, Object resultOnTimeout) {
         super(classType, resultOnTimeout);
     }
 
     public final boolean isExpect(Object result) {
-        if (super.isExpect(result)){
+        if (super.isExpect(result)) {
             Number value = (Number) result;
             return value.doubleValue() != 0;
         }

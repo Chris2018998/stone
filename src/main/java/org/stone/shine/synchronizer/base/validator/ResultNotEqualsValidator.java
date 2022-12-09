@@ -9,7 +9,7 @@
  */
 package org.stone.shine.synchronizer.base.validator;
 
-import java.util.Objects;
+import static org.stone.util.CommonUtil.objectEquals;
 
 /**
  * not equals compare
@@ -18,16 +18,16 @@ import java.util.Objects;
  * @version 1.0
  */
 public final class ResultNotEqualsValidator extends EquivalentValidator {
-    
+
     public ResultNotEqualsValidator(Object compareValue) {
         super(compareValue);
     }
-    
+
     public ResultNotEqualsValidator(Object compareValue, Object resultOnTimeout) {
         super(compareValue, resultOnTimeout);
     }
 
     public final boolean isExpect(Object result) {
-        return !Objects.equals(result, compareValue);
+        return !objectEquals(result, compareValue);
     }
 }

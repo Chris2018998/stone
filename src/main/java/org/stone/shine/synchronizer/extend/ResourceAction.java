@@ -11,7 +11,7 @@ package org.stone.shine.synchronizer.extend;
 
 import org.stone.shine.synchronizer.base.ResultCall;
 
-import java.util.Objects;
+import static org.stone.util.CommonUtil.objectEquals;
 
 /**
  * Work as a plugin of {@code ResourceWaitPool},two abstract methods need be implemented in its sub classes
@@ -31,7 +31,7 @@ public abstract class ResourceAction implements ResultCall {
     //try to acquireWithType lock or permit
     public boolean tryAcquire(int size) {
         try {
-            return Objects.equals(this.call(size), true);
+            return objectEquals(this.call(size), true);
         } catch (Throwable e) {
             return false;
         }

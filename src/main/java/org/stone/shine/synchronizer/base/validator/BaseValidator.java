@@ -21,7 +21,9 @@ abstract class BaseValidator implements ResultValidator {
 
     private final Object resultOnTimeout;
 
-    BaseValidator() {}
+    BaseValidator() {
+        this.resultOnTimeout = null;
+    }
 
     BaseValidator(Object resultOnTimeout) {
         this.resultOnTimeout = resultOnTimeout;
