@@ -27,10 +27,11 @@ public class ResultNotZeroNumberValidator extends ResultNumberTypeValidator {
     }
 
     public final boolean isExpect(Object result) {
-        if (result instanceof Number) {
+        if (super.isExpect(result)){
             Number value = (Number) result;
             return value.doubleValue() != 0;
+        } else {
+            return true;
         }
-        return false;
     }
 }
