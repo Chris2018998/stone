@@ -19,6 +19,7 @@ import org.stone.beeop.pool.exception.PoolClosedException;
 import org.stone.beeop.pool.exception.PoolCreateFailedException;
 import org.stone.beeop.pool.exception.PoolInternalException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
+import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -46,7 +47,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  */
 public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, ObjectPool, ObjectTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
-    private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = IntegerFieldUpdaterImpl.AtomicReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
+    private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastObjectPool.class, "poolState");
     private static final Logger Log = LoggerFactory.getLogger(FastObjectPool.class);
 
