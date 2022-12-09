@@ -23,7 +23,7 @@ abstract class CollectionValidator extends BaseValidator {
     protected final Collection collection;
   
     CollectionValidator(Collection collection)｛
-       this(collection);
+       this(collection,null);
     ｝
 
     CollectionValidator(Collection collection, Object resultOnTimeout) {
