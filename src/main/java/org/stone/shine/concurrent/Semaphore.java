@@ -24,7 +24,6 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class Semaphore {
-
     //resource wait pool
     private final ResourceWaitPool waitPool;
     //permit acquisition action driven by wait pool
