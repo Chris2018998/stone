@@ -17,7 +17,11 @@ package org.stone.shine.synchronizer.base.validator;
  */
 
 public class ResultNotZeroNumberValidator extends ResultNumberTypeValidator {
-
+    
+    public ResultNotZeroNumberValidator(Class<Number> classType) {
+        this(classType, null);
+    }
+   
     public ResultNotZeroNumberValidator(Class<Number> classType, Object resultOnTimeout) {
         super(classType, resultOnTimeout);
     }
