@@ -34,16 +34,16 @@ public final class CasNodeUpdater {
             Class nodeClass = CasNode.class;
             //ThreadNode.state
             Field stateField = nodeClass.getDeclaredField("state");
-            stateField.setAccessible(true);
+            if (!stateField.isAccessible()) stateField.setAccessible(true);
             stateOffSet = U.objectFieldOffset(stateField);
 
             //ThreadNode.prev
             Field prevField = nodeClass.getDeclaredField("prev");
-            prevField.setAccessible(true);
+            if (!prevField.isAccessible()) prevField.setAccessible(true);
             prevOffSet = U.objectFieldOffset(prevField);
             //ThreadNode.next
             Field nextField = nodeClass.getDeclaredField("next");
-            nextField.setAccessible(true);
+            if (!nextField.isAccessible()) nextField.setAccessible(true);
             nextOffSet = U.objectFieldOffset(nextField);
         } catch (Exception e) {
             throw new Error(e);

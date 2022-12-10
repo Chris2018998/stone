@@ -70,7 +70,7 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              2: node methods(5)                                                //
+    //                                              2: node methods(7)                                                //
     //****************************************************************************************************************//
     public final void setNodeType(Object nodeType) {
         this.nodeType = nodeType;

@@ -34,7 +34,6 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
-
     //wakeup one
     private static CasNode wakeupOne(Iterator<CasNode> iterator, Object toState, Object nodeType) {
         while (iterator.hasNext()) {

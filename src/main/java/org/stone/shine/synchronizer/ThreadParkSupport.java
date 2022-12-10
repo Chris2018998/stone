@@ -59,13 +59,9 @@ public class ThreadParkSupport {
     protected boolean interrupted;
 
     //****************************************************************************************************************//
-    //                                              constructors(2)                                                   //
+    //                                              constructors(1)                                                   //
     //****************************************************************************************************************//
     ThreadParkSupport() {
-    }
-
-    private ThreadParkSupport(Object blocker) {
-        this.blocker = blocker;
     }
 
     //****************************************************************************************************************//
@@ -109,7 +105,7 @@ public class ThreadParkSupport {
     //****************************************************************************************************************//
     static class ThreadBlockerParkSupport extends ThreadParkSupport {
         ThreadBlockerParkSupport(Object blocker) {
-            super(blocker);
+            this.blocker = blocker;
         }
 
         public final boolean park() {
