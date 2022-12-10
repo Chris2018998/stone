@@ -12,8 +12,6 @@ package org.stone.shine.synchronizer;
 import org.stone.util.atomic.UnsafeAdaptor;
 import org.stone.util.atomic.UnsafeAdaptorFactory;
 
-import java.lang.reflect.Field;
-
 /**
  * node cas updater
  *
@@ -33,18 +31,11 @@ public final class CasNodeUpdater {
             U = UnsafeAdaptorFactory.get();
             Class nodeClass = CasNode.class;
             //ThreadNode.state
-            Field stateField = nodeClass.getDeclaredField("state");
-            if (!stateField.isAccessible()) stateField.setAccessible(true);
-            stateOffSet = U.objectFieldOffset(stateField);
-
+            stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));
             //ThreadNode.prev
-            Field prevField = nodeClass.getDeclaredField("prev");
-            if (!prevField.isAccessible()) prevField.setAccessible(true);
-            prevOffSet = U.objectFieldOffset(prevField);
+            prevOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("prev"));
             //ThreadNode.next
-            Field nextField = nodeClass.getDeclaredField("next");
-            if (!nextField.isAccessible()) nextField.setAccessible(true);
-            nextOffSet = U.objectFieldOffset(nextField);
+            nextOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("next"));
         } catch (Exception e) {
             throw new Error(e);
         }
