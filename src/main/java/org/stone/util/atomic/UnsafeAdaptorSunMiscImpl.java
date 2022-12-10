@@ -37,14 +37,17 @@ public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
     //                                            field offset                                                        //
     //****************************************************************************************************************//
     public final long objectFieldOffset(Field field) {
+        if (!field.isAccessible()) field.setAccessible(true);
         return U.objectFieldOffset(field);
     }
 
     public final long staticFieldOffset(Field field) {
+        if (!field.isAccessible()) field.setAccessible(true);
         return U.staticFieldOffset(field);
     }
 
     public final Object staticFieldBase(Field field) {
+        if (!field.isAccessible()) field.setAccessible(true);
         return U.staticFieldBase(field);
     }
 
