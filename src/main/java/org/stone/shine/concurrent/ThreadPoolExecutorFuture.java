@@ -36,6 +36,7 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
     private final UUID futureId;
     //private final TaskHolder taskHolder;@todo to be dev
     private final ThreadPoolExecutor executor;
+    //future state
     private volatile int state;
 
     private V result;
