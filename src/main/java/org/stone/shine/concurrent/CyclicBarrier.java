@@ -127,7 +127,6 @@ public final class CyclicBarrier {
     }
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
-        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
         return doAwait(new ThreadWaitConfig(timeout, unit));
     }
 

@@ -51,10 +51,7 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 
-//********************************************************************************************************************//
-//                          1:Implementation based on park method{@code LockSupport.park}                             //
-//********************************************************************************************************************//
-public class ThreadParkSupport implements Cloneable {
+public class ThreadParkSupport {
     private static final long spinForTimeoutThreshold = 1000L;
     protected long deadline;
     protected long parkTime = 1L;//a initialized value,calculated before park,if less than zero or equals zero means timeout
@@ -67,27 +64,8 @@ public class ThreadParkSupport implements Cloneable {
     ThreadParkSupport() {
     }
 
-    ThreadParkSupport(Object blocker) {
+    private ThreadParkSupport(Object blocker) {
         this.blocker = blocker;
-    }
-
-    //****************************************************************************************************************//
-    //                                           Factory  methods(2)                                                  //
-    //****************************************************************************************************************//
-    public static ThreadParkSupport create(long time, boolean isMilliseconds) {
-        if (time <= 0) return new ThreadParkSupport();
-
-        if (isMilliseconds) return new MillisecondsUtilParkSupport(time);
-
-        return new NanoSecondsParkSupport(time);
-    }
-
-    public static ThreadParkSupport create(long time, boolean isMilliseconds, Object blocker) {
-        if (time <= 0) return new ThreadObjectParkSupport(blocker);
-
-        if (isMilliseconds) return new MillisecondsObjectUtilParkSupport(time, blocker);
-
-        return new NanoSecondsObjectParkSupport(time, blocker);
     }
 
     //****************************************************************************************************************//
@@ -126,10 +104,11 @@ public class ThreadParkSupport implements Cloneable {
         return interrupted = Thread.interrupted();
     }
 
-
-    //Thead Park with block object for{@code LockSupport.park(blocker)}
-    private static class ThreadObjectParkSupport extends ThreadParkSupport {
-        ThreadObjectParkSupport(Object blocker) {
+    //****************************************************************************************************************//
+    //                                           blocker park Implement                                               //
+    //****************************************************************************************************************//
+    static class ThreadBlockerParkSupport extends ThreadParkSupport {
+        ThreadBlockerParkSupport(Object blocker) {
             super(blocker);
         }
 
@@ -144,9 +123,9 @@ public class ThreadParkSupport implements Cloneable {
     }
 
     //****************************************************************************************************************//
-    //                     2: Implementation based on park method{@code LockSupport.parkNanos}                        //
+    //                                            NanoSeconds park Implement                                          //
     //****************************************************************************************************************//
-    private static class NanoSecondsParkSupport extends ThreadParkSupport {
+    static class NanoSecondsParkSupport extends ThreadParkSupport {
         NanoSecondsParkSupport(long nanoTime) {
             this.deadline = System.nanoTime() + nanoTime;
         }
@@ -170,8 +149,11 @@ public class ThreadParkSupport implements Cloneable {
         }
     }
 
-    private static class NanoSecondsObjectParkSupport extends NanoSecondsParkSupport {
-        NanoSecondsObjectParkSupport(long nanoTime, Object blocker) {
+    //****************************************************************************************************************//
+    //                                    NanoSeconds blocker park Implement                                          //
+    //****************************************************************************************************************//
+    static class NanoSecondsBlockerParkSupport extends NanoSecondsParkSupport {
+        NanoSecondsBlockerParkSupport(long nanoTime, Object blocker) {
             super(nanoTime);
             this.blocker = blocker;
         }
@@ -191,9 +173,9 @@ public class ThreadParkSupport implements Cloneable {
     }
 
     //****************************************************************************************************************//
-    //                        3: Implementation based on park method{@code LockSupport.parkUntil}                     //
+    //                                       MilliSeconds parkUtil Implement                                          //
     //****************************************************************************************************************//
-    private static class MillisecondsUtilParkSupport extends ThreadParkSupport {
+    static class MillisecondsUtilParkSupport extends ThreadParkSupport {
         MillisecondsUtilParkSupport(long deadline) {
             this.deadline = deadline;
         }
@@ -213,8 +195,11 @@ public class ThreadParkSupport implements Cloneable {
         }
     }
 
-    private static class MillisecondsObjectUtilParkSupport extends MillisecondsUtilParkSupport {
-        MillisecondsObjectUtilParkSupport(long deadline, Object blocker) {
+    //****************************************************************************************************************//
+    //                                       MilliSeconds blocker parkUtil Implement                                  //
+    //****************************************************************************************************************//
+    static class MillisecondsBlockerUtilParkSupport extends MillisecondsUtilParkSupport {
+        MillisecondsBlockerUtilParkSupport(long deadline, Object blocker) {
             super(deadline);
             this.blocker = blocker;
         }

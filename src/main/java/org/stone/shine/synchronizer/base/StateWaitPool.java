@@ -56,7 +56,7 @@ public class StateWaitPool extends ThreadWaitPool {
         if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
         //1:create wait node and offer to wait queue
-        CasNode node = config.getThreadNode();
+        CasNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config

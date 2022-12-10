@@ -82,7 +82,8 @@ class BaseLock implements Lock {
      */
     public void lock() {
         try {
-            ThreadWaitConfig config = new ThreadWaitConfig(acquireType);
+            ThreadWaitConfig config = new ThreadWaitConfig();
+            config.setNodeType(acquireType);
             config.setThrowsIE(false);
             waitPool.acquire(lockAction, 1, config);
         } catch (Exception e) {
@@ -137,7 +138,9 @@ class BaseLock implements Lock {
      *                              of lock acquisition is supported)
      */
     public void lockInterruptibly() throws InterruptedException {
-        waitPool.acquire(lockAction, 1, new ThreadWaitConfig(acquireType));
+        ThreadWaitConfig config = new ThreadWaitConfig();
+        config.setNodeType(acquireType);
+        waitPool.acquire(lockAction, 1, config);
     }
 
     /**
@@ -229,8 +232,9 @@ class BaseLock implements Lock {
      *                              acquisition is supported)
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        return waitPool.acquire(lockAction, 1, new ThreadWaitConfig(time, unit, acquireType));
+        ThreadWaitConfig config = new ThreadWaitConfig(time, unit);
+        config.setNodeType(acquireType);
+        return waitPool.acquire(lockAction, 1, config);
     }
 
     /**
@@ -366,7 +370,6 @@ class BaseLock implements Lock {
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
-            if (unit == null) throw new IllegalArgumentException("time unit can't be null");
             ThreadWaitConfig config = new ThreadWaitConfig(time, unit);
             this.doAwait(config);
             return config.getThreadParkSupport().isTimeout();
@@ -374,7 +377,7 @@ class BaseLock implements Lock {
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
-            ThreadWaitConfig config = new ThreadWaitConfig(deadline);
+            ThreadWaitConfig config = new ThreadWaitConfig(deadline.getTime());
             this.doAwait(config);
             return config.getThreadParkSupport().isTimeout();
         }
@@ -385,7 +388,7 @@ class BaseLock implements Lock {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
             //2:create a reusable node(why before unlock?)
-            CasNode conditionNode = config.getThreadNode();
+            CasNode conditionNode = config.getCasNode();
             super.appendNode(conditionNode);
 
             //3:full release(exclusive count should be zero):support full release for reentrant
@@ -406,7 +409,7 @@ class BaseLock implements Lock {
             conditionNode.setState(null);
             conditionNode.setType(TYPE_EXCLUSIVE);
             ThreadWaitConfig lockConfig = new ThreadWaitConfig();
-            lockConfig.setThreadNode(conditionNode);
+            lockConfig.setCasNode(conditionNode);
             lock.waitPool.acquire(lockAction, holdCount, lockConfig);//restore hold size before unlock
 
             //6:throw occurred interrupt exception on condition wait

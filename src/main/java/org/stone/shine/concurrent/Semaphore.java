@@ -365,9 +365,6 @@ public class Semaphore {
      */
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
-        if (timeout < 0) throw new IllegalArgumentException();
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-
         return this.waitPool.acquire(permitAction, permits, new ThreadWaitConfig(timeout, unit));
     }
 

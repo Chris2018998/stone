@@ -56,8 +56,6 @@ public final class CountDownLatch implements ResultCall {
 
     //true means all programs over
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-
         try {
             waitPool.doCall(this, null, new ThreadWaitConfig(timeout, unit));
         } catch (InterruptedException e) {

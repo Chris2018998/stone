@@ -31,7 +31,7 @@ public class SignalWaitPool extends ThreadWaitPool {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //2:create wait node and offer to wait queue
-        CasNode node = config.getThreadNode();
+        CasNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //3:get control parameters from config

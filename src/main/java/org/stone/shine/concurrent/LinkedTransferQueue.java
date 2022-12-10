@@ -90,7 +90,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
         if (e == null) throw new NullPointerException();
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         return this.waitPool.offer(e, new ThreadWaitConfig(timeout, unit));
     }
 
@@ -145,7 +144,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean tryTransfer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         return this.waitPool.transfer(e, new ThreadWaitConfig(timeout, unit));
     }
 
@@ -185,8 +183,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-
         return this.waitPool.get(new ThreadWaitConfig<E>(timeout, unit));
     }
 

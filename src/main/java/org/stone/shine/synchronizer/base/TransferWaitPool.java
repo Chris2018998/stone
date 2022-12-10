@@ -114,7 +114,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //1:create wait node and offer to wait queue
-        CasNode node = config.getThreadNode();
+        CasNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config

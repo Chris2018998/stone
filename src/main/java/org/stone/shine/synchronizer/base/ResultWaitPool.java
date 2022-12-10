@@ -84,11 +84,11 @@ public class ResultWaitPool extends ThreadWaitPool {
                 Object result = call.call(arg);
                 if (validator.isExpect(result)) return result;
             }
-            super.appendNode(config.getThreadNode());
+            super.appendNode(config.getCasNode());
         }
 
         //3:get wait node from config object
-        CasNode node = config.getThreadNode();
+        CasNode node = config.getCasNode();
 
         //4:get control parameters from config
         boolean throwsIE = config.isThrowsIE();

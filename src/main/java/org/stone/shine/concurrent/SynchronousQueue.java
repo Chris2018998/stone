@@ -87,7 +87,6 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         return this.waitPool.transfer(e, new ThreadWaitConfig<E>(timeout, unit));
     }
 
@@ -116,7 +115,6 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
         return this.waitPool.get(new ThreadWaitConfig<E>(timeout, unit));
     }
 

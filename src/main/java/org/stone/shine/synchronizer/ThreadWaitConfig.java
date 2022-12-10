@@ -9,7 +9,6 @@
  */
 package org.stone.shine.synchronizer;
 
-import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,24 +19,21 @@ import java.util.concurrent.TimeUnit;
  */
 
 public final class ThreadWaitConfig<E> implements java.io.Serializable {
-    //************************************************A: wait node config*********************************************//
+
+    //************************************************A: park config**************************************************//
+    //park support
+    private final ThreadParkSupport parkSupport;
+
+    //************************************************B: wait node config*********************************************//
     //node type
     private Object nodeType;
     //node value
     private E nodeValue;
     //node object
-    private CasNode threadNode;
+    private CasNode casNode;
     //need add into queue of wait pool
     private boolean outsideOfWaitPool = true;
-    //***********************************************B: wait time config**********************************************//
-    //wait time value(Nanoseconds or Milliseconds)
-    private long maxWaitTime;
-    //wait util deadline(using in LockSupport.parkUtil)
-    private boolean isMilliseconds;
-    //time block object(using in LockSupport.park,LockSupport.parkNanos)
-    private Object waitBlocker;
-    //park support
-    private ThreadParkSupport parkSupport;
+
     //***********************************************C: IE config*****************************************************//
     //indicator of throw interruptException when interrupted
     private boolean throwsIE = true;
@@ -45,43 +41,57 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     private boolean transferSignalOnIE = true;
 
     //****************************************************************************************************************//
-    //                                              1: constructors methods(5)                                        //
+    //                                              1: constructors methods(6)                                        //
     //****************************************************************************************************************//
     public ThreadWaitConfig() {
+        this.parkSupport = new ThreadParkSupport();
     }
 
-    public ThreadWaitConfig(Object nodeType) {
-        this.nodeType = nodeType;
+    public ThreadWaitConfig(Object blocker) {
+        this.parkSupport = new ThreadParkSupport.ThreadBlockerParkSupport(blocker);
     }
 
-    public ThreadWaitConfig(Date waitDeadline) {
-        this.setWaitDeadline(waitDeadline);
+    public ThreadWaitConfig(long deadlineMs) {
+        this.parkSupport = new ThreadParkSupport.MillisecondsUtilParkSupport(deadlineMs);
     }
 
-    public ThreadWaitConfig(long maxWaitTime, TimeUnit waitTimeUnit) {
-        this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
+    public ThreadWaitConfig(long deadlineMs, Object blocker) {
+        this.parkSupport = new ThreadParkSupport.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker);
     }
 
-    public ThreadWaitConfig(long maxWaitTime, TimeUnit waitTimeUnit, Object nodeType) {
-        this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
-        this.nodeType = nodeType;
+    public ThreadWaitConfig(long timeout, TimeUnit unit) {
+        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
+        this.parkSupport = new ThreadParkSupport.NanoSecondsParkSupport(unit.toNanos(timeout));
+    }
+
+    public ThreadWaitConfig(long timeout, TimeUnit unit, Object blocker) {
+        if (unit == null) throw new IllegalArgumentException("time unit can't be null");
+        this.parkSupport = new ThreadParkSupport.NanoSecondsBlockerParkSupport(unit.toNanos(timeout), blocker);
     }
 
     //****************************************************************************************************************//
     //                                              2: node methods(5)                                                //
     //****************************************************************************************************************//
+    public final void setNodeType(Object nodeType) {
+        this.nodeType = nodeType;
+    }
+
     public final void setNodeValue(Object nodeType, E nodeValue) {
         this.nodeType = nodeType;
         this.nodeValue = nodeValue;
     }
 
-    public final CasNode getThreadNode() {
-        if (threadNode != null) return threadNode;
-        return this.threadNode = new CasNode<>(nodeType, nodeValue);
+    public final CasNode getCasNode() {
+        if (casNode != null) return casNode;
+        return this.casNode = new CasNode<>(nodeType, nodeValue);
     }
 
-    public final void setThreadNode(CasNode threadNode) {
-        this.threadNode = threadNode;
+    public final void setCasNode(CasNode casNode) {
+        this.casNode = casNode;
+    }
+
+    public final ThreadParkSupport getThreadParkSupport() {
+        return parkSupport;
     }
 
     public final boolean isOutsideOfWaitPool() {
@@ -90,39 +100,6 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
 
     public final void setOutsideOfWaitPool(boolean outsideOfWaitPool) {
         this.outsideOfWaitPool = outsideOfWaitPool;
-    }
-
-    //****************************************************************************************************************//
-    //                                              3: wait time config(5)                                            //
-    //****************************************************************************************************************//
-    public final void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit) {
-        this.setMaxWaitTime(maxWaitTime, waitTimeUnit, null);
-    }
-
-    public final void setMaxWaitTime(long maxWaitTime, TimeUnit waitTimeUnit, Object waitBlocker) {
-        if (waitTimeUnit == null) throw new IllegalArgumentException("timeUnit can't be null");
-        this.maxWaitTime = waitTimeUnit.toNanos(maxWaitTime);
-        this.waitBlocker = waitBlocker;
-    }
-
-    public final void setWaitDeadline(Date waitDeadline) {
-        this.setWaitDeadline(waitDeadline, null);
-    }
-
-    public final void setWaitDeadline(Date waitDeadline, Object waitBlocker) {
-        if (waitDeadline == null) throw new IllegalArgumentException("deadline can't be null");
-        this.maxWaitTime = waitDeadline.getTime();
-        this.waitBlocker = waitBlocker;
-        this.isMilliseconds = true;
-    }
-
-    public final ThreadParkSupport getThreadParkSupport() {
-        if (parkSupport != null) return parkSupport;
-
-        if (waitBlocker != null)
-            return parkSupport = ThreadParkSupport.create(maxWaitTime, isMilliseconds, waitBlocker);
-
-        return parkSupport = ThreadParkSupport.create(maxWaitTime, isMilliseconds);
     }
 
     //****************************************************************************************************************//
