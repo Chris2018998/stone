@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.*;
 
 /**
- * Future Impl by wait pool
+ * Future Impl by wait pool(which inside ThreadPoolExecutor)
  *
  * @author Chris Liao
  * @version 1.0
