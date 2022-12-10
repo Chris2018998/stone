@@ -16,6 +16,8 @@ import java.util.concurrent.*;
 
 /**
  * Future Impl by wait pool(which inside ThreadPoolExecutor)
+ * <p>
+ * TaskHolder contains two attributes:taskFuture,Callable
  *
  * @author Chris Liao
  * @version 1.0
@@ -31,17 +33,19 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
     //task execution exception
     private static final int State_ExecutionException = 4;
 
-    private final UUID taskId;//task uuid created by executor,and it held in task
+    private final UUID futureId;
+    //private final TaskHolder taskHolder;@todo to be dev
     private final ThreadPoolExecutor executor;
     private volatile int state;
 
     private V result;
     private ExecutionException executionException;
 
-    ThreadPoolExecutorFuture(UUID taskId, ThreadPoolExecutor executor) {
-        this.taskId = taskId;
+    ThreadPoolExecutorFuture(ThreadPoolExecutor executor) {
         this.executor = executor;
         this.state = State_Doing;
+        this.futureId = UUID.randomUUID();
+        //this.taskHolder =taskHolder;//@todo to be dev
     }
 
     //****************************************************************************************************************//
@@ -113,7 +117,7 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
 
         //step2:wait result
         ThreadWaitConfig config = new ThreadWaitConfig();
-        config.setNodeType(taskId);
+        config.setNodeType(futureId);
         //@todo wait int pool(InterruptedException can be thrown from wait pool)
 
         //step3:read result by state code
@@ -139,7 +143,7 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
 
         //step2:wait result
         ThreadWaitConfig config = new ThreadWaitConfig(timeout, unit);
-        config.setNodeType(taskId);
+        config.setNodeType(futureId);
         //@todo wait int pool(InterruptedException can be thrown from wait pool)
         if (config.getThreadParkSupport().isTimeout()) throw new TimeoutException();
 
@@ -150,6 +154,11 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
     //****************************************************************************************************************//
     //                                          3: result get/set methods                                             //
     //****************************************************************************************************************//
+    //call by ThreadPoolExecutor to get wakeup key after task over
+    UUID getFutureId() {
+        return futureId;
+    }
+
     //set by ThreadPoolExecutor
     void setResult(V result) {
         if (state == State_Doing) {
