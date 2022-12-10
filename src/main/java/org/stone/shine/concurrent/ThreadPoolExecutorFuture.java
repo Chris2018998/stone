@@ -102,7 +102,7 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
      * retrieves its result.
      *
      * @return the computed result
-     * @throws InterruptedException,                      which from wait,just thrown once;if the current thread was interrupted while waiting
+     * @throws InterruptedException,                      which be thrown from wait pool,and just thrown once per waiter;if the current thread was interrupted while waiting
      * @throws ExecutionException,                        which from executor,if the computation threw an exception
      * @throws java.util.concurrent.CancellationException if the computation was cancelled
      */
@@ -128,7 +128,7 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
      * @param unit    the time unit of the timeout argument
      * @return the computed result
      * @throws java.util.concurrent.CancellationException if the computation was cancelled
-     * @throws InterruptedException                       if the current thread was interrupted while waiting
+     * @throws InterruptedException                       which be thrown from wait pool,and just thrown once per waiter;if the current thread was interrupted while waiting
      * @throws TimeoutException                           if the wait timed out
      * @throws ExecutionException                         if the computation threw an  exception
      */
