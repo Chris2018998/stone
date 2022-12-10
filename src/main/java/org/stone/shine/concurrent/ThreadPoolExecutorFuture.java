@@ -31,7 +31,7 @@ public class ThreadPoolExecutorFuture<V> implements Future<V> {
     //task execution exception
     private static final int State_ExecutionException = 4;
 
-    private final UUID taskId;//task uuid set from executor
+    private final UUID taskId;//task uuid created by executor,and it held in task
     private final ThreadPoolExecutor executor;
     private volatile int state;
 
