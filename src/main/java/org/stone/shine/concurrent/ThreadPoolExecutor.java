@@ -26,6 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class ThreadPoolExecutor<E> implements ExecutorService {
+    //pool state
+    private static final Object RUNNING = new Object();
+    private static final Object SHUTDOWN = new Object();
+    private static final Object STOP = new Object();
+    private static final Object TIDYING = new Object();
+    private static final Object TERMINATED = new Object();
+
     //allow max size in queue
     private int taskMaxSize;
     //number of task in queue(not running + running)
@@ -41,7 +48,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
 
     //allow max size to work
     private int workerMaxSize;
-    //worker wait time for task
+    //worker wait time for task(0 means not timeout)
     private volatile long keepAliveTime;
     //worker thread factory
     private volatile ThreadFactory workerThreadFactory;
@@ -49,7 +56,6 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     private volatile RejectedExecutionHandler handler;
     //for Future wait and awaitTermination,Worker thread
     private StateWaitPool waitPool = new StateWaitPool(new AnyValidator());
-
 
     //****************************************************************************************************************//
     //                                          1: constructor(2)                                                     //
