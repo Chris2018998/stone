@@ -15,7 +15,6 @@ import org.stone.shine.synchronizer.base.validator.AnyValidator;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,13 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class ThreadPoolExecutor<E> implements ExecutorService {
-    //pool state
     private static final int RUNNING = 1;
     private static final int SHUTDOWN = 2;
     private static final int STOP = 3;
     private static final int TIDYING = 4;
     private static final int TERMINATED = 5;
-    private static final String TERMINATED_WAIT_KEY = UUID.randomUUID().toString();
+    private static final String Worker_Wait_Task_Key = "WaitForTask";
+    private static final String App_Wait_Terminate_Key = "WaitForTerminate";
 
     //allow max size to work
     private int workerMaxSize;
@@ -387,7 +386,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     //****************************************************************************************************************//
     //                                          5:ThreadPoolExecutor inner classes                                    //
     //****************************************************************************************************************//
-    static final class ThreadPoolCallableAdaptor<V> implements Callable<V> {
+    private static final class ThreadPoolCallableAdaptor<V> implements Callable<V> {
         private final V defaultResult;
         private final Runnable runnable;
 
@@ -403,6 +402,18 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
         public V call() throws Exception {
             runnable.run();
             return defaultResult;
+        }
+    }
+
+    private static final class PoolTaskWorker {
+        private Thread thread;
+        private ThreadPoolTask task;
+        private StateWaitPool waitPool;
+
+        public PoolTaskWorker(Thread thread, ThreadPoolTask task, StateWaitPool waitPool) {
+            this.task = task;
+            this.thread = thread;
+            this.waitPool = waitPool;
         }
     }
 }
