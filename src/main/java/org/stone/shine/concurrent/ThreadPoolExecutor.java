@@ -372,7 +372,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     //****************************************************************************************************************//
     //                                          4:ThreadPoolExecutor inner methods                                    //
     //****************************************************************************************************************//
-    boolean cancelTask(Object taskHolder, boolean mayInterruptIfRunning) {
+    boolean cancelTask(ThreadPoolTask task, boolean mayInterruptIfRunning) {
         return false;
         //@todo to be dev
     }
@@ -384,5 +384,4 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     //****************************************************************************************************************//
     //                                          5:ThreadPoolExecutor inner classes                                    //
     //****************************************************************************************************************//
-
 }
