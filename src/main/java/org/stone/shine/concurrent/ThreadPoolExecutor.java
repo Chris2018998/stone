@@ -42,6 +42,8 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     private volatile ThreadFactory workerThreadFactory;
     //Handler called when saturated or shutdown in execute.
     private volatile RejectedExecutionHandler handler;
+    //worker queue
+    private ConcurrentLinkedQueue<PoolTaskWorker> workerQueue = new ConcurrentLinkedQueue<>();
 
     //allow max size in queue
     private int taskMaxSize;
@@ -54,7 +56,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     //number of canceled task
     private AtomicInteger taskCountInCanceled = new AtomicInteger(0);
     //task queue
-    private ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
+    private ConcurrentLinkedQueue<ThreadPoolTask> taskQueue = new ConcurrentLinkedQueue<>();
 
     //pool state
     private AtomicInteger state = new AtomicInteger(RUNNING);
@@ -414,6 +416,10 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
             this.task = task;
             this.thread = thread;
             this.waitPool = waitPool;
+        }
+
+        public void run() {
+
         }
     }
 }
