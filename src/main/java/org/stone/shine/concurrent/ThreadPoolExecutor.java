@@ -181,6 +181,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         if (isTerminated()) return true;
         ThreadWaitConfig config = new ThreadWaitConfig(timeout, unit);
+        config.setNodeType(App_Wait_Terminate_Key);
         waitPool.doWait(config);
         return isTerminated();
     }
