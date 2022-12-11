@@ -134,7 +134,7 @@ public class ThreadParkSupport {
             this.deadline = System.nanoTime() + nanoTime;
         }
 
-        public void reset() {
+        public final void reset() {
             super.reset();
             this.deadline = System.nanoTime() + nanoTime;
         }
@@ -203,7 +203,7 @@ public class ThreadParkSupport {
             return "Implementation with LockSupport.parkUntil(deadline)";
         }
 
-        public void reset() {
+        public final void reset() {
             throw new IllegalArgumentException("can't support deadline reset");
         }
     }
