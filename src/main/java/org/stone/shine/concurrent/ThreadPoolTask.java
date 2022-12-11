@@ -40,10 +40,6 @@ class ThreadPoolTask<V> {
     //task state(can be read by future)
     private final AtomicInteger state;
 
-    //default result set to future when call result is null
-    private V defaultResult;
-    //true when defaultResult has been set
-    private boolean existDefaultResult;
     //call result from callable
     private V result;
     //exception from executing call
@@ -60,15 +56,6 @@ class ThreadPoolTask<V> {
     //****************************************************************************************************************//
     UUID getTaskId() {
         return taskId;
-    }
-
-    public boolean isExistDefaultResult() {
-        return existDefaultResult;
-    }
-
-    public void setDefaultResult(V defaultResult) {
-        this.defaultResult = defaultResult;
-        this.existDefaultResult = true;
     }
 
     //****************************************************************************************************************//
@@ -128,7 +115,6 @@ class ThreadPoolTask<V> {
     public final void executeTask() {
         try {
             this.result = call.call();
-            if (result == null && existDefaultResult) this.result = defaultResult;
             compareAndSetState(State_Executing, State_Result);
         } catch (Throwable e) {
             this.executionException = new ExecutionException(e);
