@@ -19,11 +19,9 @@ import java.util.concurrent.TimeUnit;
  */
 
 public final class ThreadWaitConfig<E> implements java.io.Serializable {
+
     //************************************************A: park config**************************************************//
-    private final int constructorSeq;
-    private long timeNanos;
-    private Object blocker;
-    private ThreadParkSupport parkSupport;
+    private final ThreadParkSupport parkSupport;
 
     //************************************************B: wait node config*********************************************//
     //node type
@@ -45,39 +43,30 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     //                                              1: constructors methods(6)                                        //
     //****************************************************************************************************************//
     public ThreadWaitConfig() {
-        this.constructorSeq = 1;
         this.parkSupport = new ThreadParkSupport();
     }
 
     public ThreadWaitConfig(Object blocker) {
-        this.constructorSeq = 2;
-        this.blocker = blocker;
         this.parkSupport = new ThreadParkSupport.ThreadBlockerParkSupport(blocker);
     }
 
     public ThreadWaitConfig(long deadlineMs) {
-        this.constructorSeq = 3;
         this.parkSupport = new ThreadParkSupport.MillisecondsUtilParkSupport(deadlineMs);
     }
 
     public ThreadWaitConfig(long deadlineMs, Object blocker) {
-        this.constructorSeq = 4;
+
         this.parkSupport = new ThreadParkSupport.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker);
     }
 
     public ThreadWaitConfig(long timeout, TimeUnit unit) {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        this.constructorSeq = 5;
-        this.timeNanos = unit.toNanos(timeout);
-        this.parkSupport = new ThreadParkSupport.NanoSecondsParkSupport(timeNanos);
+        this.parkSupport = new ThreadParkSupport.NanoSecondsParkSupport(unit.toNanos(timeout));
     }
 
     public ThreadWaitConfig(long timeout, TimeUnit unit, Object blocker) {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        this.constructorSeq = 6;
-        this.blocker = blocker;
-        this.timeNanos = unit.toNanos(timeout);
-        this.parkSupport = new ThreadParkSupport.NanoSecondsBlockerParkSupport(timeNanos, blocker);
+        this.parkSupport = new ThreadParkSupport.NanoSecondsBlockerParkSupport(unit.toNanos(timeout), blocker);
     }
 
     //****************************************************************************************************************//
