@@ -153,8 +153,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
      * @return {@code true} if this executor has been shut down
      */
     public boolean isShutdown() {
-        //@todo
-        return false;
+        return state.get() >= SHUTDOWN;
     }
 
     /**
@@ -165,8 +164,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
      * @return {@code true} if all tasks have completed following shut down
      */
     public boolean isTerminated() {
-        //@todo
-        return false;
+        return state.get() == TERMINATED;
     }
 
     /**
@@ -181,8 +179,10 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
      * @throws InterruptedException if interrupted while waiting
      */
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        //@todo
-        return false;
+        if (isTerminated()) return true;
+        ThreadWaitConfig config = new ThreadWaitConfig(timeout, unit);
+        waitPool.doWait(config);
+        return isTerminated();
     }
 
     /**
