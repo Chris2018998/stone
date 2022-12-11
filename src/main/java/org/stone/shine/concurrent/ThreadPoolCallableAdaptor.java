@@ -9,18 +9,17 @@
  */
 package org.stone.shine.concurrent;
 
-
 import java.util.concurrent.Callable;
 
 /**
- * Task Future Impl
+ * Callable Adaptor for runnable
  *
  * @author Chris Liao
  * @version 1.0
  */
 final class ThreadPoolCallableAdaptor<V> implements Callable<V> {
-    private V defaultResult;
-    private Runnable runnable;
+    private final V defaultResult;
+    private final Runnable runnable;
 
     public ThreadPoolCallableAdaptor(Runnable runnable) {
         this(runnable, null);
