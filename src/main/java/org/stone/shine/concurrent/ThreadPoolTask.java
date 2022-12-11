@@ -39,8 +39,6 @@ class ThreadPoolTask<V> {
     private final Callable<V> call;
     //task state(can be read by future)
     private final AtomicInteger state;
-    //fetch result
-    private ThreadTaskFuture<V> future;
 
     //default result set to future when call result is null
     private V defaultResult;
@@ -51,9 +49,8 @@ class ThreadPoolTask<V> {
     //exception from executing call
     private ExecutionException executionException;
 
-    public ThreadPoolTask(Callable<V> call, ThreadTaskFuture<V> future) {
+    public ThreadPoolTask(Callable<V> call) {
         this.call = call;
-        this.future = future;
         this.taskId = UUID.randomUUID();
         this.state = new AtomicInteger(State_New);
     }
@@ -63,11 +60,6 @@ class ThreadPoolTask<V> {
     //****************************************************************************************************************//
     UUID getTaskId() {
         return taskId;
-    }
-
-    //runnable call not need bind
-    public void bindFuture(ThreadTaskFuture<V> future) {
-        this.future = future;
     }
 
     public boolean isExistDefaultResult() {
