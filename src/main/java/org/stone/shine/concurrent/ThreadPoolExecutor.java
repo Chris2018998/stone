@@ -15,6 +15,7 @@ import org.stone.shine.synchronizer.base.validator.AnyValidator;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,6 +33,16 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     private static final int STOP = 3;
     private static final int TIDYING = 4;
     private static final int TERMINATED = 5;
+    private static final String TERMINATED_WAIT_KEY = UUID.randomUUID().toString();
+
+    //allow max size to work
+    private int workerMaxSize;
+    //worker wait time for task(0 means not timeout)
+    private volatile long keepAliveTime;
+    //worker thread factory
+    private volatile ThreadFactory workerThreadFactory;
+    //Handler called when saturated or shutdown in execute.
+    private volatile RejectedExecutionHandler handler;
 
     //allow max size in queue
     private int taskMaxSize;
@@ -46,18 +57,10 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     //task queue
     private ConcurrentLinkedQueue taskQueue = new ConcurrentLinkedQueue();
 
-    //allow max size to work
-    private int workerMaxSize;
-    //worker wait time for task(0 means not timeout)
-    private volatile long keepAliveTime;
-    //worker thread factory
-    private volatile ThreadFactory workerThreadFactory;
-    //Handler called when saturated or shutdown in execute.
-    private volatile RejectedExecutionHandler handler;
-    //for Future wait and awaitTermination,Worker thread
-    private StateWaitPool waitPool = new StateWaitPool(new AnyValidator());
     //pool state
     private AtomicInteger state = new AtomicInteger(RUNNING);
+    //for Future wait and awaitTermination,Worker thread
+    private StateWaitPool waitPool = new StateWaitPool(new AnyValidator());
 
     //****************************************************************************************************************//
     //                                          1: constructor(2)                                                     //
@@ -380,6 +383,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     void waitCallResult(ThreadWaitConfig config) throws InterruptedException {
         waitPool.doWait(config);
     }
+
 
     //****************************************************************************************************************//
     //                                          5:ThreadPoolExecutor inner classes                                    //
