@@ -27,11 +27,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPoolExecutor<E> implements ExecutorService {
     //pool state
-    private static final Object RUNNING = new Object();
-    private static final Object SHUTDOWN = new Object();
-    private static final Object STOP = new Object();
-    private static final Object TIDYING = new Object();
-    private static final Object TERMINATED = new Object();
+    private static final int RUNNING = 1;
+    private static final int SHUTDOWN = 2;
+    private static final int STOP = 3;
+    private static final int TIDYING = 4;
+    private static final int TERMINATED = 5;
 
     //allow max size in queue
     private int taskMaxSize;
@@ -56,6 +56,8 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     private volatile RejectedExecutionHandler handler;
     //for Future wait and awaitTermination,Worker thread
     private StateWaitPool waitPool = new StateWaitPool(new AnyValidator());
+    //pool state
+    private AtomicInteger state = new AtomicInteger(RUNNING);
 
     //****************************************************************************************************************//
     //                                          1: constructor(2)                                                     //
@@ -73,7 +75,23 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     }
 
     //****************************************************************************************************************//
-    //                                          2: Executor public methods                                            //
+    //                                          2: private methods                                                    //
+    //****************************************************************************************************************//
+
+    private final int getState() {
+        return state.get();
+    }
+
+    private final void setState(int newState) {
+        state.set(newState);
+    }
+
+    private final boolean compareAndSetState(int expect, int update) {
+        return state.compareAndSet(expect, update);
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: Executor public methods                                            //
     //****************************************************************************************************************//
 
     /**
@@ -352,7 +370,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     }
 
     //****************************************************************************************************************//
-    //                                          3:ThreadPoolExecutor inner methods                                    //
+    //                                          4:ThreadPoolExecutor inner methods                                    //
     //****************************************************************************************************************//
     boolean cancelTask(Object taskHolder, boolean mayInterruptIfRunning) {
         return false;
@@ -364,7 +382,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
     }
 
     //****************************************************************************************************************//
-    //                                          4:ThreadPoolExecutor inner classes                                    //
+    //                                          5:ThreadPoolExecutor inner classes                                    //
     //****************************************************************************************************************//
 
 }
