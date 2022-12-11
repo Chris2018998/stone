@@ -17,9 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Future Impl by wait pool(which inside ThreadPoolExecutor)
- * <p>
- * TaskHolder contains two attributes:taskFuture,Callable
+ * Task Future Impl
  *
  * @author Chris Liao
  * @version 1.0
