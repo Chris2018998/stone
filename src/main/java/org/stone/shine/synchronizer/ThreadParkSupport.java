@@ -67,12 +67,12 @@ public class ThreadParkSupport {
     //****************************************************************************************************************//
     //                                           get methods(4)                                                       //
     //****************************************************************************************************************//
-    public final long getDeadline() {
-        return deadline;
-    }
-
     public final long getParkTime() {
         return parkTime;
+    }
+
+    public final long getDeadline() {
+        return deadline;
     }
 
     public final boolean isTimeout() {
@@ -85,6 +85,11 @@ public class ThreadParkSupport {
 
     public String toString() {
         return "Implementation with LockSupport.park()";
+    }
+
+    public void reset() {
+        this.parkTime = 1L;
+        this.interrupted = false;
     }
 
     //****************************************************************************************************************//
@@ -122,7 +127,15 @@ public class ThreadParkSupport {
     //                                            NanoSeconds park Implement                                          //
     //****************************************************************************************************************//
     static class NanoSecondsParkSupport extends ThreadParkSupport {
+        private final long nanoTime;
+
         NanoSecondsParkSupport(long nanoTime) {
+            this.nanoTime = nanoTime;
+            this.deadline = System.nanoTime() + nanoTime;
+        }
+
+        public void reset() {
+            super.reset();
             this.deadline = System.nanoTime() + nanoTime;
         }
 
@@ -188,6 +201,10 @@ public class ThreadParkSupport {
 
         public String toString() {
             return "Implementation with LockSupport.parkUntil(deadline)";
+        }
+
+        public void reset() {
+            throw new IllegalArgumentException("can't support deadline reset");
         }
     }
 
