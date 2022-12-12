@@ -55,7 +55,6 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     }
 
     public ThreadWaitConfig(long deadlineMs, Object blocker) {
-
         this.parkSupport = new ThreadParkSupport.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker);
     }
 
