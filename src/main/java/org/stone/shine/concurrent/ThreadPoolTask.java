@@ -114,8 +114,12 @@ class ThreadPoolTask<V> {
     //****************************************************************************************************************//
     public final void executeTask() {
         try {
-            this.result = call.call();
-            compareAndSetState(State_Executing, State_Result);
+            if (compareAndSetState(State_New, State_Executing)) {
+                this.result = call.call();
+                this.setState(State_Result);
+            }
+        } catch (InterruptedException e) {
+            this.setState(State_Canceled);
         } catch (Throwable e) {
             this.executionException = new ExecutionException(e);
             compareAndSetState(State_Executing, State_ExecutionException);
