@@ -114,7 +114,7 @@ public abstract class ThreadWaitPool<E> {
         return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType) != null ? 1 : 0;
     }
 
-    public final CasNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
+    protected final CasNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
         return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType);
     }
 
