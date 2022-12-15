@@ -9,6 +9,7 @@
  */
 package org.stone.shine.synchronizer;
 
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -55,7 +56,7 @@ final class CasNodeChain {
     }
 
     final Iterator iterator() {
-        return new AscItr(head);
+        return new AscItr(head.getNext());
     }
 
     final Iterator descendingIterator() {
@@ -65,48 +66,77 @@ final class CasNodeChain {
     //****************************************************************************************************************//
     //                                          Iterator implement                                                    //
     //****************************************************************************************************************//
-    private static class AscItr implements Iterator {
-        private CasNode currentNode;
-        private Object currentNodeState;
+    private static abstract class PointerItr implements Iterator {
+        final ChainPointer point;
 
-        public AscItr(CasNode currentNode) {
-            this.currentNode = currentNode;
+        PointerItr(CasNode currentNode) {
+            this.point = new ChainPointer(currentNode);
         }
 
         public boolean hasNext() {
-            if (currentNode == null) throw new NoSuchElementException();
+            if (point.currentNode == null) throw new NoSuchElementException();
+            if (point.currentState != REMOVED) return true;
+
+            searchNextNode(point);
+            if (point.currentNode == null) throw new NoSuchElementException();
             return true;
         }
 
         public Object next() {
-            return null;
+            //1:check current node and item
+            CasNode curNode = point.currentNode;
+            if (curNode == null) throw new NoSuchElementException();
+            Object item = curNode.getState();
+            if (item != REMOVED) return item;//valid node
+
+            //2:re-get a valid node from chain
+            searchNextNode(point);
+            if (point.currentNode == null) throw new ConcurrentModificationException();
+            return point.currentState;
         }
 
         public void remove() {
             throw new UnsupportedOperationException("remove");
         }
 
+        abstract void searchNextNode(ChainPointer point);
     }
 
-    private static class DescItr implements Iterator {
+
+    private static class AscItr extends PointerItr {
+        AscItr(CasNode currentNode) {
+            super(currentNode);
+        }
+
+        public void searchNextNode(ChainPointer point) {
+
+        }
+    }
+
+    private static class DescItr extends PointerItr {
+        DescItr(CasNode currentNode) {
+            super(currentNode);
+        }
+
+        public void searchNextNode(ChainPointer point) {
+
+        }
+    }
+
+    private static class ChainPointer {
         private CasNode currentNode;
+        private Object currentState;
 
-        public DescItr(CasNode currentNode) {
-            this.currentNode = currentNode;
+        ChainPointer(CasNode currentNode) {
+            if (currentNode != null) {
+                this.currentNode = currentNode;
+                this.currentState = currentNode.getState();
+            }
         }
 
-        public boolean hasNext() {
-            if (currentNode == null) throw new NoSuchElementException();
-            return true;
+        void fill(CasNode node, Object state) {
+            this.currentNode = node;
+            this.currentState = state;
         }
-
-        public Object next() {
-            return null;
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
-
     }
 }
