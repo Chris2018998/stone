@@ -40,24 +40,16 @@ final class CasNodeChain {
     }
 
     final boolean remove(CasNode node) {
+        node.setState(REMOVED);
         CasNode preNode = node.getPrev();
-        CasNode preNextNode = preNode.getNext();
-
-        if (node == tail) {//node is tail
-            if (casTail(this, node, preNode)) {
-                casNext(preNode, preNextNode, null);
-                return true;
-            }
+        if (node == tail && casTail(this, node, preNode)) {
+            casNext(preNode, preNode.getNext(), null);
         } else {
             CasNode nodeNext = node.getNext();
-            CasNode nodePrev = nodeNext.getPrev();
-            if (casNext(preNode, preNextNode, nodeNext)) {
-                casPrev(nodeNext, nodePrev, preNode);
-                return true;
-            }
+            if (casNext(preNode, preNode.getNext(), nodeNext))
+                if (nodeNext != null) casPrev(nodeNext, nodeNext.getPrev(), preNode);
         }
-
-        return false;
+        return true;
     }
 
     final Iterator iterator() {
