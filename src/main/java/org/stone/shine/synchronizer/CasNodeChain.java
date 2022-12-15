@@ -11,8 +11,9 @@ package org.stone.shine.synchronizer;
 
 import java.util.Iterator;
 
-import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
+import static org.stone.shine.synchronizer.CasNodeUpdater.casNext;
 import static org.stone.shine.synchronizer.CasNodeUpdater.casTail;
+import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
  * A synchronize node chain
@@ -25,36 +26,83 @@ final class CasNodeChain {
     private final CasNode head = new CasNode(null);
     private volatile CasNode tail = head;
 
-    public final boolean offer(CasNode node) {
+    final void offer(CasNode node) {
         CasNode t;
         do {
             t = tail;//tail always exists
             if (casTail(this, t, node)) {//set as new tail
                 t.setNext(node);
                 node.setPrev(t);
-                return true;
+                return;
             }
         } while (true);
     }
 
-    public final boolean remove(CasNode node) {
-        CasNode t;
-        do {
-            t = tail;//tail always exists
-            if (t.getNext() == null && casState(t, null, node)) {//append to tail.next
-                node.setPrev(t);
-                this.tail = node;//new tail
-                return true;
-            }
-        } while (t != null);
+    final boolean remove(CasNode node) {
+        CasNode preNode = node.getPrev();
+        CasNode predNext = preNode.getNext();
+
+        if (node == tail && casTail(this, node, preNode)) {//node is tail
+            casNext(preNode, predNext, null);
+            node.setState(REMOVED);
+            return true;
+        } else if (casNext(preNode, node, node.getNext())) {
+            node.setState(REMOVED);
+            return true;
+        }
         return false;
     }
 
-    public final Iterator<CasNode> iterator() {
-        return null;
+    final Iterator iterator() {
+        return new AscItr(head);
     }
 
-    public final Iterator<CasNode> descendingIterator() {
-        return null;
+    final Iterator descendingIterator() {
+        return new DescItr(tail);
+    }
+
+    //****************************************************************************************************************//
+    //                                          Iterator implement                                                    //
+    //****************************************************************************************************************//
+    private class AscItr implements Iterator {
+        private CasNode startNode;
+
+        public AscItr(CasNode startNode) {
+            this.startNode = startNode;
+        }
+
+        public boolean hasNext() {
+            return true;
+        }
+
+        public Object next() {
+            return null;
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
+
+    }
+
+    private class DescItr implements Iterator {
+        private CasNode startNode;
+
+        public DescItr(CasNode startNode) {
+            this.startNode = startNode;
+        }
+
+        public boolean hasNext() {
+            return true;
+        }
+
+
+        public Object next() {
+            return null;
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
     }
 }
