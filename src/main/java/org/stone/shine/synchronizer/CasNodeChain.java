@@ -24,7 +24,7 @@ import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
  */
 
 final class CasNodeChain {
-    private final CasNode head = new CasNode(null);
+    private final CasNode head = new CasNode(REMOVED);
     private volatile CasNode tail = head;
 
     final void offer(CasNode node) {
@@ -57,7 +57,8 @@ final class CasNodeChain {
     }
 
     final Iterator descendingIterator() {
-        return new DescItr(tail);
+        CasNode t = tail;
+        return new DescItr(t != head ? t : null);
     }
 
     //****************************************************************************************************************//
