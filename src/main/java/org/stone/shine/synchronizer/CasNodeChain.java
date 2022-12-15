@@ -12,6 +12,7 @@ package org.stone.shine.synchronizer;
 import java.util.Iterator;
 
 import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
+import static org.stone.shine.synchronizer.CasNodeUpdater.casTail;
 
 /**
  * A synchronize node chain
@@ -24,14 +25,14 @@ final class CasNodeChain {
     private final CasNode head = new CasNode(null);
     private volatile CasNode tail = head;
 
-    public final CasNode offer(CasNode node) {
+    public final boolean offer(CasNode node) {
         CasNode t;
         do {
             t = tail;//tail always exists
-            if (t.getNext() == null && casState(t, null, node)) {//append to tail.next
+            if (casTail(this, t, node)) {//set as new tail
+                t.setNext(node);
                 node.setPrev(t);
-                this.tail = node;//new tail
-                return node;
+                return true;
             }
         } while (true);
     }

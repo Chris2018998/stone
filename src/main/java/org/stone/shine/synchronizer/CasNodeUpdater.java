@@ -23,6 +23,7 @@ public final class CasNodeUpdater {
     private final static long stateOffSet;
 
     //chain field offset
+    private final static long tailOffSet;
     private final static long prevOffSet;
     private final static long nextOffSet;
 
@@ -36,9 +37,15 @@ public final class CasNodeUpdater {
             prevOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("prev"));
             //ThreadNode.next
             nextOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("next"));
+            //CasNodeChain.tail
+            tailOffSet = U.objectFieldOffset(CasNodeChain.class.getDeclaredField("tail"));
         } catch (Exception e) {
             throw new Error(e);
         }
+    }
+
+    static boolean casTail(CasNodeChain chain, CasNode expect, CasNode update) {
+        return U.compareAndSwapObject(chain, tailOffSet, expect, update);
     }
 
     public static boolean casPrev(CasNode n, CasNode curPrev, CasNode newPrev) {
