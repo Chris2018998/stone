@@ -12,7 +12,6 @@ package org.stone.shine.synchronizer;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.synchronizer.CasStaticState.INTERRUPTED;
@@ -27,9 +26,8 @@ import static org.stone.util.CommonUtil.objectEquals;
  */
 
 public abstract class ThreadWaitPool<E> {
-
-    //temp util ThreadNodeChain is stable
-    private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();
+    private final CasNodeChain waitQueue = new CasNodeChain();
+    //private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
@@ -64,7 +62,6 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                          2: queue Methods(8)                                                   //
     //****************************************************************************************************************//
-
     protected final void appendNode(CasNode node) {
         waitQueue.offer(node);
     }

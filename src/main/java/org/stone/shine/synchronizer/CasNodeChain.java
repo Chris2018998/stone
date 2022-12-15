@@ -10,6 +10,7 @@
 package org.stone.shine.synchronizer;
 
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import static org.stone.shine.synchronizer.CasNodeUpdater.casNext;
 import static org.stone.shine.synchronizer.CasNodeUpdater.casTail;
@@ -64,14 +65,16 @@ final class CasNodeChain {
     //****************************************************************************************************************//
     //                                          Iterator implement                                                    //
     //****************************************************************************************************************//
-    private class AscItr implements Iterator {
-        private CasNode startNode;
+    private static class AscItr implements Iterator {
+        private CasNode currentNode;
+        private Object currentNodeState;
 
-        public AscItr(CasNode startNode) {
-            this.startNode = startNode;
+        public AscItr(CasNode currentNode) {
+            this.currentNode = currentNode;
         }
 
         public boolean hasNext() {
+            if (currentNode == null) throw new NoSuchElementException();
             return true;
         }
 
@@ -85,17 +88,17 @@ final class CasNodeChain {
 
     }
 
-    private class DescItr implements Iterator {
-        private CasNode startNode;
+    private static class DescItr implements Iterator {
+        private CasNode currentNode;
 
-        public DescItr(CasNode startNode) {
-            this.startNode = startNode;
+        public DescItr(CasNode currentNode) {
+            this.currentNode = currentNode;
         }
 
         public boolean hasNext() {
+            if (currentNode == null) throw new NoSuchElementException();
             return true;
         }
-
 
         public Object next() {
             return null;
@@ -104,5 +107,6 @@ final class CasNodeChain {
         public void remove() {
             throw new UnsupportedOperationException("remove");
         }
+
     }
 }
