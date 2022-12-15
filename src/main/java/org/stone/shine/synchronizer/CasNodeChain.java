@@ -13,8 +13,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static org.stone.shine.synchronizer.CasNodeUpdater.casNext;
-import static org.stone.shine.synchronizer.CasNodeUpdater.casTail;
+import static org.stone.shine.synchronizer.CasNodeUpdater.*;
 import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
@@ -41,17 +40,26 @@ final class CasNodeChain {
     }
 
     final boolean remove(CasNode node) {
-        CasNode preNode = node.getPrev();
-        CasNode predNext = preNode.getNext();
+        Object state = node.getState();
+       // if (state != REMOVED && casState(node, state, REMOVED)) {
+            CasNode preNode = node.getPrev();
+            CasNode preNextNode = preNode.getNext();
 
-        if (node == tail && casTail(this, node, preNode)) {//node is tail
-            casNext(preNode, predNext, null);
-            node.setState(REMOVED);
-            return true;
-        } else if (casNext(preNode, node, node.getNext())) {
-            node.setState(REMOVED);
-            return true;
-        }
+            if (node == tail) {//node is tail
+                if (casTail(this, node, preNode)){
+                    casNext(preNode, preNextNode, null);
+                    return true;
+                }
+            } else {
+                CasNode nodeNext = node.getNext();
+                CasNode nodePrev = nodeNext.getPrev();
+                if (casNext(preNode, preNextNode, nodeNext)) {
+                    casPrev(nodeNext, nodePrev, preNode);
+                    return true;
+                }
+            }
+
+       // }
         return false;
     }
 
@@ -67,32 +75,30 @@ final class CasNodeChain {
     //                                          Iterator implement                                                    //
     //****************************************************************************************************************//
     private static abstract class PointerItr implements Iterator {
-        final ChainPointer point;
+        final ChainPointer pointer;
 
         PointerItr(CasNode currentNode) {
-            this.point = new ChainPointer(currentNode);
+            this.pointer = new ChainPointer(currentNode);
         }
 
         public boolean hasNext() {
-            if (point.currentNode == null) throw new NoSuchElementException();
-            if (point.currentState != REMOVED) return true;
+            if (pointer.currentNode == null) return false;
+            if (pointer.currentState != REMOVED) return true;
 
-            searchNextNode(point);
-            if (point.currentNode == null) throw new NoSuchElementException();
-            return true;
+            searchNextNode(pointer);
+            return pointer.currentNode != null;
         }
 
         public Object next() {
             //1:check current node and item
-            CasNode curNode = point.currentNode;
+            CasNode curNode = pointer.currentNode;
             if (curNode == null) throw new NoSuchElementException();
-            Object item = curNode.getState();
-            if (item != REMOVED) return item;//valid node
+            if (pointer.currentState != REMOVED) return pointer.currentState;//valid node
 
             //2:re-get a valid node from chain
-            searchNextNode(point);
-            if (point.currentNode == null) throw new ConcurrentModificationException();
-            return point.currentState;
+            searchNextNode(pointer);
+            if (pointer.currentNode == null) throw new ConcurrentModificationException();
+            return pointer.currentState;
         }
 
         public void remove() {
@@ -102,14 +108,29 @@ final class CasNodeChain {
         abstract void searchNextNode(ChainPointer point);
     }
 
-
     private static class AscItr extends PointerItr {
         AscItr(CasNode currentNode) {
             super(currentNode);
         }
 
         public void searchNextNode(ChainPointer point) {
+            CasNode searchedNode = null;
+            Object searchedNodeState = null;
+            CasNode curNode = pointer.currentNode.getNext();
 
+            try {
+                while (curNode != null) {
+                    Object state = curNode.getState();
+                    if (state != REMOVED) {//find a valid node
+                        searchedNode = curNode;
+                        searchedNodeState = state;
+                        break;
+                    }
+                    curNode = curNode.getNext();
+                }
+            } finally {
+                pointer.fill(searchedNode, searchedNodeState);
+            }
         }
     }
 
@@ -119,7 +140,23 @@ final class CasNodeChain {
         }
 
         public void searchNextNode(ChainPointer point) {
+            CasNode searchedNode = null;
+            Object searchedNodeState = null;
+            CasNode curNode = pointer.currentNode.getPrev();
 
+            try {
+                while (curNode != null) {
+                    Object state = curNode.getState();
+                    if (state != REMOVED) {//find a valid node
+                        searchedNode = curNode;
+                        searchedNodeState = state;
+                        break;
+                    }
+                    curNode = curNode.getPrev();
+                }
+            } finally {
+                pointer.fill(searchedNode, searchedNodeState);
+            }
         }
     }
 
