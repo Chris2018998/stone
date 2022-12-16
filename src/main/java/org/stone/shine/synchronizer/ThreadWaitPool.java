@@ -12,8 +12,10 @@ package org.stone.shine.synchronizer;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
 import static org.stone.shine.synchronizer.CasStaticState.INTERRUPTED;
 import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 import static org.stone.util.CommonUtil.objectEquals;
@@ -26,8 +28,8 @@ import static org.stone.util.CommonUtil.objectEquals;
  */
 
 public abstract class ThreadWaitPool<E> {
-    private final CasNodeChain waitQueue = new CasNodeChain();
-    //private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
+    //private final CasNodeChain waitQueue = new CasNodeChain();
+    private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
@@ -37,7 +39,7 @@ public abstract class ThreadWaitPool<E> {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
             if (nodeType != null && !objectEquals(nodeType, node.getType())) continue;
-            if (CasNodeUpdater.casState(node, null, toState)) {
+            if (casState(node, null, toState)) {
                 LockSupport.unpark(node.getThread());
                 return node;
             }
@@ -51,7 +53,7 @@ public abstract class ThreadWaitPool<E> {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
             if (nodeType != null && !objectEquals(nodeType, node.getType())) continue;
-            if (CasNodeUpdater.casState(node, null, toState)) {
+            if (casState(node, null, toState)) {
                 LockSupport.unpark(node.getThread());
                 count++;
             }
@@ -126,7 +128,7 @@ public abstract class ThreadWaitPool<E> {
         return waitQueue.descendingIterator();
     }
 
-    protected boolean existsTypeNode(Object nodeType) {
+    protected final boolean existsTypeNode(Object nodeType) {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
@@ -211,7 +213,7 @@ public abstract class ThreadWaitPool<E> {
             if (parker.park() && throwsIE) {//interrupted
                 if (node.getState() == null) {
                     //step1:try to cas state to INTERRUPTED,if failed,the step2 can be reach
-                    if (CasNodeUpdater.casState(node, null, INTERRUPTED))
+                    if (casState(node, null, INTERRUPTED))
                         throw new InterruptedException();
                 }
 

@@ -9,7 +9,13 @@
  */
 package org.stone.shine.synchronizer.base;
 
-import org.stone.shine.synchronizer.*;
+import org.stone.shine.synchronizer.CasNode;
+import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.ThreadWaitConfig;
+import org.stone.shine.synchronizer.ThreadWaitPool;
+
+import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
+import static org.stone.shine.synchronizer.CasStaticState.TIMEOUT;
 
 /**
  * Signal Wait Pool,caller try to get a signal from pool,if not get,then wait for it util timeout
@@ -51,7 +57,7 @@ public class SignalWaitPool extends ThreadWaitPool {
                 //5.2: timeout test
                 if (parker.isTimeout()) {
                     //5.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
-                    if (CasNodeUpdater.casState(node, null, CasStaticState.TIMEOUT)) return false;
+                    if (casState(node, null, TIMEOUT)) return false;
                 } else {
                     //5.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);

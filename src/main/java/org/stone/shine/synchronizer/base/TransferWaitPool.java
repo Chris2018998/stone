@@ -9,9 +9,16 @@
  */
 package org.stone.shine.synchronizer.base;
 
-import org.stone.shine.synchronizer.*;
+import org.stone.shine.synchronizer.CasNode;
+import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.ThreadWaitConfig;
+import org.stone.shine.synchronizer.ThreadWaitPool;
 
 import java.util.Iterator;
+
+import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
+import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
+import static org.stone.shine.synchronizer.CasStaticState.TIMEOUT;
 
 /**
  * transfer wait pool
@@ -91,7 +98,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     //                                          3: get methods                                                        //
     //****************************************************************************************************************//
     public final E tryGet() {
-        CasNode<E> node = this.getWokenUpNode(fair, CasStaticState.SIGNAL, Node_Type_Data);
+        CasNode<E> node = this.getWokenUpNode(fair, SIGNAL, Node_Type_Data);
         return node != null ? node.getValue() : null;
     }
 
@@ -140,7 +147,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
                 //4.2: timeout test
                 if (parker.isTimeout()) {
                     //4.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
-                    if (CasNodeUpdater.casState(node, null, CasStaticState.TIMEOUT)) return null;
+                    if (casState(node, null, TIMEOUT)) return null;
                 } else {
                     //4.3: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);

@@ -9,8 +9,14 @@
  */
 package org.stone.shine.synchronizer.base;
 
-import org.stone.shine.synchronizer.*;
+import org.stone.shine.synchronizer.CasNode;
+import org.stone.shine.synchronizer.ThreadParkSupport;
+import org.stone.shine.synchronizer.ThreadWaitConfig;
+import org.stone.shine.synchronizer.ThreadWaitPool;
 import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
+
+import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
+import static org.stone.shine.synchronizer.CasStaticState.TIMEOUT;
 
 /**
  * Result call executed inside pool and compare result of call with expected parameter,if equals,return true
@@ -110,7 +116,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 //6.3:timeout test
                 if (parker.isTimeout()) {
                     //6.3.1:try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
-                    if (CasNodeUpdater.casState(node, state, CasStaticState.TIMEOUT))
+                    if (casState(node, state, TIMEOUT))
                         return validator.resultOnTimeout();
                 } else if (state != null) {//6.4:reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);

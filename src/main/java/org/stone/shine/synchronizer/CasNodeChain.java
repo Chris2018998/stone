@@ -30,24 +30,23 @@ final class CasNodeChain {
     final void offer(CasNode node) {
         CasNode t;
         do {
-            t = tail;//tail always exists
-            if (casTail(this, t, node)) {//set as new tail
-                t.setNext(node);
-                node.setPrev(t);
-                return;
-            }
-        } while (true);
+            t = this.tail;
+        } while (!casTail(this, t, node));
+
+        t.setNext(node);
+        node.setPrev(t);
     }
 
     final boolean remove(CasNode node) {
         node.setState(REMOVED);
         CasNode preNode = node.getPrev();
-        if (node == tail && casTail(this, node, preNode)) {
+        if (node == this.tail && casTail(this, node, preNode)) {
             casNext(preNode, preNode.getNext(), null);
         } else {
             CasNode nodeNext = node.getNext();
-            if (casNext(preNode, preNode.getNext(), nodeNext))
-                if (nodeNext != null) casPrev(nodeNext, nodeNext.getPrev(), preNode);
+            if (casNext(preNode, preNode.getNext(), nodeNext) && nodeNext != null) {
+                casPrev(nodeNext, nodeNext.getPrev(), preNode);
+            }
         }
         return true;
     }
