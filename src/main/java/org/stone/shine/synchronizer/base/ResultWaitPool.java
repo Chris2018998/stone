@@ -94,14 +94,14 @@ public class ResultWaitPool extends ThreadWaitPool {
         }
 
         //3:get wait node from config object
-        CasNode node = config.getCasNode();
+        final CasNode node = config.getCasNode();
 
         //4:get control parameters from config
-        boolean throwsIE = config.isThrowsIE();
-        boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
+        final boolean throwsIE = config.isThrowsIE();
+        final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
 
         //5:create thread parker
-        ThreadParkSupport parker = config.getThreadParkSupport();
+        final ThreadParkSupport parker = config.getThreadParkSupport();
 
         //6:spin control
         try {

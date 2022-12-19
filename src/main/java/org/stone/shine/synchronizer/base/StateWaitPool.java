@@ -62,15 +62,15 @@ public class StateWaitPool extends ThreadWaitPool {
         if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
         //1:create wait node and offer to wait queue
-        CasNode node = config.getCasNode();
+        final CasNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config
-        boolean throwsIE = config.isThrowsIE();
-        boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
+        final boolean throwsIE = config.isThrowsIE();
+        final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
 
         //3:create thread parker
-        ThreadParkSupport parker = config.getThreadParkSupport();
+        final ThreadParkSupport parker = config.getThreadParkSupport();
 
         //4:spin control
         try {

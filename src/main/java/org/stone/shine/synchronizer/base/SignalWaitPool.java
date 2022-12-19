@@ -37,15 +37,15 @@ public class SignalWaitPool extends ThreadWaitPool {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //2:create wait node and offer to wait queue
-        CasNode node = config.getCasNode();
+        final CasNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //3:get control parameters from config
-        boolean throwsIE = config.isThrowsIE();
-        boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
+        final boolean throwsIE = config.isThrowsIE();
+        final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
 
         //4:create thread parker
-        ThreadParkSupport parker = config.getThreadParkSupport();
+        final ThreadParkSupport parker = config.getThreadParkSupport();
 
         //5:spin control
         try {
