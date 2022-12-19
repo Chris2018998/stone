@@ -17,10 +17,10 @@ package org.stone.shine.synchronizer;
  */
 
 public final class CasNode<E> {
-    private Object type;//node type
+    Object type;//node type
+    Thread thread;//node thread
+    volatile Object state;//cas field
     private E value;//node value
-    private Thread thread;//node thread
-    private volatile Object state;//cas field
 
     //chain info(unusable fields at present)
     private volatile CasNode prev;
@@ -54,18 +54,6 @@ public final class CasNode<E> {
 
     public final E getValue() {
         return value;
-    }
-
-    public final void setValue(E value) {
-        this.value = value;
-    }
-
-    public final Thread getThread() {
-        return thread;
-    }
-
-    final void setThread(Thread thread) {
-        this.thread = thread;
     }
 
     public final Object getState() {

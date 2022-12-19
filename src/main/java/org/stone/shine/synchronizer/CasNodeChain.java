@@ -70,10 +70,11 @@ final class CasNodeChain {
             this.pointer = new ChainPointer(currentNode);
         }
 
+        //valid node exists test method
         public boolean hasNext() {
             if (pointer.curNode == null) return false;
 
-            //try to search a valid node after/prev current node
+            //try to search a valid node after/prev current node(test)
             fillNextNode(pointer);
             return pointer.nextNode != null;
         }
@@ -126,7 +127,7 @@ final class CasNodeChain {
                     pointer.fillNextNode(nextNode, state);
                     break;
                 }
-                nextNode = nextNode.getNext();
+                nextNode = curNode.getNext();
             }
         }
     }

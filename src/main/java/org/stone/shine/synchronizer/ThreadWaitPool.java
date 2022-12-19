@@ -38,9 +38,9 @@ public abstract class ThreadWaitPool<E> {
     private static CasNode wakeupOne(Iterator<CasNode> iterator, Object toState, Object nodeType) {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (nodeType != null && !objectEquals(nodeType, node.getType())) continue;
-            if (casState(node, null, toState)) {
-                LockSupport.unpark(node.getThread());
+            if (nodeType != null && !objectEquals(nodeType, node.type)) continue;
+            if (node.state == null && casState(node, null, toState)) {
+                LockSupport.unpark(node.thread);
                 return node;
             }
         }
@@ -52,9 +52,9 @@ public abstract class ThreadWaitPool<E> {
         int count = 0;
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (nodeType != null && !objectEquals(nodeType, node.getType())) continue;
-            if (casState(node, null, toState)) {
-                LockSupport.unpark(node.getThread());
+            if (nodeType != null && !objectEquals(nodeType, node.type)) continue;
+            if (node.state == null && casState(node, null, toState)) {
+                LockSupport.unpark(node.thread);
                 count++;
             }
         }
@@ -74,7 +74,7 @@ public abstract class ThreadWaitPool<E> {
 
     protected final CasNode appendDataNode(Object type, Object value) {
         CasNode node = new CasNode(type, value);
-        node.setThread(null);
+        node.thread = null;
         waitQueue.offer(node);
         return node;
     }
@@ -132,7 +132,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (objectEquals(nodeType, node.getType())) return true;
+            if (objectEquals(nodeType, node.type)) return true;
         }
         return false;
     }
@@ -141,7 +141,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (node.getState() == null && node.getThread() != null) return true;
+            if (node.state == null && node.thread != null) return true;
         }
         return false;
     }
@@ -150,7 +150,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (node.getThread() == thread) return true;
+            if (node.thread == thread) return true;
         }
         return false;
     }
@@ -160,7 +160,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (node.getState() == null) count++;
+            if (node.state == null) count++;
         }
         return count;
     }
@@ -170,7 +170,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (node.getState() == null && node.getThread() != null) threadList.add(node.getThread());
+            if (node.state == null && node.thread != null) threadList.add(node.thread);
         }
         return threadList;
     }
@@ -182,7 +182,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (objectEquals(nodeType, node.getType()) && node.getState() == null) count++;
+            if (objectEquals(nodeType, node.type) && node.state == null) count++;
         }
         return count;
     }
@@ -194,8 +194,8 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (objectEquals(nodeType, node.getType()) && node.getState() == null && node.getThread() != null)
-                threadList.add(node.getThread());
+            if (objectEquals(nodeType, node.type) && node.state == null && node.thread != null)
+                threadList.add(node.thread);
         }
         return threadList;
     }
@@ -211,14 +211,14 @@ public abstract class ThreadWaitPool<E> {
     protected final void parkNodeThread(CasNode node, ThreadParkSupport parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
         if (parker.calculateParkTime()) {//before deadline
             if (parker.park() && throwsIE) {//interrupted
-                if (node.getState() == null) {
+                if (node.state == null) {
                     //step1:try to cas state to INTERRUPTED,if failed,the step2 can be reach
                     if (casState(node, null, INTERRUPTED))
                         throw new InterruptedException();
                 }
 
                 //step2:send signal state to other when got
-                Object state = node.getState();
+                Object state = node.state;
                 if (state != null && wakeupOtherOnIE)
                     wakeupOne(state);//send the got signal state to another waiter(skip over the current node during wakeup iterator)
                 throw new InterruptedException();
