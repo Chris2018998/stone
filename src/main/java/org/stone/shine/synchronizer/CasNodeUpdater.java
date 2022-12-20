@@ -29,8 +29,8 @@ public final class CasNodeUpdater {
 
     static {
         try {
-            Class nodeClass = CasNode.class;
             U = UnsafeAdaptorHolder.U;
+            Class nodeClass = CasNode.class;
             //ThreadNode.state
             stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));
             //ThreadNode.prev
