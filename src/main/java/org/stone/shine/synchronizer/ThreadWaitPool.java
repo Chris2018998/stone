@@ -39,7 +39,7 @@ public abstract class ThreadWaitPool<E> {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
             if (nodeType != null && !objectEquals(nodeType, node.type)) continue;
-            if (node.state == null && casState(node, null, toState)) {
+            if (casState(node, null, toState)) {
                 LockSupport.unpark(node.thread);
                 return node;
             }
@@ -53,7 +53,7 @@ public abstract class ThreadWaitPool<E> {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
             if (nodeType != null && !objectEquals(nodeType, node.type)) continue;
-            if (node.state == null && casState(node, null, toState)) {
+            if (casState(node, null, toState)) {
                 LockSupport.unpark(node.thread);
                 count++;
             }

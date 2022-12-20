@@ -57,7 +57,7 @@ public class SignalWaitPool extends ThreadWaitPool {
                 //5.2: timeout test
                 if (parker.isTimeout()) {
                     //5.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
-                    if (casState(node, null, TIMEOUT)) return false;
+                    if (casState(node, state, TIMEOUT)) return false;
                 } else {
                     //5.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);

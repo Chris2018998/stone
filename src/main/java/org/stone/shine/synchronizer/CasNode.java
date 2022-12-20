@@ -20,11 +20,12 @@ public final class CasNode<E> {
     Object type;//node type
     Thread thread;//node thread
     volatile Object state;//cas field
-    private E value;//node value
 
     //chain info(unusable fields at present)
-    private volatile CasNode prev;
-    private volatile CasNode next;
+    volatile CasNode prev;
+    volatile CasNode next;
+
+    private E value;//node value
 
     //****************************************************************************************************************//
     //                                                1: constructor(2)                                               //

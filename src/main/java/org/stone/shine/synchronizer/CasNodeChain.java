@@ -33,26 +33,26 @@ final class CasNodeChain {
             t = this.tail;
         } while (!casTail(this, t, node));
 
-        t.setNext(node);
-        node.setPrev(t);
+        t.next = node;
+        node.prev = t;
     }
 
     final boolean remove(CasNode node) {
         node.setState(REMOVED);
-        CasNode preNode = node.getPrev();
+        CasNode preNode = node.prev;
         if (node == this.tail && casTail(this, node, preNode)) {
-            casNext(preNode, preNode.getNext(), null);
+            casNext(preNode, preNode.next, null);
         } else {
-            CasNode nodeNext = node.getNext();
-            if (casNext(preNode, preNode.getNext(), nodeNext) && nodeNext != null) {
-                casPrev(nodeNext, nodeNext.getPrev(), preNode);
+            CasNode nodeNext = node.next;
+            if (casNext(preNode, preNode.next, nodeNext) && nodeNext != null) {
+                casPrev(nodeNext, nodeNext.prev, preNode);
             }
         }
         return true;
     }
 
     final Iterator iterator() {
-        return new AscItr(head.getNext());
+        return new AscItr(head.next);
     }
 
     final Iterator descendingIterator() {
@@ -111,7 +111,7 @@ final class CasNodeChain {
             CasNode curNode = pointer.curNode;
             CasNode nextNode = pointer.nextNode;
             if (curNode == nextNode) {
-                pointer.setCurNode(curNode.getNext());
+                pointer.setCurNode(curNode.next);
             } else {
                 pointer.setCurNode(nextNode);
             }
@@ -119,15 +119,15 @@ final class CasNodeChain {
 
         public void fillNextNode(ChainPointer pointer) {
             CasNode curNode = pointer.curNode;
-            CasNode nextNode = pointer.isAtFirst() ? curNode : curNode.getNext();
+            CasNode nextNode = pointer.isAtFirst() ? curNode : curNode.next;
 
             while (nextNode != null) {
-                Object state = nextNode.getState();
+                Object state = nextNode.state;
                 if (state != REMOVED) {//find a valid node
                     pointer.fillNextNode(nextNode, state);
                     break;
                 }
-                nextNode = curNode.getNext();
+                nextNode = curNode.next;
             }
         }
     }
@@ -142,7 +142,7 @@ final class CasNodeChain {
             CasNode curNode = pointer.curNode;
             CasNode nextNode = pointer.nextNode;
             if (curNode == nextNode) {
-                pointer.setCurNode(curNode.getPrev());
+                pointer.setCurNode(curNode.prev);
             } else {
                 pointer.setCurNode(nextNode);
             }
@@ -150,15 +150,15 @@ final class CasNodeChain {
 
         public void fillNextNode(ChainPointer pointer) {
             CasNode curNode = pointer.curNode;
-            CasNode nextNode = pointer.isAtFirst() ? curNode : curNode.getPrev();
+            CasNode nextNode = pointer.isAtFirst() ? curNode : curNode.prev;
 
             while (nextNode != null) {
-                Object state = nextNode.getState();
+                Object state = nextNode.state;
                 if (state != REMOVED) {//find a valid node
                     pointer.fillNextNode(nextNode, state);
                     break;
                 }
-                nextNode = nextNode.getPrev();
+                nextNode = nextNode.prev;
             }
         }
     }
