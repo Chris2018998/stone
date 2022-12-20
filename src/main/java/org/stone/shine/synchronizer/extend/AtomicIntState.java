@@ -10,7 +10,7 @@
 package org.stone.shine.synchronizer.extend;
 
 import org.stone.util.atomic.UnsafeAdaptor;
-import org.stone.util.atomic.UnsafeAdaptorFactory;
+import org.stone.util.atomic.UnsafeAdaptorHolder;
 
 /**
  * resource state,which be similar to atomic field in {@link java.util.concurrent.locks.AbstractQueuedSynchronizer}class
@@ -25,7 +25,7 @@ public class AtomicIntState {
 
     static {
         try {
-            U = UnsafeAdaptorFactory.get();
+            U = UnsafeAdaptorHolder.U;
             offset = U.objectFieldOffset(AtomicIntState.class.getDeclaredField("state"));
         } catch (Exception e) {
             throw new Error(e);

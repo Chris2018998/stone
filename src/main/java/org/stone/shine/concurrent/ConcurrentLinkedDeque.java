@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent;
 
 import org.stone.util.atomic.UnsafeAdaptor;
-import org.stone.util.atomic.UnsafeAdaptorFactory;
+import org.stone.util.atomic.UnsafeAdaptorHolder;
 
 import java.util.*;
 
@@ -40,7 +40,7 @@ public class ConcurrentLinkedDeque<E> extends AbstractCollection<E> implements D
 
     static {
         try {
-            U = UnsafeAdaptorFactory.get();
+            U = UnsafeAdaptorHolder.U;
             prevOffSet = U.objectFieldOffset(Node.class.getDeclaredField("prev"));
             nextOffSet = U.objectFieldOffset(Node.class.getDeclaredField("next"));
             itemOffSet = U.objectFieldOffset(Node.class.getDeclaredField("item"));

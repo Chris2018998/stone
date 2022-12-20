@@ -10,7 +10,7 @@
 package org.stone.shine.synchronizer;
 
 import org.stone.util.atomic.UnsafeAdaptor;
-import org.stone.util.atomic.UnsafeAdaptorFactory;
+import org.stone.util.atomic.UnsafeAdaptorHolder;
 
 /**
  * node cas updater
@@ -29,8 +29,8 @@ public final class CasNodeUpdater {
 
     static {
         try {
-            U = UnsafeAdaptorFactory.get();
             Class nodeClass = CasNode.class;
+            U = UnsafeAdaptorHolder.U;
             //ThreadNode.state
             stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));
             //ThreadNode.prev
