@@ -12,7 +12,6 @@ package org.stone.shine.synchronizer;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
@@ -28,17 +27,18 @@ import static org.stone.util.CommonUtil.objectEquals;
  */
 
 public abstract class ThreadWaitPool<E> {
-    //private final CasNodeChain waitQueue = new CasNodeChain();
-    private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
+
+    private final CasNodeChain waitQueue = new CasNodeChain();
+    //private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
     //wakeup one
-    private static CasNode wakeupOne(Iterator<CasNode> iterator, Object toState, Object nodeType) {
+    private static CasNode wakeupOne(Iterator<CasNode> iterator, Object toState, Object type) {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (nodeType != null && !objectEquals(nodeType, node.type)) continue;
+            if (type != null && !objectEquals(type, node.type)) continue;
             if (casState(node, null, toState)) {
                 LockSupport.unpark(node.thread);
                 return node;
@@ -48,11 +48,11 @@ public abstract class ThreadWaitPool<E> {
     }
 
     //wakeup All
-    private static int wakeupAll(Iterator<CasNode> iterator, Object toState, Object nodeType) {
+    private static int wakeupAll(Iterator<CasNode> iterator, Object toState, Object type) {
         int count = 0;
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (nodeType != null && !objectEquals(nodeType, node.type)) continue;
+            if (type != null && !objectEquals(type, node.type)) continue;
             if (casState(node, null, toState)) {
                 LockSupport.unpark(node.thread);
                 count++;
@@ -209,20 +209,12 @@ public abstract class ThreadWaitPool<E> {
     }
 
     protected final void parkNodeThread(CasNode node, ThreadParkSupport parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
-        if (parker.calculateParkTime()) {//before deadline
-            if (parker.park() && throwsIE) {//interrupted
-                if (node.state == null) {
-                    //step1:try to cas state to INTERRUPTED,if failed,the step2 can be reach
-                    if (casState(node, null, INTERRUPTED))
-                        throw new InterruptedException();
-                }
+        if (parker.calculateParkTime() && parker.park() && throwsIE) {//not timeout and park interrupted
+            if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
 
-                //step2:send signal state to other when got
-                Object state = node.state;
-                if (state != null && wakeupOtherOnIE)
-                    wakeupOne(state);//send the got signal state to another waiter(skip over the current node during wakeup iterator)
-                throw new InterruptedException();
-            }
+            Object state = node.state;
+            if (state != null && wakeupOtherOnIE) this.wakeupOne(state);
+            throw new InterruptedException();
         }
     }
 }

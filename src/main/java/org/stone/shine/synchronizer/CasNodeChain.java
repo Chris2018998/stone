@@ -13,7 +13,8 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static org.stone.shine.synchronizer.CasNodeUpdater.*;
+import static org.stone.shine.synchronizer.CasNodeUpdater.casNext;
+import static org.stone.shine.synchronizer.CasNodeUpdater.casTail;
 import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
@@ -30,7 +31,7 @@ final class CasNodeChain {
     final void offer(CasNode node) {
         CasNode t;
         do {
-            t = this.tail;
+            t = tail;
         } while (!casTail(this, t, node));
 
         t.next = node;
@@ -40,12 +41,15 @@ final class CasNodeChain {
     final boolean remove(CasNode node) {
         node.setState(REMOVED);
         CasNode preNode = node.prev;
-        if (node == this.tail && casTail(this, node, preNode)) {
-            casNext(preNode, preNode.next, null);
+
+        if (node == tail && casTail(this, node, preNode)) {
+            preNode.next = null;
+            //casNext(preNode, preNode.next, null);
         } else {
-            CasNode nodeNext = node.next;
-            if (casNext(preNode, preNode.next, nodeNext) && nodeNext != null) {
-                casPrev(nodeNext, nodeNext.prev, preNode);
+            CasNode nextNode = node.next;
+            if (casNext(preNode, preNode.next, nextNode) && nextNode != null) {
+                nextNode.prev = preNode;
+                // casPrev(nextNode, nextNode.prev, preNode);
             }
         }
         return true;

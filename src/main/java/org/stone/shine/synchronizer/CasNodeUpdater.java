@@ -44,7 +44,7 @@ public final class CasNodeUpdater {
         }
     }
 
-    public static boolean casTail(CasNodeChain chain, CasNode expect, CasNode update) {
+    static boolean casTail(CasNodeChain chain, CasNode expect, CasNode update) {
         return U.compareAndSwapObject(chain, tailOffSet, expect, update);
     }
 
