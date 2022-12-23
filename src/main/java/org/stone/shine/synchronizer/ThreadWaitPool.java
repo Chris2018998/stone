@@ -28,8 +28,8 @@ import static org.stone.util.CommonUtil.objectEquals;
 
 public abstract class ThreadWaitPool<E> {
 
-    private final CasNodeChain waitQueue = new CasNodeChain();
-    //private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
+    //private final CasNodeChain waitQueue = new CasNodeChain();
+    private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
