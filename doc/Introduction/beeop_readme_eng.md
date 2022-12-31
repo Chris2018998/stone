@@ -1,24 +1,13 @@
-<a href="https://github.com/Chris2018998/BeeOP/blob/master/README.md">English</a>|<a href="https://github.com/Chris2018998/BeeOP/blob/master/README-ZH.md">中文</a>
 ![图片](https://user-images.githubusercontent.com/32663325/154847136-10e241ae-af4c-478a-a608-aaa685e0464b.png)
+<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md">English</a>|<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_cn.md">中文</a>
 <p align="left">
  <a><img src="https://img.shields.io/badge/JDK-1.7+-green.svg"></a>
  <a><img src="https://img.shields.io/badge/License-LGPL%202.1-blue.svg"></a>
- <a><img src="https://maven-badges.herokuapp.com/maven-central/com.github.chris2018998/beeop/badge.svg"></a>
 </p> 
 
 ## :coffee: Introduction 
 
 BeeOP: a small Java object pool
-
-## :arrow_down: Download 
-Java7 or higher
-```xml
-<dependency>
-   <groupId>com.github.chris2018998</groupId>
-   <artifactId>beeop</artifactId>
-   <version>1.2.8</version>
-</dependency>
-```
 
 ## Performance 
 
