@@ -122,10 +122,8 @@
                     <skipTests>false</skipTests>
                     <includes>
                         <include>org/stone/shine/TestRunner.java</include>
-                        <!--
                         <include>org/stone/beecp/TestRunner.java</include>
                         <include>org/stone/beeop/TestRunner.java</include>
-                        -->
                     </includes>
                 </configuration>
             </plugin>
