@@ -6,11 +6,11 @@
 
 Stone,A set of Java Tool Suite
 
-beecp: a small JDBC connection pool
+<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md">beeop:</a> a small JDBC connection pool
 
-beeop: a small Java object pool
+<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md">beeop:</a> a small Java object pool
 
-shine: a Java concurrent package(similar to JDK)
+<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md">shine:</a> a Java concurrent package(similar to JDK)
 
 ## :arrow_down: Download 
 
