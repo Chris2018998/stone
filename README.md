@@ -10,7 +10,7 @@ Stone,A Java Tool Suite
 
 <a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md">beeop:</a> a small Java object pool
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md">shine:</a> a Java concurrent package(similar to JDK)
+<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md">shine:</a> a Java concurrent package(similar to JDK concurrent)
 
 ## :arrow_down: Download 
 
