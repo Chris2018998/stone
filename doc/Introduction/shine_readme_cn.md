@@ -16,29 +16,55 @@ Shine 的同步方式是通过一些线程等待池来实现的，我们将这�
 
 
 ## 等待池介绍
-池名 	池类名 	池的解释
-结果等待池 	ResultWaitPool.java 	
 
-1：在池内调用一个 ResultCall 实例，将调用结果使用验证器进行识别，若结果符合预期则退出池，若不符合预期则在池中等待，直到被唤醒再次调用再比较
-2：若等待超时，则会退出等待，并返回一个超时结果（默认是 false)
-3：若等待时被中断，则可抛出 InterruptException
-4：ResultCall 和结果验证器均可自行定义
-5：应用它的相关类：CountDownLatch，CyclicBarrier
-信号量等待池 	SignalWaitPool.java 	
+<table>
+ <tr>
+  <td width=200px>池名</td>
+  <td width=200px>池类名</td>
+  <td width=800px>池的描述</td>
+ </tr>
+ <tr>
+  <td>结果等待池</td>
+  <td>ResultWaitPool.java</td>
+  <td>
+     1：在池内调用一个 ResultCall 实例，将调用结果使用验证器进行识别，若结果符合预期则退出池，若不符合预期则在池中等待，直到被唤醒再次调用再比较</br>
+     2：若等待超时，则会退出等待，并返回一个超时结果（默认是 false)</br>
+     3：若等待时被中断，则可抛出 InterruptException</br>
+     4：ResultCall 和结果验证器均可自行定义</br>
+     5：应用它的相关类：CountDownLatch，CyclicBarrier</br>
+   </td>
+ </tr>
+ 
+  <tr>
+  <td>信号量等待池</td>
+  <td>SignalWaitPool.java</td>
+  <td>
+      1：调用者调用池的等待方法，在池内部等待预期状态值（使用结果验证器，同结果等待池）</br>
+      2：若等待超时，则会退出等待，并返回一个超时结果（默认是 false)</br>
+      3：若等待时被中断，则可抛出 InterruptException</br>
+      4：应用它的相关类：Lock 的 Conndtion 实现类</br>
+   </td>
+ </tr>
+ 
+ <tr>
+  <td>Transfer等待池</td>
+  <td>TransferWaitPool.java</td>
+  <td>
+      应用它的相关类：SynchronousQueue，LinkedTransferQueue
+   </td>
+ </tr
+ <tr>
+  <td>状态等待池</td>
+  <td>StateWaitPool.java</td>
+  <td> </td>
+ </tr>
 
-1：调用者调用池的等待方法，在池内部等待预期状态值（使用结果验证器，同结果等待池）
-2：若等待超时，则会退出等待，并返回一个超时结果（默认是 false)
-3：若等待时被中断，则可抛出 InterruptException
-4：应用它的相关类：Lock 的 Conndtion 实现类
-Transfer 等待池 	TransferWaitPool.java 	
-
-应用它的相关类：SynchronousQueue，LinkedTransferQueue
-状态等待池 	StateWaitPool.java 	 
-资源等待池 	ResourceWaitPool.java 	
-
-由结果等待池衍生而来，应用它的相关类：Lock, Semaphore
-
- 
+ <tr>
+  <td>资源等待池</td>
+  <td>ResourceWaitPool.java</td>
+  <td>由结果等待池衍生而来，应用它的相关类：Lock, Semaphore</td>
+ </tr>
+ </table>
 
 ## 扩展接口介绍
 
