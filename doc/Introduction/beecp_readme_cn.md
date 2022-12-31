@@ -2,7 +2,6 @@
 <p align="left">
  <a><img src="https://img.shields.io/badge/JDK-1.7+-green.svg"></a>
  <a><img src="https://img.shields.io/badge/License-LGPL%202.1-blue.svg"></a>
- <a><img src="https://maven-badges.herokuapp.com/maven-central/com.github.chris2018998/beecp/badge.svg"></a>
 </p> 
 
 ## 一：简介
@@ -16,29 +15,8 @@
 *   提供日志输出和监控工具
 *   健壮性好，敏捷应对意外情况（如断网，数据库服务崩溃）
 *   良好的接口扩展性
-
-## 二：版本下载 
-
-### Java7或更高
-
-```xml
-<dependency>
-   <groupId>com.github.chris2018998</groupId>
-   <artifactId>beecp</artifactId>
-   <version>3.3.7</version>
-</dependency>
-```
-
-### Java6
-
-```xml
-<dependency>
-   <groupId>com.github.chris2018998</groupId>
-   <artifactId>beecp</artifactId>
-   <version>1.6.10</version>
-</dependency>
-```                                 
-## 三：参考例子
+                                
+## 二：参考例子
 
 ### :point_right: 例子1(独立应用)
 
@@ -93,11 +71,11 @@ public class DataSourceConfig {
 
 :sunny: *如果项目为Springboot类型，推荐使用数据源管理工具：<a href="https://github.com/Chris2018998/BeeCP-Starter">BeeCP-Starter</a>（无需代码开发配置即可，且自带监控界面）*
 
-## 四：功能导向
+## 三：功能导向
 
 ![图片](https://user-images.githubusercontent.com/32663325/153597592-c7d36f14-445a-454b-9db4-2289e1f92ed6.png)
 
-## 五：运行时监控
+## 四：运行时监控
 
 为了更好的监控池内的运行情况（*闲置连接数，使用中连接数，等待数等*），产品内部提供了三种方式
 *   基于slf4j日志接口输出池内运行时信息
@@ -110,7 +88,7 @@ public class DataSourceConfig {
 
 ![图片](https://user-images.githubusercontent.com/32663325/154832193-62b71ade-84cc-41db-894f-9b012995d619.png)
 
-## 六：技术点对比
+## 五：技术点对比
 
 | **比较项**                      |**BeeCP**                                          | **HikariCP**                                      |
 |---------------------------------|---------------------------------------------------| ------------------------------------------------- |
@@ -121,11 +99,11 @@ public class DataSourceConfig {
 | 性能                             |总体性能高40%以上（光连接池基准）                      |                                                         |
 
 
-## 七：代码质量
+## 六：代码质量
 
 ![图片](https://user-images.githubusercontent.com/32663325/163173015-2ce906f3-1b83-419d-82aa-a42b5c8d92b8.png)
 
-## 八：扩展接口
+## 七：扩展接口
 
 ### 1：连接工厂接口
 
@@ -147,7 +125,7 @@ public class DataSourceConfig {
 
 ![图片](https://user-images.githubusercontent.com/32663325/153597176-e48382b9-7395-4c6c-9f34-425072d7c510.png)
 
-## 九：配置项
+## 八：配置项
 
 |项名                              |描述                                   |默认值                               |
 | ---------------------------------| -------------------------------------| -----------------------------------|
@@ -178,7 +156,3 @@ public class DataSourceConfig {
 |enableJmx                         |JMX监控支持开关                           |false                               | 
 |printConfigInfo                   |是否打印配置信息                           |false                               | 
 |printRuntimeLog                   |是否打印运行时日志                         |false                               | 
-
-## 感谢与动态
-
-项目坚持了5年多，付出了很多努力，尽管用户数没有达到预期的目标，但依然倍感欣慰，感谢网友们的大力支持，特别鸣谢中国开源社区，hutool，多米豆等，未来将持续深耕两个池子和Jdbc领域，一如既往维护好项目，个人坚信未来10年它们将与众多开源伙伴一起前行成长。项目未来动态：由于Beecp与Beeop项目偏轻，将会有一次合并，届时重新开张，欢迎网友们提PR，发Issue ，提建议，也欢迎网友们拍砖。
