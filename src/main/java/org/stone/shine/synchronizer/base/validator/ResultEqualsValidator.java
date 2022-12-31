@@ -27,7 +27,7 @@ public final class ResultEqualsValidator extends EquivalentValidator {
         super(compareValue, resultOnTimeout);
     }
 
-    public final boolean isExpect(Object result) {
+    public final boolean isExpected(Object result) {
         return objectEquals(result, compareValue);
     }
 }

@@ -274,7 +274,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             ThreadWaitConfig config = new ThreadWaitConfig();
-            config.setThrowsIE(false);
+            config.allowThrowsIE(false);
             this.waitPool.acquire(permitAction, permits, config);
         } catch (Exception e) {
             //do nothing

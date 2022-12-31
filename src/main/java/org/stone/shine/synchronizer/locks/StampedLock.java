@@ -107,7 +107,7 @@ public class StampedLock implements java.io.Serializable {
      *
      * @param stamp a stamp returned by a write-lock operation
      * @throws IllegalMonitorStateException if the stamp does
-     *                                      not isExpect the current state of this lock
+     *                                      not isExpected the current state of this lock
      */
     public void unlockWrite(long stamp) {
 
@@ -188,7 +188,7 @@ public class StampedLock implements java.io.Serializable {
      *
      * @param stamp a stamp returned by a read-lock operation
      * @throws IllegalMonitorStateException if the stamp does
-     *                                      not isExpect the current state of this lock
+     *                                      not isExpected the current state of this lock
      */
     public void unlockRead(long stamp) {
     }

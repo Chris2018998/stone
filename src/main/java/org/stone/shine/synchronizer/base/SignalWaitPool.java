@@ -41,25 +41,23 @@ public class SignalWaitPool extends ThreadWaitPool {
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //3:get control parameters from config
-        final boolean throwsIE = config.isThrowsIE();
+        final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-
-        //4:create thread parker
         final ThreadParkSupport parker = config.getThreadParkSupport();
 
-        //5:spin control
+        //4:spin control
         try {
             do {
-                //5.1: read node state
+                //4.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) return true;
 
-                //5.2: timeout test
+                //4.2: timeout test
                 if (parker.isTimeout()) {
-                    //5.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
+                    //4.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
                     if (casState(node, state, TIMEOUT)) return false;
                 } else {
-                    //5.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
+                    //4.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);

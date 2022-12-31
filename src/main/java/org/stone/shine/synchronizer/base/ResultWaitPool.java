@@ -19,18 +19,17 @@ import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
 import static org.stone.shine.synchronizer.CasStaticState.TIMEOUT;
 
 /**
- * Result call executed inside pool and compare result of call with expected parameter,if equals,return true
- * and leave from pool,not equals,then join in wait queue util wakeup from other and execute call again and compare.
+ * execute the call inside pool and match its result with a validator,if passed the return result value;
+ * false then wait util other's wakeup to execute call again.
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class ResultWaitPool extends ThreadWaitPool {
-
-    //true,use fair mode to execute call
+    //true,use fair mode
     private final boolean fair;
 
-    //call result validator(equals validator is default)
+    //result validator(equals validator is default)
     private final ResultValidator validator;
 
     //****************************************************************************************************************//
@@ -54,8 +53,8 @@ public class ResultWaitPool extends ThreadWaitPool {
     }
 
     /**
-     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
-     * method return true,not equals that wait timeout and return false.
+     * execute the call inside pool and match its result with a validator,if passed the return result value;
+     * false then wait util other's wakeup to execute call again.
      *
      * @param call   executed in pool to get result
      * @param arg    call argument
@@ -68,8 +67,8 @@ public class ResultWaitPool extends ThreadWaitPool {
     }
 
     /**
-     * execute the call inside pool and compare its result with expected parameter value,if equivalence that this
-     * method return true,not equals that wait timeout and return false.
+     * execute the call inside pool and match its result with a validator,if passed the return result value;
+     * false then wait util other's wakeup to execute call again.
      *
      * @param call      executed in pool to get result
      * @param arg       call argument
@@ -88,7 +87,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         if (config.isOutsideOfWaitPool()) {
             if (!fair || !this.hasQueuedThreads()) {
                 Object result = call.call(arg);
-                if (validator.isExpect(result)) return result;
+                if (validator.isExpected(result)) return result;
             }
             super.appendNode(config.getCasNode());
         }
@@ -97,32 +96,30 @@ public class ResultWaitPool extends ThreadWaitPool {
         final CasNode node = config.getCasNode();
 
         //4:get control parameters from config
-        final boolean throwsIE = config.isThrowsIE();
+        final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-
-        //5:create thread parker
         final ThreadParkSupport parker = config.getThreadParkSupport();
 
-        //6:spin control
+        //5:spin control
         try {
             do {
-                //6.1:if got a signal then execute call
+                //5.1:if got a signal then execute call
                 Object result = call.call(arg);
-                if (validator.isExpect(result)) return result;
+                if (validator.isExpected(result)) return result;
 
-                //6.2:read node state
+                //5.2:read node state
                 Object state = node.getState();
 
-                //6.3:timeout test
+                //5.3:timeout test
                 if (parker.isTimeout()) {
-                    //6.3.1:try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
+                    //5.3.1:try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (casState(node, state, TIMEOUT))
                         return validator.resultOnTimeout();
-                } else if (state != null) {//6.4:reach here means not got expected value from call,then rest to continue waiting
+                } else if (state != null) {//5.4:reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);
                     Thread.yield();
                 } else {//here: state == null
-                    //6.5:park current thread(if interrupted then transfer the got state value to another waiter)
+                    //5.5:park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);

@@ -90,8 +90,7 @@ public class ResourceWaitPool {
         if (action.tryRelease(size)) {
             callPool.wakeupOne();
             return true;
-        } else {
-            return false;
         }
+        return false;
     }
 }

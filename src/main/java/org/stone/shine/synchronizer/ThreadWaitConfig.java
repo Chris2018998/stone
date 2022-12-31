@@ -35,7 +35,7 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
 
     //***********************************************C: IE config*****************************************************//
     //indicator of throw interruptException when interrupted
-    private boolean throwsIE = true;
+    private boolean allowThrowsIE = true;
     //transfer got signal to other when got transfer signal but interrupted
     private boolean transferSignalOnIE = true;
 
@@ -104,12 +104,12 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              4: Interrupt Config(4)                                            //
     //****************************************************************************************************************//
-    public final boolean isThrowsIE() {
-        return throwsIE;
+    public final boolean isAllowThrowsIE() {
+        return allowThrowsIE;
     }
 
-    public final void setThrowsIE(boolean throwsIE) {
-        this.throwsIE = throwsIE;
+    public final void allowThrowsIE(boolean allowThrowsIE) {
+        this.allowThrowsIE = allowThrowsIE;
     }
 
     public final boolean isTransferSignalOnIE() {
@@ -128,7 +128,7 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
         this.nodeType = null;
         this.nodeValue = null;
         this.casNode = null;
-        this.throwsIE = true;
+        this.allowThrowsIE = true;
         this.transferSignalOnIE = true;
         this.outsideOfWaitPool = true;
     }

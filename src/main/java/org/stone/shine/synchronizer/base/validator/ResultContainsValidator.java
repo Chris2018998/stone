@@ -28,7 +28,7 @@ public final class ResultContainsValidator extends CollectionValidator {
         super(collection, resultOnTimeout);
     }
 
-    public final boolean isExpect(Object result) {
+    public final boolean isExpected(Object result) {
         return collection.contains(result);
     }
 }

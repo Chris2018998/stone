@@ -66,31 +66,29 @@ public class StateWaitPool extends ThreadWaitPool {
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config
-        final boolean throwsIE = config.isThrowsIE();
+        final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-
-        //3:create thread parker
         final ThreadParkSupport parker = config.getThreadParkSupport();
 
-        //4:spin control
+        //3: spin control
         try {
             do {
-                //4.1: read node state
+                //3.1: read node state
                 Object state = node.getState();
 
-                //4.2: if got a signal then execute call
-                if (state != null && validator.isExpect(state)) return state;
+                //3.2: if got a signal then execute call
+                if (state != null && validator.isExpected(state)) return state;
 
-                //4.3: timeout test
+                //3.3: timeout test
                 if (parker.isTimeout()) {
-                    //4.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
+                    //3.3.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
                     if (casState(node, state, TIMEOUT))
                         return validator.resultOnTimeout();
                 } else if (state != null) {//3.4: reach here means not got expected value from call,then rest to continue waiting
                     node.setState(null);
                     Thread.yield();
                 } else {//here: state == null
-                    //4.5: park current thread(if interrupted then transfer the got state value to another waiter)
+                    //3.5: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);

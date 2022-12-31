@@ -13,8 +13,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.locks.LockSupport.unpark;
 import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
 import static org.stone.shine.synchronizer.CasStaticState.INTERRUPTED;
 import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
@@ -40,7 +40,7 @@ public abstract class ThreadWaitPool<E> {
             CasNode node = iterator.next();
             if (type != null && !objectEquals(type, node.type)) continue;
             if (casState(node, null, toState)) {
-                LockSupport.unpark(node.thread);
+                unpark(node.thread);
                 return node;
             }
         }
@@ -54,7 +54,7 @@ public abstract class ThreadWaitPool<E> {
             CasNode node = iterator.next();
             if (type != null && !objectEquals(type, node.type)) continue;
             if (casState(node, null, toState)) {
-                LockSupport.unpark(node.thread);
+                unpark(node.thread);
                 count++;
             }
         }
@@ -209,11 +209,12 @@ public abstract class ThreadWaitPool<E> {
     }
 
     protected final void parkNodeThread(CasNode node, ThreadParkSupport parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
-        if (parker.calculateParkTime() && parker.park() && throwsIE) {//not timeout and park interrupted
-            if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
+        if (parker.parkUtilInterrupted() && throwsIE) {//not timeout and park interrupted
+            if (!casState(node, null, INTERRUPTED)) {
+                Object state = node.state;
+                if (state != null && wakeupOtherOnIE) this.wakeupOne(state, node.type);
+            }
 
-            Object state = node.state;
-            if (state != null && wakeupOtherOnIE) this.wakeupOne(state,node.type);
             throw new InterruptedException();
         }
     }

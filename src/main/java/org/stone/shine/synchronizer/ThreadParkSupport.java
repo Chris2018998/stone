@@ -95,12 +95,7 @@ public class ThreadParkSupport {
     //****************************************************************************************************************//
     //                                           park methods(2) need be override                                     //
     //****************************************************************************************************************//
-    //calculate park time for{@code LockSupport.park},true that time value is not timeout
-    public boolean calculateParkTime() {
-        return true;
-    }
-
-    public boolean park() {
+    public boolean parkUtilInterrupted() {
         LockSupport.park();
         return interrupted = Thread.interrupted();
     }
@@ -113,7 +108,7 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public final boolean park() {
+        public final boolean parkUtilInterrupted() {
             LockSupport.park(blocker);
             return interrupted = Thread.interrupted();
         }
@@ -139,18 +134,13 @@ public class ThreadParkSupport {
             this.deadline = System.nanoTime() + nanoTime;
         }
 
-        //true means that time point before deadline
-        public final boolean calculateParkTime() {
+        public boolean parkUtilInterrupted() {
             this.parkTime = deadline - System.nanoTime();
-            return parkTime > 0;
-        }
-
-        public boolean park() {
             if (parkTime > spinForTimeoutThreshold) {
                 LockSupport.parkNanos(parkTime);
-                this.interrupted = Thread.interrupted();
+                return this.interrupted = Thread.interrupted();
             }
-            return interrupted;
+            return false;
         }
 
         public String toString() {
@@ -167,13 +157,13 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public final boolean park() {
+        public final boolean parkUtilInterrupted() {
+            this.parkTime = deadline - System.nanoTime();
             if (parkTime > spinForTimeoutThreshold) {
-                LockSupport.parkNanos(parkTime);
-                return interrupted = Thread.interrupted();
-            } else {
-                return interrupted;
+                LockSupport.parkNanos(blocker, parkTime);
+                return this.interrupted = Thread.interrupted();
             }
+            return false;
         }
 
         public String toString() {
@@ -189,14 +179,13 @@ public class ThreadParkSupport {
             this.deadline = deadline;
         }
 
-        public final boolean calculateParkTime() {
+        public boolean parkUtilInterrupted() {
             this.parkTime = deadline - System.currentTimeMillis();
-            return parkTime > 0;
-        }
-
-        public boolean park() {
-            LockSupport.parkUntil(deadline);
-            return interrupted = Thread.interrupted();
+            if (parkTime > spinForTimeoutThreshold) {
+                LockSupport.parkUntil(deadline);
+                return interrupted = Thread.interrupted();
+            }
+            return false;
         }
 
         public String toString() {
@@ -217,9 +206,13 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public final boolean park() {
-            LockSupport.parkUntil(blocker, deadline);
-            return interrupted = Thread.interrupted();
+        public boolean parkUtilInterrupted() {
+            this.parkTime = deadline - System.currentTimeMillis();
+            if (parkTime > spinForTimeoutThreshold) {
+                LockSupport.parkUntil(blocker, deadline);
+                return interrupted = Thread.interrupted();
+            }
+            return false;
         }
 
         public String toString() {

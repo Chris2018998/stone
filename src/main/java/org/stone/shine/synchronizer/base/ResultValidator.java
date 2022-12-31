@@ -21,6 +21,6 @@ public interface ResultValidator {
     Object resultOnTimeout();
 
     //check call result or state is whether expected
-    boolean isExpect(Object result);
+    boolean isExpected(Object result);
 
 }

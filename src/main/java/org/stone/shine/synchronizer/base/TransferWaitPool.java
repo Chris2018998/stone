@@ -125,16 +125,14 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config
-        boolean throwsIE = config.isThrowsIE();
-        boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
+        final boolean throwsIE = config.isAllowThrowsIE();
+        final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
+        final ThreadParkSupport parker = config.getThreadParkSupport();
 
-        //3:create thread parker
-        ThreadParkSupport parker = config.getThreadParkSupport();
-
-        //4:spin control
+        //3:spin control
         try {
             do {
-                //4.1: read node state
+                //3.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) {//wokenUp
                     if (node.getType() == Node_Type_Data) {
@@ -144,12 +142,12 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
                     }
                 }
 
-                //4.2: timeout test
+                //3.2: timeout test
                 if (parker.isTimeout()) {
-                    //4.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
+                    //3.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return null
                     if (casState(node, null, TIMEOUT)) return null;
                 } else {
-                    //4.3: park current thread(if interrupted then transfer the got state value to another waiter)
+                    //3.3: park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);

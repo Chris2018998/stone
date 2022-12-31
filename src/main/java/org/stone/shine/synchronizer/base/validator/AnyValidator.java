@@ -25,7 +25,7 @@ public final class AnyValidator extends BaseValidator {
     }
 
     //check call result or state is whether expected
-    public boolean isExpect(Object result) {
+    public boolean isExpected(Object result) {
         return true;
     }
 }

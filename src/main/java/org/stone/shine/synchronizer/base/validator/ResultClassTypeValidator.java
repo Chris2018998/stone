@@ -30,7 +30,7 @@ public class ResultClassTypeValidator extends BaseValidator {
         if (classType == null) throw new IllegalArgumentException("result class type can't be null");
     }
 
-    public boolean isExpect(Object result) {
+    public boolean isExpected(Object result) {
         return classType.isInstance(result);
     }
 }

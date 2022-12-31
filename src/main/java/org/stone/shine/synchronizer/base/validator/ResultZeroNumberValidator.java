@@ -26,8 +26,8 @@ public class ResultZeroNumberValidator extends ResultNumberTypeValidator {
         super(classType, resultOnTimeout);
     }
 
-    public final boolean isExpect(Object result) {
-        if (super.isExpect(result)) {
+    public final boolean isExpected(Object result) {
+        if (super.isExpected(result)) {
             Number value = (Number) result;
             return value.doubleValue() == 0;
         }

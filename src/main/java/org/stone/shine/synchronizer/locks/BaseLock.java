@@ -84,7 +84,7 @@ class BaseLock implements Lock {
         try {
             ThreadWaitConfig config = new ThreadWaitConfig();
             config.setNodeType(acquireType);
-            config.setThrowsIE(false);
+            config.allowThrowsIE(false);
             waitPool.acquire(lockAction, 1, config);
         } catch (Exception e) {
             //do nothing
@@ -356,7 +356,7 @@ class BaseLock implements Lock {
         public void awaitUninterruptibly() {
             try {
                 ThreadWaitConfig config = new ThreadWaitConfig();
-                config.setThrowsIE(false);
+                config.allowThrowsIE(false);
                 this.doAwait(config);
             } catch (InterruptedException e) {
                 //in fact,InterruptedException never throws here
