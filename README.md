@@ -4,7 +4,7 @@
  
 ## :coffee: Introduction 
 
-Stone,A set of Java Tool Suite
+Stone,A Java Tool Suite
 
 <a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md">beecp:</a> a small JDBC connection pool
 
