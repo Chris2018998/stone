@@ -1,6 +1,6 @@
 <a><img src="https://img.shields.io/badge/JDK-1.7+-green.svg"></a>
 <a><img src="https://img.shields.io/badge/License-LGPL%202.1-blue.svg"></a>
-<a><img src="https://maven-badges.herokuapp.com/maven-central/com.github.chris2018998/stone/badge.svg"></a>
+<a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
  
 ## :coffee: Introduction 
 
