@@ -283,7 +283,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
 
         long deadline = System.nanoTime();
         try {
-            //1:try to acquire a synchronizer
+            //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new ObjectException("Get object timeout");
         } catch (InterruptedException e) {
@@ -371,9 +371,9 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
         Iterator<Borrower> iterator = waitQueue.iterator();
 
         while (iterator.hasNext()) {
-            Borrower b = iterator.next();
             if (p.state != stateCodeOnRelease) return;
-            if (BorrowStUpd.compareAndSet(b, null, p)) {
+            Borrower b = iterator.next();
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -395,7 +395,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
 
         while (iterator.hasNext()) {
             Borrower b = iterator.next();
-            if (BorrowStUpd.compareAndSet(b, null, e)) {
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -627,7 +627,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
         return this.poolConfig.getBorrowSemaphoreSize() - this.semaphore.availablePermits();
     }
 
-    //Method-5.6: using size of semaphore synchronizer
+    //Method-5.6: using size of semaphore permit
     public int getSemaphoreWaitingSize() {
         return this.semaphore.getQueueLength();
     }
