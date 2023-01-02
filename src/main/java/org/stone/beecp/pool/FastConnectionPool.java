@@ -413,7 +413,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
         long deadline = System.nanoTime();
         try {
-            //1:try to acquire a synchronizer
+            //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new SQLTimeoutException("Get connection timeout");
         } catch (InterruptedException e) {
@@ -507,9 +507,9 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         Iterator<Borrower> iterator = this.waitQueue.iterator();
 
         while (iterator.hasNext()) {
-            Borrower b = iterator.next();
             if (p.state != stateCodeOnRelease) return;
-            if (BorrowStUpd.compareAndSet(b, null, p)) {
+            Borrower b = iterator.next();
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -529,7 +529,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         Iterator<Borrower> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             Borrower b = iterator.next();
-            if (BorrowStUpd.compareAndSet(b, null, e)) {
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -770,7 +770,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         return this.semaphore.getQueueLength();
     }
 
-    //Method-5.6: using size of semaphore synchronizer
+    //Method-5.6: using size of semaphore permit
     public int getSemaphoreAcquiredSize() {
         return this.poolConfig.getBorrowSemaphoreSize() - this.semaphore.availablePermits();
     }
