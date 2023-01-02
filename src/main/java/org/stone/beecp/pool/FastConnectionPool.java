@@ -507,8 +507,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         Iterator<Borrower> iterator = this.waitQueue.iterator();
 
         while (iterator.hasNext()) {
-            if (p.state != stateCodeOnRelease) return;
             Borrower b = iterator.next();
+            if (p.state != stateCodeOnRelease) return;
             if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
