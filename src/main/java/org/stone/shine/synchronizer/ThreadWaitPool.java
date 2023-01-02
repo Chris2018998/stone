@@ -35,7 +35,7 @@ public abstract class ThreadWaitPool<E> {
     //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
     //wakeup one
-    private static CasNode wakeupOne(Iterator<CasNode> iterator, Object toState, Object type) {
+    private static CasNode wakeupOne(final Iterator<CasNode> iterator, final Object toState, final Object type) {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
             if (type != null && !objectEquals(type, node.type)) continue;
@@ -48,7 +48,7 @@ public abstract class ThreadWaitPool<E> {
     }
 
     //wakeup All
-    private static int wakeupAll(Iterator<CasNode> iterator, Object toState, Object type) {
+    private static int wakeupAll(final Iterator<CasNode> iterator, final Object toState, final Object type) {
         int count = 0;
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
@@ -132,7 +132,7 @@ public abstract class ThreadWaitPool<E> {
         Iterator<CasNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
-            if (objectEquals(nodeType, node.type)) return true;
+            if (nodeType == null || objectEquals(nodeType, node.type)) return true;
         }
         return false;
     }
