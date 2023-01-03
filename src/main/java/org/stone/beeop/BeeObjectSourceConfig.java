@@ -321,6 +321,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         return this.objectFactory;
     }
 
+    public void setObjectFactory(RawObjectFactory objectFactory) {
+        this.objectFactory = objectFactory;
+    }
+
     public void addExcludeMethodName(String methodName) {
         if (!ObjectPoolStatics.isBlank(methodName)) this.excludeMethodNames.add(methodName);
     }
@@ -476,15 +480,17 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
         //1:load object implemented interfaces,if config
         Class[] objectInterfaces = this.loadObjectInterfaces();
+
         //2:try to create object factory
-        RawObjectFactory objectFactory = this.tryCreateObjectFactory(objectInterfaces);
+        RawObjectFactory tempObjectFactory = null;
+        if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(objectInterfaces);
         if (ObjectPoolStatics.isBlank(poolName)) poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
 
         //3:create config object
         BeeObjectSourceConfig configCopy = new BeeObjectSourceConfig();
         copyTo(configCopy);
-        configCopy.objectFactory = objectFactory;
         configCopy.setObjectInterfaces(objectInterfaces);
+        if (tempObjectFactory != null) configCopy.objectFactory = tempObjectFactory;
         return configCopy;
     }
 
