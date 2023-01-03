@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import static org.stone.shine.synchronizer.CasNodeUpdater.casNext;
+import static org.stone.shine.synchronizer.CasNodeUpdater.casTail;
 import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
@@ -24,7 +25,7 @@ import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
  */
 
 final class CasNodeChain {
-    private final CasNode head = new CasNode(REMOVED);
+    private final CasNode head = new CasNode(null);
     private volatile CasNode tail = head;
 
     final void offer(CasNode node) {
@@ -32,8 +33,8 @@ final class CasNodeChain {
         do {
             t = tail;
             node.prev = t;
-            if (casNext(t, null, node)) {//append to tail.next
-                this.tail = node;//new tail
+            if (casTail(this, t, node)) {//append to tail.next
+                t.next = node;
                 return;
             }
         } while (true);
@@ -43,9 +44,12 @@ final class CasNodeChain {
         node.setState(REMOVED);
         CasNode preNode = node.prev;
         CasNode nextNode = node.next;
-        if (casNext(preNode, preNode.next, nextNode)) {
-            if (nextNode != null) nextNode.prev = preNode;
-            else if (node == tail) this.tail = preNode;
+
+        if (casNext(preNode, node, nextNode)) {
+            if (nextNode != null)
+                nextNode.prev = preNode;
+            else
+                this.tail = preNode;
         }
         return true;
     }
