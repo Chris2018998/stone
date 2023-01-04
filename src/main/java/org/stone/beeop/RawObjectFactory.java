@@ -15,20 +15,20 @@ package org.stone.beeop;
  * @author Chris
  * @version 1.0
  */
-public interface RawObjectFactory {
+public interface RawObjectFactory<E> {
 
     //create object instance
-    Object create() throws Exception;
+    E create() throws Exception;
 
     //set default values to raw object on initialization
-    void setDefault(Object obj) throws Exception;
+    void setDefault(E obj) throws Exception;
 
     //reset some changed properties in raw object on returning
-    void reset(Object obj) throws Exception;
+    void reset(E obj) throws Exception;
 
     //test raw object valid
-    boolean isValid(Object obj, int timeout);
+    boolean isValid(E obj, int timeout);
 
     //destroy raw object on removed from pool
-    void destroy(Object obj);
+    void destroy(E obj);
 }

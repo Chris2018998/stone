@@ -15,13 +15,13 @@ package org.stone.beeop;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectHandle {
+public interface BeeObjectHandle<E> {
 
     void close() throws Exception;
 
     boolean isClosed() throws Exception;
 
-    Object getObjectProxy() throws Exception;
+    E getObjectProxy() throws Exception;
 
     Object call(String methodName) throws Exception;
 
