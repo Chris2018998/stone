@@ -85,8 +85,8 @@ public class ThreadPoolTaskFuture<V> implements Future<V> {
      * retrieves its result.
      *
      * @return the computed result
-     * @throws InterruptedException,                      which be thrown from wait pool,and just thrown once per waiter;if the current thread was interrupted while waiting
-     * @throws ExecutionException,                        which from executor,if the computation threw an exception
+     * @throws InterruptedException                       which be thrown from wait pool,and just thrown once per waiter;if the current thread was interrupted while waiting
+     * @throws ExecutionException                         which from executor,if the computation threw an exception
      * @throws java.util.concurrent.CancellationException if the computation was cancelled
      */
     public V get() throws InterruptedException, ExecutionException {

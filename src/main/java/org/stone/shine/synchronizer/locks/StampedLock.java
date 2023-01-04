@@ -83,7 +83,7 @@ public class StampedLock implements java.io.Serializable {
      * @throws InterruptedException if the current thread is interrupted
      *                              before acquiring the lock
      */
-    public long tryWriteLock(long time, TimeUnit unit) {
+    public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         return 1;
     }
 
@@ -164,7 +164,7 @@ public class StampedLock implements java.io.Serializable {
      * @throws InterruptedException if the current thread is interrupted
      *                              before acquiring the lock
      */
-    public long tryReadLock(long time, TimeUnit unit) {
+    public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
         return 1;
     }
 
