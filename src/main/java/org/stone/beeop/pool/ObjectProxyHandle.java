@@ -23,28 +23,25 @@ import static org.stone.beeop.pool.ObjectPoolStatics.PoolClassLoader;
  */
 public final class ObjectProxyHandle extends ObjectBaseHandle {
     private Object objectProxy;
-    private boolean proxyCreated;
+    private Exception failCause;
 
     ObjectProxyHandle(PooledObject p) {
         super(p);
+        try {
+            this.objectProxy = Proxy.newProxyInstance(
+                    PoolClassLoader,
+                    p.objectInterfaces,
+                    new ObjectReflectHandler(p, this));
+        } catch (Exception e) {
+            this.failCause = e;
+        } catch (Throwable e) {
+            this.failCause = new Exception(e);
+        }
     }
 
-    public Object getObjectProxy() throws Exception {
+    public final Object getObjectProxy() throws Exception {
         if (isClosed) throw new ObjectException("No operations allowed after object handle closed");
-        if (proxyCreated) return objectProxy;
-
-        synchronized (this) {
-            if (!proxyCreated) {
-                try {
-                    objectProxy = Proxy.newProxyInstance(
-                            PoolClassLoader,
-                            p.objectInterfaces,
-                            new ObjectReflectHandler(p, this));
-                } finally {
-                    proxyCreated = true;
-                }
-            }
-        }
+        if (failCause != null) throw failCause;
         return objectProxy;
     }
 }
