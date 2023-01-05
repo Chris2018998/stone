@@ -42,14 +42,19 @@ final class CasNodeChain {
 
     final boolean remove(CasNode node) {
         node.setState(REMOVED);
-        CasNode preNode = node.prev;
-        CasNode nextNode = node.next;
 
-        if (casNext(preNode, node, nextNode)) {
-            if (nextNode != null)
-                nextNode.prev = preNode;
-            else
-                this.tail = preNode;
+        //1: find out not removed pre-node
+        CasNode pred = node.prev;
+        while (pred.state == REMOVED)
+            node.prev = pred = pred.prev;
+
+        //2:remove node from chain
+        CasNode predNext = pred.next;
+        if (node == tail && casTail(this, node, pred)) {
+            casNext(pred, predNext, null);
+        } else {
+            CasNode next = node.next;
+            casNext(pred, predNext, next);
         }
         return true;
     }
