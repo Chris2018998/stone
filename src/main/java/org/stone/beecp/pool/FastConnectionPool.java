@@ -428,7 +428,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             //3:try to get one transferred connection
             b.state = null;
             this.waitQueue.offer(b);
-            boolean failed = false;
+            int failedType = 0;
             Throwable cause = null;
             deadline += this.maxWaitNs;
 
@@ -436,7 +436,9 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 Object s = b.state;//PooledConnection,Throwable,null
                 if (s instanceof PooledConnection) {
                     p = (PooledConnection) s;
-                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                    if (failedType == 2)
+                        this.recycle(p);//transfer to other waiter on interrupted
+                    else if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                         this.waitQueue.remove(b);
                         return b.lastUsed = p;
                     }
@@ -445,7 +447,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                     throw s instanceof SQLException ? (SQLException) s : new PoolInternalException((Throwable) s);
                 }
 
-                if (failed) {
+                if (failedType > 0) {
                     BorrowStUpd.compareAndSet(b, s, cause);
                 } else if (s instanceof PooledConnection) {
                     b.state = null;
@@ -458,12 +460,12 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted()) {
-                            failed = true;
+                            failedType = 2;
                             cause = new SQLException("Interrupted during getting connection");
                             if (b.state == null) BorrowStUpd.compareAndSet(b, null, cause);
                         }
                     } else {//timeout
-                        failed = true;
+                        failedType = 1;
                         cause = new SQLTimeoutException("Get connection timeout");
                     }
                 }//end
