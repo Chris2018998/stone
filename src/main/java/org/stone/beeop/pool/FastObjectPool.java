@@ -297,7 +297,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
             //3:try to get one transferred one
             b.state = null;
             this.waitQueue.offer(b);
-            boolean failed = false;
+            int failedType = 0;
             Throwable cause = null;
             deadline += this.maxWaitNs;
 
@@ -305,7 +305,9 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
                 Object s = b.state;
                 if (s instanceof PooledObject) {
                     p = (PooledObject) s;
-                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                    if (failedType == 2)
+                        this.recycle(p);//transfer to other waiter on interrupted
+                    else if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                         this.waitQueue.remove(b);
                         return handleFactory.createHandle(p, b);
                     }
@@ -314,7 +316,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
                     throw s instanceof Exception ? (Exception) s : new PoolInternalException((Throwable) s);
                 }
 
-                if (failed) {
+                if (failedType > 0) {
                     BorrowStUpd.compareAndSet(b, s, cause);
                 } else if (s instanceof PooledObject) {
                     b.state = null;
@@ -327,12 +329,12 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted()) {
-                            failed = true;
+                            failedType = 2;
                             cause = new ObjectException("Interrupted during getting object");
                             if (b.state == null) BorrowStUpd.compareAndSet(b, null, cause);
                         }
                     } else {//timeout
-                        failed = true;
+                        failedType = 1;
                         cause = new ObjectException("Get object timeout");
                     }
                 }//end (state == BOWER_NORMAL)
