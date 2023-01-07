@@ -289,7 +289,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
         //step2:get transactionIsolation default value
         Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
-        if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnIsolation())
+        if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnTransactionIsolation())
             defaultTransactionIsolation = rawCon.getTransactionIsolation();
 
         //step3:get readOnly default value

@@ -83,7 +83,7 @@ final class PooledConnection implements Cloneable {
     final PooledConnection setDefaultAndCopy(Connection rawConn, int state, XAResource rawXaRes) throws SQLException, CloneNotSupportedException {
         if (poolConfig.isEnableDefaultOnAutoCommit() && defaultAutoCommit != rawConn.getAutoCommit())
             rawConn.setAutoCommit(defaultAutoCommit);
-        if (poolConfig.isEnableDefaultOnIsolation() && defaultTransactionIsolation != rawConn.getTransactionIsolation())
+        if (poolConfig.isEnableDefaultOnTransactionIsolation() && defaultTransactionIsolation != rawConn.getTransactionIsolation())
             rawConn.setTransactionIsolation(defaultTransactionIsolation);
         if (poolConfig.isEnableDefaultOnReadOnly() && defaultReadOnly != rawConn.isReadOnly())
             rawConn.setReadOnly(defaultReadOnly);
