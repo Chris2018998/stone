@@ -1,0 +1,9 @@
+
+Stone-1.0.2
+ beecp
+   1: transfer conneciton on interrupted
+   2: add default enable indicator
+
+  beeop
+   1: transfer object on interrupted
+   2: add method filter
