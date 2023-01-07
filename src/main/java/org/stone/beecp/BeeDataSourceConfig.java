@@ -106,8 +106,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean enableDefaultOnReadOnly = true;
     //default value set indicator on readOnly(connection property)
     private boolean enableDefaultOnAutoCommit = true;
-    //default value set indicator on Isolation(connection property)
-    private boolean enableDefaultOnIsolation = true;
+    //default value set indicator on transactionIsolation(connection property)
+    private boolean enableDefaultOnTransactionIsolation = true;
 
     /**
      * connection factory class,which is one implementation class of
@@ -451,12 +451,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
     }
 
-    public boolean isEnableDefaultOnIsolation() {
-        return enableDefaultOnIsolation;
+    public boolean isEnableDefaultOnTransactionIsolation() {
+        return enableDefaultOnTransactionIsolation;
     }
 
-    public void setEnableDefaultOnIsolation(boolean enableDefaultOnIsolation) {
-        this.enableDefaultOnIsolation = enableDefaultOnIsolation;
+    public void setEnableDefaultOnTransactionIsolation(boolean enableDefaultOnTransactionIsolation) {
+        this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
     }
 
     //****************************************************************************************************************//
