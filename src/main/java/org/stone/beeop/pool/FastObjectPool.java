@@ -112,7 +112,7 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
         this.pooledArray = new PooledObject[0];
 
         Class[] objectInterfaces = poolConfig.getObjectInterfaces();
-        this.templatePooledObject = new PooledObject(this, objectFactory, objectInterfaces, poolConfig.getExcludeMethodNames());
+        this.templatePooledObject = new PooledObject(this, objectFactory, objectInterfaces, poolConfig.getObjectMethodFilter());
         this.createInitObjects(this.poolConfig.getInitialSize());
         if (objectInterfaces != null && objectInterfaces.length > 0)
             handleFactory = new ObjectHandleWithProxyFactory();

@@ -10,8 +10,7 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.RawObjectFactory;
-
-import java.util.Set;
+import org.stone.beeop.RawObjectMethodFilter;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -23,7 +22,7 @@ import static java.lang.System.currentTimeMillis;
  */
 final class PooledObject implements Cloneable {
     final Class[] objectInterfaces;
-    final Set<String> excludeMethodNames;
+    final RawObjectMethodFilter filter;
     private final ObjectPool pool;
     private final RawObjectFactory factory;
 
@@ -36,11 +35,11 @@ final class PooledObject implements Cloneable {
     //***************************************************************************************************************//
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(ObjectPool pool, RawObjectFactory factory, Class[] objectInterfaces, Set<String> excludeMethodNames) {
+    PooledObject(ObjectPool pool, RawObjectFactory factory, Class[] objectInterfaces, RawObjectMethodFilter filter) {
         this.pool = pool;
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
-        this.excludeMethodNames = excludeMethodNames;
+        this.filter = filter;
     }
 
     PooledObject setDefaultAndCopy(Object raw, int state) throws Exception {

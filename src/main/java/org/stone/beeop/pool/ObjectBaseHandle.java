@@ -10,11 +10,11 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.RawObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectException;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASSES;
@@ -30,14 +30,14 @@ public class ObjectBaseHandle implements BeeObjectHandle {
     private static final ConcurrentHashMap<MethodCacheKey, Method> MethodMap = new ConcurrentHashMap<MethodCacheKey, Method>(16);
     protected final PooledObject p;
     private final Object raw;
-    private final Set<String> excludeMethodNames;
+    private final RawObjectMethodFilter filter;
     protected boolean isClosed;
 
     ObjectBaseHandle(PooledObject p) {
         this.p = p;
         this.raw = p.raw;
         p.handleInUsing = this;
-        this.excludeMethodNames = p.excludeMethodNames;
+        this.filter = p.filter;
     }
 
     //***************************************************************************************************************//
@@ -72,7 +72,7 @@ public class ObjectBaseHandle implements BeeObjectHandle {
 
     public Object call(String name, Class[] types, Object[] params) throws Exception {
         if (isClosed) throw new ObjectException("No operations allowed after object handle closed");
-        if (excludeMethodNames.contains(name)) throw new ObjectException("Method illegal access");
+        if (filter != null) filter.doFilter(name, types, params);
 
         MethodCacheKey key = new MethodCacheKey(name, types);
         Method method = MethodMap.get(key);

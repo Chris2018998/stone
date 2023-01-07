@@ -10,12 +10,12 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.RawObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectException;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Set;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.PoolClassLoader;
 
@@ -53,19 +53,19 @@ public final class ObjectProxyHandle extends ObjectBaseHandle {
         private final Object raw;
         private final PooledObject p;
         private final BeeObjectHandle handle;
-        private final Set<String> excludeMethodNames;
+        private final RawObjectMethodFilter filter;
 
         ObjectReflectHandler(PooledObject p, ObjectBaseHandle handle) {
             this.p = p;
             this.raw = p.raw;
             this.handle = handle;
-            this.excludeMethodNames = p.excludeMethodNames;
+            this.filter = p.filter;
         }
 
         //reflect method
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if (handle.isClosed()) throw new ObjectException("No operations allowed after object handle closed");
-            if (excludeMethodNames.contains(method.getName())) throw new ObjectException("Method illegal access");
+            if (filter != null) filter.doFilter(method.getName(), method.getParameterTypes(), args);
 
             Object v = method.invoke(raw, args);
             p.updateAccessTime();
