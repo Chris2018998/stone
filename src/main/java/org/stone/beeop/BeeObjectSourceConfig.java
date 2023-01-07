@@ -34,9 +34,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //poolName index
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-
-    //exclude method names on raw object,which can't be called by user,for example;close,destroy,terminate
-    private final Set<String> excludeMethodNames = new HashSet<String>(3);
     //object factory properties
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
 
@@ -88,6 +85,13 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private String objectFactoryClassName;
     //object factory
     private RawObjectFactory objectFactory;
+
+    //object method call filter class
+    private Class objectMethodFilterClass;
+    //object method call filter class name
+    private String objectMethodFilterClassName;
+    //method call filter instance
+    private RawObjectMethodFilter objectMethodFilter;
     //pool implementation class name
     private String poolImplementClassName = FastObjectPool.class.getName();
 
@@ -95,26 +99,20 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //                                     1: constructors(4)                                                        //
     //***************************************************************************************************************//
     public BeeObjectSourceConfig() {
-        this.excludeMethodNames.add("close");
-        this.excludeMethodNames.add("destroy");
-        this.excludeMethodNames.add("terminate");
     }
 
     //read configuration from properties file
     public BeeObjectSourceConfig(File propertiesFile) {
-        this();
         loadFromPropertiesFile(propertiesFile);
     }
 
     //read configuration from properties file
     public BeeObjectSourceConfig(String propertiesFileName) {
-        this();
         loadFromPropertiesFile(propertiesFileName);
     }
 
     //read configuration from properties
     public BeeObjectSourceConfig(Properties configProperties) {
-        this();
         loadFromProperties(configProperties);
     }
 
@@ -325,16 +323,28 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.objectFactory = objectFactory;
     }
 
-    public void addExcludeMethodName(String methodName) {
-        if (!ObjectPoolStatics.isBlank(methodName)) this.excludeMethodNames.add(methodName);
+    public Class getObjectMethodFilterClass() {
+        return objectMethodFilterClass;
     }
 
-    public void removeExcludeMethodName(String methodName) {
-        if (!ObjectPoolStatics.isBlank(methodName)) this.excludeMethodNames.remove(methodName);
+    public void setObjectMethodFilterClass(Class objectMethodFilterClass) {
+        this.objectMethodFilterClass = objectMethodFilterClass;
     }
 
-    public Set<String> getExcludeMethodNames() {
-        return new HashSet<String>(this.excludeMethodNames);
+    public String getObjectMethodFilterClassName() {
+        return objectMethodFilterClassName;
+    }
+
+    public void setObjectMethodFilterClassName(String objectMethodFilterClassName) {
+        this.objectMethodFilterClassName = objectMethodFilterClassName;
+    }
+
+    public RawObjectMethodFilter getObjectMethodFilter() {
+        return objectMethodFilter;
+    }
+
+    public void setObjectMethodFilter(RawObjectMethodFilter objectMethodFilter) {
+        this.objectMethodFilter = objectMethodFilter;
     }
 
     public void removeFactoryProperty(String key) {
@@ -423,20 +433,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
                 this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties." + i));
         }
 
-        //4:try to find 'excludeMethodNames' config value
-        String excludeMethodNames = ObjectPoolStatics.getPropertyValue(configProperties, "excludeMethodNames");
-        if (!ObjectPoolStatics.isBlank(excludeMethodNames)) {
-            String[] excludeMethodNameArray = excludeMethodNames.split(",");
-            for (String excludeMethodName : excludeMethodNameArray) {
-                if (!ObjectPoolStatics.isBlank(excludeMethodName)) {
-                    excludeMethodName = excludeMethodName.trim();
-                    addExcludeMethodName(excludeMethodName);
-
-                    ObjectPoolStatics.CommonLog.debug("add excludeMethodName:{}", excludeMethodName);
-                }
-            }
-        }
-
         //5:try to find 'objectInterfaceNames' config value
         String objectInterfaceNames = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaceNames");
         if (!ObjectPoolStatics.isBlank(objectInterfaceNames))
@@ -478,34 +474,42 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (maxWait <= 0)
             throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
 
-        //1:load object implemented interfaces,if config
-        Class[] objectInterfaces = this.loadObjectInterfaces();
+        //1:try to create method filter
+        RawObjectMethodFilter tempMethodFilter = null;
+        if (this.objectMethodFilter == null) tempMethodFilter = this.tryCreateMethodFilter();
 
-        //2:try to create object factory
+        //2:load object implemented interfaces,if config
+        Class[] tempObjectInterfaces = this.loadObjectInterfaces();
+
+        //3:try to create object factory
         RawObjectFactory tempObjectFactory = null;
-        if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(objectInterfaces);
+        if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
+
+        //4:try to create pool name
         if (ObjectPoolStatics.isBlank(poolName)) poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
 
-        //3:create config object
+        //5: copy field value to new config from current config
         BeeObjectSourceConfig configCopy = new BeeObjectSourceConfig();
         copyTo(configCopy);
-        configCopy.setObjectInterfaces(objectInterfaces);
+
+        //6:set factory
+        if (tempMethodFilter != null) configCopy.objectMethodFilter = tempMethodFilter;
         if (tempObjectFactory != null) configCopy.objectFactory = tempObjectFactory;
+        if (tempObjectInterfaces != null) configCopy.objectInterfaces = tempObjectInterfaces;
         return configCopy;
     }
 
     void copyTo(BeeObjectSourceConfig config) {
-        List<String> containerTypeFieldList = new ArrayList<String>(4);
-        containerTypeFieldList.add("objectInterfaces");
-        containerTypeFieldList.add("objectInterfaceNames");
-        containerTypeFieldList.add("excludeMethodNames");
-        containerTypeFieldList.add("factoryProperties");
+        List<String> excludeFieldList = new ArrayList<String>(3);
+        excludeFieldList.add("factoryProperties");
+        excludeFieldList.add("objectInterfaces");
+        excludeFieldList.add("objectInterfaceNames");
 
         //1:primitive type copy
         String fieldName = "";
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
-                if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers()) || containerTypeFieldList.contains(field.getName()))
+                if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers()) || excludeFieldList.contains(field.getName()))
                     continue;
                 Object fieldValue = field.get(this);
                 fieldName = field.getName();
@@ -518,50 +522,29 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             throw new BeeObjectSourceConfigException("Failed to copy field[" + fieldName + "]", e);
         }
 
-        //2:copy 'excludeMethodNames'
-        int index = 0;
-        for (String methodName : this.excludeMethodNames) {
-            config.addExcludeMethodName(methodName);
-            if (this.printConfigInfo)
-                ObjectPoolStatics.CommonLog.info("{}.excludeMethodNames[{}]={}", this.poolName, index++, methodName);
-        }
-
-        //3:copy 'objectInterfaces'
-        Class[] interfaces = (this.objectInterfaces == null) ? null : new Class[this.objectInterfaces.length];
+        //2:copy 'objectInterfaces'
+        Class[] interfaces = this.objectInterfaces == null ? null : new Class[this.objectInterfaces.length];
         if (interfaces != null) {
             System.arraycopy(this.objectInterfaces, 0, interfaces, 0, interfaces.length);
             for (int i = 0, l = interfaces.length; i < l; i++)
                 if (this.printConfigInfo)
                     ObjectPoolStatics.CommonLog.info("{}.objectInterfaces[{}]={}", this.poolName, i, interfaces[i]);
+            config.setObjectInterfaces(interfaces);
         }
-        config.setObjectInterfaces(interfaces);
 
-        //4:copy 'objectInterfaceNames'
+        //3:copy 'objectInterfaceNames'
         String[] interfaceNames = (this.objectInterfaceNames == null) ? null : new String[this.objectInterfaceNames.length];
         if (interfaceNames != null) {
             System.arraycopy(this.objectInterfaceNames, 0, interfaceNames, 0, interfaceNames.length);
             for (int i = 0, l = this.objectInterfaceNames.length; i < l; i++)
                 if (this.printConfigInfo)
                     ObjectPoolStatics.CommonLog.info("{}.objectInterfaceNames[{}]={}", this.poolName, i, this.objectInterfaceNames[i]);
+            config.setObjectInterfaceNames(interfaceNames);
         }
-        config.setObjectInterfaceNames(interfaceNames);
     }
 
     private Class[] loadObjectInterfaces() throws BeeObjectSourceConfigException {
-        Class[] objectInterfaces = this.objectInterfaces;
-        if (objectInterfaces == null && this.objectInterfaceNames != null) {
-            objectInterfaces = new Class[this.objectInterfaceNames.length];
-            for (int i = 0; i < this.objectInterfaceNames.length; i++) {
-                try {
-                    if (ObjectPoolStatics.isBlank(this.objectInterfaceNames[i]))
-                        throw new BeeObjectSourceConfigException("objectInterfaceNames[" + i + "]is empty or null");
-                    objectInterfaces[i] = Class.forName(this.objectInterfaceNames[i]);
-                } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Not found interface:" + this.objectInterfaceNames[i]);
-                }
-            }
-        }
-
+        //1: if objectInterfaces field value is not null,then check it and return it
         if (objectInterfaces != null) {
             for (int i = 0, l = objectInterfaces.length; i < l; i++) {
                 if (objectInterfaces[i] == null)
@@ -569,44 +552,97 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
                 if (!objectInterfaces[i].isInterface())
                     throw new BeeObjectSourceConfigException("interfaces array[" + i + "]is not valid interface");
             }
+            return objectInterfaces;
         }
-        return objectInterfaces;
+
+        //2: try to load interfaces by names
+        if (this.objectInterfaceNames != null) {
+            Class[] objectInterfaces = new Class[this.objectInterfaceNames.length];
+            for (int i = 0; i < this.objectInterfaceNames.length; i++) {
+                try {
+                    if (ObjectPoolStatics.isBlank(this.objectInterfaceNames[i]))
+                        throw new BeeObjectSourceConfigException("objectInterfaceNames[" + i + "]is empty or null");
+                    objectInterfaces[i] = Class.forName(this.objectInterfaceNames[i]);
+                } catch (ClassNotFoundException e) {
+                    throw new BeeObjectSourceConfigException("Not found objectInterfaceNames[" + i + "]:" + this.objectInterfaceNames[i]);
+                }
+            }
+            return objectInterfaces;
+        }
+        return null;
+    }
+
+    private RawObjectMethodFilter tryCreateMethodFilter() {
+        //1:if exists method filter then return it directly
+        if (this.objectMethodFilter != null) return objectMethodFilter;
+
+        //2:if filter class is not null,then try to create instance by it
+        if (objectMethodFilterClass != null) {
+            try {
+                return (RawObjectMethodFilter) ObjectPoolStatics.createClassInstance(objectMethodFilterClass, RawObjectMethodFilter.class, "object method filter");
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + objectMethodFilterClass.getName(), e);
+            }
+        }
+
+        //3:if filter class name is not null,then try to create instance by it
+        if (!ObjectPoolStatics.isBlank(this.objectMethodFilterClassName)) {
+            try {
+                Class methodFilterClass = Class.forName(this.objectMethodFilterClassName);
+                return (RawObjectMethodFilter) ObjectPoolStatics.createClassInstance(methodFilterClass, RawObjectMethodFilter.class, "object method filter");
+            } catch (ClassNotFoundException e) {
+                throw new BeeObjectSourceConfigException("Not found object filter class:" + this.objectMethodFilterClassName);
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + objectMethodFilterClassName, e);
+            }
+        }
+
+        return null;
     }
 
     private RawObjectFactory tryCreateObjectFactory(Class[] objectInterfaces) {
-        //1: try to create factory from factory class/className
-        Class objectFactoryClass = this.objectFactoryClass;
-        if (objectFactoryClass == null && !ObjectPoolStatics.isBlank(this.objectFactoryClassName)) {
+        RawObjectFactory rawObjectFactory = null;
+
+        //1:if exists object factory,then return it
+        if (this.objectFactory != null) rawObjectFactory = objectFactory;
+
+        //2:if factory class exists,then try to create by it
+        if (rawObjectFactory == null && objectFactoryClass != null) {
             try {
-                objectFactoryClass = Class.forName(this.objectFactoryClassName);
-            } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found object factory class:" + this.objectFactoryClassName);
-            }
-        }
-        if (objectFactoryClass != null) {
-            try {
-                RawObjectFactory factory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
-                ObjectPoolStatics.setPropertiesValue(factory, this.factoryProperties);
-                return factory;
+                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + objectFactoryClass.getName(), e);
             }
         }
 
-        //2: try to create simple factory from object class/class name
-        Class objectClass = this.objectClass;
-        if (objectClass == null && !ObjectPoolStatics.isBlank(this.objectClassName)) {
+        //3:if factory class name exists,then try to create by class name
+        if (rawObjectFactory == null && !ObjectPoolStatics.isBlank(this.objectFactoryClassName)) {
             try {
-                objectClass = Class.forName(this.objectClassName);
+                Class objectFactoryClass = Class.forName(this.objectFactoryClassName);
+                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found object class:" + this.objectClassName);
+                throw new BeeObjectSourceConfigException("Not found object factory class:" + this.objectFactoryClassName);
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + objectFactoryClassName, e);
             }
         }
 
-        if (objectClass != null) {
+        //4:return factory instance
+        if (rawObjectFactory != null) {
+            //set properties to factory
+            ObjectPoolStatics.setPropertiesValue(rawObjectFactory, this.factoryProperties);
+            return rawObjectFactory;
+        } else if (objectClass != null) {
             try {
                 return new SimpleObjectFactory(ObjectPoolStatics.getConstructor(objectClass, objectInterfaces, "object class"));
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Not found a valid constructor without parameters in class:" + objectClass.getName());
+            }
+        } else if (!ObjectPoolStatics.isBlank(this.objectClassName)) {
+            try {
+                Class objectClass = Class.forName(this.objectClassName);
+                return new SimpleObjectFactory(ObjectPoolStatics.getConstructor(objectClass, objectInterfaces, "object class"));
+            } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Not found a valid constructor without parameters in class:" + objectClass.getName());
             }
         } else {
