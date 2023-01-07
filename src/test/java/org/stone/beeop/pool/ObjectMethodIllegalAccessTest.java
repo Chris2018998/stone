@@ -11,6 +11,7 @@ import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.RawObjectMethodFilter;
 import org.stone.beeop.object.Book;
 import org.stone.beeop.object.JavaBook;
 
@@ -27,7 +28,7 @@ public class ObjectMethodIllegalAccessTest extends TestCase {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setObjectClass(JavaBook.class);
         config.setObjectInterfaces(new Class[]{Book.class});
-        config.addExcludeMethodName("getName");
+        config.setObjectMethodFilter(new ExcludeMethodFilter());
         obs = new BeeObjectSource(config);
     }
 
@@ -66,6 +67,12 @@ public class ObjectMethodIllegalAccessTest extends TestCase {
                 System.out.println("Proxy method illegal access test OK");
             else
                 TestUtil.assertError("Proxy method illegal access test fail");
+        }
+    }
+
+    class ExcludeMethodFilter implements RawObjectMethodFilter {
+        public void doFilter(String methodName, Class[] paramTypes, Object[] paramValues) throws Exception {
+            if ("getName".equals(methodName)) throw new IllegalAccessException();
         }
     }
 }

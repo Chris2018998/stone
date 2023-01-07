@@ -7,7 +7,6 @@
 package org.stone.beeop.config;
 
 import org.stone.base.TestCase;
-import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
 import org.stone.beeop.object.JavaBook;
@@ -16,7 +15,6 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * @author Chris.Liao
@@ -34,7 +32,6 @@ public class ConfigCheckCopyTest extends TestCase {
         excludeNames.add("objectFactory");
         excludeNames.add("objectInterfaces");
         excludeNames.add("objectInterfaceNames");
-        excludeNames.add("excludeMethodNames");
 
         //1:primitive type copy
         Field[] fields = BeeObjectSourceConfig.class.getDeclaredFields();
@@ -48,10 +45,6 @@ public class ConfigCheckCopyTest extends TestCase {
         }
 
         //2:test container type properties
-        Set<String> excludeMethodNames1 = (Set<String>) TestUtil.getFieldValue(config, "excludeMethodNames");
-        Set<String> excludeMethodNames2 = (Set<String>) TestUtil.getFieldValue(config2, "excludeMethodNames");
-        if (!Objects.deepEquals(excludeMethodNames1, excludeMethodNames2))
-            throw new BeeObjectSourceConfigException("Configuration 'excludeMethodNames' check copy failed");
         if (!Objects.deepEquals(config.getObjectInterfaceNames(), config2.getObjectInterfaceNames()))
             throw new BeeObjectSourceConfigException("Configuration 'objectInterfaceNames' check copy failed");
     }
