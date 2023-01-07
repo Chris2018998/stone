@@ -379,7 +379,11 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 supportNetworkTimeoutInd,
                 networkTimeoutExecutor,
                 this,
-                poolConfig);
+                poolConfig.isEnableDefaultOnCatalog(),
+                poolConfig.isEnableDefaultOnSchema(),
+                poolConfig.isEnableDefaultOnReadOnly(),
+                poolConfig.isEnableDefaultOnAutoCommit(),
+                poolConfig.isEnableDefaultOnTransactionIsolation());
     }
 
     //***************************************************************************************************************//
