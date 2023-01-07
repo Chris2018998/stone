@@ -98,6 +98,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //connection default value:description of transactionIsolation <code>defaultTransactionIsolationCode</code>
     private String defaultTransactionIsolationName;
 
+    //default value set indicator on catalog(connection property)
+    private boolean enableDefaultOnCatalog = true;
+    //default value set indicator on schema(connection property)
+    private boolean enableDefaultOnSchema = true;
+    //default value set indicator on readOnly(connection property)
+    private boolean enableDefaultOnReadOnly = true;
+    //default value set indicator on readOnly(connection property)
+    private boolean enableDefaultOnAutoCommit = true;
+    //default value set indicator on Isolation(connection property)
+    private boolean enableDefaultOnIsolation = true;
+
     /**
      * connection factory class,which is one implementation class of
      * 1:<class>RawConnectionFactory</class>
@@ -124,9 +135,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //runtime log print indicator on pool activity
     private boolean printRuntimeLog;
 
-    //***************************************************************************************************************//
-    //                                     1: constructors(5)                                                        //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                     1: constructors(5)                                                         //
+    //****************************************************************************************************************//
     public BeeDataSourceConfig() {
     }
 
@@ -152,9 +163,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.driverClassName = trimString(driver);
     }
 
-    //***************************************************************************************************************//
-    //                                     2: JDBC link configuration methods(10)                                    //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                     2: JDBC link configuration methods(10)                                     //
+    //****************************************************************************************************************//
     public String getUsername() {
         return this.username;
     }
@@ -196,9 +207,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
 
-    //***************************************************************************************************************//
-    //                                3: configuration about pool inner control(30)                                  //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                3: configuration about pool inner control(30)                                   //
+    //****************************************************************************************************************//
     public String getPoolName() {
         return this.poolName;
     }
@@ -348,9 +359,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.printRuntimeLog = printRuntimeLog;
     }
 
-    //***************************************************************************************************************//
-    //                                     4: connection default value set methods(12)                               //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                     4: connection default value set methods(12)                                //
+    //****************************************************************************************************************//
     public String getDefaultCatalog() {
         return this.defaultCatalog;
     }
@@ -405,9 +416,52 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         }
     }
 
-    //***************************************************************************************************************//
-    //                                    5: connection factory class set methods(12)                               //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                     5: connection default value set Indicator methods(10)                      //
+    //****************************************************************************************************************//
+    public boolean isEnableDefaultOnCatalog() {
+        return enableDefaultOnCatalog;
+    }
+
+    public void setEnableDefaultOnCatalog(boolean enableDefaultOnCatalog) {
+        this.enableDefaultOnCatalog = enableDefaultOnCatalog;
+    }
+
+    public boolean isEnableDefaultOnSchema() {
+        return enableDefaultOnSchema;
+    }
+
+    public void setEnableDefaultOnSchema(boolean enableDefaultOnSchema) {
+        this.enableDefaultOnSchema = enableDefaultOnSchema;
+    }
+
+    public boolean isEnableDefaultOnReadOnly() {
+        return enableDefaultOnReadOnly;
+    }
+
+    public void setEnableDefaultOnReadOnly(boolean enableDefaultOnReadOnly) {
+        this.enableDefaultOnReadOnly = enableDefaultOnReadOnly;
+    }
+
+    public boolean isEnableDefaultOnAutoCommit() {
+        return enableDefaultOnAutoCommit;
+    }
+
+    public void setEnableDefaultOnAutoCommit(boolean enableDefaultOnAutoCommit) {
+        this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
+    }
+
+    public boolean isEnableDefaultOnIsolation() {
+        return enableDefaultOnIsolation;
+    }
+
+    public void setEnableDefaultOnIsolation(boolean enableDefaultOnIsolation) {
+        this.enableDefaultOnIsolation = enableDefaultOnIsolation;
+    }
+
+    //****************************************************************************************************************//
+    //                                    6: connection factory class set methods(12)                                 //
+    //****************************************************************************************************************//
     public Object getConnectionFactory() {
         return this.connectionFactory;
     }
@@ -477,9 +531,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         }
     }
 
-    //***************************************************************************************************************//
-    //                                     6: properties configuration(3)                                            //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                     7: properties configuration(3)                                             //
+    //****************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         if (isBlank(filename)) throw new IllegalArgumentException("Properties file can't be null");
         this.loadFromPropertiesFile(new File(filename));
@@ -535,9 +589,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         }
     }
 
-    //***************************************************************************************************************//
-    //                                    7: configuration check and connection factory create methods(4)            //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                                    8: configuration check and connection factory create methods(4)             //
+    //****************************************************************************************************************//
     //check pool configuration
     public BeeDataSourceConfig check() throws SQLException {
         if (maxActive <= 0)
