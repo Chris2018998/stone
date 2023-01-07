@@ -9,6 +9,8 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.beecp.BeeDataSourceConfig;
+
 import javax.transaction.xa.XAResource;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -35,6 +37,7 @@ final class PooledConnection implements Cloneable {
     private final boolean supportNetworkTimeoutInd;
     private final ThreadPoolExecutor networkTimeoutExecutor;
     private final FastConnectionPool pool;
+    private final BeeDataSourceConfig poolConfig;
 
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
@@ -59,7 +62,8 @@ final class PooledConnection implements Cloneable {
             int defaultNetworkTimeout,
             boolean supportNetworkTimeoutInd,
             ThreadPoolExecutor networkTimeoutExecutor,
-            FastConnectionPool pool) {
+            FastConnectionPool pool,
+            BeeDataSourceConfig poolConfig) {
 
         this.defaultAutoCommit = defaultAutoCommit;
         this.defaultTransactionIsolation = defaultTransactionIsolation;
@@ -72,20 +76,21 @@ final class PooledConnection implements Cloneable {
         this.supportNetworkTimeoutInd = supportNetworkTimeoutInd;
         this.networkTimeoutExecutor = networkTimeoutExecutor;
         this.pool = pool;
+        this.poolConfig = poolConfig;
         this.curAutoCommit = defaultAutoCommit;
     }
 
     final PooledConnection setDefaultAndCopy(Connection rawConn, int state, XAResource rawXaRes) throws SQLException, CloneNotSupportedException {
-        if (this.defaultAutoCommit != rawConn.getAutoCommit())
-            rawConn.setAutoCommit(this.defaultAutoCommit);
-        if (this.defaultTransactionIsolation != rawConn.getTransactionIsolation())
-            rawConn.setTransactionIsolation(this.defaultTransactionIsolation);
-        if (this.defaultReadOnly != rawConn.isReadOnly())
-            rawConn.setReadOnly(this.defaultReadOnly);
-        if (this.defaultCatalogIsNotBlank && !this.defaultCatalog.equals(rawConn.getCatalog()))
-            rawConn.setCatalog(this.defaultCatalog);
-        if (this.defaultSchemaIsNotBlank && !this.defaultSchema.equals(rawConn.getSchema()))
-            rawConn.setSchema(this.defaultSchema);
+        if (poolConfig.isEnableDefaultOnAutoCommit() && defaultAutoCommit != rawConn.getAutoCommit())
+            rawConn.setAutoCommit(defaultAutoCommit);
+        if (poolConfig.isEnableDefaultOnIsolation() && defaultTransactionIsolation != rawConn.getTransactionIsolation())
+            rawConn.setTransactionIsolation(defaultTransactionIsolation);
+        if (poolConfig.isEnableDefaultOnReadOnly() && defaultReadOnly != rawConn.isReadOnly())
+            rawConn.setReadOnly(defaultReadOnly);
+        if (poolConfig.isEnableDefaultOnCatalog() && defaultCatalogIsNotBlank && !defaultCatalog.equals(rawConn.getCatalog()))
+            rawConn.setCatalog(defaultCatalog);
+        if (poolConfig.isEnableDefaultOnSchema() && defaultSchemaIsNotBlank && !defaultSchema.equals(rawConn.getSchema()))
+            rawConn.setSchema(defaultSchema);
 
         PooledConnection p = (PooledConnection) clone();
         p.state = state;

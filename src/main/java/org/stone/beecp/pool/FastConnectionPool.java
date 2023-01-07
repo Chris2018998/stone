@@ -283,20 +283,22 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     //Method-1.5: test first connection and create template pooled connection
     private PooledConnection createTemplatePooledConn(Connection rawCon) throws SQLException {
         //step1:get autoCommit default value
-        Boolean defaultAutoCommit = this.poolConfig.isDefaultAutoCommit();
-        if (defaultAutoCommit == null) defaultAutoCommit = rawCon.getAutoCommit();
+        Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
+        if (defaultAutoCommit == null && poolConfig.isEnableDefaultOnAutoCommit())
+            defaultAutoCommit = rawCon.getAutoCommit();
 
         //step2:get transactionIsolation default value
-        Integer defaultTransactionIsolation = this.poolConfig.getDefaultTransactionIsolationCode();
-        if (defaultTransactionIsolation == null) defaultTransactionIsolation = rawCon.getTransactionIsolation();
+        Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
+        if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnIsolation())
+            defaultTransactionIsolation = rawCon.getTransactionIsolation();
 
         //step3:get readOnly default value
-        Boolean defaultReadOnly = this.poolConfig.isDefaultReadOnly();
-        if (defaultReadOnly == null) defaultReadOnly = rawCon.isReadOnly();
+        Boolean defaultReadOnly = poolConfig.isDefaultReadOnly();
+        if (defaultReadOnly == null && poolConfig.isEnableDefaultOnReadOnly()) defaultReadOnly = rawCon.isReadOnly();
 
         //step4:get catalog default value
-        String defaultCatalog = this.poolConfig.getDefaultCatalog();
-        if (isBlank(defaultCatalog))
+        String defaultCatalog = poolConfig.getDefaultCatalog();
+        if (isBlank(defaultCatalog) && poolConfig.isEnableDefaultOnCatalog())
             try {
                 defaultCatalog = rawCon.getCatalog();
             } catch (Throwable e) {
@@ -305,8 +307,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             }
 
         //step5:get schema default value
-        String defaultSchema = this.poolConfig.getDefaultSchema();
-        if (isBlank(defaultSchema))
+        String defaultSchema = poolConfig.getDefaultSchema();
+        if (isBlank(defaultSchema) && poolConfig.isEnableDefaultOnSchema())
             try {
                 defaultSchema = rawCon.getSchema();
             } catch (Throwable e) {
@@ -376,7 +378,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 defaultNetworkTimeout,
                 supportNetworkTimeoutInd,
                 networkTimeoutExecutor,
-                this);
+                this,
+                poolConfig);
     }
 
     //***************************************************************************************************************//
