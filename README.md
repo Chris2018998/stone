@@ -4,7 +4,7 @@
  
 ## :coffee: Introduction 
 
-Stone,A Java Tool Suite
+Stone,A Java Tools Suite
 
 <a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md">beecp:</a> a small JDBC connection pool
 
@@ -19,6 +19,6 @@ Java7 or higher
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.0.1</version>
+   <version>1.0.2</version>
 </dependency>
 ```
