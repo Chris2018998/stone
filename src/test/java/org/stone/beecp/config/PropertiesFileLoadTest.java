@@ -9,11 +9,12 @@ package org.stone.beecp.config;
 import org.stone.base.TestCase;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.beecp.pool.ConnectionPoolStatics;
 
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Map;
+
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * @author Chris Liao
@@ -35,7 +36,7 @@ public class PropertiesFileLoadTest extends TestCase {
 
     public void test() throws Exception {
         String msg = check();
-        if (!ConnectionPoolStatics.isBlank(msg)) throw new BeeDataSourceConfigException(msg);
+        if (!isBlank(msg)) throw new BeeDataSourceConfigException(msg);
     }
 
     private String check() throws Exception {

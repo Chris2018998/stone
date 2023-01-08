@@ -9,9 +9,10 @@ package org.stone.beeop.config;
 import org.stone.base.TestCase;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
-import org.stone.beeop.pool.ObjectPoolStatics;
 
 import java.net.URL;
+
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * @author Chris.Liao
@@ -59,10 +60,10 @@ public class PropertiesFileLoadTest extends TestCase {
         config.loadFromPropertiesFile(url.getFile());
 
         String error = checkBase(config);
-        if (!ObjectPoolStatics.isBlank(error)) throw new BeeObjectSourceConfigException(error);
+        if (!isBlank(error)) throw new BeeObjectSourceConfigException(error);
         error = checkTimeValue(config);
-        if (!ObjectPoolStatics.isBlank(error)) throw new BeeObjectSourceConfigException(error);
+        if (!isBlank(error)) throw new BeeObjectSourceConfigException(error);
         error = checkInterface(config);
-        if (!ObjectPoolStatics.isBlank(error)) throw new BeeObjectSourceConfigException(error);
+        if (!isBlank(error)) throw new BeeObjectSourceConfigException(error);
     }
 }
