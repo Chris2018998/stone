@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.util.CommonUtil.trimString;
 
 /**
  * Object pool configuration
@@ -124,7 +126,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setPoolName(String poolName) {
-        this.poolName = ObjectPoolStatics.trimString(poolName);
+        this.poolName = trimString(poolName);
     }
 
     public boolean isFairMode() {
@@ -231,8 +233,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setPoolImplementClassName(String poolImplementClassName) {
-        if (!ObjectPoolStatics.isBlank(poolImplementClassName))
-            this.poolImplementClassName = ObjectPoolStatics.trimString(poolImplementClassName);
+        if (!isBlank(poolImplementClassName))
+            this.poolImplementClassName = trimString(poolImplementClassName);
     }
 
     public boolean isEnableJmx() {
@@ -272,7 +274,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setObjectClassName(String objectClassName) {
-        this.objectClassName = ObjectPoolStatics.trimString(objectClassName);
+        this.objectClassName = trimString(objectClassName);
     }
 
     public Class[] getObjectInterfaces() {
@@ -312,7 +314,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setObjectFactoryClassName(String objectFactoryClassName) {
-        this.objectFactoryClassName = ObjectPoolStatics.trimString(objectFactoryClassName);
+        this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
     public RawObjectFactory getObjectFactory() {
@@ -348,15 +350,15 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void removeFactoryProperty(String key) {
-        if (!ObjectPoolStatics.isBlank(key)) this.factoryProperties.remove(key);
+        if (!isBlank(key)) this.factoryProperties.remove(key);
     }
 
     public void addFactoryProperty(String key, Object value) {
-        if (!ObjectPoolStatics.isBlank(key) && value != null) this.factoryProperties.put(key, value);
+        if (!isBlank(key) && value != null) this.factoryProperties.put(key, value);
     }
 
     public void addFactoryProperty(String propertyText) {
-        if (!ObjectPoolStatics.isBlank(propertyText)) {
+        if (!isBlank(propertyText)) {
             String[] attributeArray = propertyText.split("&");
             for (String attribute : attributeArray) {
                 String[] pair = attribute.split("=");
@@ -376,7 +378,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //                                     4: configuration load from properties load (3)                            //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
-        if (ObjectPoolStatics.isBlank(filename)) throw new IllegalArgumentException("Properties file can't be null");
+        if (isBlank(filename)) throw new IllegalArgumentException("Properties file can't be null");
         this.loadFromPropertiesFile(new File(filename));
     }
 
@@ -422,7 +424,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         //3:try to find 'factoryProperties' config value
         this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties"));
         String factoryPropertiesSize = ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties.size");
-        if (!ObjectPoolStatics.isBlank(factoryPropertiesSize)) {
+        if (!isBlank(factoryPropertiesSize)) {
             int size = 0;
             try {
                 size = Integer.parseInt(factoryPropertiesSize.trim());
@@ -435,12 +437,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
         //5:try to find 'objectInterfaceNames' config value
         String objectInterfaceNames = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaceNames");
-        if (!ObjectPoolStatics.isBlank(objectInterfaceNames))
+        if (!isBlank(objectInterfaceNames))
             setObjectInterfaceNames(objectInterfaceNames.split(","));
 
         //6:try to find 'objectInterfaces' config value
         String objectInterfaceNames2 = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaces");
-        if (!ObjectPoolStatics.isBlank(objectInterfaceNames2)) {
+        if (!isBlank(objectInterfaceNames2)) {
             String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
             Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
             for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
@@ -486,7 +488,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
 
         //4:try to create pool name
-        if (ObjectPoolStatics.isBlank(poolName)) poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
+        if (isBlank(poolName)) poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
 
         //5: copy field value to new config from current config
         BeeObjectSourceConfig configCopy = new BeeObjectSourceConfig();
@@ -560,7 +562,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             Class[] objectInterfaces = new Class[this.objectInterfaceNames.length];
             for (int i = 0; i < this.objectInterfaceNames.length; i++) {
                 try {
-                    if (ObjectPoolStatics.isBlank(this.objectInterfaceNames[i]))
+                    if (isBlank(this.objectInterfaceNames[i]))
                         throw new BeeObjectSourceConfigException("objectInterfaceNames[" + i + "]is empty or null");
                     objectInterfaces[i] = Class.forName(this.objectInterfaceNames[i]);
                 } catch (ClassNotFoundException e) {
@@ -586,7 +588,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         }
 
         //3:if filter class name is not null,then try to create instance by it
-        if (!ObjectPoolStatics.isBlank(this.objectMethodFilterClassName)) {
+        if (!isBlank(this.objectMethodFilterClassName)) {
             try {
                 Class methodFilterClass = Class.forName(this.objectMethodFilterClassName);
                 return (RawObjectMethodFilter) ObjectPoolStatics.createClassInstance(methodFilterClass, RawObjectMethodFilter.class, "object method filter");
@@ -616,7 +618,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         }
 
         //3:if factory class name exists,then try to create by class name
-        if (rawObjectFactory == null && !ObjectPoolStatics.isBlank(this.objectFactoryClassName)) {
+        if (rawObjectFactory == null && !isBlank(this.objectFactoryClassName)) {
             try {
                 Class objectFactoryClass = Class.forName(this.objectFactoryClassName);
                 rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
@@ -638,7 +640,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Not found a valid constructor without parameters in class:" + objectClass.getName());
             }
-        } else if (!ObjectPoolStatics.isBlank(this.objectClassName)) {
+        } else if (!isBlank(this.objectClassName)) {
             try {
                 Class objectClass = Class.forName(this.objectClassName);
                 return new SimpleObjectFactory(ObjectPoolStatics.getConstructor(objectClass, objectInterfaces, "object class"));

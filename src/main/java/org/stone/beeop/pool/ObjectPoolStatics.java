@@ -71,24 +71,7 @@ public class ObjectPoolStatics {
     }
 
     //***************************************************************************************************************//
-    //                               2: String operation methods(3)                                                  //
-    //***************************************************************************************************************//
-    public static String trimString(String value) {
-        return value == null ? null : value.trim();
-    }
-
-    public static boolean isBlank(String str) {
-        if (str == null) return true;
-        for (int i = 0, l = str.length(); i < l; ++i) {
-            if (!Character.isWhitespace((int) str.charAt(i)))
-                return false;
-        }
-        return true;
-    }
-
-
-    //***************************************************************************************************************//
-    //                               3: configuration read methods(2)                                                //
+    //                               2: configuration read methods(2)                                                //
     //***************************************************************************************************************//
 
     /**
