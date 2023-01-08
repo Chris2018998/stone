@@ -305,11 +305,12 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
                 Object s = b.state;
                 if (s instanceof PooledObject) {
                     p = (PooledObject) s;
-                    if (failedType == 2)
+                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                        if (failedType != 2) {
+                            this.waitQueue.remove(b);
+                            return handleFactory.createHandle(p, b);
+                        }
                         this.recycle(p);//transfer to other waiter on interrupted
-                    else if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        this.waitQueue.remove(b);
-                        return handleFactory.createHandle(p, b);
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
