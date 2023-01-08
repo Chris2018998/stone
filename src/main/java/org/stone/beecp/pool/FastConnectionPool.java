@@ -435,8 +435,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             //3:try to get one transferred connection
             b.state = null;
             this.waitQueue.offer(b);
-            int failedType = 0;
             Throwable cause = null;
+            boolean interrupted = false;
             deadline += this.maxWaitNs;
 
             do {
@@ -444,7 +444,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 if (s instanceof PooledConnection) {
                     p = (PooledConnection) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        if (failedType != 2) {
+                        if (!interrupted) {
                             this.waitQueue.remove(b);
                             return b.lastUsed = p;
                         }
@@ -455,7 +455,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                     throw s instanceof SQLException ? (SQLException) s : new PoolInternalException((Throwable) s);
                 }
 
-                if (failedType > 0) {
+                if (cause != null) {
                     BorrowStUpd.compareAndSet(b, s, cause);
                 } else if (s instanceof PooledConnection) {
                     b.state = null;
@@ -467,13 +467,11 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                             LockSupport.unpark(this);
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
-                        if (Thread.interrupted()) {
-                            failedType = 2;
+                        if (interrupted = Thread.interrupted()) {
                             cause = new SQLException("Interrupted during getting connection");
                             if (b.state == null) BorrowStUpd.compareAndSet(b, null, cause);
                         }
                     } else {//timeout
-                        failedType = 1;
                         cause = new SQLTimeoutException("Get connection timeout");
                     }
                 }//end
