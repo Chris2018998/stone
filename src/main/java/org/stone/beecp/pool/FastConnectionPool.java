@@ -443,11 +443,12 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 Object s = b.state;//PooledConnection,Throwable,null
                 if (s instanceof PooledConnection) {
                     p = (PooledConnection) s;
-                    if (failedType == 2)
+                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                        if (failedType != 2) {
+                            this.waitQueue.remove(b);
+                            return b.lastUsed = p;
+                        }
                         this.recycle(p);//transfer to other waiter on interrupted
-                    else if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        this.waitQueue.remove(b);
-                        return b.lastUsed = p;
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
