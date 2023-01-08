@@ -42,6 +42,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * JDBC Connection Pool Implementation

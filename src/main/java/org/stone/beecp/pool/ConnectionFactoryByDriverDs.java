@@ -15,7 +15,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.stone.beecp.pool.ConnectionPoolStatics.isBlank;
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * Raw connection factory by dsnode implementation in driver package

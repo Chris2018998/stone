@@ -35,6 +35,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.util.CommonUtil.trimString;
 
 /**
  * Connection pool configuration under dataSource
@@ -64,7 +66,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int initialSize;
     //connections max reachable size in pool
     private int maxActive = Math.min(Math.max(10, NCPUS), 50);
-    //max synchronizer size of pool semaphore
+    //max permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPUS);
     //milliseconds:max wait parkTime to get one connection from pool<code>ConnectionPool.getConnection()</code>
     private long maxWait = SECONDS.toMillis(8);

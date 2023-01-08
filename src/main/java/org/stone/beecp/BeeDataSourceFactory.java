@@ -25,6 +25,8 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.stone.util.CommonUtil.isBlank;
+
 /**
  * BeeDataSource factory
  *
@@ -53,7 +55,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
             Object refObject = refAddr.getContent();
             if (refObject == null) return null;
             String value = refObject.toString().trim();
-            if (!ConnectionPoolStatics.isBlank(value)) {
+            if (!isBlank(value)) {
                 ConnectionPoolStatics.CommonLog.info("beecp.{}={}", propertyName, value);
                 return value;
             }
@@ -80,7 +82,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         //1:try to lookup transactionManager if configured
         TransactionManager tm = null;
         String tmJndiName = getConfigValue(ref, ConnectionPoolStatics.CONFIG_TM_JNDI);
-        if (!ConnectionPoolStatics.isBlank(tmJndiName) && nameCtx != null) {
+        if (!isBlank(tmJndiName) && nameCtx != null) {
             tm = (TransactionManager) nameCtx.lookup(tmJndiName);
         }
 
@@ -93,7 +95,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         //5:loop to find out properties config value by set methods
         for (String propertyName : setMethodMap.keySet()) {
             String configVal = getConfigValue(ref, propertyName);
-            if (ConnectionPoolStatics.isBlank(configVal)) continue;
+            if (isBlank(configVal)) continue;
             setValueMap.put(propertyName, configVal);
         }
         //6:inject found config value to ds config object
@@ -102,7 +104,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         //7:try to find 'connectProperties' config value and put to ds config object
         config.addConnectProperty(getConfigValue(ref, ConnectionPoolStatics.CONFIG_CONNECT_PROP));
         String connectPropertiesCount = getConfigValue(ref, ConnectionPoolStatics.CONFIG_CONNECT_PROP_SIZE);
-        if (!ConnectionPoolStatics.isBlank(connectPropertiesCount)) {
+        if (!isBlank(connectPropertiesCount)) {
             int count = Integer.parseInt(connectPropertiesCount.trim());
             for (int i = 1; i <= count; i++)
                 config.addConnectProperty(getConfigValue(ref, ConnectionPoolStatics.CONFIG_CONNECT_PROP_KEY_PREFIX + i));

@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.util.CommonUtil.objectEquals;
 
 /**
  * connection proxy
@@ -94,13 +95,13 @@ abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connectio
 
     public void setCatalog(String catalog) throws SQLException {
         this.raw.setCatalog(catalog);
-        this.p.setResetInd(PS_CATALOG, !stringEquals(catalog, this.p.defaultCatalog));
+        this.p.setResetInd(PS_CATALOG, !objectEquals(catalog, this.p.defaultCatalog));
     }
 
     //for JDK1.7 begin
     public void setSchema(String schema) throws SQLException {
         this.raw.setSchema(schema);
-        this.p.setResetInd(PS_SCHEMA, !stringEquals(schema, this.p.defaultSchema));
+        this.p.setResetInd(PS_SCHEMA, !objectEquals(schema, this.p.defaultSchema));
     }
 
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {

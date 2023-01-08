@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * Pooled Connection

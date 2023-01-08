@@ -15,7 +15,7 @@ import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 import java.sql.SQLException;
 
-import static org.stone.beecp.pool.ConnectionPoolStatics.isBlank;
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * XaConnection Factory implementation by XADataSource
