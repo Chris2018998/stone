@@ -19,5 +19,4 @@ final class Borrower {
     final Thread thread = Thread.currentThread();
     volatile Object state;
     PooledObject lastUsed;
-    Object borrowKey;//support BeeObjectSource.get(key)
 }

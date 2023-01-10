@@ -20,13 +20,13 @@ import static java.lang.System.currentTimeMillis;
  * @author Chris Liao
  * @version 1.0
  */
-final class PooledObject implements Cloneable {
+final class PooledObject<E> implements Cloneable {
     final Class[] objectInterfaces;
     final RawObjectMethodFilter filter;
     private final ObjectPool pool;
     private final RawObjectFactory factory;
 
-    Object raw;
+    E raw;
     Class rawClass;
     volatile int state;
     ObjectBaseHandle handleInUsing;

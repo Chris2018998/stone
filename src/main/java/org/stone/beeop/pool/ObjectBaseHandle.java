@@ -26,14 +26,14 @@ import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectBaseHandle implements BeeObjectHandle {
+public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
     private static final ConcurrentHashMap<MethodCacheKey, Method> MethodMap = new ConcurrentHashMap<MethodCacheKey, Method>(16);
     protected final PooledObject p;
-    private final Object raw;
+    private final E raw;
     private final RawObjectMethodFilter filter;
     protected boolean isClosed;
 
-    ObjectBaseHandle(PooledObject p) {
+    ObjectBaseHandle(PooledObject<E> p) {
         this.p = p;
         this.raw = p.raw;
         p.handleInUsing = this;
@@ -62,7 +62,7 @@ public class ObjectBaseHandle implements BeeObjectHandle {
     //***************************************************************************************************************//
     //                                 2: raw methods call methods(2)                                                //                                                                                  //
     //***************************************************************************************************************//
-    public Object getObjectProxy() throws Exception {
+    public E getObjectProxy() throws Exception {
         return null;
     }
 

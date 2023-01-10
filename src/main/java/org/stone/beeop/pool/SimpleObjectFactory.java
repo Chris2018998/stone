@@ -19,35 +19,35 @@ import java.lang.reflect.Constructor;
  * @author Chris Liao
  * @version 1.0
  */
-public final class SimpleObjectFactory implements RawObjectFactory {
-    private final Constructor constructor;
+public final class SimpleObjectFactory<E> implements RawObjectFactory<E> {
+    private final Constructor<E> constructor;
 
-    public SimpleObjectFactory(Constructor constructor) {
+    public SimpleObjectFactory(Constructor<E> constructor) {
         this.constructor = constructor;
     }
 
     //create object instance
-    public Object create() throws Exception {
+    public E create() throws Exception {
         return this.constructor.newInstance();
     }
 
     //set default values
-    public void setDefault(Object obj) {
+    public void setDefault(E obj) {
         //do nothing
     }
 
     //set default values
-    public void reset(Object obj) {
+    public void reset(E obj) {
         //do nothing
     }
 
     //test object
-    public boolean isValid(Object obj, int timeout) {
+    public boolean isValid(E obj, int timeout) {
         return true;
     }
 
     //destroy  object
-    public void destroy(Object obj) {
+    public void destroy(E obj) {
         //do nothing
     }
 }

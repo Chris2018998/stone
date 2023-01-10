@@ -45,7 +45,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, ObjectPool, ObjectTransferPolicy {
+public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean, ObjectPool<E>, ObjectTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastObjectPool.class, "poolState");
@@ -71,12 +71,12 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
     private long validAssumeTime;//milliseconds
     private int validTestTimeout;//seconds
     private long delayTimeForNextClearNs;//nanoseconds
-    private PooledObject templatePooledObject;
+    private PooledObject<E> templatePooledObject;
     private ObjectTransferPolicy transferPolicy;
     private ObjectHandleFactory handleFactory;
-    private RawObjectFactory objectFactory;
+    private RawObjectFactory<E> objectFactory;
     private ReentrantLock pooledArrayLock;
-    private volatile PooledObject[] pooledArray;
+    private volatile PooledObject<E>[] pooledArray;
 
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
@@ -206,13 +206,13 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
                 if (this.printRuntimeLog)
                     Log.info("BeeOP({}))begin to create a new pooled object,state:{}", this.poolName, state);
 
-                Object rawObj = null;
+                E rawObj = null;
                 try {
                     rawObj = this.objectFactory.create();
                     PooledObject p = this.templatePooledObject.setDefaultAndCopy(rawObj, state);
                     if (this.printRuntimeLog)
                         Log.info("BeeOP({}))has created a new pooled object:{},state:{}", this.poolName, p, state);
-                    PooledObject[] arrayNew = new PooledObject[l + 1];
+                    PooledObject<E>[] arrayNew = new PooledObject[l + 1];
                     System.arraycopy(this.pooledArray, 0, arrayNew, 0, l);
                     arrayNew[l] = p;// tail
                     this.pooledArray = arrayNew;
@@ -410,8 +410,8 @@ public final class FastObjectPool extends Thread implements ObjectPoolJmxBean, O
     }
 
     //Method-2.7: check object alive state,if not alive then remove it from pool
-    private boolean testOnBorrow(PooledObject p) {
-        if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(p, this.validTestTimeout)) {
+    private boolean testOnBorrow(PooledObject<E> p) {
+        if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(p.raw, this.validTestTimeout)) {
             this.removePooledEntry(p, DESC_RM_BAD);
             this.tryWakeupServantThread();
             return false;
