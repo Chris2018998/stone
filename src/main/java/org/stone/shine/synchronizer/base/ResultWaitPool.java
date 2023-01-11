@@ -16,7 +16,7 @@ import org.stone.shine.synchronizer.ThreadWaitPool;
 import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.synchronizer.CasStaticState.TIMEOUT;
+import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 /**
  * execute the call inside pool and match its result with a validator,if passed the return result value;
@@ -103,23 +103,20 @@ public class ResultWaitPool extends ThreadWaitPool {
         //5:spin control
         try {
             do {
-                //5.1:if got a signal then execute call
+                //5.1: read node state
+                Object state = node.getState();
+                if (state == null || casState(node, null, SIGNAL)) state = SIGNAL;
+
+                //5.2: execute call
                 Object result = call.call(arg);
                 if (validator.isExpected(result)) return result;
 
-                //5.2:read node state
-                Object state = node.getState();
-
-                //5.3:timeout test
+                //5.3: timeout test
                 if (parker.isTimeout()) {
-                    //5.3.1:try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false(abandon)
-                    if (casState(node, state, TIMEOUT))
-                        return validator.resultOnTimeout();
-                } else if (state != null) {//5.4:reach here means not got expected value from call,then rest to continue waiting
+                    return validator.resultOnTimeout();
+                } else {
                     node.setState(null);
                     Thread.yield();
-                } else {//here: state == null
-                    //5.5:park current thread(if interrupted then transfer the got state value to another waiter)
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);
