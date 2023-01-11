@@ -104,8 +104,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         try {
             do {
                 //5.1: read node state
-                Object state = node.getState();
-                if (state == null) casState(node, null, SIGNAL);
+                if (node.getState() == null) casState(node, null, SIGNAL);
 
                 //5.2: execute call
                 Object result = call.call(arg);
