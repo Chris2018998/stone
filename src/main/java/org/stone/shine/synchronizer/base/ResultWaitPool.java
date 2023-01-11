@@ -112,13 +112,12 @@ public class ResultWaitPool extends ThreadWaitPool {
                 if (validator.isExpected(result)) return result;
 
                 //5.3: timeout test
-                if (parker.isTimeout()) {
-                    return validator.resultOnTimeout();
-                } else {
-                    node.setState(null);
-                    Thread.yield();
-                    parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
-                }
+                if (parker.isTimeout()) return validator.resultOnTimeout();
+
+                //5.4: park thread
+                node.setState(null);
+                Thread.yield();
+                parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
             } while (true);
         } finally {
             super.removeNode(node);
