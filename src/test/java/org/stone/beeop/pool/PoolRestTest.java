@@ -39,7 +39,7 @@ public class PoolRestTest extends TestCase {
 
         TestUtil.assertError("Total size expected:%s,current is:%s", initSize, totalSize);
         TestUtil.assertError("idle expected:%s,current is:%s", initSize, idleSize);
-        obs.clear();
+        obs.restartPool();
 
         monitorVo = obs.getPoolMonitorVo();
         usingSize = monitorVo.getUsingSize();
