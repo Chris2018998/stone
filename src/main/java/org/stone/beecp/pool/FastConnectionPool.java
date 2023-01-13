@@ -676,7 +676,12 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         }
     }
 
-    //Method-4.3: remove all connections from pool
+    //Method-4.3: restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    public void restart(boolean forceCloseUsingOnClear, BeeDataSourceConfig config) {
+
+    }
+
+    //Method-4.4: remove all connections from pool
     private void removeAllConnections(boolean force, String source) {
         this.semaphore.interruptWaitingThreads();
         PoolClosedException exception = new PoolClosedException("Pool has shut down or in clearing");
@@ -712,12 +717,12 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         }
     }
 
-    //Method-4.4: closed check
+    //Method-4.5: closed check
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
     }
 
-    //Method-4.5: close pool
+    //Method-4.6: close pool
     public void close() {
         do {
             int poolStateCode = this.poolState;
@@ -742,7 +747,6 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             }
         } while (true);
     }
-
 
     //***************************************************************************************************************//
     //                                  5: Pool monitor/jmx methods(15)                                              //                                                                                  //

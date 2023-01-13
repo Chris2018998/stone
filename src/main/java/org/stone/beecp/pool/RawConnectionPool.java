@@ -179,6 +179,10 @@ public final class RawConnectionPool implements ConnectionPool, ConnectionPoolJm
         //do nothing
     }
 
+    public void restart(boolean force, BeeDataSourceConfig config) {
+        //do nothing
+    }
+
     public int getTotalSize() {
         return 0;
     }

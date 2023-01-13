@@ -130,7 +130,7 @@ public class BeeJtaDataSource extends TimerTask implements DataSource {
 
     public void clear(boolean force) throws SQLException {
         checkDataSource();
-        this.ds.clear(force);
+        this.ds.restartPool(force);
     }
 
     public boolean isClosed() throws SQLException {

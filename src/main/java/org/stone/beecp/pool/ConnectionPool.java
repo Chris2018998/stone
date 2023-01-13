@@ -44,6 +44,9 @@ public interface ConnectionPool {
     //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
     void restart(boolean forceCloseUsingOnClear);
 
+    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    void restart(boolean forceCloseUsingOnClear, BeeDataSourceConfig config);
+
     //check pool is closed
     boolean isClosed();
 

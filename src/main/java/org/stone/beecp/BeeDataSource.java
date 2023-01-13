@@ -157,13 +157,18 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                     3: below are self-define methods(6)                                       //
     //***************************************************************************************************************//
-    public void clear() throws SQLException {
-        clear(false);
+    public void restartPool() throws SQLException {
+        restartPool(false);
     }
 
-    public void clear(boolean force) throws SQLException {
+    public void restartPool(boolean force) throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
         this.pool.restart(force);
+    }
+
+    public void restartPool(boolean force, BeeDataSourceConfig config) throws SQLException {
+        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
+        this.pool.restart(force, config);
     }
 
     public boolean isClosed() {
