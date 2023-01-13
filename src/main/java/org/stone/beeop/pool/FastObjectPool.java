@@ -140,6 +140,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         this.semaphoreSize = this.poolConfig.getBorrowSemaphoreSize();
         this.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
+
         this.waitQueue = new ConcurrentLinkedQueue<Borrower>();
         this.threadLocal = new BorrowerThreadLocal();
         this.servantTryCount = new AtomicInteger(0);
@@ -526,6 +527,11 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})all objects were removed and restored to accept new requests", this.poolName);
         }
+    }
+
+    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    public void restart(boolean forceCloseUsingOnClear, BeeObjectSourceConfig config) {
+
     }
 
     //Method-4.3: remove all connections from pool
