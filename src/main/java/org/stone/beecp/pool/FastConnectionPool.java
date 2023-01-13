@@ -676,11 +676,6 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     //                                  4: Pool restart/close methods(5)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-4.1: remove all connections from pool
-    public void restart() {
-        this.restart(false);
-    }
-
-    //Method-4.2: remove all connections from pool
     public void restart(boolean force) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeCP({})begin to remove connections", this.poolName);

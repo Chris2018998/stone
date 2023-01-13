@@ -64,7 +64,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean fairMode;
     //connections create size on pool starting
     private int initialSize;
-    //indicator of asynchronized create connection on init
+    //asynchronized create connection on init
     private boolean asyncCreateInitConnection;
     //connections max reachable size in pool
     private int maxActive = Math.min(Math.max(10, NCPUS), 50);

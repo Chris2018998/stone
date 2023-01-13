@@ -38,15 +38,6 @@ public interface ConnectionPool {
     //close pool
     void close();
 
-    //remove all pooled connections,if exists using connections,then wait util them idle,and close them and remove
-    void restart();
-
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    void restart(boolean forceCloseUsingOnClear);
-
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    void restart(boolean forceCloseUsingOnClear, BeeDataSourceConfig config);
-
     //check pool is closed
     boolean isClosed();
 
@@ -55,6 +46,12 @@ public interface ConnectionPool {
 
     //get pool monitor vo
     ConnectionPoolMonitorVo getPoolMonitorVo();
+
+    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    void restart(boolean forceCloseUsing);
+
+    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    void restart(boolean forceCloseUsing, BeeDataSourceConfig config);
 
 }
 	

@@ -91,20 +91,6 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                          3: pool other methods(6)                                             //
     //***************************************************************************************************************//
-    public void restartPool() throws Exception {
-        restartPool(false);
-    }
-
-    public void restartPool(boolean force) throws Exception {
-        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
-        pool.restart(force);
-    }
-
-    public void restartPool(boolean force, BeeObjectSourceConfig config) throws Exception {
-        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
-        pool.restart(force, config);
-    }
-
     public boolean isClosed() {
         return pool == null || pool.isClosed();
     }
@@ -126,5 +112,15 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
     public ObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
         if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
         return pool.getPoolMonitorVo();
+    }
+
+    public void restartPool(boolean forceCloseUsing) throws Exception {
+        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        pool.restart(forceCloseUsing);
+    }
+
+    public void restartPool(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
+        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        pool.restart(forceCloseUsing, config);
     }
 }

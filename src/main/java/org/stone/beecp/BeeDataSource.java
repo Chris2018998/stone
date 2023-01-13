@@ -157,20 +157,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                     3: below are self-define methods(6)                                       //
     //***************************************************************************************************************//
-    public void restartPool() throws SQLException {
-        restartPool(false);
-    }
-
-    public void restartPool(boolean force) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
-        this.pool.restart(force);
-    }
-
-    public void restartPool(boolean force, BeeDataSourceConfig config) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
-        this.pool.restart(force, config);
-    }
-
     public boolean isClosed() {
         return this.pool == null || this.pool.isClosed();
     }
@@ -192,5 +178,15 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     public ConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
         return this.pool.getPoolMonitorVo();
+    }
+
+    public void restartPool(boolean forceCloseUsing) throws SQLException {
+        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
+        this.pool.restart(forceCloseUsing);
+    }
+
+    public void restartPool(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
+        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
+        this.pool.restart(forceCloseUsing, config);
     }
 }

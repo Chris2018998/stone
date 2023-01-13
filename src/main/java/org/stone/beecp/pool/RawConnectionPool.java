@@ -170,11 +170,6 @@ public final class RawConnectionPool implements ConnectionPool, ConnectionPoolJm
     }
 
     //******************************** JMX **************************************//
-    // close all connections
-    public void restart() {
-        //do nothing
-    }
-
     public void restart(boolean force) {
         //do nothing
     }
