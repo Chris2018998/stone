@@ -473,7 +473,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     }
 
     /**
-     * Method-3.4: inner timer will call the method to clear some idle timeout objects
+     * Method-3.4: inner timer will call the method to restart some idle timeout objects
      * or dead objects,or long parkTime not active objects in using state
      */
     private void closeIdleTimeoutPooledEntry() {
@@ -511,25 +511,25 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     }
 
     //***************************************************************************************************************//
-    //                                      4: Pool clear/close methods(5)                                           //                                                                                  //
+    //                                      4: Pool restart/close methods(5)                                           //                                                                                  //
     //***************************************************************************************************************//
     //Method-4.1: remove all connections from pool
-    public void clear() {
-        this.clear(false);
+    public void restart() {
+        this.restart(false);
     }
 
     //Method-4.2: remove all connections from pool
-    public void clear(boolean force) {
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+    public void restart(boolean force) {
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeOP({})begin to remove objects", this.poolName);
-            this.clear(force, DESC_RM_CLEAR);
+            this.restart(force, DESC_RM_CLEAR);
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})all objects were removed and restored to accept new requests", this.poolName);
         }
     }
 
     //Method-4.3: remove all connections from pool
-    private void clear(boolean force, String source) {
+    private void restart(boolean force, String source) {
         this.semaphore.interruptWaitingThreads();
         PoolClosedException poolCloseException = new PoolClosedException("Pool has shut down or in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(poolCloseException);
@@ -576,7 +576,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             int poolStateCode = this.poolState;
             if ((poolStateCode == POOL_NEW || poolStateCode == POOL_READY) && PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSED)) {
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
-                this.clear(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
+                this.restart(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
                 this.unregisterJmx();
                 this.shutdownPoolThread();
 

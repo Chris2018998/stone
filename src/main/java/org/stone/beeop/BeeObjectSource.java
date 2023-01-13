@@ -97,7 +97,7 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
 
     public void clear(boolean force) throws Exception {
         if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
-        pool.clear(force);
+        pool.restart(force);
     }
 
     public boolean isClosed() {

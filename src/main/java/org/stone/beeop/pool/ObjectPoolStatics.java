@@ -41,7 +41,8 @@ public class ObjectPoolStatics {
     static final int POOL_NEW = 0;
     static final int POOL_READY = 1;
     static final int POOL_CLOSED = 2;
-    static final int POOL_CLEARING = 3;
+    static final int POOL_RESTARTING = 3;
+
     //pool thread state
     static final int THREAD_WORKING = 0;
     static final int THREAD_WAITING = 1;
@@ -51,7 +52,7 @@ public class ObjectPoolStatics {
     static final String DESC_RM_BAD = "bad";
     static final String DESC_RM_IDLE = "idle";
     static final String DESC_RM_CLOSED = "closed";
-    static final String DESC_RM_CLEAR = "clear";
+    static final String DESC_RM_CLEAR = "restart";
     static final String DESC_RM_DESTROY = "destroy";
 
     static final ClassLoader PoolClassLoader = FastObjectPool.class.getClassLoader();

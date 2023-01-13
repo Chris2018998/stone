@@ -63,7 +63,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private long timerCheckInterval = MINUTES.toMillis(3);
     //using object instance forced close indicator on pool clean
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay parkTime for next loop to clear,when<code>forceCloseUsingOnClear</code> is false and exists using object instance
+    //milliseconds:delay parkTime for next loop to restart,when<code>forceCloseUsingOnClear</code> is false and exists using object instance
     private long delayTimeForNextClear = 3000L;
 
     //indicator,whether register pool to jmx
