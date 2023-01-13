@@ -101,7 +101,8 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      */
     public void init(BeeObjectSourceConfig config) throws Exception {
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
-        if (this.poolState != POOL_NEW) throw new PoolCreateFailedException("Pool has initialized");
+        if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
+            throw new PoolCreateFailedException("Pool has initialized");
 
         this.poolConfig = config.check();//why need a copy here?
         this.poolName = this.poolConfig.getPoolName();
@@ -113,7 +114,21 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         Class[] objectInterfaces = poolConfig.getObjectInterfaces();
         this.templatePooledObject = new PooledObject(this, objectFactory, objectInterfaces, poolConfig.getObjectMethodFilter());
-        this.createInitObjects(this.poolConfig.getInitialSize());
+
+        if (poolConfig.isAsyncCreateInitObject()) {
+            new Thread() {
+                public void run() {
+                    try {
+                        createInitObjects(poolConfig.getInitialSize());
+                    } catch (Exception e) {
+                        Log.info("BeeOP({})failed to create initialized objects", poolName, e);
+                    }
+                }
+            }.start();
+        } else {
+            createInitObjects(this.poolConfig.getInitialSize());
+        }
+
         if (objectInterfaces != null && objectInterfaces.length > 0)
             handleFactory = new ObjectHandleWithProxyFactory();
         else

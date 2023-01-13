@@ -39,9 +39,10 @@ public class ObjectPoolStatics {
     static final int OBJECT_CLOSED = 2;
     //pool state
     static final int POOL_NEW = 0;
-    static final int POOL_READY = 1;
-    static final int POOL_CLOSED = 2;
-    static final int POOL_RESTARTING = 3;
+    static final int POOL_STARTING = 1;
+    static final int POOL_READY = 2;
+    static final int POOL_CLOSED = 3;
+    static final int POOL_RESTARTING = 4;
 
     //pool thread state
     static final int THREAD_WORKING = 0;

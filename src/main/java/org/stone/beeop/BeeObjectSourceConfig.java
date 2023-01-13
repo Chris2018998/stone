@@ -45,6 +45,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private boolean fairMode;
     //size of object instance on pool starting
     private int initialSize;
+    //indicator of asynchronized create object on init
+    private boolean asyncCreateInitObject;
     //max reachable size of object instance in pool
     private int maxActive = Math.min(Math.max(10, ObjectPoolStatics.NCPUS), 50);
     //max synchronizer size of pool semaphore
@@ -143,6 +145,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize >= 0) this.initialSize = initialSize;
+    }
+
+    public boolean isAsyncCreateInitObject() {
+        return asyncCreateInitObject;
+    }
+
+    public void setAsyncCreateInitObject(boolean asyncCreateInitObject) {
+        this.asyncCreateInitObject = asyncCreateInitObject;
     }
 
     public int getMaxActive() {
