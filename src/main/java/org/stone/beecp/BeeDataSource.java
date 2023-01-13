@@ -163,9 +163,8 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
     public void clear(boolean force) throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
-        this.pool.clear(force);
+        this.pool.restart(force);
     }
-
 
     public boolean isClosed() {
         return this.pool == null || this.pool.isClosed();

@@ -621,7 +621,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     }
 
     /**
-     * Method-3.4: inner timer will call the method to clear some idle timeout connections
+     * Method-3.4: inner timer will call the method to restart some idle timeout connections
      * or dead connections,or long parkTime not active connections in using state
      */
     private void closeIdleTimeoutConnection() {
@@ -659,16 +659,16 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     }
 
     //***************************************************************************************************************//
-    //                                  4: Pool clear/close methods(5)                                               //                                                                                  //
+    //                                  4: Pool restart/close methods(5)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-4.1: remove all connections from pool
-    public void clear() {
-        this.clear(false);
+    public void restart() {
+        this.restart(false);
     }
 
     //Method-4.2: remove all connections from pool
-    public void clear(boolean force) {
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+    public void restart(boolean force) {
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeCP({})begin to remove connections", this.poolName);
             this.removeAllConnections(force, DESC_RM_CLEAR);
             this.poolState = POOL_READY;// restore state;

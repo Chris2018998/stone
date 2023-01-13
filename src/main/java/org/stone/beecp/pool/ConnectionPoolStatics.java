@@ -46,7 +46,8 @@ public class ConnectionPoolStatics {
     static final int POOL_NEW = 0;
     static final int POOL_READY = 1;
     static final int POOL_CLOSED = 2;
-    static final int POOL_CLEARING = 3;
+    static final int POOL_RESTARTING = 3;
+
     //connection state
     static final int CON_IDLE = 0;
     static final int CON_USING = 1;
@@ -68,7 +69,7 @@ public class ConnectionPoolStatics {
     static final String DESC_RM_ABORT = "abort";
     static final String DESC_RM_IDLE = "idle";
     static final String DESC_RM_CLOSED = "closed";
-    static final String DESC_RM_CLEAR = "clear";
+    static final String DESC_RM_CLEAR = "restart";
     static final String DESC_RM_DESTROY = "destroy";
     //***************************************************************************************************************//
     //                                1: jdbc global proxy (3)                                                       //
