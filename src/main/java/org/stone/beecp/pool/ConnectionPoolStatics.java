@@ -44,9 +44,10 @@ public class ConnectionPoolStatics {
     public static final String CONFIG_CONNECT_PROP_KEY_PREFIX = "connectProperties.";
     //pool state
     static final int POOL_NEW = 0;
-    static final int POOL_READY = 1;
-    static final int POOL_CLOSED = 2;
-    static final int POOL_RESTARTING = 3;
+    static final int POOL_STARTING = 1;
+    static final int POOL_READY = 2;
+    static final int POOL_CLOSED = 3;
+    static final int POOL_RESTARTING = 4;
 
     //connection state
     static final int CON_IDLE = 0;

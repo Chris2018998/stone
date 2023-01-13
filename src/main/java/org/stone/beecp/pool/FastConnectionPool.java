@@ -110,7 +110,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     public void init(BeeDataSourceConfig config) throws SQLException {
         checkJdbcProxyClass();
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
-        if (this.poolState != POOL_NEW) throw new PoolCreateFailedException("Pool has initialized");
+        if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
+            throw new PoolCreateFailedException("Pool has initialized");
 
         this.poolConfig = config.check();//why need a copy here?
         this.poolName = this.poolConfig.getPoolName();
@@ -129,7 +130,19 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         this.pooledArrayLock = new ReentrantLock();
         this.pooledArray = new PooledConnection[0];
         this.poolMaxSize = this.poolConfig.getMaxActive();
-        this.createInitConnections(this.poolConfig.getInitialSize());
+        if (poolConfig.isAsyncCreateInitConnection()) {
+            new Thread() {
+                public void run() {
+                    try {
+                        createInitConnections(poolConfig.getInitialSize());
+                    } catch (SQLException e) {
+                        Log.info("BeeCP({})failed to create initialized connections", poolName, e);
+                    }
+                }
+            }.start();
+        } else {
+            this.createInitConnections(this.poolConfig.getInitialSize());
+        }
 
         //step3;create transfer policy by config
         if (this.poolConfig.isFairMode()) {
@@ -185,6 +198,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 this.semaphoreSize,
                 this.poolConfig.getMaxWait(),
                 this.poolConfig.getDriverClassName());
+
     }
 
     /**

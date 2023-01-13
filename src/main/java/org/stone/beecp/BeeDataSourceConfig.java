@@ -64,6 +64,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean fairMode;
     //connections create size on pool starting
     private int initialSize;
+    //indicator of asynchronized create connection on init
+    private boolean asyncCreateInitConnection;
     //connections max reachable size in pool
     private int maxActive = Math.min(Math.max(10, NCPUS), 50);
     //max permit size of pool semaphore
@@ -110,6 +112,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean enableDefaultOnAutoCommit = true;
     //default value set indicator on transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
+
 
     /**
      * connection factory class,which is one implementation class of
@@ -234,6 +237,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize >= 0) this.initialSize = initialSize;
+    }
+
+    public boolean isAsyncCreateInitConnection() {
+        return asyncCreateInitConnection;
+    }
+
+    public void setAsyncCreateInitConnection(boolean asyncCreateInitConnection) {
+        this.asyncCreateInitConnection = asyncCreateInitConnection;
     }
 
     public int getMaxActive() {
