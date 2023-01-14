@@ -713,7 +713,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         try {
             this.poolHostIP = (InetAddress.getLocalHost().getHostAddress());
         } catch (UnknownHostException e) {
-            Log.info("BeeOP({})failed to resolve pool hose ip", this.poolName);
+            Log.info("BeeOP({})failed to resolve pool host ip", this.poolName);
         }
         return new ObjectPoolMonitorVo();
     }
