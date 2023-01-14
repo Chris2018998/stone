@@ -47,7 +47,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean, ObjectPool<E>, ObjectTransferPolicy {
+public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean, ObjectPool, ObjectTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastObjectPool.class, "poolState");
@@ -95,7 +95,6 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     //****************************************************************************************************************//
     //                1: Pool initialize and Pooled object create/remove methods(4)                                   //                                                                                  //
     //****************************************************************************************************************//
-
     //Method-1.1: initialize pool with configuration
     public void init(BeeObjectSourceConfig config) throws Exception {
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
@@ -127,9 +126,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         Class[] objectInterfaces = config.getObjectInterfaces();
         this.templatePooledObject = new PooledObject<E>(this, objectFactory, objectInterfaces, config.getObjectMethodFilter(), this.methodCache);
-
-        if (!config.isAsyncCreateInitObject())
-            createInitObjects(config.getInitialSize(), true);
+        if (!config.isAsyncCreateInitObject()) createInitObjects(config.getInitialSize(), true);
 
         if (objectInterfaces != null && objectInterfaces.length > 0)
             handleFactory = new ObjectHandleWithProxyFactory<E>();
@@ -159,15 +156,13 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         if (POOL_STARTING == this.poolState) {
             this.waitQueue = new ConcurrentLinkedQueue<Borrower>();
-
-
             this.threadLocal = new BorrowerThreadLocal();
             this.servantTryCount = new AtomicInteger(0);
             this.servantState = new AtomicInteger(THREAD_WORKING);
             this.idleScanState = new AtomicInteger(THREAD_WORKING);
             this.idleScanThread = new IdleTimeoutScanThread(this);
-
             this.monitorVo = this.createPoolMonitorVo();
+
             this.exitHook = new ObjectPoolHook(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
             this.registerJmx();
@@ -188,7 +183,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                 this.pooledArray.length,
                 this.poolMaxSize,
                 this.semaphoreSize,
-                this.poolConfig.getMaxWait());
+                config.getMaxWait());
 
         if (config.isAsyncCreateInitObject()) new PoolInitAsynCreateThread(this).start();
     }
@@ -290,7 +285,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      * @return pooled object,
      * @throws Exception if pool is closed or waiting timeout,then throw exception
      */
-    public BeeObjectHandle<E> getObject() throws Exception {
+    public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY) throw new PoolClosedException("Pool has shut down or in clearing");
 
         //0:try to get from threadLocal cache
@@ -549,8 +544,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             Log.info("BeeOP({})begin to remove pooled objects", this.poolName);
             this.restart(forceCloseUsing, DESC_RM_CLEAR);
             if (tempConfig != null) startup(tempConfig);
+
             this.poolState = POOL_READY;// restore state;
-            Log.info("BeeOP({})all objects were removed and restored to accept new requests", this.poolName);
+            Log.info("BeeOP({})pool has been restart,and ready to accept new requests", this.poolName);
         }
     }
 

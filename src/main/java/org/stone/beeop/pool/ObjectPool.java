@@ -18,13 +18,13 @@ import org.stone.beeop.BeeObjectSourceConfig;
  * @author Chris Liao
  * @version 1.0
  */
-public interface ObjectPool<E> {
+public interface ObjectPool {
 
     //initialize pool with configuration
     void init(BeeObjectSourceConfig config) throws Exception;
 
     //borrow a object from pool
-    BeeObjectHandle<E> getObject() throws Exception;
+    BeeObjectHandle getObjectHandle() throws Exception;
 
     //recycle one pooled Connection
     void recycle(PooledObject entry);

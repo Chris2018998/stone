@@ -25,7 +25,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
+public class ObjectBaseHandle<E> implements BeeObjectHandle {
     protected final PooledObject<E> p;
     private final E raw;
     private final RawObjectMethodFilter filter;
@@ -62,7 +62,7 @@ public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
     //***************************************************************************************************************//
     //                                 2: raw methods call methods(2)                                                //                                                                                  //
     //***************************************************************************************************************//
-    public E getObjectProxy() throws Exception {
+    public Object getObjectProxy() throws Exception {
         return null;
     }
 

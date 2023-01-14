@@ -45,8 +45,8 @@ final class PooledObject<E> implements Cloneable {
         this.pool = pool;
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
-        this.methodCache = methodCache;
         this.filter = filter;
+        this.methodCache = methodCache;
     }
 
     PooledObject<E> setDefaultAndCopy(E raw, int state) throws Exception {

@@ -51,7 +51,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private int maxActive = Math.min(Math.max(10, ObjectPoolStatics.NCPUS), 50);
     //max permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, ObjectPoolStatics.NCPUS);
-    //milliseconds:max wait parkTime to get one object from pool<code>ObjectPool.getObject()</code>
+    //milliseconds:max wait parkTime to get one object from pool<code>ObjectPool.getObjectHandle()</code>
     private long maxWait = SECONDS.toMillis(8);
     //milliseconds:max idle parkTime of objects in pool,when reach,then close them and remove from pool
     private long idleTimeout = MINUTES.toMillis(3);
