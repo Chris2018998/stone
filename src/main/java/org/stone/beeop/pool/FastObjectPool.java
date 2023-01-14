@@ -328,7 +328,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                             this.waitQueue.remove(b);
                             return handleFactory.createHandle(p, b);
                         }
-                        this.recycle(p);//transfer to other waiter on interrupted
+                        this.recycle(p);//transfer to other waiter when interrupted
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
@@ -544,7 +544,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             if (tempConfig != null) startup(tempConfig);
 
             this.poolState = POOL_READY;// restore state;
-            Log.info("BeeOP({})pool has been restarted,and ready to accept new requests", this.poolName);
+            Log.info("BeeOP({})pool has restarted", this.poolName);
         }
     }
 
@@ -843,7 +843,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         public void run() {
             try {
-                Log.info("BeeOP({})PoolHook Running", this.pool.poolName);
+                Log.info("BeeOP({})exit-hook running", this.pool.poolName);
                 this.pool.close();
             } catch (Throwable e) {
                 Log.error("BeeOP({})Error at closing pool,cause:", this.pool.poolName, e);
