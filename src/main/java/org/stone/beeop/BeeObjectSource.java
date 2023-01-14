@@ -29,7 +29,7 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private ObjectPool pool;
     private boolean ready;
-    private Exception failedCause;
+    private Exception cause;
 
     //***************************************************************************************************************//
     //                                             1:constructors(2)                                                 //
@@ -66,11 +66,11 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
         if (lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
-                    failedCause = null;
+                    cause = null;
                     createPool(this);
                 }
             } catch (Exception e) {
-                failedCause = e;
+                cause = e;
             } finally {
                 lock.writeLock().unlock();
             }
@@ -82,7 +82,7 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
             }
         }
 
-        if (failedCause != null) throw failedCause;
+        if (cause != null) throw cause;
         return pool.getObjectHandle();
     }
 
