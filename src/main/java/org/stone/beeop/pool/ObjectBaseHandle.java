@@ -14,7 +14,6 @@ import org.stone.beeop.RawObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectException;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASSES;
@@ -27,10 +26,10 @@ import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
  * @version 1.0
  */
 public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
-    private static final ConcurrentHashMap<MethodCacheKey, Method> MethodMap = new ConcurrentHashMap<MethodCacheKey, Method>(16);
-    protected final PooledObject p;
+    protected final PooledObject<E> p;
     private final E raw;
     private final RawObjectMethodFilter filter;
+    private final ConcurrentHashMap<ObjectMethodKey, Method> methodCache;
     protected boolean isClosed;
 
     ObjectBaseHandle(PooledObject<E> p) {
@@ -38,6 +37,7 @@ public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
         this.raw = p.raw;
         p.handleInUsing = this;
         this.filter = p.filter;
+        this.methodCache = p.methodCache;
     }
 
     //***************************************************************************************************************//
@@ -74,12 +74,12 @@ public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
         if (isClosed) throw new ObjectException("No operations allowed after object handle closed");
         if (filter != null) filter.doFilter(name, types, params);
 
-        MethodCacheKey key = new MethodCacheKey(name, types);
-        Method method = MethodMap.get(key);
+        ObjectMethodKey key = new ObjectMethodKey(name, types);
+        Method method = methodCache.get(key);
 
         if (method == null) {
             method = p.rawClass.getMethod(name, types);
-            MethodMap.put(key, method);
+            methodCache.put(key, method);
         }
 
         Object v = method.invoke(raw, params);
@@ -87,30 +87,4 @@ public class ObjectBaseHandle<E> implements BeeObjectHandle<E> {
         return v;
     }
 
-    //***************************************************************************************************************//
-    //                                  4: inner class(1)                                                            //                                                                                  //
-    //***************************************************************************************************************//
-    private static final class MethodCacheKey {
-        private final String name;
-        private final Class[] types;
-
-        MethodCacheKey(String name, Class[] types) {
-            this.name = name;
-            this.types = types;
-        }
-
-        public int hashCode() {
-            int result = this.name.hashCode();
-            result = 31 * result + Arrays.hashCode(this.types);
-            return result;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || this.getClass() != o.getClass()) return false;
-            MethodCacheKey that = (MethodCacheKey) o;
-            return this.name.equals(that.name) &&
-                    Arrays.equals(this.types, that.types);
-        }
-    }
 }

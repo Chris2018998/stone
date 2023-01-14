@@ -45,11 +45,9 @@ public interface ObjectPool<E> {
     ObjectPoolMonitorVo getPoolMonitorVo();
 
     //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    void restart(boolean forceCloseUsing);
+    void restart(boolean forceCloseUsing) throws Exception;
 
     //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    void restart(boolean forceCloseUsing, BeeObjectSourceConfig config);
-
-
+    void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 }
 	
