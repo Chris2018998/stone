@@ -39,7 +39,7 @@ public class ObjectMethodIllegalAccessTest extends TestCase {
     public void test() throws Exception {
         BeeObjectHandle handle = null;
         try {
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             test1(handle);
             test2(handle);
         } finally {

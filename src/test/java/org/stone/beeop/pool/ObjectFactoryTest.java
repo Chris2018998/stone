@@ -33,7 +33,7 @@ public class ObjectFactoryTest extends TestCase {
     public void test() throws Exception {
         BeeObjectHandle handle = null;
         try {
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             System.out.println(handle.call("getName"));
 
             if (handle == null)

@@ -37,7 +37,7 @@ public class ObjectGetTimeoutTest extends TestCase {
     public void test() throws Exception {
         BeeObjectHandle handle = null;
         try {
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             CountDownLatch lacth = new CountDownLatch(1);
             TestThread testTh = new TestThread(lacth);
             testTh.start();
@@ -64,7 +64,7 @@ public class ObjectGetTimeoutTest extends TestCase {
         public void run() {
             ObjectBaseHandle proxy = null;
             try {
-                proxy = (ObjectBaseHandle) obs.getObject();
+                proxy = (ObjectBaseHandle) obs.getObjectHandle();
             } catch (Exception e) {
                 this.e = e;
             } finally {

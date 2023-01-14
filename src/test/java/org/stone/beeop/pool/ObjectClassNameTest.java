@@ -33,7 +33,7 @@ public class ObjectClassNameTest extends TestCase {
     public void test() throws Exception {
         BeeObjectHandle handle = null;
         try {
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             if (handle == null)
                 TestUtil.assertError("Failed to get object");
         } finally {

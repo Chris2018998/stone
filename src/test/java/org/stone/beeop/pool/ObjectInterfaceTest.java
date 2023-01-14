@@ -11,9 +11,8 @@ import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.stone.beeop.object.Book;
+import org.stone.beeop.object.JavaBookFactory;
 
 /**
  * ObjectFactory subclass
@@ -25,10 +24,8 @@ public class ObjectInterfaceTest extends TestCase {
 
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        // config.setObjectFactoryClassName(JavaBookFactory.class.getName());
-        // config.setObjectInterfaces(new Class[]{Book.class});
-        config.setObjectClass(HashMap.class);
-        config.setObjectInterfaces(new Class[]{Map.class});
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
+        config.setObjectInterfaces(new Class[]{Book.class});
         obs = new BeeObjectSource(config);
     }
 
@@ -39,11 +36,11 @@ public class ObjectInterfaceTest extends TestCase {
     public void test() throws Exception {
         BeeObjectHandle handle = null;
         try {
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             if (handle == null)
                 TestUtil.assertError("Failed to get object");
-            Map book = (Map) handle.getObjectProxy();
-            System.out.println("Book name:" + book.size());
+            Book book = (Book) handle.getObjectProxy();
+            System.out.println("Book name:" + book.getName());
         } finally {
             if (handle != null)
                 handle.close();

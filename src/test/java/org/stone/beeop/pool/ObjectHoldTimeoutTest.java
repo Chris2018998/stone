@@ -41,7 +41,7 @@ public class ObjectHoldTimeoutTest extends TestCase {
         BeeObjectHandle handle = null;
         try {
             //FastObjectPool pool = (FastObjectPool) TestUtil.getFieldValue(obs, "pool");
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             ObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
             if (monitorVo.getIdleSize() + monitorVo.getUsingSize() != 1)
                 TestUtil.assertError("Total objects not as expected 1");

@@ -36,7 +36,7 @@ public class ObjectClosedTest extends TestCase {
     public void test() throws Exception {
         BeeObjectHandle handle = null;
         try {
-            handle = obs.getObject();
+            handle = obs.getObjectHandle();
             handle.close();
             handle.call("toString", new Class[0], new Object[0]);
             TestUtil.assertError("Closed test failed");
