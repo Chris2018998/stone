@@ -6,3 +6,14 @@ Stone-1.0.2
   beeop
    1: transfer object on interrupted
    2: add method filter
+
+Stone-1.0.3
+ beecp
+   1: add async thread to create connections on pool initialization 
+   2: rename pool method 'clearAll' to 'restart'
+   3: pool support restart with new configueration
+   
+  beeop
+   1: add async thread to create objects on pool initialization 
+   2: rename pool method 'clearAll' to 'restart'
+   3: pool support restart with new configueration
