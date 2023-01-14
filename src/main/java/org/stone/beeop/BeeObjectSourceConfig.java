@@ -49,7 +49,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private boolean asyncCreateInitObject;
     //max reachable size of object instance in pool
     private int maxActive = Math.min(Math.max(10, ObjectPoolStatics.NCPUS), 50);
-    //max synchronizer size of pool semaphore
+    //max permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, ObjectPoolStatics.NCPUS);
     //milliseconds:max wait parkTime to get one object from pool<code>ObjectPool.getObject()</code>
     private long maxWait = SECONDS.toMillis(8);

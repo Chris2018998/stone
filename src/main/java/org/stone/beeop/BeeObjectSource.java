@@ -121,6 +121,8 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
 
     public void restartPool(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
         if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        if (config == null) throw new PoolNotCreateException("Object pool config can't be null");
         pool.restart(forceCloseUsing, config);
+        config.copyTo(this);
     }
 }
