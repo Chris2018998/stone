@@ -76,7 +76,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private ObjectHandleFactory handleFactory;
     private RawObjectFactory<E> objectFactory;
     private ReentrantLock pooledArrayLock;
-    private volatile PooledObject<E>[] pooledArray;
+    private volatile PooledObject[] pooledArray;
 
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
@@ -89,9 +89,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private ObjectPoolHook exitHook;
     private boolean printRuntimeLog;
 
-    //***************************************************************************************************************//
-    //                1: Pool initialize and Pooled object create/remove methods(4)                                  //                                                                                  //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                1: Pool initialize and Pooled object create/remove methods(4)                                   //                                                                                  //
+    //****************************************************************************************************************//
 
     /**
      * Method-1.1: initialize pool with configuration
@@ -113,7 +113,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         this.pooledArray = new PooledObject[0];
 
         Class[] objectInterfaces = poolConfig.getObjectInterfaces();
-        this.templatePooledObject = new PooledObject(this, objectFactory, objectInterfaces, poolConfig.getObjectMethodFilter());
+        this.templatePooledObject = new PooledObject<E>(this, objectFactory, objectInterfaces, poolConfig.getObjectMethodFilter());
 
         if (poolConfig.isAsyncCreateInitObject()) {
             new Thread() {
@@ -192,7 +192,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      *
      * @throws Exception error occurred in creating objects
      */
-    private void createInitObjects(int initSize) throws Exception {
+    private void createInitObjects(int initSize, boolean async) throws Exception {
         int size = initSize > 0 ? initSize : 1;
         if (size > 1) this.pooledArrayLock.lock();
 
@@ -270,9 +270,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //***************************************************************************************************************//
-    //                  2: Pooled object borrow and release methods(8)                                               //                                                                                  //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //                  2: Pooled object borrow and release methods(8)                                                //                                                                                  //
+    //****************************************************************************************************************//
 
     /**
      * Method-2.1:borrow one object from pool,if search one idle object in pool,then try to catch it and return it
@@ -436,8 +436,6 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Compete Pooled connection transfer
-    //private static final class CompeteTransferPolicy implements ObjectTransferPolicy {
     public final int getStateCodeOnRelease() {
         return OBJECT_IDLE;
     }
@@ -446,9 +444,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         return p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
     }
 
-    //***************************************************************************************************************//
-    //               3: Pooled object idle-timeout/hold-timeout scan methods(4)                                      //                                                                                  //
-    //***************************************************************************************************************//
+    //****************************************************************************************************************//
+    //               3: Pooled object idle-timeout/hold-timeout scan methods(4)                                       //                                                                                  //
+    //****************************************************************************************************************//
     //Method-3.1: check whether exists borrows under semaphore
     private boolean existBorrower() {
         return this.semaphoreSize > this.semaphore.availablePermits();
@@ -526,15 +524,15 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //***************************************************************************************************************//
-    //                                      4: Pool restart/close methods(5)                                           //                                                                                  //
-    //***************************************************************************************************************//
-    //Method-4.1: remove all connections from pool
+    //****************************************************************************************************************//
+    //                                      4: Pool restart/close methods(5)                                          //                                                                                  //
+    //****************************************************************************************************************//
+    //Method-4.1: remove all object from pool
     public void restart() {
         this.restart(false);
     }
 
-    //Method-4.2: remove all connections from pool
+    //Method-4.2: remove all object from pool
     public void restart(boolean force) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeOP({})begin to remove objects", this.poolName);
@@ -544,12 +542,12 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    //Method-4.3: remove all object from pool
     public void restart(boolean forceCloseUsingOnClear, BeeObjectSourceConfig config) {
 
     }
 
-    //Method-4.3: remove all connections from pool
+    //Method-4.4: remove all connections from pool
     private void restart(boolean force, String source) {
         this.semaphore.interruptWaitingThreads();
         PoolClosedException poolCloseException = new PoolClosedException("Pool has shut down or in clearing");
@@ -586,12 +584,12 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Method-4.4: closed check
+    //Method-4.5: closed check
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
     }
 
-    // Method-4.5: close pool
+    // Method-4.6: close pool
     public void close() {
         do {
             int poolStateCode = this.poolState;
@@ -741,8 +739,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     //***************************************************************************************************************//
     //                                  6: Pool inner interface/class(4)                                             //                                                                                  //
     //***************************************************************************************************************//
-
-    //class-6.1:Compete Pooled connection transfer
+    //class-6.1: fair transfer impl
     private static final class FairTransferPolicy implements ObjectTransferPolicy {
         public final int getStateCodeOnRelease() {
             return OBJECT_USING;
@@ -753,7 +750,30 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //class-6.2:Semaphore extend
+    //class-6.2: handle factory
+    private static class ObjectHandleFactory<E> {
+        BeeObjectHandle createHandle(PooledObject<E> p, Borrower b) {
+            b.lastUsed = p;
+            return new ObjectBaseHandle<E>(p);
+        }
+    }
+
+    //class-6.3: supported proxy handle factory
+    private static class ObjectHandleWithProxyFactory<E> extends ObjectHandleFactory<E> {
+        BeeObjectHandle createHandle(PooledObject<E> p, Borrower b) {
+            b.lastUsed = p;
+            return new ObjectProxyHandle<E>(p);
+        }
+    }
+
+    //class-6.4: Borrower ThreadLocal
+    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<Borrower>> {
+        protected WeakReference<Borrower> initialValue() {
+            return new WeakReference<Borrower>(new Borrower());
+        }
+    }
+
+    //class-6.5: Semaphore extend
     private static final class PoolSemaphore extends Semaphore {
         PoolSemaphore(int permits, boolean fair) {
             super(permits, fair);
@@ -769,7 +789,27 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //class-6.3:Idle scan thread
+    //class-6.6: add new objects on pool initialized by asynchronization
+    private static final class PoolInitAsynCreateThread extends Thread {
+        private final FastObjectPool pool;
+
+        public PoolInitAsynCreateThread(FastObjectPool pool) {
+            this.pool = pool;
+        }
+
+        public void run() {
+            try {
+                pool.createInitObjects(pool.poolConfig.getInitialSize(), true);
+                pool.servantState.getAndSet(pool.pooledArray.length);
+                if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
+                    LockSupport.unpark(pool);
+            } catch (Throwable e) {
+                //do nothing
+            }
+        }
+    }
+
+    //class-6.7: Idle scan thread
     private static final class IdleTimeoutScanThread extends Thread {
         private final FastObjectPool pool;
         private final AtomicInteger idleScanState;
@@ -792,30 +832,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //class-6.4: handle factory
-    private static class ObjectHandleFactory {
-        BeeObjectHandle createHandle(PooledObject p, Borrower b) {
-            b.lastUsed = p;
-            return new ObjectBaseHandle(p);
-        }
-    }
-
-    //class-6.5: supported proxy handle factory
-    private static class ObjectHandleWithProxyFactory extends ObjectHandleFactory {
-        BeeObjectHandle createHandle(PooledObject p, Borrower b) {
-            b.lastUsed = p;
-            return new ObjectProxyHandle(p);
-        }
-    }
-
-    //class-6.6:Borrower ThreadLocal
-    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<Borrower>> {
-        protected WeakReference<Borrower> initialValue() {
-            return new WeakReference<Borrower>(new Borrower());
-        }
-    }
-
-    //class-6.7:JVM exit hook
+    //class-6.8: JVM exit hook
     private static class ObjectPoolHook extends Thread {
         private final FastObjectPool pool;
 
