@@ -95,7 +95,8 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     //***************************************************************************************************************//
     //                1: Pool initialize and Pooled object create/remove methods(4)                                  //                                                                                  //
     //***************************************************************************************************************//
-    //Method-1.1: initialize pool with configuration
+
+    //Method-1.1: initialize pool
     public void init(BeeObjectSourceConfig config) throws Exception {
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
@@ -111,7 +112,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    // Method-1.2: running pool with config
+    // Method-1.2: running pool
     private void startup(BeeObjectSourceConfig config) throws Exception {
         this.poolName = config.getPoolName();
         Log.info("BeeOP({})starting....", this.poolName);
@@ -188,11 +189,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         if (config.isAsyncCreateInitObject()) new PoolInitAsynCreateThread(this).start();
     }
 
-    /**
-     * Method-1.3: create specified size objects to pool,if zero,then try to create one
-     *
-     * @throws Exception error occurred in creating objects
-     */
+    //Method-1.3: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
         int size = initSize > 0 ? initSize : 1;
         if (size > 1) this.pooledArrayLock.lock();
@@ -217,7 +214,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Method-1.4:create one pooled object
+    //Method-1.4: create one pooled object
     private PooledObject<E> createPooledEntry(int state) throws Exception {
         this.pooledArrayLock.lock();
         try {
@@ -550,7 +547,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Method-4.4: remove all connections from pool
+    //Method-4.3: remove all connections from pool
     private void restart(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
         PoolClosedException poolCloseException = new PoolClosedException("Pool has shut down or in clearing");
@@ -587,12 +584,12 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Method-4.5: closed check
+    //Method-4.4: closed check
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
     }
 
-    // Method-4.6: close pool
+    // Method-4.5: close pool
     public void close() {
         do {
             int poolStateCode = this.poolState;

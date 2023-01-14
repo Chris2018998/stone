@@ -13,7 +13,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSourceConfig;
 
 /**
- * object pool interface
+ * object pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -44,10 +44,10 @@ public interface ObjectPool {
     //get pool monitor vo
     ObjectPoolMonitorVo getPoolMonitorVo();
 
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    //remove all objects from pool
     void restart(boolean forceCloseUsing) throws Exception;
 
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    //remove all objects from pool
     void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 }
 	
