@@ -24,7 +24,7 @@ final class PooledObject<E> implements Cloneable {
     final Class[] objectInterfaces;
     final RawObjectMethodFilter filter;
     private final ObjectPool pool;
-    private final RawObjectFactory factory;
+    private final RawObjectFactory<E> factory;
 
     E raw;
     Class rawClass;
@@ -35,14 +35,14 @@ final class PooledObject<E> implements Cloneable {
     //***************************************************************************************************************//
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(ObjectPool pool, RawObjectFactory factory, Class[] objectInterfaces, RawObjectMethodFilter filter) {
+    PooledObject(ObjectPool pool, RawObjectFactory<E> factory, Class[] objectInterfaces, RawObjectMethodFilter filter) {
         this.pool = pool;
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
         this.filter = filter;
     }
 
-    PooledObject setDefaultAndCopy(Object raw, int state) throws Exception {
+    PooledObject<E> setDefaultAndCopy(E raw, int state) throws Exception {
         this.factory.setDefault(raw);
         PooledObject p = (PooledObject) this.clone();
 

@@ -73,7 +73,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private long delayTimeForNextClearNs;//nanoseconds
     private PooledObject<E> templatePooledObject;
     private ObjectTransferPolicy transferPolicy;
-    private ObjectHandleFactory handleFactory;
+    private ObjectHandleFactory<E> handleFactory;
     private RawObjectFactory<E> objectFactory;
     private ReentrantLock pooledArrayLock;
     private volatile PooledObject[] pooledArray;
@@ -192,7 +192,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      *
      * @throws Exception error occurred in creating objects
      */
-    private void createInitObjects(int initSize, boolean async) throws Exception {
+    private void createInitObjects(int initSize, boolean syn) throws Exception {
         int size = initSize > 0 ? initSize : 1;
         if (size > 1) this.pooledArrayLock.lock();
 
@@ -202,11 +202,14 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         } catch (Throwable e) {
             for (PooledObject pooledEntry : this.pooledArray)
                 this.removePooledEntry(pooledEntry, DESC_RM_INIT);
-            if (initSize > 0) {
+
+            if (syn && initSize > 0) {//throw exception on syn mode
                 if (e instanceof Exception)
                     throw (Exception) e;
                 else
                     throw new Exception(e);
+            } else {
+                Log.warn("Failed to create init object,cause:" + e);
             }
         } finally {
             if (size > 1) this.pooledArrayLock.unlock();
@@ -214,7 +217,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     }
 
     //Method-1.4:create one pooled object
-    private PooledObject createPooledEntry(int state) throws Exception {
+    private PooledObject<E> createPooledEntry(int state) throws Exception {
         this.pooledArrayLock.lock();
         try {
             int l = this.pooledArray.length;
@@ -225,10 +228,10 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                 E rawObj = null;
                 try {
                     rawObj = this.objectFactory.create();
-                    PooledObject p = this.templatePooledObject.setDefaultAndCopy(rawObj, state);
+                    PooledObject<E> p = this.templatePooledObject.setDefaultAndCopy(rawObj, state);
                     if (this.printRuntimeLog)
                         Log.info("BeeOP({}))has created a new pooled object:{},state:{}", this.poolName, p, state);
-                    PooledObject<E>[] arrayNew = new PooledObject[l + 1];
+                    PooledObject[] arrayNew = new PooledObject[l + 1];
                     System.arraycopy(this.pooledArray, 0, arrayNew, 0, l);
                     arrayNew[l] = p;// tail
                     this.pooledArray = arrayNew;
@@ -281,13 +284,13 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      * @return pooled object,
      * @throws Exception if pool is closed or waiting timeout,then throw exception
      */
-    public BeeObjectHandle getObject() throws Exception {
+    public BeeObjectHandle<E> getObject() throws Exception {
         if (this.poolState != POOL_READY) throw new PoolClosedException("Pool has shut down or in clearing");
 
         //0:try to get from threadLocal cache
         Borrower b = this.threadLocal.get().get();
         if (b != null) {
-            PooledObject p = b.lastUsed;
+            PooledObject<E> p = b.lastUsed;
             if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
                 if (this.testOnBorrow(p)) return handleFactory.createHandle(p, b);
                 b.lastUsed = null;
@@ -307,7 +310,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
         try {//semaphore acquired
             //2:try search one or create one
-            PooledObject p = this.searchOrCreate();
+            PooledObject<E> p = this.searchOrCreate();
             if (p != null) return handleFactory.createHandle(p, b);
 
             //3:try to get one transferred one
@@ -360,7 +363,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     }
 
     //Method-2.2: search one idle Object,if not found,then try to create one
-    private PooledObject searchOrCreate() throws Exception {
+    private PooledObject<E> searchOrCreate() throws Exception {
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array) {
             if (p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING) && this.testOnBorrow(p))
@@ -799,7 +802,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         public void run() {
             try {
-                pool.createInitObjects(pool.poolConfig.getInitialSize(), true);
+                pool.createInitObjects(pool.poolConfig.getInitialSize(), false);
                 pool.servantState.getAndSet(pool.pooledArray.length);
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
                     LockSupport.unpark(pool);
