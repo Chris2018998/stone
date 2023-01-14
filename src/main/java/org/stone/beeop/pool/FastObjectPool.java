@@ -92,9 +92,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private ObjectPoolHook exitHook;
     private boolean printRuntimeLog;
 
-    //****************************************************************************************************************//
-    //                1: Pool initialize and Pooled object create/remove methods(4)                                   //                                                                                  //
-    //****************************************************************************************************************//
+    //***************************************************************************************************************//
+    //                1: Pool initialize and Pooled object create/remove methods(4)                                  //                                                                                  //
+    //***************************************************************************************************************//
     //Method-1.1: initialize pool with configuration
     public void init(BeeObjectSourceConfig config) throws Exception {
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
@@ -274,9 +274,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //****************************************************************************************************************//
-    //                  2: Pooled object borrow and release methods(8)                                                //                                                                                  //
-    //****************************************************************************************************************//
+    //***************************************************************************************************************//
+    //                  2: Pooled object borrow and release methods(8)                                               //                                                                                  //
+    //***************************************************************************************************************//
 
     /**
      * Method-2.1:borrow one object from pool,if search one idle object in pool,then try to catch it and return it
@@ -448,9 +448,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         return p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
     }
 
-    //****************************************************************************************************************//
-    //               3: Pooled object idle-timeout/hold-timeout scan methods(4)                                       //                                                                                  //
-    //****************************************************************************************************************//
+    //***************************************************************************************************************//
+    //               3: Pooled object idle-timeout/hold-timeout scan methods(4)                                      //                                                                                  //
+    //***************************************************************************************************************//
     //Method-3.1: check whether exists borrows under semaphore
     private boolean existBorrower() {
         return this.semaphoreSize > this.semaphore.availablePermits();
@@ -528,9 +528,9 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //****************************************************************************************************************//
-    //                                      4: Pool restart/close methods(5)                                          //                                                                                  //
-    //****************************************************************************************************************//
+    //***************************************************************************************************************//
+    //                                      4: Pool restart/close methods(5)                                         //                                                                                  //
+    //***************************************************************************************************************//
     //Method-4.1: remove all object from pool
     public void restart(boolean forceCloseUsing) throws Exception {
         this.restart(forceCloseUsing, (BeeObjectSourceConfig) null);
