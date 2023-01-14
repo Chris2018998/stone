@@ -100,7 +100,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     public void init(BeeObjectSourceConfig config) throws Exception {
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
-            throw new PoolCreateFailedException("Pool has been initialized");
+            throw new PoolCreateFailedException("Pool has been initialized or in starting");
 
         try {
             this.poolConfig = config.check();
@@ -120,6 +120,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         this.objectFactory = config.getObjectFactory();
         this.pooledArrayLock = new ReentrantLock();
         this.pooledArray = new PooledObject[0];
+
         if (methodCache == null)
             this.methodCache = new ConcurrentHashMap<ObjectMethodKey, Method>(16);
         else
@@ -207,7 +208,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                 else
                     throw new Exception(e);
             } else {
-                Log.warn("Failed to create init object,cause:" + e);
+                Log.warn("Failed to create objects on pool initialization,cause:" + e);
             }
         } finally {
             if (size > 1) this.pooledArrayLock.unlock();
@@ -249,7 +250,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     //Method-1.5: remove one pooled object
     private void removePooledEntry(PooledObject p, String removeType) {
         if (this.printRuntimeLog)
-            Log.info("BeeOP({}))begin to remove pooled object:{},reason:{}", this.poolName, p, removeType);
+            Log.info("BeeOP({}))begin to remove a pooled object:{},reason:{}", this.poolName, p, removeType);
         p.onBeforeRemove();
 
         this.pooledArrayLock.lock();
@@ -543,14 +544,14 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             if (tempConfig != null) startup(tempConfig);
 
             this.poolState = POOL_READY;// restore state;
-            Log.info("BeeOP({})pool has been restart,and ready to accept new requests", this.poolName);
+            Log.info("BeeOP({})pool has been restarted,and ready to accept new requests", this.poolName);
         }
     }
 
     //Method-4.3: remove all connections from pool
     private void restart(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
-        PoolClosedException poolCloseException = new PoolClosedException("Pool has shut down or in clearing");
+        PoolClosedException poolCloseException = new PoolClosedException("Pool has shutdown or in restarting");
         while (!this.waitQueue.isEmpty()) this.transferException(poolCloseException);
 
         while (this.pooledArray.length > 0) {
@@ -665,7 +666,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private void registerJmx() {
         if (this.poolConfig.isEnableJmx()) {
             MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            this.registerJmxBean(mBeanServer, String.format(" FastObjectPool:type=BeeOP(%s)", this.poolName), this);
+            this.registerJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName), this);
             this.registerJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName), this.poolConfig);
         }
     }
@@ -686,7 +687,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private void unregisterJmx() {
         if (this.poolConfig.isEnableJmx()) {
             MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            this.unregisterJmxBean(mBeanServer, String.format(" FastObjectPool:type=BeeOP(%s)", this.poolName));
+            this.unregisterJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName));
             this.unregisterJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName));
         }
     }
