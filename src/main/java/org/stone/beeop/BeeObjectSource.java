@@ -27,8 +27,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class BeeObjectSource<E> extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
     private ObjectPool pool;
     private boolean ready;
     private Exception failedCause;
@@ -65,7 +63,7 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (ready) return pool.getObjectHandle();
 
-        if (writeLock.tryLock()) {
+        if (lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
                     failedCause = null;
@@ -74,13 +72,13 @@ public class BeeObjectSource<E> extends BeeObjectSourceConfig {
             } catch (Exception e) {
                 failedCause = e;
             } finally {
-                writeLock.unlock();
+                lock.writeLock().unlock();
             }
         } else {
             try {
-                readLock.lock();
+                lock.readLock().lock();
             } finally {
-                readLock.unlock();
+                lock.readLock().unlock();
             }
         }
 
