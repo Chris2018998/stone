@@ -14,7 +14,7 @@ import org.stone.beeop.RawObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectException;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASSES;
 import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
@@ -29,7 +29,7 @@ public class ObjectBaseHandle<E> implements BeeObjectHandle {
     protected final PooledObject<E> p;
     private final E raw;
     private final RawObjectMethodFilter filter;
-    private final ConcurrentHashMap<ObjectMethodKey, Method> methodCache;
+    private final Map<ObjectMethodKey, Method> methodCache;
     protected boolean isClosed;
 
     ObjectBaseHandle(PooledObject<E> p) {

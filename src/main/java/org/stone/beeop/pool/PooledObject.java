@@ -13,7 +13,7 @@ import org.stone.beeop.RawObjectFactory;
 import org.stone.beeop.RawObjectMethodFilter;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -26,7 +26,7 @@ import static java.lang.System.currentTimeMillis;
 final class PooledObject<E> implements Cloneable {
     final Class[] objectInterfaces;
     final RawObjectMethodFilter filter;
-    final ConcurrentHashMap<ObjectMethodKey, Method> methodCache;
+    final Map<ObjectMethodKey, Method> methodCache;
     private final ObjectPool pool;
     private final RawObjectFactory<E> factory;
 
@@ -40,7 +40,7 @@ final class PooledObject<E> implements Cloneable {
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(ObjectPool pool, RawObjectFactory<E> factory, Class[] objectInterfaces,
-                 RawObjectMethodFilter filter, ConcurrentHashMap<ObjectMethodKey, Method> methodCache) {
+                 RawObjectMethodFilter filter, Map<ObjectMethodKey, Method> methodCache) {
 
         this.pool = pool;
         this.factory = factory;
