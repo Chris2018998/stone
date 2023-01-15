@@ -38,11 +38,9 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.createClassInstance;
 //public final class BeeDataSource extends BeeDataSourceConfig implements DataSource {
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private ConnectionPool pool;
     private boolean ready;//true,means that inner pool has created
-    private SQLException failedCause;//inner pool create failed cause
+    private SQLException cause;//inner pool create failed cause
 
     //***************************************************************************************************************//
     //                                             1:constructors(3)                                                 //
@@ -91,27 +89,27 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     private ConnectionPool createPoolByLock() throws SQLException {
-        if (writeLock.tryLock()) {
+        if (lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
-                    failedCause = null;
+                    cause = null;
                     createPool(this);
                 }
             } catch (SQLException e) {
-                failedCause = e;
+                cause = e;
             } finally {
-                writeLock.unlock();
+                lock.writeLock().unlock();
             }
         } else {
             try {
-                readLock.lock();
+                lock.readLock().lock();
             } finally {
-                readLock.unlock();
+                lock.readLock().unlock();
             }
         }
 
         //read lock will reach
-        if (failedCause != null) throw failedCause;
+        if (cause != null) throw cause;
         return pool;
     }
 
@@ -176,17 +174,19 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public ConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
+        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
         return this.pool.getPoolMonitorVo();
     }
 
     public void restartPool(boolean forceCloseUsing) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
+        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
         this.pool.restart(forceCloseUsing);
     }
 
     public void restartPool(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialize");
+        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
+        if (config == null) throw new PoolNotCreateException("Connection pool config can't be null");
         this.pool.restart(forceCloseUsing, config);
+        config.copyTo(this);
     }
 }
