@@ -326,7 +326,6 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             b.state = null;
             this.waitQueue.offer(b);
             Throwable cause = null;
-            boolean interrupted = false;
             deadline += this.maxWaitNs;
 
             do {
@@ -334,11 +333,8 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                 if (s instanceof PooledObject) {
                     p = (PooledObject) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        if (!interrupted) {
-                            this.waitQueue.remove(b);
-                            return handleFactory.createHandle(p, b);
-                        }
-                        this.recycle(p);//transfer to other waiter when interrupted
+                        this.waitQueue.remove(b);
+                        return handleFactory.createHandle(p, b);
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
@@ -357,10 +353,8 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                             LockSupport.unpark(this);
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
-                        if (interrupted = Thread.interrupted()) {
+                        if (Thread.interrupted())
                             cause = new ObjectException("Interrupted during getting object");
-                            if (b.state == null) BorrowStUpd.compareAndSet(b, null, cause);
-                        }
                     } else {//timeout
                         cause = new ObjectException("Get object timeout");
                     }
@@ -503,36 +497,44 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      * or dead objects,or long parkTime not active objects in using state
      */
     private void closeIdleTimeoutPooledEntry() {
-        if (this.poolState == POOL_READY) {
-            PooledObject[] array = this.pooledArray;
-            for (PooledObject p : array) {
-                int state = p.state;
-                if (state == OBJECT_IDLE && !this.existBorrower()) {
-                    boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
-                    if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
-                        this.removePooledEntry(p, DESC_RM_IDLE);
-                        this.tryWakeupServantThread();
-                    }
-                } else if (state == OBJECT_USING) {
-                    if (System.currentTimeMillis() - p.lastAccessTime - this.holdTimeoutMs >= 0L) {//hold timeout
-                        BeeObjectHandle handleInUsing = p.handleInUsing;
-                        if (handleInUsing != null) {
-                            tryCloseObjectHandle(handleInUsing);
-                        } else {
-                            this.removePooledEntry(p, DESC_RM_BAD);
-                            this.tryWakeupServantThread();
-                        }
-                    }
-                } else if (state == OBJECT_CLOSED) {
-                    this.removePooledEntry(p, DESC_RM_CLOSED);
+        if (this.poolState != POOL_READY) return;
+
+        //step1: print pool info before clean
+        if (this.printRuntimeLog) {
+            ObjectPoolMonitorVo vo = getPoolMonitorVo();
+            Log.info("BeeOP({})-before idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+        }
+
+        //step2:remove idle timeout and hold timeout
+        PooledObject[] array = this.pooledArray;
+        for (PooledObject p : array) {
+            int state = p.state;
+            if (state == OBJECT_IDLE && !this.existBorrower()) {
+                boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
+                if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
+                    this.removePooledEntry(p, DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
+            } else if (state == OBJECT_USING) {
+                if (System.currentTimeMillis() - p.lastAccessTime - this.holdTimeoutMs >= 0L) {//hold timeout
+                    BeeObjectHandle handleInUsing = p.handleInUsing;
+                    if (handleInUsing != null) {
+                        tryCloseObjectHandle(handleInUsing);
+                    } else {
+                        this.removePooledEntry(p, DESC_RM_BAD);
+                        this.tryWakeupServantThread();
+                    }
+                }
+            } else if (state == OBJECT_CLOSED) {
+                this.removePooledEntry(p, DESC_RM_CLOSED);
+                this.tryWakeupServantThread();
             }
+        }
 
-            if (this.printRuntimeLog) {
-                ObjectPoolMonitorVo vo = getPoolMonitorVo();
-                Log.info("BeeOP({})idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
-            }
+        //step3: print pool info after idle clean
+        if (this.printRuntimeLog) {
+            ObjectPoolMonitorVo vo = getPoolMonitorVo();
+            Log.info("BeeOP({})-after idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -631,7 +633,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     }
 
     //***************************************************************************************************************//
-    //                                       5: Pool monitor/jmx methods(12)                                         //                                                                                  //
+    //                                       5: Pool controller/jmx methods(12)                                         //                                                                                  //
     //***************************************************************************************************************//
     //Method-5.1: set pool info debug switch
     public void setPrintRuntimeLog(boolean indicator) {
@@ -719,7 +721,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Method-5.12 create monitor vo
+    //Method-5.12 create controller vo
     private ObjectPoolMonitorVo createPoolMonitorVo() {
         Thread currentThread = Thread.currentThread();
         this.poolThreadId = currentThread.getId();
@@ -733,7 +735,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         return new ObjectPoolMonitorVo();
     }
 
-    //Method-5.13: pool monitor vo
+    //Method-5.13: pool controller vo
     public ObjectPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
