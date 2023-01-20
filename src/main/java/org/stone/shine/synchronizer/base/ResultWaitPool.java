@@ -107,8 +107,12 @@ public class ResultWaitPool extends ThreadWaitPool {
                 if (node.getState() == null) casState(node, null, SIGNAL);
 
                 //5.2: execute call
-                Object result = call.call(arg);
-                if (validator.isExpected(result)) return result;
+                try {
+                    Object result = call.call(arg);
+                    if (validator.isExpected(result)) return result;
+                } catch (Throwable e) {
+                    //do nothing
+                }
 
                 //5.3: timeout test
                 if (parker.isTimeout()) return validator.resultOnTimeout();
