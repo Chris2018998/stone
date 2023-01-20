@@ -463,7 +463,6 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             b.state = null;
             this.waitQueue.offer(b);
             Throwable cause = null;
-            boolean interrupted = false;
             deadline += this.maxWaitNs;
 
             do {
@@ -471,11 +470,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                 if (s instanceof PooledConnection) {
                     p = (PooledConnection) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        if (!interrupted) {
-                            this.waitQueue.remove(b);
-                            return b.lastUsed = p;
-                        }
-                        this.recycle(p);//transfer to other waiter on interrupted
+                        this.waitQueue.remove(b);
+                        return b.lastUsed = p;
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
@@ -494,10 +490,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                             LockSupport.unpark(this);
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
-                        if (interrupted = Thread.interrupted()) {
+                        if (Thread.interrupted())
                             cause = new SQLException("Interrupted during getting connection");
-                            if (b.state == null) BorrowStUpd.compareAndSet(b, null, cause);
-                        }
                     } else {//timeout
                         cause = new SQLTimeoutException("Get connection timeout");
                     }
@@ -651,36 +645,44 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
      * or dead connections,or long parkTime not active connections in using state
      */
     private void closeIdleTimeoutConnection() {
-        if (this.poolState == POOL_READY) {
-            PooledConnection[] array = this.pooledArray;
-            for (PooledConnection p : array) {
-                final int state = p.state;
-                if (state == CON_IDLE && !this.existBorrower()) {
-                    boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime >= this.idleTimeoutMs;
-                    if (isTimeoutInIdle && ConStUpd.compareAndSet(p, state, CON_CLOSED)) {//need close idle
-                        this.removePooledConn(p, DESC_RM_IDLE);
-                        this.tryWakeupServantThread();
-                    }
-                } else if (state == CON_USING) {
-                    if (System.currentTimeMillis() - p.lastAccessTime >= this.holdTimeoutMs) {//hold timeout
-                        ProxyConnectionBase proxyInUsing = p.proxyInUsing;
-                        if (proxyInUsing != null) {
-                            oclose(proxyInUsing);
-                        } else {
-                            this.removePooledConn(p, DESC_RM_BAD);
-                            this.tryWakeupServantThread();
-                        }
-                    }
-                } else if (state == CON_CLOSED) {
-                    this.removePooledConn(p, DESC_RM_CLOSED);
+        if (this.poolState != POOL_READY) return;
+
+        //step1:print pool info before clean
+        if (printRuntimeLog) {
+            ConnectionPoolMonitorVo vo = getPoolMonitorVo();
+            Log.info("BeeCP({})-before idle clean,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+        }
+
+        //step2:remove idle timeout and hold timeout
+        PooledConnection[] array = this.pooledArray;
+        for (PooledConnection p : array) {
+            final int state = p.state;
+            if (state == CON_IDLE && !this.existBorrower()) {
+                boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime >= this.idleTimeoutMs;
+                if (isTimeoutInIdle && ConStUpd.compareAndSet(p, state, CON_CLOSED)) {//need close idle
+                    this.removePooledConn(p, DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
+            } else if (state == CON_USING) {
+                if (System.currentTimeMillis() - p.lastAccessTime >= this.holdTimeoutMs) {//hold timeout
+                    ProxyConnectionBase proxyInUsing = p.proxyInUsing;
+                    if (proxyInUsing != null) {
+                        oclose(proxyInUsing);
+                    } else {
+                        this.removePooledConn(p, DESC_RM_BAD);
+                        this.tryWakeupServantThread();
+                    }
+                }
+            } else if (state == CON_CLOSED) {
+                this.removePooledConn(p, DESC_RM_CLOSED);
+                this.tryWakeupServantThread();
             }
         }
 
+        //step3: print pool info after idle clean
         if (printRuntimeLog) {
             ConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})-{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})-after idle clean,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -779,7 +781,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     }
 
     //***************************************************************************************************************//
-    //                                  5: Pool monitor/jmx methods(15)                                              //                                                                                  //
+    //                                  5: Pool controller/jmx methods(15)                                              //                                                                                  //
     //***************************************************************************************************************//
     //Method-5.1: set pool info debug switch
     public void setPrintRuntimeLog(boolean indicator) {
@@ -882,7 +884,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         return false;
     }
 
-    //Method-5.13 create monitor vo
+    //Method-5.13 create controller vo
     private ConnectionPoolMonitorVo createPoolMonitorVo() {
         Thread currentThread = Thread.currentThread();
         this.poolThreadId = currentThread.getId();
@@ -896,7 +898,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         return new ConnectionPoolMonitorVo();
     }
 
-    //Method-5.14: pool monitor vo
+    //Method-5.14: pool controller vo
     public ConnectionPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
@@ -1061,7 +1063,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
                     changed = true;
                 }
 
-                //step2: create statement
+                //step2: create sqlTrace
                 st = rawConn.createStatement();
                 if (this.supportQueryTimeout) {
                     try {
