@@ -1,10 +1,7 @@
 
 Stone-1.0.4
- beecp
-   1: add log on conneciton idle scan-task
-   
- beeop
-   1: add log on object idle scan-task
+   1: add log on conneciton idle scan-task(beecp)
+   2: add log on object idle scan-task(beeop)
    
 Stone-1.0.3
  beecp
