@@ -1,12 +1,11 @@
-Stone-1.0.2
+
+Stone-1.0.4
  beecp
-   1: transfer conneciton on interrupted
-   2: add default enable indicator
-
-  beeop
-   1: transfer object on interrupted
-   2: add method filter
-
+   1: add log on conneciton idle scan-task
+   
+ beeop
+   1: add log on object idle scan-task
+   
 Stone-1.0.3
  beecp
    1: add async thread to create connections on pool initialization 
@@ -17,3 +16,12 @@ Stone-1.0.3
    1: add async thread to create objects on pool initialization 
    2: rename pool method 'clearAll' to 'restart'
    3: pool support restart with new configueration
+   
+Stone-1.0.2
+ beecp
+   1: transfer conneciton on interrupted
+   2: add default enable indicator
+
+  beeop
+   1: transfer object on interrupted
+   2: add method filter
