@@ -28,6 +28,10 @@ final class CasNodeChain {
     private final CasNode head = new CasNode(null);
     private volatile CasNode tail = head;
 
+    CasNodeChain() {
+        head.thread = null;
+    }
+
     final void offer(CasNode node) {
         CasNode t;
         do {

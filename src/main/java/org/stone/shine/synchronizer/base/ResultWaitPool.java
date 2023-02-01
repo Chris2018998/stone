@@ -16,7 +16,6 @@ import org.stone.shine.synchronizer.ThreadWaitPool;
 import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 /**
  * execute the call inside pool and match its result with a validator,if passed the return result value;
@@ -79,13 +78,13 @@ public class ResultWaitPool extends ThreadWaitPool {
      */
     public final Object doCall(ResultCall call, Object arg, ResultValidator validator, ThreadWaitConfig config) throws Exception {
         //1:check call parameter
-        if (call == null) throw new IllegalArgumentException("call can't be null");
+        if (call == null) throw new IllegalArgumentException("result call can't be null");
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
         if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
         //2:try to execute call
         if (config.isOutsideOfWaitPool()) {
-            if (!fair || !this.hasQueuedThreads()) {
+            if (!fair || !this.hasQueuedPredecessors()) {
                 Object result = call.call(arg);
                 if (validator.isExpected(result)) return result;
             }
@@ -104,7 +103,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         try {
             do {
                 //5.1: read node state
-                if (node.getState() == null) casState(node, null, SIGNAL);
+                if (node.getState() == null) casState(node, null, node);
 
                 //5.2: execute call
                 try {

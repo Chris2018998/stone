@@ -34,7 +34,6 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
-    //wakeup one
     private static CasNode wakeupOne(final Iterator<CasNode> iterator, final Object toState, final Object type) {
         while (iterator.hasNext()) {
             CasNode node = iterator.next();
@@ -47,7 +46,6 @@ public abstract class ThreadWaitPool<E> {
         return null;
     }
 
-    //wakeup All
     private static int wakeupAll(final Iterator<CasNode> iterator, final Object toState, final Object type) {
         int count = 0;
         while (iterator.hasNext()) {
@@ -120,12 +118,13 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                         5: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
-    public final Iterator<CasNode> ascendingIterator() {
+    protected final Iterator<CasNode> ascendingIterator() {
         return waitQueue.iterator();
     }
 
-    public final Iterator<CasNode> descendingIterator() {
-        return waitQueue.descendingIterator();
+    public final boolean hasQueuedPredecessors() {
+        CasNode node = waitQueue.peek();
+        return node != null && node.thread != Thread.currentThread();
     }
 
     protected final boolean existsTypeNode(Object nodeType) {
