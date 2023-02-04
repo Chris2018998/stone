@@ -25,7 +25,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSource<E> extends BeeObjectSourceConfig {
+public class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private ObjectPool pool;
     private boolean ready;
