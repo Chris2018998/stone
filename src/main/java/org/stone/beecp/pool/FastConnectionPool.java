@@ -645,8 +645,6 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
      * or dead connections,or long parkTime not active connections in using state
      */
     private void closeIdleTimeoutConnection() {
-        if (this.poolState != POOL_READY) return;
-
         //step1:print pool info before clean
         if (printRuntimeLog) {
             ConnectionPoolMonitorVo vo = getPoolMonitorVo();
@@ -987,7 +985,8 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             while (this.idleScanState.get() == THREAD_WORKING) {
                 LockSupport.parkNanos(checkTimeIntervalNanos);
                 try {
-                    this.pool.closeIdleTimeoutConnection();
+                    if (pool.poolState == POOL_READY)
+                        pool.closeIdleTimeoutConnection();
                 } catch (Throwable e) {
                     Log.warn("BeeCP({})Error at closing idle timeout connections,cause:", this.pool.poolName, e);
                 }
