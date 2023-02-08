@@ -325,7 +325,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             //3:try to get one transferred one
             b.state = null;
             this.waitQueue.offer(b);
-            Throwable cause = null;
+            ObjectException cause = null;
             deadline += this.maxWaitNs;
 
             do {
@@ -679,7 +679,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         return size;
     }
 
-    //Method-5.8: register pool to jmx
+    //Method-5.8: assembly pool to jmx
     private void registerJmx() {
         if (this.poolConfig.isEnableJmx()) {
             MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
@@ -688,7 +688,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
     }
 
-    //Method-5.9: jmx register
+    //Method-5.9: jmx assembly
     private void registerJmxBean(MBeanServer mBeanServer, String regName, Object bean) {
         try {
             ObjectName jmxRegName = new ObjectName(regName);
@@ -696,7 +696,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                 mBeanServer.registerMBean(bean, jmxRegName);
             }
         } catch (Exception e) {
-            Log.warn("BeeOP({})failed to register jmx-bean:{}", this.poolName, regName, e);
+            Log.warn("BeeOP({})failed to assembly jmx-bean:{}", this.poolName, regName, e);
         }
     }
 
