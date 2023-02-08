@@ -497,8 +497,6 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      * or dead objects,or long parkTime not active objects in using state
      */
     private void closeIdleTimeoutPooledEntry() {
-        if (this.poolState != POOL_READY) return;
-
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
             ObjectPoolMonitorVo vo = getPoolMonitorVo();
@@ -842,7 +840,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             while (this.idleScanState.get() == THREAD_WORKING) {
                 LockSupport.parkNanos(checkTimeIntervalNanos);
                 try {
-                    this.pool.closeIdleTimeoutPooledEntry();
+                    if (pool.poolState == POOL_READY) pool.closeIdleTimeoutPooledEntry();
                 } catch (Throwable e) {
                     //do nothing
                 }
