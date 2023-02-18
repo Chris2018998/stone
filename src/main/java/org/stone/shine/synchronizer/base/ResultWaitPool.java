@@ -15,8 +15,6 @@ import org.stone.shine.synchronizer.ThreadWaitConfig;
 import org.stone.shine.synchronizer.ThreadWaitPool;
 import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
-
 /**
  * execute the call inside pool and match its result with a validator,if passed the return result value;
  * false then wait util other's wakeup to execute call again.
@@ -27,6 +25,7 @@ import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
 public class ResultWaitPool extends ThreadWaitPool {
     //true,use fair mode
     private final boolean fair;
+
 
     //result validator(equals validator is default)
     private final ResultValidator validator;
@@ -103,15 +102,12 @@ public class ResultWaitPool extends ThreadWaitPool {
         try {
             do {
                 //5.1: read node state
-                if (node.getState() == null) casState(node, null, node);
-
-                //5.2: execute call
-                try {
+                Object state = node.getState();
+                if (state != null) {//init value of node is not null
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) return result;
-                } catch (Throwable e) {
-                    //do nothing
                 }
+
 
                 //5.3: timeout test
                 if (parker.isTimeout()) return validator.resultOnTimeout();
