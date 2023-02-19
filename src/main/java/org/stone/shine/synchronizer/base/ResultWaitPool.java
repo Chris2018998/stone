@@ -90,6 +90,10 @@ public class ResultWaitPool extends ThreadWaitPool {
             super.appendNode(config.getCasNode());
         }
 
+
+        /**
+         * @todo need set a not null state to node as initialized value(plan after object key pool)
+         */
         //3:get wait node from config object
         final CasNode node = config.getCasNode();
 
