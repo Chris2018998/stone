@@ -480,11 +480,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     //connection factory
-    private void setRawConnectionFactory(RawConnectionFactory factory) {
+    public void setRawConnectionFactory(RawConnectionFactory factory) {
         this.connectionFactory = factory;
     }
 
-    private void setRawXaConnectionFactory(RawXaConnectionFactory factory) {
+    public void setRawXaConnectionFactory(RawXaConnectionFactory factory) {
         this.connectionFactory = factory;
     }
 
