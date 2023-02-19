@@ -50,7 +50,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  */
 public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean, ObjectPool, ObjectTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
-    private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
+    private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastObjectPool.class, "poolState");
     private static final Logger Log = LoggerFactory.getLogger(FastObjectPool.class);
 
@@ -85,8 +85,8 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     private AtomicInteger servantTryCount;
     private AtomicInteger idleScanState;
     private IdleTimeoutScanThread idleScanThread;
-    private ConcurrentLinkedQueue<Borrower> waitQueue;
-    private ThreadLocal<WeakReference<Borrower>> threadLocal;
+    private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
+    private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
 
     private Map<ObjectMethodKey, Method> methodCache;
     private BeeObjectSourceConfig poolConfig;
@@ -167,7 +167,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
         //step6: create some work threads
         if (POOL_STARTING == this.poolState) {//object instance create once
-            this.waitQueue = new ConcurrentLinkedQueue<Borrower>();
+            this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
             this.servantTryCount = new AtomicInteger(0);
             this.servantState = new AtomicInteger(THREAD_WORKING);
             this.idleScanState = new AtomicInteger(THREAD_WORKING);
@@ -297,7 +297,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         if (this.poolState != POOL_READY) throw new PoolClosedException("Pool has shut down or in clearing");
 
         //0:try to get from threadLocal cache
-        Borrower b = this.threadLocal.get().get();
+        ObjectBorrower b = this.threadLocal.get().get();
         if (b != null) {
             PooledObject<E> p = b.lastUsed;
             if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
@@ -305,8 +305,8 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
                 b.lastUsed = null;
             }
         } else {
-            b = new Borrower();
-            this.threadLocal.set(new WeakReference<Borrower>(b));
+            b = new ObjectBorrower();
+            this.threadLocal.set(new WeakReference<ObjectBorrower>(b));
         }
 
         long deadline = System.nanoTime();
@@ -391,10 +391,10 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     //Method-2.4: return object to pool after borrower end of use object
     public final void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
-        Iterator<Borrower> iterator = waitQueue.iterator();
+        Iterator<ObjectBorrower> iterator = waitQueue.iterator();
 
         while (iterator.hasNext()) {
-            Borrower b = iterator.next();
+            ObjectBorrower b = iterator.next();
             if (p.state != stateCodeOnRelease) return;
             if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
@@ -414,10 +414,10 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
      * @param e: transfer Exception to waiter
      */
     private void transferException(Throwable e) {
-        Iterator<Borrower> iterator = waitQueue.iterator();
+        Iterator<ObjectBorrower> iterator = waitQueue.iterator();
 
         while (iterator.hasNext()) {
-            Borrower b = iterator.next();
+            ObjectBorrower b = iterator.next();
             if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
@@ -671,7 +671,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
     //Method-5.7: waiting size in transfer queue
     public int getTransferWaitingSize() {
         int size = 0;
-        for (Borrower borrower : this.waitQueue) {
+        for (ObjectBorrower borrower : this.waitQueue) {
             if (borrower.state == null) size++;
         }
         return size;
@@ -768,7 +768,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
     //class-6.2: handle factory
     private static class ObjectHandleFactory<E> {
-        BeeObjectHandle createHandle(PooledObject<E> p, Borrower b) {
+        BeeObjectHandle createHandle(PooledObject<E> p, ObjectBorrower b) {
             b.lastUsed = p;
             return new ObjectBaseHandle<E>(p);
         }
@@ -776,16 +776,16 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
     //class-6.3: supported proxy handle factory
     private static class ObjectHandleWithProxyFactory<E> extends ObjectHandleFactory<E> {
-        BeeObjectHandle createHandle(PooledObject<E> p, Borrower b) {
+        BeeObjectHandle createHandle(PooledObject<E> p, ObjectBorrower b) {
             b.lastUsed = p;
             return new ObjectProxyHandle<E>(p);
         }
     }
 
     //class-6.4: Borrower ThreadLocal
-    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<Borrower>> {
-        protected WeakReference<Borrower> initialValue() {
-            return new WeakReference<Borrower>(new Borrower());
+    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<ObjectBorrower>> {
+        protected WeakReference<ObjectBorrower> initialValue() {
+            return new WeakReference<ObjectBorrower>(new ObjectBorrower());
         }
     }
 

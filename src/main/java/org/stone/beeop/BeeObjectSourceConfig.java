@@ -99,6 +99,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //pool implementation class name
     private String poolImplementClassName = FastObjectPool.class.getName();
 
+    //keyed sub-pool size
+    private int maxKeySize;
+
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
     //***************************************************************************************************************//
@@ -245,6 +248,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     public void setPoolImplementClassName(String poolImplementClassName) {
         if (!isBlank(poolImplementClassName))
             this.poolImplementClassName = trimString(poolImplementClassName);
+    }
+
+    public int getMaxKeySize() {
+        return maxKeySize;
+    }
+
+    public void setMaxKeySize(int maxKeySize) {
+        this.maxKeySize = maxKeySize;
     }
 
     public boolean isEnableJmx() {
