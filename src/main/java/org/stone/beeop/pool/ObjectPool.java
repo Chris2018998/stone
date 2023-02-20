@@ -38,16 +38,23 @@ public interface ObjectPool {
     //check pool is closed
     boolean isClosed();
 
-    //enable Runtime Log
-    void setPrintRuntimeLog(boolean indicator);
+    //clear timeout pooled objects
+    void removeIdleTimeout();
 
-    //get pool monitor vo
-    ObjectPoolMonitorVo getPoolMonitorVo();
+//    boolean asyncRetryCount();
+//
+//    boolean re();
 
     //remove all objects from pool
     void restart(boolean forceCloseUsing) throws Exception;
 
     //remove all objects from pool
     void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
+
+    //get pool monitor vo
+    ObjectPoolMonitorVo getPoolMonitorVo();
+
+    //enable Runtime Log
+    void setPrintRuntimeLog(boolean indicator);
 }
 	
