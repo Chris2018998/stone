@@ -15,6 +15,9 @@ import org.stone.shine.synchronizer.ThreadWaitConfig;
 import org.stone.shine.synchronizer.ThreadWaitPool;
 import org.stone.shine.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
+import static org.stone.shine.synchronizer.CasStaticState.TIMEOUT;
+
 /**
  * execute the call inside pool and match its result with a validator,if passed the return result value;
  * false then wait util other's wakeup to execute call again.
@@ -90,10 +93,6 @@ public class ResultWaitPool extends ThreadWaitPool {
             super.appendNode(config.getCasNode());
         }
 
-
-        /**
-         * @todo need set a not null state to node as initialized value(plan after object key pool)
-         */
         //3:get wait node from config object
         final CasNode node = config.getCasNode();
 
@@ -112,14 +111,16 @@ public class ResultWaitPool extends ThreadWaitPool {
                     if (validator.isExpected(result)) return result;
                 }
 
-
                 //5.3: timeout test
-                if (parker.isTimeout()) return validator.resultOnTimeout();
-
-                //5.4: park thread
-                node.setState(null);
-                Thread.yield();
-                parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
+                if (parker.isTimeout()) {
+                    if (state != null || casState(node, state, TIMEOUT))
+                        return validator.resultOnTimeout();
+                } else if (state != null) {
+                    node.setState(null);
+                    Thread.yield();
+                }else{
+                    parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
+                }
             } while (true);
         } finally {
             super.removeNode(node);

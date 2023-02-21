@@ -42,6 +42,14 @@ public final class CasNode<E> {
         this.thread = Thread.currentThread();
     }
 
+    CasNode(Object type, E value, Object state) {
+        this.type = type;
+        this.value = value;
+        this.state = state;
+        this.thread = Thread.currentThread();
+    }
+
+
     //****************************************************************************************************************//
     //                                           set/get of chain node                                                //
     //****************************************************************************************************************//

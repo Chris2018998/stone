@@ -11,6 +11,8 @@ package org.stone.shine.synchronizer;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.stone.shine.synchronizer.CasStaticState.INIT;
+
 /**
  * Thread wait control parameter for wait pool,which is once-only use object
  *
@@ -28,6 +30,9 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     private Object nodeType;
     //node value
     private E nodeValue;
+    //node state
+    private Object nodeState = INIT;
+
     //node object
     private CasNode casNode;
     //need add into queue of wait pool
@@ -78,11 +83,18 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     public final void setNodeValue(Object nodeType, E nodeValue) {
         this.nodeType = nodeType;
         this.nodeValue = nodeValue;
+        this.nodeState = null;
+    }
+
+    public final void setNodeValue(Object nodeType, E nodeValue, Object nodeState) {
+        this.nodeType = nodeType;
+        this.nodeValue = nodeValue;
+        this.nodeState = nodeState;
     }
 
     public final CasNode getCasNode() {
         if (casNode != null) return casNode;
-        return this.casNode = new CasNode<>(nodeType, nodeValue);
+        return this.casNode = new CasNode<>(nodeType, nodeValue, nodeState);
     }
 
     public final void setCasNode(CasNode casNode) {
