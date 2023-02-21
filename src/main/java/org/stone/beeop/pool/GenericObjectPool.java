@@ -13,26 +13,34 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSourceConfig;
 
 /**
- * object pool
+ * Generic object pool
  *
  * @author Chris Liao
  * @version 1.0
  */
 public interface GenericObjectPool {
 
-    //initialize pool with configuration
+    //***************************************************************************************************************//
+    //                1: pool initialize method(1)                                                                   //                                                                                  //
+    //***************************************************************************************************************//
     void init(BeeObjectSourceConfig config) throws Exception;
 
+
+    //***************************************************************************************************************//
+    //                2: objects methods(3)                                                                          //                                                                                  //
+    //***************************************************************************************************************//
     //borrow a object from pool
     BeeObjectHandle getObjectHandle() throws Exception;
 
     //recycle one pooled Connection
     void recycle(PooledObject entry);
 
-    //remove failed object
+    //remove failed return object
     void abandonOnReturn(PooledObject entry);
 
-
+    //***************************************************************************************************************//
+    //                3: Pool runtime maintain methods(5)                                                            //                                                                                  //
+    //***************************************************************************************************************//
     //close pool
     void close();
 

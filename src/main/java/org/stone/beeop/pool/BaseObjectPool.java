@@ -18,7 +18,7 @@ import org.stone.beeop.BeeObjectSourceConfig;
  * @author Chris Liao
  * @version 1.0
  */
-abstract class BaseObjectPool implements ObjectPool {
+abstract class BaseObjectPool implements GenericObjectPool {
 
     //initialize pool with configuration
     public void init(BeeObjectSourceConfig config) throws Exception {

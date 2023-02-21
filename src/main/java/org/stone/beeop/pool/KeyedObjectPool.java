@@ -12,8 +12,6 @@ package org.stone.beeop.pool;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSourceConfig;
 
-import java.util.List;
-
 /**
  * keyed object pool
  *
@@ -22,12 +20,31 @@ import java.util.List;
  */
 public interface KeyedObjectPool {
 
-    //initialize pool with configuration
+    //***************************************************************************************************************//
+    //                1: pool initialize method(1)                                                                   //                                                                                  //
+    //***************************************************************************************************************//
     void init(BeeObjectSourceConfig config) throws Exception;
 
-    //borrow a object from pool
+
+    //***************************************************************************************************************//
+    //                2: key objects methods(5)                                                                      //                                                                                  //
+    //***************************************************************************************************************//
+    int keySize();
+
+    Object[] keys();
+
+    //remove key category from key pool
+    void deleteKey(Object key);
+
+    //remove keyed objects from pool
+    void clearObjects(Object key, boolean forceCloseUsing);
+
+    //borrow a keyed object from pool
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
+    //***************************************************************************************************************//
+    //                3: Pool runtime maintain methods(5)                                                            //                                                                                  //
+    //***************************************************************************************************************//
     //close pool
     void close();
 
@@ -42,12 +59,4 @@ public interface KeyedObjectPool {
 
     //remove all objects from pool
     void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
-
-    int keySize();
-
-    List keyList();
-
-    //remove key
-    void removeKey(Object key);
-
 }
