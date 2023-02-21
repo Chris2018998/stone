@@ -32,6 +32,7 @@ public interface GenericObjectPool {
     //remove failed object
     void abandonOnReturn(PooledObject entry);
 
+
     //close pool
     void close();
 
@@ -41,18 +42,19 @@ public interface GenericObjectPool {
     //clear timeout pooled objects
     void removeIdleTimeout();
 
-    boolean asyncRetryCount();
-
-    //remove all objects from pool
-    void restart(boolean forceCloseUsing) throws Exception;
-
-    //remove all objects from pool
-    void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
+    //
+    int asyncRetryCount();
 
     //get pool monitor vo
     ObjectPoolMonitorVo getPoolMonitorVo();
 
     //enable Runtime Log
     void setPrintRuntimeLog(boolean indicator);
+
+    //remove all objects from pool
+    void restart(boolean forceCloseUsing) throws Exception;
+
+    //remove all objects from pool
+    void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 
 }
