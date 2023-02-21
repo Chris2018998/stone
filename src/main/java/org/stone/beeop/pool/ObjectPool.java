@@ -38,8 +38,8 @@ public interface ObjectPool {
     //check pool is closed
     boolean isClosed();
 
-    //clear timeout pooled objects
-    void removeIdleTimeout();
+//    //clear timeout pooled objects
+//    void removeIdleTimeout();
 
 //    boolean asyncRetryCount();
 //
