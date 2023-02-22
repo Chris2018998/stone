@@ -131,15 +131,19 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         this.objectFactory = config.getObjectFactory();
         Class[] objectInterfaces = config.getObjectInterfaces();
         this.templatePooledObject = new PooledObject<E>(this, objectFactory, objectInterfaces, config.getObjectMethodFilter(), this.methodCache);
-        if (!config.isAsyncCreateInitObject()) createInitObjects(config.getInitialSize(), true);
 
-        //step2: create object handle factory
+        //step2: create init objects by syn mode
+        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(config.getMaxWait());
+        if (config.getInitialSize() > 0 && !config.isAsyncCreateInitObject())
+            createInitObjects(config.getInitialSize(), true);
+
+        //step3: create object handle factory
         if (objectInterfaces != null && objectInterfaces.length > 0)
             handleFactory = new ObjectHandleWithProxyFactory<E>();
         else
             handleFactory = new ObjectHandleFactory<E>();
 
-        //step3: create object transfer policy
+        //step4: create object transfer policy
         if (config.isFairMode()) {
             poolMode = "fair";
             isFairMode = true;
@@ -151,21 +155,20 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
         }
         this.stateCodeOnRelease = this.transferPolicy.getStateCodeOnRelease();
 
-        //step4: copy some properties as pool local variable
+        //step5: copy some properties as pool local variable
         this.idleTimeoutMs = config.getIdleTimeout();
         this.holdTimeoutMs = config.getHoldTimeout();
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(config.getMaxWait());
         this.delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
         this.validAssumeTime = config.getValidAssumeTime();
         this.validTestTimeout = config.getValidTestTimeout();
         this.printRuntimeLog = config.isPrintRuntimeLog();
         this.semaphoreSize = config.getBorrowSemaphoreSize();
 
-        //step5: create semaphore and threadLocal
+        //step6: create semaphore and threadLocal
         this.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         this.threadLocal = new BorrowerThreadLocal();
 
-        //step6: create some work threads
+        //step7: create some work threads
         if (POOL_STARTING == this.poolState) {//object instance create once
             this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
             this.servantTryCount = new AtomicInteger(0);
@@ -187,10 +190,11 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             this.idleScanThread.start();
         }
 
-        //step7: create initialized objects to pool
-        if (config.isAsyncCreateInitObject()) new PoolInitAsynCreateThread(this).start();
+        //step8: create initialized objects to pool
+        if (config.getInitialSize() > 0 && config.isAsyncCreateInitObject())
+            new PoolInitAsynCreateThread(this).start();
 
-        //step8: print pool info
+        //step9: print pool info
         Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
                 this.poolName,
                 poolMode,
@@ -202,17 +206,14 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
     //Method-1.3: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
-        int size = initSize > 0 ? initSize : 1;
-        if (size > 1) this.pooledArrayLock.lock();
-
         try {
-            for (int i = 0; i < size; i++)
+            for (int i = 0; i < initSize; i++)
                 this.createPooledEntry(OBJECT_IDLE);
         } catch (Throwable e) {
             for (PooledObject pooledEntry : this.pooledArray)
                 this.removePooledEntry(pooledEntry, DESC_RM_INIT);
 
-            if (syn && initSize > 0) {//throw exception on syn mode
+            if (syn) {//throw exception on syn mode
                 if (e instanceof Exception)
                     throw (Exception) e;
                 else
@@ -220,14 +221,20 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             } else {
                 Log.warn("Failed to create objects on pool initialization,cause:" + e);
             }
-        } finally {
-            if (size > 1) this.pooledArrayLock.unlock();
         }
     }
 
     //Method-1.4: create one pooled object
     private PooledObject<E> createPooledEntry(int state) throws Exception {
-        this.pooledArrayLock.lock();
+        //1:try to acquire lock
+        try {
+            if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
+                throw new ObjectException("Get object timeout");
+        } catch (InterruptedException e) {
+            throw new ObjectException("Interrupted during getting a object");
+        }
+
+        //2:try to create a pooled object
         try {
             int l = this.pooledArray.length;
             if (l < this.poolMaxSize) {
@@ -315,7 +322,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new ObjectException("Get object timeout");
         } catch (InterruptedException e) {
-            throw new ObjectException("Interrupted during getting object");
+            throw new ObjectException("Interrupted during getting a object");
         }
         try {//semaphore acquired
             //2:try search one or create one
@@ -354,7 +361,7 @@ public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
-                            cause = new ObjectException("Interrupted during getting object");
+                            cause = new ObjectException("Interrupted during getting a object");
                     } else {//timeout
                         cause = new ObjectException("Get object timeout");
                     }
