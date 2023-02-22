@@ -18,7 +18,7 @@ package org.stone.beeop;
 public interface RawObjectFactory<E> {
 
     //create object instance
-    E create() throws Exception;
+    E create(Object key) throws Exception;
 
     //set default values to raw object on initialization
     void setDefault(E obj) throws Exception;

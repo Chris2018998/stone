@@ -27,7 +27,7 @@ public final class SimpleObjectFactory<E> implements RawObjectFactory<E> {
     }
 
     //create object instance
-    public E create() throws Exception {
+    public E create(Object key) throws Exception {
         return this.constructor.newInstance();
     }
 
