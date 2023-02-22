@@ -146,9 +146,13 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             this.pooledArrayLock = new ReentrantLock();
             this.pooledArray = new PooledConnection[0];
         }
-        if (!config.isAsyncCreateInitConnection()) createInitConnections(config.getInitialSize(), true);
 
-        //step3: create transfer policy
+        //step3: create init connections by syn mode
+        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(config.getMaxWait());//lock time or acquire time
+        if (config.getInitialSize() > 0 && !config.isAsyncCreateInitConnection())
+            createInitConnections(config.getInitialSize(), true);
+
+        //step4: create transfer policy
         if (config.isFairMode()) {
             poolMode = "fair";
             isFairMode = true;
@@ -160,8 +164,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         }
         this.stateCodeOnRelease = this.transferPolicy.getStateCodeOnRelease();
 
-        //step4: copy some properties as pool local variable
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(config.getMaxWait());
+        //step5: copy some properties as pool local variable
         this.idleTimeoutMs = config.getIdleTimeout();
         this.holdTimeoutMs = config.getHoldTimeout();
         this.validAssumeTimeMs = config.getValidAssumeTime();
@@ -170,11 +173,11 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         this.printRuntimeLog = config.isPrintRuntimeLog();
         this.semaphoreSize = config.getBorrowSemaphoreSize();
 
-        //step5: create semaphore and threadLocal
+        //step6: create semaphore and threadLocal
         this.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         this.threadLocal = new BorrowerThreadLocal();
 
-        //step6: create some work threads
+        //step7: create some work threads
         if (POOL_STARTING == this.poolState) {
             this.waitQueue = new ConcurrentLinkedQueue<Borrower>();
             this.servantTryCount = new AtomicInteger(0);
@@ -197,10 +200,11 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             this.idleScanThread.start();
         }
 
-        //step7: create connections to pool by async
-        if (config.isAsyncCreateInitConnection()) new PoolInitAsynCreateThread(this).start();
+        //step8: create connections to pool by async
+        if (config.getInitialSize() > 0 && config.isAsyncCreateInitConnection())
+            new PoolInitAsynCreateThread(this).start();
 
-        //step8: print pool info
+        //step9: print pool info
         Log.info("BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,driver:{}}",
                 poolName,
                 poolMode,
@@ -213,16 +217,14 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
     //Method-1.3: create specified size connections at pool initialization,
     private void createInitConnections(int initSize, boolean syn) throws SQLException {
-        int size = initSize > 0 ? initSize : 1;
-        if (size > 1) this.pooledArrayLock.lock();
         try {
-            for (int i = 0; i < size; i++)
+            for (int i = 0; i < initSize; i++)
                 this.createPooledConn(CON_IDLE);
         } catch (Throwable e) {
             for (PooledConnection p : this.pooledArray)
                 this.removePooledConn(p, DESC_RM_INIT);
 
-            if (syn && initSize > 0) {//throw exception on syn mode
+            if (syn) {//throw exception on syn mode
                 if (e instanceof SQLException)
                     throw (SQLException) e;
                 else
@@ -230,14 +232,20 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
             } else {
                 Log.warn("Failed to create connections on pool initialization,cause:" + e);
             }
-        } finally {
-            if (size > 1) this.pooledArrayLock.unlock();
         }
     }
 
     //Method-1.4: create one pooled connection
     private PooledConnection createPooledConn(int state) throws SQLException {
-        this.pooledArrayLock.lock();
+        //1:try to acquire lock
+        try {
+            if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
+                throw new SQLTimeoutException("Get connection timeout");
+        } catch (InterruptedException e) {
+            throw new SQLException("Interrupted during getting connection");
+        }
+
+        //2:try to create a pooled connection
         try {
             int l = this.pooledArray.length;
             if (l < this.poolMaxSize) {
@@ -491,7 +499,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
-                            cause = new SQLException("Interrupted during getting connection");
+                            cause = new SQLException("Interrupted during getting a connection");
                     } else {//timeout
                         cause = new SQLTimeoutException("Get connection timeout");
                     }
