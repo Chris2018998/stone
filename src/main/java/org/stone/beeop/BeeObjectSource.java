@@ -12,9 +12,14 @@ package org.stone.beeop;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.beeop.pool.ObjectPoolMonitorVo;
 import org.stone.beeop.pool.ObjectPoolStatics;
+import org.stone.beeop.pool.exception.ObjectException;
 import org.stone.beeop.pool.exception.PoolNotCreateException;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Bee Object object source
@@ -27,6 +32,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private long maxWaitNanos = SECONDS.toNanos(8);
     private ObjectPool pool;
     private boolean ready;
     private Exception cause;
@@ -41,6 +48,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         try {
             config.copyTo(this);
             createPool(this);
+            this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
@@ -63,7 +71,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (ready) return pool.getObjectHandle();
 
-        if (lock.writeLock().tryLock()) {
+        if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
                     cause = null;
@@ -76,10 +84,12 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
             }
         } else {
             try {
-                lock.readLock().lock();
-            } finally {
-                lock.readLock().unlock();
+                if (!readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
+                    throw new ObjectException("Get object timeout");
+            } catch (InterruptedException e) {
+                throw new ObjectException("Interrupted during getting a object");
             }
+            readLock.unlock();
         }
 
         if (cause != null) throw cause;
@@ -103,6 +113,14 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         }
     }
 
+    //override method
+    public void setMaxWait(long maxWait) {
+        if (maxWait > 0) {
+            super.setMaxWait(maxWait);
+            this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
+        }
+    }
+
     public void setPrintRuntimeLog(boolean printRuntimeLog) {
         if (pool != null) pool.setPrintRuntimeLog(printRuntimeLog);
     }
@@ -122,5 +140,6 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         if (config == null) throw new PoolNotCreateException("Object pool config can't be null");
         pool.restart(forceCloseUsing, config);
         config.copyTo(this);
+        this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
 }
