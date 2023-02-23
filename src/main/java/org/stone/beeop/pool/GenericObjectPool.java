@@ -38,7 +38,18 @@ public interface GenericObjectPool {
     void abandonOnReturn(PooledObject entry);
 
     //***************************************************************************************************************//
-    //                3: Pool runtime maintain methods(5)                                                            //                                                                                  //
+    //                3: async filler(4)                                                                             //                                                                                  //
+    //***************************************************************************************************************//
+    int getAsyncFillCount();
+
+    int getAsyncFillerState();
+
+    void wakeupAsyncFiller();
+
+    boolean compareAndSetFillerState(int expect, int update);
+
+    //***************************************************************************************************************//
+    //                4: Pool runtime maintain methods(7)                                                            //                                                                                  //
     //***************************************************************************************************************//
     //close pool
     void close();
@@ -48,9 +59,6 @@ public interface GenericObjectPool {
 
     //clear timeout pooled objects
     void removeIdleTimeout();
-
-    //
-    int asyncRetryCount();
 
     //get pool monitor vo
     ObjectPoolMonitorVo getPoolMonitorVo();
