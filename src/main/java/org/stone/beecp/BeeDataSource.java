@@ -21,9 +21,13 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLTimeoutException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.CommonLog;
 import static org.stone.beecp.pool.ConnectionPoolStatics.createClassInstance;
 
@@ -38,6 +42,8 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.createClassInstance;
 //public final class BeeDataSource extends BeeDataSourceConfig implements DataSource {
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private long maxWaitNanos = SECONDS.toNanos(8);
     private ConnectionPool pool;
     private boolean ready;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause
@@ -56,6 +62,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         try {
             config.copyTo(this);
             BeeDataSource.createPool(this);
+            this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -89,7 +96,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     private ConnectionPool createPoolByLock() throws SQLException {
-        if (lock.writeLock().tryLock()) {
+        if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
                     cause = null;
@@ -102,10 +109,12 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             }
         } else {
             try {
-                lock.readLock().lock();
-            } finally {
-                lock.readLock().unlock();
+                if (!this.readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
+                    throw new SQLTimeoutException("Get connection timeout");
+            } catch (InterruptedException e) {
+                throw new SQLException("Interrupted during getting connection");
             }
+            readLock.unlock();
         }
 
         //read lock will reach
@@ -169,6 +178,14 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         }
     }
 
+    //override method
+    public void setMaxWait(long maxWait) {
+        if (maxWait > 0) {
+            super.setMaxWait(maxWait);
+            this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
+        }
+    }
+
     public void setPrintRuntimeLog(boolean printRuntimeLog) {
         if (this.pool != null) this.pool.setPrintRuntimeLog(printRuntimeLog);
     }
@@ -188,5 +205,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         if (config == null) throw new PoolNotCreateException("Connection pool config can't be null");
         this.pool.restart(forceCloseUsing, config);
         config.copyTo(this);
+        this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
 }
