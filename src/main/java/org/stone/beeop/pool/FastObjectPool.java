@@ -49,7 +49,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @version 1.0
  * @todo this class will be removed and new impl is DefaultGenericObjectPool
  */
-public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean, ObjectPool, ObjectTransferPolicy {
+public final class FastObjectPool<E> extends Thread implements ObjectPoolJmxBean, ObjectTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastObjectPool.class, "poolState");
