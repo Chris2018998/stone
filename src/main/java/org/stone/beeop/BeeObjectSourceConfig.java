@@ -45,10 +45,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private boolean fairMode;
     //size of object instance on pool starting
     private int initialSize;
-    //indicator of asynchronized create object on init
+    //indicator: true,creating initialized objects by async mode
     private boolean asyncCreateInitObject;
     //max reachable size of object instance in pool
     private int maxActive = Math.min(Math.max(10, ObjectPoolStatics.NCPUS), 50);
+    //max key size of sub pools
+    private int maxObjectKeySize = 50;
     //max permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, ObjectPoolStatics.NCPUS);
     //milliseconds:max wait parkTime to get one object from pool<code>ObjectPool.getObjectHandle()</code>
@@ -75,10 +77,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //indicator,whether print pool runtime info
     private boolean printRuntimeLog;
 
-    //object class
-    private Class objectClass;
-    //object class name
-    private String objectClassName;
     //object implements interfaces
     private Class[] objectInterfaces;
     //object implements interface names
@@ -90,6 +88,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //object factory(implement class of RawObjectFactory or RawKeyedObjectFactory)
     private Object objectFactory;
 
+
     //object method call filter class
     private Class objectMethodFilterClass;
     //object method call filter class name
@@ -98,9 +97,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private RawObjectMethodFilter objectMethodFilter;
     //pool implementation class name
     private String poolImplementClassName = FastObjectPool.class.getName();
-
-    //keyed sub-pool size
-    private int maxKeySize;
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
@@ -124,7 +120,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     //***************************************************************************************************************//
-    //                                     2:configuration about pool inner control(33)                              //
+    //                                     2:configuration about pool inner control(37)                              //
     //***************************************************************************************************************//
     public String getPoolName() {
         return this.poolName;
@@ -167,6 +163,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             this.maxActive = maxActive;
             borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, ObjectPoolStatics.NCPUS) : 1;
         }
+    }
+
+    public int getMaxObjectKeySize() {
+        return maxObjectKeySize;
+    }
+
+    public void setMaxObjectKeySize(int maxObjectKeySize) {
+        if (maxObjectKeySize >= 2) this.maxObjectKeySize = maxObjectKeySize;
     }
 
     public int getBorrowSemaphoreSize() {
@@ -250,14 +254,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             this.poolImplementClassName = trimString(poolImplementClassName);
     }
 
-    public int getMaxKeySize() {
-        return maxKeySize;
-    }
-
-    public void setMaxKeySize(int maxKeySize) {
-        this.maxKeySize = maxKeySize;
-    }
-
     public boolean isEnableJmx() {
         return this.enableJmx;
     }
@@ -278,26 +274,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.printRuntimeLog = printRuntimeLog;
     }
 
-
     //***************************************************************************************************************//
     //                                     3: configuration about object creation(19)                                //
     //***************************************************************************************************************//
-    public Class getObjectClass() {
-        return this.objectClass;
-    }
-
-    public void setObjectClass(Class objectClass) {
-        this.objectClass = objectClass;
-    }
-
-    public String getObjectClassName() {
-        return this.objectClassName;
-    }
-
-    public void setObjectClassName(String objectClassName) {
-        this.objectClassName = trimString(objectClassName);
-    }
-
     public Class[] getObjectInterfaces() {
         return (this.objectInterfaces == null) ? ObjectPoolStatics.EMPTY_CLASSES : objectInterfaces.clone();
     }
@@ -492,6 +471,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             throw new BeeObjectSourceConfigException("initialSize must be greater than zero");
         if (initialSize > this.maxActive)
             throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
+        if (this.maxObjectKeySize <= 0)
+            throw new BeeObjectSourceConfigException("maxObjectKeySize must be greater than zero");
         if (borrowSemaphoreSize <= 0)
             throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");
         if (idleTimeout <= 0)
@@ -509,7 +490,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
 
         //3:try to create object factory
-        RawObjectFactory tempObjectFactory = null;
+        Object tempObjectFactory = null;
         if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
 
         //4:try to create pool name
