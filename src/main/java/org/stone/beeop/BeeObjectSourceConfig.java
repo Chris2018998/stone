@@ -83,12 +83,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private Class[] objectInterfaces;
     //object implements interface names
     private String[] objectInterfaceNames;
-    //object factory class
+    //object factory class(RawObjectFactory or RawKeyedObjectFactory)
     private Class objectFactoryClass;
-    //object factory class name
+    //object factory class name(RawObjectFactory or RawKeyedObjectFactory)
     private String objectFactoryClassName;
-    //object factory
-    private RawObjectFactory objectFactory;
+    //object factory(implement class of RawObjectFactory or RawKeyedObjectFactory)
+    private Object objectFactory;
 
     //object method call filter class
     private Class objectMethodFilterClass;
@@ -338,12 +338,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
-    public RawObjectFactory getObjectFactory() {
+    public Object getObjectFactory() {
         return this.objectFactory;
     }
 
-    public void setObjectFactory(RawObjectFactory objectFactory) {
-        this.objectFactory = objectFactory;
+    public void setRawObjectFactory(RawObjectFactory factory) {
+        this.objectFactory = factory;
+    }
+
+    public void setRawKeyedObjectFactory(RawKeyedObjectFactory factory) {
+        this.objectFactory = factory;
     }
 
     public Class getObjectMethodFilterClass() {

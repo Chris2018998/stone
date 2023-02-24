@@ -33,7 +33,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private long maxWaitNanos = SECONDS.toNanos(8);
+    private long maxWaitNanos = SECONDS.toNanos(8);//default vale same to config
     private ObjectPool pool;
     private boolean ready;
     private Exception cause;
