@@ -11,7 +11,6 @@ package org.stone.beeop;
 
 import org.stone.beeop.pool.FastObjectPool;
 import org.stone.beeop.pool.ObjectPoolStatics;
-import org.stone.beeop.pool.SimpleObjectFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -87,7 +86,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private String objectFactoryClassName;
     //object factory(implement class of RawObjectFactory or RawKeyedObjectFactory)
     private Object objectFactory;
-
 
     //object method call filter class
     private Class objectMethodFilterClass;
@@ -608,8 +606,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         return null;
     }
 
-    private RawObjectFactory tryCreateObjectFactory(Class[] objectInterfaces) {
-        RawObjectFactory rawObjectFactory = null;
+    private Object tryCreateObjectFactory(Class[] objectInterfaces) {
+        Object rawObjectFactory = null;
 
         //1:if exists object factory,then return it
         if (this.objectFactory != null) rawObjectFactory = objectFactory;
@@ -617,7 +615,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         //2:if factory class exists,then try to create by it
         if (rawObjectFactory == null && objectFactoryClass != null) {
             try {
-                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
+                Class[] parentClasses = {RawObjectFactory.class, RawKeyedObjectFactory.class};
+                rawObjectFactory = ObjectPoolStatics.createClassInstance(objectFactoryClass, parentClasses, "object factory");
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + objectFactoryClass.getName(), e);
             }
@@ -627,7 +626,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (rawObjectFactory == null && !isBlank(this.objectFactoryClassName)) {
             try {
                 Class objectFactoryClass = Class.forName(this.objectFactoryClassName);
-                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
+                Class[] parentClasses = {RawObjectFactory.class, RawKeyedObjectFactory.class};
+                rawObjectFactory = ObjectPoolStatics.createClassInstance(objectFactoryClass, parentClasses, "object factory");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object factory class:" + this.objectFactoryClassName);
             } catch (Throwable e) {
@@ -638,23 +638,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         //4:return factory instance
         if (rawObjectFactory != null) {
             //set properties to factory
-            ObjectPoolStatics.setPropertiesValue(rawObjectFactory, this.factoryProperties);
+            if (!factoryProperties.isEmpty())
+                ObjectPoolStatics.setPropertiesValue(rawObjectFactory, this.factoryProperties);
             return rawObjectFactory;
-        } else if (objectClass != null) {
-            try {
-                return new SimpleObjectFactory(ObjectPoolStatics.getConstructor(objectClass, objectInterfaces, "object class"));
-            } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Not found a valid constructor without parameters in class:" + objectClass.getName());
-            }
-        } else if (!isBlank(this.objectClassName)) {
-            try {
-                Class objectClass = Class.forName(this.objectClassName);
-                return new SimpleObjectFactory(ObjectPoolStatics.getConstructor(objectClass, objectInterfaces, "object class"));
-            } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Not found a valid constructor without parameters in class:" + objectClass.getName());
-            }
         } else {
-            throw new BeeObjectSourceConfigException("Must set value to one of ['objectFactoryClassName','objectClassName']");
+            throw new BeeObjectSourceConfigException("Must set one of properties['objectFactoryClassName','objectClassName']");
         }
     }
 }
