@@ -9,8 +9,7 @@
  */
 package org.stone.beecp;
 
-import org.stone.beecp.pool.ConnectionPool;
-import org.stone.beecp.pool.ConnectionPoolMonitorVo;
+import org.stone.beecp.pool.FastConnectionPoolMonitorVo;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreateException;
 
@@ -43,8 +42,8 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.createClassInstance;
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private long maxWaitNanos = SECONDS.toNanos(8);
-    private ConnectionPool pool;
+    private long maxWaitNanos = SECONDS.toNanos(8);//default vale same to config
+    private BeeConnectionPool pool;
     private boolean ready;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause
 
@@ -71,7 +70,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private static void createPool(BeeDataSource ds) throws SQLException {
         try {
             Class<?> poolClass = Class.forName(ds.getPoolImplementClassName());
-            ConnectionPool pool = (ConnectionPool) createClassInstance(poolClass, ConnectionPool.class, "pool");
+            BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolClass, BeeConnectionPool.class, "pool");
             pool.init(ds);
             ds.pool = pool;
             ds.ready = true;
@@ -95,7 +94,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return createPoolByLock().getXAConnection();
     }
 
-    private ConnectionPool createPoolByLock() throws SQLException {
+    private BeeConnectionPool createPoolByLock() throws SQLException {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
@@ -162,7 +161,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                     3: below are self-define methods(6)                                       //
+    //                                     3: below are self-define methods(7)                                       //
     //***************************************************************************************************************//
     public boolean isClosed() {
         return this.pool == null || this.pool.isClosed();
@@ -190,7 +189,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         if (this.pool != null) this.pool.setPrintRuntimeLog(printRuntimeLog);
     }
 
-    public ConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
+    public FastConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
         return this.pool.getPoolMonitorVo();
     }
