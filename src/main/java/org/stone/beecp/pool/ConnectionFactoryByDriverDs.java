@@ -23,7 +23,7 @@ import static org.stone.util.CommonUtil.isBlank;
  * @author Chris.liao
  * @version 1.0
  */
-public class ConnectionFactoryByDriverDs implements RawConnectionFactory {
+public final class ConnectionFactoryByDriverDs implements RawConnectionFactory {
     //username
     private final String username;
     //password
