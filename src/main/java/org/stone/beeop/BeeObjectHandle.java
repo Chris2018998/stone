@@ -21,6 +21,8 @@ public interface BeeObjectHandle {
 
     boolean isClosed() throws Exception;
 
+    Object getObjectKey() throws Exception;
+
     Object getObjectProxy() throws Exception;
 
     Object call(String methodName) throws Exception;
