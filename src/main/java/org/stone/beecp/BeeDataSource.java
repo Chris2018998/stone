@@ -189,7 +189,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         if (this.pool != null) this.pool.setPrintRuntimeLog(printRuntimeLog);
     }
 
-    public FastConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
+    public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
         return this.pool.getPoolMonitorVo();
     }
