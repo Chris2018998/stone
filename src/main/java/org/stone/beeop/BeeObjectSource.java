@@ -66,11 +66,19 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        2: object take methods(1)                                              //
+    //                                        2: object take methods(3)                                              //
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
-        if (ready) return pool.getObjectHandle();
+        if (this.ready) return pool.getObjectHandle();
+        return createPoolByLock().getObjectHandle();
+    }
 
+    public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
+        if (this.ready) return pool.getObjectHandle();
+        return createPoolByLock().getObjectHandle();
+    }
+
+    private ObjectPool createPoolByLock() throws Exception {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
@@ -91,9 +99,10 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
             }
             readLock.unlock();
         }
-
+        
+        //read lock will reach
         if (cause != null) throw cause;
-        return pool.getObjectHandle();
+        return pool;
     }
 
     //***************************************************************************************************************//
