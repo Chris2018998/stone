@@ -11,9 +11,7 @@ package org.stone.beecp.pool;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.RawConnectionFactory;
-import org.stone.beecp.RawXaConnectionFactory;
+import org.stone.beecp.*;
 import org.stone.beecp.pool.exception.PoolClosedException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolInternalException;
@@ -49,7 +47,7 @@ import static org.stone.util.CommonUtil.isBlank;
  * @author Chris Liao
  * @version 1.0
  */
-public final class FastConnectionPool extends Thread implements ConnectionPool, ConnectionPoolJmxBean, PooledConnectionValidTest, PooledConnectionTransferPolicy {
+public final class FastConnectionPool extends Thread implements BeeConnectionPool, BeeConnectionPoolJmxBean, PooledConnectionValidTest, PooledConnectionTransferPolicy {
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
@@ -92,7 +90,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     private ConcurrentLinkedQueue<Borrower> waitQueue;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
     private BeeDataSourceConfig poolConfig;
-    private ConnectionPoolMonitorVo monitorVo;
+    private FastConnectionPoolMonitorVo monitorVo;
     private ConnectionPoolHook exitHook;
     private boolean printRuntimeLog;
 
@@ -655,7 +653,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     private void closeIdleTimeoutConnection() {
         //step1:print pool info before clean
         if (printRuntimeLog) {
-            ConnectionPoolMonitorVo vo = getPoolMonitorVo();
+            BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeCP({})-before idle clean,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
@@ -687,7 +685,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
 
         //step3: print pool info after idle clean
         if (printRuntimeLog) {
-            ConnectionPoolMonitorVo vo = getPoolMonitorVo();
+            BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeCP({})-after idle clean,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
@@ -750,7 +748,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         } // while
 
         if (printRuntimeLog) {
-            ConnectionPoolMonitorVo vo = getPoolMonitorVo();
+            BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeCP({})-{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
@@ -891,7 +889,7 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
     }
 
     //Method-5.13 create controller vo
-    private ConnectionPoolMonitorVo createPoolMonitorVo() {
+    private FastConnectionPoolMonitorVo createPoolMonitorVo() {
         Thread currentThread = Thread.currentThread();
         this.poolThreadId = currentThread.getId();
         this.poolThreadName = currentThread.getName();
@@ -901,11 +899,11 @@ public final class FastConnectionPool extends Thread implements ConnectionPool, 
         } catch (UnknownHostException e) {
             Log.info("BeeCP({})failed to resolve pool hose ip", this.poolName);
         }
-        return new ConnectionPoolMonitorVo();
+        return new FastConnectionPoolMonitorVo();
     }
 
     //Method-5.14: pool controller vo
-    public ConnectionPoolMonitorVo getPoolMonitorVo() {
+    public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
         monitorVo.setPoolMaxSize(poolMaxSize);

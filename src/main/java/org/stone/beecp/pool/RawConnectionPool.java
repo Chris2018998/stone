@@ -9,9 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.RawConnectionFactory;
-import org.stone.beecp.RawXaConnectionFactory;
+import org.stone.beecp.*;
 import org.stone.beecp.pool.exception.PoolClosedException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 
@@ -37,9 +35,9 @@ import static org.stone.util.CommonUtil.isBlank;
  * @author Chris Liao
  * @version 1.0
  */
-public final class RawConnectionPool implements ConnectionPool, ConnectionPoolJmxBean {
+public final class RawConnectionPool implements BeeConnectionPool, BeeConnectionPoolJmxBean {
     private static final AtomicInteger poolNameIndex = new AtomicInteger(1);
-    private static final ConnectionPoolMonitorVo monitorVo = new ConnectionPoolMonitorVo();
+    private static final FastConnectionPoolMonitorVo monitorVo = new FastConnectionPoolMonitorVo();
 
     private String poolName = "";
     private String poolMode = "";
@@ -207,7 +205,7 @@ public final class RawConnectionPool implements ConnectionPool, ConnectionPoolJm
         //do nothing
     }
 
-    public ConnectionPoolMonitorVo getPoolMonitorVo() {
+    public FastConnectionPoolMonitorVo getPoolMonitorVo() {
         int totSize = getTotalSize();
         int idleSize = getIdleSize();
         monitorVo.setPoolName(poolName);
