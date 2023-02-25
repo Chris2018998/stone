@@ -9,7 +9,6 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.pool.FastObjectPoolMonitorVo;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.beeop.pool.ObjectPoolStatics;
 import org.stone.beeop.pool.exception.ObjectException;
@@ -134,7 +133,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         if (pool != null) pool.setPrintRuntimeLog(printRuntimeLog);
     }
 
-    public FastObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
+    public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
         if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
         return pool.getPoolMonitorVo();
     }
