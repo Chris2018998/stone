@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -726,7 +725,7 @@ public final class FastObjectPool<E> extends Thread implements BeeObjectPoolJmxB
     }
 
     //Method-5.12 create controller vo
-    private FastObjectPoolMonitorVo createPoolMonitorVo() {
+    private BeeObjectPoolMonitorVo createPoolMonitorVo() {
         Thread currentThread = Thread.currentThread();
         this.poolThreadId = currentThread.getId();
         this.poolThreadName = currentThread.getName();
@@ -795,21 +794,6 @@ public final class FastObjectPool<E> extends Thread implements BeeObjectPoolJmxB
         }
     }
 
-    //class-6.5: Semaphore extend
-    private static final class PoolSemaphore extends Semaphore {
-        PoolSemaphore(int permits, boolean fair) {
-            super(permits, fair);
-        }
-
-        void interruptWaitingThreads() {
-            for (Thread thread : getQueuedThreads()) {
-                Thread.State state = thread.getState();
-                if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
-                    thread.interrupt();
-                }
-            }
-        }
-    }
 
     //class-6.6: add new objects on pool initialized by asynchronization
     private static final class PoolInitAsynCreateThread extends Thread {
