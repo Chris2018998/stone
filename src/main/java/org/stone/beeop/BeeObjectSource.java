@@ -72,8 +72,8 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
-        if (this.ready) return pool.getObjectHandle();
-        return createPoolByLock().getObjectHandle();
+        if (this.ready) return pool.getObjectHandle(key);
+        return createPoolByLock().getObjectHandle(key);
     }
 
     private BeeObjectPool createPoolByLock() throws Exception {

@@ -9,7 +9,7 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.pool.FastObjectPool;
+import org.stone.beeop.pool.KeyedObjectPool;
 import org.stone.beeop.pool.ObjectPoolStatics;
 
 import java.io.File;
@@ -94,7 +94,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //method call filter instance
     private RawObjectMethodFilter objectMethodFilter;
     //pool implementation class name
-    private String poolImplementClassName = FastObjectPool.class.getName();
+    private String poolImplementClassName = KeyedObjectPool.class.getName();
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
