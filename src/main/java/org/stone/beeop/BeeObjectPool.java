@@ -51,22 +51,4 @@ public interface BeeObjectPool {
 
     //remove all objects from pool
     void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
-
 }
-
-//    //recycle one pooled Connection
-//    void recycle(PooledObject entry);
-//
-//    //remove failed return object
-//    void abandonOnReturn(PooledObject entry);
-//
-//    //***************************************************************************************************************//
-//    //                3: async filler(4)                                                                             //                                                                                  //
-//    //***************************************************************************************************************//
-//    int getAsyncFillCount();
-//
-//    int getAsyncFillerState();
-//
-//    void wakeupAsyncFiller();
-//
-//    boolean compareAndSetFillerState(int expect, int update);

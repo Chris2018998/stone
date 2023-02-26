@@ -9,7 +9,6 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.pool.ObjectPool;
 import org.stone.beeop.pool.ObjectPoolStatics;
 import org.stone.beeop.pool.exception.ObjectException;
 import org.stone.beeop.pool.exception.PoolNotCreateException;
@@ -33,7 +32,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8);//default vale same to config
-    private ObjectPool pool;
+    private BeeObjectPool pool;
     private boolean ready;
     private Exception cause;
 
@@ -57,7 +56,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
 
     private static void createPool(BeeObjectSource os) throws Exception {
         Class<?> poolClass = Class.forName(os.getPoolImplementClassName());
-        ObjectPool pool = (ObjectPool) ObjectPoolStatics.createClassInstance(poolClass, ObjectPool.class, "pool");
+        BeeObjectPool pool = (BeeObjectPool) ObjectPoolStatics.createClassInstance(poolClass, BeeObjectPool.class, "pool");
 
         pool.init(os);
         os.pool = pool;
@@ -77,7 +76,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         return createPoolByLock().getObjectHandle();
     }
 
-    private ObjectPool createPoolByLock() throws Exception {
+    private BeeObjectPool createPoolByLock() throws Exception {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
