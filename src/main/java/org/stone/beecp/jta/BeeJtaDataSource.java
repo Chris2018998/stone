@@ -9,8 +9,9 @@
  */
 package org.stone.beecp.jta;
 
+import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.pool.ConnectionPoolMonitorVo;
+import org.stone.beecp.pool.FastConnectionPoolMonitorVo;
 
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
@@ -149,7 +150,7 @@ public class BeeJtaDataSource extends TimerTask implements DataSource {
         ds.setPrintRuntimeLog(printRuntimeLog);
     }
 
-    public ConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
+    public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
         checkDataSource();
         return ds.getPoolMonitorVo();
     }
