@@ -27,11 +27,12 @@ final class PooledObject<E> implements Cloneable {
     final Class[] objectInterfaces;
     final RawObjectMethodFilter filter;
     final Map<ObjectMethodKey, Method> methodCache;
-    private final ObjectPool pool;
-    private final RawObjectFactory<E> factory;
+    private final RawObjectFactory factory;
 
     E raw;
+    Object key;
     Class rawClass;
+    Object objectPool;
     volatile int state;
     ObjectBaseHandle handleInUsing;
     volatile long lastAccessTime;
@@ -39,23 +40,23 @@ final class PooledObject<E> implements Cloneable {
     //***************************************************************************************************************//
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(ObjectPool pool, RawObjectFactory<E> factory, Class[] objectInterfaces,
+    PooledObject(RawObjectFactory factory, Class[] objectInterfaces,
                  RawObjectMethodFilter filter, Map<ObjectMethodKey, Method> methodCache) {
-
-        this.pool = pool;
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
         this.filter = filter;
         this.methodCache = methodCache;
     }
 
-    PooledObject<E> setDefaultAndCopy(E raw, int state) throws Exception {
-        this.factory.setDefault(raw);
-        PooledObject<E> p = (PooledObject<E>) this.clone();
+    PooledObject setDefaultAndCopy(Object k, Object v, int state, Object objectPool) throws Exception {
+        this.factory.setDefault(k, v);
+        PooledObject p = (PooledObject) this.clone();
 
+        p.key = k;
         p.raw = raw;
         p.rawClass = raw.getClass();
         p.state = state;
+        p.objectPool = objectPool;
         p.lastAccessTime = currentTimeMillis();//first parkTime
         return p;
     }
@@ -63,6 +64,10 @@ final class PooledObject<E> implements Cloneable {
     //***************************************************************************************************************//
     //                               2: Pooled entry business methods(4)                                             //                                                                                  //
     //***************************************************************************************************************//
+    public Object getObjectKey() {
+        return key;
+    }
+
     public String toString() {
         return this.raw.toString();
     }
@@ -78,17 +83,17 @@ final class PooledObject<E> implements Cloneable {
         } catch (Throwable e) {
             ObjectPoolStatics.CommonLog.error("Object close error", e);
         } finally {
-            this.factory.destroy(this.raw);
+            this.factory.destroy(key, raw);
         }
     }
 
     void recycleSelf() throws Exception {
         try {
             this.handleInUsing = null;
-            this.factory.reset(this.raw);
-            this.pool.recycle(this);
+            this.factory.reset(key, raw);
+            //this.pool.recycle(this);//@todo
         } catch (Throwable e) {
-            this.pool.abandonOnReturn(this);
+            //this.pool.abandonOnReturn(this);//@todo
             if (e instanceof Exception)
                 throw (Exception) e;
             else
