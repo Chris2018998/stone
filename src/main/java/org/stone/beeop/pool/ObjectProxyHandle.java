@@ -25,11 +25,11 @@ import static org.stone.beeop.pool.ObjectPoolStatics.PoolClassLoader;
  * @author Chris Liao
  * @version 1.0
  */
-public final class ObjectProxyHandle<E> extends ObjectBaseHandle {
+public final class ObjectProxyHandle extends ObjectBaseHandle {
     private Object objectProxy;
     private Exception failCause;
 
-    ObjectProxyHandle(PooledObject<E> p) {
+    ObjectProxyHandle(PooledObject p) {
         super(p);
         try {
             this.objectProxy = Proxy.newProxyInstance(

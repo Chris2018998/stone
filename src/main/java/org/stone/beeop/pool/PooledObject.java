@@ -18,19 +18,19 @@ import java.util.Map;
 import static java.lang.System.currentTimeMillis;
 
 /**
- * Pooled Entry
+ * Pooled object
  *
  * @author Chris Liao
  * @version 1.0
  */
-final class PooledObject<E> implements Cloneable {
+final class PooledObject implements Cloneable {
     final Class[] objectInterfaces;
     final RawObjectMethodFilter filter;
     final Map<ObjectMethodKey, Method> methodCache;
     private final RawObjectFactory factory;
 
-    E raw;
     Object key;
+    Object raw;
     Class rawClass;
     Object objectPool;
     volatile int state;
