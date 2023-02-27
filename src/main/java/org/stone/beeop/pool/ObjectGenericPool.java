@@ -10,12 +10,15 @@
 package org.stone.beeop.pool;
 
 /**
- * category pool
+ * generic pool
  *
  * @author Chris Liao
  * @version 1.0
  */
-final class ObjectGenericPool {
+final class ObjectGenericPool implements Runnable {
 
 
+    public void run() {
+
+    }
 }

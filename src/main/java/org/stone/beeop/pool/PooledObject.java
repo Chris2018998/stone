@@ -32,7 +32,7 @@ final class PooledObject implements Cloneable {
     Object key;
     Object raw;
     Class rawClass;
-    Object objectPool;
+    ObjectGenericPool pool;
     volatile int state;
     ObjectBaseHandle handleInUsing;
     volatile long lastAccessTime;
@@ -48,7 +48,7 @@ final class PooledObject implements Cloneable {
         this.methodCache = methodCache;
     }
 
-    PooledObject setDefaultAndCopy(Object k, Object v, int state, Object objectPool) throws Exception {
+    PooledObject setDefaultAndCopy(Object k, Object v, int state, ObjectGenericPool pool) throws Exception {
         this.factory.setDefault(k, v);
         PooledObject p = (PooledObject) this.clone();
 
@@ -56,7 +56,7 @@ final class PooledObject implements Cloneable {
         p.raw = raw;
         p.rawClass = raw.getClass();
         p.state = state;
-        p.objectPool = objectPool;
+        p.pool = pool;
         p.lastAccessTime = currentTimeMillis();//first parkTime
         return p;
     }

@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class KeyedObjectPool implements BeeObjectPool {
 
-    private Map<Object, ObjectGenericPool> categoryMap = new ConcurrentHashMap<>();
+    private Map<Object, ObjectGenericPool> subPoolMap = new ConcurrentHashMap<>();
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
