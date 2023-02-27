@@ -9,10 +9,7 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectPool;
-import org.stone.beeop.BeeObjectPoolMonitorVo;
-import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.*;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Chris Liao
  * @version 1.0
  */
-public class KeyedObjectPool implements BeeObjectPool {
+public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
 
     private Map<Object, ObjectGenericPool> subPoolMap = new ConcurrentHashMap<>();
 
@@ -39,12 +36,14 @@ public class KeyedObjectPool implements BeeObjectPool {
     //***************************************************************************************************************//
     //borrow a object from pool
     public BeeObjectHandle getObjectHandle() throws Exception {
-        return null;
+        return getObjectHandle(null);
     }
 
     //borrow a object from pool
     public BeeObjectHandle getObjectHandle(Object key) throws Exception {
+        ObjectGenericPool pool = subPoolMap.get(key);
         return null;
+        //return pool.getObjectHandle();//@todo
     }
 
     //***************************************************************************************************************//
@@ -78,5 +77,44 @@ public class KeyedObjectPool implements BeeObjectPool {
     //remove all objects from pool
     public void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
 
+    }
+
+    //***************************************************************************************************************//
+    //                3: Jmx methods(6)                                                                              //                                                                                  //
+    //***************************************************************************************************************//
+    //return current size(using +idle)
+    public int getTotalSize() {
+        //@todo
+        return 0;
+    }
+
+    //return idle size
+    public int getIdleSize() {
+        //@todo
+        return 0;
+    }
+
+    //return using size
+    public int getUsingSize() {
+        //@todo
+        return 0;
+    }
+
+    //return semaphore acquired success size from pool
+    public int getSemaphoreAcquiredSize() {
+        //@todo
+        return 0;
+    }
+
+    //return waiting size to take semaphore synchronizer
+    public int getSemaphoreWaitingSize() {
+        //@todo
+        return 0;
+    }
+
+    //return waiter size for transferred object
+    public int getTransferWaitingSize() {
+        //@todo
+        return 0;
     }
 }
