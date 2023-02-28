@@ -42,7 +42,7 @@ public interface BeeConnectionPool {
     //close pool
     void close();
 
-    //check pool is closed
+    //check pool is whether closed
     boolean isClosed();
 
     //enable Runtime Log
