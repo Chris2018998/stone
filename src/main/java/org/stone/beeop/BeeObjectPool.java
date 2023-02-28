@@ -37,7 +37,7 @@ public interface BeeObjectPool {
     //close pool
     void close();
 
-    //check pool is closed
+    //check pool is whether closed
     boolean isClosed();
 
     //get pool monitor vo
