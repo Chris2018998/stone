@@ -44,6 +44,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private boolean fairMode;
     //size of object instance on pool starting
     private int initialSize;
+    //object key for initialized objects creation
+    private Object initialObjectKey;
     //indicator: true,creating initialized objects by async mode
     private boolean asyncCreateInitObject;
     //max reachable size of object instance in pool
@@ -142,6 +144,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize >= 0) this.initialSize = initialSize;
+    }
+
+    public Object getInitialObjectKey() {
+        return initialObjectKey;
+    }
+
+    public void setInitialObjectKey(Object initialObjectKey) {
+        this.initialObjectKey = initialObjectKey;
     }
 
     public boolean isAsyncCreateInitObject() {
