@@ -22,9 +22,6 @@ import org.stone.beeop.pool.exception.PoolInternalException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
@@ -80,7 +77,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private BeeObjectSourceConfig poolConfig;
     //clone block end
 
-
     //@need create during init method
     private String poolName;
     private PoolSemaphore semaphore;
@@ -93,11 +89,9 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue = new ConcurrentLinkedQueue<>();
     private Map<ObjectMethodKey, Method> methodCache = new ConcurrentHashMap<>(16);
 
-
     public void init(Object key, String keyPoolName) {
 
     }
-
 
     //***************************************************************************************************************//
     //                1: Pool initialize and Pooled object create/remove methods(4)                                  //                                                                                  //
@@ -689,47 +683,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return size;
     }
 
-    //Method-5.8: assembly pool to jmx
-    private void registerJmx() {
-        if (this.poolConfig.isEnableJmx()) {
-            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            this.registerJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName), this);
-            this.registerJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName), this.poolConfig);
-        }
-    }
-
-    //Method-5.9: jmx assembly
-    private void registerJmxBean(MBeanServer mBeanServer, String regName, Object bean) {
-        try {
-            ObjectName jmxRegName = new ObjectName(regName);
-            if (!mBeanServer.isRegistered(jmxRegName)) {
-                mBeanServer.registerMBean(bean, jmxRegName);
-            }
-        } catch (Exception e) {
-            Log.warn("BeeOP({})failed to assembly jmx-bean:{}", this.poolName, regName, e);
-        }
-    }
-
-    //Method-5.10: pool unregister from jmx
-    private void unregisterJmx() {
-        if (this.poolConfig.isEnableJmx()) {
-            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            this.unregisterJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName));
-            this.unregisterJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName));
-        }
-    }
-
-    //Method-5.11: jmx unregister
-    private void unregisterJmxBean(MBeanServer mBeanServer, String regName) {
-        try {
-            ObjectName jmxRegName = new ObjectName(regName);
-            if (mBeanServer.isRegistered(jmxRegName)) {
-                mBeanServer.unregisterMBean(jmxRegName);
-            }
-        } catch (Exception e) {
-            Log.warn("BeeOP({})failed to unregister jmx-bean:{}", this.poolName, regName, e);
-        }
-    }
 
     //Method-5.12 create controller vo
     private BeeObjectPoolMonitorVo createPoolMonitorVo() {
@@ -764,35 +717,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return this.monitorVo;
     }
 
-    //***************************************************************************************************************//
-    //                                  6: Pool inner interface/class(8)                                             //                                                                                  //
-    //***************************************************************************************************************//
-    //class-6.1: fair transfer impl
-    private static final class FairTransferPolicy implements ObjectTransferPolicy {
-        public final int getStateCodeOnRelease() {
-            return OBJECT_USING;
-        }
-
-        public final boolean tryCatch(PooledObject p) {
-            return p.state == OBJECT_USING;
-        }
-    }
-
-    //class-6.2: handle factory
-    private static class ObjectHandleFactory<E> {
-        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            b.lastUsed = p;
-            return new ObjectBaseHandle(p);
-        }
-    }
-
-    //class-6.3: supported proxy handle factory
-    private static class ObjectHandleWithProxyFactory extends ObjectHandleFactory {
-        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            b.lastUsed = p;
-            return new ObjectReflectHandle(p);
-        }
-    }
 
     //class-6.4: Borrower ThreadLocal
     private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<ObjectBorrower>> {
@@ -844,23 +768,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //class-6.8: JVM exit hook
-    private static class ObjectPoolHook extends Thread {
-        private final FastObjectPool pool;
-
-        ObjectPoolHook(FastObjectPool pool) {
-            this.pool = pool;
-        }
-
-        public void run() {
-            try {
-                Log.info("BeeOP({})exit-hook running", this.pool.poolName);
-                this.pool.close();
-            } catch (Throwable e) {
-                Log.error("BeeOP({})Error at closing pool,cause:", this.pool.poolName, e);
-            }
-        }
-    }
 
     final class PoolSemaphore extends Semaphore {
         PoolSemaphore(int permits, boolean fair) {
