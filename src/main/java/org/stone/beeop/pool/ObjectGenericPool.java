@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -43,18 +44,18 @@ import java.util.concurrent.locks.ReentrantLock;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
- * Object Pool Implementation
+ * Object Generic Pool Implementation
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class ObjectGenericPool implements Runnable {
+public final class ObjectGenericPool implements Runnable, Cloneable {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectGenericPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectGenericPool.class, "poolState");
     private static final Logger Log = LoggerFactory.getLogger(ObjectGenericPool.class);
 
-    private String poolName;
+    //clone block begin
     private String poolMode;
     private String poolHostIP;
     private long poolThreadId;
@@ -63,38 +64,40 @@ public final class ObjectGenericPool implements Runnable {
     private volatile int poolState;
     private boolean isFairMode;
     private boolean isCompeteMode;
-
     private int semaphoreSize;
-    private PoolSemaphore semaphore;
     private long maxWaitNs;//nanoseconds
     private long idleTimeoutMs;//milliseconds
     private long holdTimeoutMs;//milliseconds
-
     private int stateCodeOnRelease;
     private long validAssumeTime;//milliseconds
     private int validTestTimeout;//seconds
     private long delayTimeForNextClearNs;//nanoseconds
-    private RawObjectFactory<E> objectFactory;
-
-    private PooledObject<E> templatePooledObject;
+    private RawObjectFactory objectFactory;
+    private PooledObject templatePooledObject;
     private ObjectTransferPolicy transferPolicy;
-    private ObjectHandleFactory<E> handleFactory;
-
-    private ReentrantLock pooledArrayLock;
-    private volatile PooledObject[] pooledArray;
-
-    private AtomicInteger servantState;
-    private AtomicInteger servantTryCount;
-    private AtomicInteger idleScanState;
-    private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
-    private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
-    private Map<ObjectMethodKey, Method> methodCache;
-    private BeeObjectSourceConfig poolConfig;
-    private ObjectPoolMonitorVo monitorVo;
-    private ObjectPoolHook exitHook;
+    private ObjectHandleFactory handleFactory;
     private boolean printRuntimeLog;
+    private BeeObjectSourceConfig poolConfig;
+    //clone block end
 
-    private IdleTimeoutScanThread idleScanThread;
+
+    //@need create during init method
+    private String poolName;
+    private PoolSemaphore semaphore;
+    private ObjectPoolMonitorVo monitorVo = new ObjectPoolMonitorVo();
+    private AtomicInteger servantState = new AtomicInteger(0);
+    private AtomicInteger servantTryCount = new AtomicInteger(0);
+    private ReentrantLock pooledArrayLock = new ReentrantLock();
+    private volatile PooledObject[] pooledArray = new PooledObject[0];
+    private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal = new ThreadLocal<>();
+    private ConcurrentLinkedQueue<ObjectBorrower> waitQueue = new ConcurrentLinkedQueue<>();
+    private Map<ObjectMethodKey, Method> methodCache = new ConcurrentHashMap<>(16);
+
+
+    public void init(Object key, String keyPoolName) {
+
+    }
+
 
     //***************************************************************************************************************//
     //                1: Pool initialize and Pooled object create/remove methods(4)                                  //                                                                                  //
@@ -777,17 +780,17 @@ public final class ObjectGenericPool implements Runnable {
 
     //class-6.2: handle factory
     private static class ObjectHandleFactory<E> {
-        BeeObjectHandle createHandle(PooledObject<E> p, ObjectBorrower b) {
+        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             b.lastUsed = p;
-            return new ObjectBaseHandle<E>(p);
+            return new ObjectBaseHandle(p);
         }
     }
 
     //class-6.3: supported proxy handle factory
-    private static class ObjectHandleWithProxyFactory<E> extends ObjectHandleFactory<E> {
-        BeeObjectHandle createHandle(PooledObject<E> p, ObjectBorrower b) {
+    private static class ObjectHandleWithProxyFactory extends ObjectHandleFactory {
+        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             b.lastUsed = p;
-            return new ObjectProxyHandle<E>(p);
+            return new ObjectReflectHandle(p);
         }
     }
 
@@ -797,7 +800,6 @@ public final class ObjectGenericPool implements Runnable {
             return new WeakReference<ObjectBorrower>(new ObjectBorrower());
         }
     }
-
 
     //class-6.6: add new objects on pool initialized by asynchronization
     private static final class PoolInitAsynCreateThread extends Thread {
@@ -856,6 +858,21 @@ public final class ObjectGenericPool implements Runnable {
                 this.pool.close();
             } catch (Throwable e) {
                 Log.error("BeeOP({})Error at closing pool,cause:", this.pool.poolName, e);
+            }
+        }
+    }
+
+    final class PoolSemaphore extends Semaphore {
+        PoolSemaphore(int permits, boolean fair) {
+            super(permits, fair);
+        }
+
+        void interruptWaitingThreads() {
+            for (Thread thread : getQueuedThreads()) {
+                Thread.State state = thread.getState();
+                if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                    thread.interrupt();
+                }
             }
         }
     }
