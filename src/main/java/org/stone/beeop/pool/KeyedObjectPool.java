@@ -184,22 +184,6 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
         }
     }
 
-    //class-6.2: handle factory
-    private static class ObjectHandleFactory<E> {
-        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            b.lastUsed = p;
-            return new ObjectBaseHandle(p);
-        }
-    }
-
-    //class-6.3: supported proxy handle factory
-    private static class ObjectHandleWithProxyFactory extends ObjectHandleFactory {
-        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            b.lastUsed = p;
-            return new ObjectReflectHandle(p);
-        }
-    }
-
     //class-6.8: JVM exit hook
     private static class ObjectPoolHook extends Thread {
         private final KeyedObjectPool pool;
