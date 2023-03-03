@@ -634,11 +634,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             throw new BeeDataSourceConfigException("validTestSql must be start with 'select '");
         }
 
-        if (connectionFactory == null) connectionFactory = createConnectionFactory();
+        Object tempConnectionFactory = null;
+        if (this.connectionFactory == null) tempConnectionFactory = createConnectionFactory();
         if (isBlank(poolName)) poolName = "FastPool-" + BeeDataSourceConfig.PoolNameIndex.getAndIncrement();
 
         BeeDataSourceConfig configCopy = new BeeDataSourceConfig();
         copyTo(configCopy);
+
+        if (tempConnectionFactory != null) configCopy.connectionFactory = tempConnectionFactory;
         return configCopy;
     }
 
@@ -691,6 +694,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     //create Connection factory
     private Object createConnectionFactory() throws SQLException {
+        //step1:if exists object factory,then return it
+        if (this.connectionFactory != null) return this.connectionFactory;
+
+        //step2:create connection factory by driver
         PasswordDecoder passwordDecoder = this.createPasswordDecoder();
         if (this.connectionFactoryClass == null && isBlank(this.connectionFactoryClassName)) {
             if (isBlank(this.jdbcUrl)) throw new BeeDataSourceConfigException("jdbcUrl can't be null");
@@ -717,7 +724,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 configProperties.setProperty("password", tempPassword);
             }
             return new ConnectionFactoryByDriver(this.jdbcUrl, connectDriver, configProperties);
-        } else {
+        } else {//step3:create connection factory by connection factory class
             try {
                 //1:load connection factory by class name
                 Class<?> conFactClass = this.connectionFactoryClass != null ? this.connectionFactoryClass : Class.forName(this.connectionFactoryClassName);
