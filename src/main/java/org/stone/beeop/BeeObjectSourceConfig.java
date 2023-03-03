@@ -613,13 +613,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     private RawObjectFactory tryCreateObjectFactory(Class[] objectInterfaces) {
-        RawObjectFactory rawObjectFactory = null;
-
         //1:if exists object factory,then return it
-        if (this.objectFactory != null) rawObjectFactory = objectFactory;
+        if (this.objectFactory != null) return this.objectFactory;
 
+        RawObjectFactory rawObjectFactory = null;
         //2:if factory class exists,then try to create by it
-        if (rawObjectFactory == null && objectFactoryClass != null) {
+        if (objectFactoryClass != null) {
             try {
                 rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
             } catch (Throwable e) {
