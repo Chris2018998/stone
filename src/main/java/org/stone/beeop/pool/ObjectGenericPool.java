@@ -144,26 +144,23 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
         p.poolName = poolConfig.getPoolName() + "[" + key.toString() + "]";
-        p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
-        p.threadLocal = new BorrowerThreadLocal();
         p.pooledArrayLock = new ReentrantLock();
         p.pooledArray = new PooledObject[0];
+        if (createInitObjects && this.poolInitSize > 0) {
+            if (!poolConfig.isAsyncCreateInitObject())
+                this.createInitObjects(poolInitSize, !poolConfig.isAsyncCreateInitObject());
+        }
 
-        p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
+        p.threadLocal = new BorrowerThreadLocal();
         p.monitorVo = new ObjectPoolMonitorVo();
-        p.servantState = new AtomicInteger(0);
-        p.servantTryCount = new AtomicInteger(0);
-        p.pooledArrayLock = new ReentrantLock();
-        p.pooledArray = new PooledObject[0];
-        p.threadLocal = new ThreadLocal<>();
+        p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         p.waitQueue = new ConcurrentLinkedQueue<>();
         p.methodCache = new ConcurrentHashMap<>(16);
+        p.servantState = new AtomicInteger(0);
+        p.servantTryCount = new AtomicInteger(0);
         if (createInitObjects && this.poolInitSize > 0) {
-            if (poolConfig.isAsyncCreateInitObject()) {
+            if (poolConfig.isAsyncCreateInitObject())
                 new PoolInitAsynCreateThread(this).start();
-            } else {
-                this.createInitObjects(poolInitSize, !poolConfig.isAsyncCreateInitObject());
-            }
         }
         p.poolState = POOL_READY;
 
