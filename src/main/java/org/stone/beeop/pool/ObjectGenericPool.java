@@ -74,10 +74,10 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;
     private final KeyedObjectPool parentPool;
-    private BeeObjectSourceConfig poolConfig;
+    private final BeeObjectSourceConfig poolConfig;
     //clone block end
 
-    //@need create during init method
+    //set in clone method
     private Object key;
     private String poolName;
     private volatile int poolState;
@@ -92,7 +92,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private Map<ObjectMethodKey, Method> methodCache;
 
     //***************************************************************************************************************//
-    //                1: Pool Creation/clone(2)                                                                            //
+    //                1: Pool Creation/clone(2)                                                                      //
     //***************************************************************************************************************//
     //method-1.1: constructor for clone
     ObjectGenericPool(BeeObjectSourceConfig config, KeyedObjectPool keyedObjectPool) {
@@ -142,7 +142,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     //method-1.2: creation from clone and init
     ObjectGenericPool cloneAndInit(Object key, String keyPoolName, boolean createInitObjects) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
-
         p.key = key;
         p.poolName = poolName + "(" + key.toString() + ")";
         p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
