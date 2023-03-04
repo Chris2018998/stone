@@ -188,6 +188,4 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
             }
         }
     }
-
-
 }
