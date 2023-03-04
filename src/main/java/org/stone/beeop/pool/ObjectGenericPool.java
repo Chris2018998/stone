@@ -82,7 +82,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private String poolName;
     private volatile int poolState;
     private PoolSemaphore semaphore;
-    private ObjectPoolMonitorVo monitorVo;
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
     private ReentrantLock pooledArrayLock;
@@ -90,6 +89,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
     private Map<ObjectMethodKey, Method> methodCache;
+    private ObjectPoolMonitorVo monitorVo;
 
     //***************************************************************************************************************//
     //                1: Pool Creation/clone(2)                                                                      //
@@ -139,8 +139,8 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //method-1.2: creation from clone and init
-    ObjectGenericPool cloneAndInit(Object key, boolean createInitObjects) throws Exception {
+    //method-1.2: creation from clone and init(this method called by clone object in keyed pool)
+    ObjectGenericPool createByClone(Object key, boolean createInitObjects) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
         p.poolName = poolConfig.getPoolName() + "[" + key.toString() + "]";
@@ -148,7 +148,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         p.pooledArray = new PooledObject[0];
         if (createInitObjects && this.poolInitSize > 0) {
             if (!poolConfig.isAsyncCreateInitObject())
-                this.createInitObjects(poolInitSize, !poolConfig.isAsyncCreateInitObject());
+                this.createInitObjects(poolInitSize, true);
         }
 
         p.threadLocal = new BorrowerThreadLocal();
@@ -175,9 +175,9 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                2: Pool initialize and Pooled object create/remove methods(4)                                  //                                                                                  //
+    //                2: Pooled object create/remove methods(3)                                                     //                                                                                  //
     //***************************************************************************************************************//
-    //Method-1.3: create specified size objects to pool,if zero,then try to create one
+    //Method-2.1: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
         try {
             for (int i = 0; i < initSize; i++)
@@ -197,7 +197,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //Method-1.4: create one pooled object
+    //Method-2.2: create one pooled object
     private PooledObject createPooledEntry(int state) throws Exception {
         //1:try to acquire lock
         try {
@@ -237,7 +237,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //Method-1.5: remove one pooled object
+    //Method-2.3: remove one pooled object
     private void removePooledEntry(PooledObject p, String removeType) {
         if (this.printRuntimeLog)
             Log.info("BeeOP({}))begin to remove a pooled object:{},reason:{}", this.poolName, p, removeType);
@@ -263,11 +263,11 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                  2: Pooled object borrow and release methods(8)                                               //                                                                                  //
+    //                  3: Pooled object borrow and release methods(8)                                               //                                                                                  //
     //***************************************************************************************************************//
 
     /**
-     * Method-2.1:borrow one object from pool,if search one idle object in pool,then try to catch it and return it
+     * Method-3.1:borrow one object from pool,if search one idle object in pool,then try to catch it and return it
      * if not search,then wait until other borrowers release objects or wait timeout
      *
      * @return pooled object,
@@ -329,8 +329,10 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
                 } else {//here:(state == null)
                     long t = deadline - System.nanoTime();
                     if (t > 0L) {
-                        if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
-                            LockSupport.unpark(this);
+                        if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+                            //@todo
+                            //LockSupport.unpark(this);
+                        }
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
@@ -345,7 +347,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //Method-2.2: search one idle Object,if not found,then try to create one
+    //Method-3.2: search one idle Object,if not found,then try to create one
     private PooledObject searchOrCreate() throws Exception {
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array) {
@@ -357,18 +359,20 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return null;
     }
 
-    //Method-2.3: try to wakeup servant thread to work if it waiting
+    //Method-3.3: try to wakeup servant thread to work if it waiting
     private void tryWakeupServantThread() {
         int c;
         do {
             c = this.servantTryCount.get();
             if (c >= this.poolMaxSize) return;
         } while (!this.servantTryCount.compareAndSet(c, c + 1));
-        if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
-            LockSupport.unpark(this);
+        if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+            //@todo
+            //LockSupport.unpark(this);
+        }
     }
 
-    //Method-2.4: return object to pool after borrower end of use object
+    //Method-3.4: return object to pool after borrower end of use object
     public final void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
         Iterator<ObjectBorrower> iterator = waitQueue.iterator();
@@ -386,9 +390,8 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         tryWakeupServantThread();
     }
 
-
     /**
-     * Method-2.5:when object create failed,creator thread will transfer caused exception to one waiting borrower,
+     * Method-3.5:when object create failed,creator thread will transfer caused exception to one waiting borrower,
      * which will exit wait and throw this exception.
      *
      * @param e: transfer Exception to waiter
@@ -405,15 +408,15 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //Method-2.6: remove object when exception occur in return
+    //Method-3.6: remove object when exception occur in return
     public void abandonOnReturn(PooledObject p) {
         this.removePooledEntry(p, DESC_RM_BAD);
         this.tryWakeupServantThread();
     }
 
-    //Method-2.7: check object alive state,if not alive then remove it from pool
-    private boolean testOnBorrow(PooledObject<E> p) {
-        if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(p.raw, this.validTestTimeout)) {
+    //Method-3.7: check object alive state,if not alive then remove it from pool
+    private boolean testOnBorrow(PooledObject p) {
+        if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
             this.removePooledEntry(p, DESC_RM_BAD);
             this.tryWakeupServantThread();
             return false;
@@ -422,16 +425,8 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    public final int getStateCodeOnRelease() {
-        return OBJECT_IDLE;
-    }
-
-    public final boolean tryCatch(PooledObject p) {
-        return p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
-    }
-
     //***************************************************************************************************************//
-    //               3: Pooled object idle-timeout/hold-timeout scan methods(4)                                      //                                                                                  //
+    //               4: Pooled object idle-timeout/hold-timeout scan methods(4)                                      //                                                                                  //
     //***************************************************************************************************************//
     //Method-3.1: check whether exists borrows under semaphore
     private boolean existBorrower() {
