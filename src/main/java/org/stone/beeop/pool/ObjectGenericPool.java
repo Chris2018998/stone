@@ -68,15 +68,15 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
     private final long delayTimeForNextClearNs;//nanoseconds
-    private final boolean printRuntimeLog;
     private final RawObjectFactory objectFactory;
     private final PooledObject templatePooledObject;
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;
     private final KeyedObjectPool parentPool;
     private final BeeObjectSourceConfig poolConfig;
+    private boolean printRuntimeLog;
     //clone block end
-
+    
     //set in clone method
     private Object key;
     private String poolName;
@@ -433,40 +433,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return this.semaphoreSize > this.semaphore.availablePermits();
     }
 
-    //Method-3.2 shutdown two work threads in pool
-    private void shutdownPoolThread() {
-        int curState = this.servantState.get();
-        this.servantState.set(THREAD_EXIT);
-        if (curState == THREAD_WAITING) LockSupport.unpark(this);
-
-        curState = this.idleScanState.get();
-        this.idleScanState.set(THREAD_EXIT);
-        if (curState == THREAD_WAITING) LockSupport.unpark(this.idleScanThread);
-    }
-
-    //Method-3.3: pool servant thread run method
-    public void run() {
-        while (poolState != POOL_CLOSED) {
-            while (servantState.get() == THREAD_WORKING) {
-                int c = servantTryCount.get();
-                if (c <= 0 || (waitQueue.isEmpty() && servantTryCount.compareAndSet(c, 0))) break;
-                servantTryCount.decrementAndGet();
-
-                try {
-                    PooledObject p = searchOrCreate();
-                    if (p != null) recycle(p);
-                } catch (Throwable e) {
-                    this.transferException(e);
-                }
-            }
-
-            if (servantState.get() == THREAD_EXIT)
-                break;
-            if (servantTryCount.get() == 0 && servantState.compareAndSet(THREAD_WORKING, THREAD_WAITING))
-                LockSupport.park();
-        }
-    }
-
     /**
      * Method-3.4: inner timer will call the method to removeAllObjects some idle timeout objects
      * or dead objects,or long parkTime not active objects in using state
@@ -474,7 +440,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private void closeIdleTimeoutPooledEntry() {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
-            ObjectPoolMonitorVo vo = getPoolMonitorVo();
+            BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})-before idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
@@ -506,33 +472,20 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
 
         //step3: print pool info after idle clean
         if (this.printRuntimeLog) {
-            ObjectPoolMonitorVo vo = getPoolMonitorVo();
+            BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})-after idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
     //***************************************************************************************************************//
-    //                                      4: Pool removeAllObjects/close methods(5)                                         //                                                                                  //
+    //                                      4: Pool removeAllObjects/close methods(5)                                //                                                                                  //
     //***************************************************************************************************************//
-    //Method-4.1: remove all object from pool
-    public void restart(boolean forceCloseUsing) throws Exception {
-        this.restart(forceCloseUsing, null);
-    }
-
     //Method-4.2: remove all object from pool
-    public void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        BeeObjectSourceConfig tempConfig = null;
-        if (config != null) tempConfig = config.check();
+    public void restart(boolean forceCloseUsing) throws Exception {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeOP({})begin to remove all objects", this.poolName);
             this.removeAllObjects(forceCloseUsing, DESC_RM_CLEAR);
             Log.info("BeeOP({})has removed all objects", this.poolName);
-
-            if (tempConfig != null) {
-                this.poolConfig = tempConfig;
-                startup(this.poolConfig);
-            }
-
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})pool has restarted", this.poolName);
         }
@@ -570,7 +523,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         } // while
 
         if (this.printRuntimeLog) {
-            ObjectPoolMonitorVo vo = getPoolMonitorVo();
+            BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
@@ -587,14 +540,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
             if ((poolStateCode == POOL_NEW || poolStateCode == POOL_READY) && PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSED)) {
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
                 this.removeAllObjects(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
-                this.unregisterJmx();
-                this.shutdownPoolThread();
-
-                try {
-                    Runtime.getRuntime().removeShutdownHook(this.exitHook);
-                } catch (Throwable e) {
-                    //do nothing
-                }
                 Log.info("BeeOP({})has shutdown", this.poolName);
                 break;
             } else if (poolStateCode == POOL_CLOSED) {
@@ -775,4 +720,40 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
             }
         }
     }
+
+
+//    //Method-3.2 shutdown two work threads in pool
+//    private void shutdownPoolThread() {
+//        int curState = this.servantState.get();
+//        this.servantState.set(THREAD_EXIT);
+//        if (curState == THREAD_WAITING) LockSupport.unpark(this);
+//
+//        curState = this.idleScanState.get();
+//        this.idleScanState.set(THREAD_EXIT);
+//        if (curState == THREAD_WAITING) LockSupport.unpark(this.idleScanThread);
+//    }
+
+//    //Method-3.3: pool servant thread run method
+//    public void run() {
+//        while (poolState != POOL_CLOSED) {
+//            while (servantState.get() == THREAD_WORKING) {
+//                int c = servantTryCount.get();
+//                if (c <= 0 || (waitQueue.isEmpty() && servantTryCount.compareAndSet(c, 0))) break;
+//                servantTryCount.decrementAndGet();
+//
+//                try {
+//                    PooledObject p = searchOrCreate();
+//                    if (p != null) recycle(p);
+//                } catch (Throwable e) {
+//                    this.transferException(e);
+//                }
+//            }
+//
+//            if (servantState.get() == THREAD_EXIT)
+//                break;
+//            if (servantTryCount.get() == 0 && servantState.compareAndSet(THREAD_WORKING, THREAD_WAITING))
+//                LockSupport.park();
+//        }
+//    }
+
 }
