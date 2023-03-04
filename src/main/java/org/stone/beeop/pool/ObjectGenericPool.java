@@ -140,10 +140,10 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //method-1.2: creation from clone and init
-    ObjectGenericPool cloneAndInit(Object key, String keyPoolName, boolean createInitObjects) throws Exception {
+    ObjectGenericPool cloneAndInit(Object key, boolean createInitObjects) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
-        p.poolName = poolName + "(" + key.toString() + ")";
+        p.poolName = poolConfig.getPoolName() + "[" + key.toString() + "]";
         p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         p.threadLocal = new BorrowerThreadLocal();
         p.pooledArrayLock = new ReentrantLock();
@@ -158,7 +158,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         p.threadLocal = new ThreadLocal<>();
         p.waitQueue = new ConcurrentLinkedQueue<>();
         p.methodCache = new ConcurrentHashMap<>(16);
-        if (this.poolInitSize > 0 && createInitObjects) {
+        if (createInitObjects && this.poolInitSize > 0) {
             if (poolConfig.isAsyncCreateInitObject()) {
                 new PoolInitAsynCreateThread(this).start();
             } else {
