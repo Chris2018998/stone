@@ -325,7 +325,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
-    public Object getObjectFactory() {
+    public RawObjectFactory getObjectFactory() {
         return this.objectFactory;
     }
 
