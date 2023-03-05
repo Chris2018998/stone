@@ -86,7 +86,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private long timerCheckInterval = MINUTES.toMillis(3);
     //close indicator of connections in using on pool clean
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay parkTime for next restart using connections util them return to pool,when<config>forceCloseUsingOnClear</config> is false
+    //milliseconds:delay parkTime for next clear using connections util them return to pool,when<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
 
     //connection default value:catalog <code>Connection.setAutoCommit(String)</code>

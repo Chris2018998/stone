@@ -18,7 +18,7 @@ import java.sql.SQLException;
 import static org.stone.util.CommonUtil.isBlank;
 
 /**
- * Raw connection factory by dsnode implementation in driver package
+ * Raw connection factory by datasource implementation in driver package
  *
  * @author Chris.liao
  * @version 1.0

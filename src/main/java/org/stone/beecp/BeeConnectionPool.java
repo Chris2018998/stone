@@ -51,11 +51,11 @@ public interface BeeConnectionPool {
     //get pool monitor vo
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    void restart(boolean forceCloseUsing) throws SQLException;
+    //clear all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    void clear(boolean forceCloseUsing) throws SQLException;
 
-    //restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    void restart(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
+    //clear all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
 
 }
 	

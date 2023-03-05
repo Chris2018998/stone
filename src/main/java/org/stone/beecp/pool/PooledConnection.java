@@ -187,7 +187,7 @@ final class PooledConnection implements Cloneable {
             this.resetCnt = 0;
             System.arraycopy(PooledConnection.FALSE, 0, this.resetFlags, 0, 6);
         }//reset end
-        //restart warnings
+        //clear warnings
         this.rawConn.clearWarnings();
     }
 
@@ -206,7 +206,7 @@ final class PooledConnection implements Cloneable {
             if (s == this.openStatements[i]) {
                 int m = this.openStmSize - i - 1;
                 if (m > 0) System.arraycopy(this.openStatements, i + 1, this.openStatements, i, m);//move ahead
-                this.openStatements[--this.openStmSize] = null; // restart to let GC do its work
+                this.openStatements[--this.openStmSize] = null; // clear to let GC do its work
                 return;
             }
         }

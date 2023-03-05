@@ -168,11 +168,11 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
     }
 
     //******************************** JMX **************************************//
-    public void restart(boolean force) {
+    public void clear(boolean force) {
         //do nothing
     }
 
-    public void restart(boolean force, BeeDataSourceConfig config) {
+    public void clear(boolean force, BeeDataSourceConfig config) {
         //do nothing
     }
 

@@ -647,7 +647,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-3.4: inner timer will call the method to restart some idle timeout connections
+     * Method-3.4: inner timer will call the method to clear some idle timeout connections
      * or dead connections,or long parkTime not active connections in using state
      */
     private void closeIdleTimeoutConnection() {
@@ -691,15 +691,15 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //***************************************************************************************************************//
-    //                                  4: Pool restart/close methods(5)                                               //                                                                                  //
+    //                                  4: Pool clear/close methods(5)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-4.1: remove all connections from pool
-    public void restart(boolean forceCloseUsing) throws SQLException {
-        restart(forceCloseUsing, null);
+    public void clear(boolean forceCloseUsing) throws SQLException {
+        clear(forceCloseUsing, null);
     }
 
-    //Method-4.2: restart all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
-    public void restart(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
+    //Method-4.2: clear all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
+    public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
         BeeDataSourceConfig tempConfig = null;
         if (config != null) tempConfig = config.check();
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
@@ -720,7 +720,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-4.3: remove all connections from pool
     private void removeAllConnections(boolean force, String source) {
         this.semaphore.interruptWaitingThreads();
-        PoolClosedException exception = new PoolClosedException("Pool has shutdown or in restarting");
+        PoolClosedException exception = new PoolClosedException("Pool has been in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(exception);
 
         while (this.pooledArray.length > 0) {

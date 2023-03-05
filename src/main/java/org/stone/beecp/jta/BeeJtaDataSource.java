@@ -11,7 +11,6 @@ package org.stone.beecp.jta;
 
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.pool.FastConnectionPoolMonitorVo;
 
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
@@ -131,7 +130,7 @@ public class BeeJtaDataSource extends TimerTask implements DataSource {
 
     public void clear(boolean force) throws SQLException {
         checkDataSource();
-        this.ds.restartPool(force);
+        this.ds.clear(force);
     }
 
     public boolean isClosed() throws SQLException {

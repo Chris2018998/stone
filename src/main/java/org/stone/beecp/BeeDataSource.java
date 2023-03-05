@@ -9,7 +9,6 @@
  */
 package org.stone.beecp;
 
-import org.stone.beecp.pool.FastConnectionPoolMonitorVo;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreateException;
 
@@ -194,15 +193,15 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.pool.getPoolMonitorVo();
     }
 
-    public void restartPool(boolean forceCloseUsing) throws SQLException {
+    public void clear(boolean forceCloseUsing) throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
-        this.pool.restart(forceCloseUsing);
+        this.pool.clear(forceCloseUsing);
     }
 
-    public void restartPool(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
+    public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
         if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
         if (config == null) throw new PoolNotCreateException("Connection pool config can't be null");
-        this.pool.restart(forceCloseUsing, config);
+        this.pool.clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
