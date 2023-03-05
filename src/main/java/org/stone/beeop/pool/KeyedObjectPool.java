@@ -18,6 +18,7 @@ import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -126,7 +127,30 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     }
 
-//    //Method-5.8: assembly pool to jmx
+    void closeIdleTimeout() {
+        Iterator<ObjectGenericPool> iterator = genericPoolMap.values().iterator();
+        while (iterator.hasNext()) {
+            iterator.next().closeIdleTimeout();
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                3: Jmx methods(6)                                                                              //                                                                                  //
+    //***************************************************************************************************************//
+    //return current size(using +idle)
+    public int getTotalSize() {
+        //@todo
+        return 0;
+    }
+
+    //return idle size
+    public int getIdleSize() {
+        //@todo
+        return 0;
+    }
+
+
+    //    //Method-5.8: assembly pool to jmx
 //    private void registerJmx() {
 //        if (this.poolConfig.isEnableJmx()) {
 //            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
@@ -168,21 +192,6 @@ public class KeyedObjectPool implements BeeObjectPool {
 //        }
 //    }
 
-    //***************************************************************************************************************//
-    //                3: Jmx methods(6)                                                                              //                                                                                  //
-    //***************************************************************************************************************//
-    //return current size(using +idle)
-    public int getTotalSize() {
-        //@todo
-        return 0;
-    }
-
-    //return idle size
-    public int getIdleSize() {
-        //@todo
-        return 0;
-    }
-
     //return using size
     public int getUsingSize() {
         //@todo
@@ -210,7 +219,21 @@ public class KeyedObjectPool implements BeeObjectPool {
     //***************************************************************************************************************//
     //                                  6: Pool inner interface/class(8)                                             //                                                                                  //
     //***************************************************************************************************************//
-    //class-6.8: JVM exit hook
+    private static class IdleClearTask implements Runnable {
+        private final KeyedObjectPool pool;
+
+        IdleClearTask(KeyedObjectPool pool) {
+            this.pool = pool;
+        }
+
+        public void run() {
+            try {
+                this.pool.closeIdleTimeout();
+            } catch (Throwable e) {
+            }
+        }
+    }
+
     private static class ObjectPoolHook extends Thread {
         private final KeyedObjectPool pool;
 
