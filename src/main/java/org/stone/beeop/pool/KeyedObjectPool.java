@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
-    private final Map<Object, ObjectGenericPool> subPoolMap = new ConcurrentHashMap<>();
+    private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>();
     private String poolName;
     private BeeObjectSourceConfig poolConfig;
 
@@ -49,7 +49,7 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
 
     //borrow a object from pool
     public BeeObjectHandle getObjectHandle(Object key) throws Exception {
-        ObjectGenericPool pool = subPoolMap.get(key);
+        ObjectGenericPool pool = genericPoolMap.get(key);
         return pool.getObjectHandle();
     }
 
