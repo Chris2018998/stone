@@ -426,7 +426,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //               4: Idle-timeout and hold-timeout clear                                                          //                                                                                  //
+    //                          4: Idle-timeout and hold-timeout clear                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-4.1: check whether exists borrows under semaphore
     private boolean existBorrowers() {
@@ -438,7 +438,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})-before idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})-before idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2: remove idle timeout and hold timeout
@@ -470,25 +470,25 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         //step3: print pool info after idle clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})-after idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})-after idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
     //***************************************************************************************************************//
-    //                                      4: Pooled objects clear(2)                                               //                                                                                  //
+    //                                      5: Pooled objects clear(2)                                               //                                                                                  //
     //***************************************************************************************************************//
-    //Method-4.1: remove all object from pool
+    //Method-5.1: remove all object from pool
     void clear(boolean forceCloseUsing) throws Exception {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
-            Log.info("BeeOP({})begin to remove all objects", this.poolName);
+            Log.info("BeeOP({})begin to clear all objects", this.poolName);
             this.clear(forceCloseUsing, DESC_RM_CLEAR);
-            Log.info("BeeOP({})has removed all objects", this.poolName);
+            Log.info("BeeOP({})has clear all objects", this.poolName);
             this.poolState = POOL_READY;// restore state;
-            Log.info("BeeOP({})pool has restarted", this.poolName);
+            Log.info("BeeOP({})pool has cleared all objects", this.poolName);
         }
     }
 
-    //Method-4.2: remove all connections from pool
+    //Method-5.2: remove all connections from pool
     private void clear(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
         PoolClosedException poolClearException = new PoolClosedException("Pool has been in clearing");
@@ -526,18 +526,21 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
 
-    //Method-4.4: closed check
+    //***************************************************************************************************************//
+    //                                      6: Pooled close (2)                                                      //                                                                                  //
+    //***************************************************************************************************************//
+    //Method-6.1: closed check
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
     }
 
-    // Method-4.5: close pool
+    // Method-6.2: close pool
     public void close() {
         do {
             int poolStateCode = this.poolState;
             if ((poolStateCode == POOL_NEW || poolStateCode == POOL_READY) && PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSED)) {
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
-                this.removeAllObjects(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
+                this.clear(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
                 Log.info("BeeOP({})has shutdown", this.poolName);
                 break;
             } else if (poolStateCode == POOL_CLOSED) {
@@ -549,22 +552,17 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                       5: Pool controller/jmx methods(12)                                      //                                                                                  //
+    //                                       7: Pool monitor(5)                                                      //                                                                                  //
     //***************************************************************************************************************//
-
-
-    //Method-5.1: set pool info debug switch
     public void setPrintRuntimeLog(boolean indicator) {
         printRuntimeLog = indicator;
     }
 
-    //Method-5.2: size of all pooled object
-    public int getTotalSize() {
+    private int getTotalSize() {
         return this.pooledArray.length;
     }
 
-    //Method-5.3: size of idle pooled object
-    public int getIdleSize() {
+    private int getIdleSize() {
         int idleSize = 0;
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array)
@@ -572,24 +570,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return idleSize;
     }
 
-    //Method-5.4: size of using pooled connections
-    public int getUsingSize() {
-        int active = this.pooledArray.length - this.getIdleSize();
-        return (active > 0) ? active : 0;
-    }
-
-    //Method-5.5: waiting size for semaphore
-    public int getSemaphoreAcquiredSize() {
-        return this.poolConfig.getBorrowSemaphoreSize() - this.semaphore.availablePermits();
-    }
-
-    //Method-5.6: using size of semaphore permit
-    public int getSemaphoreWaitingSize() {
-        return this.semaphore.getQueueLength();
-    }
-
-    //Method-5.7: waiting size in transfer queue
-    public int getTransferWaitingSize() {
+    private int getTransferWaitingSize() {
         int size = 0;
         for (ObjectBorrower borrower : this.waitQueue) {
             if (borrower.state == null) size++;
@@ -597,7 +578,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return size;
     }
 
-    //Method-5.13: pool controller vo
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
@@ -611,11 +591,14 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         monitorVo.setPoolState(poolState);
         monitorVo.setIdleSize(idleSize);
         monitorVo.setUsingSize(totSize - idleSize);
-        monitorVo.setSemaphoreWaitingSize(this.getSemaphoreWaitingSize());
-        monitorVo.setTransferWaitingSize(this.getTransferWaitingSize());
+        monitorVo.setSemaphoreWaitingSize(this.semaphore.getQueueLength());
+        monitorVo.setTransferWaitingSize(getTransferWaitingSize());
         return this.monitorVo;
     }
 
+    //***************************************************************************************************************//
+    //                                       7: Inner Classes(7)                                                     //                                                                                  //
+    //***************************************************************************************************************//
     private static class ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             b.lastUsed = p;
@@ -630,7 +613,12 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //class-6.1: fair transfer impl
+    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<ObjectBorrower>> {
+        protected WeakReference<ObjectBorrower> initialValue() {
+            return new WeakReference<ObjectBorrower>(new ObjectBorrower());
+        }
+    }
+
     private static final class FairTransferPolicy implements ObjectTransferPolicy {
         public final int getStateCodeOnRelease() {
             return OBJECT_USING;
@@ -641,7 +629,6 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //class-6.1: fair transfer impl
     private static final class CompeteTransferPolicy implements ObjectTransferPolicy {
         public final int getStateCodeOnRelease() {
             return OBJECT_IDLE;
@@ -652,18 +639,25 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //class-6.4: Borrower ThreadLocal
-    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<ObjectBorrower>> {
-        protected WeakReference<ObjectBorrower> initialValue() {
-            return new WeakReference<ObjectBorrower>(new ObjectBorrower());
+    private static class PoolSemaphore extends Semaphore {
+        PoolSemaphore(int permits, boolean fair) {
+            super(permits, fair);
+        }
+
+        void interruptWaitingThreads() {
+            for (Thread thread : getQueuedThreads()) {
+                Thread.State state = thread.getState();
+                if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                    thread.interrupt();
+                }
+            }
         }
     }
 
-    //class-6.6: add new objects on pool initialized by asynchronization
     private static final class PoolInitAsynCreateThread extends Thread {
         private final ObjectGenericPool pool;
 
-        public PoolInitAsynCreateThread(ObjectGenericPool pool) {
+        PoolInitAsynCreateThread(ObjectGenericPool pool) {
             this.pool = pool;
         }
 
@@ -679,79 +673,4 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
             }
         }
     }
-
-
-//    //class-6.7: Idle scan thread
-//    private static final class IdleTimeoutScanThread extends Thread {
-//        private final FastObjectPool pool;
-//        private final AtomicInteger idleScanState;
-//
-//        IdleTimeoutScanThread(FastObjectPool pool) {
-//            this.pool = pool;
-//            idleScanState = pool.idleScanState;
-//        }
-//
-//        public void run() {
-//            long checkTimeIntervalNanos = TimeUnit.MILLISECONDS.toNanos(this.pool.poolConfig.getTimerCheckInterval());
-//            while (this.idleScanState.get() == THREAD_WORKING) {
-//                LockSupport.parkNanos(checkTimeIntervalNanos);
-//                try {
-//                    if (pool.poolState == POOL_READY) pool.closeIdleTimeoutPooledEntry();
-//                } catch (Throwable e) {
-//                    //do nothing
-//                }
-//            }
-//        }
-//    }
-
-    final class PoolSemaphore extends Semaphore {
-        PoolSemaphore(int permits, boolean fair) {
-            super(permits, fair);
-        }
-
-        void interruptWaitingThreads() {
-            for (Thread thread : getQueuedThreads()) {
-                Thread.State state = thread.getState();
-                if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
-                    thread.interrupt();
-                }
-            }
-        }
-    }
-
-
-//    //Method-3.2 shutdown two work threads in pool
-//    private void shutdownPoolThread() {
-//        int curState = this.servantState.get();
-//        this.servantState.set(THREAD_EXIT);
-//        if (curState == THREAD_WAITING) LockSupport.unpark(this);
-//
-//        curState = this.idleScanState.get();
-//        this.idleScanState.set(THREAD_EXIT);
-//        if (curState == THREAD_WAITING) LockSupport.unpark(this.idleScanThread);
-//    }
-
-//    //Method-3.3: pool servant thread run method
-//    public void run() {
-//        while (poolState != POOL_CLOSED) {
-//            while (servantState.get() == THREAD_WORKING) {
-//                int c = servantTryCount.get();
-//                if (c <= 0 || (waitQueue.isEmpty() && servantTryCount.compareAndSet(c, 0))) break;
-//                servantTryCount.decrementAndGet();
-//
-//                try {
-//                    PooledObject p = searchOrCreate();
-//                    if (p != null) recycle(p);
-//                } catch (Throwable e) {
-//                    this.transferException(e);
-//                }
-//            }
-//
-//            if (servantState.get() == THREAD_EXIT)
-//                break;
-//            if (servantTryCount.get() == 0 && servantState.compareAndSet(THREAD_WORKING, THREAD_WAITING))
-//                LockSupport.park();
-//        }
-//    }
-
 }
