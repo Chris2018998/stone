@@ -76,10 +76,10 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     private final BeeObjectSourceConfig poolConfig;
     private boolean printRuntimeLog;
     //clone block end
-    
+
     //set in clone method
     private Object key;
-    private String poolName;
+    private String poolName;//parent's poolName + [key.toString()]
     private volatile int poolState;
     private PoolSemaphore semaphore;
     private AtomicInteger servantState;
@@ -96,7 +96,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //method-1.1: constructor for clone
     ObjectGenericPool(BeeObjectSourceConfig config, KeyedObjectPool keyedObjectPool) {
-        //step1: number field setting
+        //step1: primitive type field setting
         this.poolInitSize = config.getInitialSize();
         this.poolMaxSize = config.getInitialSize();
         this.isFairMode = config.isFairMode();
@@ -112,7 +112,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         this.printRuntimeLog = config.isPrintRuntimeLog();
         this.poolState = POOL_NEW;
 
-        //step2:object field setting
+        //step2:object type field setting
         this.poolConfig = config;
         this.parentPool = keyedObjectPool;
         this.objectFactory = config.getObjectFactory();
@@ -143,7 +143,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     ObjectGenericPool createByClone(Object key, boolean createInitObjects) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
-        p.poolName = poolConfig.getPoolName() + "[" + key.toString() + "]";
+        p.poolName = poolConfig.getPoolName() + "-[" + key.toString() + "]";
         p.pooledArrayLock = new ReentrantLock();
         p.pooledArray = new PooledObject[0];
         if (createInitObjects && this.poolInitSize > 0) {
@@ -154,8 +154,8 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         p.threadLocal = new BorrowerThreadLocal();
         p.monitorVo = new ObjectPoolMonitorVo();
         p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
-        p.waitQueue = new ConcurrentLinkedQueue<>();
-        p.methodCache = new ConcurrentHashMap<>(16);
+        p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
+        p.methodCache = new ConcurrentHashMap<ObjectMethodKey, Method>();
         p.servantState = new AtomicInteger(0);
         p.servantTryCount = new AtomicInteger(0);
         if (createInitObjects && this.poolInitSize > 0) {
@@ -373,7 +373,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //Method-3.4: return object to pool after borrower end of use object
-    public final void recycle(PooledObject p) {
+    final void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
         Iterator<ObjectBorrower> iterator = waitQueue.iterator();
 
@@ -409,7 +409,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //Method-3.6: remove object when exception occur in return
-    public void abandonOnReturn(PooledObject p) {
+    final void abandonOnReturn(PooledObject p) {
         this.removePooledEntry(p, DESC_RM_BAD);
         this.tryWakeupServantThread();
     }
@@ -426,29 +426,26 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //               4: Pooled object idle-timeout/hold-timeout scan methods(4)                                      //                                                                                  //
+    //               4: Idle-timeout and hold-timeout clear                                                          //                                                                                  //
     //***************************************************************************************************************//
-    //Method-3.1: check whether exists borrows under semaphore
-    private boolean existBorrower() {
+    //Method-4.1: check whether exists borrows under semaphore
+    private boolean existBorrowers() {
         return this.semaphoreSize > this.semaphore.availablePermits();
     }
 
-    /**
-     * Method-3.4: inner timer will call the method to removeAllObjects some idle timeout objects
-     * or dead objects,or long parkTime not active objects in using state
-     */
-    private void closeIdleTimeoutPooledEntry() {
+    //Method-4.2: clear idle-timeout pooled objects and hold-time objects,this method will be called by ScheduledThreadPoolExecutor in key pool
+    void closeIdleTimeout() {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})-before idle clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
-        //step2:remove idle timeout and hold timeout
+        //step2: remove idle timeout and hold timeout
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array) {
             int state = p.state;
-            if (state == OBJECT_IDLE && !this.existBorrower()) {
+            if (state == OBJECT_IDLE && !this.existBorrowers()) {
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
                 if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
                     this.removePooledEntry(p, DESC_RM_IDLE);
@@ -478,24 +475,24 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                      4: Pool removeAllObjects/close methods(5)                                //                                                                                  //
+    //                                      4: Pooled objects clear(2)                                               //                                                                                  //
     //***************************************************************************************************************//
-    //Method-4.2: remove all object from pool
-    public void restart(boolean forceCloseUsing) throws Exception {
+    //Method-4.1: remove all object from pool
+    void clear(boolean forceCloseUsing) throws Exception {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeOP({})begin to remove all objects", this.poolName);
-            this.removeAllObjects(forceCloseUsing, DESC_RM_CLEAR);
+            this.clear(forceCloseUsing, DESC_RM_CLEAR);
             Log.info("BeeOP({})has removed all objects", this.poolName);
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})pool has restarted", this.poolName);
         }
     }
 
-    //Method-4.3: remove all connections from pool
-    private void removeAllObjects(boolean forceCloseUsing, String removeReason) {
+    //Method-4.2: remove all connections from pool
+    private void clear(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
-        PoolClosedException poolCloseException = new PoolClosedException("Pool has shutdown or in restarting");
-        while (!this.waitQueue.isEmpty()) this.transferException(poolCloseException);
+        PoolClosedException poolClearException = new PoolClosedException("Pool has been in clearing");
+        while (!this.waitQueue.isEmpty()) this.transferException(poolClearException);
 
         while (this.pooledArray.length > 0) {
             PooledObject[] array = this.pooledArray;
@@ -527,6 +524,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
             Log.info("BeeOP({})idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
+
 
     //Method-4.4: closed check
     public boolean isClosed() {

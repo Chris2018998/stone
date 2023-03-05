@@ -137,15 +137,15 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         return pool.getPoolMonitorVo();
     }
 
-    public void restartPool(boolean forceCloseUsing) throws Exception {
+    public void clear(boolean forceCloseUsing) throws Exception {
         if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
-        pool.restart(forceCloseUsing);
+        pool.clear(forceCloseUsing);
     }
 
-    public void restartPool(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
+    public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
         if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
         if (config == null) throw new PoolNotCreateException("Object pool config can't be null");
-        pool.restart(forceCloseUsing, config);
+        pool.clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }

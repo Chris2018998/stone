@@ -53,7 +53,7 @@ public class ObjectPoolStatics {
     static final String DESC_RM_BAD = "bad";
     static final String DESC_RM_IDLE = "idle";
     static final String DESC_RM_CLOSED = "closed";
-    static final String DESC_RM_CLEAR = "restart";
+    static final String DESC_RM_CLEAR = "clear";
     static final String DESC_RM_DESTROY = "destroy";
 
     static final ClassLoader PoolClassLoader = ObjectPoolStatics.class.getClassLoader();

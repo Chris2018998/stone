@@ -47,8 +47,8 @@ public interface BeeObjectPool {
     void setPrintRuntimeLog(boolean indicator);
 
     //remove all objects from pool
-    void restart(boolean forceCloseUsing) throws Exception;
+    void clear(boolean forceCloseUsing) throws Exception;
 
     //remove all objects from pool
-    void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
+    void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 }

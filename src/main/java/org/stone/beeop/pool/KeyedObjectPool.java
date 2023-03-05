@@ -77,12 +77,12 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
     }
 
     //remove all objects from pool
-    public void restart(boolean forceCloseUsing) throws Exception {
+    public void clear(boolean forceCloseUsing) throws Exception {
 
     }
 
     //remove all objects from pool
-    public void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
+    public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
 
     }
 
