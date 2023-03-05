@@ -542,7 +542,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         return this.poolState == POOL_CLOSED;
     }
 
-    // Method-7.2: close pool
+    //Method-7.2: close pool
     public void close() {
         do {
             int poolStateCode = this.poolState;
@@ -586,7 +586,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         return size;
     }
 
-    public BeeObjectPoolMonitorVo getPoolMonitorVo() {
+    BeeObjectPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
         monitorVo.setPoolMaxSize(poolMaxSize);
