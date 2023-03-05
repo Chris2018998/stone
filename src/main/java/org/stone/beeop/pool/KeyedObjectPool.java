@@ -122,6 +122,9 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     }
 
+    void submitAsyncServantTask(Runnable task) {
+
+    }
 
 //    //Method-5.8: assembly pool to jmx
 //    private void registerJmx() {
