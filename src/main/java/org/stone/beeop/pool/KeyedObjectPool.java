@@ -20,7 +20,7 @@ import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
@@ -41,6 +41,8 @@ public class KeyedObjectPool implements BeeObjectPool {
     private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
     private ObjectGenericPool genericClonePool;
+    private IdleClearTask scheduledIdleClearTask;
+    private ScheduledThreadPoolExecutor scheduledService;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -53,17 +55,21 @@ public class KeyedObjectPool implements BeeObjectPool {
         this.poolConfig = config.check();
         this.poolName = poolConfig.getPoolName();
         this.genericClonePool = new ObjectGenericPool(poolConfig, this);
+        if (config.getInitialSize() > 0) {
+            ObjectGenericPool genericPool = genericClonePool.createByClone(config.getInitialObjectKey(), true);
+            genericPoolMap.put(config.getInitialObjectKey(), genericPool);
+        }
+
         this.poolState = POOL_READY;
         this.exitHook = new ObjectPoolHook(this);
         Runtime.getRuntime().addShutdownHook(this.exitHook);
 
-//        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
-//                this.poolName,
-//                poolMode,
-//                this.pooledArray.length,
-//                config.getMaxActive(),
-//                config.getBorrowSemaphoreSize(),
-//                config.getMaxWait());
+        int coreSize = Runtime.getRuntime().availableProcessors();
+        scheduledIdleClearTask = new IdleClearTask(this);
+        scheduledService = new ScheduledThreadPoolExecutor(coreSize, new PoolThreadFactory(poolName), new ThreadPoolExecutor.DiscardPolicy());
+        scheduledService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        scheduledService.setRemoveOnCancelPolicy(true);
+        scheduledService.scheduleWithFixedDelay(scheduledIdleClearTask, 0, config.getTimerCheckInterval(), TimeUnit.MILLISECONDS);
     }
 
     //***************************************************************************************************************//
@@ -231,6 +237,20 @@ public class KeyedObjectPool implements BeeObjectPool {
                 this.pool.closeIdleTimeout();
             } catch (Throwable e) {
             }
+        }
+    }
+
+    private static final class PoolThreadFactory implements ThreadFactory {
+        private final String threadName;
+
+        PoolThreadFactory(String threadName) {
+            this.threadName = threadName;
+        }
+
+        public Thread newThread(Runnable runnable) {
+            Thread thread = new Thread(runnable, threadName);
+            thread.setDaemon(true);
+            return thread;
         }
     }
 
