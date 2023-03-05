@@ -430,7 +430,20 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
     //Method-4.2: servant method driven by executor in key pool
     public void run() {
+        while (servantState.get() == THREAD_WORKING) {
+            int c = servantTryCount.get();
+            if (c <= 0 || (waitQueue.isEmpty() && servantTryCount.compareAndSet(c, 0))) break;
+            servantTryCount.decrementAndGet();
 
+            try {
+                PooledObject p = searchOrCreate();
+                if (p != null) recycle(p);
+            } catch (Throwable e) {
+                this.transferException(e);
+            }
+        }
+
+        servantState.compareAndSet(THREAD_WORKING, THREAD_WAITING);
     }
 
     //***************************************************************************************************************//
