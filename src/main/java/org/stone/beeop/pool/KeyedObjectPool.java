@@ -11,13 +11,18 @@ package org.stone.beeop.pool;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stone.beeop.*;
+import org.stone.beecp.pool.exception.PoolCreateFailedException;
+import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.BeeObjectPool;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
+import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
  * keyed object pool
@@ -25,18 +30,39 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Chris Liao
  * @version 1.0
  */
-public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
+public class KeyedObjectPool implements BeeObjectPool {
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
+    private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>();
+
     private String poolName;
+    private volatile int poolState;
+    private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
+    private ObjectGenericPool genericClonePool;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public void init(BeeObjectSourceConfig config) throws Exception {
-        this.poolConfig = config;
+        if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
+        if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
+            throw new PoolCreateFailedException("Pool has been initialized or in starting");
+
+        this.poolConfig = config.check();
         this.poolName = poolConfig.getPoolName();
+        this.genericClonePool = new ObjectGenericPool(poolConfig, this);
+        this.poolState = POOL_READY;
+        this.exitHook = new ObjectPoolHook(this);
+        Runtime.getRuntime().addShutdownHook(this.exitHook);
+
+//        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
+//                this.poolName,
+//                poolMode,
+//                this.pooledArray.length,
+//                config.getMaxActive(),
+//                config.getBorrowSemaphoreSize(),
+//                config.getMaxWait());
     }
 
     //***************************************************************************************************************//
@@ -56,14 +82,14 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
     //***************************************************************************************************************//
     //                3: Pool runtime maintain methods(6)                                                            //                                                                                  //
     //***************************************************************************************************************//
+    //check pool is whether closed
+    public boolean isClosed() {
+        return this.poolState == POOL_CLOSED;
+    }
+
     //close pool
     public void close() {
 
-    }
-
-    //check pool is closed
-    public boolean isClosed() {
-        return false;
     }
 
     //get pool monitor vo
@@ -71,8 +97,18 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
         return null;
     }
 
+    //get pool monitor vo
+    public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
+
+    }
+
     //enable Runtime Log
     public void setPrintRuntimeLog(boolean indicator) {
+
+    }
+
+    //enable Runtime Log
+    public void setPrintRuntimeLog(Object key, boolean indicator) {
 
     }
 
@@ -87,47 +123,47 @@ public class KeyedObjectPool implements BeeObjectPool, BeeObjectPoolJmxBean {
     }
 
 
-    //Method-5.8: assembly pool to jmx
-    private void registerJmx() {
-        if (this.poolConfig.isEnableJmx()) {
-            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            this.registerJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName), this);
-            this.registerJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName), this.poolConfig);
-        }
-    }
-
-    //Method-5.9: jmx assembly
-    private void registerJmxBean(MBeanServer mBeanServer, String regName, Object bean) {
-        try {
-            ObjectName jmxRegName = new ObjectName(regName);
-            if (!mBeanServer.isRegistered(jmxRegName)) {
-                mBeanServer.registerMBean(bean, jmxRegName);
-            }
-        } catch (Exception e) {
-            Log.warn("BeeOP({})failed to assembly jmx-bean:{}", this.poolName, regName, e);
-        }
-    }
-
-    //Method-5.10: pool unregister from jmx
-    private void unregisterJmx() {
-        if (this.poolConfig.isEnableJmx()) {
-            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-            this.unregisterJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName));
-            this.unregisterJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName));
-        }
-    }
-
-    //Method-5.11: jmx unregister
-    private void unregisterJmxBean(MBeanServer mBeanServer, String regName) {
-        try {
-            ObjectName jmxRegName = new ObjectName(regName);
-            if (mBeanServer.isRegistered(jmxRegName)) {
-                mBeanServer.unregisterMBean(jmxRegName);
-            }
-        } catch (Exception e) {
-            Log.warn("BeeOP({})failed to unregister jmx-bean:{}", this.poolName, regName, e);
-        }
-    }
+//    //Method-5.8: assembly pool to jmx
+//    private void registerJmx() {
+//        if (this.poolConfig.isEnableJmx()) {
+//            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+//            this.registerJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName), this);
+//            this.registerJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName), this.poolConfig);
+//        }
+//    }
+//
+//    //Method-5.9: jmx assembly
+//    private void registerJmxBean(MBeanServer mBeanServer, String regName, Object bean) {
+//        try {
+//            ObjectName jmxRegName = new ObjectName(regName);
+//            if (!mBeanServer.isRegistered(jmxRegName)) {
+//                mBeanServer.registerMBean(bean, jmxRegName);
+//            }
+//        } catch (Exception e) {
+//            Log.warn("BeeOP({})failed to assembly jmx-bean:{}", this.poolName, regName, e);
+//        }
+//    }
+//
+//    //Method-5.10: pool unregister from jmx
+//    private void unregisterJmx() {
+//        if (this.poolConfig.isEnableJmx()) {
+//            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+//            this.unregisterJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName));
+//            this.unregisterJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName));
+//        }
+//    }
+//
+//    //Method-5.11: jmx unregister
+//    private void unregisterJmxBean(MBeanServer mBeanServer, String regName) {
+//        try {
+//            ObjectName jmxRegName = new ObjectName(regName);
+//            if (mBeanServer.isRegistered(jmxRegName)) {
+//                mBeanServer.unregisterMBean(jmxRegName);
+//            }
+//        } catch (Exception e) {
+//            Log.warn("BeeOP({})failed to unregister jmx-bean:{}", this.poolName, regName, e);
+//        }
+//    }
 
     //***************************************************************************************************************//
     //                3: Jmx methods(6)                                                                              //                                                                                  //
