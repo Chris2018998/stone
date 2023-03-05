@@ -45,7 +45,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class ObjectGenericPool implements Runnable, Cloneable {
+final class ObjectGenericPool implements Runnable, Cloneable {
     private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectGenericPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectGenericPool.class, "poolState");
@@ -175,7 +175,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                2: Pooled object create/remove methods(3)                                                     //                                                                                  //
+    //                2: Pooled object create/remove methods(3)                                                      //                                                                                  //
     //***************************************************************************************************************//
     //Method-2.1: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
@@ -359,20 +359,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         return null;
     }
 
-    //Method-3.3: try to wakeup servant thread to work if it waiting
-    private void tryWakeupServantThread() {
-        int c;
-        do {
-            c = this.servantTryCount.get();
-            if (c >= this.poolMaxSize) return;
-        } while (!this.servantTryCount.compareAndSet(c, c + 1));
-        if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-            //@todo
-            //LockSupport.unpark(this);
-        }
-    }
-
-    //Method-3.4: return object to pool after borrower end of use object
+    //Method-3.3: return object to pool after borrower end of use object
     final void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
         Iterator<ObjectBorrower> iterator = waitQueue.iterator();
@@ -391,7 +378,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     /**
-     * Method-3.5:when object create failed,creator thread will transfer caused exception to one waiting borrower,
+     * Method-3.4: when object create failed,creator thread will transfer caused exception to one waiting borrower,
      * which will exit wait and throw this exception.
      *
      * @param e: transfer Exception to waiter
@@ -408,13 +395,13 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //Method-3.6: remove object when exception occur in return
+    //Method-3.5: remove object when exception occur in return
     final void abandonOnReturn(PooledObject p) {
         this.removePooledEntry(p, DESC_RM_BAD);
         this.tryWakeupServantThread();
     }
 
-    //Method-3.7: check object alive state,if not alive then remove it from pool
+    //Method-3.6: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject p) {
         if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
             this.removePooledEntry(p, DESC_RM_BAD);
@@ -426,14 +413,35 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                          4: Idle-timeout and hold-timeout clear                                               //                                                                                  //
+    //                          4: Async Servant(2)                                                                  //                                                                                  //
     //***************************************************************************************************************//
-    //Method-4.1: check whether exists borrows under semaphore
+    //Method-4.1: try to wakeup servant thread to work if it waiting
+    private void tryWakeupServantThread() {
+        int c;
+        do {
+            c = this.servantTryCount.get();
+            if (c >= this.poolMaxSize) return;
+        } while (!this.servantTryCount.compareAndSet(c, c + 1));
+        if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+            //@todo
+            //LockSupport.unpark(this);
+        }
+    }
+
+    //Method-4.2: servant method driven by executor in key pool
+    public void run() {
+
+    }
+
+    //***************************************************************************************************************//
+    //                          5: Idle-timeout and hold-timeout clear                                               //                                                                                  //
+    //***************************************************************************************************************//
+    //Method-5.1: check whether exists borrows under semaphore
     private boolean existBorrowers() {
         return this.semaphoreSize > this.semaphore.availablePermits();
     }
 
-    //Method-4.2: clear idle-timeout pooled objects and hold-time objects,this method will be called by ScheduledThreadPoolExecutor in key pool
+    //Method-5.2: clear idle-timeout pooled objects and hold-time objects,this method will be called by ScheduledThreadPoolExecutor in key pool
     void closeIdleTimeout() {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
@@ -475,9 +483,9 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                      5: Pooled objects clear(2)                                               //                                                                                  //
+    //                                      6: Pooled objects clear(2)                                               //                                                                                  //
     //***************************************************************************************************************//
-    //Method-5.1: remove all object from pool
+    //Method-6.1: remove all object from pool
     void clear(boolean forceCloseUsing) throws Exception {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeOP({})begin to clear all objects", this.poolName);
@@ -488,7 +496,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    //Method-5.2: remove all connections from pool
+    //Method-6.2: remove all connections from pool
     private void clear(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
         PoolClosedException poolClearException = new PoolClosedException("Pool has been in clearing");
@@ -527,14 +535,14 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
 
 
     //***************************************************************************************************************//
-    //                                      6: Pooled close (2)                                                      //                                                                                  //
+    //                                      7: Pooled close (2)                                                      //                                                                                  //
     //***************************************************************************************************************//
-    //Method-6.1: closed check
+    //Method-7.1: closed check
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
     }
 
-    // Method-6.2: close pool
+    // Method-7.2: close pool
     public void close() {
         do {
             int poolStateCode = this.poolState;
@@ -552,7 +560,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                       7: Pool monitor(5)                                                      //                                                                                  //
+    //                                       8: Pool monitor(5)                                                      //                                                                                  //
     //***************************************************************************************************************//
     public void setPrintRuntimeLog(boolean indicator) {
         printRuntimeLog = indicator;
@@ -597,7 +605,7 @@ public final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                       7: Inner Classes(7)                                                     //                                                                                  //
+    //                                       9: Inner Classes(7)                                                     //                                                                                  //
     //***************************************************************************************************************//
     private static class ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
