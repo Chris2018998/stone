@@ -100,7 +100,7 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     //get pool monitor vo
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
-
+        return null;
     }
 
     //enable Runtime Log
