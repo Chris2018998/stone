@@ -76,9 +76,7 @@ public class KeyedObjectPool implements BeeObjectPool {
 
         //step6: create idle scheduled executor(core thread keep alive)
         this.scheduledIdleClearTask = new IdleClearTask(this);
-        scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
-        scheduledService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        scheduledService.setRemoveOnCancelPolicy(true);
+        scheduledService = new ScheduledThreadPoolExecutor(1, poolThreadFactory);
         scheduledService.scheduleWithFixedDelay(scheduledIdleClearTask, 0, config.getTimerCheckInterval(), TimeUnit.MILLISECONDS);
 
         //step7: create generic pool by init size
@@ -98,13 +96,28 @@ public class KeyedObjectPool implements BeeObjectPool {
     //                2: objects methods(2)                                                                          //                                                                                  //
     //***************************************************************************************************************//
     //borrow a object from pool
-    public BeeObjectHandle getObjectHandle() throws Exception {
+    public final BeeObjectHandle getObjectHandle() throws Exception {
+        if (defaultGenericPool != null) return defaultGenericPool.getObjectHandle();
         return getObjectHandle(null);
     }
 
     //borrow a object from pool
-    public BeeObjectHandle getObjectHandle(Object key) throws Exception {
+    public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
+        //1: get pool from generic map
         ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) return pool.getObjectHandle();
+
+        //2: create pool by clone
+        synchronized (genericPoolMap) {
+            pool = genericPoolMap.get(key);
+            if (pool == null) {
+                pool = cloneGenericPool.createByClone(key, poolName, 0, true);
+                genericPoolMap.put(key, pool);
+                if (key == null) defaultGenericPool = pool;
+            }
+        }
+
+        //3: get handle from pool
         return pool.getObjectHandle();
     }
 
