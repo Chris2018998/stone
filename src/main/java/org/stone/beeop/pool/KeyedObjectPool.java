@@ -31,7 +31,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class KeyedObjectPool implements BeeObjectPool {
+public class KeyedObjectPool implements BeeObjectPool {
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>();
@@ -41,6 +41,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
     private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
     private ObjectGenericPool genericClonePool;
+    private ThreadPoolExecutor servantService;
     private IdleClearTask scheduledIdleClearTask;
     private ScheduledThreadPoolExecutor scheduledService;
 
@@ -48,28 +49,46 @@ public final class KeyedObjectPool implements BeeObjectPool {
     //                1: pool initialize method(1)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public void init(BeeObjectSourceConfig config) throws Exception {
+        //step1: pool check
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
             throw new PoolCreateFailedException("Pool has been initialized or in starting");
-
         this.poolConfig = config.check();
+
+        //step2: create clone pool
         this.poolName = poolConfig.getPoolName();
         this.genericClonePool = new ObjectGenericPool(poolConfig, this);
-        if (config.getInitialSize() > 0) {
-            ObjectGenericPool genericPool = genericClonePool.createByClone(config.getInitialObjectKey(), true);
-            genericPoolMap.put(config.getInitialObjectKey(), genericPool);
-        }
 
-        this.poolState = POOL_READY;
+        //step3: register pool exit hook
         this.exitHook = new ObjectPoolHook(this);
         Runtime.getRuntime().addShutdownHook(this.exitHook);
 
-        int coreSize = Runtime.getRuntime().availableProcessors();
-        scheduledIdleClearTask = new IdleClearTask(this);
-        scheduledService = new ScheduledThreadPoolExecutor(coreSize, new PoolThreadFactory(poolName), new ThreadPoolExecutor.DiscardPolicy());
+        //step4: calculate pool thread size and prepare thread factory
+        int maxObjectKeySize = config.getMaxObjectKeySize();
+        int cpuCoreSize = Runtime.getRuntime().availableProcessors();
+        int coreThreadSize = Math.min(cpuCoreSize, maxObjectKeySize);
+        PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
+
+        //step5: create servant executor(core thread keep alive)
+        this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(maxObjectKeySize), poolThreadFactory);
+
+        //step6: create idle scheduled executor(core thread keep alive)
+        this.scheduledIdleClearTask = new IdleClearTask(this);
+        scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
         scheduledService.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
         scheduledService.setRemoveOnCancelPolicy(true);
         scheduledService.scheduleWithFixedDelay(scheduledIdleClearTask, 0, config.getTimerCheckInterval(), TimeUnit.MILLISECONDS);
+
+        //step7: create generic pool by init size
+        try {
+            if (config.getInitialSize() > 0) {
+                ObjectGenericPool genericPool = genericClonePool.createByClone(config.getInitialObjectKey(), true);
+                genericPoolMap.put(config.getInitialObjectKey(), genericPool);
+            }
+        } finally {
+            this.poolState = POOL_READY;//assume that default pool create failed,the state should be ready
+        }
     }
 
     //***************************************************************************************************************//
@@ -236,6 +255,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
             try {
                 this.pool.closeIdleTimeout();
             } catch (Throwable e) {
+                //do nothing
             }
         }
     }
