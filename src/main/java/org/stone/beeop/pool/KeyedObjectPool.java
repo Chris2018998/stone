@@ -34,13 +34,14 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
 public class KeyedObjectPool implements BeeObjectPool {
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
-    private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>();
+    private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>(1);
 
     private String poolName;
     private volatile int poolState;
     private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
-    private ObjectGenericPool genericClonePool;
+    private ObjectGenericPool cloneGenericPool;
+    private ObjectGenericPool defaultGenericPool;//key is null
     private ThreadPoolExecutor servantService;
     private IdleClearTask scheduledIdleClearTask;
     private ScheduledThreadPoolExecutor scheduledService;
@@ -57,7 +58,7 @@ public class KeyedObjectPool implements BeeObjectPool {
 
         //step2: create clone pool
         this.poolName = poolConfig.getPoolName();
-        this.genericClonePool = new ObjectGenericPool(poolConfig, this);
+        this.cloneGenericPool = new ObjectGenericPool(poolConfig, this);
 
         //step3: register pool exit hook
         this.exitHook = new ObjectPoolHook(this);
@@ -83,7 +84,7 @@ public class KeyedObjectPool implements BeeObjectPool {
         //step7: create generic pool by init size
         try {
             if (config.getInitialSize() > 0) {
-                ObjectGenericPool genericPool = genericClonePool.createByClone(config.getInitialObjectKey(),
+                ObjectGenericPool genericPool = cloneGenericPool.createByClone(config.getInitialObjectKey(),
                         poolName, config.getInitialSize(), config.isAsyncCreateInitObject());
 
                 genericPoolMap.put(config.getInitialObjectKey(), genericPool);
