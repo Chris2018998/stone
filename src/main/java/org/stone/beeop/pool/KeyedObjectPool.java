@@ -50,36 +50,43 @@ public class KeyedObjectPool implements BeeObjectPool {
     //                1: pool initialize method(1)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public void init(BeeObjectSourceConfig config) throws Exception {
-        //step1: pool check
+        //step1: pool state check
         if (config == null) throw new PoolCreateFailedException("Configuration can't be null");
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
             throw new PoolCreateFailedException("Pool has been initialized or in starting");
-        this.poolConfig = config.check();
 
-        //step2: create clone pool
+        //step2: pool check config
+        try {
+            this.poolConfig = config.check();
+        } catch (Throwable e) {
+            this.poolState = POOL_NEW;
+            throw e;
+        }
+
+        //step3: create clone pool
         this.poolName = poolConfig.getPoolName();
         this.cloneGenericPool = new ObjectGenericPool(poolConfig, this);
 
-        //step3: register pool exit hook
+        //step4: register pool exit hook
         this.exitHook = new ObjectPoolHook(this);
         Runtime.getRuntime().addShutdownHook(this.exitHook);
 
-        //step4: calculate pool thread size and prepare thread factory
+        //step5: calculate pool thread size and prepare thread factory
         int maxObjectKeySize = config.getMaxObjectKeySize();
         int cpuCoreSize = Runtime.getRuntime().availableProcessors();
         int coreThreadSize = Math.min(cpuCoreSize, maxObjectKeySize);
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
 
-        //step5: create servant executor(core thread keep alive)
+        //step6: create servant executor(core thread keep alive)
         this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(maxObjectKeySize), poolThreadFactory);
 
-        //step6: create idle scheduled executor(core thread keep alive)
+        //step7: create idle scheduled executor(core thread keep alive)
         this.scheduledIdleClearTask = new IdleClearTask(this);
         scheduledService = new ScheduledThreadPoolExecutor(1, poolThreadFactory);
         scheduledService.scheduleWithFixedDelay(scheduledIdleClearTask, 0, config.getTimerCheckInterval(), TimeUnit.MILLISECONDS);
 
-        //step7: create generic pool by init size
+        //step8: create generic pool by init size
         try {
             if (config.getInitialSize() > 0) {
                 ObjectGenericPool genericPool = cloneGenericPool.createByClone(config.getInitialObjectKey(),
