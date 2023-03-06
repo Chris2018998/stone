@@ -72,6 +72,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private final PooledObject templatePooledObject;
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;
+    private final Map<ObjectMethodKey, Method> methodCache;
     private final KeyedObjectPool parentPool;
     private boolean printRuntimeLog;
     //clone block end
@@ -87,7 +88,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private volatile PooledObject[] pooledArray;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
-    private Map<ObjectMethodKey, Method> methodCache;
+
     private ObjectPoolMonitorVo monitorVo;
 
     //***************************************************************************************************************//
@@ -118,6 +119,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         Class[] objectInterfaces = config.getObjectInterfaces();
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
+        this.methodCache = new ConcurrentHashMap<>(16);
         this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces, config.getObjectMethodFilter(), this.methodCache);
         if (objectInterfaces != null && objectInterfaces.length > 0)
             this.handleFactory = new ObjectReflectHandleFactory();
@@ -139,23 +141,17 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //method-1.2: creation from clone and init(this method called by clone object in keyed pool)
-    ObjectGenericPool createByClone(Object key, String parentName) throws Exception {
-        return createByClone(key, parentName, 0, true);
-    }
-
-    //method-1.3: creation from clone and init(this method called by clone object in keyed pool)
     ObjectGenericPool createByClone(Object key, String parentName, int initSize, boolean async) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
         p.poolName = parentName + "-[" + key.toString() + "]";
         p.pooledArrayLock = new ReentrantLock();
         p.pooledArray = new PooledObject[0];
-        if (initSize > 0 && !async) this.createInitObjects(poolInitSize, false);
+        if (initSize > 0 && !async) this.createInitObjects(poolInitSize, true);
 
         p.threadLocal = new BorrowerThreadLocal();
         p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
-        p.methodCache = new ConcurrentHashMap<ObjectMethodKey, Method>();
         p.servantState = new AtomicInteger(0);
         p.servantTryCount = new AtomicInteger(0);
         if (initSize > 0 && async) new PoolInitAsynCreateThread(initSize, this).start();
