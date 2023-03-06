@@ -73,7 +73,6 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;
     private final KeyedObjectPool parentPool;
-    private final BeeObjectSourceConfig poolConfig;
     private boolean printRuntimeLog;
     //clone block end
 
@@ -113,7 +112,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         this.poolState = POOL_NEW;
 
         //step2:object type field setting
-        this.poolConfig = config;
+        //this.poolConfig = config;
         this.parentPool = keyedObjectPool;
         this.objectFactory = config.getObjectFactory();
         Class[] objectInterfaces = config.getObjectInterfaces();
@@ -140,16 +139,18 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //method-1.2: creation from clone and init(this method called by clone object in keyed pool)
-    ObjectGenericPool createByClone(Object key, boolean createInitObjects) throws Exception {
+    ObjectGenericPool createByClone(Object key, String parentName) throws Exception {
+        return createByClone(key, parentName, 0, true);
+    }
+
+    //method-1.3: creation from clone and init(this method called by clone object in keyed pool)
+    ObjectGenericPool createByClone(Object key, String parentName, int initSize, boolean async) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
-        p.poolName = poolConfig.getPoolName() + "-[" + key.toString() + "]";
+        p.poolName = parentName + "-[" + key.toString() + "]";
         p.pooledArrayLock = new ReentrantLock();
         p.pooledArray = new PooledObject[0];
-        if (createInitObjects && this.poolInitSize > 0) {
-            if (!poolConfig.isAsyncCreateInitObject())
-                this.createInitObjects(poolInitSize, true);
-        }
+        if (initSize > 0 && !async) this.createInitObjects(poolInitSize, false);
 
         p.threadLocal = new BorrowerThreadLocal();
         p.monitorVo = new ObjectPoolMonitorVo();
@@ -158,19 +159,16 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         p.methodCache = new ConcurrentHashMap<ObjectMethodKey, Method>();
         p.servantState = new AtomicInteger(0);
         p.servantTryCount = new AtomicInteger(0);
-        if (createInitObjects && this.poolInitSize > 0) {
-            if (poolConfig.isAsyncCreateInitObject())
-                new PoolInitAsynCreateThread(this).start();
-        }
-        p.poolState = POOL_READY;
+        if (initSize > 0 && async) new PoolInitAsynCreateThread(initSize, this).start();
 
-        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
+        p.poolState = POOL_READY;
+        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ns",
                 this.poolName,
                 poolMode,
                 this.pooledArray.length,
                 this.poolMaxSize,
                 this.semaphoreSize,
-                poolConfig.getMaxWait());
+                this.maxWaitNs);
         return p;
     }
 
@@ -556,12 +554,12 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //Method-7.2: close pool
-    public void close() {
+    public void close(boolean forceCloseUsing) {
         do {
             int poolStateCode = this.poolState;
             if ((poolStateCode == POOL_NEW || poolStateCode == POOL_READY) && PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSED)) {
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
-                this.clear(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
+                this.clear(forceCloseUsing, DESC_RM_DESTROY);
                 Log.info("BeeOP({})has shutdown", this.poolName);
                 break;
             } else if (poolStateCode == POOL_CLOSED) {
@@ -676,15 +674,17 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     private static final class PoolInitAsynCreateThread extends Thread {
+        private final int initialSize;
         private final ObjectGenericPool pool;
 
-        PoolInitAsynCreateThread(ObjectGenericPool pool) {
+        PoolInitAsynCreateThread(int initialSize, ObjectGenericPool pool) {
+            this.initialSize = initialSize;
             this.pool = pool;
         }
 
         public void run() {
             try {
-                pool.createInitObjects(pool.poolConfig.getInitialSize(), false);
+                pool.createInitObjects(initialSize, false);
                 pool.servantState.getAndSet(pool.pooledArray.length);
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
                     pool.parentPool.submitAsyncServantTask(pool);

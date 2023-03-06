@@ -263,12 +263,12 @@ public class ObjectPoolStatics {
     }
 
     //check subclass,if failed,then return error message;
-    public static Object createClassInstance(Class objectClass, Class[] parentClasses, String objectClassType) throws Exception {
+    private static Object createClassInstance(Class objectClass, Class[] parentClasses, String objectClassType) throws Exception {
         return getConstructor(objectClass, parentClasses, objectClassType).newInstance(EMPTY_PARAMETERS);
     }
 
     //check subclass,if failed,then return error message;
-    public static Constructor getConstructor(Class objectClass, Class[] parentClasses, String objectClassType) throws Exception {
+    private static Constructor getConstructor(Class objectClass, Class[] parentClasses, String objectClassType) throws Exception {
         //1:check class abstract modifier
         if (Modifier.isAbstract(objectClass.getModifiers()))
             throw new BeeObjectSourceConfigException("Error " + objectClassType + " class[" + objectClass.getName() + "],which can't be an abstract class");

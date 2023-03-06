@@ -83,7 +83,9 @@ public class KeyedObjectPool implements BeeObjectPool {
         //step7: create generic pool by init size
         try {
             if (config.getInitialSize() > 0) {
-                ObjectGenericPool genericPool = genericClonePool.createByClone(config.getInitialObjectKey(), true);
+                ObjectGenericPool genericPool = genericClonePool.createByClone(config.getInitialObjectKey(),
+                        poolName, config.getInitialSize(), config.isAsyncCreateInitObject());
+
                 genericPoolMap.put(config.getInitialObjectKey(), genericPool);
             }
         } finally {

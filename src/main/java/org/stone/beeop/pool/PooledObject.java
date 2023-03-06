@@ -28,14 +28,13 @@ final class PooledObject implements Cloneable {
     final RawObjectMethodFilter filter;
     final Map<ObjectMethodKey, Method> methodCache;
     private final RawObjectFactory factory;
-
     Object key;
     Object raw;
     Class rawClass;
     volatile int state;
-    ObjectGenericPool ownerPool;
     ObjectBaseHandle handleInUsing;
     volatile long lastAccessTime;
+    private ObjectGenericPool ownerPool;
 
     //***************************************************************************************************************//
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
