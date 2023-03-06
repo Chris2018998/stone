@@ -153,13 +153,13 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         if (initSize > 0 && !async) this.createInitObjects(poolInitSize, false);
 
         p.threadLocal = new BorrowerThreadLocal();
-        p.monitorVo = new ObjectPoolMonitorVo();
         p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         p.methodCache = new ConcurrentHashMap<ObjectMethodKey, Method>();
         p.servantState = new AtomicInteger(0);
         p.servantTryCount = new AtomicInteger(0);
         if (initSize > 0 && async) new PoolInitAsynCreateThread(initSize, this).start();
+        p.monitorVo = new ObjectPoolMonitorVo(poolHostIP, poolThreadId, poolThreadName, poolName, poolMode, poolMaxSize);
 
         p.poolState = POOL_READY;
         Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ns",
@@ -598,13 +598,6 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     BeeObjectPoolMonitorVo getPoolMonitorVo() {
-        monitorVo.setPoolName(poolName);
-        monitorVo.setPoolMode(poolMode);
-        monitorVo.setPoolMaxSize(poolMaxSize);
-        monitorVo.setThreadId(poolThreadId);
-        monitorVo.setThreadName(poolThreadName);
-        monitorVo.setHostIP(poolHostIP);
-
         int totSize = this.getTotalSize();
         int idleSize = this.getIdleSize();
         monitorVo.setPoolState(poolState);
