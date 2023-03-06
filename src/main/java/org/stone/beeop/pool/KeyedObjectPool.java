@@ -40,7 +40,7 @@ public class KeyedObjectPool implements BeeObjectPool {
     private volatile int poolState;
     private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
-    private ObjectGenericPool cloneGenericPool;
+    private ObjectGenericPool cloneGenericPool;//other generic pools from it
     private ObjectGenericPool defaultGenericPool;//key is null
     private ThreadPoolExecutor servantService;
     private IdleClearTask scheduledIdleClearTask;
