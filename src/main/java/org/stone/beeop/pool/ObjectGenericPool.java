@@ -538,7 +538,6 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-
     //***************************************************************************************************************//
     //                                      7: Pooled close (2)                                                      //                                                                                  //
     //***************************************************************************************************************//
@@ -565,9 +564,25 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                       8: Pool monitor(5)                                                      //                                                                                  //
+    //                                       8: Pool monitor(9)                                                      //                                                                                  //
     //***************************************************************************************************************//
-    public void setPrintRuntimeLog(boolean indicator) {
+    String getPoolHostIP() {
+        return poolHostIP;
+    }
+
+    long getPoolThreadId() {
+        return poolThreadId;
+    }
+
+    String getPoolThreadName() {
+        return poolThreadName;
+    }
+
+    String getPoolMode() {
+        return poolMode;
+    }
+
+    void setPrintRuntimeLog(boolean indicator) {
         printRuntimeLog = indicator;
     }
 

@@ -24,8 +24,9 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private final String threadName;
     private final String poolName;
     private final String poolMode;
-    private final int poolMaxSize;
     private int poolState;
+
+    private int maxSize;
     private int idleSize;
     private int usingSize;
     private int semaphoreWaitingSize;
@@ -39,10 +40,9 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.threadName = threadName;
         this.poolName = poolName;
         this.poolMode = poolMode;
-        this.poolMaxSize = poolMaxSize;
+        this.maxSize = poolMaxSize;
     }
 
-    @Override
     public int getPoolState() {
         return poolState;
     }
@@ -51,7 +51,14 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.poolState = poolState;
     }
 
-    @Override
+    public int getMaxSize() {
+        return maxSize;
+    }
+
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
+
     public int getIdleSize() {
         return idleSize;
     }
@@ -60,7 +67,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.idleSize = idleSize;
     }
 
-    @Override
     public int getUsingSize() {
         return usingSize;
     }
@@ -69,7 +75,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.usingSize = usingSize;
     }
 
-    @Override
     public int getSemaphoreWaitingSize() {
         return semaphoreWaitingSize;
     }
@@ -78,7 +83,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
     }
 
-    @Override
     public int getTransferWaitingSize() {
         return transferWaitingSize;
     }
@@ -87,7 +91,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.transferWaitingSize = transferWaitingSize;
     }
 
-    @Override
     public String getOsId() {
         return osId;
     }
@@ -96,7 +99,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.osId = osId;
     }
 
-    @Override
     public String getOsUUID() {
         return osUUID;
     }
@@ -126,9 +128,8 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     }
 
     public int getPoolMaxSize() {
-        return poolMaxSize;
+        return maxSize;
     }
-
 
 }
 

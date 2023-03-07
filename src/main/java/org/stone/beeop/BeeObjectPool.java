@@ -32,7 +32,12 @@ public interface BeeObjectPool {
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     //***************************************************************************************************************//
-    //                3: Pool runtime maintain methods(6)                                                            //                                                                                  //
+    //                3: Pool monitor(1)                                                                             //                                                                                  //
+    //***************************************************************************************************************//
+    BeeObjectPoolMonitorVo getPoolMonitorVo();
+
+    //***************************************************************************************************************//
+    //                4: Pool close(2)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     //close pool
     void close();
@@ -40,8 +45,6 @@ public interface BeeObjectPool {
     //check pool is whether closed
     boolean isClosed();
 
-    //get pool monitor vo
-    BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     //enable Runtime Log
     void setPrintRuntimeLog(boolean indicator);

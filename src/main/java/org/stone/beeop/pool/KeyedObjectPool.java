@@ -43,6 +43,7 @@ public class KeyedObjectPool implements BeeObjectPool {
     private BeeObjectSourceConfig poolConfig;
     private ObjectGenericPool cloneGenericPool;//other generic pools from it
     private ObjectGenericPool defaultGenericPool;
+    private ObjectPoolMonitorVo poolMonitorVo;
     private ThreadPoolExecutor servantService;
     private IdleClearTask scheduledIdleClearTask;
     private ScheduledThreadPoolExecutor scheduledService;
@@ -67,6 +68,10 @@ public class KeyedObjectPool implements BeeObjectPool {
         //step3: create clone pool
         this.poolName = poolConfig.getPoolName();
         this.cloneGenericPool = new ObjectGenericPool(poolConfig, this);
+        this.poolMonitorVo = new ObjectPoolMonitorVo(
+                cloneGenericPool.getPoolHostIP(), cloneGenericPool.getPoolThreadId(),
+                cloneGenericPool.getPoolThreadName(), poolName,
+                cloneGenericPool.getPoolMode(), poolConfig.getMaxActive());
 
         //step4: register pool exit hook
         this.exitHook = new ObjectPoolHook(this);
@@ -142,29 +147,53 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     }
 
+
     //get pool monitor vo
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
-        return null;
+        int semaphoreWaitingSize = 0;
+        int transferWaitingSize = 0;
+        int idleSize = 0, usingSize = 0, maxSize = 0;
+        for (ObjectGenericPool pool : genericPoolMap.values()) {
+            BeeObjectPoolMonitorVo genericMonitorVo = pool.getPoolMonitorVo();
+            idleSize = +genericMonitorVo.getIdleSize();
+            usingSize = +genericMonitorVo.getUsingSize();
+            maxSize = +genericMonitorVo.getPoolMaxSize();
+            semaphoreWaitingSize = +genericMonitorVo.getSemaphoreWaitingSize();
+            transferWaitingSize = +genericMonitorVo.getTransferWaitingSize();
+        }
+        poolMonitorVo.setMaxSize(maxSize);
+        poolMonitorVo.setIdleSize(idleSize);
+        poolMonitorVo.setUsingSize(usingSize);
+        poolMonitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
+        poolMonitorVo.setTransferWaitingSize(transferWaitingSize);
+        poolMonitorVo.setPoolState(poolState);
+        return poolMonitorVo;
     }
 
     //get pool monitor vo
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
-        return null;
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        return pool != null ? pool.getPoolMonitorVo() : null;
     }
 
     //enable Runtime Log
     public void setPrintRuntimeLog(boolean indicator) {
-
+        for (ObjectGenericPool pool : genericPoolMap.values()) {
+            pool.setPrintRuntimeLog(indicator);
+        }
     }
 
     //enable Runtime Log
     public void setPrintRuntimeLog(Object key, boolean indicator) {
-
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) pool.setPrintRuntimeLog(indicator);
     }
 
     //remove all objects from pool
     public void clear(boolean forceCloseUsing) throws Exception {
-
+        for (ObjectGenericPool pool : genericPoolMap.values()) {
+            pool.clear(forceCloseUsing);
+        }
     }
 
     //remove all objects from pool
@@ -172,8 +201,9 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     }
 
-    void submitAsyncServantTask(Runnable task) {
 
+    void submitAsyncServantTask(Runnable task) {
+        this.servantService.submit(task);
     }
 
     void closeIdleTimeout() {
@@ -183,87 +213,6 @@ public class KeyedObjectPool implements BeeObjectPool {
         }
     }
 
-    //***************************************************************************************************************//
-    //                3: Jmx methods(6)                                                                              //                                                                                  //
-    //***************************************************************************************************************//
-    //return current size(using +idle)
-    public int getTotalSize() {
-        //@todo
-        return 0;
-    }
-
-    //return idle size
-    public int getIdleSize() {
-        //@todo
-        return 0;
-    }
-
-
-    //    //Method-5.8: assembly pool to jmx
-//    private void registerJmx() {
-//        if (this.poolConfig.isEnableJmx()) {
-//            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-//            this.registerJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName), this);
-//            this.registerJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName), this.poolConfig);
-//        }
-//    }
-//
-//    //Method-5.9: jmx assembly
-//    private void registerJmxBean(MBeanServer mBeanServer, String regName, Object bean) {
-//        try {
-//            ObjectName jmxRegName = new ObjectName(regName);
-//            if (!mBeanServer.isRegistered(jmxRegName)) {
-//                mBeanServer.registerMBean(bean, jmxRegName);
-//            }
-//        } catch (Exception e) {
-//            Log.warn("BeeOP({})failed to assembly jmx-bean:{}", this.poolName, regName, e);
-//        }
-//    }
-//
-//    //Method-5.10: pool unregister from jmx
-//    private void unregisterJmx() {
-//        if (this.poolConfig.isEnableJmx()) {
-//            MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-//            this.unregisterJmxBean(mBeanServer, String.format("FastObjectPool:type=BeeOP(%s)", this.poolName));
-//            this.unregisterJmxBean(mBeanServer, String.format("BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName));
-//        }
-//    }
-//
-//    //Method-5.11: jmx unregister
-//    private void unregisterJmxBean(MBeanServer mBeanServer, String regName) {
-//        try {
-//            ObjectName jmxRegName = new ObjectName(regName);
-//            if (mBeanServer.isRegistered(jmxRegName)) {
-//                mBeanServer.unregisterMBean(jmxRegName);
-//            }
-//        } catch (Exception e) {
-//            Log.warn("BeeOP({})failed to unregister jmx-bean:{}", this.poolName, regName, e);
-//        }
-//    }
-
-    //return using size
-    public int getUsingSize() {
-        //@todo
-        return 0;
-    }
-
-    //return semaphore acquired success size from pool
-    public int getSemaphoreAcquiredSize() {
-        //@todo
-        return 0;
-    }
-
-    //return waiting size to take semaphore synchronizer
-    public int getSemaphoreWaitingSize() {
-        //@todo
-        return 0;
-    }
-
-    //return waiter size for transferred object
-    public int getTransferWaitingSize() {
-        //@todo
-        return 0;
-    }
 
     //***************************************************************************************************************//
     //                                  6: Pool inner interface/class(8)                                             //                                                                                  //
