@@ -32,26 +32,37 @@ public interface BeeObjectPool {
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     //***************************************************************************************************************//
-    //                3: Pool monitor(1)                                                                             //                                                                                  //
+    //                3: key methods(2)                                                                          //                                                                                  //
     //***************************************************************************************************************//
-    BeeObjectPoolMonitorVo getPoolMonitorVo();
+    Object[] keys();
+
+    BeeObjectPoolMonitorVo getPoolMonitorVo(Object key);
+
+    void setPrintRuntimeLog(Object key, boolean indicator);
+
+    void clear(Object key) throws Exception;
+
+    void clear(Object key, boolean forceCloseUsing) throws Exception;
+
+    void deleteKey(Object key) throws Exception;
+
+    void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 
     //***************************************************************************************************************//
     //                4: Pool close(2)                                                                              //                                                                                  //
     //***************************************************************************************************************//
-    //close pool
     void close();
 
-    //check pool is whether closed
     boolean isClosed();
 
-
-    //enable Runtime Log
     void setPrintRuntimeLog(boolean indicator);
+
+    BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     //remove all objects from pool
     void clear(boolean forceCloseUsing) throws Exception;
 
     //remove all objects from pool
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
+
 }
