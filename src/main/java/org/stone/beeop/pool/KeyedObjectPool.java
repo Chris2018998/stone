@@ -32,7 +32,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class KeyedObjectPool implements BeeObjectPool {
+public final class KeyedObjectPool implements BeeObjectPool {
     private static final Object DEFAULT_KEY = new Object();
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
