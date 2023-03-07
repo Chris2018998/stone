@@ -132,14 +132,49 @@ public class KeyedObjectPool implements BeeObjectPool {
         return pool.getObjectHandle();
     }
 
+    //***************************************************************************************************************//
+    //                3: key methods(7)                                                                              //                                                                                  //
+    //***************************************************************************************************************//
+    public Object[] keys() {
+        return this.genericPoolMap.keySet().toArray();
+    }
 
+    public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        return pool != null ? pool.getPoolMonitorVo() : null;
+    }
 
-    
+    public void setPrintRuntimeLog(Object key, boolean indicator) {
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) pool.setPrintRuntimeLog(indicator);
+    }
 
+    public void clear(Object key) throws Exception {
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) pool.clear(false);
+    }
 
+    public void clear(Object key, boolean forceCloseUsing) throws Exception {
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) pool.clear(forceCloseUsing);
+    }
+
+    public void deleteKey(Object key) throws Exception {
+        synchronized (genericPoolMap) {
+            ObjectGenericPool pool = genericPoolMap.remove(key);
+            if (pool != null) pool.clear(false);
+        }
+    }
+
+    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        synchronized (genericPoolMap) {
+            ObjectGenericPool pool = genericPoolMap.remove(key);
+            if (pool != null) pool.clear(forceCloseUsing);
+        }
+    }
 
     //***************************************************************************************************************//
-    //                3: Pool runtime maintain methods(6)                                                            //                                                                                  //
+    //                4: Pool runtime maintain methods(6)                                                            //                                                                                  //
     //***************************************************************************************************************//
     //check pool is whether closed
     public boolean isClosed() {
@@ -195,23 +230,12 @@ public class KeyedObjectPool implements BeeObjectPool {
         return poolMonitorVo;
     }
 
-    //get pool monitor vo
-    public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
-        ObjectGenericPool pool = genericPoolMap.get(key);
-        return pool != null ? pool.getPoolMonitorVo() : null;
-    }
 
     //enable Runtime Log
     public void setPrintRuntimeLog(boolean indicator) {
         for (ObjectGenericPool pool : genericPoolMap.values()) {
             pool.setPrintRuntimeLog(indicator);
         }
-    }
-
-    //enable Runtime Log
-    public void setPrintRuntimeLog(Object key, boolean indicator) {
-        ObjectGenericPool pool = genericPoolMap.get(key);
-        if (pool != null) pool.setPrintRuntimeLog(indicator);
     }
 
     //remove all objects from pool
@@ -226,8 +250,10 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     }
 
-
-    void submitAsyncServantTask(Runnable task) {
+    //***************************************************************************************************************//
+    //                5: Pool runtime maintain methods(6)                                                            //                                                                                  //
+    //***************************************************************************************************************//
+    void submitServantTask(Runnable task) {
         this.servantService.submit(task);
     }
 
@@ -287,5 +313,4 @@ public class KeyedObjectPool implements BeeObjectPool {
             }
         }
     }
-
 }

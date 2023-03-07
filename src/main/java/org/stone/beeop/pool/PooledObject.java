@@ -28,6 +28,7 @@ final class PooledObject implements Cloneable {
     final RawObjectMethodFilter filter;
     final Map<ObjectMethodKey, Method> methodCache;
     private final RawObjectFactory factory;
+
     Object key;
     Object raw;
     Class rawClass;

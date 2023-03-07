@@ -321,7 +321,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     long t = deadline - System.nanoTime();
                     if (t > 0L) {
                         if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-                            parentPool.submitAsyncServantTask(this);
+                            parentPool.submitServantTask(this);
                         }
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
@@ -413,7 +413,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
             if (c >= this.poolMaxSize) return;
         } while (!this.servantTryCount.compareAndSet(c, c + 1));
         if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-            parentPool.submitAsyncServantTask(this);
+            parentPool.submitServantTask(this);
         }
     }
 
@@ -687,7 +687,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                 pool.createInitObjects(initialSize, false);
                 pool.servantState.getAndSet(pool.pooledArray.length);
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-                    pool.parentPool.submitAsyncServantTask(pool);
+                    pool.parentPool.submitServantTask(pool);
                 }
             } catch (Throwable e) {
                 //do nothing

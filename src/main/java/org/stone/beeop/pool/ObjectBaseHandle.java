@@ -62,7 +62,7 @@ public class ObjectBaseHandle implements BeeObjectHandle {
     //***************************************************************************************************************//
     //                                 2: raw methods call methods(2)                                                //                                                                                  //
     //***************************************************************************************************************//
-    public Object getObjectKey() throws Exception {
+    public Object getObjectKey() {
         return p.key;
     }
 
