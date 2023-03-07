@@ -231,7 +231,6 @@ public final class KeyedObjectPool implements BeeObjectPool {
         return poolMonitorVo;
     }
 
-
     //enable Runtime Log
     public void setPrintRuntimeLog(boolean indicator) {
         for (ObjectGenericPool pool : genericPoolMap.values()) {
