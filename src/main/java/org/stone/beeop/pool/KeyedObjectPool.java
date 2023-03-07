@@ -16,6 +16,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.pool.exception.ObjectException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Iterator;
@@ -240,14 +241,28 @@ public final class KeyedObjectPool implements BeeObjectPool {
 
     //remove all objects from pool
     public void clear(boolean forceCloseUsing) throws Exception {
-        for (ObjectGenericPool pool : genericPoolMap.values()) {
-            pool.clear(forceCloseUsing);
-        }
+        clear(forceCloseUsing, null);
     }
 
     //remove all objects from pool
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-
+        BeeObjectSourceConfig tempConfig = null;
+        if (config != null) tempConfig = config.check();
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+            for (ObjectGenericPool pool : genericPoolMap.values())
+                pool.clear(forceCloseUsing);
+            synchronized (genericPoolMap) {
+                genericPoolMap.clear();
+                //@todo here need more think
+                if (tempConfig != null) {
+                    init(tempConfig);
+                    this.poolConfig = tempConfig;
+                }
+            }
+            this.poolState = POOL_READY;// restore state;
+        } else {
+            throw new ObjectException("Pool has been in clearing");
+        }
     }
 
     //***************************************************************************************************************//
@@ -257,7 +272,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
         this.servantService.submit(task);
     }
 
-    void closeIdleTimeout() {
+    private void closeIdleTimeout() {
         Iterator<ObjectGenericPool> iterator = genericPoolMap.values().iterator();
         while (iterator.hasNext()) {
             iterator.next().closeIdleTimeout();
@@ -265,8 +280,8 @@ public final class KeyedObjectPool implements BeeObjectPool {
     }
 
     //***************************************************************************************************************//
-//                                  6: Pool inner interface/class(8)                                             //                                                                                  //
-//***************************************************************************************************************//
+    //                      6: Pool inner interface/class(3)                                                         //                                                                                  //
+    //***************************************************************************************************************//
     private static class IdleClearTask implements Runnable {
         private final KeyedObjectPool pool;
 
