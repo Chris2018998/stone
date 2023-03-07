@@ -88,7 +88,6 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private volatile PooledObject[] pooledArray;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
-
     private ObjectPoolMonitorVo monitorVo;
 
     //***************************************************************************************************************//
@@ -145,8 +144,8 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
         p.poolName = parentName + "-[" + key.toString() + "]";
-        p.pooledArrayLock = new ReentrantLock();
         p.pooledArray = new PooledObject[0];
+        p.pooledArrayLock = new ReentrantLock();
         if (initSize > 0 && !async) this.createInitObjects(poolInitSize, true);
 
         p.threadLocal = new BorrowerThreadLocal();
