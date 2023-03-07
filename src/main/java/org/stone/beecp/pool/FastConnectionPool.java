@@ -654,7 +654,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step1:print pool info before clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})-before idle clean,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})-before idle clear,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2:remove idle timeout and hold timeout
@@ -686,7 +686,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step3: print pool info after idle clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})-after idle clean,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})-after idle clear,{idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -702,10 +702,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
         BeeDataSourceConfig tempConfig = null;
         if (config != null) tempConfig = config.check();
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
-            Log.info("BeeCP({})begin to remove all connections", this.poolName);
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+            Log.info("BeeCP({})begin to cleared all connections", this.poolName);
             this.removeAllConnections(forceCloseUsing, DESC_RM_CLEAR);
-            Log.info("BeeCP({})has removed all connections", this.poolName);
+            Log.info("BeeCP({})has cleared all connections", this.poolName);
 
             if (tempConfig != null) {
                 this.poolConfig = tempConfig;
@@ -713,7 +713,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
 
             this.poolState = POOL_READY;// restore state;
-            Log.info("BeeCP({})pool has restarted", this.poolName);
+            Log.info("BeeCP({})pool has cleared all connections", this.poolName);
         }
     }
 
