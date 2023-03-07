@@ -32,6 +32,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @version 1.0
  */
 public class KeyedObjectPool implements BeeObjectPool {
+    private static final Object DEFAULT_KEY = new Object();
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>(1);
@@ -41,7 +42,7 @@ public class KeyedObjectPool implements BeeObjectPool {
     private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
     private ObjectGenericPool cloneGenericPool;//other generic pools from it
-    private ObjectGenericPool defaultGenericPool;//key is null
+    private ObjectGenericPool defaultGenericPool;
     private ThreadPoolExecutor servantService;
     private IdleClearTask scheduledIdleClearTask;
     private ScheduledThreadPoolExecutor scheduledService;
@@ -105,7 +106,7 @@ public class KeyedObjectPool implements BeeObjectPool {
     //borrow a object from pool
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (defaultGenericPool != null) return defaultGenericPool.getObjectHandle();
-        return getObjectHandle(null);
+        return getObjectHandle(DEFAULT_KEY);
     }
 
     //borrow a object from pool
@@ -120,7 +121,7 @@ public class KeyedObjectPool implements BeeObjectPool {
             if (pool == null) {
                 pool = cloneGenericPool.createByClone(key, poolName, 0, true);
                 genericPoolMap.put(key, pool);
-                if (key == null) defaultGenericPool = pool;
+                if (key == DEFAULT_KEY) defaultGenericPool = pool;
             }
         }
 
