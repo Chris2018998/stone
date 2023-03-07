@@ -46,7 +46,6 @@ public class KeyedObjectPool implements BeeObjectPool {
     private ObjectGenericPool defaultGenericPool;
     private ObjectPoolMonitorVo poolMonitorVo;
     private ThreadPoolExecutor servantService;
-    private IdleClearTask scheduledIdleClearTask;
     private ScheduledThreadPoolExecutor scheduledService;
 
     //***************************************************************************************************************//
@@ -89,9 +88,9 @@ public class KeyedObjectPool implements BeeObjectPool {
                 TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(maxObjectKeySize), poolThreadFactory);
 
         //step7: create idle scheduled executor(core thread keep alive)
-        this.scheduledIdleClearTask = new IdleClearTask(this);
         scheduledService = new ScheduledThreadPoolExecutor(1, poolThreadFactory);
-        scheduledService.scheduleWithFixedDelay(scheduledIdleClearTask, 0, config.getTimerCheckInterval(), TimeUnit.MILLISECONDS);
+        scheduledService.scheduleWithFixedDelay(new IdleClearTask(this), 0,
+                config.getTimerCheckInterval(), TimeUnit.MILLISECONDS);
 
         //step8: create generic pool by init size
         try {
@@ -109,13 +108,11 @@ public class KeyedObjectPool implements BeeObjectPool {
     //***************************************************************************************************************//
     //                2: objects methods(2)                                                                          //                                                                                  //
     //***************************************************************************************************************//
-    //borrow a object from pool
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (defaultGenericPool != null) return defaultGenericPool.getObjectHandle();
         return getObjectHandle(DEFAULT_KEY);
     }
 
-    //borrow a object from pool
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
         //1: get pool from generic map
         ObjectGenericPool pool = genericPoolMap.get(key);
@@ -134,6 +131,12 @@ public class KeyedObjectPool implements BeeObjectPool {
         //3: get handle from pool
         return pool.getObjectHandle();
     }
+
+
+
+    
+
+
 
     //***************************************************************************************************************//
     //                3: Pool runtime maintain methods(6)                                                            //                                                                                  //
