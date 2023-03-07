@@ -18,35 +18,90 @@ import org.stone.beeop.BeeObjectPoolMonitorVo;
  * @version 1.0
  */
 
-public class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
-    private String osId;
-    private String osUUID;
-    private String hostIP;
-    private long threadId;
-    private String threadName;
-    private String poolName;
-    private String poolMode;
-    private int poolMaxSize;
-
+public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
+    private final String hostIP;
+    private final long threadId;
+    private final String threadName;
+    private final String poolName;
+    private final String poolMode;
+    private final int poolMaxSize;
     private int poolState;
     private int idleSize;
     private int usingSize;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
+    private String osId;
+    private String osUUID;
 
+    ObjectPoolMonitorVo(String hostIP, long threadId, String threadName, String poolName, String poolMode, int poolMaxSize) {
+        this.hostIP = hostIP;
+        this.threadId = threadId;
+        this.threadName = threadName;
+        this.poolName = poolName;
+        this.poolMode = poolMode;
+        this.poolMaxSize = poolMaxSize;
+    }
+
+    @Override
+    public int getPoolState() {
+        return poolState;
+    }
+
+    public void setPoolState(int poolState) {
+        this.poolState = poolState;
+    }
+
+    @Override
+    public int getIdleSize() {
+        return idleSize;
+    }
+
+    public void setIdleSize(int idleSize) {
+        this.idleSize = idleSize;
+    }
+
+    @Override
+    public int getUsingSize() {
+        return usingSize;
+    }
+
+    public void setUsingSize(int usingSize) {
+        this.usingSize = usingSize;
+    }
+
+    @Override
+    public int getSemaphoreWaitingSize() {
+        return semaphoreWaitingSize;
+    }
+
+    public void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
+        this.semaphoreWaitingSize = semaphoreWaitingSize;
+    }
+
+    @Override
+    public int getTransferWaitingSize() {
+        return transferWaitingSize;
+    }
+
+    public void setTransferWaitingSize(int transferWaitingSize) {
+        this.transferWaitingSize = transferWaitingSize;
+    }
+
+    @Override
     public String getOsId() {
         return osId;
     }
 
-    void setOsId(String osId) {
+    public void setOsId(String osId) {
         this.osId = osId;
     }
 
+    @Override
     public String getOsUUID() {
         return osUUID;
     }
 
-    void setOsUUID(String osUUID) {
+    public void setOsUUID(String osUUID) {
         this.osUUID = osUUID;
     }
 
@@ -54,88 +109,26 @@ public class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return hostIP;
     }
 
-    void setHostIP(String hostIP) {
-        this.hostIP = hostIP;
-    }
-
     public long getThreadId() {
         return threadId;
-    }
-
-    void setThreadId(long threadId) {
-        this.threadId = threadId;
     }
 
     public String getThreadName() {
         return threadName;
     }
 
-    void setThreadName(String threadName) {
-        this.threadName = threadName;
-    }
-
     public String getPoolName() {
         return poolName;
-    }
-
-    void setPoolName(String poolName) {
-        this.poolName = poolName;
     }
 
     public String getPoolMode() {
         return poolMode;
     }
 
-    void setPoolMode(String poolMode) {
-        this.poolMode = poolMode;
-    }
-
     public int getPoolMaxSize() {
         return poolMaxSize;
     }
 
-    void setPoolMaxSize(int poolMaxSize) {
-        this.poolMaxSize = poolMaxSize;
-    }
 
-    public int getPoolState() {
-        return poolState;
-    }
-
-    void setPoolState(int poolState) {
-        this.poolState = poolState;
-    }
-
-    public int getIdleSize() {
-        return idleSize;
-    }
-
-    void setIdleSize(int idleSize) {
-        this.idleSize = idleSize;
-    }
-
-    public int getUsingSize() {
-        return usingSize;
-    }
-
-    void setUsingSize(int usingSize) {
-        this.usingSize = usingSize;
-    }
-
-    public int getSemaphoreWaitingSize() {
-        return semaphoreWaitingSize;
-    }
-
-    void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
-        this.semaphoreWaitingSize = semaphoreWaitingSize;
-    }
-
-    public int getTransferWaitingSize() {
-        return transferWaitingSize;
-    }
-
-    void setTransferWaitingSize(int transferWaitingSize) {
-        this.transferWaitingSize = transferWaitingSize;
-    }
 }
 
