@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
@@ -144,9 +145,30 @@ public class KeyedObjectPool implements BeeObjectPool {
 
     //close pool
     public void close() {
+        long delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getDelayTimeForNextClear());
+        do {
+            int poolStateCode = this.poolState;
+            if ((poolStateCode == POOL_NEW || poolStateCode == POOL_READY) && PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSED)) {
+                for (ObjectGenericPool pool : genericPoolMap.values())
+                    pool.close(poolConfig.isForceCloseUsingOnClear());
 
+                servantService.shutdown();
+                scheduledService.shutdown();
+
+                try {
+                    Runtime.getRuntime().removeShutdownHook(this.exitHook);
+                } catch (Throwable e) {
+                    //do nothing
+                }
+                Log.info("BeeCP({})has shutdown", this.poolName);
+                break;
+            } else if (poolStateCode == POOL_CLOSED) {
+                break;
+            } else {
+                LockSupport.parkNanos(delayTimeForNextClearNs);// default wait 3 seconds
+            }
+        } while (true);
     }
-
 
     //get pool monitor vo
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
@@ -213,10 +235,9 @@ public class KeyedObjectPool implements BeeObjectPool {
         }
     }
 
-
     //***************************************************************************************************************//
-    //                                  6: Pool inner interface/class(8)                                             //                                                                                  //
-    //***************************************************************************************************************//
+//                                  6: Pool inner interface/class(8)                                             //                                                                                  //
+//***************************************************************************************************************//
     private static class IdleClearTask implements Runnable {
         private final KeyedObjectPool pool;
 
@@ -263,4 +284,5 @@ public class KeyedObjectPool implements BeeObjectPool {
             }
         }
     }
+
 }
