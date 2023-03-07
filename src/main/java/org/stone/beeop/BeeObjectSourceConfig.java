@@ -32,7 +32,7 @@ import static org.stone.util.CommonUtil.trimString;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
+public class BeeObjectSourceConfig {
     //poolName index
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //object factory properties

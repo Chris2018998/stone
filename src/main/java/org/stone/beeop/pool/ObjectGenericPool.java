@@ -26,7 +26,6 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Semaphore;
@@ -72,7 +71,6 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private final PooledObject templatePooledObject;
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;
-    private final Map<ObjectMethodKey, Method> methodCache;
     private final KeyedObjectPool parentPool;
     private boolean printRuntimeLog;
     //clone block end
@@ -112,14 +110,14 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         this.poolState = POOL_NEW;
 
         //step2:object type field setting
-        //this.poolConfig = config;
         this.parentPool = keyedObjectPool;
         this.objectFactory = config.getObjectFactory();
         Class[] objectInterfaces = config.getObjectInterfaces();
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
-        this.methodCache = new ConcurrentHashMap<>(16);
-        this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces, config.getObjectMethodFilter(), this.methodCache);
+        this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces, config.getObjectMethodFilter(),
+                new ConcurrentHashMap<ObjectMethodKey, Method>(16));
+
         if (objectInterfaces != null && objectInterfaces.length > 0)
             this.handleFactory = new ObjectReflectHandleFactory();
         else
