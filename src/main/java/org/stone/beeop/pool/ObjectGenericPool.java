@@ -487,13 +487,16 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     //                                      6: Pooled objects clear(2)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-6.1: remove all object from pool
-    void clear(boolean forceCloseUsing) {
+    boolean clear(boolean forceCloseUsing) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
             Log.info("BeeOP({})begin to clear all objects", this.poolName);
             this.clear(forceCloseUsing, DESC_RM_CLEAR);
             Log.info("BeeOP({})has clear all objects", this.poolName);
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})pool has cleared all objects", this.poolName);
+            return true;
+        } else {
+            return false;
         }
     }
 
