@@ -140,6 +140,26 @@ public final class KeyedObjectPool implements BeeObjectPool {
         return this.genericPoolMap.keySet().toArray();
     }
 
+    public void clear(Object key) {
+        clear(key, false);
+    }
+
+    public void clear(Object key, boolean forceCloseUsing) {
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) pool.clear(forceCloseUsing);
+    }
+
+    public void deleteKey(Object key) {
+        deleteKey(key, false);
+    }
+
+    public void deleteKey(Object key, boolean forceCloseUsing) {
+        synchronized (genericPoolMap) {
+            ObjectGenericPool pool = genericPoolMap.remove(key);
+            if (pool != null) pool.clear(forceCloseUsing);
+        }
+    }
+
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
         ObjectGenericPool pool = genericPoolMap.get(key);
         return pool != null ? pool.getPoolMonitorVo() : null;
@@ -148,30 +168,6 @@ public final class KeyedObjectPool implements BeeObjectPool {
     public void setPrintRuntimeLog(Object key, boolean indicator) {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
-    }
-
-    public void clear(Object key) throws Exception {
-        ObjectGenericPool pool = genericPoolMap.get(key);
-        if (pool != null) pool.clear(false);
-    }
-
-    public void clear(Object key, boolean forceCloseUsing) throws Exception {
-        ObjectGenericPool pool = genericPoolMap.get(key);
-        if (pool != null) pool.clear(forceCloseUsing);
-    }
-
-    public void deleteKey(Object key) throws Exception {
-        synchronized (genericPoolMap) {
-            ObjectGenericPool pool = genericPoolMap.remove(key);
-            if (pool != null) pool.clear(false);
-        }
-    }
-
-    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        synchronized (genericPoolMap) {
-            ObjectGenericPool pool = genericPoolMap.remove(key);
-            if (pool != null) pool.clear(forceCloseUsing);
-        }
     }
 
     //***************************************************************************************************************//
