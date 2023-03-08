@@ -117,6 +117,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
         //1: get pool from generic map
+        if (key == null) key = DEFAULT_KEY;
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) return pool.getObjectHandle();
 
