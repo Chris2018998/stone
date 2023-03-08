@@ -16,7 +16,8 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.pool.exception.ObjectException;
+import org.stone.beeop.pool.exception.PoolInClearingException;
+import org.stone.beeop.pool.exception.PoolObjectKeyException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Iterator;
@@ -140,34 +141,44 @@ public final class KeyedObjectPool implements BeeObjectPool {
         return this.genericPoolMap.keySet().toArray();
     }
 
-    public void clear(Object key) {
+    public void clear(Object key) throws Exception {
         clear(key, false);
     }
 
-    public void clear(Object key, boolean forceCloseUsing) {
+    public void clear(Object key, boolean forceCloseUsing) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
-        if (pool != null) pool.clear(forceCloseUsing);
-    }
-
-    public void deleteKey(Object key) {
-        deleteKey(key, false);
-    }
-
-    public void deleteKey(Object key, boolean forceCloseUsing) {
-        synchronized (genericPoolMap) {
-            ObjectGenericPool pool = genericPoolMap.remove(key);
-            if (pool != null) pool.clear(forceCloseUsing);
+        if (pool != null) {
+            if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
+        } else {
+            throw new PoolObjectKeyException("Not exists pool key:" + key);
         }
     }
 
-    public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) {
-        ObjectGenericPool pool = genericPoolMap.get(key);
-        return pool != null ? pool.getPoolMonitorVo() : null;
+    public void deleteKey(Object key) throws Exception {
+        deleteKey(key, false);
     }
 
-    public void setPrintRuntimeLog(Object key, boolean indicator) {
+    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        synchronized (genericPoolMap) {
+            ObjectGenericPool pool = genericPoolMap.remove(key);
+            if (pool != null) {
+                if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
+            } else {
+                throw new PoolObjectKeyException("Not exists pool key:" + key);
+            }
+        }
+    }
+
+    public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {
+        ObjectGenericPool pool = genericPoolMap.get(key);
+        if (pool != null) pool.getPoolMonitorVo();
+        throw new PoolObjectKeyException("Not exists pool key:" + key);
+    }
+
+    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
+        throw new PoolObjectKeyException("Not exists pool key:" + key);
     }
 
     //***************************************************************************************************************//
@@ -256,7 +267,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
             }
             this.poolState = POOL_READY;// restore state;
         } else {
-            throw new ObjectException("Pool has been in clearing");
+            throw new PoolInClearingException("Pool has been in clearing");
         }
     }
 

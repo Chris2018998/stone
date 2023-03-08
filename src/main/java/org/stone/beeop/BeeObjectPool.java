@@ -36,17 +36,17 @@ public interface BeeObjectPool {
     //***************************************************************************************************************//
     Object[] keys();
 
-    void clear(Object key);
+    void clear(Object key) throws Exception;
 
-    void clear(Object key, boolean forceCloseUsing);
+    void clear(Object key, boolean forceCloseUsing) throws Exception;
 
-    void deleteKey(Object key);
+    void deleteKey(Object key) throws Exception;
 
-    void deleteKey(Object key, boolean forceCloseUsing);
+    void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 
-    BeeObjectPoolMonitorVo getPoolMonitorVo(Object key);
+    BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception;
 
-    void setPrintRuntimeLog(Object key, boolean indicator);
+    void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
 
     //***************************************************************************************************************//
     //                4: Pool close(6)                                                                               //                                                                                  //

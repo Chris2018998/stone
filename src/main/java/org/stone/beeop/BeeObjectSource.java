@@ -10,8 +10,8 @@
 package org.stone.beeop;
 
 import org.stone.beeop.pool.ObjectPoolStatics;
-import org.stone.beeop.pool.exception.ObjectException;
-import org.stone.beeop.pool.exception.PoolNotCreateException;
+import org.stone.beeop.pool.exception.PoolNotCreatedException;
+import org.stone.beeop.pool.exception.PooledObjectBorrowException;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -91,9 +91,9 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         } else {
             try {
                 if (!readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
-                    throw new ObjectException("Get object timeout");
+                    throw new PooledObjectBorrowException("Pooled object request interrupted on waiting pool creation");
             } catch (InterruptedException e) {
-                throw new ObjectException("Interrupted during getting a object");
+                throw new PooledObjectBorrowException("Pooled object request interrupted on waiting pool creation");
             }
             readLock.unlock();
         }
@@ -133,18 +133,18 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
-        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
         return pool.getPoolMonitorVo();
     }
 
     public void clear(boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
         pool.clear(forceCloseUsing);
     }
 
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        if (pool == null) throw new PoolNotCreateException("Object pool not initialized");
-        if (config == null) throw new PoolNotCreateException("Object pool config can't be null");
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (config == null) throw new PoolNotCreatedException("Object pool config can't be null");
         pool.clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
