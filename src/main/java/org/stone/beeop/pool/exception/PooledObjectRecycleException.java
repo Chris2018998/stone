@@ -17,9 +17,6 @@ package org.stone.beeop.pool.exception;
  */
 
 public class PooledObjectRecycleException extends PooledObjectException {
-    public PooledObjectRecycleException(String message) {
-        super(message);
-    }
 
     public PooledObjectRecycleException(Throwable cause) {
         super(cause);
