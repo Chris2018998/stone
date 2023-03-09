@@ -17,6 +17,7 @@ import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.pool.exception.PoolInClearingException;
+import org.stone.beeop.pool.exception.PoolNotReadyException;
 import org.stone.beeop.pool.exception.PoolObjectKeyException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
@@ -116,13 +117,13 @@ public final class KeyedObjectPool implements BeeObjectPool {
     //                2: object borrow methods(2)                                                                          //                                                                                  //
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolInClearingException("Pool has shut down or in clearing");
+        if (this.poolState != POOL_READY) throw new PoolNotReadyException("Pool was not ready to request");
         if (defaultGenericPool != null) return defaultGenericPool.getObjectHandle();
         return getObjectHandle(DEFAULT_KEY);
     }
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolInClearingException("Pool has shut down or in clearing");
+        if (this.poolState != POOL_READY) throw new PoolNotReadyException("Pool was not ready to request");
 
         //1: get pool from generic map
         if (key == null) key = DEFAULT_KEY;

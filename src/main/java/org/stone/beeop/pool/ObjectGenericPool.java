@@ -15,10 +15,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.RawObjectFactory;
-import org.stone.beeop.pool.exception.PoolInClearingException;
-import org.stone.beeop.pool.exception.PooledObjectBorrowException;
-import org.stone.beeop.pool.exception.PooledObjectCreateException;
-import org.stone.beeop.pool.exception.PooledObjectException;
+import org.stone.beeop.pool.exception.*;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
 
@@ -266,7 +263,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
      * @throws Exception if pool is closed or waiting timeout,then throw exception
      */
     public BeeObjectHandle getObjectHandle() throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolInClearingException("Pool has shut down or in clearing");
+        if (this.poolState != POOL_READY) throw new PoolNotReadyException("Pool was not ready to request");
 
         //0:try to get from threadLocal cache
         ObjectBorrower b = this.threadLocal.get().get();
