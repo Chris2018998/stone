@@ -9,7 +9,7 @@ package org.stone.beeop.config;
 import org.stone.base.TestCase;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
-import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 import java.lang.reflect.Field;
 import java.util.LinkedList;
@@ -23,7 +23,7 @@ import java.util.Objects;
 public class ConfigCheckCopyTest extends TestCase {
     public void test() throws Exception {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectClassName(JavaBook.class.getName());
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         BeeObjectSourceConfig config2 = config.check();
 
         if (config2 == config) throw new BeeObjectSourceConfigException("Configuration check copy failed");

@@ -8,9 +8,11 @@ package org.stone.beeop.pool;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 /**
  * @author Chris.Liao
@@ -23,7 +25,7 @@ public class PoolRestartTest extends TestCase {
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setInitialSize(initSize);
-        config.setObjectClassName(JavaBook.class.getName());
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         obs = new BeeObjectSource(config);
     }
 
@@ -32,14 +34,14 @@ public class PoolRestartTest extends TestCase {
     }
 
     public void test() throws Exception {
-        ObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
+        BeeObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
         int usingSize = monitorVo.getUsingSize();
         int idleSize = monitorVo.getIdleSize();
         int totalSize = usingSize + idleSize;
 
         TestUtil.assertError("Total size expected:%s,current is:%s", initSize, totalSize);
         TestUtil.assertError("idle expected:%s,current is:%s", initSize, idleSize);
-        obs.restartPool(false);
+        obs.clear(false);
 
         monitorVo = obs.getPoolMonitorVo();
         usingSize = monitorVo.getUsingSize();

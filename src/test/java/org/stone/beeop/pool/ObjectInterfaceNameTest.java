@@ -13,6 +13,7 @@ import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.Book;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 /**
  * ObjectFactory subclass
@@ -24,7 +25,7 @@ public class ObjectInterfaceNameTest extends TestCase {
 
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectClass(JavaBook.class);
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         config.setObjectInterfaceNames(new String[]{Book.class.getName()});
         obs = new BeeObjectSource(config);
     }

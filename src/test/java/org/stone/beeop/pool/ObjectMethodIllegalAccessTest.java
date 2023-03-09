@@ -14,6 +14,7 @@ import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.RawObjectMethodFilter;
 import org.stone.beeop.object.Book;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
@@ -26,7 +27,7 @@ public class ObjectMethodIllegalAccessTest extends TestCase {
 
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectClass(JavaBook.class);
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         config.setObjectInterfaces(new Class[]{Book.class});
         config.setObjectMethodFilter(new ExcludeMethodFilter());
         obs = new BeeObjectSource(config);
@@ -71,7 +72,7 @@ public class ObjectMethodIllegalAccessTest extends TestCase {
     }
 
     class ExcludeMethodFilter implements RawObjectMethodFilter {
-        public void doFilter(String methodName, Class[] paramTypes, Object[] paramValues) throws Exception {
+        public void doFilter(Object key,String methodName, Class[] paramTypes, Object[] paramValues) throws Exception {
             if ("getName".equals(methodName)) throw new IllegalAccessException();
         }
     }

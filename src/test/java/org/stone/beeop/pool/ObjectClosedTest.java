@@ -12,7 +12,6 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBookFactory;
-import org.stone.beeop.pool.exception.ObjectException;
 
 /**
  * @author Chris.Liao
@@ -40,7 +39,8 @@ public class ObjectClosedTest extends TestCase {
             handle.close();
             handle.call("toString", new Class[0], new Object[0]);
             TestUtil.assertError("Closed test failed");
-        } catch (ObjectException e) {
+        } catch (Exception e) {
+
         } finally {
             if (handle != null)
                 handle.close();

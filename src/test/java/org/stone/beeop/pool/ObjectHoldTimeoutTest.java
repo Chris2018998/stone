@@ -9,9 +9,11 @@ package org.stone.beeop.pool;
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -29,7 +31,7 @@ public class ObjectHoldTimeoutTest extends TestCase {
         config.setHoldTimeout(1000L);// hold and not using objects;
         config.setTimerCheckInterval(1000L);//one second interval
         config.setDelayTimeForNextClear(0L);
-        config.setObjectClassName(JavaBook.class.getName());
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         obs = new BeeObjectSource(config);
     }
 
@@ -42,7 +44,7 @@ public class ObjectHoldTimeoutTest extends TestCase {
         try {
             //FastObjectPool pool = (FastObjectPool) TestUtil.getFieldValue(obs, "pool");
             handle = obs.getObjectHandle();
-            ObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
+            BeeObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
             if (monitorVo.getIdleSize() + monitorVo.getUsingSize() != 1)
                 TestUtil.assertError("Total objects not as expected 1");
             if (monitorVo.getUsingSize() != 1)

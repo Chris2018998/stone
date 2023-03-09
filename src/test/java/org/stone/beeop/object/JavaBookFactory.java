@@ -14,23 +14,23 @@ import org.stone.beeop.RawObjectFactory;
  * @author chris.liao
  */
 public class JavaBookFactory implements RawObjectFactory {
-    public Object create() throws Exception {
+    public Object create(Object key) throws Exception {
         return new JavaBook("Java核心技术·卷1", System.currentTimeMillis());
     }
 
-    public void setDefault(Object obj) throws Exception {
+    public void setDefault(Object key, Object obj) throws Exception {
         //do nothing
     }
 
-    public void reset(Object obj) throws Exception {
+    public void reset(Object key, Object obj) throws Exception {
         //do nothing
     }
 
-    public void destroy(Object obj) {
+    public void destroy(Object key, Object obj) {
         //do nothing
     }
 
-    public boolean isValid(Object obj, int timeout) {
+    public boolean isValid(Object key, Object obj, int timeout) {
         return true;
     }
 }

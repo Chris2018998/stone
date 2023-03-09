@@ -12,6 +12,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 /**
  * @author Chris.Liao
@@ -22,7 +23,7 @@ public class ObjectClassTest extends TestCase {
 
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectClass(JavaBook.class);
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         obs = new BeeObjectSource(config);
     }
 

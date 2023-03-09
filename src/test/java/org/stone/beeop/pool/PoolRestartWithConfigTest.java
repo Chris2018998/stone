@@ -8,10 +8,7 @@ package org.stone.beeop.pool;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectSource;
-import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.RawObjectFactory;
+import org.stone.beeop.*;
 import org.stone.beeop.object.Book;
 import org.stone.beeop.object.JavaBookFactory;
 
@@ -27,7 +24,7 @@ public class PoolRestartWithConfigTest extends TestCase {
         config.setInitialSize(initSize);
         config.setMaxActive(initSize);
         config.setObjectInterfaces(new Class[]{Book.class});
-        config.setObjectFactory(new JavaBookFactory());
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         config.setDelayTimeForNextClear(delayTimeForNextClear);//Ms
         obs = new BeeObjectSource(config);
     }
@@ -40,11 +37,11 @@ public class PoolRestartWithConfigTest extends TestCase {
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.setInitialSize(1);
         config2.setMaxActive(5);
-        config2.setObjectFactory(new StringFactory());
+        config2.setRawObjectFactory(new StringFactory());
         config2.setObjectInterfaces(new Class[]{CharSequence.class});
         config2.setDelayTimeForNextClear(delayTimeForNextClear);//Ms
-        obs.restartPool(true, config2);
-        ObjectPoolMonitorVo vo = obs.getPoolMonitorVo();
+        obs.clear(true, config2);
+        BeeObjectPoolMonitorVo vo = obs.getPoolMonitorVo();
         TestUtil.assertError("pool idle size expect value:%s,actual value:%s", 1, vo.getIdleSize());
         TestUtil.assertError("pool max size expect value:%s,actual value:%s", 5, vo.getPoolMaxSize());
 
@@ -59,23 +56,23 @@ public class PoolRestartWithConfigTest extends TestCase {
     }
 
     class StringFactory implements RawObjectFactory {
-        public Object create() throws Exception {
+        public Object create(Object key) throws Exception {
             return "Java核心技术·卷1";
         }
 
-        public void setDefault(Object obj) throws Exception {
+        public void setDefault(Object key,Object obj) throws Exception {
             //do nothingr
         }
 
-        public void reset(Object obj) throws Exception {
+        public void reset(Object key,Object obj) throws Exception {
             //do nothing
         }
 
-        public void destroy(Object obj) {
+        public void destroy(Object key,Object obj) {
             //do nothing
         }
 
-        public boolean isValid(Object obj, int timeout) {
+        public boolean isValid(Object key,Object obj, int timeout) {
             return true;
         }
     }

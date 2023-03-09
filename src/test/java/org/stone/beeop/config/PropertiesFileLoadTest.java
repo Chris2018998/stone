@@ -42,7 +42,7 @@ public class PropertiesFileLoadTest extends TestCase {
     }
 
     private static String checkInterface(BeeObjectSourceConfig config) {
-        if (!"org.stone.beeop.object.JavaBook".equals(config.getObjectClassName())) return "objectClassName error";
+        //if (!"org.stone.beeop.object.JavaBook".equals(config.getObjectClassName())) return "objectClassName error";
         //if(!"JavaBook".equalsString(config.getObjectClass().getClass().getName()))return"objectClass error";
         if (!"org.stone.beeop.object.JavaBookFactory".equals(config.getObjectFactoryClassName()))
             return "objectFactoryClassName error";

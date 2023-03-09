@@ -8,9 +8,11 @@ package org.stone.beeop.pool;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -30,7 +32,7 @@ public class ObjectIdleTimeoutTest extends TestCase {
         config.setIdleTimeout(1000);
         config.setTimerCheckInterval(1000L);// two seconds interval
         config.setDelayTimeForNextClear(1);
-        config.setObjectClassName(JavaBook.class.getName());
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         obs = new BeeObjectSource(config);
     }
 
@@ -43,7 +45,7 @@ public class ObjectIdleTimeoutTest extends TestCase {
 //        CountDownLatch poolThreadLatch = (CountDownLatch) TestUtil.getFieldValue(pool, "poolThreadLatch");
 //        if (poolThreadLatch.getCount() > 0) poolThreadLatch.await();
 
-        ObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
+        BeeObjectPoolMonitorVo monitorVo = obs.getPoolMonitorVo();
         int usingSize = monitorVo.getUsingSize();
         int idleSize = monitorVo.getIdleSize();
         int totalSize = usingSize + idleSize;

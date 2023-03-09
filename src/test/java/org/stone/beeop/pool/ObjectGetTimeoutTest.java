@@ -12,6 +12,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBook;
+import org.stone.beeop.object.JavaBookFactory;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -26,7 +27,7 @@ public class ObjectGetTimeoutTest extends TestCase {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setMaxActive(1);
         config.setMaxWait(3000);
-        config.setObjectClass(JavaBook.class);
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         obs = new BeeObjectSource(config);
     }
 
