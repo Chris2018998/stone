@@ -100,7 +100,12 @@ public final class KeyedObjectPool implements BeeObjectPool {
                 ObjectGenericPool genericPool = cloneGenericPool.createByClone(config.getInitialObjectKey(),
                         poolName, config.getInitialSize(), config.isAsyncCreateInitObject());
 
-                genericPoolMap.put(config.getInitialObjectKey(), genericPool);
+                Object key = config.getInitialObjectKey();
+                if (key == null) {
+                    key = DEFAULT_KEY;
+                    defaultGenericPool = genericPool;
+                }
+                genericPoolMap.put(key, genericPool);
             }
         } finally {
             this.poolState = POOL_READY;//assume that default pool create failed,the state should be ready
@@ -118,6 +123,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
         if (this.poolState != POOL_READY) throw new PoolInClearingException("Pool has shut down or in clearing");
+
         //1: get pool from generic map
         if (key == null) key = DEFAULT_KEY;
         ObjectGenericPool pool = genericPoolMap.get(key);
@@ -166,8 +172,8 @@ public final class KeyedObjectPool implements BeeObjectPool {
             ObjectGenericPool pool = genericPoolMap.remove(key);
             if (pool != null) {
                 if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
-                if(key==DEFAULT_KEY）defaultGenericPool=null;
-             } else {
+                if (key == DEFAULT_KEY) defaultGenericPool = null;
+            } else {
                 throw new PoolObjectKeyException("Not exists pool key:" + key);
             }
         }

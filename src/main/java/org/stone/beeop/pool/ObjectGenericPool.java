@@ -96,7 +96,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     ObjectGenericPool(BeeObjectSourceConfig config, KeyedObjectPool keyedObjectPool) {
         //step1: primitive type field setting
         this.poolInitSize = config.getInitialSize();
-        this.poolMaxSize = config.getInitialSize();
+        this.poolMaxSize = config.getMaxActive();
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
         this.poolMode = isFairMode ? "fair" : "compete";
@@ -142,27 +142,27 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     ObjectGenericPool createByClone(Object key, String parentName, int initSize, boolean async) throws Exception {
         final ObjectGenericPool p = (ObjectGenericPool) clone();
         p.key = key;
-        p.poolName = parentName + "-[" + key.toString() + "]";
+        p.poolName = parentName + "-[" + key + "]";
         p.pooledArray = new PooledObject[0];
         p.pooledArrayLock = new ReentrantLock();
-        if (initSize > 0 && !async) this.createInitObjects(poolInitSize, true);
+        if (initSize > 0 && !async) p.createInitObjects(poolInitSize, true);
 
         p.threadLocal = new BorrowerThreadLocal();
         p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
         p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         p.servantState = new AtomicInteger(THREAD_WAITING);
         p.servantTryCount = new AtomicInteger(0);
-        if (initSize > 0 && async) new PoolInitAsynCreateThread(initSize, this).start();
+        if (initSize > 0 && async) new PoolInitAsynCreateThread(initSize, p).start();
         p.monitorVo = new ObjectPoolMonitorVo(poolHostIP, poolThreadId, poolThreadName, poolName, poolMode, poolMaxSize);
 
         p.poolState = POOL_READY;
         Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ns",
-                this.poolName,
+                p.poolName,
                 poolMode,
-                this.pooledArray.length,
-                this.poolMaxSize,
-                this.semaphoreSize,
-                this.maxWaitNs);
+                p.pooledArray.length,
+                p.poolMaxSize,
+                p.semaphoreSize,
+                p.maxWaitNs);
         return p;
     }
 

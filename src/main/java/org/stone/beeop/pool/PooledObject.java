@@ -49,8 +49,8 @@ final class PooledObject implements Cloneable {
         this.methodCache = methodCache;
     }
 
-    PooledObject setDefaultAndCopy(Object k, Object v, int state, ObjectGenericPool pool) throws Exception {
-        this.factory.setDefault(k, v);
+    PooledObject setDefaultAndCopy(Object k, Object raw, int state, ObjectGenericPool pool) throws Exception {
+        this.factory.setDefault(k, raw);
         PooledObject p = (PooledObject) this.clone();
 
         p.key = k;
