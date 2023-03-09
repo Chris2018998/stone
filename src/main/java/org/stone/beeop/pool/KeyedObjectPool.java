@@ -108,7 +108,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
     }
 
     //***************************************************************************************************************//
-    //                2: objects methods(2)                                                                          //                                                                                  //
+    //                2: object borrow methods(2)                                                                          //                                                                                  //
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY) throw new PoolInClearingException("Pool has shut down or in clearing");
