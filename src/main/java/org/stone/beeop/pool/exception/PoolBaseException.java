@@ -16,7 +16,7 @@ package org.stone.beeop.pool.exception;
  * @version 1.0
  */
 public class PoolBaseException extends Exception {
-    PoolBaseException(String s) {
+    public PoolBaseException(String s) {
         super(s);
     }
 }
