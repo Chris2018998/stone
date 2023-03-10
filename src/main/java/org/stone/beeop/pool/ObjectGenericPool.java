@@ -263,7 +263,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
      * @throws Exception if pool is closed or waiting timeout,then throw exception
      */
     public BeeObjectHandle getObjectHandle() throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolNotReadyException("Pool was not ready to request");
+        if (this.poolState != POOL_READY) throw new PoolForbiddenException("Pool was not ready to request");
 
         //0:try to get from threadLocal cache
         ObjectBorrower b = this.threadLocal.get().get();
@@ -501,7 +501,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     //Method-6.2: remove all connections from pool
     private void clear(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
-        PoolInClearingException poolClearException = new PoolInClearingException("Pool has been in clearing");
+        PoolInClearingException poolClearException = new PoolInClearingException("Pool was in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(poolClearException);
 
         while (this.pooledArray.length > 0) {
