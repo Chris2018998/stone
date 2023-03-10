@@ -268,10 +268,9 @@ public final class KeyedObjectPool implements BeeObjectPool {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
             for (ObjectGenericPool pool : genericPoolMap.values())
                 pool.clear(forceCloseUsing);
-            synchronized (genericPoolMap) {
-                genericPoolMap.clear();
-            }
 
+            genericPoolMap.clear();//just clear on pool clearing state
+          
             try {
                 if (tempConfig != null) {
                     this.poolConfig = tempConfig;
