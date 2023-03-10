@@ -17,11 +17,11 @@ package org.stone.beeop;
  */
 public interface BeeObjectHandle {
 
+    boolean isClosed();
+
+    Object getObjectKey();
+
     void close() throws Exception;
-
-    boolean isClosed() throws Exception;
-
-    Object getObjectKey() throws Exception;
 
     Object getObjectProxy() throws Exception;
 
