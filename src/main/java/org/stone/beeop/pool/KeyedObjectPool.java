@@ -60,7 +60,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
             throw new PoolBaseException("Pool has been initialized or in starting");
 
-        //step2: pool check config
+        //step2: pool startup
         try {
             this.poolConfig = config.check();
             startup(poolConfig);
