@@ -55,11 +55,11 @@ public final class KeyedObjectPool implements BeeObjectPool {
     //                1: pool initialize method(2)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public void init(BeeObjectSourceConfig config) throws Exception {
-        //step1: pool state check
+        //step1: config check
         if (config == null) throw new PoolBaseException("Configuration can't be null");
         BeeObjectSourceConfig tempPoolConfig = config.check();
         
-        //step2:cas pool state to starting
+        //step2: cas pool state to starting
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
             throw new PoolBaseException("Pool has been initialized or in starting");
 
