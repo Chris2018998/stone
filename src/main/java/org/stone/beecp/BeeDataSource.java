@@ -9,8 +9,10 @@
  */
 package org.stone.beecp;
 
+import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
+import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
-import org.stone.beecp.pool.exception.PoolNotCreateException;
+import org.stone.beecp.pool.exception.PoolNotCreatedException;
 
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
@@ -19,7 +21,6 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLTimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
@@ -108,9 +109,9 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         } else {
             try {
                 if (!this.readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
-                    throw new SQLTimeoutException("Get connection timeout");
+                    throw new ConnectionGetTimeoutException("Connection get timeout at lock of pool creation");
             } catch (InterruptedException e) {
-                throw new SQLException("Interrupted during getting connection");
+                throw new ConnectionGetInterruptedException("Connection get request interrupted at lock of pool creation");
             }
             readLock.unlock();
         }
@@ -189,18 +190,18 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
+        if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
         return this.pool.getPoolMonitorVo();
     }
 
     public void clear(boolean forceCloseUsing) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
+        if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
         this.pool.clear(forceCloseUsing);
     }
 
     public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreateException("Connection pool not initialized");
-        if (config == null) throw new PoolNotCreateException("Connection pool config can't be null");
+        if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
+        if (config == null) throw new BeeDataSourceConfigException("Connection pool config can't be null");
         this.pool.clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());

@@ -9,6 +9,8 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.beecp.pool.exception.ConnectionRecycleException;
+
 import javax.transaction.xa.XAResource;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -156,7 +158,7 @@ final class PooledConnection implements Cloneable {
             this.pool.recycle(this);
         } catch (Throwable e) {
             this.pool.abandonOnReturn(this, DESC_RM_BAD);
-            throw e instanceof SQLException ? (SQLException) e : new SQLException(e);
+            throw e instanceof SQLException ? (SQLException) e : new ConnectionRecycleException(e);
         }
     }
 

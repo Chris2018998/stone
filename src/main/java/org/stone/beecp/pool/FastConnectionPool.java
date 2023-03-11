@@ -12,9 +12,7 @@ package org.stone.beecp.pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stone.beecp.*;
-import org.stone.beecp.pool.exception.PoolClosedException;
-import org.stone.beecp.pool.exception.PoolCreateFailedException;
-import org.stone.beecp.pool.exception.PoolInternalException;
+import org.stone.beecp.pool.exception.*;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
 
@@ -28,7 +26,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
 import java.sql.Statement;
 import java.util.Iterator;
 import java.util.concurrent.*;
@@ -228,7 +225,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 if (e instanceof SQLException)
                     throw (SQLException) e;
                 else
-                    throw new PoolInternalException(e);
+                    throw new PoolInitializedException(e);
             } else {
                 Log.warn("Failed to create connections on pool initialization,cause:" + e);
             }
@@ -240,9 +237,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //1:try to acquire lock
         try {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new SQLTimeoutException("Get connection timeout");
+                throw new ConnectionCreateException("Pooled connection create timeout at lock");
         } catch (InterruptedException e) {
-            throw new SQLException("Interrupted during getting connection");
+            throw new ConnectionCreateException("Pooled connection create interrupted at lock");
         }
 
         //2:try to create a pooled connection
@@ -280,7 +277,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 } catch (Throwable e) {
                     if (rawConn != null) oclose(rawConn);
                     else if (rawXaConn != null) oclose(rawXaConn);
-                    throw e instanceof SQLException ? (SQLException) e : new PoolInternalException(e);
+                    throw e instanceof SQLException ? (SQLException) e : new ConnectionCreateException(e);
                 }
             } else {
                 return null;
@@ -438,7 +435,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-2.3:borrow one connection from pool
     private PooledConnection getPooledConnection() throws SQLException {
-        if (this.poolState != POOL_READY) throw new PoolClosedException("Pool has shut down or in clearing");
+        if (this.poolState != POOL_READY)
+            throw new ConnectionGetForbiddenException("Access forbidden,connection pool was closed or in clearing");
 
         //0:try to get from threadLocal cache
         Borrower b = this.threadLocal.get().get();
@@ -457,9 +455,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         try {
             //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new SQLTimeoutException("Get connection timeout");
+                throw new ConnectionGetTimeoutException("Connection get timeout at semaphore");
         } catch (InterruptedException e) {
-            throw new SQLException("Interrupted during getting connection");
+            throw new ConnectionGetInterruptedException("Connection get request interrupted at semaphore");
         }
 
         try {//semaphore acquired
@@ -483,7 +481,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
-                    throw s instanceof SQLException ? (SQLException) s : new PoolInternalException((Throwable) s);
+                    throw s instanceof SQLException ? (SQLException) s : new ConnectionGetException((Throwable) s);
                 }
 
                 if (cause != null) {
@@ -499,9 +497,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
-                            cause = new SQLException("Interrupted during getting a connection");
+                            cause = new ConnectionGetInterruptedException("Connection get request interrupted in wait queue");
                     } else {//timeout
-                        cause = new SQLTimeoutException("Get connection timeout");
+                        cause = new ConnectionGetTimeoutException("Connection get timeout in wait queue");
                     }
                 }//end
             } while (true);//while
@@ -722,7 +720,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-4.3: remove all connections from pool
     private void removeAllConnections(boolean force, String source) {
         this.semaphore.interruptWaitingThreads();
-        PoolClosedException exception = new PoolClosedException("Pool has been in clearing");
+        PoolInClearingException exception = new PoolInClearingException("Connection Pool was in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(exception);
 
         while (this.pooledArray.length > 0) {

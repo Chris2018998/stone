@@ -12,7 +12,7 @@ package org.stone.beecp.pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.beecp.pool.exception.TestSQLFailException;
+import org.stone.beecp.pool.exception.TestSqlExecFailedException;
 
 import javax.sql.XAConnection;
 import java.lang.reflect.*;
@@ -218,7 +218,7 @@ public class ConnectionPoolStatics {
             try {
                 st.execute(testSql);
             } catch (Throwable e) {
-                throw new TestSQLFailException("Invalid test sql:" + testSql, e);
+                throw new TestSqlExecFailedException("Invalid test sql:" + testSql, e);
             } finally {
                 rawCon.rollback();//why? maybe store procedure in test sql
             }

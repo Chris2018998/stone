@@ -10,7 +10,7 @@
 package org.stone.beecp.pool;
 
 import org.stone.beecp.*;
-import org.stone.beecp.pool.exception.PoolClosedException;
+import org.stone.beecp.pool.exception.ConnectionGetForbiddenException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 
 import javax.management.MBeanServer;
@@ -98,7 +98,8 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
      */
     public Connection getConnection() throws SQLException {
         try {
-            if (poolState.get() != POOL_READY) throw new PoolClosedException("Pool has shut down or in clearing");
+            if (poolState.get() != POOL_READY)
+                throw new ConnectionGetForbiddenException("Access forbidden,connection pool was closed or in clearing");
             if (borrowSemaphore.tryAcquire(defaultMaxWait, NANOSECONDS)) {
                 if (isRawXaConnFactory) {
                     return rawXaConnFactory.create().getConnection();
@@ -118,7 +119,8 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
     //borrow a connection from pool
     public XAConnection getXAConnection() throws SQLException {
         try {
-            if (poolState.get() != POOL_READY) throw new PoolClosedException("Pool has shut down or in clearing");
+            if (poolState.get() != POOL_READY)
+                throw new ConnectionGetForbiddenException("Access forbidden,connection pool was closed or in clearing");
             if (borrowSemaphore.tryAcquire(defaultMaxWait, NANOSECONDS)) {
                 if (isRawXaConnFactory) {
                     return rawXaConnFactory.create();
