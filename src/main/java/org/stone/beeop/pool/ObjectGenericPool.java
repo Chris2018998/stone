@@ -12,10 +12,7 @@ package org.stone.beeop.pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stone.beeop.*;
-import org.stone.beeop.pool.exception.ObjectBorrowException;
-import org.stone.beeop.pool.exception.ObjectCreateException;
-import org.stone.beeop.pool.exception.PoolForbiddenException;
-import org.stone.beeop.pool.exception.PoolInClearingException;
+import org.stone.beeop.pool.exception.*;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
 
@@ -263,7 +260,8 @@ final class ObjectGenericPool implements Runnable, Cloneable {
      * @throws Exception if pool is closed or waiting timeout,then throw exception
      */
     public BeeObjectHandle getObjectHandle() throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolForbiddenException("Pool was not ready to request");
+        if (this.poolState != POOL_READY)
+            throw new ObjectGetForbiddenException("Forbidden,Pool was not ready for getting");
 
         //0:try to get from threadLocal cache
         ObjectBorrower b = this.threadLocal.get().get();
@@ -282,9 +280,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         try {
             //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectBorrowException("Pooled object request timeout on semaphore");
+                throw new ObjectGetTimeoutException("Object get timeout on semaphore");
         } catch (InterruptedException e) {
-            throw new ObjectBorrowException("Pooled object request interrupted on semaphore");
+            throw new ObjectGetInterruptedException("Object get request interrupted on semaphore");
         }
         try {//semaphore acquired
             //2:try search one or create one
@@ -307,7 +305,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
-                    throw s instanceof Exception ? (Exception) s : new BeeObjectException((Throwable) s);
+                    throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
                 }
 
                 if (cause != null) {
@@ -324,9 +322,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
-                            cause = new ObjectBorrowException("Pooled object request interrupted on wait queue");
+                            cause = new ObjectGetInterruptedException("Object get request interrupted on wait queue");
                     } else {//timeout
-                        cause = new ObjectBorrowException("Pooled object request timeout on wait queue");
+                        cause = new ObjectGetTimeoutException("Object get timeout on wait queue");
                     }
                 }//end (state == BOWER_NORMAL)
             } while (true);//while

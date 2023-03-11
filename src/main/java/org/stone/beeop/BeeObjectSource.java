@@ -10,7 +10,8 @@
 package org.stone.beeop;
 
 import org.stone.beeop.pool.ObjectPoolStatics;
-import org.stone.beeop.pool.exception.ObjectBorrowException;
+import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
+import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
 import org.stone.beeop.pool.exception.PoolNotCreatedException;
 
 import java.util.concurrent.TimeUnit;
@@ -91,9 +92,9 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         } else {
             try {
                 if (!readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
-                    throw new ObjectBorrowException("Pooled object request interrupted on waiting pool creation");
+                    throw new ObjectGetTimeoutException("Object get timeout on lock of pool creation");
             } catch (InterruptedException e) {
-                throw new ObjectBorrowException("Pooled object request interrupted on waiting pool creation");
+                throw new ObjectGetInterruptedException("Object get request interrupted on lock of pool creation");
             }
             readLock.unlock();
         }

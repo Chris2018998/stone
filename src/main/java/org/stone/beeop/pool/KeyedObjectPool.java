@@ -15,8 +15,8 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.pool.exception.ObjectKeyException;
-import org.stone.beeop.pool.exception.PoolForbiddenException;
+import org.stone.beeop.pool.exception.ObjectGetForbiddenException;
+import org.stone.beeop.pool.exception.ObjectKeyNotExistsException;
 import org.stone.beeop.pool.exception.PoolInClearingException;
 import org.stone.beeop.pool.exception.PoolInitializedException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
@@ -128,13 +128,15 @@ public final class KeyedObjectPool implements BeeObjectPool {
     //                2: object borrow methods(2)                                                                          //                                                                                  //
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolForbiddenException("Pool was not ready to request");
+        if (this.poolState != POOL_READY)
+            throw new ObjectGetForbiddenException("Forbidden,Pool was not ready for getting");
         if (defaultGenericPool != null) return defaultGenericPool.getObjectHandle();
         return getObjectHandle(null);
     }
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
-        if (this.poolState != POOL_READY) throw new PoolForbiddenException("Pool access forbidden");
+        if (this.poolState != POOL_READY)
+            throw new ObjectGetForbiddenException("Forbidden,Pool was not ready for getting");
 
         //1: get pool from generic map
         if (key == null) key = DEFAULT_KEY;
@@ -171,7 +173,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
         if (pool != null) {
             if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
         } else {
-            throw new ObjectKeyException("Not exists pool key:" + key);
+            throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
         }
     }
 
@@ -186,20 +188,20 @@ public final class KeyedObjectPool implements BeeObjectPool {
             if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
             if (key == DEFAULT_KEY) defaultGenericPool = null;
         } else {
-            throw new ObjectKeyException("Not found objects with key:" + key);
+            throw new ObjectKeyNotExistsException("Not found objects with key:" + key);
         }
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.getPoolMonitorVo();
-        throw new ObjectKeyException("Not exists pool key:" + key);
+        throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
-        throw new ObjectKeyException("Not exists pool key:" + key);
+        throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
     }
 
     //***************************************************************************************************************//
