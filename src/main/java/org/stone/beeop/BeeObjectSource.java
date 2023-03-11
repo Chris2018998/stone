@@ -145,7 +145,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
 
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
-        if (config == null) throw new PoolNotCreatedException("Object pool config can't be null");
+        if (config == null) throw new BeeObjectSourceConfigException("Object pool config can't be null");
         pool.clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
