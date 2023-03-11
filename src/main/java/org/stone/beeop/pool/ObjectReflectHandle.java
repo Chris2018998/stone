@@ -9,9 +9,9 @@
  */
 package org.stone.beeop.pool;
 
+import org.stone.beeop.BeeObjectException;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.RawObjectMethodFilter;
-import org.stone.beeop.pool.exception.BeeObjectException;
 import org.stone.beeop.pool.exception.ObjectCallException;
 
 import java.lang.reflect.InvocationHandler;

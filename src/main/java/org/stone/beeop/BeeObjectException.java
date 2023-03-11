@@ -7,9 +7,7 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.beeop.pool.exception;
-
-import org.stone.beeop.BeeObjectException;
+package org.stone.beeop;
 
 /**
  * pool exception
@@ -17,10 +15,12 @@ import org.stone.beeop.BeeObjectException;
  * @author Chris Liao
  * @version 1.0
  */
+public class BeeObjectException extends Exception {
+    public BeeObjectException(String message) {
+        super(message);
+    }
 
-public class ObjectRecycleException extends BeeObjectException {
-
-    public ObjectRecycleException(Throwable cause) {
+    public BeeObjectException(Throwable cause) {
         super(cause);
     }
 }

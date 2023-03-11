@@ -9,6 +9,8 @@
  */
 package org.stone.beeop.pool.exception;
 
+import org.stone.beeop.BeeObjectException;
+
 /**
  * pool keyed exception
  *
