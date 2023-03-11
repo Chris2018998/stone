@@ -19,6 +19,6 @@ Java7 or higher
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.0.4</version>
+   <version>1.0.5</version>
 </dependency>
 ```
