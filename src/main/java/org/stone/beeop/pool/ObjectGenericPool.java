@@ -191,9 +191,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         //1:try to acquire lock
         try {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new PooledObjectCreateException("Pooled object create timeout on lock");
+                throw new ObjectCreateException("Pooled object create timeout on lock");
         } catch (InterruptedException e) {
-            throw new PooledObjectCreateException("Pooled object create interrupted on lock");
+            throw new ObjectCreateException("Pooled object create interrupted on lock");
         }
 
         //2:try to create a pooled object
@@ -216,7 +216,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     return p;
                 } catch (Throwable e) {
                     if (rawObj != null) this.objectFactory.destroy(key, rawObj);
-                    throw e instanceof Exception ? (Exception) e : new PooledObjectCreateException(e);
+                    throw e instanceof Exception ? (Exception) e : new ObjectCreateException(e);
                 }
             } else {
                 return null;
@@ -282,9 +282,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         try {
             //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new PooledObjectBorrowException("Pooled object request timeout on semaphore");
+                throw new ObjectBorrowException("Pooled object request timeout on semaphore");
         } catch (InterruptedException e) {
-            throw new PooledObjectBorrowException("Pooled object request interrupted on semaphore");
+            throw new ObjectBorrowException("Pooled object request interrupted on semaphore");
         }
         try {//semaphore acquired
             //2:try search one or create one
@@ -294,7 +294,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
             //3:try to get one transferred one
             b.state = null;
             this.waitQueue.offer(b);
-            PooledObjectException cause = null;
+            BeeObjectException cause = null;
             deadline += this.maxWaitNs;
 
             do {
@@ -307,7 +307,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     }
                 } else if (s instanceof Throwable) {
                     this.waitQueue.remove(b);
-                    throw s instanceof Exception ? (Exception) s : new PooledObjectException((Throwable) s);
+                    throw s instanceof Exception ? (Exception) s : new BeeObjectException((Throwable) s);
                 }
 
                 if (cause != null) {
@@ -324,9 +324,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
-                            cause = new PooledObjectBorrowException("Pooled object request interrupted on wait queue");
+                            cause = new ObjectBorrowException("Pooled object request interrupted on wait queue");
                     } else {//timeout
-                        cause = new PooledObjectBorrowException("Pooled object request timeout on wait queue");
+                        cause = new ObjectBorrowException("Pooled object request timeout on wait queue");
                     }
                 }//end (state == BOWER_NORMAL)
             } while (true);//while

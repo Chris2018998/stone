@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.RawObjectMethodFilter;
-import org.stone.beeop.pool.exception.PooledObjectCallException;
+import org.stone.beeop.pool.exception.ObjectCallException;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -75,7 +75,7 @@ public class ObjectBaseHandle implements BeeObjectHandle {
     }
 
     public Object call(String name, Class[] types, Object[] params) throws Exception {
-        if (isClosed) throw new PooledObjectCallException("No operations allowed after object handle closed");
+        if (isClosed) throw new ObjectCallException("No operations allowed after object handle closed");
         if (filter != null) filter.doFilter(p.key, name, types, params);
 
         ObjectMethodKey key = new ObjectMethodKey(name, types);

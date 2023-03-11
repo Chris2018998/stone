@@ -15,10 +15,10 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.pool.exception.ObjectKeyException;
 import org.stone.beeop.pool.exception.PoolForbiddenException;
 import org.stone.beeop.pool.exception.PoolInClearingException;
 import org.stone.beeop.pool.exception.PoolInitializedException;
-import org.stone.beeop.pool.exception.PooledObjectKeyException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Iterator;
@@ -36,6 +36,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @version 1.0
  */
 public final class KeyedObjectPool implements BeeObjectPool {
+    private static final Object DEFAULT_KEY = new Object();
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>(1);
@@ -115,7 +116,10 @@ public final class KeyedObjectPool implements BeeObjectPool {
                     poolName, config.getInitialSize(), config.isAsyncCreateInitObject());
 
             Object key = config.getInitialObjectKey();
-            if (key == null) defaultGenericPool = genericPool;
+            if (key == null) {
+                key = DEFAULT_KEY;
+                defaultGenericPool = genericPool;
+            }
             genericPoolMap.put(key, genericPool);
         }
     }
@@ -133,6 +137,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
         if (this.poolState != POOL_READY) throw new PoolForbiddenException("Pool access forbidden");
 
         //1: get pool from generic map
+        if (key == null) key = DEFAULT_KEY;
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) return pool.getObjectHandle();
 
@@ -140,9 +145,9 @@ public final class KeyedObjectPool implements BeeObjectPool {
         synchronized (genericPoolMap) {
             pool = genericPoolMap.get(key);
             if (pool == null) {
-                pool = cloneGenericPool.createByClone(key, poolName, 0, true);
+                pool = cloneGenericPool.createByClone(key == DEFAULT_KEY ? null : key, poolName, 0, true);
                 genericPoolMap.put(key, pool);
-                if (key == null) defaultGenericPool = pool;
+                if (key == DEFAULT_KEY) defaultGenericPool = pool;
             }
         }
 
@@ -166,7 +171,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
         if (pool != null) {
             if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
         } else {
-            throw new PooledObjectKeyException("Not exists pool key:" + key);
+            throw new ObjectKeyException("Not exists pool key:" + key);
         }
     }
 
@@ -175,25 +180,26 @@ public final class KeyedObjectPool implements BeeObjectPool {
     }
 
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        if (key == null) key = DEFAULT_KEY;
         ObjectGenericPool pool = genericPoolMap.remove(key);
         if (pool != null) {
             if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
-            if (key == null) defaultGenericPool = null;
+            if (key == DEFAULT_KEY) defaultGenericPool = null;
         } else {
-            throw new PooledObjectKeyException("Not found objects with key:" + key);
+            throw new ObjectKeyException("Not found objects with key:" + key);
         }
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.getPoolMonitorVo();
-        throw new PooledObjectKeyException("Not exists pool key:" + key);
+        throw new ObjectKeyException("Not exists pool key:" + key);
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
-        throw new PooledObjectKeyException("Not exists pool key:" + key);
+        throw new ObjectKeyException("Not exists pool key:" + key);
     }
 
     //***************************************************************************************************************//

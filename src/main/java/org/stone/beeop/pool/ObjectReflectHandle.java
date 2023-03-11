@@ -11,8 +11,8 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.RawObjectMethodFilter;
-import org.stone.beeop.pool.exception.PooledObjectCallException;
-import org.stone.beeop.pool.exception.PooledObjectException;
+import org.stone.beeop.pool.exception.BeeObjectException;
+import org.stone.beeop.pool.exception.ObjectCallException;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -45,7 +45,7 @@ public final class ObjectReflectHandle extends ObjectBaseHandle {
     }
 
     public final Object getObjectProxy() throws Exception {
-        if (isClosed) throw new PooledObjectException("No operations allowed after object handle closed");
+        if (isClosed) throw new BeeObjectException("No operations allowed after object handle closed");
         if (failCause != null) throw failCause;
         return objectProxy;
     }
@@ -66,7 +66,7 @@ public final class ObjectReflectHandle extends ObjectBaseHandle {
         //reflect method
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if (handle.isClosed())
-                throw new PooledObjectCallException("No operations allowed after object handle closed");
+                throw new ObjectCallException("No operations allowed after object handle closed");
             if (filter != null) filter.doFilter(p.key, method.getName(), method.getParameterTypes(), args);
 
             Object v = method.invoke(raw, args);

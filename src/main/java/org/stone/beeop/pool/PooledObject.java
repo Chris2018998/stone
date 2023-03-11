@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.RawObjectFactory;
 import org.stone.beeop.RawObjectMethodFilter;
-import org.stone.beeop.pool.exception.PooledObjectRecycleException;
+import org.stone.beeop.pool.exception.ObjectRecycleException;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -98,7 +98,7 @@ final class PooledObject implements Cloneable {
             if (e instanceof Exception)
                 throw (Exception) e;
             else
-                throw new PooledObjectRecycleException(e);
+                throw new ObjectRecycleException(e);
         }
     }
 }
