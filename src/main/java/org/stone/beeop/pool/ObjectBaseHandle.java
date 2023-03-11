@@ -26,7 +26,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
  * @version 1.0
  */
 public class ObjectBaseHandle implements BeeObjectHandle {
-    protected final PooledObject p;
+    private final PooledObject p;
     private final Object raw;
     private final RawObjectMethodFilter filter;
     private final Map<ObjectMethodKey, Method> methodCache;

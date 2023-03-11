@@ -280,9 +280,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         try {
             //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectGetTimeoutException("Object get timeout on semaphore");
+                throw new ObjectGetTimeoutException("Object get timeout at semaphore");
         } catch (InterruptedException e) {
-            throw new ObjectGetInterruptedException("Object get request interrupted on semaphore");
+            throw new ObjectGetInterruptedException("Object get request interrupted at semaphore");
         }
         try {//semaphore acquired
             //2:try search one or create one
@@ -322,9 +322,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
-                            cause = new ObjectGetInterruptedException("Object get request interrupted on wait queue");
+                            cause = new ObjectGetInterruptedException("Object get request interrupted in wait queue");
                     } else {//timeout
-                        cause = new ObjectGetTimeoutException("Object get timeout on wait queue");
+                        cause = new ObjectGetTimeoutException("Object get timeout in wait queue");
                     }
                 }//end (state == BOWER_NORMAL)
             } while (true);//while

@@ -171,7 +171,8 @@ public final class KeyedObjectPool implements BeeObjectPool {
     public void clear(Object key, boolean forceCloseUsing) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) {
-            if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
+            if (!pool.clear(forceCloseUsing))
+                throw new PoolInClearingException("Pool has been in clearing,access forbidden");
         } else {
             throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
         }
@@ -185,7 +186,8 @@ public final class KeyedObjectPool implements BeeObjectPool {
         if (key == null) key = DEFAULT_KEY;
         ObjectGenericPool pool = genericPoolMap.remove(key);
         if (pool != null) {
-            if (!pool.clear(forceCloseUsing)) throw new PoolInClearingException("Pool has been in clearing");
+            if (!pool.clear(forceCloseUsing))
+                throw new PoolInClearingException("Pool has been in clearing,access forbidden");
             if (key == DEFAULT_KEY) defaultGenericPool = null;
         } else {
             throw new ObjectKeyNotExistsException("Not found objects with key:" + key);

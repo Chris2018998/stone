@@ -19,7 +19,7 @@ import org.stone.beeop.BeeObjectException;
  */
 public class ObjectGetException extends BeeObjectException {
 
-    public ObjectGetException(String message) {
+    ObjectGetException(String message) {
         super(message);
     }
 
