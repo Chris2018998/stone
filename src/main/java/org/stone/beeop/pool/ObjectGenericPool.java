@@ -261,7 +261,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
      */
     public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Access forbidden,Pool was not ready for getting");
+            throw new ObjectGetForbiddenException("Access forbidden,generic object pool was closed or in clearing");
 
         //0:try to get from threadLocal cache
         ObjectBorrower b = this.threadLocal.get().get();
