@@ -498,7 +498,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
 
         //4:try to create pool name
-        if (isBlank(poolName)) poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
+        if (isBlank(poolName)) poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
 
         //5: copy field value to new config from current config
         BeeObjectSourceConfig configCopy = new BeeObjectSourceConfig();

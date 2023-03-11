@@ -61,7 +61,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
 
         //step2: cas pool state to starting
         if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
-            throw new PoolInitializedException("Pool has been initialized or in starting");
+            throw new PoolInitializedException("Key pool has been initialized or in starting");
 
         //step3: pool startup
         try {
@@ -129,14 +129,14 @@ public final class KeyedObjectPool implements BeeObjectPool {
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Forbidden,Pool was not ready for getting");
+            throw new ObjectGetForbiddenException("Access forbidden,key pool was closed or in clearing");
         if (defaultGenericPool != null) return defaultGenericPool.getObjectHandle();
         return getObjectHandle(null);
     }
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Forbidden,Pool was not ready for getting");
+            throw new ObjectGetForbiddenException("Access forbidden,key pool was closed or in clearing");
 
         //1: get pool from generic map
         if (key == null) key = DEFAULT_KEY;
@@ -172,9 +172,9 @@ public final class KeyedObjectPool implements BeeObjectPool {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) {
             if (!pool.clear(forceCloseUsing))
-                throw new PoolInClearingException("Pool has been in clearing,access forbidden");
+                throw new PoolInClearingException("Generic object pool was closed or in clearing");
         } else {
-            throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
+            throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
         }
     }
 
@@ -187,23 +187,23 @@ public final class KeyedObjectPool implements BeeObjectPool {
         ObjectGenericPool pool = genericPoolMap.remove(key);
         if (pool != null) {
             if (!pool.clear(forceCloseUsing))
-                throw new PoolInClearingException("Pool has been in clearing,access forbidden");
+                throw new PoolInClearingException("Generic object pool was closed or in clearing");
             if (key == DEFAULT_KEY) defaultGenericPool = null;
         } else {
-            throw new ObjectKeyNotExistsException("Not found objects with key:" + key);
+            throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
         }
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.getPoolMonitorVo();
-        throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
+        throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         ObjectGenericPool pool = genericPoolMap.get(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
-        throw new ObjectKeyNotExistsException("Not exists pool key:" + key);
+        throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
     }
 
     //***************************************************************************************************************//
@@ -231,7 +231,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
                 } catch (Throwable e) {
                     //do nothing
                 }
-                Log.info("BeeCP({})has shutdown", this.poolName);
+                Log.info("BeeOP({})has shutdown", this.poolName);
                 break;
             } else if (poolStateCode == POOL_CLOSED) {
                 break;
@@ -294,7 +294,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
                 this.poolState = POOL_READY;// restore state;
             }
         } else {
-            throw new PoolInClearingException("Pool has been in clearing");
+            throw new PoolInClearingException("Key pool was closed or in clearing");
         }
     }
 
@@ -354,10 +354,10 @@ public final class KeyedObjectPool implements BeeObjectPool {
 
         public void run() {
             try {
-                Log.info("BeeOP({})exit-hook running", this.pool.poolName);
+                Log.info("BeeOP({})Exit hook running", this.pool.poolName);
                 this.pool.close();
             } catch (Throwable e) {
-                Log.error("BeeOP({})Error at closing pool,cause:", this.pool.poolName, e);
+                Log.error("BeeOP({})Error at closing,cause:", this.pool.poolName, e);
             }
         }
     }
