@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * object pool interface
+ * keyed object pool interface
  *
  * @author Chris Liao
  * @version 1.0

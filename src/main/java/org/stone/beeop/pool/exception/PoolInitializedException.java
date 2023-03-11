@@ -22,4 +22,8 @@ public class PoolInitializedException extends BeeObjectPoolException {
     public PoolInitializedException(String s) {
         super(s);
     }
+
+    public PoolInitializedException(Throwable cause) {
+        super(cause);
+    }
 }

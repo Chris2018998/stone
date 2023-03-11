@@ -176,7 +176,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                 if (e instanceof Exception)
                     throw (Exception) e;
                 else
-                    throw new Exception(e);
+                    throw new PoolInitializedException(e);
             } else {
                 Log.warn("Failed to create objects on pool initialization,cause:" + e);
             }
@@ -188,9 +188,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         //1:try to acquire lock
         try {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectCreateException("Pooled object create timeout on lock");
+                throw new ObjectCreateException("Pooled object create timeout at lock");
         } catch (InterruptedException e) {
-            throw new ObjectCreateException("Pooled object create interrupted on lock");
+            throw new ObjectCreateException("Pooled object create interrupted at lock");
         }
 
         //2:try to create a pooled object
@@ -499,8 +499,8 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     //Method-6.2: remove all connections from pool
     private void clear(boolean forceCloseUsing, String removeReason) {
         this.semaphore.interruptWaitingThreads();
-        PoolInClearingException poolClearException = new PoolInClearingException("Pool was in clearing");
-        while (!this.waitQueue.isEmpty()) this.transferException(poolClearException);
+        PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
+        while (!this.waitQueue.isEmpty()) this.transferException(clearException);
 
         while (this.pooledArray.length > 0) {
             PooledObject[] array = this.pooledArray;

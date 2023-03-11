@@ -16,7 +16,12 @@ package org.stone.beeop;
  * @version 1.0
  */
 public class BeeObjectPoolException extends Exception {
+
     public BeeObjectPoolException(String s) {
         super(s);
+    }
+
+    public BeeObjectPoolException(Throwable cause) {
+        super(cause);
     }
 }
