@@ -44,7 +44,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
     private volatile int poolState;
     private ObjectPoolHook exitHook;
     private BeeObjectSourceConfig poolConfig;
-    private ObjectGenericPool cloneGenericPool;//other generic pools clone base on it
+    private ObjectGenericPool templateGenericPool;//other generic pools clone base on it
     private ObjectGenericPool defaultGenericPool;
     private ObjectPoolMonitorVo poolMonitorVo;
     private ThreadPoolExecutor servantService;
@@ -76,12 +76,12 @@ public final class KeyedObjectPool implements BeeObjectPool {
     private void startup(BeeObjectSourceConfig config) throws Exception {
         //step1: create clone pool
         this.poolName = poolConfig.getPoolName();
-        this.cloneGenericPool = new ObjectGenericPool(poolConfig, this);
+        this.templateGenericPool = new ObjectGenericPool(poolConfig, this);
         this.poolMonitorVo = new ObjectPoolMonitorVo(
-                cloneGenericPool.getPoolHostIP(),
-                cloneGenericPool.getPoolThreadId(),
-                cloneGenericPool.getPoolThreadName(), poolName,
-                cloneGenericPool.getPoolMode(), poolConfig.getMaxActive());
+                templateGenericPool.getPoolHostIP(),
+                templateGenericPool.getPoolThreadId(),
+                templateGenericPool.getPoolThreadName(), poolName,
+                templateGenericPool.getPoolMode(), poolConfig.getMaxActive());
 
         //step2: register pool exit hook
         if (this.exitHook == null) {
@@ -111,7 +111,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
 
         //step4: create generic pool by init size
         if (config.getInitialSize() > 0) {
-            ObjectGenericPool genericPool = cloneGenericPool.createByClone(config.getInitialObjectKey(),
+            ObjectGenericPool genericPool = templateGenericPool.createByClone(config.getInitialObjectKey(),
                     poolName, config.getInitialSize(), config.isAsyncCreateInitObject());
 
             Object key = config.getInitialObjectKey();
@@ -146,7 +146,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
         synchronized (genericPoolMap) {
             pool = genericPoolMap.get(key);
             if (pool == null) {
-                pool = cloneGenericPool.createByClone(key == DEFAULT_KEY ? null : key, poolName, 0, true);
+                pool = templateGenericPool.createByClone(key == DEFAULT_KEY ? null : key, poolName, 0, true);
                 genericPoolMap.put(key, pool);
                 if (key == DEFAULT_KEY) defaultGenericPool = pool;
             }
