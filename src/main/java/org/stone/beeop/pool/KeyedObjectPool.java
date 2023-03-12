@@ -21,7 +21,6 @@ import org.stone.beeop.pool.exception.PoolInClearingException;
 import org.stone.beeop.pool.exception.PoolInitializedException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -310,9 +309,8 @@ public final class KeyedObjectPool implements BeeObjectPool {
     }
 
     private void closeIdleTimeout() {
-        Iterator<ObjectGenericPool> iterator = genericPoolMap.values().iterator();
-        while (iterator.hasNext()) {
-            iterator.next().closeIdleTimeout();
+        for (ObjectGenericPool pool : genericPoolMap.values()) {
+            pool.closeIdleTimeout();
         }
     }
 
@@ -361,7 +359,8 @@ public final class KeyedObjectPool implements BeeObjectPool {
                 Log.info("BeeOP({})Exit hook running", this.pool.poolName);
                 this.pool.close();
             } catch (Throwable e) {
-                Log.error("BeeOP({})Error at closing,cause:", this.pool.poolName, e);
+                Log.error("BeeOP({})Error occurred at closing pool,cause:", this.pool.poolName, e);
+                //occured
             }
         }
     }
