@@ -305,7 +305,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
     }
 
     //***************************************************************************************************************//
-    //                5: Pool runtime maintain methods(6)                                                            //                                                                                  //
+    //                5: idle close and async servant methods(2)                                                           //                                                                                  //
     //***************************************************************************************************************//
     void submitServantTask(Runnable task) {
         this.servantService.submit(task);
