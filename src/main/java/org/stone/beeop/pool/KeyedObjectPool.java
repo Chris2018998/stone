@@ -161,7 +161,11 @@ public final class KeyedObjectPool implements BeeObjectPool {
     //                3: key methods(7)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     public Object[] keys() {
-        return this.genericPoolMap.keySet().toArray();
+        Object[] keys = this.genericPoolMap.keySet().toArray();
+        for (int i = 0, l = keys.length; i < l; i++) {
+            if (keys[i] == DEFAULT_KEY) keys[i] = null;
+        }
+        return keys;
     }
 
     public void clear(Object key) throws Exception {
