@@ -360,7 +360,6 @@ public final class KeyedObjectPool implements BeeObjectPool {
                 this.pool.close();
             } catch (Throwable e) {
                 Log.error("BeeOP({})Error occurred at closing pool,cause:", this.pool.poolName, e);
-                //occured
             }
         }
     }
