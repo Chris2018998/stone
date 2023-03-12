@@ -682,7 +682,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         public void run() {
             try {
                 pool.createInitObjects(initialSize, false);
-                pool.servantState.getAndSet(pool.pooledArray.length);
+                pool.servantTryCount.set(pool.pooledArray.length);
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
                     pool.parentPool.submitServantTask(pool);
                 }
