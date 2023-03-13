@@ -18,7 +18,6 @@ import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.pool.exception.*;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
-import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
@@ -36,7 +35,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
     private static final Object DEFAULT_KEY = new Object();
     private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
-    private final Map<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>(1);
+    private final ConcurrentHashMap<Object, ObjectGenericPool> genericPoolMap = new ConcurrentHashMap<>(1);
 
     private String poolName;
     private int maxObjectKeySize;
