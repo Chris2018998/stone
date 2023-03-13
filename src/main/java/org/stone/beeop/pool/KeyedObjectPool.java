@@ -125,7 +125,7 @@ public final class KeyedObjectPool implements BeeObjectPool {
     }
 
     //***************************************************************************************************************//
-    //                2: object borrow methods(2)                                                                          //                                                                                  //
+    //                2: object borrow methods(2)                                                                    //                                                                                  //
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
