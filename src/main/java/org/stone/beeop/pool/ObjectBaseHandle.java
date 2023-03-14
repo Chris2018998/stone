@@ -29,7 +29,7 @@ public class ObjectBaseHandle implements BeeObjectHandle {
     private final PooledObject p;
     private final Object raw;
     private final RawObjectMethodFilter filter;
-    private final Map<ObjectMethodKey, Method> methodCache;
+    private final Map<ObjectMethodCacheKey, Method> methodCache;
     protected boolean isClosed;
 
     ObjectBaseHandle(PooledObject p) {
@@ -78,7 +78,7 @@ public class ObjectBaseHandle implements BeeObjectHandle {
         if (isClosed) throw new ObjectCallException("No operations allowed after object handle closed");
         if (filter != null) filter.doFilter(p.key, name, types, params);
 
-        ObjectMethodKey key = new ObjectMethodKey(name, types);
+        ObjectMethodCacheKey key = new ObjectMethodCacheKey(name, types);
         Method method = methodCache.get(key);
 
         if (method == null) {

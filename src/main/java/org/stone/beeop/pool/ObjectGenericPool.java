@@ -111,7 +111,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
         this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces, config.getObjectMethodFilter(),
-                new ConcurrentHashMap<ObjectMethodKey, Method>(16));
+                new ConcurrentHashMap<ObjectMethodCacheKey, Method>(16));
 
         if (objectInterfaces != null && objectInterfaces.length > 0)
             this.handleFactory = new ObjectReflectHandleFactory();

@@ -27,7 +27,7 @@ import static java.lang.System.currentTimeMillis;
 final class PooledObject implements Cloneable {
     final Class[] objectInterfaces;
     final RawObjectMethodFilter filter;
-    final Map<ObjectMethodKey, Method> methodCache;
+    final Map<ObjectMethodCacheKey, Method> methodCache;
     private final RawObjectFactory factory;
 
     Object key;
@@ -42,7 +42,7 @@ final class PooledObject implements Cloneable {
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(RawObjectFactory factory, Class[] objectInterfaces,
-                 RawObjectMethodFilter filter, Map<ObjectMethodKey, Method> methodCache) {
+                 RawObjectMethodFilter filter, Map<ObjectMethodCacheKey, Method> methodCache) {
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
         this.filter = filter;
