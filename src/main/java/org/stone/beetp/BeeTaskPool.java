@@ -25,4 +25,11 @@ public interface BeeTaskPool {
 
     void close(boolean forceCloseUsing);
 
+    int getWorkerCount();
+
+    int getQueueTaskCount();
+
+    int getRunningTaskCount();
+
+    int getCompletedTaskCount();
 }
