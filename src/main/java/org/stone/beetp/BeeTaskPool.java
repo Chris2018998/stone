@@ -19,6 +19,8 @@ import java.util.List;
  */
 public interface BeeTaskPool {
 
+    void init(BeeTaskPoolConfig config) throws Exception;
+
     BeeTaskHandle submit(BeeTask task) throws Exception;
 
     List<BeeTaskHandle> submit(List<BeeTask> taskList) throws Exception;
