@@ -22,6 +22,10 @@ public interface BeeTaskHandle {
 
     boolean isDone();
 
+    boolean isInQueue();
+
+    boolean isInRunning();
+
     boolean isCanceled();
 
     boolean tryCancel(boolean mayInterrupted);
