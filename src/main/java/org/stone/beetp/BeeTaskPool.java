@@ -25,7 +25,7 @@ public interface BeeTaskPool {
 
     List<BeeTaskHandle> submit(List<BeeTask> taskList) throws Exception;
 
-    void close(boolean forceCloseUsing);
+    void showdown(boolean forceCloseUsing);
 
     int getWorkerCount();
 
