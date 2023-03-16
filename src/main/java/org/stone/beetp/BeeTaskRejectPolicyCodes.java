@@ -17,5 +17,9 @@ package org.stone.beetp;
  */
 public final class BeeTaskRejectPolicyCodes {
 
+    public static final int Abort = 1;
 
+    public static final int Discard = 2;
+
+    public static final int Remove_Oldest = 2;
 }
