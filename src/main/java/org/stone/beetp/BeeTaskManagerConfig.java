@@ -32,6 +32,10 @@ public class BeeTaskManagerConfig {
 
     private boolean workerInDaemon;
 
+    private String interceptorClassName;
+
+    private BeeTaskInterceptor interceptor;
+
     public String getPoolName() {
         return poolName;
     }
@@ -70,5 +74,21 @@ public class BeeTaskManagerConfig {
 
     public void setWorkerInDaemon(boolean workerInDaemon) {
         this.workerInDaemon = workerInDaemon;
+    }
+
+    public BeeTaskInterceptor getInterceptor() {
+        return interceptor;
+    }
+
+    public void setInterceptor(BeeTaskInterceptor interceptor) {
+        this.interceptor = interceptor;
+    }
+
+    public String getInterceptorClassName() {
+        return interceptorClassName;
+    }
+
+    public void setInterceptorClassName(String interceptorClassName) {
+        this.interceptorClassName = interceptorClassName;
     }
 }
