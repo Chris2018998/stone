@@ -9,7 +9,14 @@
  */
 package org.stone.beetp;
 
+import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.beeop.BeeObjectSourceConfigException;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.stone.util.CommonUtil.isBlank;
 
 /**
  * Task manager config
@@ -49,7 +56,8 @@ public class BeeTaskManagerConfig {
     }
 
     public void setMaxQueueTaskSize(int maxQueueTaskSize) {
-        this.maxQueueTaskSize = maxQueueTaskSize;
+        if (maxQueueTaskSize >= 0)
+            this.maxQueueTaskSize = maxQueueTaskSize;
     }
 
     public int getRejectPolicyCode() {
@@ -65,7 +73,8 @@ public class BeeTaskManagerConfig {
     }
 
     public void setMaxWorkerSize(int maxWorkerSize) {
-        this.maxWorkerSize = maxWorkerSize;
+        if (maxWorkerSize >= 0)
+            this.maxWorkerSize = maxWorkerSize;
     }
 
     public boolean isWorkerInDaemon() {
@@ -90,5 +99,33 @@ public class BeeTaskManagerConfig {
 
     public void setInterceptorClassName(String interceptorClassName) {
         this.interceptorClassName = interceptorClassName;
+    }
+
+    public BeeTaskManagerConfig check() {
+        if (maxQueueTaskSize < 0)
+            throw new BeeObjectSourceConfigException("maxQueueTaskSize must be greater than zero");
+        if (maxWorkerSize < 0)
+            throw new BeeObjectSourceConfigException("maxWorkerSize must be greater than zero");
+
+
+        if (isBlank(poolName)) poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
+        BeeTaskManagerConfig config = new BeeTaskManagerConfig();
+        copyTo(config);
+        return config;
+    }
+
+    void copyTo(BeeTaskManagerConfig config) {
+        String fieldName = "";
+        try {
+            for (Field field : BeeTaskManagerConfig.class.getDeclaredFields()) {
+                fieldName = field.getName();
+                if (!Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()) && !"connectProperties".equals(fieldName)) {
+                    Object fieldValue = field.get(this);
+                    field.set(config, fieldValue);
+                }
+            }
+        } catch (Throwable e) {
+            throw new BeeDataSourceConfigException("Failed to copy field[" + fieldName + "]", e);
+        }
     }
 }
