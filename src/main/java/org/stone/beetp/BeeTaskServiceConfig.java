@@ -116,7 +116,8 @@ public class BeeTaskServiceConfig {
     }
 
     public void setPoolImplementClassName(String poolImplementClassName) {
-        this.poolImplementClassName = poolImplementClassName;
+        if (!isBlank(this.poolImplementClassName))
+            this.poolImplementClassName = poolImplementClassName;
     }
 
     public BeeTaskServiceConfig check() {

@@ -10,7 +10,6 @@
 package org.stone.beetp;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Task handle
@@ -26,12 +25,14 @@ public interface BeeTaskHandle {
 
     boolean isCanceled();
 
-    boolean isDone();
+    boolean isCompleted();
+
+    boolean isException();
 
     boolean tryCancel(boolean mayInterrupted);
 
     Object get() throws BeeTaskException, InterruptedException;
 
-    Object get(long timeout, TimeUnit unit) throws BeeTaskException, TimeoutException, InterruptedException;
+    Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
 
 }

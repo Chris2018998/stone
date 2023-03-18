@@ -9,8 +9,6 @@
  */
 package org.stone.beetp;
 
-import org.stone.beeop.pool.ObjectPoolStatics;
-
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -46,10 +44,10 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
     private static void createPool(BeeTaskService service) throws Exception {
         Class<?> poolClass = Class.forName(service.getPoolImplementClassName());
+        if (BeeTaskPool.class.isAssignableFrom(poolClass))
+            throw new BeeTaskServiceConfigException("Invalid pool implement class name:" + service.getPoolImplementClassName());
 
-
-        BeeTaskPool pool = (BeeTaskPool) ObjectPoolStatics.createClassInstance(poolClass, BeeTaskPool.class, "pool");
-
+        BeeTaskPool pool = (BeeTaskPool) poolClass.newInstance();
         pool.init(service);
         service.pool = pool;
         service.ready = true;
