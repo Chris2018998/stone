@@ -20,13 +20,13 @@ import java.util.concurrent.TimeoutException;
  */
 public interface BeeTaskHandle {
 
-    boolean isDone();
+    boolean isNew();
 
-    boolean isInQueue();
-
-    boolean isInRunning();
+    boolean isRunning();
 
     boolean isCanceled();
+
+    boolean isDone();
 
     boolean tryCancel(boolean mayInterrupted);
 

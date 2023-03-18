@@ -19,13 +19,13 @@ import java.util.List;
  */
 public interface BeeTaskPool {
 
-    void init(BeeTaskManagerConfig config) throws Exception;
+    void init(BeeTaskServiceConfig config) throws Exception;
 
     BeeTaskHandle submit(BeeTask task) throws Exception;
 
     List<BeeTaskHandle> submit(List<BeeTask> taskList) throws Exception;
 
-    void showdown(boolean forceCloseUsing);
+    void showdown(boolean interru);
 
     int getWorkerCount();
 
