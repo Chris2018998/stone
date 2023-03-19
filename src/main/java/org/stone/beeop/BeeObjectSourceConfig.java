@@ -497,20 +497,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         RawObjectFactory tempObjectFactory = null;
         if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
 
-        //4:try to create pool name
-        String tempPoolName = poolName;
-        if (isBlank(tempPoolName)) tempPoolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
+        //4:copy field value to new config from current config
+        BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
+        copyTo(checkedConfig);
 
-        //5:copy field value to new config from current config
-        BeeObjectSourceConfig configCopy = new BeeObjectSourceConfig();
-        copyTo(configCopy);
-
-        //6:set temp to config
-        configCopy.poolName = tempPoolName;
-        if (tempMethodFilter != null) configCopy.objectMethodFilter = tempMethodFilter;
-        if (tempObjectFactory != null) configCopy.objectFactory = tempObjectFactory;
-        if (tempObjectInterfaces != null) configCopy.objectInterfaces = tempObjectInterfaces;
-        return configCopy;
+        //5:set temp to config
+        if (tempMethodFilter != null) checkedConfig.objectMethodFilter = tempMethodFilter;
+        if (tempObjectFactory != null) checkedConfig.objectFactory = tempObjectFactory;
+        if (tempObjectInterfaces != null) checkedConfig.objectInterfaces = tempObjectInterfaces;
+        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
+        return checkedConfig;
     }
 
     void copyTo(BeeObjectSourceConfig config) {
