@@ -121,9 +121,9 @@ public class BeeTaskServiceConfig {
     }
 
     public BeeTaskServiceConfig check() {
-        if (maxQueueTaskSize < 0)
+        if (maxQueueTaskSize <= 0)
             throw new BeeTaskServiceConfigException("maxQueueTaskSize must be greater than zero");
-        if (maxWorkerSize < 0)
+        if (maxWorkerSize <= 0)
             throw new BeeTaskServiceConfigException("maxWorkerSize must be greater than zero");
 
         //1: check pool full policy code
@@ -147,13 +147,13 @@ public class BeeTaskServiceConfig {
         }
 
         //3:create new config and copy field value from current
-        BeeTaskServiceConfig config = new BeeTaskServiceConfig();
-        copyTo(config);
+        BeeTaskServiceConfig checkedConfig = new BeeTaskServiceConfig();
+        copyTo(checkedConfig);
 
         //4:set pool name and interceptor
-        if (tempInterceptor != null) config.interceptor = tempInterceptor;
-        if (isBlank(config.poolName)) config.poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
-        return config;
+        if (tempInterceptor != null) checkedConfig.interceptor = tempInterceptor;
+        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
+        return checkedConfig;
     }
 
     void copyTo(BeeTaskServiceConfig config) {
