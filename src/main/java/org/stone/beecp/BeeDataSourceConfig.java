@@ -45,7 +45,7 @@ import static org.stone.util.CommonUtil.trimString;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //poolName index
+    //index on pool name generation
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
     //extra properties for jdbc driver to connect db
@@ -636,11 +636,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
         Object tempConnectionFactory = null;
         if (this.connectionFactory == null) tempConnectionFactory = createConnectionFactory();
-        if (isBlank(poolName)) poolName = "FastPool-" + BeeDataSourceConfig.PoolNameIndex.getAndIncrement();
+
+        String tempPoolName = poolName;
+        if (isBlank(tempPoolName)) tempPoolName = "FastPool-" + BeeDataSourceConfig.PoolNameIndex.getAndIncrement();
 
         BeeDataSourceConfig configCopy = new BeeDataSourceConfig();
         copyTo(configCopy);
 
+        //set temp to config
+        configCopy.poolName = tempPoolName;
         if (tempConnectionFactory != null) configCopy.connectionFactory = tempConnectionFactory;
         return configCopy;
     }
