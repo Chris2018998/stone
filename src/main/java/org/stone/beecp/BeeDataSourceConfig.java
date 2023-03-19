@@ -637,16 +637,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         Object tempConnectionFactory = null;
         if (this.connectionFactory == null) tempConnectionFactory = createConnectionFactory();
 
-        String tempPoolName = poolName;
-        if (isBlank(tempPoolName)) tempPoolName = "FastPool-" + BeeDataSourceConfig.PoolNameIndex.getAndIncrement();
-
-        BeeDataSourceConfig configCopy = new BeeDataSourceConfig();
-        copyTo(configCopy);
+        BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
+        copyTo(checkedConfig);
 
         //set temp to config
-        configCopy.poolName = tempPoolName;
-        if (tempConnectionFactory != null) configCopy.connectionFactory = tempConnectionFactory;
-        return configCopy;
+        if (tempConnectionFactory != null) checkedConfig.connectionFactory = tempConnectionFactory;
+        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
+        return checkedConfig;
     }
 
     //copy configuration to other object
