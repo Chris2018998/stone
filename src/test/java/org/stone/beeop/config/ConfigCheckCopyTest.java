@@ -29,6 +29,7 @@ public class ConfigCheckCopyTest extends TestCase {
         if (config2 == config) throw new BeeObjectSourceConfigException("Configuration check copy failed");
 
         List<String> excludeNames = new LinkedList<String>();
+        excludeNames.add("poolName");
         excludeNames.add("objectFactory");
         excludeNames.add("objectInterfaces");
         excludeNames.add("objectInterfaceNames");
