@@ -17,6 +17,8 @@ package org.stone.beetp;
  */
 public interface BeeTask {
 
+    BeeTaskCallBack getCallback();
+
     Object call() throws Exception;
 
 }
