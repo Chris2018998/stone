@@ -10,6 +10,7 @@
 package org.stone.beetp;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Task Pool
@@ -19,19 +20,34 @@ import java.util.List;
  */
 public interface BeeTaskPool {
 
+    //***************************************************************************************************************//
+    //                1: pool initialize method(1)                                                                   //                                                                                  //
+    //***************************************************************************************************************//
     void init(BeeTaskServiceConfig config) throws Exception;
 
+    //***************************************************************************************************************//
+    //                2: task submit methods(2)                                                                      //                                                                                  //
+    //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws Exception;
 
     List<BeeTaskHandle> submit(List<BeeTask> taskList) throws Exception;
 
-    void showdown(boolean interru);
+    //***************************************************************************************************************//
+    //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
+    //***************************************************************************************************************//
+    boolean isTerminated();
 
-    int getWorkerCount();
+    boolean isTerminating();
 
-    int getQueueTaskCount();
+    List<BeeTask> terminate(boolean cancelRunningTask) throws BeeTaskPoolException;
 
-    int getRunningTaskCount();
+    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
-    int getCompletedTaskCount();
+    void clear(boolean cancelRunningTask) throws BeeTaskPoolException;
+
+    //***************************************************************************************************************//
+    //                4: Pool monitor(1)                                                                             //                                                                                  //
+    //***************************************************************************************************************//
+    BeeTaskPoolMonitorVo getPoolMonitorVo();
+
 }
