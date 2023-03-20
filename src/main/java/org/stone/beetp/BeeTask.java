@@ -17,7 +17,7 @@ package org.stone.beetp;
  */
 public interface BeeTask {
 
-    BeeTaskAspect getAspect();
+    BeeTaskAspect getAroundAspect();
 
     Object call() throws Exception;
 
