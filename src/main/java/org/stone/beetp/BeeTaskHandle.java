@@ -23,13 +23,17 @@ public interface BeeTaskHandle {
 
     boolean isRunning();
 
-    boolean isCanceled();
+    boolean isCancelled();
 
+    //task running completed,and a result object filled to this handle
     boolean isCompleted();
 
+    //execute failed during task execution
     boolean isException();
 
-    boolean tryCancel(boolean mayInterrupted);
+    void callbackOnCompleted();
+
+    boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException;
 
     Object get() throws BeeTaskException, InterruptedException;
 
