@@ -24,7 +24,7 @@ final class PoolWorkerThread extends Thread {
 
     public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
         this.pool = pool;
-        super.setName(name + "- worker thread" + Index.getAndIncrement());
+        super.setName(name + "-worker thread" + Index.getAndIncrement());
         super.setDaemon(daemon);
     }
 
