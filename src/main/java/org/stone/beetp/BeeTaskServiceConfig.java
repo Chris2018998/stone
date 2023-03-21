@@ -46,9 +46,9 @@ public class BeeTaskServiceConfig {
 
     private boolean workerInDaemon;
 
-    private String interceptorClassName;
+    private String poolInterceptorClassName;
 
-    private BeeTaskInterceptor interceptor;
+    private BeeTaskPoolInterceptor poolInterceptor;
 
     //pool implementation class name
     private String poolImplementClassName = TaskPoolImpl.class.getName();
@@ -95,20 +95,20 @@ public class BeeTaskServiceConfig {
         this.workerInDaemon = workerInDaemon;
     }
 
-    public String getInterceptorClassName() {
-        return interceptorClassName;
+    public String getPoolInterceptorClassName() {
+        return poolInterceptorClassName;
     }
 
-    public void setInterceptorClassName(String interceptorClassName) {
-        this.interceptorClassName = interceptorClassName;
+    public void setPoolInterceptorClassName(String poolInterceptorClassName) {
+        this.poolInterceptorClassName = poolInterceptorClassName;
     }
 
-    public BeeTaskInterceptor getInterceptor() {
-        return interceptor;
+    public BeeTaskPoolInterceptor getPoolInterceptor() {
+        return poolInterceptor;
     }
 
-    public void setInterceptor(BeeTaskInterceptor interceptor) {
-        this.interceptor = interceptor;
+    public void setPoolInterceptor(BeeTaskPoolInterceptor poolInterceptor) {
+        this.poolInterceptor = poolInterceptor;
     }
 
     public String getPoolImplementClassName() {
@@ -131,18 +131,18 @@ public class BeeTaskServiceConfig {
             throw new BeeTaskServiceConfigException("invalid poolFullPolicyCode");
 
         //2: try to create Interceptor
-        BeeTaskInterceptor tempInterceptor = this.interceptor;
-        if (tempInterceptor == null && !isBlank(this.interceptorClassName)) {
+        BeeTaskPoolInterceptor tempInterceptor = this.poolInterceptor;
+        if (tempInterceptor == null && !isBlank(this.poolInterceptorClassName)) {
             try {
-                Class interceptorClassClass = Class.forName(this.interceptorClassName);
-                if (!BeeTaskInterceptor.class.isAssignableFrom(interceptorClassClass))
-                    throw new BeeTaskServiceConfigException("Not found Interceptor class:" + this.interceptorClassName);
+                Class interceptorClassClass = Class.forName(this.poolInterceptorClassName);
+                if (!BeeTaskPoolInterceptor.class.isAssignableFrom(interceptorClassClass))
+                    throw new BeeTaskServiceConfigException("Not found Interceptor class:" + this.poolInterceptorClassName);
 
-                tempInterceptor = (BeeTaskInterceptor) interceptorClassClass.newInstance();
+                tempInterceptor = (BeeTaskPoolInterceptor) interceptorClassClass.newInstance();
             } catch (ClassNotFoundException e) {
-                throw new BeeTaskServiceConfigException("Not found object factory class:" + this.interceptorClassName);
+                throw new BeeTaskServiceConfigException("Not found object factory class:" + this.poolInterceptorClassName);
             } catch (Throwable e) {
-                throw new BeeTaskServiceConfigException("Failed to create object factory by class:" + interceptorClassName, e);
+                throw new BeeTaskServiceConfigException("Failed to create object factory by class:" + poolInterceptorClassName, e);
             }
         }
 
@@ -151,7 +151,7 @@ public class BeeTaskServiceConfig {
         copyTo(checkedConfig);
 
         //4:set pool name and interceptor
-        if (tempInterceptor != null) checkedConfig.interceptor = tempInterceptor;
+        if (tempInterceptor != null) checkedConfig.poolInterceptor = tempInterceptor;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
         return checkedConfig;
     }
@@ -161,7 +161,7 @@ public class BeeTaskServiceConfig {
         try {
             for (Field field : BeeTaskServiceConfig.class.getDeclaredFields()) {
                 fieldName = field.getName();
-                if (!Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers()) && !"connectProperties".equals(fieldName)) {
+                if (!Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
                     Object fieldValue = field.get(this);
                     field.set(config, fieldValue);
                 }
