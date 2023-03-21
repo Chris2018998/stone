@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.util.CommonUtil.isBlank;
 
 /**
- * Task manager config
+ * Task service config
  *
  * @author Chris Liao
  * @version 1.0
