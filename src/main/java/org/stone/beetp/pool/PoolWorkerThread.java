@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Task Worker thread
  *
@@ -16,12 +18,13 @@ package org.stone.beetp.pool;
  * @version 1.0
  */
 final class PoolWorkerThread extends Thread {
+    private static final AtomicInteger Index = new AtomicInteger(1);
     private final TaskExecutionPool pool;
     private int state;
 
     public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
         this.pool = pool;
-        super.setName(name);
+        super.setName(name + "- worker thread" + Index.getAndIncrement());
         super.setDaemon(daemon);
     }
 
