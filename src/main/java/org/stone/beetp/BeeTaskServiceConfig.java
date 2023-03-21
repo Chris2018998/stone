@@ -9,7 +9,7 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.TaskPoolImpl;
+import org.stone.beetp.pool.TaskExecutionPool;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -51,7 +51,7 @@ public class BeeTaskServiceConfig {
     private BeeTaskPoolInterceptor poolInterceptor;
 
     //pool implementation class name
-    private String poolImplementClassName = TaskPoolImpl.class.getName();
+    private String poolImplementClassName = TaskExecutionPool.class.getName();
 
 
     public String getPoolName() {
