@@ -16,10 +16,10 @@ package org.stone.beetp.pool;
  * @version 1.0
  */
 final class PoolWorkerThread extends Thread {
-    private final DefaultTaskPool pool;
+    private final TaskExecutionPool pool;
     private int state;
 
-    public PoolWorkerThread(DefaultTaskPool pool, String name, boolean daemon) {
+    public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
         this.pool = pool;
         super.setName(name);
         super.setDaemon(daemon);
