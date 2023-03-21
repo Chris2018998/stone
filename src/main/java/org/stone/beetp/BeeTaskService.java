@@ -9,11 +9,13 @@
  */
 package org.stone.beetp;
 
+import org.stone.beetp.pool.PoolStaticCenter;
+
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Task Pool
+ * Task Pool service
  *
  * @author Chris Liao
  * @version 1.0
@@ -89,8 +91,25 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        3: task submit methods(3)                                              //
+    //                                        3: pool terminate methods(3)                                           //
     //***************************************************************************************************************//
+    public boolean isTerminated() {
+        return pool == null || pool.isTerminated();
+    }
+
+    public boolean isTerminating() {
+        return pool == null || pool.isTerminating();
+    }
+
+    public void terminate(boolean cancelRunningTask) {
+        if (pool != null) {
+            try {
+                pool.terminate(cancelRunningTask);
+            } catch (Throwable e) {
+                PoolStaticCenter.CommonLog.error("Error at closing pool,cause:", e);
+            }
+        }
+    }
 
 
 }
