@@ -12,7 +12,10 @@ package org.stone.beetp.pool;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
+import org.stone.beetp.pool.exception.GetTimeoutException;
+import org.stone.beetp.pool.exception.TaskCancelledException;
 
+import java.security.InvalidParameterException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,11 +63,48 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     //                2: task result get and cancel methods(3)                                                       //                                                                                  //
     //***************************************************************************************************************//
     public Object get() throws BeeTaskException, InterruptedException {
-        return null;
+        return get(0);
     }
 
     public Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException {
-        return null;
+        if (timeout <= 0) throw new InvalidParameterException("Time out value must be greater than zero");
+        if (unit == null) throw new InvalidParameterException("Time unit can't be null");
+        return get(unit.toNanos(timeout));
+    }
+
+    private Object get(long nanoseconds) throws BeeTaskException, InterruptedException {
+        int stateCode = state.get();
+        if (stateCode == TASK_COMPLETED) return result;
+        if (stateCode == TASK_EXCEPTIONAL) throw exception;
+        if (stateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
+
+        boolean timed = nanoseconds > 0;
+        long deadline = System.nanoTime() + nanoseconds;
+        Thread currentThread = Thread.currentThread();
+        waitQueue.offer(currentThread);
+
+        try {
+            do {
+                stateCode = state.get();
+                if (stateCode == TASK_COMPLETED) return result;
+                if (stateCode == TASK_EXCEPTIONAL) throw exception;
+                if (stateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
+
+                if (timed) {
+                    long parkTime = deadline - System.nanoTime();
+                    if (parkTime > 0)
+                        LockSupport.parkNanos(parkTime);
+                    else
+                        throw new GetTimeoutException("Get timeout");
+                } else {
+                    LockSupport.park();
+                }
+
+                if (currentThread.isInterrupted()) throw new InterruptedException();
+            } while (true);
+        } finally {
+            waitQueue.remove(currentThread);
+        }
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException {
