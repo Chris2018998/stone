@@ -11,11 +11,10 @@ package org.stone.beetp;
 
 import org.stone.beetp.pool.PoolStaticCenter;
 
-import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Task Pool service
+ * Task service
  *
  * @author Chris Liao
  * @version 1.0
@@ -56,16 +55,11 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        2: task submit methods(3)                                              //
+    //                                        2: task submit methods(2)                                              //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws Exception {
         if (this.ready) return pool.submit(task);
         return createPoolByLock().submit(task);
-    }
-
-    public List<BeeTaskHandle> submit(List<BeeTask> taskList) throws Exception {
-        if (this.ready) return pool.submit(taskList);
-        return createPoolByLock().submit(taskList);
     }
 
     private BeeTaskPool createPoolByLock() throws Exception {
