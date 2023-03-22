@@ -19,6 +19,9 @@ import java.util.concurrent.TimeUnit;
  */
 public interface BeeTaskHandle {
 
+    //***************************************************************************************************************//
+    //                1: task state methods(5)                                                                       //                                                                                  //
+    //***************************************************************************************************************//
     boolean isNew();
 
     boolean isRunning();
@@ -29,14 +32,15 @@ public interface BeeTaskHandle {
     boolean isCompleted();
 
     //execute failed during task execution
-    boolean isException();
+    boolean isExceptional();
 
-    void callbackOnCompleted();
-
-    boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException;
-
+    //***************************************************************************************************************//
+    //                2: task result get and cancel methods(3)                                                                       //                                                                                  //
+    //***************************************************************************************************************//
     Object get() throws BeeTaskException, InterruptedException;
 
     Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
+
+    boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException;
 
 }
