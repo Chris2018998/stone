@@ -64,12 +64,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: task submit methods(2)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    public BeeTaskHandle submit(BeeTask task) throws Exception {
-        return null;
-        //@todo
-    }
-
-    public List<BeeTaskHandle> submit(List<BeeTask> taskList) throws Exception {
+    public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
         return null;
         //@todo
     }
