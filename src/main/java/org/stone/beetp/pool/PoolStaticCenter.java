@@ -21,22 +21,22 @@ import org.slf4j.LoggerFactory;
 public class PoolStaticCenter {
     public static final Logger CommonLog = LoggerFactory.getLogger(PoolStaticCenter.class);
     //task state
-    private static final int TASK_NEW = 0;
-    private static final int TASK_RUNNING = 1;
-    private static final int TASK_CANCELLED = 2;
-    private static final int TASK_EXCEPTIONAL = 3;
-    private static final int TASK_COMPLETED = 4;
+    static final int TASK_NEW = 0;
+    static final int TASK_RUNNING = 1;
+    static final int TASK_CANCELLED = 2;
+    static final int TASK_EXCEPTIONAL = 3;
+    static final int TASK_COMPLETED = 4;
     //pool state
-    private static final int POOL_NEW = 0;
-    private static final int POOL_STARTING = 1;
-    private static final int POOL_READY = 2;
-    private static final int POOL_TERMINATING = 3;
-    private static final int POOL_TERMINATED = 4;
-    private static final int POOL_CLEARING = 5;
+    static final int POOL_NEW = 0;
+    static final int POOL_STARTING = 1;
+    static final int POOL_READY = 2;
+    static final int POOL_TERMINATING = 3;
+    static final int POOL_TERMINATED = 4;
+    static final int POOL_CLEARING = 5;
     //worker state
-    private static final int WORKER_IDLE = 0;
-    private static final int WORKER_RUNNING = 1;
-    private static final int WORKER_TERMINATED = 2;
+    static final int WORKER_IDLE = 0;
+    static final int WORKER_RUNNING = 1;
+    static final int WORKER_TERMINATED = 2;
 
 
 }
