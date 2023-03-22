@@ -31,6 +31,7 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  */
 public final class TaskHandleImpl implements BeeTaskHandle {
     private BeeTask task;
+    private Thread workerThread;
     private Object result;
     private BeeTaskException exception;
     private AtomicInteger state = new AtomicInteger(TASK_NEW);
@@ -109,7 +110,22 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException {
-        return true;
+        int stateCode = state.get();
+        if (stateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was already cancelled");
+        if (stateCode == TASK_COMPLETED || stateCode == TASK_EXCEPTIONAL)
+            throw new TaskCancelledException("Task was already in cancelled state");
+
+        if (stateCode == TASK_NEW && state.compareAndSet(TASK_NEW, TASK_CANCELLED)) {
+            return true;
+        }
+
+        if (state.get() == TASK_RUNNING && mayInterruptIfRunning) {
+            Thread.State workerState = workerThread.getState();
+            if (workerState == Thread.State.WAITING || workerState == Thread.State.TIMED_WAITING) {
+                workerThread.interrupt();//interrupt worker thead from wait state
+                
+            }
+        }
     }
 
     //***************************************************************************************************************//
