@@ -78,10 +78,11 @@ public final class TaskHandleImpl implements BeeTaskHandle {
         if (stateCode == TASK_EXCEPTIONAL) throw exception;
         if (stateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
 
-        boolean timed = nanoseconds > 0;
-        long deadline = System.nanoTime() + nanoseconds;
         Thread currentThread = Thread.currentThread();
         waitQueue.offer(currentThread);
+
+        boolean timed = nanoseconds > 0;
+        long deadline = System.nanoTime() + nanoseconds;
 
         try {
             do {
