@@ -28,10 +28,8 @@ public interface BeeTaskHandle {
 
     boolean isCancelled();
 
-    //task running completed,and a result object filled to this handle
     boolean isCompleted();
 
-    //execute failed during task execution
     boolean isExceptional();
 
     //***************************************************************************************************************//
