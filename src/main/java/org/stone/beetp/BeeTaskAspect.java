@@ -17,9 +17,9 @@ package org.stone.beetp;
  */
 public interface BeeTaskAspect {
 
-    void beforeExecute();
+    void beforeCall();
 
-    void afterExecute(Object result);
+    void afterCall(Object result);
 
-    void onException(Throwable e);
+    void AfterThrowing(Throwable e);
 }
