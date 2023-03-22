@@ -9,10 +9,16 @@
  */
 package org.stone.beetp.pool;
 
+import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
+
+import static org.stone.beetp.pool.PoolStaticCenter.*;
 
 /**
  * Task Handle Impl
@@ -21,30 +27,33 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public final class TaskHandleImpl implements BeeTaskHandle {
+    private BeeTask task;
+    private Object result;
+    private BeeTaskException exception;
+    private AtomicInteger state = new AtomicInteger(TASK_NEW);
+    private ConcurrentLinkedQueue<Thread> waitQueue = new ConcurrentLinkedQueue<>();
 
     //***************************************************************************************************************//
     //                1: task state methods(5)                                                                       //                                                                                  //
     //***************************************************************************************************************//
     public boolean isNew() {
-        return false;
+        return state.get() == TASK_NEW;
     }
 
     public boolean isRunning() {
-        return false;
+        return state.get() == TASK_RUNNING;
     }
 
     public boolean isCancelled() {
-        return false;
+        return state.get() == TASK_CANCELLED;
     }
 
-    //task running completed,and a result object filled to this handle
     public boolean isCompleted() {
-        return false;
+        return state.get() == TASK_COMPLETED;
     }
 
-    //execute failed during task execution
     public boolean isExceptional() {
-        return false;
+        return state.get() == TASK_EXCEPTIONAL;
     }
 
     //***************************************************************************************************************//
@@ -60,5 +69,28 @@ public final class TaskHandleImpl implements BeeTaskHandle {
 
     public boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException {
         return true;
+    }
+
+    //***************************************************************************************************************//
+    //                3: package access methods(3)                                                                   //                                                                                  //
+    //***************************************************************************************************************//
+    boolean compareAndSetState(int expect, int update) {
+        return state.compareAndSet(expect, update);
+    }
+
+    void setResult(Object result) {
+        this.result = result;
+        this.wakeupWaiters();
+    }
+
+    void setException(BeeTaskException exception) {
+        this.exception = exception;
+        this.wakeupWaiters();
+    }
+
+    private void wakeupWaiters() {
+        for (Thread thread : waitQueue) {
+            LockSupport.unpark(thread);
+        }
     }
 }
