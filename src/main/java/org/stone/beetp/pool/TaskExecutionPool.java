@@ -113,9 +113,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public List<BeeTask> terminate(boolean cancelRunningTask) throws BeeTaskPoolException {
+
+        wakeupTerminationWaiters();
         return null;
     }
-
 
     private void wakeupTerminationWaiters() {
         for (Thread thread : poolTerminateWaitQueue)
