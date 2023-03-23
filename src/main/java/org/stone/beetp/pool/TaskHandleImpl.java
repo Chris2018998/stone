@@ -80,7 +80,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     }
 
     public Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException {
-        if (timeout <= 0) throw new InvalidParameterException("Time out value must be greater than zero");
+        if (timeout < 0) throw new InvalidParameterException("Time out value must be greater than zero");
         if (unit == null) throw new InvalidParameterException("Time unit can't be null");
         return get(unit.toNanos(timeout));
     }
