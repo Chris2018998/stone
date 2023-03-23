@@ -24,7 +24,7 @@ import static org.stone.util.CommonUtil.isBlank;
  * @version 1.0
  */
 public class BeeTaskServiceConfig {
-    //action: throw TaskRejectedException when pool full
+    //action: throw PoolRejectedException when pool full
     public static final int Policy_Abort = 1;
     //action: do nothing when pool full
     public static final int Policy_Discard = 2;
