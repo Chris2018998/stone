@@ -16,11 +16,13 @@ import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
+import java.security.InvalidParameterException;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolStaticCenter.*;
 
@@ -47,6 +49,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private AtomicInteger workerCount;
     private ConcurrentLinkedQueue taskQueue;
     private ConcurrentLinkedQueue workerQueue;
+    private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -61,6 +64,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.workerCount = new AtomicInteger(0);
         this.taskQueue = new ConcurrentLinkedQueue();
         this.workerQueue = new ConcurrentLinkedQueue();
+        this.poolTerminateWaitQueue = new ConcurrentLinkedQueue();
 
         //step3: simple attribute set
         this.poolName = checkedConfig.getPoolName();
@@ -112,8 +116,43 @@ public final class TaskExecutionPool implements BeeTaskPool {
         return null;
     }
 
+
+    private void wakeupTerminationWaiters() {
+        for (Thread thread : poolTerminateWaitQueue)
+            LockSupport.unpark(thread);
+    }
+
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        return true;
+        if (this.poolState == POOL_TERMINATED) return true;
+        if (timeout < 0) throw new InvalidParameterException("Time out value must be greater than zero");
+        if (unit == null) throw new InvalidParameterException("Time unit can't be null");
+
+        Thread currentThread = Thread.currentThread();
+        poolTerminateWaitQueue.offer(currentThread);
+
+        long timeoutNano = unit.toNanos(timeout);
+        boolean timed = timeoutNano > 0;
+        long deadline = System.nanoTime() + timeoutNano;
+
+        try {
+            do {
+                int poolStateCode = this.poolState;
+                if (poolStateCode == POOL_TERMINATED) return true;
+
+                if (timed) {
+                    long parkTime = deadline - System.nanoTime();
+                    if (parkTime > 0)
+                        LockSupport.parkNanos(parkTime);
+                    else
+                        return this.poolState == POOL_TERMINATED;
+                } else {
+                    LockSupport.park();
+                }
+                if (currentThread.isInterrupted()) throw new InterruptedException();
+            } while (true);
+        } finally {
+            poolTerminateWaitQueue.remove(currentThread);
+        }
     }
 
     public void clear(boolean cancelRunningTask) throws BeeTaskPoolException {
