@@ -40,11 +40,13 @@ public class BeeTaskServiceConfig {
 
     private int maxQueueTaskSize;
 
-    private int poolFullPolicyCode = Policy_Abort;
-
     private int maxWorkerSize;
 
     private boolean workerInDaemon;
+
+    private int poolFullPolicyCode = Policy_Abort;
+
+    private boolean interruptRunningTaskOnClear;
 
     private String poolInterceptorClassName;
 
@@ -70,15 +72,6 @@ public class BeeTaskServiceConfig {
         this.maxQueueTaskSize = maxQueueTaskSize;
     }
 
-    public int getPoolFullPolicyCode() {
-        return poolFullPolicyCode;
-    }
-
-    public void setPoolFullPolicyCode(int poolFullPolicyCode) {
-        if (poolFullPolicyCode >= Policy_Abort && poolFullPolicyCode <= Policy_Caller_Runs)
-            this.poolFullPolicyCode = poolFullPolicyCode;
-    }
-
     public int getMaxWorkerSize() {
         return maxWorkerSize;
     }
@@ -93,6 +86,23 @@ public class BeeTaskServiceConfig {
 
     public void setWorkerInDaemon(boolean workerInDaemon) {
         this.workerInDaemon = workerInDaemon;
+    }
+
+    public int getPoolFullPolicyCode() {
+        return poolFullPolicyCode;
+    }
+
+    public void setPoolFullPolicyCode(int poolFullPolicyCode) {
+        if (poolFullPolicyCode >= Policy_Abort && poolFullPolicyCode <= Policy_Caller_Runs)
+            this.poolFullPolicyCode = poolFullPolicyCode;
+    }
+
+    public boolean isInterruptRunningTaskOnClear() {
+        return interruptRunningTaskOnClear;
+    }
+
+    public void setInterruptRunningTaskOnClear(boolean interruptRunningTaskOnClear) {
+        this.interruptRunningTaskOnClear = interruptRunningTaskOnClear;
     }
 
     public String getPoolInterceptorClassName() {
