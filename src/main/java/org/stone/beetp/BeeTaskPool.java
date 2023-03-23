@@ -23,12 +23,12 @@ public interface BeeTaskPool {
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
     //***************************************************************************************************************//
-    void init(BeeTaskServiceConfig config) throws Exception;
+    void init(BeeTaskServiceConfig config) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
     //                2: task submit methods(1)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    BeeTaskHandle submit(BeeTask task) throws BeeTaskException;
+    BeeTaskHandle submit(BeeTask task) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
     //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
@@ -37,14 +37,14 @@ public interface BeeTaskPool {
 
     boolean isTerminating();
 
-    List<BeeTask> terminate(boolean cancelRunningTask) throws BeeTaskPoolException;
+    List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
 
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
-    void clear(boolean cancelRunningTask) throws BeeTaskPoolException;
+    void clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
-    //                4: Pool monitor(1)                                                                             //                                                                                  //
+    //                4: Pool monitor(1)                                                                             //
     //***************************************************************************************************************//
     BeeTaskPoolMonitorVo getPoolMonitorVo();
 
