@@ -50,7 +50,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                2: task taskState methods(5)                                                                       //                                                                                  //
+    //                2: task taskState methods(5)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public boolean isNew() {
         return taskState.get() == TASK_NEW;
