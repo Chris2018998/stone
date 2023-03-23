@@ -12,7 +12,7 @@ package org.stone.beetp.pool;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
-import org.stone.beetp.pool.exception.GetTimeoutException;
+import org.stone.beetp.pool.exception.ResultGetTimeoutException;
 import org.stone.beetp.pool.exception.TaskCancelledException;
 
 import java.security.InvalidParameterException;
@@ -109,7 +109,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
                     if (parkTime > 0)
                         LockSupport.parkNanos(parkTime);
                     else
-                        throw new GetTimeoutException("Get timeout");
+                        throw new ResultGetTimeoutException("Get timeout");
                 } else {
                     LockSupport.park();
                 }
