@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static org.stone.beetp.pool.PoolStaticCenter.POOL_READY;
+import static org.stone.beetp.pool.PoolStaticCenter.*;
 
 /**
  * Task Pool Impl
@@ -77,30 +77,25 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
         return null;
-        //@todo
     }
 
     //***************************************************************************************************************//
     //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
     //***************************************************************************************************************//
     public boolean isTerminated() {
-        return true;
-        //@todo
+        return poolState == POOL_TERMINATED;
     }
 
     public boolean isTerminating() {
-        return true;
-        //@todo
+        return poolState == POOL_TERMINATING;
     }
 
     public List<BeeTask> terminate(boolean cancelRunningTask) throws BeeTaskPoolException {
         return null;
-        //@todo
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         return true;
-        //@todo
     }
 
     public void clear(boolean cancelRunningTask) throws BeeTaskPoolException {
@@ -111,7 +106,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                4: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
-        return null;
-        //@todo
+        return monitorVo;
     }
 }
