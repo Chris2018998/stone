@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+import static org.stone.beetp.pool.PoolStaticCenter.POOL_READY;
+
 /**
  * Task Pool Impl
  *
@@ -33,6 +35,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     private String poolName;
     private volatile int poolState;
+    private int maxQueueTaskSize;
+    private int maxWorkerSize;
+    private boolean workerInDaemon;
+    private int poolFullPolicyCode;
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
 
@@ -49,16 +55,21 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (config == null) throw new PoolInitializedException("Configuration can't be null");
         BeeTaskServiceConfig checkedConfig = config.check();
 
-        //step2: simple attribute set
-        this.poolName = checkedConfig.getPoolName();
-        this.monitorVo = new TaskPoolMonitorVo();
-        this.poolInterceptor = checkedConfig.getPoolInterceptor();
-
-        //step3: task queue create
+        //step2: task queue create
         this.taskCount = new AtomicInteger(0);
         this.workerCount = new AtomicInteger(0);
         this.taskQueue = new ConcurrentLinkedQueue();
         this.workerQueue = new ConcurrentLinkedQueue();
+
+        //step3: simple attribute set
+        this.poolName = checkedConfig.getPoolName();
+        this.maxQueueTaskSize = checkedConfig.getMaxQueueTaskSize();
+        this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
+        this.workerInDaemon = checkedConfig.isWorkerInDaemon();
+        this.poolFullPolicyCode = checkedConfig.getPoolFullPolicyCode();
+        this.monitorVo = new TaskPoolMonitorVo();
+        this.poolInterceptor = checkedConfig.getPoolInterceptor();
+        this.poolState = POOL_READY;
     }
 
     //***************************************************************************************************************//
