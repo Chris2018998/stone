@@ -12,6 +12,7 @@ package org.stone.beetp.pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stone.beetp.*;
+import org.stone.beetp.pool.exception.PoolAccessForbiddenException;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
@@ -75,8 +76,25 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: task submit methods(2)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
-        return null;
+    public BeeTaskHandle submit(BeeTask task) throws BeeTaskPoolException {
+        //1: check pool state
+        if (task == null) throw new NullPointerException("Task can't be null");
+        if (this.poolState != POOL_READY)
+            throw new PoolAccessForbiddenException("Access forbidden,generic object pool was closed or in clearing");
+
+        //2: check pool size full
+        if (taskCount.get() == maxQueueTaskSize) {
+
+        }
+
+        //3: check pool size full
+        TaskHandleImpl taskHandle = new TaskHandleImpl(task, this);
+        taskQueue.offer(taskHandle);
+
+        //4: wakeup a thread to process the task or create a new worker thread
+
+
+        return taskHandle;
     }
 
     //***************************************************************************************************************//
