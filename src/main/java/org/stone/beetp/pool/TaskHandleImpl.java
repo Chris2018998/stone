@@ -89,7 +89,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
         int taskStateCode = taskState.get();
         if (taskStateCode == TASK_COMPLETED) return result;
         if (taskStateCode == TASK_EXCEPTIONAL) throw exception;
-        if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
+        if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was in cancelled state");
 
         Thread currentThread = Thread.currentThread();
         waitQueue.offer(currentThread);
@@ -123,7 +123,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
 
     public boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException {
         int taskStateCode = taskState.get();
-        if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was already cancelled");
+        if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was in cancelled state");
         if (taskStateCode == TASK_COMPLETED || taskStateCode == TASK_EXCEPTIONAL)
             throw new TaskCancelledException("Task was already in cancelled taskState");
 
