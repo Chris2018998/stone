@@ -141,8 +141,12 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                4: driven by worker thread methods(5)                                                          //                                                                                  //
+    //                4: driven by worker thread methods(6)                                                          //                                                                                  //
     //***************************************************************************************************************//
+    BeeTask getTask() {
+        return task;
+    }
+
     boolean compareAndSetState(int expect, int update) {
         return taskState.compareAndSet(expect, update);
     }
