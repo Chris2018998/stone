@@ -43,7 +43,7 @@ public class BeeTaskServiceConfig {
     private int maxWorkerSize;
 
     private boolean workerInDaemon;
-
+    //millis
     private long workerMaxAliveTime;
 
     private int poolFullPolicyCode = Policy_Abort;
