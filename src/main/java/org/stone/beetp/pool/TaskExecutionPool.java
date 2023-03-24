@@ -41,13 +41,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private int maxQueueTaskSize;
     private int maxWorkerSize;
     private boolean workerInDaemon;
+    private long workerMaxAliveTime;
     private int poolFullPolicyCode;
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
 
     private AtomicInteger taskCount;
     private AtomicInteger workerCount;
-    private ConcurrentLinkedQueue taskQueue;
+    private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
     private ConcurrentLinkedQueue workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
@@ -64,13 +65,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.workerCount = new AtomicInteger(0);
         this.taskQueue = new ConcurrentLinkedQueue();
         this.workerQueue = new ConcurrentLinkedQueue();
-        this.poolTerminateWaitQueue = new ConcurrentLinkedQueue();
+        this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
         //step3: simple attribute set
         this.poolName = checkedConfig.getPoolName();
         this.maxQueueTaskSize = checkedConfig.getMaxQueueTaskSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
+        this.workerMaxAliveTime = checkedConfig.getWorkerMaxAliveTime();
         this.poolFullPolicyCode = checkedConfig.getPoolFullPolicyCode();
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
@@ -80,6 +82,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: task submit methods(2)                                                                      //                                                                                  //
     //***************************************************************************************************************//
+    void removeTask(BeeTaskHandle task) {
+        taskQueue.remove(task);
+    }
+
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskPoolException {
         //1: check pool state
         if (task == null) throw new NullPointerException("Task can't be null");
