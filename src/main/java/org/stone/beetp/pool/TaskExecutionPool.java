@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.security.InvalidParameterException;
@@ -24,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.beetp.BeeTaskServiceConfig.*;
 import static org.stone.beetp.pool.PoolStaticCenter.*;
 
 /**
@@ -42,7 +44,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private int maxWorkerSize;
     private boolean workerInDaemon;
     private long workerMaxAliveTime;
-    private int poolFullPolicyCode;
+    private TaskRejectPolicy rejectPolicy;
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
 
@@ -73,7 +75,25 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
         this.workerMaxAliveTime = checkedConfig.getWorkerMaxAliveTime();
-        this.poolFullPolicyCode = checkedConfig.getPoolFullPolicyCode();
+        switch (checkedConfig.getPoolFullPolicyCode()) {
+            case Policy_Abort: {
+                rejectPolicy = new TaskAbortPolicy();
+                break;
+            }
+            case Policy_Discard: {
+                rejectPolicy = new TaskDiscardPolicy();
+                break;
+            }
+            case Policy_Remove_Oldest: {
+                rejectPolicy = new TaskRemoveOldestPolicy();
+                break;
+            }
+            case Policy_Caller_Runs: {
+                rejectPolicy = new TaskCallerRunsPolicy();
+                break;
+            }
+        }
+
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
         this.poolState = POOL_READY;
@@ -86,22 +106,23 @@ public final class TaskExecutionPool implements BeeTaskPool {
         taskQueue.remove(task);
     }
 
-    public BeeTaskHandle submit(BeeTask task) throws BeeTaskPoolException {
+    public BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException {
         //1: check pool state
-        if (task == null) throw new NullPointerException("Task can't be null");
+        if (task == null) throw new TaskExecutionException("Task can't be null");
         if (this.poolState != POOL_READY)
             throw new PoolSubmitRejectedException("Access forbidden,generic object pool was closed or in clearing");
 
-        //2: check pool size full
-        if (taskCount.get() == maxQueueTaskSize) {
+        //2: execute reject policy on task queue full
+        boolean offerInd = true;
+        if (taskCount.get() == maxQueueTaskSize) offerInd = rejectPolicy.rejectTask(task, this);
 
-        }
+        //3: create task handle and offer it to queue
+        TaskHandleImpl taskHandle = new TaskHandleImpl(task, offerInd ? TASK_NEW : TASK_CANCELLED, this);
+        if (offerInd) taskQueue.offer(taskHandle);
 
-        //3: check pool size full
-        TaskHandleImpl taskHandle = new TaskHandleImpl(task, this);
-        taskQueue.offer(taskHandle);
+        //4: wakeup a worker to execute the task in async mode(@todo)
 
-        //4: wakeup a thread to process the task or create a new worker thread
+
         return taskHandle;
     }
 
@@ -116,8 +137,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         return poolState == POOL_TERMINATING;
     }
 
-    public List<BeeTask> terminate(boolean cancelRunningTask) throws BeeTaskPoolException {
-
+    public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
         wakeupTerminationWaiters();
         return null;
     }
@@ -160,7 +180,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 
-    public void clear(boolean cancelRunningTask) throws BeeTaskPoolException {
+    public void clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
 
     }
 
@@ -169,5 +189,47 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         return monitorVo;
+    }
+
+    //***************************************************************************************************************//
+    //                5: Inner Classes(7)                                                                            //                                                                                  //
+    //***************************************************************************************************************//
+    private interface TaskRejectPolicy {
+        //true:rejected;false:continue;
+        boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskException, BeeTaskPoolException;
+    }
+
+    private static class TaskAbortPolicy implements TaskRejectPolicy {
+        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskPoolException {
+            throw new PoolSubmitRejectedException("");
+        }
+    }
+
+    private static class TaskDiscardPolicy implements TaskRejectPolicy {
+        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) {
+            return true;
+        }
+    }
+
+    private static class TaskRemoveOldestPolicy implements TaskRejectPolicy {
+        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) {
+            TaskHandleImpl oldTask = pool.taskQueue.poll();
+            if (oldTask != null) {
+                pool.taskCount.decrementAndGet();
+                oldTask.compareAndSetState(TASK_NEW, TASK_CANCELLED);
+            }
+            return false;
+        }
+    }
+
+    private static class TaskCallerRunsPolicy implements TaskRejectPolicy {
+        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskException {
+            try {
+                task.call();
+                return true;
+            } catch (Throwable e) {
+                throw new BeeTaskException(e);
+            }
+        }
     }
 }
