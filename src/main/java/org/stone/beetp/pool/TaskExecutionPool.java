@@ -49,7 +49,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private AtomicInteger taskCount;
     private AtomicInteger workerCount;
     private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
-    private ConcurrentLinkedQueue workerQueue;
+    private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -63,8 +63,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         //step2: task queue create
         this.taskCount = new AtomicInteger(0);
         this.workerCount = new AtomicInteger(0);
-        this.taskQueue = new ConcurrentLinkedQueue();
-        this.workerQueue = new ConcurrentLinkedQueue();
+        this.taskQueue = new ConcurrentLinkedQueue<>();
+        this.workerQueue = new ConcurrentLinkedQueue<>();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
         //step3: simple attribute set
