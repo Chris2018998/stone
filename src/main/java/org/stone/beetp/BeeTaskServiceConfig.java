@@ -24,7 +24,7 @@ import static org.stone.util.CommonUtil.isBlank;
  * @version 1.0
  */
 public class BeeTaskServiceConfig {
-    //action: throw PoolRejectedException when pool full
+    //action: throw PoolSubmitRejectedException when pool full
     public static final int Policy_Abort = 1;
     //action: do nothing when pool full
     public static final int Policy_Discard = 2;
@@ -43,6 +43,8 @@ public class BeeTaskServiceConfig {
     private int maxWorkerSize;
 
     private boolean workerInDaemon;
+
+    private boolean workerMaxAliveTime;
 
     private int poolFullPolicyCode = Policy_Abort;
 
@@ -86,6 +88,14 @@ public class BeeTaskServiceConfig {
 
     public void setWorkerInDaemon(boolean workerInDaemon) {
         this.workerInDaemon = workerInDaemon;
+    }
+
+    public boolean isWorkerMaxAliveTime() {
+        return workerMaxAliveTime;
+    }
+
+    public void setWorkerMaxAliveTime(boolean workerMaxAliveTime) {
+        this.workerMaxAliveTime = workerMaxAliveTime;
     }
 
     public int getPoolFullPolicyCode() {
