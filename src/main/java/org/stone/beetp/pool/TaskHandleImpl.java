@@ -129,7 +129,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
 
         //1: try to cas state to cancelled from new
         if (taskStateCode == TASK_NEW && taskState.compareAndSet(TASK_NEW, TASK_CANCELLED)) {
-            //pool.remove(this);//@todo task need be removed from pool after cancelled
+            pool.removeTask(this);
             return true;
         }
 
