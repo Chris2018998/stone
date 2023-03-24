@@ -116,13 +116,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
         boolean offerInd = true;
         if (taskCount.get() == maxQueueTaskSize) offerInd = rejectPolicy.rejectTask(task, this);
 
-        //3: create task handle and offer it to queue
+        //3: create task handle and offer it to queue by indicator
         TaskHandleImpl taskHandle = new TaskHandleImpl(task, offerInd ? TASK_NEW : TASK_CANCELLED, this);
-        if (offerInd) taskQueue.offer(taskHandle);
-
-        //4: wakeup a worker to execute the task in async mode(@todo)
-
-
+        if (offerInd) {
+            taskQueue.offer(taskHandle);
+            //4: wakeup a worker to execute the task in async mode(@todo)
+        }
         return taskHandle;
     }
 
