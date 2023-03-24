@@ -44,7 +44,7 @@ public class BeeTaskServiceConfig {
 
     private boolean workerInDaemon;
 
-    private boolean workerMaxAliveTime;
+    private long workerMaxAliveTime;
 
     private int poolFullPolicyCode = Policy_Abort;
 
@@ -90,11 +90,11 @@ public class BeeTaskServiceConfig {
         this.workerInDaemon = workerInDaemon;
     }
 
-    public boolean isWorkerMaxAliveTime() {
+    public long isWorkerMaxAliveTime() {
         return workerMaxAliveTime;
     }
 
-    public void setWorkerMaxAliveTime(boolean workerMaxAliveTime) {
+    public void setWorkerMaxAliveTime(long workerMaxAliveTime) {
         this.workerMaxAliveTime = workerMaxAliveTime;
     }
 
@@ -145,6 +145,8 @@ public class BeeTaskServiceConfig {
             throw new BeeTaskServiceConfigException("maxQueueTaskSize must be greater than zero");
         if (maxWorkerSize <= 0)
             throw new BeeTaskServiceConfigException("maxWorkerSize must be greater than zero");
+        if (workerMaxAliveTime < 0)
+            throw new BeeTaskServiceConfigException("workerMaxAliveTime must be greater than zero");
 
         //1: check pool full policy code
         if (poolFullPolicyCode < Policy_Abort || poolFullPolicyCode > Policy_Caller_Runs)
