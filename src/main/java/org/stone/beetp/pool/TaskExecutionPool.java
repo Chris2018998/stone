@@ -102,8 +102,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
         taskQueue.offer(taskHandle);
 
         //4: wakeup a thread to process the task or create a new worker thread
-
-
         return taskHandle;
     }
 
