@@ -28,7 +28,7 @@ public interface BeeTaskPool {
     //***************************************************************************************************************//
     //                2: task submit methods(1)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    BeeTaskHandle submit(BeeTask task) throws BeeTaskPoolException;
+    BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException;
 
     //***************************************************************************************************************//
     //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
