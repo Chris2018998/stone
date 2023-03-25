@@ -125,7 +125,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         TaskHandleImpl taskHandle = new TaskHandleImpl(task, offerInd ? TASK_NEW : TASK_CANCELLED, this);
         if (offerInd) {
             taskQueue.offer(taskHandle);
-            //4: wakeup a worker to execute the task in async mode(@todo)
+            wakeUpOneWorker();
         }
         return taskHandle;
     }
