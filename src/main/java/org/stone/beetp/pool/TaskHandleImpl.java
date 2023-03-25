@@ -43,10 +43,12 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     //                1: task constructor(1)                                                                         //                                                                                  //
     //***************************************************************************************************************//
     TaskHandleImpl(BeeTask task, int initState, TaskExecutionPool pool) {
-        this.task = task;
-        this.pool = pool;
         this.taskState = new AtomicInteger(initState);
-        this.waitQueue = new ConcurrentLinkedQueue<>();
+        if (initState == TASK_NEW) {
+            this.task = task;
+            this.pool = pool;
+            this.waitQueue = new ConcurrentLinkedQueue<>();
+        }
     }
 
     //***************************************************************************************************************//
