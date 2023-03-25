@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.BeeTaskServiceConfig.*;
 import static org.stone.beetp.pool.PoolStaticCenter.*;
 
@@ -74,7 +75,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxQueueTaskSize = checkedConfig.getMaxQueueTaskSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
-        this.workerMaxAliveTime = checkedConfig.getWorkerMaxAliveTime();
+        this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerMaxAliveTime());
         switch (checkedConfig.getPoolFullPolicyCode()) {
             case Policy_Abort: {
                 rejectPolicy = new TaskAbortPolicy();
@@ -191,11 +192,29 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                5: Inner Classes(7)                                                                            //                                                                                  //
+    //                5: Inner interfaces and classes (7)                                                            //                                                                                  //
     //***************************************************************************************************************//
     private interface TaskRejectPolicy {
         //true:rejected;false:continue;
         boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskException, BeeTaskPoolException;
+    }
+
+    private static class PoolWorkerThread extends Thread {
+        private static final AtomicInteger Index = new AtomicInteger(1);
+        private final AtomicInteger state;
+        private final TaskExecutionPool pool;
+
+        public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
+            this.pool = pool;
+            this.setDaemon(daemon);
+            this.setName(name + "-worker thread" + Index.getAndIncrement());
+            this.state = new AtomicInteger(WORKER_IDLE);
+        }
+
+        public void run() {
+
+
+        }
     }
 
     private static class TaskAbortPolicy implements TaskRejectPolicy {
