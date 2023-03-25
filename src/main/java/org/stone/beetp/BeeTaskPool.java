@@ -41,7 +41,7 @@ public interface BeeTaskPool {
 
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
-    void clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
+    boolean clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
     //                4: Pool monitor(1)                                                                             //
