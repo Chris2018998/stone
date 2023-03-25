@@ -51,6 +51,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     private AtomicInteger taskCount;
     private AtomicInteger workerCount;
+    private AtomicInteger runningTaskCount;
+    private AtomicInteger completedTaskCount;
     private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
@@ -66,6 +68,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         //step2: task queue create
         this.taskCount = new AtomicInteger(0);
         this.workerCount = new AtomicInteger(0);
+        this.runningTaskCount = new AtomicInteger(0);
+        this.completedTaskCount = new AtomicInteger(0);
         this.taskQueue = new ConcurrentLinkedQueue<>();
         this.workerQueue = new ConcurrentLinkedQueue<>();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
@@ -194,6 +198,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                4: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
+        monitorVo.setWorkerCount(taskCount.get());
+        monitorVo.setQueueTaskCount(taskCount.get());
+        monitorVo.setRunningTaskCount(runningTaskCount.get());
+        monitorVo.setCompletedTaskCount(completedTaskCount.get());
         return monitorVo;
     }
 
@@ -247,9 +255,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
         private final long workerKeepAliveTime;
         private final ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
 
-        public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
+        public PoolWorkerThread(TaskExecutionPool pool, String name) {
             this.pool = pool;
-            this.setDaemon(daemon);
+            this.setDaemon(pool.workerInDaemon);
             this.taskQueue = pool.taskQueue;
             this.workerKeepAliveTime = pool.workerMaxAliveTime;
             this.keepaliveTimed = workerKeepAliveTime > 0;
