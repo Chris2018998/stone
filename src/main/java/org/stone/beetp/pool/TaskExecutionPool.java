@@ -211,6 +211,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.state = new AtomicInteger(WORKER_IDLE);
         }
 
+        void setState(int update) {
+            state.set(update);
+        }
+
+        boolean compareAndSetState(int expect, int update) {
+            return state.compareAndSet(expect, update);
+        }
+
         public void run() {
 
 
