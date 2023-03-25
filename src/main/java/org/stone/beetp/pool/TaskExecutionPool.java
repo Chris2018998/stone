@@ -49,8 +49,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
 
-    private AtomicInteger taskCount;
-    private AtomicInteger workerCount;
+    private AtomicInteger taskCountInQueue;
+    private AtomicInteger workerCountInQueue;
     private AtomicInteger runningTaskCount;
     private AtomicInteger completedTaskCount;
     private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
@@ -66,8 +66,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         BeeTaskServiceConfig checkedConfig = config.check();
 
         //step2: task queue create
-        this.taskCount = new AtomicInteger(0);
-        this.workerCount = new AtomicInteger(0);
+        this.taskCountInQueue = new AtomicInteger(0);
+        this.workerCountInQueue = new AtomicInteger(0);
         this.runningTaskCount = new AtomicInteger(0);
         this.completedTaskCount = new AtomicInteger(0);
         this.taskQueue = new ConcurrentLinkedQueue<>();
@@ -107,8 +107,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: task submit methods(2)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    void removeTask(BeeTaskHandle task) {
-        taskQueue.remove(task);
+    void removeTask(BeeTaskHandle handle) {
+        taskQueue.remove(handle);
     }
 
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException {
@@ -119,7 +119,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //2: execute reject policy on task queue full
         boolean offerInd = true;
-        if (taskCount.get() == maxQueueTaskSize) offerInd = rejectPolicy.rejectTask(task, this);
+        if (taskCountInQueue.get() == maxQueueTaskSize) offerInd = rejectPolicy.rejectTask(task, this);
 
         //3: create task handle and offer it to queue by indicator
         TaskHandleImpl taskHandle = new TaskHandleImpl(task, offerInd ? TASK_NEW : TASK_CANCELLED, this);
@@ -139,9 +139,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         do {
-            int currentCount = this.workerCount.get();
+            int currentCount = this.workerCountInQueue.get();
             if (currentCount >= this.maxWorkerSize) return;
-            if (workerCount.compareAndSet(currentCount, currentCount + 1)) {
+            if (workerCountInQueue.compareAndSet(currentCount, currentCount + 1)) {
                 PoolWorkerThread worker = new PoolWorkerThread(this);
                 worker.start();
                 workerQueue.offer(worker);
@@ -208,13 +208,59 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     }
 
+    //execute task
     private void executeTask(TaskHandleImpl handle) {
-        taskCount.decrementAndGet();
         try {
-            runningTaskCount.incrementAndGet();
+            workerCountInQueue.decrementAndGet();
             if (handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
-                if (poolInterceptor != null) poolInterceptor.beforeCall(handle.getTask());
-
+                runningTaskCount.incrementAndGet();
+                BeeTask task = handle.getTask();
+                //1: execute pool interceptor
+                if (poolInterceptor != null) {
+                    try {
+                        poolInterceptor.beforeCall(task);
+                    } catch (Throwable e) {
+                    }
+                }
+                //2: execute task aspect
+                BeeTaskAspect aspect = task.getAspect();
+                if (aspect != null) {
+                    try {
+                        aspect.beforeCall();
+                    } catch (Throwable e) {
+                    }
+                }
+                //3: execute task
+                try {
+                    Object result = task.call();
+                    handle.setResult(result);
+                    if (poolInterceptor != null) {
+                        try {
+                            poolInterceptor.afterCall(task, result);
+                        } catch (Throwable e) {
+                        }
+                    }
+                    if (aspect != null) {
+                        try {
+                            aspect.afterCall(result);
+                        } catch (Throwable e) {
+                        }
+                    }
+                } catch (Throwable e) {
+                    handle.setException(new TaskExecutionException(e));
+                    if (poolInterceptor != null) {
+                        try {
+                            poolInterceptor.AfterThrowing(task, e);
+                        } catch (Throwable ee) {
+                        }
+                    }
+                    if (aspect != null) {
+                        try {
+                            aspect.AfterThrowing(e);
+                        } catch (Throwable ee) {
+                        }
+                    }
+                }
             }
         } finally {
             runningTaskCount.decrementAndGet();
@@ -226,8 +272,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                4: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
-        monitorVo.setWorkerCount(taskCount.get());
-        monitorVo.setQueueTaskCount(taskCount.get());
+        monitorVo.setWorkerCount(workerCountInQueue.get());
+        monitorVo.setQueueTaskCount(taskCountInQueue.get());
         monitorVo.setRunningTaskCount(runningTaskCount.get());
         monitorVo.setCompletedTaskCount(completedTaskCount.get());
         return monitorVo;
@@ -257,7 +303,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         public boolean rejectTask(BeeTask task, TaskExecutionPool pool) {
             TaskHandleImpl oldTask = pool.taskQueue.poll();
             if (oldTask != null) {
-                pool.taskCount.decrementAndGet();
+                pool.taskCountInQueue.decrementAndGet();
                 oldTask.compareAndSetState(TASK_NEW, TASK_CANCELLED);
             }
             return false;
@@ -283,7 +329,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         private final long workerKeepAliveTime;
         private final ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
 
-        public PoolWorkerThread(TaskExecutionPool pool) {
+        PoolWorkerThread(TaskExecutionPool pool) {
             this.pool = pool;
             this.setDaemon(pool.workerInDaemon);
             this.taskQueue = pool.taskQueue;
@@ -305,7 +351,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             do {
                 int stateCode = state.get();
                 if (stateCode == WORKER_TERMINATED) {
-                    pool.workerCount.decrementAndGet();
+                    pool.workerCountInQueue.decrementAndGet();
                     pool.workerQueue.remove(this);
                     break;
                 }
