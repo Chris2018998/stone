@@ -184,6 +184,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     }
 
+
+    private void executeTask(TaskHandleImpl task) {
+        taskCount.decrementAndGet();
+    }
+
+
     //***************************************************************************************************************//
     //                4: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
@@ -197,32 +203,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private interface TaskRejectPolicy {
         //true:rejected;false:continue;
         boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskException, BeeTaskPoolException;
-    }
-
-    private static class PoolWorkerThread extends Thread {
-        private static final AtomicInteger Index = new AtomicInteger(1);
-        private final AtomicInteger state;
-        private final TaskExecutionPool pool;
-
-        public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
-            this.pool = pool;
-            this.setDaemon(daemon);
-            this.setName(name + "-worker thread" + Index.getAndIncrement());
-            this.state = new AtomicInteger(WORKER_IDLE);
-        }
-
-        void setState(int update) {
-            state.set(update);
-        }
-
-        boolean compareAndSetState(int expect, int update) {
-            return state.compareAndSet(expect, update);
-        }
-
-        public void run() {
-
-
-        }
     }
 
     private static class TaskAbortPolicy implements TaskRejectPolicy {
@@ -256,6 +236,54 @@ public final class TaskExecutionPool implements BeeTaskPool {
             } catch (Throwable e) {
                 throw new BeeTaskException(e);
             }
+        }
+    }
+
+    private static class PoolWorkerThread extends Thread {
+        private static final AtomicInteger Index = new AtomicInteger(1);
+        private final AtomicInteger state;
+        private final TaskExecutionPool pool;
+        private final boolean keepaliveTimed;
+        private final long workerKeepAliveTime;
+        private final ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
+
+        public PoolWorkerThread(TaskExecutionPool pool, String name, boolean daemon) {
+            this.pool = pool;
+            this.setDaemon(daemon);
+            this.taskQueue = pool.taskQueue;
+            this.workerKeepAliveTime = pool.workerMaxAliveTime;
+            this.keepaliveTimed = workerKeepAliveTime > 0;
+            this.setName(name + "-worker thread" + Index.getAndIncrement());
+            this.state = new AtomicInteger(WORKER_RUNNING);
+        }
+
+        void setState(int update) {
+            state.set(update);
+        }
+
+        boolean compareAndSetState(int expect, int update) {
+            return state.compareAndSet(expect, update);
+        }
+
+        public void run() {
+            do {
+                int stateCode = state.get();
+                if (stateCode == WORKER_TERMINATED) break;
+
+                //poll task from queue
+                TaskHandleImpl task = taskQueue.poll();
+                if (task != null) {
+                    pool.executeTask(task);
+                } else if (compareAndSetState(WORKER_RUNNING, WORKER_IDLE)) {
+                    if (keepaliveTimed)
+                        LockSupport.parkNanos(workerKeepAliveTime);
+                    else
+                        LockSupport.park();
+
+                    //keep alive timeout,then try to exit
+                    compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
+                }
+            } while (true);
         }
     }
 }
