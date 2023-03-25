@@ -18,7 +18,7 @@ import org.stone.beetp.BeeTaskPoolMonitorVo;
  * @version 1.0
  */
 
-public class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
+public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
     private int workerCount;
     private int queueTaskCount;
     private int runningTaskCount;
