@@ -203,6 +203,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private void wakeupTerminationWaiters() {
         for (Thread thread : poolTerminateWaitQueue)
             LockSupport.unpark(thread);
+        poolTerminateWaitQueue.clear();
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
