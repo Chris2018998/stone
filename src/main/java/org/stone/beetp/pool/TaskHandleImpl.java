@@ -164,11 +164,13 @@ public final class TaskHandleImpl implements BeeTaskHandle {
 
     void setResult(Object result) {
         this.result = result;
+        taskState.set(TASK_COMPLETED);
         this.wakeupWaiters();
     }
 
     void setException(BeeTaskException exception) {
         this.exception = exception;
+        taskState.set(TASK_EXCEPTIONAL);
         this.wakeupWaiters();
     }
 
