@@ -130,6 +130,26 @@ public final class TaskExecutionPool implements BeeTaskPool {
         return taskHandle;
     }
 
+    private void wakeUpOneWorker() {
+        for (PoolWorkerThread workerThread : workerQueue) {
+            if (workerThread.compareAndSetState(WORKER_IDLE, WORKER_RUNNING)) {
+                LockSupport.unpark(workerThread);
+                return;
+            }
+        }
+
+        do {
+            int currentCount = this.workerCount.get();
+            if (currentCount >= this.maxWorkerSize) return;
+            if (workerCount.compareAndSet(currentCount, currentCount + 1)) {
+                PoolWorkerThread worker = new PoolWorkerThread(this);
+                worker.start();
+                workerQueue.offer(worker);
+                return;
+            }
+        } while (true);
+    }
+
     //***************************************************************************************************************//
     //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
     //***************************************************************************************************************//
@@ -188,11 +208,19 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     }
 
-
-    private void executeTask(TaskHandleImpl task) {
+    private void executeTask(TaskHandleImpl handle) {
         taskCount.decrementAndGet();
-    }
+        try {
+            runningTaskCount.incrementAndGet();
+            if (handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
+                if (poolInterceptor != null) poolInterceptor.beforeCall(handle.getTask());
 
+            }
+        } finally {
+            runningTaskCount.decrementAndGet();
+            completedTaskCount.incrementAndGet();
+        }
+    }
 
     //***************************************************************************************************************//
     //                4: Pool monitor(1)                                                                             //                                                                                  //
@@ -255,13 +283,13 @@ public final class TaskExecutionPool implements BeeTaskPool {
         private final long workerKeepAliveTime;
         private final ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
 
-        public PoolWorkerThread(TaskExecutionPool pool, String name) {
+        public PoolWorkerThread(TaskExecutionPool pool) {
             this.pool = pool;
             this.setDaemon(pool.workerInDaemon);
             this.taskQueue = pool.taskQueue;
             this.workerKeepAliveTime = pool.workerMaxAliveTime;
             this.keepaliveTimed = workerKeepAliveTime > 0;
-            this.setName(name + "-worker thread" + Index.getAndIncrement());
+            this.setName(pool.poolName + "-worker thread" + Index.getAndIncrement());
             this.state = new AtomicInteger(WORKER_RUNNING);
         }
 
@@ -276,7 +304,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
         public void run() {
             do {
                 int stateCode = state.get();
-                if (stateCode == WORKER_TERMINATED) break;
+                if (stateCode == WORKER_TERMINATED) {
+                    pool.workerCount.decrementAndGet();
+                    pool.workerQueue.remove(this);
+                    break;
+                }
 
                 //poll task from queue
                 TaskHandleImpl task = taskQueue.poll();
