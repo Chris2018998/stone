@@ -162,8 +162,13 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
+        //@todo
         wakeupTerminationWaiters();
         return null;
+    }
+
+    public void clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
+        //@todo
     }
 
     private void wakeupTerminationWaiters() {
@@ -202,10 +207,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
         } finally {
             poolTerminateWaitQueue.remove(currentThread);
         }
-    }
-
-    public void clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
-
     }
 
     //execute task
