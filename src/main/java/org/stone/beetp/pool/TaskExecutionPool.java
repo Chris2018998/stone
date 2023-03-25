@@ -18,6 +18,7 @@ import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.security.InvalidParameterException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -162,13 +163,41 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
-        //@todo
-        wakeupTerminationWaiters();
-        return null;
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_TERMINATING)) {
+            for (PoolWorkerThread worker : workerQueue) {
+                worker.setState(WORKER_TERMINATED);
+                worker.interrupt();
+            }
+
+            List<BeeTask> queueTaskList = new LinkedList<>();
+            for (TaskHandleImpl taskHandle : taskQueue)
+                queueTaskList.add(taskHandle.getTask());
+
+            workerQueue.clear();
+            taskQueue.clear();
+            this.poolState = POOL_TERMINATED;
+            this.wakeupTerminationWaiters();
+            return queueTaskList;
+        } else {
+            return null;
+        }
     }
 
-    public void clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
-        //@todo
+    public boolean clear(boolean mayInterruptIfRunning) {
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+            taskQueue.clear();
+
+            if (mayInterruptIfRunning) {
+                for (PoolWorkerThread worker : workerQueue) {
+                    worker.setState(WORKER_TERMINATED);
+                    worker.interrupt();
+                }
+            }
+            this.poolState = POOL_READY;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private void wakeupTerminationWaiters() {
