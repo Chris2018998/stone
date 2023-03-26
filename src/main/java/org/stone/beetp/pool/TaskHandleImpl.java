@@ -15,7 +15,6 @@ import org.stone.beetp.BeeTaskHandle;
 import org.stone.beetp.pool.exception.ResultGetTimeoutException;
 import org.stone.beetp.pool.exception.TaskCancelledException;
 
-import java.security.InvalidParameterException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -30,13 +29,12 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  * @version 1.0
  */
 public final class TaskHandleImpl implements BeeTaskHandle {
+    private final AtomicInteger taskState;
     private BeeTask task;
     private Thread workThread;
     private TaskExecutionPool pool;
-
     private Object result;
     private BeeTaskException exception;
-    private AtomicInteger taskState;
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
     //***************************************************************************************************************//
@@ -82,8 +80,8 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     }
 
     public Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException {
-        if (timeout < 0) throw new InvalidParameterException("Time out value must be greater than zero");
-        if (unit == null) throw new InvalidParameterException("Time unit can't be null");
+        if (timeout < 0) throw new IllegalArgumentException("Time out value must be greater than zero");
+        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
         return get(unit.toNanos(timeout));
     }
 
