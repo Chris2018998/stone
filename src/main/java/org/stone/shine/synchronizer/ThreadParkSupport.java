@@ -57,6 +57,7 @@ public class ThreadParkSupport {
     protected long parkTime = 1L;//a initialized value,calculated before park,if less than zero or equals zero means timeout
     protected Object blocker;
     protected boolean interrupted;
+    protected boolean interruptable = true;
 
     //****************************************************************************************************************//
     //                                              constructors(1)                                                   //
