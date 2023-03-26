@@ -9,8 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
@@ -37,7 +35,6 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  * @version 1.0
  */
 public final class TaskExecutionPool implements BeeTaskPool {
-    private static final Logger Log = LoggerFactory.getLogger(TaskExecutionPool.class);
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
 
     private String poolName;
