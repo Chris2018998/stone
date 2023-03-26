@@ -250,6 +250,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     try {
                         poolInterceptor.beforeCall(task);
                     } catch (Throwable e) {
+                        //do nothing
                     }
                 }
                 //2: execute task aspect
@@ -258,6 +259,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     try {
                         aspect.beforeCall();
                     } catch (Throwable e) {
+                        //do nothing
                     }
                 }
                 //3: execute task
@@ -268,12 +270,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
                         try {
                             poolInterceptor.afterCall(task, result);
                         } catch (Throwable e) {
+                            //do nothing
                         }
                     }
                     if (aspect != null) {
                         try {
                             aspect.afterCall(result);
                         } catch (Throwable e) {
+                            //do nothing
                         }
                     }
                 } catch (Throwable e) {
@@ -282,12 +286,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
                         try {
                             poolInterceptor.AfterThrowing(task, e);
                         } catch (Throwable ee) {
+                            //do nothing
                         }
                     }
                     if (aspect != null) {
                         try {
                             aspect.AfterThrowing(e);
                         } catch (Throwable ee) {
+                            //do nothing
                         }
                     }
                 }
