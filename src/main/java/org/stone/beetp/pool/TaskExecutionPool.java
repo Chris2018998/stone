@@ -140,8 +140,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
             if (currentCount >= this.maxWorkerSize) return;
             if (workerCountInQueue.compareAndSet(currentCount, currentCount + 1)) {
                 PoolWorkerThread worker = new PoolWorkerThread(this);
-                worker.start();
                 workerQueue.offer(worker);
+                worker.start();
                 return;
             }
         } while (true);
@@ -175,7 +175,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.wakeupTerminationWaiters();
             return queueTaskList;
         } else {
-            return null;
+            throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or terminated");
         }
     }
 
