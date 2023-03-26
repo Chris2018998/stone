@@ -36,7 +36,6 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  * @author Chris Liao
  * @version 1.0
  */
-@SuppressWarnings("SuspiciousMethodCalls")
 public final class TaskExecutionPool implements BeeTaskPool {
     private static final Logger Log = LoggerFactory.getLogger(TaskExecutionPool.class);
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
@@ -108,7 +107,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: task submit methods(2)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    void removeTask(BeeTaskHandle handle) {
+    void removeTask(TaskHandleImpl handle) {
         taskQueue.remove(handle);
     }
 
