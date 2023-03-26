@@ -85,7 +85,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        3: pool terminate methods(3)                                           //
+    //                                        3: pool terminate methods(4)                                           //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return pool == null || pool.isTerminated();
@@ -93,6 +93,11 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
     public boolean isTerminating() {
         return pool == null || pool.isTerminating();
+    }
+
+    public BeeTaskPoolMonitorVo getPoolMonitorVo() throws Exception {
+        if (pool == null) throw new BeeTaskPoolException("Task pool not initialized");
+        return pool.getPoolMonitorVo();
     }
 
     public void terminate(boolean cancelRunningTask) {
@@ -104,6 +109,4 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             }
         }
     }
-
-
 }
