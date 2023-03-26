@@ -36,6 +36,7 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  * @author Chris Liao
  * @version 1.0
  */
+@SuppressWarnings("SuspiciousMethodCalls")
 public final class TaskExecutionPool implements BeeTaskPool {
     private static final Logger Log = LoggerFactory.getLogger(TaskExecutionPool.class);
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
@@ -81,6 +82,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerMaxAliveTime());
+        this.monitorVo = new TaskPoolMonitorVo();
+        this.poolInterceptor = checkedConfig.getPoolInterceptor();
         switch (checkedConfig.getPoolFullPolicyCode()) {
             case Policy_Abort: {
                 rejectPolicy = new TaskAbortPolicy();
@@ -99,9 +102,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 break;
             }
         }
-
-        this.monitorVo = new TaskPoolMonitorVo();
-        this.poolInterceptor = checkedConfig.getPoolInterceptor();
         this.poolState = POOL_READY;
     }
 
