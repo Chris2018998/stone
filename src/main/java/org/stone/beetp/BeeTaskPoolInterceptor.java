@@ -21,5 +21,8 @@ public interface BeeTaskPoolInterceptor {
 
     void afterCall(BeeTask task, Object result);
 
-    void AfterThrowing(BeeTask task, Throwable e);
+    void afterThrowing(BeeTask task, Throwable e);
+
+    void terminated();
+
 }
