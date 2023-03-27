@@ -176,6 +176,13 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
             this.poolState = POOL_TERMINATED;
             this.wakeupTerminationWaiters();
+            if (poolInterceptor != null) {
+                try {
+                    poolInterceptor.terminated();
+                } catch (Throwable ee) {
+                    //do nothing
+                }
+            }
             return queueTaskList;
         } else {
             throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or terminated");
@@ -290,14 +297,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     handle.setException(new TaskExecutionException(e));
                     if (poolInterceptor != null) {
                         try {
-                            poolInterceptor.AfterThrowing(task, e);
+                            poolInterceptor.afterThrowing(task, e);
                         } catch (Throwable ee) {
                             //do nothing
                         }
                     }
                     if (aspect != null) {
                         try {
-                            aspect.AfterThrowing(e);
+                            aspect.afterThrowing(e);
                         } catch (Throwable ee) {
                             //do nothing
                         }
@@ -377,7 +384,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.taskQueue = pool.taskQueue;
             this.workerKeepAliveTime = pool.workerMaxAliveTime;
             this.keepaliveTimed = workerKeepAliveTime > 0;
-            this.setName(pool.poolName + "-worker thread" + Index.getAndIncrement());
+            this.setName(pool.poolName + "-worker thread-" + Index.getAndIncrement());
             this.state = new AtomicInteger(WORKER_RUNNING);
         }
 
