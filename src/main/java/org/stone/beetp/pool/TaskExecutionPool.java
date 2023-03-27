@@ -160,17 +160,20 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_TERMINATING)) {
-            for (PoolWorkerThread worker : workerQueue) {
+            PoolWorkerThread worker;
+            while ((worker = workerQueue.poll()) != null) {
                 worker.setState(WORKER_TERMINATED);
                 worker.interrupt();
             }
 
+            TaskHandleImpl taskHandle;
             List<BeeTask> queueTaskList = new LinkedList<>();
-            for (TaskHandleImpl taskHandle : taskQueue)
+            while ((taskHandle = taskQueue.poll()) != null) {
                 queueTaskList.add(taskHandle.getTask());
+                taskHandle.setState(TASK_CANCELLED);
+                taskHandle.wakeupWaiters();
+            }
 
-            workerQueue.clear();
-            taskQueue.clear();
             this.poolState = POOL_TERMINATED;
             this.wakeupTerminationWaiters();
             return queueTaskList;
@@ -181,10 +184,15 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public boolean clear(boolean mayInterruptIfRunning) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
-            taskQueue.clear();
+            TaskHandleImpl taskHandle;
+            while ((taskHandle = taskQueue.poll()) != null) {
+                taskHandle.setState(TASK_CANCELLED);
+                taskHandle.wakeupWaiters();
+            }
 
             if (mayInterruptIfRunning) {
-                for (PoolWorkerThread worker : workerQueue) {
+                PoolWorkerThread worker;
+                while ((worker = workerQueue.poll()) != null) {
                     worker.setState(WORKER_TERMINATED);
                     worker.interrupt();
                 }
@@ -228,7 +236,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 } else {
                     LockSupport.park();
                 }
-                if (currentThread.isInterrupted()) throw new InterruptedException();
+
+                if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
         } finally {
             poolTerminateWaitQueue.remove(currentThread);
