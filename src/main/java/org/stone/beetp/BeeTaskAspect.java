@@ -21,5 +21,5 @@ public interface BeeTaskAspect {
 
     void afterCall(Object result);
 
-    void AfterThrowing(Throwable e);
+    void afterThrowing(Throwable e);
 }
