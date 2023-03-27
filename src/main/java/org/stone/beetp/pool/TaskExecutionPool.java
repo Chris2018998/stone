@@ -112,7 +112,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         //1: check pool state
         if (task == null) throw new TaskExecutionException("Task can't be null");
         if (this.poolState != POOL_READY)
-            throw new PoolSubmitRejectedException("Access forbidden,generic object pool was closed or in clearing");
+            throw new PoolSubmitRejectedException("Access forbidden,task pool was closed or in clearing");
 
         //2: execute reject policy on task queue full
         boolean offerInd = true;
@@ -399,7 +399,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         public void run() {
             do {
                 int stateCode = state.get();
-                if (stateCode == WORKER_TERMINATED) {
+                if (stateCode == WORKER_TERMINATED || pool.poolState >= POOL_TERMINATING) {
                     pool.workerCountInQueue.decrementAndGet();
                     pool.workerQueue.remove(this);
                     break;
