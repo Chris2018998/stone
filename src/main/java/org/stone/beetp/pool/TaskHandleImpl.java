@@ -93,7 +93,6 @@ public final class TaskHandleImpl implements BeeTaskHandle {
 
         Thread currentThread = Thread.currentThread();
         waitQueue.offer(currentThread);
-
         boolean timed = nanoseconds > 0;
         long deadline = System.nanoTime() + nanoseconds;
 
@@ -114,7 +113,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
                     LockSupport.park();
                 }
 
-                if (currentThread.isInterrupted()) throw new InterruptedException();
+                if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
         } finally {
             waitQueue.remove(currentThread);
@@ -172,7 +171,7 @@ public final class TaskHandleImpl implements BeeTaskHandle {
         this.wakeupWaiters();
     }
 
-    private void wakeupWaiters() {
+    void wakeupWaiters() {
         for (Thread thread : waitQueue)
             LockSupport.unpark(thread);
         this.task = null;
