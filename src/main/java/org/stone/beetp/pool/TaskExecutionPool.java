@@ -9,13 +9,14 @@
  */
 package org.stone.beetp.pool;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
-import java.security.InvalidParameterException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,6 +37,7 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  */
 public final class TaskExecutionPool implements BeeTaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
+    private static final Logger Log = LoggerFactory.getLogger(TaskExecutionPool.class);
 
     private String poolName;
     private volatile int poolState;
@@ -43,6 +45,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private int maxWorkerSize;
     private boolean workerInDaemon;
     private long workerMaxAliveTime;
+    private boolean interruptWorkerOnClear;
     private TaskRejectPolicy rejectPolicy;
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
@@ -54,6 +57,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
+    private PoolExitJvmHook exitHook;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -77,6 +81,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxQueueTaskSize = checkedConfig.getMaxQueueTaskSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
+        this.interruptWorkerOnClear = checkedConfig.isInterruptWorkerOnClear();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerMaxAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
@@ -97,6 +102,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 rejectPolicy = new TaskCallerRunsPolicy();
                 break;
             }
+        }
+
+        if (this.exitHook == null) {
+            this.exitHook = new PoolExitJvmHook(this);
+            Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
         this.poolState = POOL_READY;
     }
@@ -161,9 +171,19 @@ public final class TaskExecutionPool implements BeeTaskPool {
     public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_TERMINATING)) {
             PoolWorkerThread worker;
-            while ((worker = workerQueue.poll()) != null) {
-                worker.setState(WORKER_TERMINATED);
-                worker.interrupt();
+            if (mayInterruptIfRunning) {
+                while ((worker = workerQueue.poll()) != null) {
+                    worker.setState(WORKER_TERMINATED);
+                    worker.interrupt();
+                }
+            } else {
+                while ((worker = workerQueue.poll()) != null) {
+                    try {
+                        worker.join();
+                    } catch (Exception e) {
+                        //do nothing
+                    }
+                }
             }
 
             TaskHandleImpl taskHandle;
@@ -183,6 +203,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     //do nothing
                 }
             }
+
+            try {
+                Runtime.getRuntime().removeShutdownHook(this.exitHook);
+            } catch (Throwable e) {
+                //do nothing
+            }
             return queueTaskList;
         } else {
             throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or terminated");
@@ -197,13 +223,23 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 taskHandle.wakeupWaiters();
             }
 
+
+            PoolWorkerThread worker;
             if (mayInterruptIfRunning) {
-                PoolWorkerThread worker;
                 while ((worker = workerQueue.poll()) != null) {
                     worker.setState(WORKER_TERMINATED);
                     worker.interrupt();
                 }
+            } else {
+                while ((worker = workerQueue.poll()) != null) {
+                    try {
+                        worker.join();
+                    } catch (Exception e) {
+                        //do nothing
+                    }
+                }
             }
+
             this.poolState = POOL_READY;
             return true;
         } else {
@@ -219,8 +255,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         if (this.poolState == POOL_TERMINATED) return true;
-        if (timeout < 0) throw new InvalidParameterException("Time out value must be greater than zero");
-        if (unit == null) throw new InvalidParameterException("Time unit can't be null");
+        if (timeout < 0) throw new IllegalArgumentException("Time out value must be greater than zero");
+        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
 
         Thread currentThread = Thread.currentThread();
         poolTerminateWaitQueue.offer(currentThread);
@@ -420,6 +456,23 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
                 }
             } while (true);
+        }
+    }
+
+    private static class PoolExitJvmHook extends Thread {
+        private final TaskExecutionPool pool;
+
+        PoolExitJvmHook(TaskExecutionPool pool) {
+            this.pool = pool;
+        }
+
+        public void run() {
+            try {
+                Log.info("BeeTP({})JVM exit hook running", this.pool.poolName);
+                pool.terminate(pool.interruptWorkerOnClear);
+            } catch (Throwable e) {
+                Log.error("BeeTP({})Error occurred at closing pool,cause:", this.pool.poolName, e);
+            }
         }
     }
 }
