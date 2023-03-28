@@ -78,7 +78,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //step3: simple attribute set
         this.poolName = checkedConfig.getPoolName();
-        this.maxQueueTaskSize = checkedConfig.getMaxQueueTaskSize();
+        this.maxQueueTaskSize = checkedConfig.getMaxQueueSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
         this.interruptWorkerOnClear = checkedConfig.isInterruptWorkerOnClear();
