@@ -48,7 +48,7 @@ public class BeeTaskServiceConfig {
 
     private int poolFullPolicyCode = Policy_Abort;
 
-    private boolean interruptRunningTaskOnClear;
+    private boolean interruptWorkerOnClear;
 
     private String poolInterceptorClassName;
 
@@ -90,7 +90,7 @@ public class BeeTaskServiceConfig {
         this.workerInDaemon = workerInDaemon;
     }
 
-    public long isWorkerMaxAliveTime() {
+    public long getWorkerMaxAliveTime() {
         return workerMaxAliveTime;
     }
 
@@ -107,12 +107,12 @@ public class BeeTaskServiceConfig {
             this.poolFullPolicyCode = poolFullPolicyCode;
     }
 
-    public boolean isInterruptRunningTaskOnClear() {
-        return interruptRunningTaskOnClear;
+    public boolean isInterruptWorkerOnClear() {
+        return interruptWorkerOnClear;
     }
 
-    public void setInterruptRunningTaskOnClear(boolean interruptRunningTaskOnClear) {
-        this.interruptRunningTaskOnClear = interruptRunningTaskOnClear;
+    public void setInterruptWorkerOnClear(boolean interruptWorkerOnClear) {
+        this.interruptWorkerOnClear = interruptWorkerOnClear;
     }
 
     public String getPoolInterceptorClassName() {
