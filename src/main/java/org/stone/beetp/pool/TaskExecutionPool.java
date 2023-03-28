@@ -353,7 +353,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
             TaskHandleImpl oldTask = pool.taskQueue.poll();
             if (oldTask != null) {
                 pool.taskCountInQueue.decrementAndGet();
-                oldTask.compareAndSetState(TASK_NEW, TASK_CANCELLED);
+                oldTask.setState(TASK_CANCELLED);
+                oldTask.wakeupWaiters();
             }
             return false;
         }
