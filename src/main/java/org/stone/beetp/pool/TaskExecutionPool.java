@@ -82,7 +82,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkerInDaemon();
         this.interruptWorkerOnClear = checkedConfig.isInterruptWorkerOnClear();
-        this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerMaxAliveTime());
+        this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
         switch (checkedConfig.getPoolFullPolicyCode()) {
