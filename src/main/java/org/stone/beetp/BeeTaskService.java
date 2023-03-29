@@ -45,7 +45,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
     private static void createPool(BeeTaskService service) throws Exception {
         Class<?> poolClass = Class.forName(service.getPoolImplementClassName());
-        if (BeeTaskPool.class.isAssignableFrom(poolClass))
+        if (!BeeTaskPool.class.isAssignableFrom(poolClass))
             throw new BeeTaskServiceConfigException("Invalid pool implement class name:" + service.getPoolImplementClassName());
 
         BeeTaskPool pool = (BeeTaskPool) poolClass.newInstance();
