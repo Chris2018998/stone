@@ -109,6 +109,13 @@ public final class TaskExecutionPool implements BeeTaskPool {
             Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
         this.poolState = POOL_READY;
+        if (poolInterceptor != null) {
+            try {
+                poolInterceptor.startup();
+            } catch (Throwable e) {
+                //do nothing
+            }
+        }
     }
 
     //***************************************************************************************************************//
@@ -297,7 +304,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 //1: execute pool interceptor
                 if (poolInterceptor != null) {
                     try {
-                        poolInterceptor.beforeCall(task);
+                        poolInterceptor.beforeCall(task, handle);
                     } catch (Throwable e) {
                         //do nothing
                     }
@@ -306,7 +313,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 BeeTaskAspect aspect = task.getAspect();
                 if (aspect != null) {
                     try {
-                        aspect.beforeCall();
+                        aspect.beforeCall(handle);
                     } catch (Throwable e) {
                         //do nothing
                     }
@@ -317,14 +324,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     handle.setResult(result);
                     if (poolInterceptor != null) {
                         try {
-                            poolInterceptor.afterCall(task, result);
+                            poolInterceptor.afterCall(task, result, handle);
                         } catch (Throwable e) {
                             //do nothing
                         }
                     }
                     if (aspect != null) {
                         try {
-                            aspect.afterCall(result);
+                            aspect.afterCall(result, handle);
                         } catch (Throwable e) {
                             //do nothing
                         }
@@ -333,14 +340,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     handle.setException(new TaskExecutionException(e));
                     if (poolInterceptor != null) {
                         try {
-                            poolInterceptor.afterThrowing(task, e);
+                            poolInterceptor.afterThrowing(task, e, handle);
                         } catch (Throwable ee) {
                             //do nothing
                         }
                     }
                     if (aspect != null) {
                         try {
-                            aspect.afterThrowing(e);
+                            aspect.afterThrowing(e, handle);
                         } catch (Throwable ee) {
                             //do nothing
                         }
