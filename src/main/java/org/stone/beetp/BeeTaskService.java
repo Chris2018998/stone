@@ -9,8 +9,6 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.PoolStaticCenter;
-
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -100,13 +98,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         return pool.getPoolMonitorVo();
     }
 
-    public void terminate(boolean cancelRunningTask) {
-        if (pool != null) {
-            try {
-                pool.terminate(cancelRunningTask);
-            } catch (Throwable e) {
-                PoolStaticCenter.CommonLog.error("Error at closing pool,cause:", e);
-            }
-        }
+    public void terminate(boolean cancelRunningTask) throws BeeTaskPoolException {
+        if (pool != null) pool.terminate(cancelRunningTask);
     }
 }
