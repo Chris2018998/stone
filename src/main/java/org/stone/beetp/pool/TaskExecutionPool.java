@@ -9,8 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
@@ -37,7 +35,6 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  */
 public final class TaskExecutionPool implements BeeTaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
-    private static final Logger Log = LoggerFactory.getLogger(TaskExecutionPool.class);
 
     private String poolName;
     private volatile int poolState;
@@ -475,10 +472,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         public void run() {
             try {
-                Log.info("BeeTP({})JVM exit hook running", this.pool.poolName);
                 pool.terminate(pool.interruptWorkerOnClear);
             } catch (Throwable e) {
-                Log.error("BeeTP({})Error occurred at closing pool,cause:", this.pool.poolName, e);
+                //do nothing
             }
         }
     }
