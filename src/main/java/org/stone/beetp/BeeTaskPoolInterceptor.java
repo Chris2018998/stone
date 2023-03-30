@@ -17,11 +17,13 @@ package org.stone.beetp;
  */
 public interface BeeTaskPoolInterceptor {
 
-    void beforeCall(BeeTask task);
+    void startup();
 
-    void afterCall(BeeTask task, Object result);
+    void beforeCall(BeeTask task, BeeTaskHandle handle);
 
-    void afterThrowing(BeeTask task, Throwable e);
+    void afterCall(BeeTask task, Object result, BeeTaskHandle handle);
+
+    void afterThrowing(BeeTask task, Throwable e, BeeTaskHandle handle);
 
     void terminated();
 
