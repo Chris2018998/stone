@@ -17,9 +17,9 @@ package org.stone.beetp;
  */
 public interface BeeTaskAspect {
 
-    void beforeCall();
+    void beforeCall(BeeTaskHandle handle);
 
-    void afterCall(Object result);
+    void afterCall(Object result, BeeTaskHandle handle);
 
-    void afterThrowing(Throwable e);
+    void afterThrowing(Throwable e, BeeTaskHandle handle);
 }
