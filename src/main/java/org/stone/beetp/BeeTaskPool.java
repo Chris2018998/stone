@@ -30,6 +30,12 @@ public interface BeeTaskPool {
     //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException;
 
+    BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException;
+
+    BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException;
+
+    BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException;
+
     //***************************************************************************************************************//
     //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
     //***************************************************************************************************************//
