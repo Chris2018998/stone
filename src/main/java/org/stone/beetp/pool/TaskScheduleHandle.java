@@ -20,7 +20,7 @@ import org.stone.beetp.BeeTask;
 public class TaskScheduleHandle extends TaskHandleImpl {
     private long executeTimePoint;
 
-    private long periodNanoseconds;//==0,just once execute
+    private long periodNanoseconds;//==0,only execute once
 
     TaskScheduleHandle(BeeTask task, int initState, TaskExecutionPool pool) {
         super(task, initState, pool);
