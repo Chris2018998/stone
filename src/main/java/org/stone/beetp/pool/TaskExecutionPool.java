@@ -161,6 +161,22 @@ public final class TaskExecutionPool implements BeeTaskPool {
         } while (true);
     }
 
+
+    //***************************************************************************************************************//
+    //                2: schedule task methods(3)                                                                    //                                                                                  //
+    //***************************************************************************************************************//
+    public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        throw new BeeTaskPoolException("Not support");
+    }
+
+    public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        throw new BeeTaskPoolException("Not support");
+    }
+
+    public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        throw new BeeTaskPoolException("Not support");
+    }
+
     //***************************************************************************************************************//
     //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
     //***************************************************************************************************************//
