@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.BeeTaskServiceConfig.*;
@@ -55,6 +56,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
     private PoolExitJvmHook exitHook;
+
+    //peek schedule tasks from array then push to execute queue
+    private Thread schedulerThread;
+    private ReentrantLock[] scheduleTaskArrayLock;
+    private TaskScheduleHandle[] scheduleTaskArray;//sortable
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
