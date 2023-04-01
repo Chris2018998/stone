@@ -115,7 +115,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.poolState = POOL_READY;
         if (poolInterceptor != null) {
             try {
-                poolInterceptor.startup();
+                poolInterceptor.afterStartup();
             } catch (Throwable e) {
                 //do nothing
             }
@@ -228,7 +228,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.wakeupTerminationWaiters();
             if (poolInterceptor != null) {
                 try {
-                    poolInterceptor.terminated();
+                    poolInterceptor.afterTerminated();
                 } catch (Throwable ee) {
                     //do nothing
                 }
@@ -241,7 +241,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             }
             return queueTaskList;
         } else {
-            throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or terminated");
+            throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
         }
     }
 
