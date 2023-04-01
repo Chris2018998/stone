@@ -9,9 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * pool util
  *
@@ -19,7 +16,6 @@ import org.slf4j.LoggerFactory;
  * @version 1.0
  */
 public class PoolStaticCenter {
-    public static final Logger CommonLog = LoggerFactory.getLogger(PoolStaticCenter.class);
     //task state
     static final int TASK_NEW = 0;
     static final int TASK_RUNNING = 1;
@@ -27,10 +23,10 @@ public class PoolStaticCenter {
     static final int TASK_EXCEPTIONAL = 3;
     static final int TASK_COMPLETED = 4;
     //pool state
-    static final int POOL_READY = 1;
-    static final int POOL_CLEARING = 2;
-    static final int POOL_TERMINATING = 3;
-    static final int POOL_TERMINATED = 4;
+    static final int POOL_READY = 0;
+    static final int POOL_CLEARING = 1;
+    static final int POOL_TERMINATING = 2;
+    static final int POOL_TERMINATED = 3;
     //worker state
     static final int WORKER_IDLE = 0;
     static final int WORKER_RUNNING = 1;

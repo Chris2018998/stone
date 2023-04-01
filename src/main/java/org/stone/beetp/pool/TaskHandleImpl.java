@@ -28,11 +28,13 @@ import static org.stone.beetp.pool.PoolStaticCenter.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class TaskHandleImpl implements BeeTaskHandle {
+public class TaskHandleImpl implements BeeTaskHandle {
     private final AtomicInteger taskState;
+
     private BeeTask task;
     private Thread workThread;
     private TaskExecutionPool pool;
+
     private Object result;
     private BeeTaskException exception;
     private ConcurrentLinkedQueue<Thread> waitQueue;
@@ -128,14 +130,16 @@ public final class TaskHandleImpl implements BeeTaskHandle {
 
         //1: try to cas state to cancelled from new
         if (taskStateCode == TASK_NEW && taskState.compareAndSet(TASK_NEW, TASK_CANCELLED)) {
-            pool.removeTask(this);
+            pool.removeExecuteTask(this);
             return true;
         }
 
         //2: try to interrupt worker thread(an execution failed exception will set back to the handle by worker thread)
-        if (mayInterruptIfRunning && taskState.get() == TASK_RUNNING && workThread != null)
-            workThread.interrupt();
-
+        if (mayInterruptIfRunning && taskState.get() == TASK_RUNNING && workThread != null) {
+            Thread.State threadState = workThread.getState();
+            if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
+                workThread.interrupt();
+        }
         return false;
     }
 
@@ -174,8 +178,8 @@ public final class TaskHandleImpl implements BeeTaskHandle {
     void wakeupWaiters() {
         for (Thread thread : waitQueue)
             LockSupport.unpark(thread);
+        this.workThread = null;
         this.task = null;
         this.pool = null;
-        this.workThread = null;
     }
 }

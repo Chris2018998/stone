@@ -10,21 +10,19 @@
 package org.stone.beetp;
 
 /**
- * Task Pool interceptor
+ * Task Pool Monitor Vo
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTaskPoolInterceptor {
+public interface BeeTaskPoolMonitorVo {
 
-    void startup();
+    int getWorkerCount();
 
-    void beforeCall(BeeTask task, BeeTaskHandle handle);
+    int getQueueTaskCount();
 
-    void afterCall(BeeTask task, Object result, BeeTaskHandle handle);
+    int getRunningTaskCount();
 
-    void afterThrowing(BeeTask task, Throwable e, BeeTaskHandle handle);
-
-    void terminated();
+    int getCompletedTaskCount();
 
 }

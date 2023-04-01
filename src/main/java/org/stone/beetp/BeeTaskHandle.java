@@ -33,7 +33,7 @@ public interface BeeTaskHandle {
     boolean isExceptional();
 
     //***************************************************************************************************************//
-    //                2: task result get and cancel methods(3)                                                                       //                                                                                  //
+    //                2: task result get and cancel methods(3)                                                       //                                                                                  //
     //***************************************************************************************************************//
     Object get() throws BeeTaskException, InterruptedException;
 

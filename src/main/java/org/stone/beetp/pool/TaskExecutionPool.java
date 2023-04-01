@@ -39,7 +39,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     private String poolName;
     private volatile int poolState;
-    private int maxQueueTaskSize;
+    private int maxQueueSize;
     private int maxWorkerSize;
     private boolean workerInDaemon;
     private long workerMaxAliveTime;
@@ -81,14 +81,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //step3: simple attribute set
         this.poolName = checkedConfig.getPoolName();
-        this.maxQueueTaskSize = checkedConfig.getMaxQueueSize();
+        this.maxQueueSize = checkedConfig.getMaxQueueSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
-        this.workerInDaemon = checkedConfig.isWorkerInDaemon();
+        this.workerInDaemon = checkedConfig.isWorkInDaemon();
         this.interruptWorkerOnClear = checkedConfig.isInterruptWorkerOnClear();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
-        switch (checkedConfig.getPoolFullPolicyCode()) {
+        switch (checkedConfig.getQueueFullPolicyCode()) {
             case Policy_Abort: {
                 rejectPolicy = new TaskAbortPolicy();
                 break;
@@ -111,6 +111,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.exitHook = new PoolExitJvmHook(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
+
         this.poolState = POOL_READY;
         if (poolInterceptor != null) {
             try {
@@ -122,9 +123,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                2: task submit methods(2)                                                                      //                                                                                  //
+    //                2: execution task methods(2)                                                                   //                                                                                  //
     //***************************************************************************************************************//
-    void removeTask(TaskHandleImpl handle) {
+    void removeExecuteTask(TaskHandleImpl handle) {
         taskQueue.remove(handle);
     }
 
@@ -136,7 +137,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //2: execute reject policy on task queue full
         boolean offerInd = true;
-        if (taskCountInQueue.get() == maxQueueTaskSize) offerInd = rejectPolicy.rejectTask(task, this);
+        if (taskCountInQueue.get() == maxQueueSize) offerInd = rejectPolicy.rejectTask(task, this);
 
         //3: create task handle and offer it to queue by indicator
         TaskHandleImpl taskHandle = new TaskHandleImpl(task, offerInd ? TASK_NEW : TASK_CANCELLED, this);
@@ -167,10 +168,13 @@ public final class TaskExecutionPool implements BeeTaskPool {
         } while (true);
     }
 
-
     //***************************************************************************************************************//
     //                2: schedule task methods(3)                                                                    //                                                                                  //
     //***************************************************************************************************************//
+    void removeScheduleTask(TaskScheduleHandle handle) {
+        taskQueue.remove(handle);
+    }
+
     public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         throw new BeeTaskPoolException("Not support");
     }
