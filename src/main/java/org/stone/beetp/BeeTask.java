@@ -16,8 +16,7 @@ package org.stone.beetp;
  * @version 1.0
  */
 public interface BeeTask {
-
-    //write some logic code in aspect,for example: print log,push result to blocking queue similar to<code>CompletionService<code> impl in JDK
+ 
     BeeTaskAspect getAspect();
 
     Object call() throws Exception;
