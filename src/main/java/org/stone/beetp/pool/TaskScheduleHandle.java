@@ -19,7 +19,8 @@ import org.stone.beetp.BeeTask;
  */
 public class TaskScheduleHandle extends TaskHandleImpl {
     private long executeTimePoint;
-    private long periodNanoseconds;//==0,only execute once
+    private long delayNanoseconds;
+    private boolean delayFromExecuteTime;
 
     TaskScheduleHandle(BeeTask task, int initState, TaskExecutionPool pool) {
         super(task, initState, pool);
@@ -32,12 +33,20 @@ public class TaskScheduleHandle extends TaskHandleImpl {
     public void setExecuteTimePoint(long executeTimePoint) {
         this.executeTimePoint = executeTimePoint;
     }
-
-    public long getPeriodNanoseconds() {
-        return periodNanoseconds;
+    
+    public long getDelayNanoseconds() {
+        return delayNanoseconds;
     }
 
-    public void setPeriodNanoseconds(long periodNanoseconds) {
-        this.periodNanoseconds = periodNanoseconds;
+    public void setDelayNanoseconds(long delayNanoseconds) {
+        this.delayNanoseconds = delayNanoseconds;
+    }
+
+    public boolean isDelayFromExecuteTime() {
+        return delayFromExecuteTime;
+    }
+
+    public void setDelayFromExecuteTime(boolean delayFromExecuteTime) {
+        this.delayFromExecuteTime = delayFromExecuteTime;
     }
 }
