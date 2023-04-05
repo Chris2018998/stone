@@ -49,20 +49,26 @@ public interface BeeObjectPool {
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
 
     //***************************************************************************************************************//
-    //                4: Pool close(6)                                                                               //                                                                                  //
+    //                4: Pool close(2)                                                                               //                                                                                  //
     //***************************************************************************************************************//
     void close();
 
     boolean isClosed();
 
-    void setPrintRuntimeLog(boolean indicator);
-
-    BeeObjectPoolMonitorVo getPoolMonitorVo();
-
+    //***************************************************************************************************************//
+    //                5: Pool clear(2)                                                                               //                                                                                  //
+    //***************************************************************************************************************//
     //remove all objects from pool
     void clear(boolean forceCloseUsing) throws Exception;
 
     //remove all objects from pool
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
+
+    //***************************************************************************************************************//
+    //                6: Pool log indicator and monitor(2)                                                                               //                                                                                  //
+    //***************************************************************************************************************//
+    void setPrintRuntimeLog(boolean indicator);
+
+    BeeObjectPoolMonitorVo getPoolMonitorVo();
 
 }

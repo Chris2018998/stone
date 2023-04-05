@@ -33,7 +33,7 @@ import static org.stone.util.CommonUtil.trimString;
  * @version 1.0
  */
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
-    //poolName index
+    //index on pool name generation
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //object factory properties
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
