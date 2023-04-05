@@ -57,7 +57,7 @@ public class ThreadParkSupport {
     protected long deadline;
     protected long remainTime;
     protected boolean timeout;
-    protected boolean allowInterrupted = true;
+    protected boolean allowInterrupted;
 
     //****************************************************************************************************************//
     //                                              constructors(1)                                                   //
@@ -97,7 +97,6 @@ public class ThreadParkSupport {
     public void reset() {
         this.remainTime = 0;
         this.timeout = false;
-        this.allowInterrupted = true;
     }
 
     public String toString() {
