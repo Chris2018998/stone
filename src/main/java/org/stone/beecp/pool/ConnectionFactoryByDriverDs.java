@@ -20,7 +20,7 @@ import static org.stone.util.CommonUtil.isBlank;
 /**
  * Raw connection factory by datasource implementation in driver package
  *
- * @author Chris.liao
+ * @author Chris liao
  * @version 1.0
  */
 public final class ConnectionFactoryByDriverDs implements RawConnectionFactory {

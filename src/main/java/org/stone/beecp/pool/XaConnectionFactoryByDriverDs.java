@@ -20,7 +20,7 @@ import static org.stone.util.CommonUtil.isBlank;
 /**
  * XaConnection Factory implementation by XADataSource
  *
- * @author Chris.liao
+ * @author Chris liao
  * @version 1.0
  */
 public class XaConnectionFactoryByDriverDs implements RawXaConnectionFactory {

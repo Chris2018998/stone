@@ -19,7 +19,7 @@ import java.util.Properties;
 /**
  * Raw connection factory by jdbc driver
  *
- * @author Chris.liao
+ * @author Chris liao
  * @version 1.0
  */
 public final class ConnectionFactoryByDriver implements RawConnectionFactory {
