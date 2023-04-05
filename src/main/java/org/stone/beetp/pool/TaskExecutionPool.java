@@ -58,9 +58,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private PoolExitJvmHook exitHook;
 
     //peek schedule tasks from array then push to execute queue
+    private int scheduledTaskCount;
     private Thread schedulerThread;
-    private ReentrantLock[] scheduleTaskArrayLock;
-    private TaskScheduleHandle[] scheduleTaskArray;//sortable
+    private ReentrantLock scheduledTaskArrayLock;
+    private TaskScheduleHandle[] scheduledTaskArray;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -87,6 +88,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.interruptWorkerOnClear = checkedConfig.isInterruptWorkerOnClear();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
+        this.scheduledTaskArrayLock = new ReentrantLock();
+        this.scheduledTaskArray = new TaskScheduleHandle[0];
+
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
         switch (checkedConfig.getQueueFullPolicyCode()) {
             case Policy_Abort: {
@@ -107,10 +111,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
             }
         }
 
+
         if (this.exitHook == null) {
             this.exitHook = new PoolExitJvmHook(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
+
 
         this.poolState = POOL_READY;
         if (poolInterceptor != null) {
@@ -381,6 +387,20 @@ public final class TaskExecutionPool implements BeeTaskPool {
             runningTaskCount.decrementAndGet();
             completedTaskCount.incrementAndGet();
         }
+    }
+
+    private void sortScheduleTask() {
+        if (scheduledTaskCount == 0) return;
+        for (int i = 0, l = scheduledTaskCount - 1; i < l; i++)
+            for (int j = i + 1; j < scheduledTaskCount; j++) {
+                TaskScheduleHandle pre = scheduledTaskArray[i];
+                TaskScheduleHandle after = scheduledTaskArray[j];
+                if (pre.getExecuteTimePoint() - after.getDelayNanoseconds() > 0) {
+                    TaskScheduleHandle temp = pre;
+                    scheduledTaskArray[i] = after;
+                    scheduledTaskArray[j] = temp;
+                }
+            }
     }
 
     //***************************************************************************************************************//
