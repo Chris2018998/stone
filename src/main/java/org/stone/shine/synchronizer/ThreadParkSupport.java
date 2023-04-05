@@ -73,10 +73,6 @@ public class ThreadParkSupport {
         return deadline;
     }
 
-    public final long getRemainTime() {
-        return remainTime;
-    }
-
     public final boolean isTimeout() {
         return timeout;
     }
