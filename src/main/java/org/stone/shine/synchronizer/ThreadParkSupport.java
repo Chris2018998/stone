@@ -53,65 +53,70 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ThreadParkSupport {
     private static final long spinForTimeoutThreshold = 1000L;
-    protected long deadline;
-    protected long parkTime = 1L;//a initialized value,calculated before park,if less than zero or equals zero means timeout
     protected Object blocker;
-    protected boolean interrupted;
-    protected boolean interruptable = true;
+    protected long deadline;
+    protected long remainTime;
+    protected boolean timeout;
+    protected boolean allowInterrupted = true;
 
     //****************************************************************************************************************//
     //                                              constructors(1)                                                   //
     //****************************************************************************************************************//
-    ThreadParkSupport() {
+    ThreadParkSupport(boolean allowInterrupted) {
+        this.allowInterrupted = allowInterrupted;
     }
 
     //****************************************************************************************************************//
     //                                           get methods(4)                                                       //
     //****************************************************************************************************************//
-    public final long getParkTime() {
-        return parkTime;
-    }
-
     public final long getDeadline() {
         return deadline;
     }
 
-    public final boolean isTimeout() {
-        return parkTime <= 0;
+    public final long getRemainTime() {
+        return remainTime;
     }
 
-    public final boolean isInterrupted() {
-        return interrupted;
+    public final boolean isTimeout() {
+        return timeout;
+    }
+
+    //****************************************************************************************************************//
+    //                                           park methods(2) need be override                                     //
+    //****************************************************************************************************************//
+    public boolean computeParkTime() {
+        return true;
+    }
+
+    public void parkUtilInterrupted() throws InterruptedException {
+        LockSupport.park();
+        if (Thread.interrupted() && allowInterrupted)
+            throw new InterruptedException();
+    }
+
+    public void reset() {
+        this.remainTime = 0;
+        this.timeout = false;
+        this.allowInterrupted = true;
     }
 
     public String toString() {
         return "Implementation with LockSupport.park()";
     }
 
-    public void reset() {
-        this.parkTime = 1L;
-        this.interrupted = false;
-    }
-
-    //****************************************************************************************************************//
-    //                                           park methods(2) need be override                                     //
-    //****************************************************************************************************************//
-    public boolean parkUtilInterrupted() {
-        LockSupport.park();
-        return interrupted = Thread.interrupted();
-    }
-
     //****************************************************************************************************************//
     //                                           blocker park Implement                                               //
     //****************************************************************************************************************//
     static class ThreadBlockerParkSupport extends ThreadParkSupport {
-        ThreadBlockerParkSupport(Object blocker) {
+        ThreadBlockerParkSupport(Object blocker, boolean allowInterrupted) {
+            super(allowInterrupted);
             this.blocker = blocker;
         }
 
-        public final boolean parkUtilInterrupted() {
+        public final void parkUtilInterrupted() throws InterruptedException {
             LockSupport.park(blocker);
-            return interrupted = Thread.interrupted();
+            if (Thread.interrupted() && allowInterrupted)
+                throw new InterruptedException();
         }
 
         public String toString() {
@@ -125,7 +130,8 @@ public class ThreadParkSupport {
     static class NanoSecondsParkSupport extends ThreadParkSupport {
         private final long nanoTime;
 
-        NanoSecondsParkSupport(long nanoTime) {
+        NanoSecondsParkSupport(long nanoTime, boolean allowInterrupted) {
+            super(allowInterrupted);
             this.nanoTime = nanoTime;
             this.deadline = System.nanoTime() + nanoTime;
         }
@@ -135,13 +141,16 @@ public class ThreadParkSupport {
             this.deadline = System.nanoTime() + nanoTime;
         }
 
-        public boolean parkUtilInterrupted() {
-            this.parkTime = deadline - System.nanoTime();
-            if (parkTime > spinForTimeoutThreshold) {
-                LockSupport.parkNanos(parkTime);
-                return this.interrupted = Thread.interrupted();
-            }
-            return false;
+        public boolean computeParkTime() {
+            this.remainTime = deadline - System.nanoTime();
+            this.timeout = this.remainTime <= 0;
+            return remainTime > spinForTimeoutThreshold;
+        }
+
+        public void parkUtilInterrupted() throws InterruptedException {
+            LockSupport.parkNanos(remainTime);
+            if (Thread.interrupted() && allowInterrupted)
+                throw new InterruptedException();
         }
 
         public String toString() {
@@ -153,22 +162,19 @@ public class ThreadParkSupport {
     //                                    NanoSeconds blocker park Implement                                          //
     //****************************************************************************************************************//
     static class NanoSecondsBlockerParkSupport extends NanoSecondsParkSupport {
-        NanoSecondsBlockerParkSupport(long nanoTime, Object blocker) {
-            super(nanoTime);
+        NanoSecondsBlockerParkSupport(long nanoTime, Object blocker, boolean allowInterrupted) {
+            super(nanoTime, allowInterrupted);
             this.blocker = blocker;
         }
 
-        public final boolean parkUtilInterrupted() {
-            this.parkTime = deadline - System.nanoTime();
-            if (parkTime > spinForTimeoutThreshold) {
-                LockSupport.parkNanos(blocker, parkTime);
-                return this.interrupted = Thread.interrupted();
-            }
-            return false;
+        public final void parkUtilInterrupted() throws InterruptedException {
+            LockSupport.parkNanos(blocker, remainTime);
+            if (Thread.interrupted() && allowInterrupted)
+                throw new InterruptedException();
         }
 
         public String toString() {
-            return "Implementation with LockSupport.parkNanos(time,blocker)";
+            return "Implementation with LockSupport.parkNanos(blocker,time)";
         }
     }
 
@@ -176,17 +182,20 @@ public class ThreadParkSupport {
     //                                       MilliSeconds parkUtil Implement                                          //
     //****************************************************************************************************************//
     static class MillisecondsUtilParkSupport extends ThreadParkSupport {
-        MillisecondsUtilParkSupport(long deadline) {
+        MillisecondsUtilParkSupport(long deadline, boolean allowInterrupted) {
+            super(allowInterrupted);
             this.deadline = deadline;
         }
 
-        public boolean parkUtilInterrupted() {
-            this.parkTime = deadline - System.currentTimeMillis();
-            if (parkTime > spinForTimeoutThreshold) {
-                LockSupport.parkUntil(deadline);
-                return interrupted = Thread.interrupted();
-            }
-            return false;
+        public boolean computeParkTime() {
+            this.remainTime = deadline - System.currentTimeMillis();
+            this.timeout = this.remainTime <= 0;
+            return remainTime > spinForTimeoutThreshold;
+        }
+
+        public void parkUtilInterrupted() throws InterruptedException {
+            LockSupport.parkUntil(deadline);
+            if (Thread.interrupted() && allowInterrupted) throw new InterruptedException();
         }
 
         public String toString() {
@@ -202,22 +211,18 @@ public class ThreadParkSupport {
     //                                       MilliSeconds blocker parkUtil Implement                                  //
     //****************************************************************************************************************//
     static class MillisecondsBlockerUtilParkSupport extends MillisecondsUtilParkSupport {
-        MillisecondsBlockerUtilParkSupport(long deadline, Object blocker) {
-            super(deadline);
+        MillisecondsBlockerUtilParkSupport(long deadline, Object blocker, boolean allowInterrupted) {
+            super(deadline, allowInterrupted);
             this.blocker = blocker;
         }
 
-        public boolean parkUtilInterrupted() {
-            this.parkTime = deadline - System.currentTimeMillis();
-            if (parkTime > spinForTimeoutThreshold) {
-                LockSupport.parkUntil(blocker, deadline);
-                return interrupted = Thread.interrupted();
-            }
-            return false;
+        public void parkUtilInterrupted() throws InterruptedException {
+            LockSupport.parkUntil(blocker, deadline);
+            if (Thread.interrupted() && allowInterrupted) throw new InterruptedException();
         }
 
         public String toString() {
-            return "Implementation with LockSupport.parkUntil(deadline,blocker)";
+            return "Implementation with LockSupport.parkUntil(blocker,deadline)";
         }
     }
 }
