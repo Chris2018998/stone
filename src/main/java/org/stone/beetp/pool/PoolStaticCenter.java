@@ -21,7 +21,8 @@ public class PoolStaticCenter {
     static final int TASK_RUNNING = 1;
     static final int TASK_CANCELLED = 2;
     static final int TASK_EXCEPTIONAL = 3;
-    static final int TASK_COMPLETED = 4;
+    static final int TASK_CALL_RESULT = 4;
+    static final int TASK_INTERRUPTED = 5;
     //pool state
     static final int POOL_READY = 0;
     static final int POOL_CLEARING = 1;

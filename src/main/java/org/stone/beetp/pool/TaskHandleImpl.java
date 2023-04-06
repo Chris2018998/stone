@@ -32,11 +32,10 @@ public class TaskHandleImpl implements BeeTaskHandle {
     private final AtomicInteger taskState;
 
     private BeeTask task;
-    private Thread workThread;
     private TaskExecutionPool pool;
+    private volatile Thread workThread;
 
-    private Object result;
-    private BeeTaskException exception;
+    private Object callResponse;//result,exception
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
     //***************************************************************************************************************//
@@ -52,26 +51,14 @@ public class TaskHandleImpl implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                2: task taskState methods(5)                                                                   //                                                                                  //
+    //                2: task taskState methods(2)                                                                   //                                                                                  //
     //***************************************************************************************************************//
-    public boolean isNew() {
-        return taskState.get() == TASK_NEW;
-    }
-
-    public boolean isRunning() {
-        return taskState.get() == TASK_RUNNING;
+    public boolean isDone() {
+        return taskState.get() > TASK_RUNNING;
     }
 
     public boolean isCancelled() {
         return taskState.get() == TASK_CANCELLED;
-    }
-
-    public boolean isCompleted() {
-        return taskState.get() == TASK_COMPLETED;
-    }
-
-    public boolean isExceptional() {
-        return taskState.get() == TASK_EXCEPTIONAL;
     }
 
     //***************************************************************************************************************//
@@ -89,8 +76,8 @@ public class TaskHandleImpl implements BeeTaskHandle {
 
     private Object get(long nanoseconds) throws BeeTaskException, InterruptedException {
         int taskStateCode = taskState.get();
-        if (taskStateCode == TASK_COMPLETED) return result;
-        if (taskStateCode == TASK_EXCEPTIONAL) throw exception;
+        if (taskStateCode == TASK_CALL_RESULT) return callResponse;
+        if (taskStateCode == TASK_EXCEPTIONAL) throw (BeeTaskException) callResponse;
         if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was in cancelled state");
 
         Thread currentThread = Thread.currentThread();
@@ -101,9 +88,9 @@ public class TaskHandleImpl implements BeeTaskHandle {
         try {
             do {
                 taskStateCode = taskState.get();
-                if (taskStateCode == TASK_COMPLETED) return result;
-                if (taskStateCode == TASK_EXCEPTIONAL) throw exception;
-                if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
+                if (taskStateCode == TASK_CALL_RESULT) return callResponse;
+                if (taskStateCode == TASK_EXCEPTIONAL) throw (BeeTaskException) callResponse;
+                if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was in cancelled state");
 
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
@@ -122,15 +109,12 @@ public class TaskHandleImpl implements BeeTaskHandle {
         }
     }
 
-    public boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException {
+    public boolean cancel(boolean mayInterruptIfRunning) {
         int taskStateCode = taskState.get();
-        if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task was in cancelled state");
-        if (taskStateCode == TASK_COMPLETED || taskStateCode == TASK_EXCEPTIONAL)
-            throw new TaskCancelledException("Task was already in cancelled taskState");
-
         //1: try to cas state to cancelled from new
         if (taskStateCode == TASK_NEW && taskState.compareAndSet(TASK_NEW, TASK_CANCELLED)) {
             pool.removeExecuteTask(this);
+            setDone(TASK_CANCELLED, null);
             return true;
         }
 
@@ -163,15 +147,9 @@ public class TaskHandleImpl implements BeeTaskHandle {
         this.workThread = workThread;
     }
 
-    void setResult(Object result) {
-        this.result = result;
-        taskState.set(TASK_COMPLETED);
-        this.wakeupWaiters();
-    }
-
-    void setException(BeeTaskException exception) {
-        this.exception = exception;
-        taskState.set(TASK_EXCEPTIONAL);
+    void setDone(int state, Object response) {
+        this.callResponse = response;
+        this.taskState.set(state);
         this.wakeupWaiters();
     }
 

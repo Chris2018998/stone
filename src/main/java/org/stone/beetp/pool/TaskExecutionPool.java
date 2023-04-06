@@ -55,7 +55,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
-    private PoolExitJvmHook exitHook;
+//    private PoolExitJvmHook exitHook;
 
     //peek schedule tasks from array then push to execute queue
     private int scheduledTaskCount;
@@ -85,7 +85,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxQueueSize = checkedConfig.getMaxQueueSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkInDaemon();
-        this.interruptWorkerOnClear = checkedConfig.isInterruptWorkerOnClear();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
         this.scheduledTaskArrayLock = new ReentrantLock();
@@ -112,10 +111,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
 
-        if (this.exitHook == null) {
-            this.exitHook = new PoolExitJvmHook(this);
-            Runtime.getRuntime().addShutdownHook(this.exitHook);
-        }
+//        if (this.exitHook == null) {
+//            this.exitHook = new PoolExitJvmHook(this);
+//            Runtime.getRuntime().addShutdownHook(this.exitHook);
+//        }
 
 
         this.poolState = POOL_READY;
@@ -240,11 +239,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
             }
 
-            try {
-                Runtime.getRuntime().removeShutdownHook(this.exitHook);
-            } catch (Throwable e) {
-                //do nothing
-            }
+//            try {
+//                Runtime.getRuntime().removeShutdownHook(this.exitHook);
+//            } catch (Throwable e) {
+//                //do nothing
+//            }
             return queueTaskList;
         } else {
             throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
@@ -325,9 +324,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //execute task
     private void executeTask(TaskHandleImpl handle) {
-        try {
-            workerCountInQueue.decrementAndGet();
-            if (handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
+        workerCountInQueue.decrementAndGet();
+        if (handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
+            try {
+                handle.setWorkThread(Thread.currentThread());
                 runningTaskCount.incrementAndGet();
                 BeeTask task = handle.getTask();
                 //1: execute pool interceptor
@@ -350,7 +350,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 //3: execute task
                 try {
                     Object result = task.call();
-                    handle.setResult(result);
+                    handle.setDone(TASK_CALL_RESULT, result);
                     if (poolInterceptor != null) {
                         try {
                             poolInterceptor.afterCall(task, result, handle);
@@ -366,7 +366,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                         }
                     }
                 } catch (Throwable e) {
-                    handle.setException(new TaskExecutionException(e));
+                    handle.setDone(TASK_EXCEPTIONAL, new TaskExecutionException(e));
                     if (poolInterceptor != null) {
                         try {
                             poolInterceptor.afterThrowing(task, e, handle);
@@ -382,10 +382,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
                         }
                     }
                 }
+            } finally {
+                handle.setWorkThread(null);
+                runningTaskCount.decrementAndGet();
+                completedTaskCount.incrementAndGet();
             }
-        } finally {
-            runningTaskCount.decrementAndGet();
-            completedTaskCount.incrementAndGet();
         }
     }
 
@@ -509,19 +510,19 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 
-    private static class PoolExitJvmHook extends Thread {
-        private final TaskExecutionPool pool;
-
-        PoolExitJvmHook(TaskExecutionPool pool) {
-            this.pool = pool;
-        }
-
-        public void run() {
-            try {
-                pool.terminate(pool.interruptWorkerOnClear);
-            } catch (Throwable e) {
-                //do nothing
-            }
-        }
-    }
+//    private static class PoolExitJvmHook extends Thread {
+//        private final TaskExecutionPool pool;
+//
+//        PoolExitJvmHook(TaskExecutionPool pool) {
+//            this.pool = pool;
+//        }
+//
+//        public void run() {
+//            try {
+//                pool.terminate(pool.interruptWorkerOnClear);
+//            } catch (Throwable e) {
+//                //do nothing
+//            }
+//        }
+//    }
 }
