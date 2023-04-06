@@ -20,25 +20,21 @@ import java.util.concurrent.TimeUnit;
 public interface BeeTaskHandle {
 
     //***************************************************************************************************************//
-    //                1: task state methods(5)                                                                       //                                                                                  //
+    //                1: task state methods(2)                                                                       //                                                                                  //
     //***************************************************************************************************************//
-    boolean isNew();
-
-    boolean isRunning();
+    boolean isDone();
 
     boolean isCancelled();
 
-    boolean isCompleted();
-
-    boolean isExceptional();
+    //***************************************************************************************************************//
+    //                2: task cancel methods(1)                                                                      //                                                                                  //
+    //***************************************************************************************************************//
+    boolean cancel(boolean mayInterruptIfRunning);
 
     //***************************************************************************************************************//
-    //                2: task result get and cancel methods(3)                                                       //                                                                                  //
+    //                3: task result get and cancel methods(2)                                                       //                                                                                  //
     //***************************************************************************************************************//
     Object get() throws BeeTaskException, InterruptedException;
 
     Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
-
-    boolean cancel(boolean mayInterruptIfRunning) throws BeeTaskException;
-
 }
