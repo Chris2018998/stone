@@ -13,8 +13,10 @@ import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.util.SortArray;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -22,7 +24,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.BeeTaskServiceConfig.*;
@@ -58,10 +59,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
 //    private PoolExitJvmHook exitHook;
 
     //peek schedule tasks from array then push to execute queue
-    private int scheduledTaskCount;
     private Thread schedulerThread;
-    private ReentrantLock scheduledTaskArrayLock;
-    private TaskScheduleHandle[] scheduledTaskArray;
+    private SortArray<TaskScheduleHandle> scheduledTaskArray;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -87,9 +86,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.workerInDaemon = checkedConfig.isWorkInDaemon();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
-        this.scheduledTaskArrayLock = new ReentrantLock();
-        this.scheduledTaskArray = new TaskScheduleHandle[0];
-
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
         switch (checkedConfig.getQueueFullPolicyCode()) {
             case Policy_Abort: {
@@ -110,12 +106,16 @@ public final class TaskExecutionPool implements BeeTaskPool {
             }
         }
 
-
-//        if (this.exitHook == null) {
-//            this.exitHook = new PoolExitJvmHook(this);
-//            Runtime.getRuntime().addShutdownHook(this.exitHook);
-//        }
-
+        //step4: create scheduled task set
+        this.scheduledTaskArray = new SortArray<>(TaskScheduleHandle.class, 0,
+                new Comparator<TaskScheduleHandle>() {
+                    public int compare(TaskScheduleHandle handle1, TaskScheduleHandle handle2) {
+                        long compareV = handle1.getExecuteTimePoint() - handle2.getExecuteTimePoint();
+                        if (compareV > 0) return 1;
+                        if (compareV == 0) return 0;
+                        return -1;
+                    }
+                });
 
         this.poolState = POOL_READY;
         if (poolInterceptor != null) {
@@ -388,20 +388,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 completedTaskCount.incrementAndGet();
             }
         }
-    }
-
-    private void sortScheduleTask() {
-        if (scheduledTaskCount == 0) return;
-        for (int i = 0, l = scheduledTaskCount - 1; i < l; i++)
-            for (int j = i + 1; j < scheduledTaskCount; j++) {
-                TaskScheduleHandle pre = scheduledTaskArray[i];
-                TaskScheduleHandle after = scheduledTaskArray[j];
-                if (pre.getExecuteTimePoint() - after.getDelayNanoseconds() > 0) {
-                    TaskScheduleHandle temp = pre;
-                    scheduledTaskArray[i] = after;
-                    scheduledTaskArray[j] = temp;
-                }
-            }
     }
 
     //***************************************************************************************************************//
