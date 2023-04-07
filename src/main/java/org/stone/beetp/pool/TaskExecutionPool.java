@@ -258,7 +258,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 taskHandle.wakeupWaiters();
             }
 
-
             PoolWorkerThread worker;
             if (mayInterruptIfRunning) {
                 while ((worker = workerQueue.poll()) != null) {
@@ -492,6 +491,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     //keep alive timeout,then try to exit
                     compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
                 }
+
+                Thread.interrupted();//clear interrupted state flag(may be interrupted in task call or worker park)
             } while (true);
         }
     }
