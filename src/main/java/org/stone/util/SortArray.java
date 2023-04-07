@@ -48,6 +48,7 @@ public final class SortArray<E> {
         try {
             //1:if full,then grown
             if (objects.length == count) this.growArray();
+
             if (count == 0) {
                 objects[0] = e;
             } else {
@@ -93,7 +94,7 @@ public final class SortArray<E> {
     public void print() {
         arrayLock.lock();//lock array
         try {
-            System.out.println("***** count:" + size());
+            System.out.println("***** count:" + count);
             int lastPos = count - 1;
             for (int i = 0; i <= lastPos; i++) {
                 System.out.println("array[" + i + "]:" + objects[i]);
