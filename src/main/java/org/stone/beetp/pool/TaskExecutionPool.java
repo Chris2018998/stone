@@ -81,12 +81,23 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //step3: simple attribute set
         this.poolName = checkedConfig.getPoolName();
-        this.maxQueueSize = checkedConfig.getMaxQueueSize();
+        this.maxQueueSize = checkedConfig.getQueueMaxSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkInDaemon();
         this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
+
+        //step4: create workers by configured initialized size
+        int workerInitSize = config.getInitWorkerSize();
+        this.workerCountInQueue.set(workerInitSize);
+        for (int i = 0; i < workerInitSize; i++) {
+            PoolWorkerThread worker = new PoolWorkerThread(this);
+            workerQueue.offer(worker);
+            worker.start();
+        }
+
+        //step5: create task queue full reject policy
         switch (checkedConfig.getQueueFullPolicyCode()) {
             case Policy_Abort: {
                 rejectPolicy = new TaskAbortPolicy();
@@ -106,7 +117,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             }
         }
 
-        //step4: create scheduled task set
+        //step6: create scheduled task array
         this.scheduledTaskArray = new SortArray<>(TaskScheduleHandle.class, 0,
                 new Comparator<TaskScheduleHandle>() {
                     public int compare(TaskScheduleHandle handle1, TaskScheduleHandle handle2) {
@@ -117,7 +128,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     }
                 });
 
+
+        //step7: set pool state to be ready for submitting tasks
         this.poolState = POOL_READY;
+
+        //step8: execute pool Interceptor(if exists)
         if (poolInterceptor != null) {
             try {
                 poolInterceptor.afterStartup();

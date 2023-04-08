@@ -36,12 +36,12 @@ public class BeeTaskServiceConfig {
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
     private String poolName;
-    private int maxQueueSize = 100;
-    private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
+    private int queueMaxSize;
+    private int initWorkerSize;
+    private int maxWorkerSize;
     private boolean workInDaemon;
     private long workerKeepAliveTime;
     private int queueFullPolicyCode = Policy_Abort;
-    private boolean interruptWorkerOnClear;
 
     private String poolInterceptorClassName;
     private BeeTaskPoolInterceptor poolInterceptor;
@@ -55,12 +55,20 @@ public class BeeTaskServiceConfig {
         this.poolName = poolName;
     }
 
-    public int getMaxQueueSize() {
-        return maxQueueSize;
+    public int getQueueMaxSize() {
+        return queueMaxSize;
     }
 
-    public void setMaxQueueSize(int maxQueueSize) {
-        this.maxQueueSize = maxQueueSize;
+    public void setQueueMaxSize(int queueMaxSize) {
+        this.queueMaxSize = queueMaxSize;
+    }
+
+    public int getInitWorkerSize() {
+        return initWorkerSize;
+    }
+
+    public void setInitWorkerSize(int initWorkerSize) {
+        this.initWorkerSize = initWorkerSize;
     }
 
     public int getMaxWorkerSize() {
@@ -96,14 +104,6 @@ public class BeeTaskServiceConfig {
             this.queueFullPolicyCode = queueFullPolicyCode;
     }
 
-    public boolean isInterruptWorkerOnClear() {
-        return interruptWorkerOnClear;
-    }
-
-    public void setInterruptWorkerOnClear(boolean interruptWorkerOnClear) {
-        this.interruptWorkerOnClear = interruptWorkerOnClear;
-    }
-
     public String getPoolInterceptorClassName() {
         return poolInterceptorClassName;
     }
@@ -130,10 +130,14 @@ public class BeeTaskServiceConfig {
     }
 
     public BeeTaskServiceConfig check() {
-        if (maxQueueSize <= 0)
-            throw new BeeTaskServiceConfigException("maxQueueSize must be greater than zero");
+        if (queueMaxSize <= 0)
+            throw new BeeTaskServiceConfigException("queueMaxSize must be greater than zero");
+        if (initWorkerSize < 0)
+            throw new BeeTaskServiceConfigException("initWorkerSize must be not less than zero");
         if (maxWorkerSize <= 0)
             throw new BeeTaskServiceConfigException("maxWorkerSize must be greater than zero");
+        if (maxWorkerSize < initWorkerSize)
+            throw new BeeTaskServiceConfigException("maxWorkerSize must be not less than initWorkerSize");
         if (workerKeepAliveTime < 0)
             throw new BeeTaskServiceConfigException("workerKeepAliveTime must be greater than zero");
 
@@ -164,6 +168,9 @@ public class BeeTaskServiceConfig {
         //4:set pool name and interceptor
         if (tempInterceptor != null) checkedConfig.poolInterceptor = tempInterceptor;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
+
+        if (checkedConfig.queueMaxSize == 0) checkedConfig.queueMaxSize = 100;
+        if (checkedConfig.maxWorkerSize == 0) checkedConfig.maxWorkerSize = Runtime.getRuntime().availableProcessors();
         return checkedConfig;
     }
 
