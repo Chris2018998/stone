@@ -57,6 +57,7 @@ public class ThreadParkSupport {
     protected long deadline;
     protected long remainTime;
     protected boolean timeout;
+    protected boolean interrupted;
     protected boolean allowInterrupted;
 
     //****************************************************************************************************************//
@@ -77,6 +78,10 @@ public class ThreadParkSupport {
         return timeout;
     }
 
+    public final boolean isInterrupted() {
+        return interrupted;
+    }
+
     //****************************************************************************************************************//
     //                                           park methods(2) need be override                                     //
     //****************************************************************************************************************//
@@ -84,10 +89,9 @@ public class ThreadParkSupport {
         return true;
     }
 
-    public void parkUtilInterrupted() throws InterruptedException {
+    public boolean parkUtilInterrupted() {
         LockSupport.park();
-        if (Thread.interrupted() && allowInterrupted)
-            throw new InterruptedException();
+        return this.interrupted = Thread.interrupted() && allowInterrupted;
     }
 
     public void reset() {
@@ -108,10 +112,9 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public final void parkUtilInterrupted() throws InterruptedException {
+        public final boolean parkUtilInterrupted() {
             LockSupport.park(blocker);
-            if (Thread.interrupted() && allowInterrupted)
-                throw new InterruptedException();
+            return this.interrupted = Thread.interrupted() && allowInterrupted;
         }
 
         public String toString() {
@@ -142,10 +145,9 @@ public class ThreadParkSupport {
             return remainTime > spinForTimeoutThreshold;
         }
 
-        public void parkUtilInterrupted() throws InterruptedException {
+        public boolean parkUtilInterrupted() {
             LockSupport.parkNanos(remainTime);
-            if (Thread.interrupted() && allowInterrupted)
-                throw new InterruptedException();
+            return this.interrupted = Thread.interrupted() && allowInterrupted;
         }
 
         public String toString() {
@@ -162,10 +164,9 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public final void parkUtilInterrupted() throws InterruptedException {
+        public final boolean parkUtilInterrupted() {
             LockSupport.parkNanos(blocker, remainTime);
-            if (Thread.interrupted() && allowInterrupted)
-                throw new InterruptedException();
+            return this.interrupted = Thread.interrupted() && allowInterrupted;
         }
 
         public String toString() {
@@ -188,9 +189,9 @@ public class ThreadParkSupport {
             return remainTime > spinForTimeoutThreshold;
         }
 
-        public void parkUtilInterrupted() throws InterruptedException {
+        public boolean parkUtilInterrupted() {
             LockSupport.parkUntil(deadline);
-            if (Thread.interrupted() && allowInterrupted) throw new InterruptedException();
+            return this.interrupted = Thread.interrupted() && allowInterrupted;
         }
 
         public String toString() {
@@ -211,9 +212,9 @@ public class ThreadParkSupport {
             this.blocker = blocker;
         }
 
-        public void parkUtilInterrupted() throws InterruptedException {
+        public final boolean parkUtilInterrupted() {
             LockSupport.parkUntil(blocker, deadline);
-            if (Thread.interrupted() && allowInterrupted) throw new InterruptedException();
+            return this.interrupted = Thread.interrupted() && allowInterrupted;
         }
 
         public String toString() {
