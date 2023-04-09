@@ -195,6 +195,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        if (task == null || unit == null) throw new NullPointerException();
+        if (delay <= 0) throw new IllegalArgumentException();
+
         TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
         if (pos == 0) {//wakeup schedule thread to work
@@ -204,6 +207,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        if (task == null || unit == null) throw new NullPointerException();
+        if (period <= 0) throw new IllegalArgumentException();
+
         TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
         if (pos == 0) {
@@ -213,6 +219,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        if (task == null || unit == null) throw new NullPointerException();
+        if (period <= 0) throw new IllegalArgumentException();
+
         TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
         if (pos == 0) {
@@ -531,6 +540,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         PoolScheduleAssignThread(TaskExecutionPool pool) {
             this.pool = pool;
+            this.setName(pool.poolName + "-ScheduleAssignThread");
             this.setDaemon(true);
         }
 
