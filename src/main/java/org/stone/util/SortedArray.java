@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Sort Array
+ * Sorted Array
  *
  * @author Chris Liao
  * @version 1.0
@@ -29,6 +29,9 @@ public final class SortedArray<E> {
     private E[] objects;
 
     public SortedArray(Class<E> type, int initSize, Comparator<E> comparator) {
+       if(type==null)throw new IllegalArgumentException("class type can't be null");
+        if(comparator==null)throw new IllegalArgumentException("comparator can't be null");
+
         this.comparator = comparator;
         this.arrayLock = new ReentrantLock();
         this.objects = (E[]) Array.newInstance(type, initSize);
@@ -113,6 +116,6 @@ public final class SortedArray<E> {
         int newCapacity = oldCapacity + (oldCapacity < 64 ?
                 oldCapacity + 2 :
                 oldCapacity >> 1);
-        objects = Arrays.copyOf(objects, newCapacity);
+        this.objects = Arrays.copyOf(objects, newCapacity);
     }
 }
