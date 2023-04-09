@@ -118,7 +118,7 @@ public class ResultWaitPool extends ThreadWaitPool {
                 } else if (state != null) {
                     node.setState(null);
                     Thread.yield();
-                }else{
+                } else {
                     parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
                 }
             } while (true);

@@ -53,12 +53,12 @@ import java.util.concurrent.locks.LockSupport;
 
 public class ThreadParkSupport {
     private static final long spinForTimeoutThreshold = 1000L;
+    protected final boolean allowInterrupted;
     protected Object blocker;
     protected long deadline;
     protected long remainTime;
     protected boolean timeout;
     protected boolean interrupted;
-    protected boolean allowInterrupted;
 
     //****************************************************************************************************************//
     //                                              constructors(1)                                                   //
@@ -72,6 +72,10 @@ public class ThreadParkSupport {
     //****************************************************************************************************************//
     public final long getDeadline() {
         return deadline;
+    }
+
+    public final long getRemainTime() {
+        return remainTime;
     }
 
     public final boolean isTimeout() {

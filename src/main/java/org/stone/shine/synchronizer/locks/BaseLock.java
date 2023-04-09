@@ -366,7 +366,7 @@ class BaseLock implements Lock {
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
             ThreadWaitConfig config = new ThreadWaitConfig(nanosTimeout, TimeUnit.NANOSECONDS);
             this.doAwait(config);
-            return config.getThreadParkSupport().getParkTime();
+            return config.getThreadParkSupport().getRemainTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {

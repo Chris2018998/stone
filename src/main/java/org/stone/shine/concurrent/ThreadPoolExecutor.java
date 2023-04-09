@@ -174,7 +174,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
      *
      * @param timeout the maximum time to wait
      * @param unit    the time unit of the timeout argument
-     * @return {@code true} if this executor terminated and
+     * @return {@code true} if this executor afterTerminated and
      * {@code false} if the timeout elapsed before termination
      * @throws InterruptedException if interrupted while waiting
      */
@@ -268,7 +268,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
      * {@link Future#isDone} is {@code true} for each
      * element of the returned list.
      * Note that a <em>completed</em> task could have
-     * terminated either normally or by throwing an exception.
+     * afterTerminated either normally or by throwing an exception.
      * The results of this method are undefined if the given
      * collection is modified while this operation is in progress.
      *
@@ -296,7 +296,7 @@ public class ThreadPoolExecutor<E> implements ExecutorService {
      * element of the returned list.
      * Upon return, tasks that have not completed are cancelled.
      * Note that a <em>completed</em> task could have
-     * terminated either normally or by throwing an exception.
+     * afterTerminated either normally or by throwing an exception.
      * The results of this method are undefined if the given
      * collection is modified while this operation is in progress.
      *
