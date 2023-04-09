@@ -29,13 +29,36 @@ public final class SortedArray<E> {
     private E[] objects;
 
     public SortedArray(Class<E> type, int initSize, Comparator<E> comparator) {
-        if (initSize <0) throw new IllegalArgumentException("initSize < 0");
+        if (initSize < 0) throw new IllegalArgumentException("initSize < 0");
         if (type == null) throw new IllegalArgumentException("class type can't be null");
         if (comparator == null) throw new IllegalArgumentException("comparator can't be null");
 
         this.comparator = comparator;
         this.arrayLock = new ReentrantLock();
         this.objects = (E[]) Array.newInstance(type, initSize);
+    }
+
+    public static void main(String[] ags) {
+        Comparator<Integer> comparator = new Comparator<Integer>() {
+            public int compare(Integer e1, Integer e2) {
+                return e1.compareTo(e2);
+            }
+        };
+        SortedArray array = new SortedArray<Integer>(Integer.class, 5, comparator);
+        array.add(5);
+        array.print();
+        array.remove(5);
+        array.print();
+//        array.add(2);
+//        array.print();
+//        array.add(3);
+//        array.print();
+//        array.add(1);
+//        array.print();
+//        array.add(7);
+//        array.print();
+//        array.remove(7);
+//        array.print();
     }
 
     public int size() {
@@ -54,27 +77,23 @@ public final class SortedArray<E> {
             if (objects.length == count) this.growArray();
 
             int pos = -1;
-            if (count == 0) {
-                objects[0] = e;
-                pos = 0;
-            } else {
-                int lastPos = count - 1;
-                for (int i = lastPos; i >= 0; i--) {
+            if (count > 0) {
+                for (int i = count - 1; i >= 0; i--) {
                     if (comparator.compare(e, objects[i]) >= 0) {
                         pos = i + 1;
+
+                        System.arraycopy(this.objects, pos, objects, pos + 1, count - pos);
+                        objects[pos] = e;
                         break;
                     }
                 }
 
-                if (pos >= 0) {
-                    System.arraycopy(this.objects, pos, objects, pos + 1, lastPos - pos + 1);
-                    objects[pos] = e;
-                } else {
-                    System.arraycopy(this.objects, 0, objects, 1, count);
-                    objects[0] = e;
-                    pos = 0;
-                }
+                //All elements move backward
+                if (pos == -1) System.arraycopy(this.objects, 0, objects, 1, count);
             }
+
+            if (pos == -1) objects[++pos] = e;
+
             count++;
             return pos;
         } finally {
@@ -85,10 +104,9 @@ public final class SortedArray<E> {
     public int remove(E e) {
         arrayLock.lock();//lock array
         try {
-            int lastPos = count - 1;
-            for (int i = lastPos; i >= 0; i--) {
+            for (int i = count - 1; i >= 0; i--) {
                 if (Objects.equals(e, objects[i])) {
-                    System.arraycopy(this.objects, i + 1, objects, i, lastPos - i);
+                    System.arraycopy(this.objects, i + 1, objects, i, count - 1 - i);
                     count--;
                     return i;
                 }
@@ -119,4 +137,5 @@ public final class SortedArray<E> {
                 oldCapacity >> 1);
         this.objects = Arrays.copyOf(objects, newCapacity);
     }
+
 }
