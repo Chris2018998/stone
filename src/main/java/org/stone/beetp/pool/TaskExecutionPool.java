@@ -196,15 +196,21 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
-        throw new BeeTaskPoolException("Not support");
+        TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
+        int pos = scheduledTaskArray.add(handle);
+        return handle;
     }
 
     public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
-        throw new BeeTaskPoolException("Not support");
+        TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
+        int pos = scheduledTaskArray.add(handle);
+        return handle;
     }
 
     public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
-        throw new BeeTaskPoolException("Not support");
+        TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
+        int pos = scheduledTaskArray.add(handle);
+        return handle;
     }
 
     //***************************************************************************************************************//
