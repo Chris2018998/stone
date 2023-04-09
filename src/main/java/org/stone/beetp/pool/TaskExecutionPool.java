@@ -13,7 +13,7 @@ import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
-import org.stone.util.SortArray;
+import org.stone.util.SortedArray;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Comparator;
@@ -60,7 +60,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //peek schedule tasks from array then push to execute queue
     private Thread schedulerThread;
-    private SortArray<TaskScheduleHandle> scheduledTaskArray;
+    private SortedArray<TaskScheduleHandle> scheduledTaskArray;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -118,7 +118,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         //step6: create scheduled task array
-        this.scheduledTaskArray = new SortArray<>(TaskScheduleHandle.class, 0,
+        this.scheduledTaskArray = new SortedArray<>(TaskScheduleHandle.class, 0,
                 new Comparator<TaskScheduleHandle>() {
                     public int compare(TaskScheduleHandle handle1, TaskScheduleHandle handle2) {
                         long compareV = handle1.getExecuteTimePoint() - handle2.getExecuteTimePoint();
@@ -198,7 +198,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
-        if(pos==0){//wakeup schedule thread to work
+        if (pos == 0) {//wakeup schedule thread to work
 
         }
         return handle;
@@ -207,7 +207,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
-        if(pos==0){
+        if (pos == 0) {
 
         }
         return handle;
@@ -216,7 +216,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         TaskScheduleHandle handle = new TaskScheduleHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
-        if(pos==0){
+        if (pos == 0) {
 
         }
         return handle;
