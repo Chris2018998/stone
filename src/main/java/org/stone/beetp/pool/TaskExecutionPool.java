@@ -44,7 +44,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private int maxWorkerSize;
     private boolean workerInDaemon;
     private long workerMaxAliveTime;
-    private boolean interruptWorkerOnClear;
     private TaskRejectPolicy rejectPolicy;
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
@@ -56,10 +55,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
-//    private PoolExitJvmHook exitHook;
 
     //peek schedule tasks from array then push to execute queue
-    private Thread schedulerThread;
+    private PoolScheduleAssignThread schedulerThread;
     private SortedArray<TaskScheduleHandle> scheduledTaskArray;
 
     //***************************************************************************************************************//
@@ -127,7 +125,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
                         return -1;
                     }
                 });
-
+        this.schedulerThread = new PoolScheduleAssignThread(this);
+        this.schedulerThread.start();
 
         //step7: set pool state to be ready for submitting tasks
         this.poolState = POOL_READY;
@@ -526,6 +525,23 @@ public final class TaskExecutionPool implements BeeTaskPool {
             } while (true);
         }
     }
+
+    private static class PoolScheduleAssignThread extends Thread {
+        private final TaskExecutionPool pool;
+
+        PoolScheduleAssignThread(TaskExecutionPool pool) {
+            this.pool = pool;
+            this.setDaemon(true);
+        }
+
+        public void run() {
+            while (pool.poolState >= POOL_TERMINATING) {
+
+
+            }
+        }
+    }
+
 
 //    private static class PoolExitJvmHook extends Thread {
 //        private final TaskExecutionPool pool;
