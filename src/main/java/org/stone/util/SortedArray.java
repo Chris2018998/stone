@@ -39,12 +39,12 @@ public final class SortedArray<E> {
     }
 
     public static void main(String[] ags) {
-        Comparator<Integer> comparator = new Comparator<Integer>() {
+        SortedArray array = new SortedArray<Integer>(Integer.class, 5, new Comparator<Integer>() {
             public int compare(Integer e1, Integer e2) {
                 return e1.compareTo(e2);
             }
-        };
-        SortedArray array = new SortedArray<Integer>(Integer.class, 5, comparator);
+        });
+
         array.add(5);
         array.print();
         array.remove(5);
