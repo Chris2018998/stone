@@ -28,7 +28,7 @@ public final class SortArray<E> {
     private int count;
     private E[] objects;
 
-    public SortArray(Class<E> type, int initSize, Comparator comparator) {
+    public SortArray(Class<E> type, int initSize, Comparator<E> comparator) {
         this.comparator = comparator;
         this.arrayLock = new ReentrantLock();
         this.objects = (E[]) Array.newInstance(type, initSize);
@@ -43,16 +43,17 @@ public final class SortArray<E> {
         }
     }
 
-    public void add(E e) {
+    public int add(E e) {
         arrayLock.lock();//lock array
         try {
             //1:if full,then grown
             if (objects.length == count) this.growArray();
 
+            int pos = -1;
             if (count == 0) {
                 objects[0] = e;
+                pos=0;
             } else {
-                int pos = -1;
                 int lastPos = count - 1;
                 for (int i = lastPos; i >= 0; i--) {
                     if (comparator.compare(e, objects[i]) >= 0) {
@@ -67,15 +68,17 @@ public final class SortArray<E> {
                 } else {
                     System.arraycopy(this.objects, 0, objects, 1, count);
                     objects[0] = e;
+                    pos=0;
                 }
             }
             count++;
+            return pos;
         } finally {
             arrayLock.unlock();//unlock
         }
     }
 
-    public void remove(E e) {
+    public int remove(E e) {
         arrayLock.lock();//lock array
         try {
             int lastPos = count - 1;
@@ -83,9 +86,10 @@ public final class SortArray<E> {
                 if (Objects.equals(e, objects[i])) {
                     System.arraycopy(this.objects, i + 1, objects, i, lastPos - i);
                     count--;
-                    break;
+                    return i;
                 }
             }
+            return -1;
         } finally {
             arrayLock.unlock();//unlock
         }
