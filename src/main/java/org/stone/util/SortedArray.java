@@ -23,8 +23,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 
 public final class SortedArray<E> {
-    private final Comparator<? super E> comparator;
     private final ReentrantLock arrayLock;
+    private final Comparator<? super E> comparator;
     private int count;
     private E[] objects;
 
