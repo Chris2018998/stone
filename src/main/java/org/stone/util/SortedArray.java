@@ -29,8 +29,9 @@ public final class SortedArray<E> {
     private E[] objects;
 
     public SortedArray(Class<E> type, int initSize, Comparator<E> comparator) {
-       if(type==null)throw new IllegalArgumentException("class type can't be null");
-        if(comparator==null)throw new IllegalArgumentException("comparator can't be null");
+        if (initSize <0) throw new IllegalArgumentException("initSize < 0");
+        if (type == null) throw new IllegalArgumentException("class type can't be null");
+        if (comparator == null) throw new IllegalArgumentException("comparator can't be null");
 
         this.comparator = comparator;
         this.arrayLock = new ReentrantLock();
