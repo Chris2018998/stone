@@ -362,68 +362,69 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //execute task
     private void executeTask(TaskHandleImpl handle) {
         workerCountInQueue.decrementAndGet();
-        if (handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
+        if (!handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) return;
+
+        try {
+            handle.setWorkThread(Thread.currentThread());
+            runningTaskCount.incrementAndGet();
+            BeeTask task = handle.getTask();
+            //1: execute pool interceptor
+            if (poolInterceptor != null) {
+                try {
+                    poolInterceptor.beforeCall(task, handle);
+                } catch (Throwable e) {
+                    //do nothing
+                }
+            }
+            //2: execute task aspect
+            BeeTaskAspect aspect = task.getAspect();
+            if (aspect != null) {
+                try {
+                    aspect.beforeCall(handle);
+                } catch (Throwable e) {
+                    //do nothing
+                }
+            }
+            //3: execute task
             try {
-                handle.setWorkThread(Thread.currentThread());
-                runningTaskCount.incrementAndGet();
-                BeeTask task = handle.getTask();
-                //1: execute pool interceptor
+                Object result = task.call();
+                handle.setDone(TASK_CALL_RESULT, result);
+
                 if (poolInterceptor != null) {
                     try {
-                        poolInterceptor.beforeCall(task, handle);
+                        poolInterceptor.afterCall(task, result, handle);
                     } catch (Throwable e) {
                         //do nothing
                     }
                 }
-                //2: execute task aspect
-                BeeTaskAspect aspect = task.getAspect();
                 if (aspect != null) {
                     try {
-                        aspect.beforeCall(handle);
+                        aspect.afterCall(result, handle);
                     } catch (Throwable e) {
                         //do nothing
                     }
                 }
-                //3: execute task
-                try {
-                    Object result = task.call();
-                    handle.setDone(TASK_CALL_RESULT, result);
-                    if (poolInterceptor != null) {
-                        try {
-                            poolInterceptor.afterCall(task, result, handle);
-                        } catch (Throwable e) {
-                            //do nothing
-                        }
-                    }
-                    if (aspect != null) {
-                        try {
-                            aspect.afterCall(result, handle);
-                        } catch (Throwable e) {
-                            //do nothing
-                        }
-                    }
-                } catch (Throwable e) {
-                    handle.setDone(TASK_EXCEPTIONAL, new TaskExecutionException(e));
-                    if (poolInterceptor != null) {
-                        try {
-                            poolInterceptor.afterThrowing(task, e, handle);
-                        } catch (Throwable ee) {
-                            //do nothing
-                        }
-                    }
-                    if (aspect != null) {
-                        try {
-                            aspect.afterThrowing(e, handle);
-                        } catch (Throwable ee) {
-                            //do nothing
-                        }
+            } catch (Throwable e) {
+                handle.setDone(TASK_EXCEPTIONAL, new TaskExecutionException(e));
+                if (poolInterceptor != null) {
+                    try {
+                        poolInterceptor.afterThrowing(task, e, handle);
+                    } catch (Throwable ee) {
+                        //do nothing
                     }
                 }
-            } finally {
-                handle.setWorkThread(null);
-                runningTaskCount.decrementAndGet();
-                completedTaskCount.incrementAndGet();
+                if (aspect != null) {
+                    try {
+                        aspect.afterThrowing(e, handle);
+                    } catch (Throwable ee) {
+                        //do nothing
+                    }
+                }
             }
+        } finally {
+            handle.setWorkThread(null);
+            runningTaskCount.decrementAndGet();
+            completedTaskCount.incrementAndGet();
         }
     }
 
@@ -483,6 +484,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     private static class PoolWorkerThread extends Thread {
         private static final AtomicInteger Index = new AtomicInteger(1);
+
         private final AtomicInteger state;
         private final TaskExecutionPool pool;
         private final boolean keepaliveTimed;
