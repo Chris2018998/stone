@@ -23,11 +23,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.BeeTaskServiceConfig.*;
 import static org.stone.beetp.pool.PoolStaticCenter.*;
+
 
 /**
  * Task Pool Impl
@@ -90,7 +92,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         int workerInitSize = config.getInitWorkerSize();
         this.workerCountInQueue.set(workerInitSize);
         for (int i = 0; i < workerInitSize; i++) {
-            PoolWorkerThread worker = new PoolWorkerThread(this);
+            PoolWorkerThread worker = new PoolWorkerThread(this, null);
             workerQueue.offer(worker);
             worker.start();
         }
@@ -160,26 +162,28 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //3: create task handle and offer it to queue by indicator
         TaskHandleImpl taskHandle = new TaskHandleImpl(task, offerInd ? TASK_NEW : TASK_CANCELLED, this);
-        if (offerInd) {
-            taskQueue.offer(taskHandle);
-            wakeUpOneWorker();
-        }
+        if (offerInd) offerToTaskQueue(taskHandle);
+
         return taskHandle;
     }
 
-    private void wakeUpOneWorker() {
+    //offer task to queue and try to wakeup a work thread
+    private void offerToTaskQueue(TaskHandleImpl taskHandle) {
+        taskQueue.offer(taskHandle);
+        //1: try to wakeup one when exists idle work thread(this different with JDK)
         for (PoolWorkerThread workerThread : workerQueue) {
-            if (workerThread.compareAndSetState(WORKER_IDLE, WORKER_RUNNING)) {
+            if (workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
                 LockSupport.unpark(workerThread);
                 return;
             }
         }
 
+        //2: try to create a new work thread to work
         do {
             int currentCount = this.workerCountInQueue.get();
             if (currentCount >= this.maxWorkerSize) return;
             if (workerCountInQueue.compareAndSet(currentCount, currentCount + 1)) {
-                PoolWorkerThread worker = new PoolWorkerThread(this);
+                PoolWorkerThread worker = new PoolWorkerThread(this, taskHandle);
                 workerQueue.offer(worker);
                 worker.start();
                 return;
@@ -484,56 +488,60 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     private static class PoolWorkerThread extends Thread {
         private static final AtomicInteger Index = new AtomicInteger(1);
-
-        private final AtomicInteger state;
         private final TaskExecutionPool pool;
         private final boolean keepaliveTimed;
         private final long workerKeepAliveTime;
+        private final AtomicReference workState;
         private final ConcurrentLinkedQueue<TaskHandleImpl> taskQueue;
 
-        PoolWorkerThread(TaskExecutionPool pool) {
+        PoolWorkerThread(TaskExecutionPool pool, Object state) {
             this.pool = pool;
             this.setDaemon(pool.workerInDaemon);
             this.taskQueue = pool.taskQueue;
             this.workerKeepAliveTime = pool.workerMaxAliveTime;
             this.keepaliveTimed = workerKeepAliveTime > 0;
             this.setName(pool.poolName + "-worker thread-" + Index.getAndIncrement());
-            this.state = new AtomicInteger(WORKER_RUNNING);
+            this.workState = new AtomicReference(state);
         }
 
-        void setState(int update) {
-            state.set(update);
+        void setState(Object update) {
+            workState.set(update);
         }
 
-        boolean compareAndSetState(int expect, int update) {
-            return state.compareAndSet(expect, update);
+        boolean compareAndSetState(Object expect, Object update) {
+            return workState.compareAndSet(expect, update);
         }
 
         public void run() {
-            do {
-                int stateCode = state.get();
-                if (stateCode == WORKER_TERMINATED || pool.poolState >= POOL_TERMINATING) {
-                    pool.workerCountInQueue.decrementAndGet();
-                    pool.workerQueue.remove(this);
-                    break;
-                }
-
-                //poll task from queue
-                TaskHandleImpl task = taskQueue.poll();
-                if (task != null) {
-                    pool.executeTask(task);
-                } else if (compareAndSetState(WORKER_RUNNING, WORKER_IDLE)) {
-                    if (keepaliveTimed)
-                        LockSupport.parkNanos(workerKeepAliveTime);
-                    else
-                        LockSupport.park();
-
-                    //keep alive timeout,then try to exit
-                    compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
-                }
-
-                Thread.interrupted();//clear interrupted state flag(may be interrupted in task call or worker park)
-            } while (true);
+//            TaskHandleImpl task = null;
+//            do {
+//                Object state = workState.get();
+//                if (state == WORKER_TERMINATED || pool.poolState >= POOL_TERMINATING)
+//                    break;
+//
+//                if (state instanceof TaskHandleImpl)
+//                    task = (TaskHandleImpl) state;
+//
+//                if (task == null) task = taskQueue.poll();
+//                if (task != null) pool.executeTask(task);
+//
+//
+//            } else if (compareAndSetState(WORKER_RUNNING, WORKER_IDLE)) {
+//                if (keepaliveTimed)
+//                    LockSupport.parkNanos(workerKeepAliveTime);
+//                else
+//                    LockSupport.park();
+//
+//                //keep alive timeout,then try to exit
+//                compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
+//            }
+//
+//            Thread.interrupted();//clear interrupted state flag(may be interrupted in task call or worker park)
+//        } while(true);
+//
+//
+//                pool.workerCountInQueue.decrementAndGet()
+//                pool.workerQueue.remove(this)
         }
     }
 
@@ -553,6 +561,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             }
         }
     }
+}
 
 
 //    private static class PoolExitJvmHook extends Thread {
@@ -570,4 +579,3 @@ public final class TaskExecutionPool implements BeeTaskPool {
 //            }
 //        }
 //    }
-}
