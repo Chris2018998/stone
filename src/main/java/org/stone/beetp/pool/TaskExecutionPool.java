@@ -30,7 +30,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.BeeTaskServiceConfig.*;
 import static org.stone.beetp.pool.PoolStaticCenter.*;
 
-
 /**
  * Task Pool Impl
  *
@@ -45,7 +44,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private int maxQueueSize;
     private int maxWorkerSize;
     private boolean workerInDaemon;
-    private long workerMaxAliveTime;
+    private long workerKeepAliveTime;
     private TaskRejectPolicy rejectPolicy;
     private TaskPoolMonitorVo monitorVo;
     private BeeTaskPoolInterceptor poolInterceptor;
@@ -84,7 +83,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.maxQueueSize = checkedConfig.getQueueMaxSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkInDaemon();
-        this.workerMaxAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
+        this.workerKeepAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
         this.monitorVo = new TaskPoolMonitorVo();
         this.poolInterceptor = checkedConfig.getPoolInterceptor();
 
@@ -365,9 +364,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //execute task
     private void executeTask(TaskHandleImpl handle) {
-        workerCountInQueue.decrementAndGet();
-        if (!handle.compareAndSetState(TASK_NEW, TASK_RUNNING)) return;
-
         try {
             handle.setWorkThread(Thread.currentThread());
             runningTaskCount.incrementAndGet();
@@ -498,7 +494,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.pool = pool;
             this.setDaemon(pool.workerInDaemon);
             this.taskQueue = pool.taskQueue;
-            this.workerKeepAliveTime = pool.workerMaxAliveTime;
+            this.workerKeepAliveTime = pool.workerKeepAliveTime;
             this.keepaliveTimed = workerKeepAliveTime > 0;
             this.setName(pool.poolName + "-worker thread-" + Index.getAndIncrement());
             this.workState = new AtomicReference(state);
@@ -513,35 +509,39 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         public void run() {
-//            TaskHandleImpl task = null;
-//            do {
-//                Object state = workState.get();
-//                if (state == WORKER_TERMINATED || pool.poolState >= POOL_TERMINATING)
-//                    break;
-//
-//                if (state instanceof TaskHandleImpl)
-//                    task = (TaskHandleImpl) state;
-//
-//                if (task == null) task = taskQueue.poll();
-//                if (task != null) pool.executeTask(task);
-//
-//
-//            } else if (compareAndSetState(WORKER_RUNNING, WORKER_IDLE)) {
-//                if (keepaliveTimed)
-//                    LockSupport.parkNanos(workerKeepAliveTime);
-//                else
-//                    LockSupport.park();
-//
-//                //keep alive timeout,then try to exit
-//                compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
-//            }
-//
-//            Thread.interrupted();//clear interrupted state flag(may be interrupted in task call or worker park)
-//        } while(true);
-//
-//
-//                pool.workerCountInQueue.decrementAndGet()
-//                pool.workerQueue.remove(this)
+            do {
+                //1: read state from work
+                Object state = workState.get();
+                if (state == WORKER_TERMINATED || pool.poolState >= POOL_TERMINATING)
+                    break;
+
+                //2: get task from state or poll from queue
+                TaskHandleImpl task;
+                if (state instanceof TaskHandleImpl) {
+                    task = (TaskHandleImpl) state;
+                } else if ((task = taskQueue.poll()) != null) {
+                    pool.workerCountInQueue.decrementAndGet();
+                }
+
+                //3: execute task
+                if (task != null && task.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
+                    pool.executeTask(task);
+                    //4: park work thread
+                } else if (compareAndSetState(state, WORKER_IDLE)) {
+                    if (keepaliveTimed)
+                        LockSupport.parkNanos(workerKeepAliveTime);
+                    else
+                        LockSupport.park();
+
+                    compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
+                }
+
+                //try to clear interrupted flag state
+                Thread.interrupted();
+            } while (true);
+
+            pool.workerCountInQueue.decrementAndGet();
+            pool.workerQueue.remove(this);
         }
     }
 

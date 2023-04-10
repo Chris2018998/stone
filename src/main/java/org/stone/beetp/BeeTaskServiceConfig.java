@@ -36,9 +36,9 @@ public class BeeTaskServiceConfig {
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
     private String poolName;
-    private int queueMaxSize;
+    private int queueMaxSize = 100;
     private int initWorkerSize;
-    private int maxWorkerSize;
+    private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
     private boolean workInDaemon;
     private long workerKeepAliveTime;
     private int queueFullPolicyCode = Policy_Abort;
@@ -168,9 +168,6 @@ public class BeeTaskServiceConfig {
         //4:set pool name and interceptor
         if (tempInterceptor != null) checkedConfig.poolInterceptor = tempInterceptor;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
-
-        if (checkedConfig.queueMaxSize == 0) checkedConfig.queueMaxSize = 100;
-        if (checkedConfig.maxWorkerSize == 0) checkedConfig.maxWorkerSize = Runtime.getRuntime().availableProcessors();
         return checkedConfig;
     }
 

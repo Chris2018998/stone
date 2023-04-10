@@ -28,7 +28,6 @@ public class PoolStaticCenter {
     static final int POOL_TERMINATING = 2;
     static final int POOL_TERMINATED = 3;
     //worker state
-    static final int WORKER_IDLE = 0;
-    static final int WORKER_RUNNING = 1;
-    static final int WORKER_TERMINATED = 2;
+    static final Object WORKER_IDLE = new Object();
+    static final Object WORKER_TERMINATED = new Object();
 }
