@@ -17,7 +17,7 @@ package org.stone.beetp.pool;
  */
 public class PoolStaticCenter {
     //task state
-    static final int TASK_NEW = 0;
+    static final int TASK_RUNNABLE = 0;
     static final int TASK_RUNNING = 1;
     static final int TASK_CANCELLED = 2;
     static final int TASK_EXCEPTIONAL = 3;

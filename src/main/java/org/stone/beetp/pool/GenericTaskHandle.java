@@ -20,8 +20,8 @@ import org.stone.beetp.BeeTaskCallback;
  */
 public class GenericTaskHandle extends AbstractTaskHandle {
 
-    GenericTaskHandle(BeeTask task, int initState, BeeTaskCallback callback, TaskExecutionPool pool) {
-        super(task, initState, callback, pool);
+    GenericTaskHandle(BeeTask task, int state, BeeTaskCallback callback, TaskExecutionPool pool) {
+        super(task, state, callback, pool);
     }
 
     void beforeCall() {

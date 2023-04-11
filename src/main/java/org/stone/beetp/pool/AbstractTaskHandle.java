@@ -36,15 +36,15 @@ abstract class AbstractTaskHandle implements BeeTaskHandle {
     private TaskExecutionPool pool;
 
     private volatile Thread workThread;
-    private Object callResponse;//result,exception
-    private ConcurrentLinkedQueue<Thread> waitQueue;
+    private Object callResponse;//null,result,exception
+    private ConcurrentLinkedQueue<Thread> waitQueue;//waiter of result get
 
     //***************************************************************************************************************//
     //                1: task constructor(1)                                                                         //                                                                                  //
     //***************************************************************************************************************//
     AbstractTaskHandle(BeeTask task, int state, BeeTaskCallback callback, TaskExecutionPool pool) {
         this.taskState = new AtomicInteger(state);
-        if (state == TASK_NEW) {
+        if (state == TASK_RUNNABLE) {
             this.task = task;
             this.pool = pool;
             this.callback = callback;
@@ -88,7 +88,7 @@ abstract class AbstractTaskHandle implements BeeTaskHandle {
     public boolean cancel(boolean mayInterruptIfRunning) {
         int taskStateCode = taskState.get();
         //1: try to cas state to cancelled from new
-        if (taskStateCode == TASK_NEW && taskState.compareAndSet(TASK_NEW, TASK_CANCELLED)) {
+        if (taskStateCode == TASK_RUNNABLE && taskState.compareAndSet(TASK_RUNNABLE, TASK_CANCELLED)) {
             pool.removeExecuteTask(this);
             setDone(TASK_CANCELLED, null);
             return true;
