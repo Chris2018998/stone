@@ -377,7 +377,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
             }
             //2: execute task aspect
-            BeeTaskAspect aspect = task.getAspect();
+            BeeTaskCallback aspect = task.getAspect();
             if (aspect != null) {
                 try {
                     aspect.beforeCall(handle);
@@ -526,8 +526,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 //3: execute task
                 if (task != null && task.compareAndSetState(TASK_NEW, TASK_RUNNING)) {
                     pool.executeTask(task);
-                    //4: park work thread
-                } else if (compareAndSetState(state, WORKER_IDLE)) {
+                } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
                     if (keepaliveTimed)
                         LockSupport.parkNanos(workerKeepAliveTime);
                     else

@@ -10,12 +10,16 @@
 package org.stone.beetp;
 
 /**
- * Task interface
+ * Task call back interface
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTask {
+public interface BeeTaskCallback {
 
-    Object call() throws Exception;
+    void beforeCall(BeeTaskHandle handle);
+
+    void afterCall(Object result, BeeTaskHandle handle);
+
+    void afterThrowing(Throwable e, BeeTaskHandle handle);
 }
