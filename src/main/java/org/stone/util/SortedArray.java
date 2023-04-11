@@ -61,10 +61,38 @@ public final class SortedArray<E> {
 //        array.print();
     }
 
+
     public int size() {
         arrayLock.lock();//lock array
         try {
             return count;
+        } finally {
+            arrayLock.unlock();//unlock
+        }
+    }
+
+    public E getFirst() {
+        arrayLock.lock();//lock array
+        try {
+            E first = null;
+            if (count > 0) first = objects[0];
+            return first;
+        } finally {
+            arrayLock.unlock();//unlock
+        }
+    }
+
+    public E removeFirst() {
+        arrayLock.lock();//lock array
+        try {
+            E first = null;
+            if (count > 0) {
+                first = objects[0];
+                System.arraycopy(this.objects, 1, objects, 0, count - 1);
+                objects[count - 1] = null;
+                count--;
+            }
+            return first;
         } finally {
             arrayLock.unlock();//unlock
         }
