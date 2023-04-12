@@ -37,4 +37,13 @@ public interface BeeTaskHandle {
     Object get() throws BeeTaskException, InterruptedException;
 
     Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
+
+    //***************************************************************************************************************//
+    //                4: schedule methods(3)                                                                         //                                                                                  //
+    //***************************************************************************************************************//
+//    long getNextExecuteTime();
+//
+//    long getPrevExecuteTime();
+//
+//    Object getPrevExecution() throws BeeTaskException;
 }
