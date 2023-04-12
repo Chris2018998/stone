@@ -44,7 +44,7 @@ abstract class AbstractTaskHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     AbstractTaskHandle(BeeTask task, int state, BeeTaskCallback callback, TaskExecutionPool pool) {
         this.taskState = new AtomicInteger(state);
-        if (state ==TASK_READY)｛
+        if (state == TASK_READY) {
             this.task = task;
             this.pool = pool;
             this.callback = callback;
@@ -88,7 +88,7 @@ abstract class AbstractTaskHandle implements BeeTaskHandle {
     public boolean cancel(boolean mayInterruptIfRunning) {
         int taskStateCode = taskState.get();
         //1: try to cas state to cancelled from new
-        if (taskStateCode ==TASK_READY && taskState.compareAndSet(TASK_READY，TASK_CANCELLED)) {
+        if (taskStateCode == TASK_READY && taskState.compareAndSet(TASK_READY, TASK_CANCELLED)) {
             pool.removeExecuteTask(this);
             setDone(TASK_CANCELLED, null);
             return true;

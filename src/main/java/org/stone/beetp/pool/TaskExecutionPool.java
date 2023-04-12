@@ -160,7 +160,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (taskCountInQueue.get() == maxQueueSize) offerInd = rejectPolicy.rejectTask(task, this);
 
         //3: create task handle and offer it to queue by indicator
-        GenericTaskHandle taskHandle = new GenericTaskHandle(task, offerInd ? TASK_RUNNABLE : TASK_CANCELLED, this);
+        GenericTaskHandle taskHandle = new GenericTaskHandle(task, offerInd ? TASK_READY : TASK_CANCELLED, this);
         if (offerInd) offerToTaskQueue(taskHandle);
 
         return taskHandle;
@@ -524,7 +524,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
 
                 //3: execute task
-                if (task != null && task.compareAndSetState(TASK_RUNNABLE, TASK_RUNNING)) {
+                if (task != null && task.compareAndSetState(TASK_READY, TASK_RUNNING)) {
                     pool.executeTask(task);
                 } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
                     if (keepaliveTimed)
