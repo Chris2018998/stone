@@ -26,26 +26,13 @@ public interface BeeTaskPool {
     void init(BeeTaskServiceConfig config) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
-    //                2: generic task(2)                                                                             //                                                                                  //
+    //                2: generic task(3)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException;
 
     BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException;
 
-    //***************************************************************************************************************//
-    //                3: schedule task(6)                                                                            //
-    //***************************************************************************************************************//
-    BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException;
-
-    BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException;
-
-    BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException;
-
-    BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException;
-
-    BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException;
-
-    BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException;
+    BeeTaskHandle submit(BeeTaskConfig taskConfig) throws BeeTaskException, BeeTaskPoolException;
 
     //***************************************************************************************************************//
     //                4: Pool terminate and clear(5)                                                                 //
