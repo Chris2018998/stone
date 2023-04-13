@@ -21,12 +21,15 @@ public final class BeeTaskConfig {
     private final BeeTask task;
     private BeeTaskCallback callback;
 
-    //time scheduled config
+    //scheduled time config
     private long initDelayTime;
     private long periodTime;
     private long fixedRateDelay;
     private TimeUnit timeUnit;
 
+    //***************************************************************************************************************//
+    //                1: constructor(2)                                                                              //
+    //***************************************************************************************************************//
     public BeeTaskConfig(BeeTask task) {
         this.task = task;
     }
@@ -36,6 +39,9 @@ public final class BeeTaskConfig {
         this.callback = callback;
     }
 
+    //***************************************************************************************************************//
+    //                2: task config(3)                                                                              //
+    //***************************************************************************************************************//
     public BeeTask getTask() {
         return task;
     }
@@ -48,6 +54,9 @@ public final class BeeTaskConfig {
         this.callback = callback;
     }
 
+    //***************************************************************************************************************//
+    //                3: time config(8)                                                                              //
+    //***************************************************************************************************************//
     public long getInitDelayTime() {
         return initDelayTime;
     }
@@ -78,5 +87,16 @@ public final class BeeTaskConfig {
 
     public void setTimeUnit(TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
+    }
+
+    public void check() {
+        if (task == null)
+            throw new IllegalArgumentException("Task can't be null");
+        if (initDelayTime < 0)
+            throw new IllegalArgumentException("Initialization delay time must be greater than zero");
+        if (periodTime < 0)
+            throw new IllegalArgumentException("Period time must be greater than zero");
+        if ((initDelayTime > 0 || periodTime > 0) && timeUnit == null)
+            throw new IllegalArgumentException("Time unit can't be null");
     }
 }
