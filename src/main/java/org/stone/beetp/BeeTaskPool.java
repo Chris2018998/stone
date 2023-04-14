@@ -26,7 +26,7 @@ public interface BeeTaskPool {
     void init(BeeTaskServiceConfig config) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
-    //                2: generic task(3)                                                                             //                                                                                  //
+    //                2: task submit(3)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException;
 

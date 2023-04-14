@@ -15,7 +15,7 @@ package org.stone.beetp;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTask {
+public interface BeeTask<T> {
 
-    Object call() throws Exception;
+    T call() throws Exception;
 }

@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTaskHandle {
+public interface BeeTaskHandle<T> {
 
     //***************************************************************************************************************//
     //                1: task state methods(2)                                                                       //                                                                                  //
@@ -34,9 +34,9 @@ public interface BeeTaskHandle {
     //***************************************************************************************************************//
     //                3: task result get and cancel methods(2)                                                       //                                                                                  //
     //***************************************************************************************************************//
-    Object get() throws BeeTaskException, InterruptedException;
+    T get() throws BeeTaskException, InterruptedException;
 
-    Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
+    T get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
 
     //***************************************************************************************************************//
     //                4: schedule methods(3)                                                                         //                                                                                  //

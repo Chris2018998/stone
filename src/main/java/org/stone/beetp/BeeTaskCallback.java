@@ -22,4 +22,6 @@ public interface BeeTaskCallback {
     void afterCall(Object result, BeeTaskHandle handle);
 
     void afterThrowing(Throwable e, BeeTaskHandle handle);
+
+    void atFinally(BeeTaskHandle handle);
 }

@@ -9,6 +9,11 @@
  */
 package org.stone.beetp;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -110,5 +115,83 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
     public void terminate(boolean cancelRunningTask) throws BeeTaskPoolException {
         if (pool != null) pool.terminate(cancelRunningTask);
+    }
+
+    //***************************************************************************************************************//
+    //                                        4: task list methods(4)                                                //
+    //***************************************************************************************************************//
+    public <T> T invokeAny(Collection<? extends BeeTask<T>> tasks) throws Exception {
+        return invokeAny(tasks, 0, TimeUnit.NANOSECONDS);
+    }
+
+    public <T> T invokeAny(Collection<? extends BeeTask<T>> tasks, long timeout, TimeUnit unit) throws Exception {
+        AnyCallback callback = new AnyCallback();
+        //@todo
+        return null;
+    }
+
+    public <T> List<BeeTaskHandle<T>> invokeAll(Collection<? extends BeeTask<T>> tasks) throws InterruptedException {
+        return invokeAll(tasks, 0, TimeUnit.NANOSECONDS);
+    }
+
+    public <T> List<BeeTaskHandle<T>> invokeAll(Collection<? extends BeeTask<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
+        AllCallback callback = new AllCallback(tasks.size());
+        //@todo
+        return null;
+    }
+
+    //***************************************************************************************************************//
+    //                                        5: callback impl(2)                                                   //
+    //***************************************************************************************************************//
+    private static final class AnyCallback implements BeeTaskCallback {
+        private final Thread callThread;
+        private volatile BeeTaskHandle handle;
+
+        AnyCallback() {
+            this.callThread = Thread.currentThread();
+        }
+
+        public void beforeCall(BeeTaskHandle handle) {
+        }
+
+        public void afterThrowing(Throwable e, BeeTaskHandle handle) {
+        }
+
+        public void atFinally(BeeTaskHandle handle) {
+        }
+
+        public void afterCall(Object result, BeeTaskHandle handle) {
+            if (this.handle == null) {
+                this.handle = handle;
+                LockSupport.unpark(callThread);
+            }
+        }
+    }
+
+    private static final class AllCallback implements BeeTaskCallback {
+        private final int taskSize;
+        private final Thread callThread;
+        private final AtomicInteger completedSize;
+
+        AllCallback(int taskSize) {
+            this.taskSize = taskSize;
+            this.callThread = Thread.currentThread();
+            this.completedSize = new AtomicInteger(0);
+        }
+
+        public void beforeCall(BeeTaskHandle handle) {
+        }
+
+        public void afterCall(Object result, BeeTaskHandle handle) {
+        }
+
+        public void afterThrowing(Throwable e, BeeTaskHandle handle) {
+        }
+
+        public void atFinally(BeeTaskHandle handle) {
+            if (completedSize.incrementAndGet() == taskSize) {
+                LockSupport.unpark(callThread);
+            }
+        }
     }
 }
