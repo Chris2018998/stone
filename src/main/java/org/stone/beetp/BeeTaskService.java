@@ -223,6 +223,8 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 } else {
                     LockSupport.park();
                 }
+                
+                if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
 
             return new ArrayList<>(callback.handleQueueInDone);
