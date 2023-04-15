@@ -13,8 +13,8 @@ import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
-import org.stone.beetp.pool.exception.ResultGetTimeoutException;
 import org.stone.beetp.pool.exception.TaskCancelledException;
+import org.stone.beetp.pool.exception.TaskTimeoutException;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -139,7 +139,7 @@ abstract class AbstractTaskHandle implements BeeTaskHandle {
                     if (parkTime > 0)
                         LockSupport.parkNanos(parkTime);
                     else
-                        throw new ResultGetTimeoutException("Get timeout");
+                        throw new TaskTimeoutException("Get timeout");
                 } else {
                     LockSupport.park();
                 }

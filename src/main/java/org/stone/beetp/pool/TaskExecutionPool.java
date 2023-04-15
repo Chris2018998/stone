@@ -12,7 +12,7 @@ package org.stone.beetp.pool;
 import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.PoolSubmitRejectedException;
-import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.beetp.pool.exception.TaskExecutedException;
 import org.stone.util.SortedArray;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
@@ -59,7 +59,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //peek schedule tasks from array then push to execute queue
     private PoolScheduleAssignThread schedulerThread;
-    private SortedArray<ScheduledTaskHandle> scheduledTaskArray;
+    private SortedArray<TimedTaskHandle> scheduledTaskArray;
 
     //***************************************************************************************************************//
     //                1: pool initialize method(1)                                                                   //                                                                                  //
@@ -117,9 +117,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         //step6: create scheduled task array
-        this.scheduledTaskArray = new SortedArray<>(ScheduledTaskHandle.class, 0,
-                new Comparator<ScheduledTaskHandle>() {
-                    public int compare(ScheduledTaskHandle handle1, ScheduledTaskHandle handle2) {
+        this.scheduledTaskArray = new SortedArray<>(TimedTaskHandle.class, 0,
+                new Comparator<TimedTaskHandle>() {
+                    public int compare(TimedTaskHandle handle1, TimedTaskHandle handle2) {
                         long compareV = handle1.getExecuteTimePoint() - handle2.getExecuteTimePoint();
                         if (compareV > 0) return 1;
                         if (compareV == 0) return 0;
@@ -151,7 +151,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException {
         //1: check pool state
-        if (task == null) throw new TaskExecutionException("Task can't be null");
+        if (task == null) throw new TaskExecutedException("Task can't be null");
         if (this.poolState != POOL_READY)
             throw new PoolSubmitRejectedException("Access forbidden,task pool was closed or in clearing");
 
@@ -193,7 +193,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: schedule task methods(3)                                                                    //                                                                                  //
     //***************************************************************************************************************//
-    void removeScheduleTask(ScheduledTaskHandle handle) {
+    void removeScheduleTask(TimedTaskHandle handle) {
         taskQueue.remove(handle);
     }
 
@@ -201,7 +201,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (task == null || unit == null) throw new NullPointerException();
         if (delay <= 0) throw new IllegalArgumentException();
 
-        ScheduledTaskHandle handle = new ScheduledTaskHandle(task, 0, this);
+        TimedTaskHandle handle = new TimedTaskHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
         if (pos == 0) {//wakeup schedule thread to work
 
@@ -213,7 +213,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (task == null || unit == null) throw new NullPointerException();
         if (period <= 0) throw new IllegalArgumentException();
 
-        ScheduledTaskHandle handle = new ScheduledTaskHandle(task, 0, this);
+        TimedTaskHandle handle = new TimedTaskHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
         if (pos == 0) {
 
@@ -225,7 +225,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (task == null || unit == null) throw new NullPointerException();
         if (period <= 0) throw new IllegalArgumentException();
 
-        ScheduledTaskHandle handle = new ScheduledTaskHandle(task, 0, this);
+        TimedTaskHandle handle = new TimedTaskHandle(task, 0, this);
         int pos = scheduledTaskArray.add(handle);
         if (pos == 0) {
 
@@ -399,13 +399,13 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
                 if (aspect != null) {
                     try {
-                        aspect.afterCall(result, handle);
+                        aspect.onReturn(result, handle);
                     } catch (Throwable e) {
                         //do nothing
                     }
                 }
             } catch (Throwable e) {
-                handle.setDone(TASK_EXCEPTIONAL, new TaskExecutionException(e));
+                handle.setDone(TASK_EXCEPTIONAL, new TaskExecutedException(e));
                 if (poolInterceptor != null) {
                     try {
                         poolInterceptor.afterThrowing(task, e, handle);
@@ -415,7 +415,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
                 if (aspect != null) {
                     try {
-                        aspect.afterThrowing(e, handle);
+                        aspect.onCatch(e, handle);
                     } catch (Throwable ee) {
                         //do nothing
                     }

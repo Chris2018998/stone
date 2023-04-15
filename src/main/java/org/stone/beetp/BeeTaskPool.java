@@ -26,13 +26,13 @@ public interface BeeTaskPool {
     void init(BeeTaskServiceConfig config) throws BeeTaskPoolException;
 
     //***************************************************************************************************************//
-    //                2: task submit(3)                                                                             //                                                                                  //
+    //                2: task submit(3)                                                                              //                                                                                  //
     //***************************************************************************************************************//
-    BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException;
+    BeeTaskHandle submit(BeeTask task) throws BeeTaskException;
 
-    BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException;
+    BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException;
 
-    BeeTaskHandle submit(BeeTaskConfig taskConfig) throws BeeTaskException, BeeTaskPoolException;
+    BeeTaskHandle submit(BeeTaskConfig taskConfig) throws BeeTaskException;
 
     //***************************************************************************************************************//
     //                4: Pool terminate and clear(5)                                                                 //
@@ -41,10 +41,13 @@ public interface BeeTaskPool {
 
     boolean isTerminating();
 
+    //return uncompleted tasks in queue
     List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
 
+    //true:pool has been terminated
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
+    //clear all tasks in pool
     boolean clear(boolean mayInterruptIfRunning);
 
     //***************************************************************************************************************//
