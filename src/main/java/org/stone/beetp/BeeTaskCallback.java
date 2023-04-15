@@ -17,11 +17,11 @@ package org.stone.beetp;
  */
 public interface BeeTaskCallback {
 
-    void beforeCall(BeeTaskHandle handle);
+    void onBefore(BeeTaskHandle handle);
 
-    void afterCall(Object result, BeeTaskHandle handle);
+    void onReturn(Object result, BeeTaskHandle handle);
 
-    void afterThrowing(Throwable e, BeeTaskHandle handle);
+    void onCatch(Throwable e, BeeTaskHandle handle);
 
-    void atFinally(BeeTaskHandle handle);
+    void onFinally(BeeTaskHandle handle);
 }

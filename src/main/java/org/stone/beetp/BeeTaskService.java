@@ -9,6 +9,9 @@
  */
 package org.stone.beetp;
 
+import org.stone.beetp.pool.exception.TaskExecutionException;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -120,28 +123,82 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     //***************************************************************************************************************//
     //                                        4: task list methods(4)                                                //
     //***************************************************************************************************************//
-    public <T> T invokeAny(Collection<? extends BeeTask<T>> tasks) throws Exception {
+    public BeeTaskHandle invokeAny(Collection<? extends BeeTask> tasks) throws Exception {
         return invokeAny(tasks, 0, TimeUnit.NANOSECONDS);
     }
 
-    public <T> T invokeAny(Collection<? extends BeeTask<T>> tasks, long timeout, TimeUnit unit) throws Exception {
+    public BeeTaskHandle invokeAny(Collection<? extends BeeTask> tasks, long timeout, TimeUnit unit) throws Exception {
+        if (tasks == null) throw new NullPointerException();
+        boolean timed = timeout > 0;
+        long deadline = System.nanoTime() + (timed ? unit.toNanos(timeout) : 0);
         AnyCallback callback = new AnyCallback();
-        //@todo
-        return null;
+
+        BeeTaskHandle completedHandle = null;
+        List<BeeTaskHandle> handleList = new ArrayList(tasks.size());
+        boolean done = false;
+        try {
+            for (BeeTask task : tasks) {
+                if ((completedHandle = callback.handle) != null) break;
+                handleList.add(pool.submit(task, callback));
+            }
+
+            do {
+                if ((completedHandle = callback.handle) != null) break;
+                if (timed) {
+                    long parkTime = deadline - System.nanoTime();
+                    if (parkTime <= 0) throw new TaskExecutionException("Timeout");
+                    LockSupport.parkNanos(parkTime);
+                } else {
+                    LockSupport.park();
+                }
+            } while (true);
+            done = true;
+            return completedHandle;
+        } catch (Throwable e) {
+            throw new TaskExecutionException(e.getCause());
+        } finally {
+            if (!done) for (BeeTaskHandle handle : handleList) handle.cancel(true);
+        }
     }
 
-    public <T> List<BeeTaskHandle<T>> invokeAll(Collection<? extends BeeTask<T>> tasks) throws InterruptedException {
+    public List<BeeTaskHandle> invokeAll(Collection<? extends BeeTask> tasks) throws Exception {
         return invokeAll(tasks, 0, TimeUnit.NANOSECONDS);
     }
 
-    public <T> List<BeeTaskHandle<T>> invokeAll(Collection<? extends BeeTask<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        AllCallback callback = new AllCallback(tasks.size());
-        //@todo
-        return null;
+    public List<BeeTaskHandle> invokeAll(Collection<? extends BeeTask> tasks, long timeout, TimeUnit unit) throws Exception {
+        if (tasks == null) throw new NullPointerException();
+        if (unit == null) throw new NullPointerException();
+
+        boolean timed = timeout > 0;
+        long deadline = System.nanoTime() + (timed ? unit.toNanos(timeout) : 0);
+        int taskSize = tasks.size();
+        AllCallback callback = new AllCallback(taskSize);
+        List<BeeTaskHandle> handleList = new ArrayList(taskSize);
+        boolean done = false;
+        try {
+            for (BeeTask task : tasks) handleList.add(pool.submit(task, callback));
+
+            do {
+                if (callback.completedSize.get() == taskSize) break;
+                if (timed) {
+                    long parkTime = deadline - System.nanoTime();
+                    if (parkTime <= 0) throw new TaskExecutionException("Timeout");
+                    LockSupport.parkNanos(parkTime);
+                } else {
+                    LockSupport.park();
+                }
+            } while (true);
+            done = true;
+            return handleList;
+        } catch (Throwable e) {
+            throw new TaskExecutionException(e.getCause());
+        } finally {
+            if (!done) for (BeeTaskHandle handle : handleList) handle.cancel(true);
+        }
     }
 
     //***************************************************************************************************************//
-    //                                        5: callback impl(2)                                                   //
+    //                                        5: callback impl(2)                                                    //
     //***************************************************************************************************************//
     private static final class AnyCallback implements BeeTaskCallback {
         private final Thread callThread;
@@ -151,20 +208,20 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             this.callThread = Thread.currentThread();
         }
 
-        public void beforeCall(BeeTaskHandle handle) {
+        public void onBefore(BeeTaskHandle handle) {
         }
 
-        public void afterThrowing(Throwable e, BeeTaskHandle handle) {
-        }
-
-        public void atFinally(BeeTaskHandle handle) {
-        }
-
-        public void afterCall(Object result, BeeTaskHandle handle) {
+        public void onReturn(Object result, BeeTaskHandle handle) {
             if (this.handle == null) {
                 this.handle = handle;
                 LockSupport.unpark(callThread);
             }
+        }
+
+        public void onCatch(Throwable e, BeeTaskHandle handle) {
+        }
+
+        public void onFinally(BeeTaskHandle handle) {
         }
     }
 
@@ -179,16 +236,16 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             this.completedSize = new AtomicInteger(0);
         }
 
-        public void beforeCall(BeeTaskHandle handle) {
+        public void onBefore(BeeTaskHandle handle) {
         }
 
-        public void afterCall(Object result, BeeTaskHandle handle) {
+        public void onReturn(Object result, BeeTaskHandle handle) {
         }
 
-        public void afterThrowing(Throwable e, BeeTaskHandle handle) {
+        public void onCatch(Throwable e, BeeTaskHandle handle) {
         }
 
-        public void atFinally(BeeTaskHandle handle) {
+        public void onFinally(BeeTaskHandle handle) {
             if (completedSize.incrementAndGet() == taskSize) {
                 LockSupport.unpark(callThread);
             }
