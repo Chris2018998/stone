@@ -9,6 +9,8 @@
  */
 package org.stone.beetp;
 
+import org.stone.beetp.pool.exception.TaskConfigException;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -89,14 +91,14 @@ public final class BeeTaskConfig {
         this.timeUnit = timeUnit;
     }
 
-    public void check() {
+    public void check() throws TaskConfigException {
         if (task == null)
-            throw new IllegalArgumentException("Task can't be null");
+            throw new TaskConfigException("Task can't be null");
         if (initDelayTime < 0)
-            throw new IllegalArgumentException("Initialization delay time must be greater than zero");
+            throw new TaskConfigException("Initialization delay time must be greater than zero");
         if (periodTime < 0)
-            throw new IllegalArgumentException("Period time must be greater than zero");
+            throw new TaskConfigException("Period time must be greater than zero");
         if ((initDelayTime > 0 || periodTime > 0) && timeUnit == null)
-            throw new IllegalArgumentException("Time unit can't be null");
+            throw new TaskConfigException("Time unit can't be null");
     }
 }
