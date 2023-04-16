@@ -544,12 +544,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 
-    private static class PoolScheduleAssignThread extends Thread {
+    private static class PoolScheduleTaskPeekThread extends Thread {
         private final TaskExecutionPool pool;
 
-        PoolScheduleAssignThread(TaskExecutionPool pool) {
+        PoolScheduleTaskPeekThread(TaskExecutionPool pool) {
             this.pool = pool;
-            this.setName(pool.poolName + "-ScheduleAssignThread");
+            this.setName(pool.poolName + "-ScheduleTaskPeek");
             this.setDaemon(true);
         }
 
