@@ -147,17 +147,23 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         List<BeeTaskHandle> handleList = new ArrayList<>(tasks.size());
         boolean timed = timeout > 0;
         long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0;
+        BeeTaskException submitFailed = null;
 
-        try {
-            //3: submit tasks to pool and try to read
-            for (BeeTask task : tasks) {
-                completedHandle = callback.handle;
-                if (completedHandle != null) break;
+        //3: submit tasks to pool
+        for (BeeTask task : tasks) {
+            completedHandle = callback.handle;
+            if (completedHandle != null) break;
+
+            try {
                 handleList.add(pool.submit(task, callback));
+            } catch (BeeTaskException e) {
+                submitFailed = e;
             }
+        }
 
-            //4:try to read a completed handle from callback
-            if (completedHandle == null) {
+        //4:try to read a completed handle from callback
+        try {
+            if (completedHandle == null && handleList.size() > 0) {
                 do {
                     completedHandle = callback.handle;
                     if (completedHandle != null) break;
@@ -174,13 +180,9 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 } while (true);
             }
 
-            return completedHandle;//reach here,the handle must be set
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (BeeTaskException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new TaskExecutedException(e.getCause());
+            if (completedHandle != null) return completedHandle;
+            if (submitFailed != null) throw submitFailed;
+            throw new TaskExecutedException("All tasks executed fail");
         } finally {
             for (BeeTaskHandle handle : handleList)
                 if (!handle.isDone()) handle.cancel(true);
@@ -223,7 +225,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 } else {
                     LockSupport.park();
                 }
-                
+
                 if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
 
