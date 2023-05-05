@@ -64,7 +64,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        2: task submit methods(4)                                              //
+    //                                        2: task submit methods(2)                                              //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.submit(task);
@@ -76,9 +76,37 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         return createPoolByLock().submit(task, callback);
     }
 
-    public BeeTaskHandle submit(BeeTaskConfig taskConfig) throws BeeTaskException, BeeTaskPoolException {
-        if (this.ready) return pool.submit(taskConfig);
-        return createPoolByLock().submit(taskConfig);
+    //***************************************************************************************************************//
+    //                3: task schedule(6)                                                                            //                                                                                  //
+    //***************************************************************************************************************//
+    public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.schedule(task, delay, unit);
+        return createPoolByLock().schedule(task, delay, unit);
+    }
+
+    public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.schedule(task, delay, unit, callback);
+        return createPoolByLock().schedule(task, delay, unit, callback);
+    }
+
+    public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.scheduleAtFixedRate(task, initialDelay, period, unit);
+        return createPoolByLock().scheduleAtFixedRate(task, initialDelay, period, unit);
+    }
+
+    public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.scheduleAtFixedRate(task, initialDelay, period, unit, callback);
+        return createPoolByLock().scheduleAtFixedRate(task, initialDelay, period, unit, callback);
+    }
+
+    public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.scheduleWithFixedDelay(task, initialDelay, delay, unit);
+        return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit);
+    }
+
+    public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
+        return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
     }
 
     private BeeTaskPool createPoolByLock() throws BeeTaskPoolException {
@@ -107,7 +135,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        3: pool terminate methods(4)                                           //
+    //                                        4: pool terminate methods(4)                                           //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return pool == null || pool.isTerminated();
@@ -128,7 +156,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        4: tasks invoke(4)                                                     //
+    //                                        5: tasks invoke(4)                                                     //
     //***************************************************************************************************************//
     public BeeTaskHandle invokeAny(Collection<? extends BeeTask> tasks) throws BeeTaskException, BeeTaskPoolException, InterruptedException {
         return invokeAny(tasks, 0, TimeUnit.NANOSECONDS);
@@ -247,7 +275,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                              5: callback impl(2)(result collector and wakeup call thread)                     //
+    //                              6: callback impl(2)(result collector and wakeup call thread)                     //
     //***************************************************************************************************************//
     private static final class AnyCallback implements BeeTaskCallback {
         private final int taskSize;
