@@ -241,6 +241,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         List<BeeTaskHandle> handleList = new ArrayList<>(totalSize);//submitted list
         boolean timed = timeout > 0;
         long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0;
+        boolean allDone = false;
 
         try {
             //4:task submission
@@ -252,7 +253,10 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             //5: spin for all tasks done
             do {
                 //5.1:if completed count equals task size,then exit spin
-                if (callback.doneCount.get() == totalSize) break;
+                if (callback.doneCount.get() == totalSize) {
+                    allDone = true;
+                    break;
+                }
 
                 //5.2:parking call thread
                 if (timed) {
@@ -269,8 +273,10 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
             return handleList;
         } finally {
-            for (BeeTaskHandle handle : handleList)
-                if (!handle.isDone()) handle.cancel(true);
+            if (!allDone) {//timeout or interrupted
+                for (BeeTaskHandle handle : handleList)
+                    if (!handle.isDone()) handle.cancel(true);
+            }
         }
     }
 
