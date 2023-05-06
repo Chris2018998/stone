@@ -12,8 +12,6 @@ package org.stone.beetp.pool;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
 
-import static org.stone.beetp.pool.PoolStaticCenter.TASK_SCHEDULING;
-
 /**
  * Task Schedule Handle Impl
  *
@@ -25,19 +23,14 @@ public final class ScheduledTaskHandle extends GenericTaskHandle {
     private long delayNanoseconds;
     private boolean delayFromExecuteTime;
 
-    ScheduledTaskHandle(BeeTask task, int state, BeeTaskCallback callback, TaskExecutionPool pool) {
-        super(task, state, callback, pool);
+    ScheduledTaskHandle(BeeTask task, BeeTaskCallback callback, TaskExecutionPool pool) {
+        super(task, callback, pool);
     }
 
     void setScheduledTime(long nextExecutionTime, long delayNanoseconds, boolean delayFromExecuteTime) {
         this.nextExecutionTime = nextExecutionTime;
         this.delayNanoseconds = delayNanoseconds;
         this.delayFromExecuteTime = delayFromExecuteTime;
-    }
-
-    //Override method
-    int getReadyStateBeforeRunning() {
-        return TASK_SCHEDULING;
     }
 
     long getNextExecutionTime() {

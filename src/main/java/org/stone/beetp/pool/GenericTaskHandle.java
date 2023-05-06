@@ -44,21 +44,19 @@ public class GenericTaskHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                1: task constructor(1)                                                                         //                                                                                  //
     //***************************************************************************************************************//
-    GenericTaskHandle(BeeTask task, int state, BeeTaskCallback callback, TaskExecutionPool pool) {
-        this.state = new AtomicInteger(state);
-        if (state == TASK_WAITING || state == TASK_SCHEDULING) {
-            this.task = task;
-            this.pool = pool;
-            this.callback = callback;
-            this.waitQueue = new ConcurrentLinkedQueue<>();
-        }
+    GenericTaskHandle(BeeTask task, BeeTaskCallback callback, TaskExecutionPool pool) {
+        this.task = task;
+        this.pool = pool;
+        this.callback = callback;
+        this.state = new AtomicInteger(TASK_WAITING);
+        this.waitQueue = new ConcurrentLinkedQueue<>();
     }
 
     //***************************************************************************************************************//
     //                2: task state methods(2)                                                                       //                                                                                  //
     //***************************************************************************************************************//
     public boolean isDone() {
-        return state.get() > TASK_RUNNING;
+        return state.get() > TASK_CALLING;
     }
 
     public boolean isCancelled() {
@@ -71,14 +69,14 @@ public class GenericTaskHandle implements BeeTaskHandle {
     public boolean cancel(boolean mayInterruptIfRunning) {
         int taskStateCode = state.get();
         //1: try to cas state to cancelled
-        if ((taskStateCode == TASK_WAITING || taskStateCode == TASK_SCHEDULING) && state.compareAndSet(taskStateCode, TASK_CANCELLED)) {
+        if ((taskStateCode == TASK_WAITING) && state.compareAndSet(taskStateCode, TASK_CANCELLED)) {
             this.setDone(TASK_CANCELLED, null);//wakeup waiters of result getting
             pool.removeCancelledTask(this);//clear from pool
             return true;
         }
 
         //2: try to interrupt worker thread(an execution failed exception will set back to the handle by worker thread)
-        if (mayInterruptIfRunning && state.get() == TASK_RUNNING && workerThread != null) {
+        if (mayInterruptIfRunning && state.get() == TASK_CALLING && workerThread != null) {
             Thread.State threadState = workerThread.getState();
             if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
                 workerThread.interrupt();
@@ -156,12 +154,8 @@ public class GenericTaskHandle implements BeeTaskHandle {
         state.set(update);
     }
 
-    int getReadyStateBeforeRunning() {
-        return TASK_WAITING;
-    }
-
     boolean setAsRunning() {//call in worker thread after task polled from queue
-        if (state.compareAndSet(getReadyStateBeforeRunning(), TASK_RUNNING)) {
+        if (state.compareAndSet(TASK_WAITING, TASK_CALLING)) {
             this.workerThread = Thread.currentThread();
             return true;
         }

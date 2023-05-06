@@ -17,12 +17,11 @@ package org.stone.beetp.pool;
  */
 public class PoolStaticCenter {
     //task state
-    public static final int TASK_WAITING = 1;
-    public static final int TASK_SCHEDULING = 2;
-    public static final int TASK_RUNNING = 3;
-    public static final int TASK_CANCELLED = 4;
-    public static final int TASK_RESULT = 5;
-    public static final int TASK_EXCEPTION = 6;
+    public static final int TASK_WAITING = 1;//waiting to be called
+    public static final int TASK_CALLING = 2;//executing in worker thread
+    public static final int TASK_CANCELLED = 3;
+    public static final int TASK_RESULT = 4;
+    public static final int TASK_EXCEPTION = 5;
     //pool state
     static final int POOL_READY = 0;
     static final int POOL_CLEARING = 1;
