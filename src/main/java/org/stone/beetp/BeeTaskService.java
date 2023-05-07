@@ -79,32 +79,32 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     //***************************************************************************************************************//
     //                3: task schedule(6)                                                                            //                                                                                  //
     //***************************************************************************************************************//
-    public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+    public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit);
         return createPoolByLock().schedule(task, delay, unit);
     }
 
-    public BeeTaskHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+    public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit, callback);
         return createPoolByLock().schedule(task, delay, unit, callback);
     }
 
-    public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+    public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.scheduleAtFixedRate(task, initialDelay, period, unit);
         return createPoolByLock().scheduleAtFixedRate(task, initialDelay, period, unit);
     }
 
-    public BeeTaskHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+    public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.scheduleAtFixedRate(task, initialDelay, period, unit, callback);
         return createPoolByLock().scheduleAtFixedRate(task, initialDelay, period, unit, callback);
     }
 
-    public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
+    public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.scheduleWithFixedDelay(task, initialDelay, delay, unit);
         return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit);
     }
 
-    public BeeTaskHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+    public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
         return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
     }
@@ -208,7 +208,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                     LockSupport.park();
                 }
 
-                //5.4:parking interruption check
+                //5.4:park interruption check
                 if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
 
@@ -216,7 +216,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             if (callback.failCause != null) throw callback.failCause;
             throw new TaskExecutedException("Execute failed");
         } finally {
-            //7:cancel not uncompleted tasks
+            //7:cancel uncompleted tasks
             for (BeeTaskHandle handle : handleList)
                 if (!handle.isDone()) handle.cancel(true);
         }
@@ -287,7 +287,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         private final int taskSize;
         private final Thread callThread;
         private final AtomicInteger doneCount;
-        private volatile BeeTaskHandle completedHandle;//we don't care who's the first
+        private volatile BeeTaskHandle completedHandle;//we don't care who arrive firstly
         private volatile TaskExecutedException failCause;
 
         AnyCallback(int taskTotalSize) {
