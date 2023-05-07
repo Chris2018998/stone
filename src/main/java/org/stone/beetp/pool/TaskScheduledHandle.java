@@ -44,7 +44,7 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
     }
 
     //***************************************************************************************************************//
-    //                2: impl interface methods(5)                                                                   //                                                                                  //
+    //                2: impl interface methods(6)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public boolean isPeriodic() {
         return delayTime != 0;
@@ -62,6 +62,11 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
     //value should be more than System.nanoTime(),when call done,then update time for next call
     public long getNextCallTime() {
         return nextRunTime;
+    }
+
+    //override,periodic is never done
+    public boolean isDone() {
+        return !isPeriodic() && curState.get() > TASK_CALLING;
     }
 
     //retrieve result of prev call
