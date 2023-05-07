@@ -22,7 +22,7 @@ import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class TaskScheduledHandle extends TaskGenericHandle implements BeeTaskScheduledHandle {
+public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeTaskScheduledHandle {
     private long nextRunTime;//time sortable
     private long delayTime;
     private boolean fixedDelay;
