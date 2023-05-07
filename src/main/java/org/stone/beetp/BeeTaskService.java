@@ -77,7 +77,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                3: task schedule(6)                                                                            //                                                                                  //
+    //                3: task schedule(6)                                                                            //
     //***************************************************************************************************************//
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit);
@@ -216,7 +216,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             if (callback.failCause != null) throw callback.failCause;
             throw new TaskExecutedException("Execute failed");
         } finally {
-            //7:cancel uncompleted tasks
+            //7:cancel not done tasks
             for (BeeTaskHandle handle : handleList)
                 if (!handle.isDone()) handle.cancel(true);
         }
