@@ -74,7 +74,7 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
         if (!isPeriodic()) throw new BeeTaskException("Just support periodic schedule");
         if (prevState == TASK_RESULT) return prevCallResult;
         if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevCallResult;
-        throw new BeeTaskException("Task not be called until now");
+        throw new BeeTaskException("Task not be called until current");
     }
 
     //***************************************************************************************************************//
