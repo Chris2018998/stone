@@ -20,7 +20,7 @@ public interface BeeTaskScheduledHandle<T> extends BeeTaskHandle<T> {
     //nanoseconds(less than System.nanoTime())
     long getPrevCallTime();
 
-    //nanoseconds(more than System.nanoTime())
+    //value should be more than System.nanoTime(),when call done,then update time for next call
     long getNextCallTime();
 
     //retrieve result of prev call
