@@ -78,7 +78,7 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
     }
 
     //***************************************************************************************************************//
-    //                3: preparation for next call(periodic)                                                           //                                                                                  //
+    //                3: preparation for next call(periodic)                                                         //
     //***************************************************************************************************************//
     //true:re-offer to array after this method call
     boolean prepareForNextCall() {
