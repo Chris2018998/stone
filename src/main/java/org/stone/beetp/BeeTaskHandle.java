@@ -20,9 +20,11 @@ import java.util.concurrent.TimeUnit;
 public interface BeeTaskHandle<T> {
 
     //***************************************************************************************************************//
-    //                1: task state methods(2)                                                                       //                                                                                  //
+    //                1: task state methods(3)                                                                       //                                                                                  //
     //***************************************************************************************************************//
     boolean isDone();
+
+    boolean isCalling();
 
     boolean isCancelled();
 
@@ -32,18 +34,10 @@ public interface BeeTaskHandle<T> {
     boolean cancel(boolean mayInterruptIfRunning);
 
     //***************************************************************************************************************//
-    //                3: task result get and cancel methods(2)                                                       //                                                                                  //
+    //                3: task result getting(2)                                                                      //                                                                                  //
     //***************************************************************************************************************//
     T get() throws BeeTaskException, InterruptedException;
 
     T get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException;
 
-    //***************************************************************************************************************//
-    //                4: schedule methods(3)                                                                         //                                                                                  //
-    //***************************************************************************************************************//
-//    long getNextExecuteTime();
-//
-//    long getPrevExecuteTime();
-//
-//    Object getPrevExecution() throws BeeTaskException;
 }
