@@ -28,5 +28,5 @@ public interface BeeTaskScheduledHandle<T> extends BeeTaskHandle<T> {
     long getNextCallTime();
 
     //retrieve result of prev call
-    T getPrevCall() throws BeeTaskException;
+    T getPrevCallResult() throws BeeTaskException;
 }
