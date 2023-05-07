@@ -19,6 +19,8 @@ public interface BeeTaskScheduledHandle<T> extends BeeTaskHandle<T> {
 
     boolean isPeriodic();
 
+    boolean isFixedDelay();
+
     //nanoseconds(less than System.nanoTime())
     long getPrevCallTime();
 
