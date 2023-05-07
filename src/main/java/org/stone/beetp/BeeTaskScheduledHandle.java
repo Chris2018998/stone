@@ -17,6 +17,8 @@ package org.stone.beetp;
  */
 public interface BeeTaskScheduledHandle<T> extends BeeTaskHandle<T> {
 
+    boolean isPeriodic();
+
     //nanoseconds(less than System.nanoTime())
     long getPrevCallTime();
 
