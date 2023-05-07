@@ -19,6 +19,6 @@ public interface BeeTaskCallback {
 
     void beforeCall(BeeTaskHandle handle);
 
-    //done situation(1:task cancelled 2:call end 3:call exception)
+    //done situation(1:task cancelled 2:call completed 3:call exception)
     void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle);
 }

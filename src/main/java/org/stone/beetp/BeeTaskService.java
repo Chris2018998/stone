@@ -9,9 +9,9 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.PoolStaticCenter;
-import org.stone.beetp.pool.exception.TaskExecutedException;
-import org.stone.beetp.pool.exception.TaskRelatedTimeoutException;
+import org.stone.beetp.pool.TaskPoolStaticUtil;
+import org.stone.beetp.pool.exception.TaskCalledException;
+import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -188,7 +188,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 //4.2:submit a task to pool
                 handleList.add(pool.submit(task, callback));
                 //4.3:timeout check
-                if (timed && deadline - System.nanoTime() <= 0) throw new TaskRelatedTimeoutException("Timeout");
+                if (timed && deadline - System.nanoTime() <= 0) throw new TaskResultGetTimeoutException("Timeout");
             }
 
             //5:spin to get a completed handle
@@ -202,7 +202,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 //5.3:parking(ThreadParkSupport is a better choice?)
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
-                    if (parkTime <= 0) throw new TaskRelatedTimeoutException("Timeout");
+                    if (parkTime <= 0) throw new TaskResultGetTimeoutException("Timeout");
                     LockSupport.parkNanos(parkTime);
                 } else {
                     LockSupport.park();
@@ -214,7 +214,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
             //6:if execution exception filled in callback object,then throw it
             if (callback.failCause != null) throw callback.failCause;
-            throw new TaskExecutedException("Execute failed");
+            throw new TaskCalledException("Execute failed");
         } finally {
             //7:cancel not done tasks
             for (BeeTaskHandle handle : handleList)
@@ -288,7 +288,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         private final Thread callThread;
         private final AtomicInteger doneCount;
         private volatile BeeTaskHandle completedHandle;//we don't care who arrive firstly
-        private volatile TaskExecutedException failCause;
+        private volatile TaskCalledException failCause;
 
         AnyCallback(int taskTotalSize) {
             this.taskSize = taskTotalSize;
@@ -303,9 +303,9 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         public void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle) {
             boolean hasWakeup = false;
             try {
-                if (PoolStaticCenter.TASK_EXCEPTION == doneCode && doneResp instanceof TaskExecutedException)
-                    this.failCause = (TaskExecutedException) doneResp;
-                else if ((PoolStaticCenter.TASK_RESULT == doneCode)) {
+                if (TaskPoolStaticUtil.TASK_EXCEPTION == doneCode && doneResp instanceof TaskCalledException)
+                    this.failCause = (TaskCalledException) doneResp;
+                else if (TaskPoolStaticUtil.TASK_RESULT == doneCode) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);
                     hasWakeup = true;
