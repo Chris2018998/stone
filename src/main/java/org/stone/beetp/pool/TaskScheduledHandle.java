@@ -30,7 +30,7 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
     //only support periodic
     private int prevState;
     private long prevCallTime;
-    private Object prevResult;
+    private Object prevCallResult;
 
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //                                                                                  //
@@ -70,10 +70,10 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
     }
 
     //retrieve result of prev call
-    public Object getPrevCall() throws BeeTaskException {
+    public Object getPrevCallResult() throws BeeTaskException {
         if (!isPeriodic()) throw new BeeTaskException("Just support periodic schedule");
-        if (prevState == TASK_RESULT) return prevResult;
-        if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevResult;
+        if (prevState == TASK_RESULT) return prevCallResult;
+        if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevCallResult;
         throw new BeeTaskException("Task not be called until now");
     }
 
@@ -84,7 +84,7 @@ public final class TaskScheduledHandle extends TaskGenericHandle implements BeeT
     boolean prepareForNextCall() {
         if (isPeriodic()) {
             this.prevState = this.curState.get();
-            this.prevResult = this.curResult;
+            this.prevCallResult = this.curResult;
             this.prevCallTime = this.nextRunTime;
 
             long startTime = fixedDelay ? System.nanoTime() : nextRunTime;
