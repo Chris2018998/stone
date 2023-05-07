@@ -32,14 +32,14 @@ public class TaskPoolStaticUtil {
     static final Object WORKER_TERMINATED = new Object();
 
     //calculate next execution time(Nanoseconds)
-    static long calculateNextExecutionTime(long startNanoTime, long delayNanoTime) {
-        long nextExecutionTime = startNanoTime;
+    static long calculateNextRunTime(long startNanoTime, long delayNanoTime) {
+        long nextRunTime = startNanoTime;
         if (delayNanoTime > 0) {//periodic
-            while (nextExecutionTime <= System.nanoTime()) {
-                nextExecutionTime = +delayNanoTime;
+            while (nextRunTime <= System.nanoTime()) {
+                nextRunTime = +delayNanoTime;
             }
         }
-        return nextExecutionTime;
+        return nextRunTime;
     }
 }
 

@@ -51,11 +51,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private AtomicInteger completedTaskCount;
 
     //store sortable scheduled tasks
-    private SortedArray<ScheduledTaskHandle> scheduledArray;
+    private SortedArray<TaskScheduledHandle> scheduledArray;
     //peek scheduled tasks,then push to execution queue
     private PoolScheduledTaskPeekThread scheduledTaskPeekThread;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
-    private ConcurrentLinkedQueue<GenericTaskHandle> executionQueue;
+    private ConcurrentLinkedQueue<TaskGenericHandle> executionQueue;
     //pool terminated wait queue
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
@@ -96,9 +96,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         //step6: create scheduled task array and peek thread
-        this.scheduledArray = new SortedArray<>(ScheduledTaskHandle.class, 0,
-                new Comparator<ScheduledTaskHandle>() {
-                    public int compare(ScheduledTaskHandle handle1, ScheduledTaskHandle handle2) {
+        this.scheduledArray = new SortedArray<>(TaskScheduledHandle.class, 0,
+                new Comparator<TaskScheduledHandle>() {
+                    public int compare(TaskScheduledHandle handle1, TaskScheduledHandle handle2) {
                         long compareV = handle1.getNextExecutionTime() - handle2.getNextExecutionTime();
                         if (compareV > 0) return 1;
                         if (compareV == 0) return 0;
@@ -135,11 +135,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (!offerTest()) throw new TaskRejectedException("Pool was full,task rejected");
 
         //4:create task handle by config
-        GenericTaskHandle handle = createTaskHandle(taskConfig);
+        TaskGenericHandle handle = createTaskHandle(taskConfig);
 
         //5:offer to queue(scheduled type task will be added to scheduledArray)
-        if (handle instanceof ScheduledTaskHandle) {
-            if (scheduledArray.add((ScheduledTaskHandle) handle) == 0) {
+        if (handle instanceof TaskScheduledHandle) {
+            if (scheduledArray.add((TaskScheduledHandle) handle) == 0) {
                 /**
                  * if new task is on first
                  * @todo wakeup thread to peek new
@@ -168,7 +168,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread call this method to push task**)
-    private void pushToExecutionQueue(GenericTaskHandle taskHandle) {
+    private void pushToExecutionQueue(TaskGenericHandle taskHandle) {
         //1:offer to task queue
         executionQueue.offer(taskHandle);
 
@@ -194,12 +194,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //create task handle
-    private GenericTaskHandle createTaskHandle(BeeTaskConfig taskConfig) {
+    private TaskGenericHandle createTaskHandle(BeeTaskConfig taskConfig) {
         if (taskConfig.getInitDelayTime() != 0 || taskConfig.getPeriodDelayTime() != 0) {
-            return new GenericTaskHandle(taskConfig.getTask(),
+            return new TaskGenericHandle(taskConfig.getTask(),
                     TASK_WAITING, taskConfig.getCallback(), this);
         } else {
-            ScheduledTaskHandle handle = new ScheduledTaskHandle(taskConfig.getTask(),
+            TaskScheduledHandle handle = new TaskScheduledHandle(taskConfig.getTask(),
                     TASK_WAITING, taskConfig.getCallback(), this);
 
             //@todo time caluate
@@ -211,9 +211,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //remove from array or queue
-    void removeCancelledTask(GenericTaskHandle handle) {
-        if (handle instanceof ScheduledTaskHandle) {
-            if (scheduledArray.remove((ScheduledTaskHandle) handle) > -1) {
+    void removeCancelledTask(TaskGenericHandle handle) {
+        if (handle instanceof TaskScheduledHandle) {
+            if (scheduledArray.remove((TaskScheduledHandle) handle) > -1) {
                 taskCountInQueue.decrementAndGet();
             }
         } else if (executionQueue.remove(handle)) {
@@ -224,7 +224,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     //                2: schedule task methods(3)                                                                    //                                                                                  //
     //***************************************************************************************************************//
-    void removeScheduleTask(ScheduledTaskHandle handle) {
+    void removeScheduleTask(TaskScheduledHandle handle) {
         executionQueue.remove(handle);
     }
 
@@ -257,7 +257,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
             }
 
-            GenericTaskHandle taskHandle;
+            TaskGenericHandle taskHandle;
             List<BeeTask> queueTaskList = new LinkedList<>();
             while ((taskHandle = executionQueue.poll()) != null) {
                 queueTaskList.add(taskHandle.getTask());
@@ -288,7 +288,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public boolean clear(boolean mayInterruptIfRunning) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
-            GenericTaskHandle taskHandle;
+            TaskGenericHandle taskHandle;
             while ((taskHandle = executionQueue.poll()) != null) {
                 taskHandle.setCurState(TASK_CANCELLED);
                 taskHandle.wakeupWaiters();
@@ -358,7 +358,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //execute task
-    private void executeTask(GenericTaskHandle handle) {
+    private void executeTask(TaskGenericHandle handle) {
         try {
             handle.setWorkThread(Thread.currentThread());
             runningTaskCount.incrementAndGet();
@@ -443,7 +443,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         private final boolean keepaliveTimed;
         private final long workerKeepAliveTime;
         private final AtomicReference workState;
-        private final ConcurrentLinkedQueue<GenericTaskHandle> taskQueue;
+        private final ConcurrentLinkedQueue<TaskGenericHandle> taskQueue;
 
         PoolWorkerThread(TaskExecutionPool pool, Object state) {
             this.pool = pool;
@@ -471,9 +471,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     break;
 
                 //2: get task from state or poll from queue
-                GenericTaskHandle task;
-                if (state instanceof GenericTaskHandle) {
-                    task = (GenericTaskHandle) state;
+                TaskGenericHandle task;
+                if (state instanceof TaskGenericHandle) {
+                    task = (TaskGenericHandle) state;
                 } else if ((task = taskQueue.poll()) != null) {
                     pool.workerCountInQueue.decrementAndGet();
                 }
@@ -536,7 +536,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 //
 //    private static class TaskRemoveOldestPolicy implements TaskRejectPolicy {
 //        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) {
-//            GenericTaskHandle oldTask = pool.executionQueue.poll();
+//            TaskGenericHandle oldTask = pool.executionQueue.poll();
 //            if (oldTask != null) {
 //                pool.taskCountInQueue.decrementAndGet();
 //                oldTask.setCurState(TASK_CANCELLED);
