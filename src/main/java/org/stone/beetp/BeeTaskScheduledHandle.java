@@ -17,9 +17,12 @@ package org.stone.beetp;
  */
 public interface BeeTaskScheduledHandle<T> extends BeeTaskHandle<T> {
 
-    long getPrevTime();
+    //nanoseconds(less than System.nanoTime())
+    long getPrevCallTime();
 
-    long getNextTime();
+    //nanoseconds(more than System.nanoTime())
+    long getNextCallTime();
 
+    //retrieve result of prev call
     T getPrevCall() throws BeeTaskException;
 }
