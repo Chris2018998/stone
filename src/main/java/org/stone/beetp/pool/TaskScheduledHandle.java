@@ -36,9 +36,9 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     TaskScheduledHandle(BeeTask task, BeeTaskCallback callback, TaskExecutionPool pool,
-                        long nextRunTime, long delayTime, boolean fixedDelay) {
+                        long firstRunTime, long delayTime, boolean fixedDelay) {
         super(task, callback, pool);
-        this.nextRunTime = nextRunTime;//first run time
+        this.nextRunTime = firstRunTime;//first run time
         this.delayTime = delayTime;
         this.fixedDelay = fixedDelay;//true:calculate next run time from task prev call end t
     }
@@ -55,17 +55,17 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     }
 
     //nanoseconds(less than System.nanoTime())
-    public long getPrevCallTime() {
+    public long getPrevTime() {
         return prevCallTime;
     }
 
     //value should be more than System.nanoTime(),when call done,then update time for next call
-    public long getNextCallTime() {
+    public long getNextTime() {
         return nextRunTime;
     }
 
     //retrieve result of prev call
-    public Object getPrevCallResult() throws BeeTaskException {
+    public Object getPrevResult() throws BeeTaskException {
         if (!isPeriodic()) throw new BeeTaskException("Only support periodic schedule");
         if (prevState == TASK_RESULT) return prevCallResult;
         if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevCallResult;
@@ -84,7 +84,7 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
 
             long startTime = fixedDelay ? System.nanoTime() : nextRunTime;
             this.nextRunTime = startTime + delayTime;
-            this.curState.set(TASK_WAITING);
+            this.curState.set(TASK_WAITING);//reset to waiting state for next call
             return true;
         } else {
             return false;

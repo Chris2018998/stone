@@ -22,11 +22,11 @@ public interface BeeTaskScheduledHandle<T> extends BeeTaskHandle<T> {
     boolean isFixedDelay();
 
     //nanoseconds(less than System.nanoTime())
-    long getPrevCallTime();
+    long getPrevTime();
 
     //value should be more than System.nanoTime(),when call done,then update time for next call
-    long getNextCallTime();
+    long getNextTime();
 
     //retrieve result of prev call
-    T getPrevCallResult() throws BeeTaskException;
+    T getPrevResult() throws BeeTaskException;
 }

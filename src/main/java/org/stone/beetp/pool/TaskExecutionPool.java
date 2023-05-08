@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -47,12 +48,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private TaskPoolMonitorVo monitorVo;
     private AtomicInteger taskCountInQueue;
     private AtomicInteger workerCountInQueue;
-    private AtomicInteger runningTaskCount;
-    private AtomicInteger completedTaskCount;
+    private AtomicLong runningTaskCount;
+    private AtomicLong completedTaskCount;
 
     //store sortable scheduled tasks
     private SortedArray<TaskScheduledHandle> scheduledArray;
-    //peek first scheduled tasks,if time expired,then push then to execution queue
+    //peek first scheduled task,if time expired,then push it to execution queue
     private PoolScheduledTaskPeekThread scheduledTaskPeekThread;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<TaskExecuteHandle> executionQueue;
@@ -83,8 +84,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.monitorVo = new TaskPoolMonitorVo();
         this.taskCountInQueue = new AtomicInteger();
         this.workerCountInQueue = new AtomicInteger();
-        this.runningTaskCount = new AtomicInteger();
-        this.completedTaskCount = new AtomicInteger();
+        this.runningTaskCount = new AtomicLong();
+        this.completedTaskCount = new AtomicLong();
 
         //step5: prepare to startup some worker threads by config
         int workerInitSize = config.getInitWorkerSize();
@@ -99,7 +100,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.scheduledArray = new SortedArray<>(TaskScheduledHandle.class, 0,
                 new Comparator<TaskScheduledHandle>() {
                     public int compare(TaskScheduledHandle handle1, TaskScheduledHandle handle2) {
-                        long compareV = handle1.getNextExecutionTime() - handle2.getNextExecutionTime();
+                        long compareV = handle1.getNextTime() - handle2.getNextTime();
                         if (compareV > 0) return 1;
                         if (compareV == 0) return 0;
                         return -1;

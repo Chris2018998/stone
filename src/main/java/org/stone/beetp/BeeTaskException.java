@@ -17,6 +17,9 @@ package org.stone.beetp;
  */
 public class BeeTaskException extends Exception {
 
+    public BeeTaskException() {
+    }
+
     public BeeTaskException(String message) {
         super(message);
     }

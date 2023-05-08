@@ -214,7 +214,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
             //6:if execution exception filled in callback object,then throw it
             if (callback.failCause != null) throw callback.failCause;
-            throw new TaskExecutionException("Execute failed");
+            throw new TaskExecutionException();
         } finally {
             //7:cancel not done tasks
             for (BeeTaskHandle handle : handleList)
@@ -267,7 +267,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                     LockSupport.park();
                 }
 
-                //5.3: park interruption
+                //5.3: park interruption check
                 if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
 
