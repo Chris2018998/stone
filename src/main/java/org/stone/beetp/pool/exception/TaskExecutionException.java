@@ -18,6 +18,8 @@ import org.stone.beetp.BeeTaskException;
  * @version 1.0
  */
 public final class TaskExecutionException extends BeeTaskException {
+    public TaskExecutionException() {
+    }
 
     public TaskExecutionException(String message) {
         super(message);

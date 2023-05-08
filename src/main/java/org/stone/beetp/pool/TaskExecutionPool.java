@@ -52,7 +52,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //store sortable scheduled tasks
     private SortedArray<TaskScheduledHandle> scheduledArray;
-    //peek scheduled tasks,then push to execution queue
+    //peek first scheduled tasks,if time expired,then push then to execution queue
     private PoolScheduledTaskPeekThread scheduledTaskPeekThread;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<TaskExecuteHandle> executionQueue;
@@ -109,7 +109,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.scheduledTaskPeekThread.start();
 
         //step7: set pool state to be ready for submitting tasks
-        this.poolState = POOL_READY;
+        this.poolState = POOL_RUNNING;
     }
 
     //***************************************************************************************************************//
@@ -125,7 +125,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public BeeTaskHandle submit(BeeTaskConfig taskConfig) throws BeeTaskException {
         //1:pool check
-        if (this.poolState != POOL_READY)
+        if (this.poolState != POOL_RUNNING)
             throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
         //2:task config check
         if (taskConfig == null) throw new TaskExecutionException("Task can't be null");
@@ -240,7 +240,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_TERMINATING)) {
+        if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
             PoolWorkerThread worker;
             if (mayInterruptIfRunning) {
                 while ((worker = workerQueue.poll()) != null) {
@@ -287,7 +287,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public boolean clear(boolean mayInterruptIfRunning) {
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+        if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
             TaskExecuteHandle taskHandle;
             while ((taskHandle = executionQueue.poll()) != null) {
                 taskHandle.setCurState(TASK_CANCELLED);
@@ -310,7 +310,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
             }
 
-            this.poolState = POOL_READY;
+            this.poolState = POOL_RUNNING;
             return true;
         } else {
             return false;

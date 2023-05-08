@@ -24,7 +24,7 @@ import java.util.concurrent.locks.LockSupport;
 import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
 
 /**
- * Generic handle impl
+ * execution handle impl
  *
  * @author Chris Liao
  * @version 1.0
@@ -123,7 +123,7 @@ public class TaskExecuteHandle implements BeeTaskHandle {
                     if (parkTime > 0)
                         LockSupport.parkNanos(parkTime);
                     else
-                        throw new TaskResultGetTimeoutException("Get timeout");
+                        throw new TaskResultGetTimeoutException();
                 } else {
                     LockSupport.park();
                 }

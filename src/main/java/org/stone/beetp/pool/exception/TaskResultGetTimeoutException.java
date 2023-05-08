@@ -12,12 +12,14 @@ package org.stone.beetp.pool.exception;
 import org.stone.beetp.BeeTaskException;
 
 /**
- * Task related operation Timeout Exception
+ * Timeout Exception
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class TaskResultGetTimeoutException extends BeeTaskException {
+    public TaskResultGetTimeoutException() {
+    }
 
     public TaskResultGetTimeoutException(String message) {
         super(message);

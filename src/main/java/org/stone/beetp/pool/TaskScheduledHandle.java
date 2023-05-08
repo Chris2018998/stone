@@ -44,7 +44,7 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     }
 
     //***************************************************************************************************************//
-    //                2: impl interface methods(6)                                                                   //                                                                                  //
+    //                2: impl interface methods(5)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public boolean isPeriodic() {
         return delayTime != 0;
@@ -66,7 +66,7 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
 
     //retrieve result of prev call
     public Object getPrevCallResult() throws BeeTaskException {
-        if (!isPeriodic()) throw new BeeTaskException("Just support periodic schedule");
+        if (!isPeriodic()) throw new BeeTaskException("Only support periodic schedule");
         if (prevState == TASK_RESULT) return prevCallResult;
         if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevCallResult;
         throw new BeeTaskException("Task not be called or not done until current");
@@ -83,7 +83,7 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
             this.prevCallTime = this.nextRunTime;
 
             long startTime = fixedDelay ? System.nanoTime() : nextRunTime;
-            this.nextRunTime = calculateNextRunTime(startTime, delayTime);
+            this.nextRunTime = startTime + delayTime;
             this.curState.set(TASK_WAITING);
             return true;
         } else {
