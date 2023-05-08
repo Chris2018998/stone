@@ -18,7 +18,7 @@ package org.stone.beetp.pool;
 public class TaskPoolStaticUtil {
     //task state
     public static final int TASK_WAITING = 1;//waiting to be called
-    public static final int TASK_CALLING = 2;//executing in worker thread
+    public static final int TASK_EXECUTING = 2;//executing in worker thread
     public static final int TASK_CANCELLED = 3;
     public static final int TASK_RESULT = 4;
     public static final int TASK_EXCEPTION = 5;
@@ -29,6 +29,7 @@ public class TaskPoolStaticUtil {
     static final int POOL_TERMINATED = 3;
     //worker state
     static final Object WORKER_IDLE = new Object();
+    static final Object WORKER_WORKING = new Object();
     static final Object WORKER_TERMINATED = new Object();
 
     //calculate next execution time(Nanoseconds)

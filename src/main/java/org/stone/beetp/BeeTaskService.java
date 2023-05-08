@@ -10,7 +10,7 @@
 package org.stone.beetp;
 
 import org.stone.beetp.pool.TaskPoolStaticUtil;
-import org.stone.beetp.pool.exception.TaskCalledException;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.ArrayList;
@@ -214,7 +214,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
 
             //6:if execution exception filled in callback object,then throw it
             if (callback.failCause != null) throw callback.failCause;
-            throw new TaskCalledException("Execute failed");
+            throw new TaskExecutionException("Execute failed");
         } finally {
             //7:cancel not done tasks
             for (BeeTaskHandle handle : handleList)
@@ -288,7 +288,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         private final Thread callThread;
         private final AtomicInteger doneCount;
         private volatile BeeTaskHandle completedHandle;//we don't care who arrive firstly
-        private volatile TaskCalledException failCause;
+        private volatile TaskExecutionException failCause;
 
         AnyCallback(int taskTotalSize) {
             this.taskSize = taskTotalSize;
@@ -303,8 +303,8 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         public void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle) {
             boolean hasWakeup = false;
             try {
-                if (TaskPoolStaticUtil.TASK_EXCEPTION == doneCode && doneResp instanceof TaskCalledException)
-                    this.failCause = (TaskCalledException) doneResp;
+                if (TaskPoolStaticUtil.TASK_EXCEPTION == doneCode && doneResp instanceof TaskExecutionException)
+                    this.failCause = (TaskExecutionException) doneResp;
                 else if (TaskPoolStaticUtil.TASK_RESULT == doneCode) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);

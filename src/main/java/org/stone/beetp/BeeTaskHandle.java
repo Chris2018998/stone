@@ -24,7 +24,7 @@ public interface BeeTaskHandle<T> {
     //***************************************************************************************************************//
     boolean isDone();
 
-    boolean isCalling();
+    boolean isExecuting();
 
     boolean isCancelled();
 

@@ -64,11 +64,6 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
         return nextRunTime;
     }
 
-    //override,periodic is never done
-    public boolean isDone() {
-        return !isPeriodic() && curState.get() > TASK_CALLING;
-    }
-
     //retrieve result of prev call
     public Object getPrevCallResult() throws BeeTaskException {
         if (!isPeriodic()) throw new BeeTaskException("Just support periodic schedule");

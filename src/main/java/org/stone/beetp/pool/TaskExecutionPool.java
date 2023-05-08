@@ -11,7 +11,7 @@ package org.stone.beetp.pool;
 
 import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
-import org.stone.beetp.pool.exception.TaskCalledException;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskRejectedException;
 import org.stone.util.SortedArray;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
@@ -128,7 +128,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (this.poolState != POOL_READY)
             throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
         //2:task config check
-        if (taskConfig == null) throw new TaskCalledException("Task can't be null");
+        if (taskConfig == null) throw new TaskExecutionException("Task can't be null");
         taskConfig.check();
 
         //3:offer test(check failed then throws rejection exception)
@@ -400,7 +400,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     }
                 }
             } catch (Throwable e) {
-                handle.setDone(TASK_EXCEPTIONAL, new TaskCalledException(e));
+                handle.setDone(TASK_EXCEPTIONAL, new TaskExecutionException(e));
                 if (poolInterceptor != null) {
                     try {
                         poolInterceptor.afterThrowing(task, e, handle);

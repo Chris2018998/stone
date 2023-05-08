@@ -55,11 +55,11 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     //                2: curState methods(3)                                                                         //
     //***************************************************************************************************************//
     public boolean isDone() {
-        return curState.get() > TASK_CALLING;
+        return curState.get() > TASK_EXECUTING;
     }
 
-    public boolean isCalling() {
-        return curState.get() == TASK_CALLING;
+    public boolean isExecuting() {
+        return curState.get() == TASK_EXECUTING;
     }
 
     public boolean isCancelled() {
@@ -79,7 +79,7 @@ public class TaskExecuteHandle implements BeeTaskHandle {
         }
 
         //2: try to interrupt worker thread(an execution failed exception will set back to the handle by worker thread)
-        if (mayInterruptIfRunning && curState.get() == TASK_CALLING && workerThread != null) {
+        if (mayInterruptIfRunning && curState.get() == TASK_EXECUTING && workerThread != null) {
             Thread.State threadState = workerThread.getState();
             if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
                 workerThread.interrupt();
@@ -158,7 +158,7 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     }
 
     boolean setAsRunning() {//call in worker thread after task polled from queue
-        if (curState.compareAndSet(TASK_WAITING, TASK_CALLING)) {
+        if (curState.compareAndSet(TASK_WAITING, TASK_EXECUTING)) {
             this.workerThread = Thread.currentThread();
             return true;
         }
