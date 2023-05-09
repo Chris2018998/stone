@@ -40,24 +40,26 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
     private String poolName;
     private volatile int poolState;
-    private int maxQueueSize;
+    //part1:control parameters
+    private int maxTaskSize;
     private int maxWorkerSize;
     private boolean workerInDaemon;
     private long workerKeepAliveTime;
-
+    //part2:pool monitor info
+    private AtomicInteger taskCount;
+    private AtomicInteger workerCount;
+    private AtomicLong taskRunningCount;
+    private AtomicLong taskCompletedCount;
     private TaskPoolMonitorVo monitorVo;
-    private AtomicInteger taskCountInQueue;
-    private AtomicInteger workerCountInQueue;
-    private AtomicLong runningTaskCount;
-    private AtomicLong completedTaskCount;
-
+    //part3:task schedule
     //store sortable scheduled tasks
     private SortedArray<TaskScheduledHandle> scheduledArray;
-    //peek first scheduled task,if time expired,then push it to execution queue
+    //a daemon thread wait on first task util it expired,then push it to execution queue
     private PoolScheduledTaskPeekThread scheduledTaskPeekThread;
+    //part4:task execution
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
     private ConcurrentLinkedQueue<TaskExecuteHandle> executionQueue;
-    //pool terminated wait queue
+    //part5:pool down wait queue
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -70,7 +72,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //step2: simple attribute set
         this.poolName = checkedConfig.getPoolName();
-        this.maxQueueSize = checkedConfig.getTaskMaxSize();
+        this.maxTaskSize = checkedConfig.getTaskMaxSize();
         this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
         this.workerInDaemon = checkedConfig.isWorkInDaemon();
         this.workerKeepAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
@@ -80,16 +82,16 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.executionQueue = new ConcurrentLinkedQueue<>();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-        //step4: creation of monitor fields
+        //step4: atomic fields of pool monitor
         this.monitorVo = new TaskPoolMonitorVo();
-        this.taskCountInQueue = new AtomicInteger();
-        this.workerCountInQueue = new AtomicInteger();
-        this.runningTaskCount = new AtomicLong();
-        this.completedTaskCount = new AtomicLong();
+        this.taskCount = new AtomicInteger();
+        this.workerCount = new AtomicInteger();
+        this.taskRunningCount = new AtomicLong();
+        this.taskCompletedCount = new AtomicLong();
 
         //step5: prepare to startup some worker threads by config
         int workerInitSize = config.getInitWorkerSize();
-        this.workerCountInQueue.set(workerInitSize);
+        this.workerCount.set(workerInitSize);
         for (int i = 0; i < workerInitSize; i++) {
             PoolWorkerThread worker = new PoolWorkerThread(this, null);
             workerQueue.offer(worker);
@@ -114,26 +116,53 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                2: task submit(3)                                                                              //                                                                                  //
+    //                2: task submit(2)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
-        return this.submit(new BeeTaskConfig(task));
+        return this.submit(task, null);
     }
 
-    public BeeTaskHandle submit(BeeTask task, BeeTaskCallback listener) throws BeeTaskException {
-        return this.submit(new BeeTaskConfig(task, listener));
+    public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
+
     }
 
+    //***************************************************************************************************************//
+    //                3: task schedule(6)                                                                            //                                                                                  //
+    //***************************************************************************************************************//
+    public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException {
+        return this.schedule(task, delay, unit);
+    }
+
+    public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
+
+    }
+
+    public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException {
+        return this.scheduleAtFixedRate(task, initialDelay, period, unit);
+    }
+
+    public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
+
+    }
+
+    public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit) throws BeeTaskException {
+        return this.scheduleWithFixedDelay(task, initialDelay, delay, unit);
+    }
+
+    public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
+
+    }
+
+    //***************************************************************************************************************//
+    //                4: task schedule(6)                                                                            //                                                                                  //
+    //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTaskConfig taskConfig) throws BeeTaskException {
         //1:pool check
         if (this.poolState != POOL_RUNNING)
             throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
-        //2:task config check
-        if (taskConfig == null) throw new TaskExecutionException("Task can't be null");
-        taskConfig.check();
-
         //3:offer test(check failed then throws rejection exception)
         if (!offerTest()) throw new TaskRejectedException("Pool was full,task rejected");
+
 
         //4:create task handle by config
         TaskExecuteHandle handle = createTaskHandle(taskConfig);
@@ -161,19 +190,16 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //true,pool not full;false,pool full
     private boolean offerTest() {
         do {
-            int currentSize = taskCountInQueue.get();
-            if (currentSize >= maxQueueSize) return false;//pool is full
-            if (taskCountInQueue.compareAndSet(currentSize, currentSize + 1))
+            int currentSize = taskCount.get();
+            if (currentSize >= maxTaskSize) return false;//pool is full
+            if (taskCount.compareAndSet(currentSize, currentSize + 1))
                 return true;
         } while (true);
     }
 
     //push task to execution queue(**scheduled peek thread call this method to push task**)
     private void pushToExecutionQueue(TaskExecuteHandle taskHandle) {
-        //1:offer to task queue
-        executionQueue.offer(taskHandle);
-
-        //2:try to wakeup a idle worker to handle the task
+        //1:try to wakeup a idle worker to handle the task
         for (PoolWorkerThread workerThread : workerQueue) {
             if (workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
                 LockSupport.unpark(workerThread);
@@ -181,11 +207,17 @@ public final class TaskExecutionPool implements BeeTaskPool {
             }
         }
 
-        //3:if not exists an idle worker,then try to create a new worker to handle it
+        //2:try to create a new worker to handle it
         do {
-            int currentCount = this.workerCountInQueue.get();
-            if (currentCount >= this.maxWorkerSize) return;
-            if (workerCountInQueue.compareAndSet(currentCount, currentCount + 1)) {
+            int currentCount = this.workerCount.get();
+            //2.1:worker full
+            if (currentCount >= this.maxWorkerSize) {
+                executionQueue.offer(taskHandle);
+                return;
+            }
+
+            //2.2worker not full
+            if (workerCount.compareAndSet(currentCount, currentCount + 1)) {
                 PoolWorkerThread worker = new PoolWorkerThread(this, taskHandle);
                 workerQueue.offer(worker);
                 worker.start();
@@ -194,22 +226,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
         } while (true);
     }
 
-    //create task handle
-    private TaskExecuteHandle createTaskHandle(BeeTaskConfig taskConfig) {
-        if (taskConfig.getInitDelayTime() != 0 || taskConfig.getPeriodDelayTime() != 0) {
-            return new TaskExecuteHandle(taskConfig.getTask(),
-                    TASK_WAITING, taskConfig.getCallback(), this);
-        } else {
-            TaskScheduledHandle handle = new TaskScheduledHandle(taskConfig.getTask(),
-                    TASK_WAITING, taskConfig.getCallback(), this);
-
-            //@todo time caluate
-            long delayNanoseconds = taskConfig.getTimeUnit().toNanos(taskConfig.getPeriodDelayTime());
-            long firstExecutionTime = 0;
-            handle.setScheduledTime(firstExecutionTime, delayNanoseconds, taskConfig.getFixedRateDelay());
-            return handle;
-        }
-    }
 
     //remove from array or queue
     void removeCancelledTask(TaskExecuteHandle handle) {
@@ -428,10 +444,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                4: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
-        monitorVo.setWorkerCount(workerCountInQueue.get());
-        monitorVo.setQueueTaskCount(taskCountInQueue.get());
-        monitorVo.setRunningTaskCount(runningTaskCount.get());
-        monitorVo.setCompletedTaskCount(completedTaskCount.get());
+        monitorVo.setWorkerCount(workerCount.get());
+        monitorVo.setQueueTaskCount(taskCount.get());
+        monitorVo.setRunningTaskCount(taskRunningCount.get());
+        monitorVo.setCompletedTaskCount(taskCompletedCount.get());
         return monitorVo;
     }
 
@@ -571,5 +587,21 @@ public final class TaskExecutionPool implements BeeTaskPool {
 //            } catch (Throwable e) {
 //                //do nothing
 //            }
+//        }
+//    }
+//    //create task handle
+//    private TaskExecuteHandle createTaskHandle(BeeTaskConfig taskConfig) {
+//        if (taskConfig.getInitDelayTime() != 0 || taskConfig.getPeriodDelayTime() != 0) {
+//            return new TaskExecuteHandle(taskConfig.getTask(),
+//                    TASK_WAITING, taskConfig.getCallback(), this);
+//        } else {
+//            TaskScheduledHandle handle = new TaskScheduledHandle(taskConfig.getTask(),
+//                    TASK_WAITING, taskConfig.getCallback(), this);
+//
+//            //@todo time caluate
+//            long delayNanoseconds = taskConfig.getTimeUnit().toNanos(taskConfig.getPeriodDelayTime());
+//            long firstExecutionTime = 0;
+//            handle.setScheduledTime(firstExecutionTime, delayNanoseconds, taskConfig.getFixedRateDelay());
+//            return handle;
 //        }
 //    }
