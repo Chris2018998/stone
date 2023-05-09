@@ -21,19 +21,19 @@ import java.util.concurrent.TimeUnit;
 public interface BeeTaskPool {
 
     //***************************************************************************************************************//
-    //                1: pool initialize method(1)                                                                   //                                                                                  //
+    //                1: pool initialize method(1)                                                                   //
     //***************************************************************************************************************//
     void init(BeeTaskServiceConfig config) throws BeeTaskPoolException, BeeTaskServiceConfigException;
 
     //***************************************************************************************************************//
-    //                2: task submit(2)                                                                              //                                                                                  //
+    //                2: task submit(2)                                                                              //
     //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws BeeTaskException;
 
     BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException;
 
     //***************************************************************************************************************//
-    //                3: task schedule(6)                                                                            //                                                                                  //
+    //                3: task schedule(6)                                                                            //
     //***************************************************************************************************************//
     BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException;
 
