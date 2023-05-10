@@ -180,9 +180,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
             throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
         }
 
-        if (index == 0) {
-            //@todo wakeup schedule peek thread to wait on it
-        }
+        if (index == 0) wakeupSchedulePeekThread();
         return handle;
     }
 
@@ -245,16 +243,16 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //remove from array or queue
     void removeCancelledTask(TaskExecuteHandle handle) {
         if (handle instanceof TaskScheduledHandle) {
-            if (scheduledArray.remove((TaskScheduledHandle) handle) > -1) {
-                taskCount.decrementAndGet();
-            }
+            int taskIndex = scheduledArray.remove((TaskScheduledHandle) handle);
+            if (taskIndex > -1) taskCount.decrementAndGet();
+            if (taskIndex == 0) wakeupSchedulePeekThread();
         } else if (executionQueue.remove(handle)) {
             taskCount.decrementAndGet();
         }
     }
 
     //***************************************************************************************************************//
-    //                4: Execute Task(1)                                                                             //                                                                                  //
+    //                4: Execute Task(1)                                                                             //
     //***************************************************************************************************************//
     private void executeTask(TaskExecuteHandle handle) {
         try {
@@ -282,16 +280,19 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
                 if (scheduledHandle.isPeriodic()) {
                     scheduledHandle.prepareForNextCall();
-                    if (scheduledArray.add(scheduledHandle) == 0) {
-                        //@todo wakeup peek thread
-                    }
-                } else {
+                    if (scheduledArray.add(scheduledHandle) == 0)
+                        wakeupSchedulePeekThread();
+                } else {//one time task,so end
                     taskCompletedCount.incrementAndGet();
                 }
             } else {
                 taskCompletedCount.incrementAndGet();
             }
         }
+    }
+
+    private void wakeupSchedulePeekThread() {
+
     }
 
     //***************************************************************************************************************//
@@ -413,9 +414,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
-        monitorVo.setQueueTaskCount(taskCount.get());
-        monitorVo.setRunningTaskCount(taskRunningCount.get());
-        monitorVo.setCompletedTaskCount(taskCompletedCount.get());
+        monitorVo.setTaskCount(taskCount.get());
+        monitorVo.setTaskRunningCount(taskRunningCount.get());
+        monitorVo.setTaskCompletedCount(taskCompletedCount.get());
         return monitorVo;
     }
 
@@ -501,75 +502,3 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 }
-
-//    private interface TaskRejectPolicy {
-//        //true:rejected;false:continue;
-//        boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskException, BeeTaskPoolException;
-//    }
-//
-//    private static class TaskAbortPolicy implements TaskRejectPolicy {
-//        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskPoolException {
-//            throw new PoolSubmitRejectedException("");
-//        }
-//    }
-//
-//    private static class TaskDiscardPolicy implements TaskRejectPolicy {
-//        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) {
-//            return true;
-//        }
-//    }
-//
-//    private static class TaskRemoveOldestPolicy implements TaskRejectPolicy {
-//        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) {
-//            TaskExecuteHandle oldTask = pool.executionQueue.poll();
-//            if (oldTask != null) {
-//                pool.taskCountInQueue.decrementAndGet();
-//                oldTask.setCurState(TASK_CANCELLED);
-//                oldTask.wakeupWaiters();
-//            }
-//            return false;
-//        }
-//    }
-//
-//    private static class TaskCallerRunsPolicy implements TaskRejectPolicy {
-//        public boolean rejectTask(BeeTask task, TaskExecutionPool pool) throws BeeTaskException {
-//            try {
-//                task.call();
-//                return true;
-//            } catch (Throwable e) {
-//                throw new BeeTaskException(e);
-//            }
-//        }
-//    }
-
-//    private static class PoolExitJvmHook extends Thread {
-//        private final TaskExecutionPool pool;
-//
-//        PoolExitJvmHook(TaskExecutionPool pool) {
-//            this.pool = pool;
-//        }
-//
-//        public void run() {
-//            try {
-//                pool.terminate(pool.interruptWorkerOnClear);
-//            } catch (Throwable e) {
-//                //do nothing
-//            }
-//        }
-//    }
-//    //create task handle
-//    private TaskExecuteHandle createTaskHandle(BeeTaskConfig taskConfig) {
-//        if (taskConfig.getInitDelayTime() != 0 || taskConfig.getPeriodDelayTime() != 0) {
-//            return new TaskExecuteHandle(taskConfig.getTask(),
-//                    TASK_WAITING, taskConfig.getCallback(), this);
-//        } else {
-//            TaskScheduledHandle handle = new TaskScheduledHandle(taskConfig.getTask(),
-//                    TASK_WAITING, taskConfig.getCallback(), this);
-//
-//            //@todo time caluate
-//            long delayNanoseconds = taskConfig.getTimeUnit().toNanos(taskConfig.getPeriodDelayTime());
-//            long firstExecutionTime = 0;
-//            handle.setScheduledTime(firstExecutionTime, delayNanoseconds, taskConfig.getFixedRateDelay());
-//            return handle;
-//        }
-//    }

@@ -77,7 +77,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                3: task schedule(6)                                                                            //
+    //                              3: task schedule(6)                                                              //
     //***************************************************************************************************************//
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit);
@@ -188,7 +188,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 //4.2:submit a task to pool
                 handleList.add(pool.submit(task, callback));
                 //4.3:timeout check
-                if (timed && deadline - System.nanoTime() <= 0) throw new TaskResultGetTimeoutException("Timeout");
+                if (timed && deadline - System.nanoTime() <= 0) throw new TaskResultGetTimeoutException();
             }
 
             //5:spin to get a completed handle

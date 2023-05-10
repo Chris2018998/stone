@@ -23,8 +23,4 @@ public final class TaskCancelledException extends BeeTaskException {
         super(message);
     }
 
-    public TaskCancelledException(Throwable cause) {
-        super(cause);
-    }
-
 }

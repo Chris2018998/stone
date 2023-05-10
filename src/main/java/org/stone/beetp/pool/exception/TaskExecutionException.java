@@ -21,10 +21,6 @@ public final class TaskExecutionException extends BeeTaskException {
     public TaskExecutionException() {
     }
 
-    public TaskExecutionException(String message) {
-        super(message);
-    }
-
     public TaskExecutionException(Throwable cause) {
         super(cause);
     }
