@@ -202,7 +202,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 //5.3:parking(ThreadParkSupport is a better choice?)
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
-                    if (parkTime <= 0) throw new TaskResultGetTimeoutException("Timeout");
+                    if (parkTime <= 0) throw new TaskResultGetTimeoutException();
                     LockSupport.parkNanos(parkTime);
                 } else {
                     LockSupport.park();
