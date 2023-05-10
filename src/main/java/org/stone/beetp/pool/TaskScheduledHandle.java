@@ -24,22 +24,22 @@ import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
  */
 public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeTaskScheduledHandle {
     private long nextRunTime;//time sortable
-    private long delayTime;
+    private long intervalTime;//nano seconds
     private boolean fixedDelay;
 
     //only support periodic
     private int prevState;
-    private long prevCallTime;
-    private Object prevCallResult;
+    private long prevTime;
+    private Object prevResult;
 
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     TaskScheduledHandle(BeeTask task, BeeTaskCallback callback, TaskExecutionPool pool,
-                        long firstRunTime, long delayTime, boolean fixedDelay) {
+                        long firstRunTime, long intervalTime, boolean fixedDelay) {
         super(task, callback, pool);
         this.nextRunTime = firstRunTime;//first run time
-        this.delayTime = delayTime;
+        this.intervalTime = intervalTime;
         this.fixedDelay = fixedDelay;//true:calculate next run time from task prev call end t
     }
 
@@ -47,7 +47,7 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     //                2: impl interface methods(5)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public boolean isPeriodic() {
-        return delayTime != 0;
+        return intervalTime != 0;
     }
 
     public boolean isFixedDelay() {
@@ -56,7 +56,7 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
 
     //nanoseconds(less than System.nanoTime())
     public long getPrevTime() {
-        return prevCallTime;
+        return prevTime;
     }
 
     //value should be more than System.nanoTime(),when call done,then update time for next call
@@ -67,8 +67,8 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     //retrieve result of prev call
     public Object getPrevResult() throws BeeTaskException {
         if (!isPeriodic()) throw new BeeTaskException("Only support periodic schedule");
-        if (prevState == TASK_RESULT) return prevCallResult;
-        if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevCallResult;
+        if (prevState == TASK_RESULT) return prevResult;
+        if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevResult;
         throw new BeeTaskException("Task not be called or not done until current");
     }
 
@@ -79,11 +79,9 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     boolean prepareForNextCall() {
         if (isPeriodic()) {
             this.prevState = this.curState.get();
-            this.prevCallResult = this.curResult;
-            this.prevCallTime = this.nextRunTime;
-
-            long startTime = fixedDelay ? System.nanoTime() : nextRunTime;
-            this.nextRunTime = startTime + delayTime;
+            this.prevResult = this.curResult;
+            this.prevTime = this.nextRunTime;
+            this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
             this.curState.set(TASK_WAITING);//reset to waiting state for next call
             return true;
         } else {

@@ -30,7 +30,6 @@ import java.util.concurrent.locks.LockSupport;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
 
-
 /**
  * Task Pool Impl
  *
@@ -112,7 +111,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.scheduledTaskPeekThread = new PoolScheduledTaskPeekThread(this);
         this.scheduledTaskPeekThread.start();
 
-        //step7: set pool state to be ready for submitting tasks
+        //step7: set pool state to be ready for coming tasks
         this.poolState = POOL_RUNNING;
     }
 
@@ -124,10 +123,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task check
-        if (task == null) throw new BeeTaskException("Task can't be null");
-        taskOfferTest();
-
+        //1:task entrance test
+        taskAllowEnteringTest(task, false, 0, 0, 0, null);
         //2:create handle and push it to execution queue
         TaskExecuteHandle handle = new TaskExecuteHandle(task, callback, this);
         this.pushToExecutionQueue(handle);
@@ -138,52 +135,43 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                3: task schedule(6)                                                                            //
     //***************************************************************************************************************//
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException {
-        return this.schedule(task, delay, unit);
+        return this.schedule(task, delay, unit, null);
     }
 
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task check
-        if (task == null) throw new BeeTaskException("Task can't be null");
-        if (unit == null) throw new BeeTaskException("Time unit can't be null");
-        if (delay < 0) throw new BeeTaskException("delay can't be less than zero");
-        this.taskOfferTest();
-
-        //2:create schedule handle
-        return addScheduleTask(task, callback, System.nanoTime() + unit.toNanos(delay), 0, false);
+        //1:task entrance test
+        taskAllowEnteringTest(task, true, 1, delay, 0, unit);
+        //2:add a schedule handle to pool
+        long firstTime = System.nanoTime() + unit.toNanos(delay);
+        return addScheduleTask(task, callback, firstTime, 0, false);
     }
 
     public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit) throws BeeTaskException {
-        return this.scheduleAtFixedRate(task, initialDelay, period, unit);
+        return this.scheduleAtFixedRate(task, initialDelay, period, unit, null);
     }
 
     public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
-        if (task == null) throw new BeeTaskException("Task can't be null");
-        if (unit == null) throw new BeeTaskException("Time unit can't be null");
-        if (period <= 0) throw new BeeTaskException("period must be greater than zero");
-        if (initialDelay < 0) throw new BeeTaskException("initialDelay can't be less than zero");
-        this.taskOfferTest();
-
-        //2:create schedule handle
-        return addScheduleTask(task, callback, System.nanoTime() + unit.toNanos(initialDelay), unit.toNanos(period), false);
+        //1:task entrance test
+        taskAllowEnteringTest(task, true, 2, initialDelay, period, unit);
+        //2:add a schedule handle to pool
+        long firstTime = System.nanoTime() + unit.toNanos(initialDelay);
+        return addScheduleTask(task, callback, firstTime, unit.toNanos(period), false);
     }
 
     public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit) throws BeeTaskException {
-        return this.scheduleWithFixedDelay(task, initialDelay, delay, unit);
+        return this.scheduleWithFixedDelay(task, initialDelay, delay, unit, null);
     }
 
     public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
-        if (task == null) throw new BeeTaskException("Task can't be null");
-        if (unit == null) throw new BeeTaskException("Time unit can't be null");
-        if (delay <= 0) throw new BeeTaskException("delay must be greater than zero");
-        if (initialDelay < 0) throw new BeeTaskException("initialDelay can't be less than zero");
-        this.taskOfferTest();
-
-        return addScheduleTask(task, callback, System.nanoTime() + unit.toNanos(initialDelay), unit.toNanos(delay), true);
+        //1:task entrance test
+        taskAllowEnteringTest(task, true, 2, initialDelay, delay, unit);
+        //2:add a schedule handle to pool
+        long firstTime = System.nanoTime() + unit.toNanos(initialDelay);
+        return addScheduleTask(task, callback, firstTime, unit.toNanos(delay), true);
     }
 
     private TaskScheduledHandle addScheduleTask(BeeTask task, BeeTaskCallback callback, long firstTime, long intervalTime, boolean fixedDelay) throws BeeTaskException {
-        TaskScheduledHandle handle = new TaskScheduledHandle(task, callback, this,
-                firstTime, intervalTime, fixedDelay);
+        TaskScheduledHandle handle = new TaskScheduledHandle(task, callback, this, firstTime, intervalTime, fixedDelay);
 
         int index = scheduledArray.add(handle);
         if (this.poolState != POOL_RUNNING) {
@@ -193,21 +181,31 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         if (index == 0) {
-            //@todo wakeup schedule peek thread
+            //@todo wakeup schedule peek thread to wait on it
         }
-
         return handle;
     }
 
     //***************************************************************************************************************//
-    //                3: task create();                                                                              //                                                                                  //
+    //                3: task entry(3)                                                                               //                                                                                  //
     //***************************************************************************************************************//
-    private void taskOfferTest() throws BeeTaskException {
-        //1: pool state check
+    private void taskAllowEnteringTest(BeeTask task, boolean scheduleInd, int scheduleType,
+                                       long initialDelay, long intervalTime, TimeUnit unit) throws BeeTaskException {
+        //1:task test
+        if (task == null) throw new BeeTaskException("Task can't be null");
+        if (scheduleInd) {
+            if (unit == null) throw new BeeTaskException("Time unit can't be null");
+            if (initialDelay < 0)
+                throw new BeeTaskException(scheduleType == 1 ? "Delay" : "Initial delay" + " time can't be less than zero");
+            if (intervalTime <= 0 && scheduleType != 1)
+                throw new BeeTaskException(scheduleType == 2 ? "Period" : "Delay" + " time must be greater than zero");
+        }
+
+        //2: pool state check
         if (this.poolState != POOL_RUNNING)
             throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
 
-        //2:try to increment task count,failed,throws exception
+        //3:try to increment task count,failed,throws exception
         do {
             int currentSize = taskCount.get();
             if (currentSize >= maxTaskSize) throw new TaskRejectedException("Pool was full,task rejected");
