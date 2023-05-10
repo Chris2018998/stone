@@ -187,7 +187,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                3: task entry(3)                                                                               //                                                                                  //
+    //                3: task enter(3)                                                                               //                                                                                  //
     //***************************************************************************************************************//
     private void taskAllowEnteringTest(BeeTask task, boolean scheduleInd, int scheduleType,
                                        long initialDelay, long intervalTime, TimeUnit unit) throws BeeTaskException {
@@ -254,7 +254,48 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                3: Pool terminate and clear(5)                                                                 //                                                                                  //
+    //                4: Execute Task(1)                                                                             //                                                                                  //
+    //***************************************************************************************************************//
+    private void executeTask(TaskExecuteHandle handle) {
+        try {
+            //1: execute callback
+            BeeTask task = handle.getTask();
+            BeeTaskCallback callback = handle.getCallback();
+            if (callback != null) {
+                try {
+                    callback.beforeCall(handle);
+                } catch (Throwable e) {
+                    //do nothing
+                }
+            }
+
+            //2: execute task
+            try {
+                Object result = task.call();
+                handle.setDone(TASK_RESULT, result);
+            } catch (Throwable e) {
+                handle.setDone(TASK_EXCEPTION, new TaskExecutionException(e));
+            }
+        } finally {
+            taskRunningCount.decrementAndGet();
+            if (handle instanceof TaskScheduledHandle) {
+                TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
+                if (scheduledHandle.isPeriodic()) {
+                    scheduledHandle.prepareForNextCall();
+                    if (scheduledArray.add(scheduledHandle) == 0) {
+                        //@todo wakeup peek thread
+                    }
+                } else {
+                    taskCompletedCount.incrementAndGet();
+                }
+            } else {
+                taskCompletedCount.incrementAndGet();
+            }
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                5: Pool terminate and clear(5)                                                                 //                                                                                  //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return poolState == POOL_TERMINATED;
@@ -286,25 +327,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
             List<BeeTask> queueTaskList = new LinkedList<>();
             while ((taskHandle = executionQueue.poll()) != null) {
                 queueTaskList.add(taskHandle.getTask());
-                taskHandle.setCurState(TASK_CANCELLED);
-                taskHandle.wakeupWaiters();
+                taskHandle.setDone(TASK_CANCELLED, null);
             }
 
             this.poolState = POOL_TERMINATED;
             this.wakeupTerminationWaiters();
-            if (poolInterceptor != null) {
-                try {
-                    poolInterceptor.afterTerminated();
-                } catch (Throwable ee) {
-                    //do nothing
-                }
-            }
-
-//            try {
-//                Runtime.getRuntime().removeShutdownHook(this.exitHook);
-//            } catch (Throwable e) {
-//                //do nothing
-//            }
             return queueTaskList;
         } else {
             throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
@@ -315,8 +342,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
             TaskExecuteHandle taskHandle;
             while ((taskHandle = executionQueue.poll()) != null) {
-                taskHandle.setCurState(TASK_CANCELLED);
-                taskHandle.wakeupWaiters();
+                taskHandle.setDone(TASK_CANCELLED, null);
             }
 
             PoolWorkerThread worker;
@@ -382,74 +408,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 
-    //execute task
-    private void executeTask(TaskExecuteHandle handle) {
-        try {
-            handle.setWorkThread(Thread.currentThread());
-            runningTaskCount.incrementAndGet();
-            BeeTask task = handle.getTask();
-            //1: execute pool interceptor
-            if (poolInterceptor != null) {
-                try {
-                    poolInterceptor.beforeCall(task, handle);
-                } catch (Throwable e) {
-                    //do nothing
-                }
-            }
-            //2: execute task aspect
-            BeeTaskCallback aspect = task.getAspect();
-            if (aspect != null) {
-                try {
-                    aspect.beforeCall(handle);
-                } catch (Throwable e) {
-                    //do nothing
-                }
-            }
-            //3: execute task
-            try {
-                Object result = task.call();
-                handle.setDone(TASK_CALL_RESULT, result);
-
-                if (poolInterceptor != null) {
-                    try {
-                        poolInterceptor.afterCall(task, result, handle);
-                    } catch (Throwable e) {
-                        //do nothing
-                    }
-                }
-                if (aspect != null) {
-                    try {
-                        aspect.onReturn(result, handle);
-                    } catch (Throwable e) {
-                        //do nothing
-                    }
-                }
-            } catch (Throwable e) {
-                handle.setDone(TASK_EXCEPTIONAL, new TaskExecutionException(e));
-                if (poolInterceptor != null) {
-                    try {
-                        poolInterceptor.afterThrowing(task, e, handle);
-                    } catch (Throwable ee) {
-                        //do nothing
-                    }
-                }
-                if (aspect != null) {
-                    try {
-                        aspect.onCatch(e, handle);
-                    } catch (Throwable ee) {
-                        //do nothing
-                    }
-                }
-            }
-        } finally {
-            handle.setWorkThread(null);
-            runningTaskCount.decrementAndGet();
-            completedTaskCount.incrementAndGet();
-        }
-    }
-
     //***************************************************************************************************************//
-    //                4: Pool monitor(1)                                                                             //                                                                                  //
+    //                6: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
@@ -460,8 +420,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-//                5: Inner interfaces and classes (7)                                                            //                                                                                  //
-//***************************************************************************************************************//
+    //                7: Inner interfaces and classes (7)                                                            //                                                                                  //
+    //***************************************************************************************************************//
     private static class PoolWorkerThread extends Thread {
         private static final AtomicInteger Index = new AtomicInteger(1);
         private final TaskExecutionPool pool;
@@ -500,7 +460,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 if (state instanceof TaskExecuteHandle) {
                     task = (TaskExecuteHandle) state;
                 } else if ((task = taskQueue.poll()) != null) {
-                    pool.workerCountInQueue.decrementAndGet();
+                    pool.workerCount.decrementAndGet();
                 }
 
                 //3: execute task
@@ -519,7 +479,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 Thread.interrupted();
             } while (true);
 
-            pool.workerCountInQueue.decrementAndGet();
+            pool.workerCount.decrementAndGet();
             pool.workerQueue.remove(this);
         }
     }
