@@ -157,6 +157,10 @@ public class TaskExecuteHandle implements BeeTaskHandle {
         curState.set(update);
     }
 
+    boolean compareAndSetState(int expect, int update) {
+        return curState.compareAndSet(expect, update);
+    }
+
     boolean setAsRunning() {//call in worker thread after task polled from queue
         if (curState.compareAndSet(TASK_WAITING, TASK_EXECUTING)) {
             this.workerThread = Thread.currentThread();

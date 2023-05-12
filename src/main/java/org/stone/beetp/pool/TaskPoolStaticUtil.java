@@ -29,6 +29,7 @@ public class TaskPoolStaticUtil {
     static final int POOL_TERMINATED = 3;
     //worker state
     static final Object WORKER_IDLE = new Object();
+    static final Object WORKER_WORKING = new Object();
     static final Object WORKER_TERMINATED = new Object();
 }
 
