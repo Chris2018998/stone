@@ -49,7 +49,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //*part2:atomic numbers of pool monitor
     private AtomicInteger workerCount;
     //number of tasks in queue and array(once count + scheduled count)
-    private AtomicInteger taskWaitingCount;
+    private AtomicInteger taskHoldingCount;
     private AtomicLong taskRunningCount;
     private AtomicLong taskCompletedCount;
     private TaskPoolMonitorVo monitorVo;
@@ -90,7 +90,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //step4: atomic fields of pool monitor
         this.monitorVo = new TaskPoolMonitorVo();
-        this.taskWaitingCount = new AtomicInteger();
+        this.taskHoldingCount = new AtomicInteger();
         this.workerCount = new AtomicInteger();
         this.taskRunningCount = new AtomicLong();
         this.taskCompletedCount = new AtomicLong();
@@ -183,7 +183,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         int index = scheduledArray.add(handle);
         if (this.poolState != POOL_RUNNING) {//recheck pool state,if shutdown,then cancel task
             if (handle.setAsCancelled()) {
-                if (scheduledArray.remove(handle) >= 0) taskWaitingCount.decrementAndGet();
+                if (scheduledArray.remove(handle) >= 0) taskHoldingCount.decrementAndGet();
                 throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
             }
         }
@@ -213,9 +213,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //3: try to increment task count,failed,throws exception
         do {
-            int currentCount = taskWaitingCount.get();
+            int currentCount = taskHoldingCount.get();
             if (currentCount >= maxTaskSize) throw new TaskRejectedException("Pool was full,task rejected");
-            if (taskWaitingCount.compareAndSet(currentCount, currentCount + 1)) return;
+            if (taskHoldingCount.compareAndSet(currentCount, currentCount + 1)) return;
         } while (true);
     }
 
@@ -252,10 +252,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
     void removeCancelledTask(TaskExecuteHandle handle) {
         if (handle instanceof TaskScheduledHandle) {
             int taskIndex = scheduledArray.remove((TaskScheduledHandle) handle);
-            if (taskIndex >= 0) taskWaitingCount.decrementAndGet();
+            if (taskIndex >= 0) taskHoldingCount.decrementAndGet();
             if (taskIndex == 0) wakeupSchedulePeekThread();
         } else if (executionQueue.remove(handle)) {
-            taskWaitingCount.decrementAndGet();
+            taskHoldingCount.decrementAndGet();
         }
     }
 
@@ -422,7 +422,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
-        monitorVo.setTaskWaitingCount(taskWaitingCount.get());
+        monitorVo.setTaskWaitingCount(taskHoldingCount.get());
         monitorVo.setTaskRunningCount(taskRunningCount.get());
         monitorVo.setTaskCompletedCount(taskCompletedCount.get());
         return monitorVo;
@@ -470,9 +470,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     if (handle instanceof TaskScheduledHandle) {
                         TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
                         if (!scheduledHandle.isPeriodic())
-                            taskWaitingCount.decrementAndGet();
+                            taskHoldingCount.decrementAndGet();
                     } else {
-                        taskWaitingCount.decrementAndGet();
+                        taskHoldingCount.decrementAndGet();
                     }
 
                     if (handle.setAsRunning()) executeTask(handle);

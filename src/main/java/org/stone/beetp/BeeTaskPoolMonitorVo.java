@@ -19,7 +19,7 @@ public interface BeeTaskPoolMonitorVo {
 
     int getWorkerCount();
 
-    int getTaskWaitingCount();
+    int getTaskHoldingCount();
 
     long getTaskRunningCount();
 

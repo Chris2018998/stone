@@ -32,7 +32,7 @@ public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
         this.workerCount = workerCount;
     }
 
-    public int getTaskWaitingCount() {
+    public int getTaskHoldingCount() {
         return taskWaitingCount;
     }
 
