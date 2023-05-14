@@ -193,7 +193,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                4: task check(1)                                                                               //                                                                                  //
+    //                4: task check(1)                                                                               //
     //***************************************************************************************************************//
     private void taskCheck(BeeTask task, boolean scheduleInd, int scheduleType,
                            long initialDelay, long intervalTime, TimeUnit unit) throws BeeTaskException {
@@ -284,9 +284,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
                 if (scheduledHandle.isPeriodic()) {
                     scheduledHandle.prepareForNextCall();//reset to waiting state for next execution
-                    if (scheduledArray.add(scheduledHandle) == 0) {
+                    if (scheduledArray.add(scheduledHandle) == 0)
                         wakeupSchedulePeekThread();
-                    }
                 } else {//one timed task,so end
                     taskCompletedCount.incrementAndGet();
                 }
