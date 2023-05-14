@@ -104,14 +104,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
             worker.start();
         }
 
-        //step6: create task schedule
+        //step6: create task schedule objects
         this.scheduledArray = new SortedArray<>(TaskScheduledHandle.class, 0,
                 new Comparator<TaskScheduledHandle>() {
                     public int compare(TaskScheduledHandle handle1, TaskScheduledHandle handle2) {
                         long compareV = handle1.getNextTime() - handle2.getNextTime();
-                        if (compareV > 0) return 1;
+                        if (compareV < 0) return -1;
                         if (compareV == 0) return 0;
-                        return -1;
+                        return 1;
                     }
                 });
 
@@ -130,16 +130,16 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task entrance test
+        //1:task entrance test(passed,then increment holding count;failed,throws exception)
         taskCheck(task, false, 0, 0, 0, null);
-        //2:create handle and push it to execution queue
+        //2:create a handle and push it to execution queue
         TaskExecuteHandle handle = new TaskExecuteHandle(task, callback, this);
         this.pushToExecutionQueue(handle);
         return handle;
     }
 
     //***************************************************************************************************************//
-    //                3: task schedule(6)                                                                            //
+    //                3: task schedule(7)                                                                            //
     //***************************************************************************************************************//
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException {
         return this.schedule(task, delay, unit, null);
@@ -193,7 +193,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                3: task enter(3)                                                                               //                                                                                  //
+    //                4: task check(1)                                                                               //                                                                                  //
     //***************************************************************************************************************//
     private void taskCheck(BeeTask task, boolean scheduleInd, int scheduleType,
                            long initialDelay, long intervalTime, TimeUnit unit) throws BeeTaskException {
@@ -219,7 +219,14 @@ public final class TaskExecutionPool implements BeeTaskPool {
         } while (true);
     }
 
-    //push task to execution queue(**scheduled peek thread call this method to push task**)
+    //***************************************************************************************************************//
+    //                5: task execution(4)                                                                           //                                                                                  //
+    //***************************************************************************************************************//
+    private void wakeupSchedulePeekThread() {
+        LockSupport.unpark(scheduledTaskPeekThread);
+    }
+
+    //push task to execution queue(**scheduled peek thread calls this method to push task**)
     private void pushToExecutionQueue(TaskExecuteHandle taskHandle) {
         //1:try to wakeup a idle worker to handle the task
         for (PoolWorkerThread workerThread : workerQueue) {
@@ -238,7 +245,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 return;
             }
 
-            //2.2: create new worker with the task handle
+            //2.2: create a new worker with the task handle
             if (workerCount.compareAndSet(currentCount, currentCount + 1)) {
                 PoolWorkerThread worker = new PoolWorkerThread(taskHandle);
                 workerQueue.offer(worker);
@@ -248,20 +255,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         } while (true);
     }
 
-    //remove from array or queue
-    void removeCancelledTask(TaskExecuteHandle handle) {
-        if (handle instanceof TaskScheduledHandle) {
-            int taskIndex = scheduledArray.remove((TaskScheduledHandle) handle);
-            if (taskIndex >= 0) taskHoldingCount.decrementAndGet();
-            if (taskIndex == 0) wakeupSchedulePeekThread();
-        } else if (executionQueue.remove(handle)) {
-            taskHoldingCount.decrementAndGet();
-        }
-    }
-
-    //***************************************************************************************************************//
-    //                4: Execute Task(1)                                                                             //
-    //***************************************************************************************************************//
+    //works inside worker thread
     private void executeTask(TaskExecuteHandle handle) {
         try {
             //1: increment running count
@@ -302,12 +296,19 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 
-    private void wakeupSchedulePeekThread() {
-        LockSupport.unpark(scheduledTaskPeekThread);
+    //remove from array or queue(method called inside handle)
+    void removeCancelledTask(TaskExecuteHandle handle) {
+        if (handle instanceof TaskScheduledHandle) {
+            int taskIndex = scheduledArray.remove((TaskScheduledHandle) handle);
+            if (taskIndex >= 0) taskHoldingCount.decrementAndGet();//task removed successfully by call thread
+            if (taskIndex == 0) wakeupSchedulePeekThread();
+        } else if (executionQueue.remove(handle)) {
+            taskHoldingCount.decrementAndGet();
+        }
     }
 
     //***************************************************************************************************************//
-    //                5: Pool clear (1)                                                                              //                                                                                  //
+    //                6: Pool clear (1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
@@ -339,7 +340,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                6: Pool shutdown (4)                                                                           //                                                                                  //
+    //                7: Pool shutdown (4)                                                                           //                                                                                  //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return poolState == POOL_TERMINATED;
@@ -418,7 +419,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
 
     //***************************************************************************************************************//
-    //                6: Pool monitor(1)                                                                             //                                                                                  //
+    //                8: Pool monitor(1)                                                                             //                                                                                  //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
@@ -429,7 +430,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                7: Inner interfaces and classes (2)                                                            //                                                                                  //
+    //                9: Inner interfaces and classes (2)                                                            //                                                                                  //
     //***************************************************************************************************************//
     //tasks execution thread
     private class PoolWorkerThread extends Thread {
@@ -494,7 +495,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
     }
 
-    //timed tasks peek thread
     private class PoolScheduledTaskPeekThread extends Thread {
         PoolScheduledTaskPeekThread() {
             this.setName(poolName + "-ScheduledPeek");
