@@ -191,7 +191,5 @@ public class TaskExecuteHandle implements BeeTaskHandle {
             LockSupport.unpark(thread);
 
         this.workerThread = null;
-        this.task = null;
-        this.pool = null;
     }
 }

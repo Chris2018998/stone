@@ -76,16 +76,13 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
     //                3: preparation for next call(periodic)                                                         //
     //***************************************************************************************************************//
     //true:re-offer to array after this method call
-    boolean prepareForNextCall() {
+    void prepareForNextCall() {
         if (isPeriodic()) {
             this.prevState = this.curState.get();
             this.prevResult = this.curResult;
             this.prevTime = this.nextRunTime;
             this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
             this.curState.set(TASK_WAITING);//reset to waiting state for next call
-            return true;
-        } else {
-            return false;
         }
     }
 }

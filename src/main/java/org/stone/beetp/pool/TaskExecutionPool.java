@@ -499,7 +499,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         private final AtomicReference<Object> workState;
 
         PoolScheduledTaskPeekThread() {
-            this.setName(poolName + "-ScheduleTaskPeek");
+            this.setName(poolName + "-ScheduledPeek");
             this.setDaemon(true);
             this.workState = new AtomicReference<>(WORKER_WORKING);
         }
@@ -509,21 +509,19 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 //1: peek first task from array
                 TaskScheduledHandle taskHandle = scheduledArray.getFirst();
 
-                //2: if task is null,then park
                 if (taskHandle == null) {
-                    LockSupport.park();//park without time
+                    //2: if task is null,then park without time
+                    LockSupport.park();
                 } else {
-                    long timeNanos = taskHandle.getNextTime();//assume the time is after current time point
-                    long parkTime = timeNanos - System.nanoTime();
-                    if (parkTime <= 0) {//the task has been expired
+                    long parkTime = taskHandle.getNextTime() - System.nanoTime();
+                    //3: if task is expired,then remove it and push it to execution queue
+                    if (parkTime <= 0) {
                         scheduledArray.remove(taskHandle);
-                        if (taskHandle.curState.get() == TASK_WAITING) {
+                        if (taskHandle.curState.get() == TASK_WAITING)
                             pushToExecutionQueue(taskHandle);//push it to execution queue
-                        }
                     } else {
-                        //time out or unpark,then re-peek first
-                        LockSupport.park(timeNanos);
-                        Thread.interrupted();//clean interrupted status(if exists)
+                        //4: if task is not expired,then park util expired
+                        LockSupport.parkNanos(parkTime);
                     }
                 }
             }
