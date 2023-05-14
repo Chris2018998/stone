@@ -202,7 +202,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             new PoolInitAsynCreateThread(this).start();
 
         //step9: print pool info
-        Log.info("BeeCP({})has afterStartup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,driver:{}}",
+        Log.info("BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,driver:{}}",
                 poolName,
                 poolMode,
                 this.pooledArray.length,
