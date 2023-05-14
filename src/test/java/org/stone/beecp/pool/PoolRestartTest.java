@@ -41,7 +41,7 @@ public class PoolRestartTest extends TestCase {
         config2.setUsername(JdbcConfig.JDBC_USER);
         config2.setPassword(JdbcConfig.JDBC_PASSWORD);
         config2.setInitialSize(10);
-        pool.restart(true,config2);
+        pool.clear(true, config2);
         TestUtil.assertError("Total connections not as expected:%s,but current is:%s", 10, pool.getTotalSize());
         TestUtil.assertError("Idle connections not as expected:%s,but current is:%s", 10, pool.getIdleSize());
 

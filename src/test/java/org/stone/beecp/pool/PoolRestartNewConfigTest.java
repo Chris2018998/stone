@@ -34,7 +34,7 @@ public class PoolRestartNewConfigTest extends TestCase {
         FastConnectionPool pool = (FastConnectionPool) TestUtil.getFieldValue(ds, "pool");
         TestUtil.assertError("Total connections expected:%s,current is:%s", initSize, pool.getTotalSize());
         TestUtil.assertError("connections expected:%s,current is:%s", initSize, pool.getIdleSize());
-        pool.restart(false);
+        pool.clear(false);
 
         TestUtil.assertError("Total connections not as expected:%s,but current is:%s", 0, pool.getTotalSize());
         TestUtil.assertError("Idle connections not as expected:%s,but current is:%s", 0, pool.getIdleSize());
