@@ -220,7 +220,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                5: task execution(4)                                                                           //                                                                                  //
+    //                5: task execution(4)                                                                           //
     //***************************************************************************************************************//
     private void wakeupSchedulePeekThread() {
         LockSupport.unpark(scheduledTaskPeekThread);
@@ -308,7 +308,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                6: Pool clear (1)                                                                              //                                                                                  //
+    //                6: Pool clear (1)                                                                              //
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
@@ -340,7 +340,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                7: Pool shutdown (4)                                                                           //                                                                                  //
+    //                7: Pool shutdown (4)                                                                           //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return poolState == POOL_TERMINATED;
@@ -430,7 +430,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                9: Inner interfaces and classes (2)                                                            //                                                                                  //
+    //                9: Inner interfaces and classes (2)                                                            //
     //***************************************************************************************************************//
     //tasks execution thread
     private class PoolWorkerThread extends Thread {
@@ -440,10 +440,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.setDaemon(workerInDaemon);
             this.setName(poolName + "-worker thread-" + workerNameIndex.getAndIncrement());
             this.workState = new AtomicReference<>(state);
-        }
-
-        void setState(Object update) {
-            workState.set(update);
         }
 
         boolean compareAndSetState(Object expect, Object update) {
@@ -462,7 +458,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 if (state instanceof TaskExecuteHandle) {
                     handle = (TaskExecuteHandle) state;
                     state = WORKER_WORKING;
-                    this.setState(WORKER_WORKING);
+                    this.workState.set(WORKER_WORKING);
                 }
                 if (handle == null) handle = executionQueue.poll();
 
@@ -471,7 +467,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     if (handle instanceof TaskScheduledHandle) {
                         TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
                         if (!scheduledHandle.isPeriodic())
-                            taskHoldingCount.decrementAndGet();
+                            taskHoldingCount.decrementAndGet();//time once task,so decrement
                     } else {
                         taskHoldingCount.decrementAndGet();
                     }
