@@ -35,7 +35,7 @@ public class HelloWorldTest implements BeeTask {
         }
     }
 
-    public BeeTaskAspect getAspect() {
+    public BeeTaskCallback getAspect() {
         return null;
     }
 

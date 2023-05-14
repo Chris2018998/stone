@@ -11,7 +11,8 @@ package org.stone.beetp;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
-
+import java.util.Date;
+import java.text.SimpleDateFormat;
 /**
  * Task interface
  *
@@ -20,9 +21,11 @@ import java.util.concurrent.locks.LockSupport;
  */
 public class TimeTaskTest implements BeeTask {
     private String name;
+    private SimpleDateFormat format;
 
     public TimeTaskTest(String name) {
         this.name = name;
+        this.format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
     }
 
     public static void main(String[] args) throws Exception {
@@ -31,8 +34,10 @@ public class TimeTaskTest implements BeeTask {
         BeeTaskService service = new BeeTaskService(config);
 
         BeeTaskHandle handle1 = service.schedule(new TimeTaskTest("OneTime"), 0, TimeUnit.NANOSECONDS);
-        BeeTaskHandle handle2 = service.scheduleAtFixedRate(new TimeTaskTest("FixedRate"), 0, 2, TimeUnit.SECONDS);
-        BeeTaskHandle handle3 = service.scheduleWithFixedDelay(new TimeTaskTest("FixedDelay"), 0, 2, TimeUnit.SECONDS);
+        BeeTaskHandle handle2 = service.scheduleAtFixedRate(new TimeTaskTest("FixedRate1"), 0, 2, TimeUnit.SECONDS);
+        BeeTaskHandle handle3 = service.scheduleWithFixedDelay(new TimeTaskTest("FixedDelay2"), 0, 2, TimeUnit.SECONDS);
+        BeeTaskHandle handle4 = service.scheduleAtFixedRate(new TimeTaskTest("FixedRate3"), 0, 2, TimeUnit.SECONDS);
+        BeeTaskHandle handle5 = service.scheduleWithFixedDelay(new TimeTaskTest("FixedDelay4"), 0, 2, TimeUnit.SECONDS);
         LockSupport.park();
     }
 
@@ -41,7 +46,8 @@ public class TimeTaskTest implements BeeTask {
     }
 
     public Object call() throws Exception {
-        System.out.println("<" + name + ">Current time:" + System.nanoTime());
+        long time= System.currentTimeMillis();
+        System.out.println("<" + name + ">Current time:" + format.format(new Date()));
         return "Hello";
     }
 }
