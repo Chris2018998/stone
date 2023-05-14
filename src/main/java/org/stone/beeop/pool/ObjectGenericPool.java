@@ -150,7 +150,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         p.monitorVo = new ObjectPoolMonitorVo(poolHostIP, poolThreadId, poolThreadName, poolName, poolMode, poolMaxSize);
 
         p.poolState = POOL_READY;
-        Log.info("BeeOP({})has afterStartup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ns",
+        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ns",
                 p.poolName,
                 poolMode,
                 p.pooledArray.length,
