@@ -23,9 +23,9 @@ import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
  * @version 1.0
  */
 public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeTaskScheduledHandle {
+    private final long intervalTime;//nano seconds
+    private final boolean fixedDelay;
     private long nextRunTime;//time sortable
-    private long intervalTime;//nano seconds
-    private boolean fixedDelay;
 
     //only support periodic
     private int prevState;

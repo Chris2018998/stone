@@ -48,7 +48,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private boolean workerKeepaliveTimed;
     //*part2:atomic numbers of pool monitor
     private AtomicInteger workerCount;
-    //number of waiting to be executed(async count + scheduled count)
+    //number of tasks in queue and array(once count + scheduled count)
     private AtomicInteger taskWaitingCount;
     private AtomicLong taskRunningCount;
     private AtomicLong taskCompletedCount;
@@ -182,7 +182,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         int index = scheduledArray.add(handle);
         if (this.poolState != POOL_RUNNING) {//recheck pool state,if shutdown,then cancel task
-            if (handle.compareAndSetState(TASK_WAITING, TASK_CANCELLED)) {
+            if (handle.setAsCancelled()) {
                 if (scheduledArray.remove(handle) >= 0) taskWaitingCount.decrementAndGet();
                 throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
             }
@@ -422,7 +422,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
-        monitorVo.setTaskCount(taskWaitingCount.get());
+        monitorVo.setTaskWaitingCount(taskWaitingCount.get());
         monitorVo.setTaskRunningCount(taskRunningCount.get());
         monitorVo.setTaskCompletedCount(taskCompletedCount.get());
         return monitorVo;
@@ -496,12 +496,9 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //timed tasks peek thread
     private class PoolScheduledTaskPeekThread extends Thread {
-        private final AtomicReference<Object> workState;
-
         PoolScheduledTaskPeekThread() {
             this.setName(poolName + "-ScheduledPeek");
             this.setDaemon(true);
-            this.workState = new AtomicReference<>(WORKER_WORKING);
         }
 
         public void run() {

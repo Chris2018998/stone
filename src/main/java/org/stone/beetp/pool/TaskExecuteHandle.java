@@ -30,15 +30,15 @@ import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
  * @version 1.0
  */
 public class TaskExecuteHandle implements BeeTaskHandle {
+    final AtomicInteger curState;//can be reset to be waiting in periodic tasks
+    private final BeeTask task;
+    private final TaskExecutionPool pool;
+    private final BeeTaskCallback callback;
+    private final ConcurrentLinkedQueue<Thread> waitQueue;
+
     //null,result,exception
     Object curResult;//can be reset to be null(initialization state)
-    AtomicInteger curState;//can be reset to be waiting(initialization state)
-
-    private BeeTask task;
-    private TaskExecutionPool pool;
-    private BeeTaskCallback callback;
     private volatile Thread workerThread;
-    private ConcurrentLinkedQueue<Thread> waitQueue;
 
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //
@@ -147,18 +147,10 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //               6: task curState setting/getting(4)                                                             //
+    //               6: task curState setting/getting(2)                                                             //
     //**************************************************e************************************************************//
-    int getCurState() {
-        return curState.get();
-    }
-
-    void setCurState(int update) {
-        curState.set(update);
-    }
-
-    boolean compareAndSetState(int expect, int update) {
-        return curState.compareAndSet(expect, update);
+    boolean setAsCancelled() {
+        return curState.compareAndSet(TASK_WAITING, TASK_CANCELLED);
     }
 
     boolean setAsRunning() {//call in worker thread after task polled from queue
