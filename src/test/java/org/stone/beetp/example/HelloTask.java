@@ -19,6 +19,6 @@ import org.stone.beetp.BeeTask;
  */
 public class HelloTask implements BeeTask {
     public Object call() {
-        return "Hello World:" + System.nanoTime();
+        return "{" + System.nanoTime() + "} - Hello World";
     }
 }
