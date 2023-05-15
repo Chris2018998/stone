@@ -171,7 +171,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
         //1:task entrance test
-        taskCheck(task, true, 2, initialDelay, delay, unit);
+        taskCheck(task, true, 3, initialDelay, delay, unit);
         //2:add a schedule handle to pool
         long firstTime = System.nanoTime() + unit.toNanos(initialDelay);
         return addScheduleTask(task, callback, firstTime, unit.toNanos(delay), true);
@@ -418,7 +418,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
 
     //***************************************************************************************************************//
-    //                8: Pool monitor(1)                                                                             //                                                                                  //
+    //                8: Pool monitor(1)                                                                             //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
