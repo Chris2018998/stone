@@ -24,21 +24,20 @@ import java.util.concurrent.locks.LockSupport;
 import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
 
 /**
- * execution handle impl
+ * generic task handle impl
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class TaskExecuteHandle implements BeeTaskHandle {
-    final AtomicInteger curState;//can be reset to be waiting in periodic tasks
+    final AtomicInteger curState;//reset to waiting state after execution when current task is periodic
     private final BeeTask task;
     private final TaskExecutionPool pool;
     private final BeeTaskCallback callback;
-    private final ConcurrentLinkedQueue<Thread> waitQueue;
+    private final ConcurrentLinkedQueue<Thread> waitQueue;//queue of waiting for task result(maybe exception)
 
-    //null,result,exception
-    Object curResult;//can be reset to be null(initialization state)
-    private volatile Thread workerThread;
+    Object curResult;//it is an exception when task sate code equals<em>TASK_EXCEPTION</em>;
+    private volatile Thread workerThread;//set before execution by pool worker and reset to null after execution
 
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //
@@ -71,14 +70,14 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     public boolean cancel(boolean mayInterruptIfRunning) {
         int taskStateCode = curState.get();
-        //1: try to cas curState to cancelled
-        if ((taskStateCode == TASK_WAITING) && curState.compareAndSet(taskStateCode, TASK_CANCELLED)) {
-            this.setDone(TASK_CANCELLED, null);//wakeup waiters of result getting
-            pool.removeCancelledTask(this);//remove from pool
+        //1: update task state to be cancelled via cas
+        if ((setAsCancelled())) {
+            this.setDone(TASK_CANCELLED, null);//if exists result waiters,wakeup them
+            pool.removeCancelledTask(this);//remove the cancelled task from pool
             return true;
         }
 
-        //2: try to interrupt worker thread(an execution failed exception will set back to the handle by worker thread)
+        //2: interrupt task execution thread when it is in blocking state
         if (mayInterruptIfRunning && curState.get() == TASK_EXECUTING && workerThread != null) {
             Thread.State threadState = workerThread.getState();
             if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
@@ -113,11 +112,13 @@ public class TaskExecuteHandle implements BeeTaskHandle {
 
         try {
             do {
+                //read task result,if done,then return
                 taskStateCode = curState.get();
                 if (taskStateCode == TASK_RESULT) return curResult;
                 if (taskStateCode == TASK_EXCEPTION) throw (BeeTaskException) curResult;
                 if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
 
+                //if not done,then waiting until done, timeout,or interrupted
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
                     if (parkTime > 0)
@@ -128,6 +129,7 @@ public class TaskExecuteHandle implements BeeTaskHandle {
                     LockSupport.park();
                 }
 
+                //if interrupted,then throws exception
                 if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
         } finally {
@@ -147,13 +149,15 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //               6: task curState setting/getting(2)                                                             //
+    //               6: task state CAS                                                                               //
     //**************************************************e************************************************************//
+    //only task in waiting can be cancelled
     boolean setAsCancelled() {
         return curState.compareAndSet(TASK_WAITING, TASK_CANCELLED);
     }
 
-    boolean setAsRunning() {//call in worker thread after task polled from queue
+    //set to be running state by pool worker before task execution
+    boolean setAsRunning() {
         if (curState.compareAndSet(TASK_WAITING, TASK_EXECUTING)) {
             this.workerThread = Thread.currentThread();
             return true;
