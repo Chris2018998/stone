@@ -17,7 +17,7 @@ import org.stone.beetp.BeeTaskScheduledHandle;
 import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
 
 /**
- * Schedule Handle Impl
+ * Scheduled task handle Impl
  *
  * @author Chris Liao
  * @version 1.0

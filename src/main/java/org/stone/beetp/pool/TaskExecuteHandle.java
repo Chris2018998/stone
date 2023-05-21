@@ -138,7 +138,7 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                5: driven by worker thread methods(2)                                                          //
+    //                5: task and callback(2)                                                                        //
     //***************************************************************************************************************//
     BeeTask getTask() {
         return task;
@@ -149,7 +149,7 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //               6: task state CAS                                                                               //
+    //               6: task state CAS(2)                                                                            //
     //**************************************************e************************************************************//
     //only task in waiting can be cancelled
     boolean setAsCancelled() {

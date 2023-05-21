@@ -90,8 +90,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         //step4: atomic fields of pool monitor
         this.monitorVo = new TaskPoolMonitorVo();
-        this.taskHoldingCount = new AtomicInteger();
         this.workerCount = new AtomicInteger();
+        this.taskHoldingCount = new AtomicInteger();
         this.taskRunningCount = new AtomicLong();
         this.taskCompletedCount = new AtomicLong();
 
@@ -130,11 +130,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task entrance test(passed,then increment holding count;failed,throws exception)
+        //1:task check
         taskCheck(task, false, 0, 0, 0, null);
-        //2:create a handle and push it to execution queue
+        //2:create task handle and push it to execution queue
         TaskExecuteHandle handle = new TaskExecuteHandle(task, callback, this);
         this.pushToExecutionQueue(handle);
+        //3:return task handle to caller
         return handle;
     }
 
@@ -154,25 +155,22 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task entrance test
+        //1:task check
         taskCheck(task, true, 1, delay, 0, unit);
-        //2:add a schedule handle to pool
+        //2:calculate first execution time
         long firstTime = System.nanoTime() + unit.toNanos(delay);
+        //3:create scheduled task
         return addScheduleTask(task, callback, firstTime, 0, false);
     }
 
     public BeeTaskScheduledHandle scheduleAtFixedRate(BeeTask task, long initialDelay, long period, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task entrance test
         taskCheck(task, true, 2, initialDelay, period, unit);
-        //2:add a schedule handle to pool
         long firstTime = System.nanoTime() + unit.toNanos(initialDelay);
         return addScheduleTask(task, callback, firstTime, unit.toNanos(period), false);
     }
 
     public BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException {
-        //1:task entrance test
         taskCheck(task, true, 3, initialDelay, delay, unit);
-        //2:add a schedule handle to pool
         long firstTime = System.nanoTime() + unit.toNanos(initialDelay);
         return addScheduleTask(task, callback, firstTime, unit.toNanos(delay), true);
     }
@@ -180,14 +178,18 @@ public final class TaskExecutionPool implements BeeTaskPool {
     private TaskScheduledHandle addScheduleTask(BeeTask task, BeeTaskCallback callback, long firstTime, long intervalTime, boolean fixedDelay) throws BeeTaskException {
         TaskScheduledHandle handle = new TaskScheduledHandle(task, callback, this, firstTime, intervalTime, fixedDelay);
 
+        //add task handle to time sortable array,and gets its index in array
         int index = scheduledArray.add(handle);
-        if (this.poolState != POOL_RUNNING) {//recheck pool state,if shutdown,then cancel task
+
+        //re-check pool state,if not in running,then try to cancel
+        if (this.poolState != POOL_RUNNING) {
             if (handle.setAsCancelled()) {
                 if (scheduledArray.remove(handle) >= 0) taskHoldingCount.decrementAndGet();
                 throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
             }
         }
 
+        //if the new handle is first of array,then wakeup peek thread to spy on it
         if (index == 0) wakeupSchedulePeekThread();
         return handle;
     }
@@ -390,7 +392,6 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         Thread currentThread = Thread.currentThread();
         poolTerminateWaitQueue.offer(currentThread);
-
         long timeoutNano = unit.toNanos(timeout);
         boolean timed = timeoutNano > 0;
         long deadline = System.nanoTime() + timeoutNano;
@@ -422,7 +423,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setWorkerCount(workerCount.get());
-        monitorVo.setTaskWaitingCount(taskHoldingCount.get());
+        monitorVo.setTaskHoldingCount(taskHoldingCount.get());
         monitorVo.setTaskRunningCount(taskRunningCount.get());
         monitorVo.setTaskCompletedCount(taskCompletedCount.get());
         return monitorVo;

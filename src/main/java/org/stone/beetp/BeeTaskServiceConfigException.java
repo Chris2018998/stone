@@ -17,11 +17,11 @@ package org.stone.beetp;
  */
 public final class BeeTaskServiceConfigException extends Exception {
 
-    BeeTaskServiceConfigException(String s) {
+    public BeeTaskServiceConfigException(String s) {
         super(s);
     }
 
-    BeeTaskServiceConfigException(String message, Throwable cause) {
+    public BeeTaskServiceConfigException(String message, Throwable cause) {
         super(message, cause);
     }
 }

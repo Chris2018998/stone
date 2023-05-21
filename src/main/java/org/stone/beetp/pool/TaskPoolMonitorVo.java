@@ -20,7 +20,7 @@ import org.stone.beetp.BeeTaskPoolMonitorVo;
 
 public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
     private int workerCount;
-    private int taskWaitingCount;
+    private int taskHoldingCount;
     private long taskRunningCount;
     private long taskCompletedCount;
 
@@ -33,11 +33,11 @@ public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
     }
 
     public int getTaskHoldingCount() {
-        return taskWaitingCount;
+        return taskHoldingCount;
     }
 
-    void setTaskWaitingCount(int taskWaitingCount) {
-        this.taskWaitingCount = taskWaitingCount;
+    void setTaskHoldingCount(int taskHoldingCount) {
+        this.taskHoldingCount = taskHoldingCount;
     }
 
     public long getTaskRunningCount() {
