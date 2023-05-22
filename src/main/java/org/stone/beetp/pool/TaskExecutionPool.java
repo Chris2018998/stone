@@ -497,24 +497,31 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         public void run() {
-            while (poolState == POOL_RUNNING) {
-                //1:poll expired task
-                Object polledObject = scheduledArray.pollExpired();
-                //2: if polled object is expired schedule task
-                if (polledObject instanceof TaskScheduledHandle) {
-                    TaskScheduledHandle taskHandle = (TaskScheduledHandle) polledObject;
-                    if (taskHandle.curState.get() == TASK_WAITING)
-                        pushToExecutionQueue(taskHandle);//push it to execution queue
-                    else
-                        taskHoldingCount.decrementAndGet();
-                } else {//3: the polled object is time,then park
-                    Long time = (Long) polledObject;
-                    if (time > 0) {
-                        LockSupport.parkNanos(time);
-                    } else {
-                        LockSupport.park();
+            while (true) {
+                int poolCurState = poolState;
+                if (poolCurState == POOL_RUNNING) {
+                    //1: poll expired task
+                    Object polledObject = scheduledArray.pollExpired();
+                    //2: if polled object is expired schedule task
+                    if (polledObject instanceof TaskScheduledHandle) {
+                        TaskScheduledHandle taskHandle = (TaskScheduledHandle) polledObject;
+                        if (taskHandle.curState.get() == TASK_WAITING)
+                            pushToExecutionQueue(taskHandle);//push it to execution queue
+                        else
+                            taskHoldingCount.decrementAndGet();//task has cancelled,so remove it
+                    } else {//3: the polled object is time,then park
+                        Long time = (Long) polledObject;
+                        if (time > 0) {
+                            LockSupport.parkNanos(time);
+                        } else {
+                            LockSupport.park();
+                        }
                     }
                 }
+
+                //4: pool state check,if in clearing,then park peek thread
+                if (poolCurState == POOL_CLEARING) LockSupport.park();
+                if (poolCurState > POOL_CLEARING) break;
             }
         }
     }
