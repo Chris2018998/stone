@@ -13,7 +13,6 @@ import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskRejectedException;
-import org.stone.util.SortedArray;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Comparator;
@@ -60,7 +59,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //*part4:task schedule
     //store sortable scheduled tasks
-    private SortedArray<TaskScheduledHandle> scheduledArray;
+    private TaskScheduledQueue scheduledArray;
     //a daemon thread park on first task util it expired,then push it to execution queue
     private PoolScheduledTaskPeekThread scheduledTaskPeekThread;
     //*part5:wait queue for pool shutting down
@@ -105,7 +104,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         //step6: create task schedule objects
-        this.scheduledArray = new SortedArray<>(TaskScheduledHandle.class, 0,
+        this.scheduledArray = new TaskScheduledQueue(0,
                 new Comparator<TaskScheduledHandle>() {
                     public int compare(TaskScheduledHandle handle1, TaskScheduledHandle handle2) {
                         long compareV = handle1.getNextTime() - handle2.getNextTime();
@@ -482,10 +481,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
                 }
 
-                //try to clear interrupted status(maybe exists)
-                Thread.interrupted();
+                Thread.interrupted();//clean interruption state
             } while (true);
 
+            //remove worker from pool by self
             workerCount.decrementAndGet();
             workerQueue.remove(this);
         }
@@ -499,22 +498,21 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
         public void run() {
             while (poolState == POOL_RUNNING) {
-                //1: peek first task from array
-                TaskScheduledHandle taskHandle = scheduledArray.getFirst();
-
-                if (taskHandle == null) {
-                    //2: if task is null,then park without time
-                    LockSupport.park();
-                } else {
-                    long parkTime = taskHandle.getNextTime() - System.nanoTime();
-                    //3: if task is expired,then remove it and push it to execution queue
-                    if (parkTime <= 0) {
-                        scheduledArray.remove(taskHandle);
-                        if (taskHandle.curState.get() == TASK_WAITING)
-                            pushToExecutionQueue(taskHandle);//push it to execution queue
+                //1:poll expired task
+                Object polledObject = scheduledArray.pollExpired();
+                //2: if polled object is expired schedule task
+                if (polledObject instanceof TaskScheduledHandle) {
+                    TaskScheduledHandle taskHandle = (TaskScheduledHandle) polledObject;
+                    if (taskHandle.curState.get() == TASK_WAITING)
+                        pushToExecutionQueue(taskHandle);//push it to execution queue
+                    else
+                        taskHoldingCount.decrementAndGet();
+                } else {//3: the polled object is time,then park
+                    Long time = (Long) polledObject;
+                    if (time > 0) {
+                        LockSupport.parkNanos(time);
                     } else {
-                        //4: if task is not expired,then park util expired
-                        LockSupport.parkNanos(parkTime);
+                        LockSupport.park();
                     }
                 }
             }
