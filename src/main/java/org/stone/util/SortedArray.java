@@ -22,11 +22,11 @@ import java.util.concurrent.locks.ReentrantLock;
  * @version 1.0
  */
 
-public final class SortedArray<E> {
-    private final ReentrantLock arrayLock;
+public class SortedArray<E> {
+    protected final ReentrantLock arrayLock;
     private final Comparator<? super E> comparator;
-    private int count;
-    private E[] objects;
+    protected int count;
+    protected E[] objects;
 
     public SortedArray(Class<E> type, int initSize, Comparator<E> comparator) {
         if (initSize < 0) throw new IllegalArgumentException("initSize < 0");
@@ -60,7 +60,6 @@ public final class SortedArray<E> {
 //        array.remove(7);
 //        array.print();
     }
-
 
     public int size() {
         arrayLock.lock();//lock array
