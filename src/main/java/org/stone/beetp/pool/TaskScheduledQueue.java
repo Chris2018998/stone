@@ -51,4 +51,16 @@ final class TaskScheduledQueue extends SortedArray<TaskScheduledHandle> {
             arrayLock.unlock();
         }
     }
+
+    TaskScheduledHandle[] clearAll() {
+        arrayLock.lock();
+        try {
+            TaskScheduledHandle[] tasks = objects;
+            this.objects = new TaskScheduledHandle[0];
+            this.count = 0;
+            return tasks;
+        } finally {
+            arrayLock.unlock();
+        }
+    }
 }
