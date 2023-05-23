@@ -22,20 +22,29 @@ import java.util.Comparator;
 
 final class TaskScheduledQueue extends SortedArray<TaskScheduledHandle> {
 
-    TaskScheduledQueue(int initSize, Comparator<TaskScheduledHandle> comparator) {
-        super(TaskScheduledHandle.class, initSize, comparator);
+    TaskScheduledQueue(int initSize) {
+        super(TaskScheduledHandle.class, initSize, new Comparator<TaskScheduledHandle>() {
+            public int compare(TaskScheduledHandle handle1, TaskScheduledHandle handle2) {
+                long compareV = handle1.getNextTime() - handle2.getNextTime();
+                if (compareV < 0) return -1;
+                if (compareV == 0) return 0;
+                return 1;
+            }
+        });
     }
 
-    //1: if first task expired,then return it; 2: if not expired,return remain time 3: if array is empty,return 0;
     Object pollExpired() {
         arrayLock.lock();
         try {
+            //1: empty queue,return -1
             if (count == 0) return -1L;
             TaskScheduledHandle handle = objects[0];
+
+            //2:if first task not be expired,return remain time
             long remainTime = handle.getNextTime() - System.nanoTime();
             if (remainTime > 0) return remainTime;//nanoseconds
 
-            //expired,then remove it
+            //3:first task expired,then remove it and return it
             this.remove(handle);
             return handle;
         } finally {

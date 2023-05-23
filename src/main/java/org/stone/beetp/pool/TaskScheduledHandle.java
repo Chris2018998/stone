@@ -82,9 +82,6 @@ public final class TaskScheduledHandle extends TaskExecuteHandle implements BeeT
             this.prevResult = this.curResult;
             this.prevTime = this.nextRunTime;
             this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
-
-//          SimpleDateFormat format= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-//          System.out.println("Time:"+ format.format(new Date(nextRunTime)) );
             this.curState.set(TASK_WAITING);//reset to waiting state for next call
         }
     }

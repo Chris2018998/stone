@@ -15,7 +15,6 @@ import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskRejectedException;
 import org.stone.util.atomic.IntegerFieldUpdaterImpl;
 
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -59,7 +58,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     //*part4:task schedule
     //store sortable scheduled tasks
-    private TaskScheduledQueue scheduledArray;
+    private TaskScheduledQueue scheduledQueue;
     //a daemon thread park on first task util it expired,then push it to execution queue
     private PoolScheduledTaskPeekThread scheduledTaskPeekThread;
     //*part5:wait queue for pool shutting down
@@ -104,16 +103,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         }
 
         //step6: create task schedule objects
-        this.scheduledArray = new TaskScheduledQueue(0,
-                new Comparator<TaskScheduledHandle>() {
-                    public int compare(TaskScheduledHandle handle1, TaskScheduledHandle handle2) {
-                        long compareV = handle1.getNextTime() - handle2.getNextTime();
-                        if (compareV < 0) return -1;
-                        if (compareV == 0) return 0;
-                        return 1;
-                    }
-                });
-
+        this.scheduledQueue = new TaskScheduledQueue(0);
         this.scheduledTaskPeekThread = new PoolScheduledTaskPeekThread();
         this.scheduledTaskPeekThread.start();
 
@@ -178,12 +168,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
         TaskScheduledHandle handle = new TaskScheduledHandle(task, callback, this, firstTime, intervalTime, fixedDelay);
 
         //add task handle to time sortable array,and gets its index in array
-        int index = scheduledArray.add(handle);
+        int index = scheduledQueue.add(handle);
 
         //re-check pool state,if not in running,then try to cancel
         if (this.poolState != POOL_RUNNING) {
             if (handle.setAsCancelled()) {
-                if (scheduledArray.remove(handle) >= 0) taskHoldingCount.decrementAndGet();
+                if (scheduledQueue.remove(handle) >= 0) taskHoldingCount.decrementAndGet();
                 throw new TaskRejectedException("Access forbidden,task pool was closed or in clearing");
             }
         }
@@ -285,7 +275,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
                 if (scheduledHandle.isPeriodic()) {
                     scheduledHandle.prepareForNextCall();//reset to waiting state for next execution
-                    if (scheduledArray.add(scheduledHandle) == 0)
+                    if (scheduledQueue.add(scheduledHandle) == 0)
                         wakeupSchedulePeekThread();
                 } else {//one timed task,so end
                     taskCompletedCount.incrementAndGet();
@@ -299,7 +289,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //remove from array or queue(method called inside handle)
     void removeCancelledTask(TaskExecuteHandle handle) {
         if (handle instanceof TaskScheduledHandle) {
-            int taskIndex = scheduledArray.remove((TaskScheduledHandle) handle);
+            int taskIndex = scheduledQueue.remove((TaskScheduledHandle) handle);
             if (taskIndex >= 0) taskHoldingCount.decrementAndGet();//task removed successfully by call thread
             if (taskIndex == 0) wakeupSchedulePeekThread();
         } else if (executionQueue.remove(handle)) {
@@ -312,6 +302,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
+
             TaskExecuteHandle taskHandle;
             while ((taskHandle = executionQueue.poll()) != null) {
                 taskHandle.setDone(TASK_CANCELLED, null);
@@ -501,7 +492,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 int poolCurState = poolState;
                 if (poolCurState == POOL_RUNNING) {
                     //1: poll expired task
-                    Object polledObject = scheduledArray.pollExpired();
+                    Object polledObject = scheduledQueue.pollExpired();
                     //2: if polled object is expired schedule task
                     if (polledObject instanceof TaskScheduledHandle) {
                         TaskScheduledHandle taskHandle = (TaskScheduledHandle) polledObject;
