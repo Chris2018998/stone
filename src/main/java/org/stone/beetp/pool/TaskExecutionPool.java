@@ -302,32 +302,54 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
-
-            TaskExecuteHandle taskHandle;
-            while ((taskHandle = executionQueue.poll()) != null) {
-                taskHandle.setDone(TASK_CANCELLED, null);
-            }
-
-            PoolWorkerThread worker;
-            if (mayInterruptIfRunning) {
-                while ((worker = workerQueue.poll()) != null) {
-                    worker.interrupt();
-                }
-            } else {
-                while ((worker = workerQueue.poll()) != null) {
-                    try {
-                        worker.join();
-                    } catch (Exception e) {
-                        //do nothing
-                    }
-                }
-            }
-
+            this.removeAll(mayInterruptIfRunning);
             this.poolState = POOL_RUNNING;
             return true;
         } else {
             return false;
         }
+    }
+
+    private List<BeeTask> removeAll(boolean mayInterruptIfRunning) {
+        List<BeeTask> unRunningTaskList = new LinkedList<>();
+        //1: remove scheduled tasks
+        for (TaskScheduledHandle handle : scheduledQueue.clearAll()) {
+            if (handle.setAsCancelled()) {//collect cancelled tasks by pool
+                unRunningTaskList.add(handle.getTask());
+                handle.setDone(TASK_CANCELLED, null);
+            }
+        }
+
+        //2: remove generic tasks
+        TaskExecuteHandle handle;
+        while ((handle = executionQueue.poll()) != null) {
+            if (handle.setAsCancelled()) {//collect cancelled tasks by pool
+                unRunningTaskList.add(handle.getTask());
+                handle.setDone(TASK_CANCELLED, null);
+            }
+        }
+
+        //3: remove generic tasks
+        for (PoolWorkerThread workerThread : workerQueue) {
+            if (mayInterruptIfRunning) {
+                workerThread.setState(WORKER_TERMINATED);
+                workerThread.interrupt();
+            }
+
+            try {
+                workerThread.join();
+            } catch (Exception e) {
+                //do nothing
+            }
+        }
+
+        //4:reset atomic numbers to zero
+        this.workerCount.set(0);
+        this.taskHoldingCount.set(0);
+        this.taskRunningCount.set(0);
+        this.taskCompletedCount.set(0);
+        this.workerNameIndex.set(0);
+        return unRunningTaskList;
     }
 
     //***************************************************************************************************************//
@@ -343,33 +365,12 @@ public final class TaskExecutionPool implements BeeTaskPool {
 
     public List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
-            PoolWorkerThread worker;
-            if (mayInterruptIfRunning) {
-                while ((worker = workerQueue.poll()) != null) {
-                    worker.interrupt();
-                }
-            } else {
-                while ((worker = workerQueue.poll()) != null) {
-                    try {
-                        worker.join();
-                    } catch (Exception e) {
-                        //do nothing
-                    }
-                }
-            }
+            List<BeeTask> unCompleteList = this.removeAll(mayInterruptIfRunning);
 
-            TaskExecuteHandle taskHandle;
-            List<BeeTask> queueTaskList = new LinkedList<>();
-            while ((taskHandle = executionQueue.poll()) != null) {
-                queueTaskList.add(taskHandle.getTask());
-                taskHandle.setDone(TASK_CANCELLED, null);
-            }
-
-            //set
             this.poolState = POOL_TERMINATED;
             for (Thread thread : poolTerminateWaitQueue)
                 LockSupport.unpark(thread);
-            return queueTaskList;
+            return unCompleteList;
         } else {
             throw new BeeTaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
         }
@@ -420,7 +421,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                9: Inner interfaces and classes (2)                                                            //
+    //                9: Pool worker class and scheduled class (2)                                                   //
     //***************************************************************************************************************//
     //tasks execution thread
     private class PoolWorkerThread extends Thread {
@@ -430,6 +431,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
             this.setDaemon(workerInDaemon);
             this.setName(poolName + "-worker thread-" + workerNameIndex.getAndIncrement());
             this.workState = new AtomicReference<>(state);
+        }
+
+        void setState(Object update) {
+            workState.set(update);
         }
 
         boolean compareAndSetState(Object expect, Object update) {
