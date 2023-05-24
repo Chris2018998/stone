@@ -304,6 +304,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
             this.removeAll(mayInterruptIfRunning);
             this.poolState = POOL_RUNNING;
+            LockSupport.unpark(scheduledTaskPeekThread);
             return true;
         } else {
             return false;
