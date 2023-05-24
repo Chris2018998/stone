@@ -135,7 +135,23 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        4: pool terminate methods(4)                                           //
+    //                                        4: pool clear(2)                                                       //
+    //***************************************************************************************************************//
+    public boolean clear(boolean mayInterruptIfRunning) throws BeeTaskPoolException {
+        try {
+            return clear(mayInterruptIfRunning, null);
+        } catch (BeeTaskServiceConfigException e) {
+            return false;
+        }
+    }
+
+    public boolean clear(boolean mayInterruptIfRunning, BeeTaskServiceConfig config) throws BeeTaskPoolException, BeeTaskServiceConfigException {
+        if (pool == null) throw new BeeTaskPoolException("Task pool not be initialized");
+        return pool.clear(mayInterruptIfRunning, config);
+    }
+
+    //***************************************************************************************************************//
+    //                                        5: pool terminate methods(4)                                           //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return pool == null || pool.isTerminated();
@@ -156,7 +172,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        5: tasks invoke(4)                                                     //
+    //                                        6: tasks invoke(4)                                                     //
     //***************************************************************************************************************//
     public BeeTaskHandle invokeAny(Collection<? extends BeeTask> tasks) throws BeeTaskException, BeeTaskPoolException, InterruptedException {
         return invokeAny(tasks, 0, TimeUnit.NANOSECONDS);
@@ -281,7 +297,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                              6: callback impl(2)(result collector and wakeup call thread)                     //
+    //                             7: callback impl(2)(result collector and wakeup call thread)                     //
     //***************************************************************************************************************//
     private static final class AnyCallback implements BeeTaskCallback {
         private final int taskSize;

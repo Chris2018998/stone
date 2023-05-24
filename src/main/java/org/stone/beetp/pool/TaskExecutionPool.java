@@ -81,7 +81,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         this.workerKeepaliveTimed = workerKeepAliveTime > 0;
 
         //step3: create queues
-        this.workerNameIndex = new AtomicInteger(1);
+        this.workerNameIndex = new AtomicInteger();
         this.workerQueue = new ConcurrentLinkedQueue<>();
         this.executionQueue = new ConcurrentLinkedQueue<>();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
@@ -298,13 +298,40 @@ public final class TaskExecutionPool implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                6: Pool clear (1)                                                                              //
+    //                6: Pool clear (3)                                                                              //
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
+        try {
+            return clear(mayInterruptIfRunning, null);
+        } catch (BeeTaskServiceConfigException e) {
+            return false;
+        }
+    }
+
+    public boolean clear(boolean mayInterruptIfRunning, BeeTaskServiceConfig config) throws BeeTaskServiceConfigException {
+        BeeTaskServiceConfig checkedConfig = null;
+        if (config != null) checkedConfig = config.check();
+
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
             this.removeAll(mayInterruptIfRunning);
+            if (checkedConfig != null) {
+                this.maxTaskSize = checkedConfig.getTaskMaxSize();
+                this.maxWorkerSize = checkedConfig.getMaxWorkerSize();
+                this.workerInDaemon = checkedConfig.isWorkInDaemon();
+                this.workerKeepAliveTime = MILLISECONDS.toNanos(checkedConfig.getWorkerKeepAliveTime());
+                this.workerKeepaliveTimed = workerKeepAliveTime > 0;
+                //reinitialize worker thread
+                int workerInitSize = config.getInitWorkerSize();
+                this.workerCount.set(workerInitSize);
+                for (int i = 0; i < workerInitSize; i++) {
+                    PoolWorkerThread worker = new PoolWorkerThread(WORKER_WORKING);
+                    workerQueue.offer(worker);
+                    worker.start();
+                }
+            }
+
             this.poolState = POOL_RUNNING;
-            LockSupport.unpark(scheduledTaskPeekThread);
+            LockSupport.unpark(this.scheduledTaskPeekThread);
             return true;
         } else {
             return false;
@@ -414,6 +441,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                8: Pool monitor(1)                                                                             //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
+        monitorVo.setPoolState(this.poolState);
         monitorVo.setWorkerCount(workerCount.get());
         monitorVo.setTaskHoldingCount(taskHoldingCount.get());
         monitorVo.setTaskRunningCount(taskRunningCount.get());

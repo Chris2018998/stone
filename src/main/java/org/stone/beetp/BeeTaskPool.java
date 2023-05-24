@@ -63,6 +63,9 @@ public interface BeeTaskPool {
     //clear all tasks in pool
     boolean clear(boolean mayInterruptIfRunning);
 
+    //clear all tasks in pool
+    boolean clear(boolean mayInterruptIfRunning, BeeTaskServiceConfig config) throws BeeTaskServiceConfigException;
+
     //***************************************************************************************************************//
     //                5: Pool monitor(1)                                                                             //
     //***************************************************************************************************************//

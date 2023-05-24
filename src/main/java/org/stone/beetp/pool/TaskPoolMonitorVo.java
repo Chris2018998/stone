@@ -19,10 +19,19 @@ import org.stone.beetp.BeeTaskPoolMonitorVo;
  */
 
 public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
+    private int poolState;
     private int workerCount;
     private int taskHoldingCount;
     private long taskRunningCount;
     private long taskCompletedCount;
+
+    public int getPoolState() {
+        return poolState;
+    }
+
+    void setPoolState(int poolState) {
+        this.poolState = poolState;
+    }
 
     public int getWorkerCount() {
         return workerCount;

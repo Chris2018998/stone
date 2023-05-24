@@ -17,6 +17,8 @@ package org.stone.beetp;
  */
 public interface BeeTaskPoolMonitorVo {
 
+    int getPoolState();
+
     int getWorkerCount();
 
     int getTaskHoldingCount();
