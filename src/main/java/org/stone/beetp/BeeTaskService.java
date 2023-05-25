@@ -151,7 +151,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        5: pool terminate methods(4)                                           //
+    //                                        5: pool termination(4)                                                 //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return pool == null || pool.isTerminated();
@@ -161,18 +161,26 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         return pool == null || pool.isTerminating();
     }
 
-    public BeeTaskPoolMonitorVo getPoolMonitorVo() throws BeeTaskPoolException {
-        if (pool == null) throw new BeeTaskPoolException("Task pool not be initialized");
-        return pool.getPoolMonitorVo();
-    }
-
     public void terminate(boolean cancelRunningTask) throws BeeTaskPoolException {
         if (pool == null) throw new BeeTaskPoolException("Task pool not be initialized");
         pool.terminate(cancelRunningTask);
     }
 
+    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException, BeeTaskPoolException {
+        if (pool == null) throw new BeeTaskPoolException("Task pool not be initialized");
+        return pool.awaitTermination(timeout, unit);
+    }
+
     //***************************************************************************************************************//
-    //                                        6: tasks invoke(4)                                                     //
+    //                                     6: Pool monitor(1)                                                        //
+    //***************************************************************************************************************//
+    public BeeTaskPoolMonitorVo getPoolMonitorVo() throws BeeTaskPoolException {
+        if (pool == null) throw new BeeTaskPoolException("Task pool not be initialized");
+        return pool.getPoolMonitorVo();
+    }
+
+    //***************************************************************************************************************//
+    //                                        7: tasks invoke(4)                                                     //
     //***************************************************************************************************************//
     public BeeTaskHandle invokeAny(Collection<? extends BeeTask> tasks) throws BeeTaskException, BeeTaskPoolException, InterruptedException {
         return invokeAny(tasks, 0, TimeUnit.NANOSECONDS);
@@ -297,7 +305,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                             7: callback impl(2)(result collector and wakeup call thread)                     //
+    //                             8: callback impl(2)(result collector and wakeup call thread)                      //
     //***************************************************************************************************************//
     private static final class AnyCallback implements BeeTaskCallback {
         private final int taskSize;
