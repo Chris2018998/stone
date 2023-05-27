@@ -486,7 +486,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                 }
                 if (handle == null) handle = executionQueue.poll();
 
-                //3: execute task
+                //3: task count
                 if (handle != null) {
                     if (handle instanceof TaskScheduledHandle) {
                         TaskScheduledHandle scheduledHandle = (TaskScheduledHandle) handle;
@@ -496,6 +496,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                         taskHoldingCount.decrementAndGet();
                     }
 
+                    //4: execute task
                     if (handle.setAsRunning()) executeTask(handle);
                 } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
                     if (workerKeepaliveTimed)

@@ -51,18 +51,30 @@ public class TaskExecuteHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                2: curState methods(3)                                                                         //
+    //                2: curState methods(6)                                                                         //
     //***************************************************************************************************************//
-    public boolean isDone() {
-        return curState.get() > TASK_EXECUTING;
+    public boolean isWaiting() {
+        return curState.get() == TASK_WAITING;
     }
 
     public boolean isExecuting() {
         return curState.get() == TASK_EXECUTING;
     }
 
+    public boolean isDone() {
+        return curState.get() > TASK_EXECUTING;
+    }
+
     public boolean isCancelled() {
         return curState.get() == TASK_CANCELLED;
+    }
+
+    public boolean isCallResult() {
+        return curState.get() == TASK_RESULT;
+    }
+
+    public boolean isCallException() {
+        return curState.get() == TASK_EXCEPTION;
     }
 
     //***************************************************************************************************************//

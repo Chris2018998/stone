@@ -20,13 +20,19 @@ import java.util.concurrent.TimeUnit;
 public interface BeeTaskHandle<T> {
 
     //***************************************************************************************************************//
-    //                1: task state methods(3)                                                                       //
+    //                1: task state methods(6)                                                                       //
     //***************************************************************************************************************//
-    boolean isDone();
+    boolean isWaiting();
 
     boolean isExecuting();
 
+    boolean isDone();
+
     boolean isCancelled();
+
+    boolean isCallResult();
+
+    boolean isCallException();
 
     //***************************************************************************************************************//
     //                2: task cancel methods(1)                                                                      //
