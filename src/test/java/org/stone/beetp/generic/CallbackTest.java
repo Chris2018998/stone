@@ -23,6 +23,7 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 public class CallbackTest extends TestCase {
+
     public void test() throws Exception {
         BeeTaskServiceConfig config = new BeeTaskServiceConfig();
         config.setWorkInDaemon(true);
