@@ -27,7 +27,7 @@ public class TaskCancelTest extends TestCase {
         BeeTaskService service = new BeeTaskService(config);
 
         service.submit(new BlockTask());//block worker thread
-        BeeTaskHandle commonHandle = service.submit(new CommonTask());
+        BeeTaskHandle commonHandle = service.submit(new HelloTask());
         commonHandle.cancel(false);
         if (!commonHandle.isCancelled()) TestUtil.assertError("Task not be cancelled");
     }

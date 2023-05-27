@@ -26,8 +26,8 @@ public class InvokeAnyTimeoutTest extends TestCase {
         BeeTaskService service = new BeeTaskService(config);
 
         List<BeeTask> taskList = new ArrayList<>(3);
-        taskList.add(new FailedTask());
-        taskList.add(new FailedTask());
+        taskList.add(new ExceptionTask());
+        taskList.add(new ExceptionTask());
         taskList.add(new BlockTask());
         try {
             service.invokeAny(taskList, 2, TimeUnit.SECONDS);

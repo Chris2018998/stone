@@ -24,9 +24,9 @@ public class InvokeAllNormalTest extends TestCase {
         BeeTaskService service = new BeeTaskService(config);
 
         List<BeeTask> taskList = new ArrayList();
-        taskList.add(new CommonTask());
-        taskList.add(new CommonTask());
-        taskList.add(new FailedTask());
+        taskList.add(new HelloTask());
+        taskList.add(new HelloTask());
+        taskList.add(new ExceptionTask());
 
         List<BeeTaskHandle> handleList = service.invokeAll(taskList);
         for (BeeTaskHandle handle : handleList) {

@@ -24,9 +24,9 @@ public class InvokeAnyNormalTest extends TestCase {
         BeeTaskService service = new BeeTaskService(config);
 
         List<BeeTask> taskList = new ArrayList();
-        taskList.add(new FailedTask());
-        taskList.add(new FailedTask());
-        taskList.add(new CommonTask());
+        taskList.add(new ExceptionTask());
+        taskList.add(new ExceptionTask());
+        taskList.add(new HelloTask());
         BeeTaskHandle handle = service.invokeAny(taskList);
         if (handle.isCallException()) TestUtil.assertError("InvokeAny test failed");
     }

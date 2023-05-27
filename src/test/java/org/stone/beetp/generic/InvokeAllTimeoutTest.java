@@ -24,15 +24,17 @@ public class InvokeAllTimeoutTest extends TestCase {
         config.setMaxWorkerSize(2);
         BeeTaskService service = new BeeTaskService(config);
 
-        List<BeeTask> taskList = new ArrayList();
-        taskList.add(new CommonTask());
-        taskList.add(new CommonTask());
+        List<BeeTask> taskList = new ArrayList<>();
+        taskList.add(new HelloTask());
+        taskList.add(new HelloTask());
         taskList.add(new BlockTask());
 
         boolean existException = false;
         List<BeeTaskHandle> handleList = service.invokeAll(taskList, 3, TimeUnit.SECONDS);
+        System.out.println("handleList:"+handleList);
+
         for (BeeTaskHandle handle : handleList) {
-            if (handle.isCallException()) {
+            if (handle.isCancelled() || handle.isCallException()) {
                 existException = true;
                 break;
             }
