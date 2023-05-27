@@ -7,18 +7,13 @@
 package org.stone.beetp;
 
 /**
- * block task
+ * Failed task
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BlockTask implements BeeTask {
-    private Object syn = new Object();
-
+public class FailedTask implements BeeTask {
     public Object call() throws Exception {
-        synchronized (syn) {
-            syn.wait();
-        }
-        return "BlockTask";
+        throw new Exception("Failed");
     }
 }
