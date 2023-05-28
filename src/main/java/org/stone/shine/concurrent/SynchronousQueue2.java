@@ -9,6 +9,9 @@
  */
 package org.stone.shine.concurrent;
 
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +30,18 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     private static final int maxTimedSpins = (NCPUS < 2) ? 0 : 32;
     private static final int maxUntimedSpins = maxTimedSpins * 16;
     private static final long spinForTimeoutThreshold = 1000L;
+    private static final Unsafe U;
+
+    static {
+        try {
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            theUnsafe.setAccessible(true);
+            U = (Unsafe) theUnsafe.get(null);
+        } catch (Exception e) {
+            throw new Error("Failed to get Unsafe", e);
+        }
+    }
+
     private Transferer<E> transfer;
 
     public SynchronousQueue2() {
