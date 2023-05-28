@@ -54,7 +54,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                     1: transfer methods                                                        //
+    //                                     1: offer/put methods(3)                                                    //
     //****************************************************************************************************************//
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
@@ -77,7 +77,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                          2: get methods                                                        //
+    //                                          2: poll/take methods(3)                                               //
     //****************************************************************************************************************//
     public E poll() {
         Object re = transfer.transfer(null, false, 0);
