@@ -244,18 +244,13 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
                 //2: try to match current node
                 if (!curNode.isMatched() && curNode.casMatch(node)) {//success
-                    Node<E> nextNode = curNode.next;
-                    Node<E> linkToNode = nextNode != null ? nextNode : curNode;
-                    casHead(head, linkToNode);
+                    casHead(head, curNode);//current node becomes new head(dummy node)
                     return curNode.nodeType == DATA ? curNode.item : node.item;
                 }
 
                 //3: read next node
                 Node<E> nextNode = curNode.next;
-                if (nextNode == null) {//reach end,so exit
-                    casHead(head, curNode);
-                    return null;
-                }
+                if (nextNode == null) return null;
                 curNode = nextNode;
             } while (true);
         }
