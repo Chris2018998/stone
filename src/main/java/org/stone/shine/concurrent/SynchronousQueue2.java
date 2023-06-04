@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * SynchronousQueue2 implementation with node chain(similar to JDK)
+ * SynchronousQueue implementation with node chain(similar to JDK)
  *
  * @author Chris Liao
  * @version 1.0
@@ -241,19 +241,23 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             int nodeTye = node.nodeType;
 
             do {
-                if (curNode.nodeType != nodeTye) {
-                    if (curNode.casMatch(node)) {//match success
-                        if (curNode.nodeType == DATA)
-                            matchedValue = curNode.data;
-                        else
-                            matchedValue = node.data;
-                        break;
-                    } else {
-                        //prev = curNode;
-                    }
-                } else {//same type,link skip,exit spin
-                    break;
-                }
+                //1: exit loop when meet same type node
+                if (curNode.nodeType == nodeTye) return null;
+
+                //2: continue to try next node
+                if (curNode.isMatched()) continue;
+
+                
+//                if (curNode.casMatch(node)) {//match success
+//                        if (curNode.nodeType == DATA)
+//                            matchedValue = curNode.item;
+//                        else
+//                            matchedValue = node.item;
+//                        break;
+//                    } else {
+//                        //prev = curNode;
+//                    }
+
             } while (true);
 
 
@@ -282,7 +286,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                         casHead(head, first);//if failed,head should be moved
                         if (success) {
                             LockSupport.unpark(first.waiter);
-                            if (type == REQUEST) return first.data;
+                            if (type == REQUEST) return first.item;
                             return e;
                         }
                         continue;//maybe next still be different type
@@ -301,7 +305,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                         casTail(t, node);
                         Node<E> matched = waitForFilling(node, timed, nanos);
                         if (matched == node) return null;//cancelled
-                        if (matched.nodeType == DATA) return matched.data;
+                        if (matched.nodeType == DATA) return matched.item;
                         return e;
                     }
                 }
@@ -349,7 +353,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                      8: Wait node for being matched                                            //
+    //                                      8: Wait node                                                              //
     //****************************************************************************************************************//
     private static final class Node<E> {
         private static final long nextOffset;
@@ -367,16 +371,16 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             }
         }
 
-        private final E data;
+        private final E item;
         private final int nodeType;
         private Node<E> prev;//unlink from this
         private volatile Node<E> next;
         private volatile Node match;
         private Thread waiter;
 
-        Node(E data) {
-            this.data = data;
-            this.nodeType = data == null ? REQUEST : DATA;
+        Node(E item) {
+            this.item = item;
+            this.nodeType = item == null ? REQUEST : DATA;
         }
 
         private boolean isMatched() {
