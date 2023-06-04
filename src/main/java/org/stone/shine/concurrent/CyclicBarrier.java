@@ -21,28 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.shine.synchronizer.CasStaticState.SIGNAL;
 
 /**
- * The class instance can be seemed as a flight,when passengers are full then begin a happy fly trip to a place(then
- * return to take others for next trip),after arriving destination,the flight set automatically as a new flight for next
- * trip,we call it cyclic.The passengers sleep(call method{@link #await} to add wait thread chain)after boarding,the last
- * passenger will wakeup them on boarding,the wakeup count must equal the present seated size(exclude self),if not equal
- * then cancel this flight(broken state,some wait threads timeout or interrupted),or the last passenger still not be
- * boarding during a time period,some passengers be loss of patience and exit this trip,wakeup automatically some
- * passengers in sleeping to leave.the Cancelled flight not accept any new coming passengers(throws
- * exception{@code BrokenBarrierException}),but can be reset (call method{@link #reset}).
- * <p>
- * Road lines of state change
- * <pre>
- * {@code
- *  line A: State_Open(1) ---> State_Flying(2) ---> State_Arrived(4) ---> State_Open(1)
- * }
- * </pre>
- *
- * <pre>
- * {@code
- *   line B: State_Open(1) ---> State_Cancelled(4) ---> State_Open(1)
- * }
- * </pre>
- *
  * @author Chris Liao
  * @version 1.0
  */

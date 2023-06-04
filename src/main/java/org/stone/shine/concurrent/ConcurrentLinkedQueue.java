@@ -18,28 +18,7 @@ import static org.stone.shine.synchronizer.CasNodeUpdater.casState;
 import static org.stone.shine.synchronizer.CasStaticState.REMOVED;
 
 /**
- * ConcurrentLinkedQueue,A FIFO unbounded queue impl based on linked nodes,the queue has a fixed head node and remain a tail node(not physical remove)
- * <p>
- * 1: snapshot at queue creation
- * ({@code
- * +----------+
- * | head(null)| next --------> null
- * +-----------+
- * })
- * <p>
- * 2:snapshot at queue offer one element(new tail node box contains element item)
- * ({@code
- * +-----------+                   +---------------+
- * | head(null) | next -------->  |new tail(item)  | next --------> null
- * +-----------+                  +---------------+
- * })
- * <p>
- * 3:snapshot at queue poll tail node (just clear node item and set to null,then kept as empty box node)
- * ({@code
- * +----------+
- * | head(null)| next --------> null
- * +-----------+
- * })
+ * ConcurrentLinkedQueue
  *
  * @author Chris Liao
  * @version 1.0
