@@ -322,11 +322,11 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                     spinCount--;//3: decrement spin count until 0
                 } else if (timed) {//4:time parking
                     final long parkTime = deadline - System.nanoTime();
-                    if (parkTime <= 0) {
-                        isFailed = true;
-                    } else if (parkTime > spinForTimeoutThreshold) {
+                    if (parkTime > spinForTimeoutThreshold) {
                         LockSupport.parkNanos(this, parkTime);
                         isFailed = currentThread.isInterrupted();
+                    } else if (parkTime <= 0) {
+                        isFailed = true;
                     }
                 } else {//5: parking without time
                     LockSupport.park(this);
