@@ -252,7 +252,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 7.2: tryMatch **************************************************************//
-        public E tryMatch(Node<E> node) {
+        public final E tryMatch(Node<E> node) {
             int nodeTye = node.nodeType;
             Node<E> curNode = head.next;
 
@@ -273,16 +273,16 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
         //******************************* 7.3: tryMatch **************************************************************//
         public E match(Node<E> node, long timeoutNanos) {
+            E matchedItem;
             int type = node.nodeType;
 
             do {
-                Node<E> h = head;
-                Node<E> t = tail;
-
                 //try to append to tail
+                Node<E> t = tail;
                 if (head == t || t.nodeType == type) {//empty or same type
                     node.prev = t;
-                    node.waiter = Thread.currentThread();
+                    if (node.waiter == null) node.waiter = Thread.currentThread();
+
                     if (t.casNext(null, node)) {
                         casTail(t, node);
                         Node<E> matched = waitForFilling(node, timeoutNanos);
@@ -290,9 +290,8 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                         if (matched.nodeType == DATA) return matched.item;
                         return node.item;
                     }
-                } else {//match transfer
-                    E matchedItem = tryMatch(node);
-                    if (matchedItem != null) return matchedItem;
+                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
+                    return matchedItem;
                 }
             } while (true);
         }
@@ -311,7 +310,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                 if (matched != null) {
                     if (node != tail) {//try to unlink from chain
                         Node prev = node.prev;
-                        prev.casNext(node, node.next);
+                        if (prev.next == node) prev.casNext(node, node.next);
                     }
                     return matched;
                 }
