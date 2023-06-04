@@ -236,32 +236,28 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         public E tryMatch(Node<E> node) {
             Node<E> curNode = head.next;
             if (curNode == null) return null;
-
-            E matchedValue = null;
             int nodeTye = node.nodeType;
 
             do {
                 //1: exit loop when meet same type node
                 if (curNode.nodeType == nodeTye) return null;
 
-                //2: continue to try next node
-                if (curNode.isMatched()) continue;
+                //2: try to match current node
+                if (!curNode.isMatched() && curNode.casMatch(node)) {//success
+                    Node<E> nextNode = curNode.next;
+                    Node<E> linkToNode = nextNode != null ? nextNode : curNode;
+                    casHead(head, linkToNode);
+                    return curNode.nodeType == DATA ? curNode.item : node.item;
+                }
 
-                
-//                if (curNode.casMatch(node)) {//match success
-//                        if (curNode.nodeType == DATA)
-//                            matchedValue = curNode.item;
-//                        else
-//                            matchedValue = node.item;
-//                        break;
-//                    } else {
-//                        //prev = curNode;
-//                    }
-
+                //3: read next node
+                Node<E> nextNode = curNode.next;
+                if (nextNode == null) {//reach end,so exit
+                    casHead(head, curNode);
+                    return null;
+                }
+                curNode = nextNode;
             } while (true);
-
-
-            return matchedValue;
         }
 
         //******************************* 7.3: tryMatch **************************************************************//
