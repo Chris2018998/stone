@@ -58,7 +58,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * queued thread then no element is available for removal and
  * {@code poll()} will return {@code null}.  For purposes of other
  * {@code Collection} methods (for example {@code contains}), a
- * {@code SynchronousQueue} acts as an empty collection.  This queue
+ * {@code SynchronousQueue2} acts as an empty collection.  This queue
  * does not permit {@code null} elements.
  *
  * <p>Synchronous queues are similar to rendezvous channels used in
@@ -200,14 +200,14 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     private WaitQueue waitingConsumers;
 
     /**
-     * Creates a {@code SynchronousQueue} with nonfair access policy.
+     * Creates a {@code SynchronousQueue2} with nonfair access policy.
      */
     public SynchronousQueue() {
         this(false);
     }
 
     /**
-     * Creates a {@code SynchronousQueue} with the specified fairness policy.
+     * Creates a {@code SynchronousQueue2} with the specified fairness policy.
      *
      * @param fair if true, waiting threads contend in FIFO order for
      *             access; otherwise the order is unspecified.
@@ -238,6 +238,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
+        if(Thread.interrupted())throw new InterruptedException();
         if (transferer.transfer(e, false, 0) == null) {
             Thread.interrupted();
             throw new InterruptedException();
@@ -253,9 +254,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    public boolean offer(E e, long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
+        if(Thread.interrupted())throw new InterruptedException();
         if (transferer.transfer(e, true, unit.toNanos(timeout)) != null)
             return true;
         if (!Thread.interrupted())
@@ -285,11 +286,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
+        if(Thread.interrupted())throw new InterruptedException();
         E e = transferer.transfer(null, false, 0);
-
-//        if (e != null)return e;
-//        Thread.interrupted();
-//        throw new InterruptedException();
+        //if (e != null)return e;
+        //Thread.interrupted();
+        //throw new InterruptedException();
 
         boolean isInterrupted = Thread.interrupted();//clear interrupted status
         if (e == null && isInterrupted) throw new InterruptedException();
@@ -306,6 +307,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        if(Thread.interrupted())throw new InterruptedException();
         E e = transferer.transfer(null, true, unit.toNanos(timeout));
 
 //        if (e != null || !Thread.interrupted()) return e;
@@ -328,7 +330,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns {@code true}.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @return {@code true}
      */
@@ -338,7 +340,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns zero.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @return zero
      */
@@ -348,7 +350,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns zero.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @return zero
      */
@@ -358,14 +360,14 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Does nothing.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      */
     public void clear() {
     }
 
     /**
      * Always returns {@code false}.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @param o the element
      * @return {@code false}
@@ -376,7 +378,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns {@code false}.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @param o the element to remove
      * @return {@code false}
@@ -387,7 +389,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Returns {@code false} unless the given collection is empty.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @param c the collection
      * @return {@code false} unless given collection is empty
@@ -398,7 +400,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns {@code false}.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @param c the collection
      * @return {@code false}
@@ -409,7 +411,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns {@code false}.
-     * A {@code SynchronousQueue} has no internal capacity.
+     * A {@code SynchronousQueue2} has no internal capacity.
      *
      * @param c the collection
      * @return {@code false}
@@ -420,7 +422,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Always returns {@code null}.
-     * A {@code SynchronousQueue} does not return elements
+     * A {@code SynchronousQueue2} does not return elements
      * unless actively waited on.
      *
      * @return {@code null}
@@ -494,7 +496,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /*
      * To cope with serialization strategy in the 1.5 version of
-     * SynchronousQueue, we declare some unused classes and fields
+     * SynchronousQueue2, we declare some unused classes and fields
      * that exist solely to enable serializability across versions.
      * These fields are never used, so are initialized only if this
      * object is ever serialized or deserialized.
@@ -756,7 +758,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * normal returns, which have precedence over
              * timeouts. (So, on timeout, one last check for match is
              * done before giving up.) Except that calls from untimed
-             * SynchronousQueue.{poll/offer} don't check interrupts
+             * SynchronousQueue2.{poll/offer} don't check interrupts
              * and don't wait at all, so are trapped in transfer
              * method rather than calling awaitFulfill.
              */
@@ -1019,7 +1021,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              *
              * The loop starts off with a null check guarding against
              * seeing uninitialized head or tail values. This never
-             * happens in current SynchronousQueue, but could if
+             * happens in current SynchronousQueue2, but could if
              * callers held non-volatile/final ref to the
              * transferer. The check is here anyway because it places
              * null checks at top of loop, which is usually faster
