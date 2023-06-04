@@ -65,11 +65,13 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
+        if (Thread.interrupted()) throw new InterruptedException();
         matcher.match(new Node<>(e), 0);
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
+        if (Thread.interrupted()) throw new InterruptedException();
         return matcher.match(new Node<>(e), unit.toNanos(timeout)) != null;
     }
 
@@ -81,10 +83,12 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     public E take() throws InterruptedException {
+        if (Thread.interrupted()) throw new InterruptedException();
         return matcher.match(new Node<>((E) null), 0);
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        if (Thread.interrupted()) throw new InterruptedException();
         return matcher.match(new Node<>((E) null), unit.toNanos(timeout));
     }
 
