@@ -296,7 +296,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             } while (true);
         }
 
-        //******************************* 7.5: Wait for being matched ************************************************//
+        //******************************* 7.4: Wait for being matched ************************************************//
         private Node<E> waitForFilling(Node<E> node, long nano) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
