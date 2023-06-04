@@ -45,8 +45,12 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
     }
 
+
     private BufferMatcher<E> matcher;
 
+    //****************************************************************************************************************//
+    //                                     1: constructors(2)                                                         //
+    //****************************************************************************************************************//
     public SynchronousQueue2() {
         this(false);
     }
@@ -56,7 +60,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                     1: offer/put methods(3)                                                    //
+    //                                     2: offer/put methods(3)                                                    //
     //****************************************************************************************************************//
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
@@ -76,7 +80,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                          2: poll/take methods(3)                                               //
+    //                                          3: poll/take methods(3)                                               //
     //****************************************************************************************************************//
     public E poll() {
         return matcher.tryMatch(new Node<>((E) null));
@@ -93,7 +97,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                      3:queue other methods                                                     //
+    //                                      4: queue other methods                                                    //
     //****************************************************************************************************************//
     public boolean isEmpty() {
         return true;
@@ -175,7 +179,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                      4: BufferMatcher Interface(1)                                             //
+    //                                      5: BufferMatcher Interface                                                //
     //****************************************************************************************************************//
     private interface BufferMatcher<E> {
 
@@ -185,7 +189,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                      4: Stack Impl of Matcher(3)                                               //
+    //                                      6: Matcher Impl By Stack                                                  //
     //****************************************************************************************************************//
     private static final class StackMatcher<E> implements BufferMatcher<E> {
         public E tryMatch(Node<E> e) {
@@ -198,7 +202,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     }
 
     //****************************************************************************************************************//
-    //                                      4: Queue Impl of Matcher(3)                                               //
+    //                                      7: Matcher Impl By Queue                                                  //
     //****************************************************************************************************************//
     private static final class QueueMatcher<E> implements BufferMatcher<E> {
         private static final long headOffset;
@@ -219,9 +223,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         private transient volatile Node<E> head = new Node<>(null);
         private transient volatile Node<E> tail = head;
 
-        //************************************************************************************************************//
-        //               1:Chain Cas(2)                                                                               //                                                                                  //
-        //************************************************************************************************************//
+        //******************************* 7.1: Chain Cas(2)***********************************************************//
         private void casHead(Node oldHead, Node newHead) {
             if (oldHead == head) U.compareAndSwapObject(this, headOffset, oldHead, newHead);
         }
@@ -230,9 +232,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             if (oldTail == tail) U.compareAndSwapObject(this, tailOffset, oldTail, newTail);
         }
 
-        //************************************************************************************************************//
-        //               2: get on buffer(2)                                                                          //                                                                                  //
-        //************************************************************************************************************//
+        //******************************* 7.2: tryMatch **************************************************************//
         public E tryMatch(Node<E> node) {
             Node<E> curNode = head.next;
             if (curNode == null) return null;
@@ -260,14 +260,12 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             return matchedValue;
         }
 
-
+        //******************************* 7.3: tryMatch **************************************************************//
         public E match(Node<E> e, long timeoutNanos) throws InterruptedException {
             return null;
         }
 
-        //************************************************************************************************************//
-        //               4:Other (2)                                                                                  //                                                                                  //
-        //************************************************************************************************************//
+        //******************************* 7.4: Other *****************************************************************//
         public E transfer(E e, boolean timed, long nanos) {
             Node<E> node = new Node<>(e);
             int type = node.nodeType;
@@ -310,7 +308,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             } while (true);
         }
 
-        //return match node(cas fill)(Copy Logic from BeeCP)
+        //******************************* 7.5: Wait for being matched ************************************************//
         private Node<E> waitForFilling(Node<E> node, boolean timed, long nano) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
@@ -350,7 +348,9 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
     }
 
-    //chain node
+    //****************************************************************************************************************//
+    //                                      8: Wait node for being matched                                            //
+    //****************************************************************************************************************//
     private static final class Node<E> {
         private static final long nextOffset;
         private static final long matchedOffset;
@@ -388,8 +388,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         private boolean casNext(Node cmp, Node val) {
-            return next == cmp &&
-                    U.compareAndSwapObject(this, nextOffset, cmp, val);
+            return next == cmp && U.compareAndSwapObject(this, nextOffset, cmp, val);
         }
     }
 }
