@@ -70,13 +70,22 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         if (Thread.interrupted()) throw new InterruptedException();
-        matcher.match(new Node<>(e), 0);
+
+        E matchedItem = matcher.match(new Node<>(e), 0);
+
+        boolean isInterrupted = Thread.interrupted();//clear interrupted status
+        if (matchedItem == null && isInterrupted) throw new InterruptedException();
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         if (Thread.interrupted()) throw new InterruptedException();
-        return matcher.match(new Node<>(e), unit.toNanos(timeout)) != null;
+
+        E matchedItem = matcher.match(new Node<>(e), unit.toNanos(timeout));
+
+        boolean isInterrupted = Thread.interrupted();//clear interrupted status
+        if (matchedItem == null && isInterrupted) throw new InterruptedException();
+        return matchedItem != null;
     }
 
     //****************************************************************************************************************//
@@ -88,12 +97,22 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
     public E take() throws InterruptedException {
         if (Thread.interrupted()) throw new InterruptedException();
-        return matcher.match(new Node<>((E) null), 0);
+
+        E matchedItem = matcher.match(new Node<>((E) null), 0);
+
+        boolean isInterrupted = Thread.interrupted();//clear interrupted status
+        if (matchedItem == null && isInterrupted) throw new InterruptedException();
+        return matchedItem;
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         if (Thread.interrupted()) throw new InterruptedException();
-        return matcher.match(new Node<>((E) null), unit.toNanos(timeout));
+
+        E matchedItem = matcher.match(new Node<>((E) null), unit.toNanos(timeout));
+
+        boolean isInterrupted = Thread.interrupted();//clear interrupted status
+        if (matchedItem == null && isInterrupted) throw new InterruptedException();
+        return matchedItem;
     }
 
     //****************************************************************************************************************//
@@ -261,7 +280,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                 Node<E> t = tail;
 
                 //try to append to tail
-                if (head == t || t.nodeType == type) {//null or same type
+                if (head == t || t.nodeType == type) {//empty or same type
                     node.prev = t;
                     node.waiter = Thread.currentThread();
                     if (t.casNext(null, node)) {
