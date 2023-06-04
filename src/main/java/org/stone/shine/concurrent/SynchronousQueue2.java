@@ -253,57 +253,36 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 7.3: tryMatch **************************************************************//
-        public E match(Node<E> e, long timeoutNanos) throws InterruptedException {
-            return null;
-        }
-
-        //******************************* 7.4: Other *****************************************************************//
-        public E transfer(E e, boolean timed, long nanos) {
-            Node<E> node = new Node<>(e);
+        public E match(Node<E> node, long timeoutNanos) throws InterruptedException {
             int type = node.nodeType;
+
             do {
-                //1: try to cas match
                 Node<E> h = head;
-                Node<E> first = h.next;
-                if (first != null) {
-                    if (first.isMatched()) {
-                        casHead(head, first);
-                        continue;//continue to get next node,maybe it can match
-                    } else if (first.nodeType != type) {
-                        boolean success = first.casMatch(node);
-                        casHead(head, first);//if failed,head should be moved
-                        if (success) {
-                            LockSupport.unpark(first.waiter);
-                            if (type == REQUEST) return first.item;
-                            return e;
-                        }
-                        continue;//maybe next still be different type
-                    }
-                }
-
-                //2: return null when time not greater than zero
-                if (timed && nanos <= 0) return null;
-
-                //3: wait to
                 Node<E> t = tail;
+
+                //try to append to tail
                 if (head == t || t.nodeType == type) {//null or same type
                     node.prev = t;
                     node.waiter = Thread.currentThread();
                     if (t.casNext(null, node)) {
                         casTail(t, node);
-                        Node<E> matched = waitForFilling(node, timed, nanos);
+                        Node<E> matched = waitForFilling(node, timeoutNanos);
                         if (matched == node) return null;//cancelled
                         if (matched.nodeType == DATA) return matched.item;
-                        return e;
+                        return node.item;
                     }
+                } else {//match transfer
+                    E matchedItem = tryMatch(node);
+                    if (matchedItem != null) return matchedItem;
                 }
             } while (true);
         }
 
         //******************************* 7.5: Wait for being matched ************************************************//
-        private Node<E> waitForFilling(Node<E> node, boolean timed, long nano) {
+        private Node<E> waitForFilling(Node<E> node, long nano) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
+            boolean timed = nano > 0;
             long deadline = timed ? System.nanoTime() + nano : 0;
             int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on first node
 
@@ -363,7 +342,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         private final int nodeType;
         private Node<E> prev;//unlink from this
         private volatile Node<E> next;
-        private volatile Node match;
+        private volatile Node<E> match;
         private Thread waiter;
 
         Node(E item) {
