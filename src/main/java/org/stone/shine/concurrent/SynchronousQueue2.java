@@ -234,8 +234,8 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
         //******************************* 7.2: tryMatch **************************************************************//
         public E tryMatch(Node<E> node) {
-            Node<E> curNode = head.next;
             int nodeTye = node.nodeType;
+            Node<E> curNode = head.next;
 
             do {
                 //1: exit loop when meet same type node
