@@ -293,7 +293,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 7.3: match *****************************************************************//
-        public E match(Node<E> node, long timeoutNanos) {
+        public E match(Node<E> node, long timeout) {
             E matchedItem;
             int type = node.nodeType;
 
@@ -306,7 +306,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
                     if (t.casNext(null, node)) {
                         casTail(t, node);
-                        Node<E> matched = waitForFilling(node, timeoutNanos);
+                        Node<E> matched = waitForFilling(node, timeout);
                         if (matched == node) return null;//cancelled
                         if (matched.nodeType == DATA) return matched.item;
                         return node.item;
@@ -318,11 +318,11 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 7.4: Wait for being matched ************************************************//
-        private Node<E> waitForFilling(Node<E> node, long nano) {
+        private Node<E> waitForFilling(Node<E> node, long timeout) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
-            boolean timed = nano > 0;
-            long deadline = timed ? System.nanoTime() + nano : 0;
+            boolean timed = timeout > 0;
+            long deadline = timed ? System.nanoTime() + timeout : 0;
             int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on first node
 
             do {
