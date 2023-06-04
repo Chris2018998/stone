@@ -328,17 +328,17 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             do {
                 //1: read match node
                 Node<E> matched = node.match;
-                if (matched != null) {
-                    if (node != tail) {//try to unlink from chain
-                        Node prev = node.prev;
-                        prev.casNext(node, node.next);
-                    }
-                    return matched;
-                }
+                if (matched != null) return matched;
 
                 //2: cancel node when failed
                 if (isFailed) {
-                    node.casMatch(node);
+                    if (node.casMatch(node)) {//has cancelled
+                        Node prev = node.prev;
+                        if (prev == head)
+                            casHead(prev, node);
+                        else if (node != tail) //try to unlink from chain
+                            prev.casNext(node, node.next);
+                    }
                 } else if (spinCount > 0) {
                     spinCount--;//3: decrement spin count until 0
                 } else if (timed) {//4:time parking
