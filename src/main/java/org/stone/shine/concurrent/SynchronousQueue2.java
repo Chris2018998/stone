@@ -211,10 +211,31 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //                                      6: Matcher Impl By Stack                                                  //
     //****************************************************************************************************************//
     private static final class StackMatcher<E> implements BufferMatcher<E> {
+        private static final long headOffset;
+
+        static {
+            try {
+                Class<?> k = StackMatcher.class;
+                headOffset = U.objectFieldOffset
+                        (k.getDeclaredField("head"));
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+
+        private transient volatile Node<E> head = new Node<>(null);
+
+        //******************************* 6.1: Chain Cas(1)***********************************************************//
+        private void casHead(Node oldHead, Node newHead) {
+            if (oldHead == head) U.compareAndSwapObject(this, headOffset, oldHead, newHead);
+        }
+
+        //******************************* 6.2: tryMatch **************************************************************//
         public E tryMatch(Node<E> e) {
             return null;
         }
 
+        //******************************* 6.3: tryMatch **************************************************************//
         public E match(Node<E> e, long timeoutNanos) {
             return null;
         }
