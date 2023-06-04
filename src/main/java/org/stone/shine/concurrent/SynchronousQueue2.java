@@ -235,7 +235,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             return null;
         }
 
-        //******************************* 6.3: tryMatch **************************************************************//
+        //******************************* 6.3: match *****************************************************************//
         public E match(Node<E> e, long timeoutNanos) {
             return null;
         }
@@ -292,7 +292,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             } while (true);
         }
 
-        //******************************* 7.3: tryMatch **************************************************************//
+        //******************************* 7.3: match *****************************************************************//
         public E match(Node<E> node, long timeoutNanos) {
             E matchedItem;
             int type = node.nodeType;
