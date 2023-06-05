@@ -231,8 +231,21 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 6.2: tryMatch **************************************************************//
-        public E tryMatch(Node<E> e) {
-            return null;
+        public E tryMatch(Node<E> node) {
+            int nodeTye = node.nodeType;
+
+            do {
+                Node<E> firstNode = head.next;
+
+                //1: exit loop when meet same type node
+                if (firstNode == null || firstNode.nodeType == nodeTye) return null;
+
+                //2: try to match current node
+                if (firstNode.match == null && firstNode.casMatch(node)) {//success
+                    casHead(head, firstNode);//current node becomes a new head(dummy node)
+                    return firstNode.nodeType == DATA ? firstNode.item : node.item;
+                }
+            } while (true);
         }
 
         //******************************* 6.3: match *****************************************************************//
@@ -260,12 +273,12 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             }
         }
 
-        private transient volatile Node<E> head = new Node<>(null);
-        private transient volatile Node<E> tail = head;
+        private transient volatile Node<E> head;
+        private transient volatile Node<E> tail;
 
         //******************************* 7.1: Chain Cas(2)***********************************************************//
-        private void casHead(Node oldHead, Node newHead) {
-            if (oldHead == head) U.compareAndSwapObject(this, headOffset, oldHead, newHead);
+        private boolean casHead(Node oldHead, Node newHead) {
+            return oldHead == head && U.compareAndSwapObject(this, headOffset, oldHead, newHead);
         }
 
         private void casTail(Node oldTail, Node newTail) {
@@ -274,16 +287,21 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
         //******************************* 7.2: tryMatch **************************************************************//
         public final E tryMatch(Node<E> node) {
+            Node<E> curNode = head;
             int nodeTye = node.nodeType;
-            Node<E> curNode = head.next;
 
             do {
                 //1: exit loop when meet same type node
                 if (curNode == null || curNode.nodeType == nodeTye) return null;
 
                 //2: try to match current node
-                if (!curNode.isMatched() && curNode.casMatch(node)) {//success
-                    casHead(head, curNode);//current node becomes a new head(dummy node)
+                if (curNode.match == null && curNode.casMatch(node)) {//match success
+                    Node<E> h = head;
+                    Node<E> next = curNode.next;
+                    if (next != null)
+                        casHead(h, next);
+                    else if (h != curNode)
+                        casHead(h, curNode);
                     return curNode.nodeType == DATA ? curNode.item : node.item;
                 }
 
@@ -293,31 +311,55 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 7.3: match *****************************************************************//
-        public E match(Node<E> node, long timeout) {
+        public final E match(Node<E> node, long timeout) {
             E matchedItem;
             int type = node.nodeType;
 
             do {
                 //try to append to tail
                 Node<E> t = tail;
-                if (head == t || t.nodeType == type) {//empty or same type
-                    node.prev = t;
-                    if (node.waiter == null) node.waiter = Thread.currentThread();
-
-                    if (t.casNext(null, node)) {
-                        casTail(t, node);
-                        Node<E> matched = waitForFilling(node, timeout);
-                        if (matched == node) return null;//cancelled
-                        if (matched.nodeType == DATA) return matched.item;
-                        return node.item;
+                if (t == head || t.nodeType == type) {//empty or same type
+                    this.offerToChain(node);
+                    Node<E> matched = this.waitForFilling(node, timeout);
+                    if (matched == node) {//cancelled(interrupted or timeout)
+                        //@todo need more think
+                        Node prev = node.prev;
+                        if (prev != null) {
+                            if (node != tail) prev.casNext(node, node.next);
+                        } else if (node != tail) {//node is head
+                            casHead(head, node.next);
+                        }
+                        return null;
+                    } else {
+                        return matched.nodeType == DATA ? matched.item : node.item;
                     }
+
                 } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
                     return matchedItem;
                 }
             } while (true);
         }
 
-        //******************************* 7.4: Wait for being matched ************************************************//
+        //******************************* 7.4: offer to chain ********************************************************//
+        private void offerToChain(Node<E> node) {
+            if (node.waiter == null) node.waiter = Thread.currentThread();
+
+            do {
+                Node<E> t = tail;
+                if (t != null) {
+                    node.prev = t;
+                    if (t.casNext(null, node)) {
+                        casTail(t, node);
+                        return;
+                    }
+                } else if (head == null && casHead(null, node)) {
+                    this.tail = node;
+                    return;
+                }
+            } while (true);
+        }
+
+        //******************************* 7.5: Wait for being matched ************************************************//
         private Node<E> waitForFilling(Node<E> node, long timeout) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
@@ -332,13 +374,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
                 //2: cancel node when failed
                 if (isFailed) {
-                    if (node.casMatch(node)) {//has cancelled
-                        Node prev = node.prev;
-                        if (prev == head)
-                            casHead(prev, node);
-                        else if (node != tail) //try to unlink from chain
-                            prev.casNext(node, node.next);
-                    }
+                    node.casMatch(node);
                 } else if (spinCount > 0) {
                     spinCount--;//3: decrement spin count until 0
                 } else if (timed) {//4:time parking
@@ -386,10 +422,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         Node(E item) {
             this.item = item;
             this.nodeType = item == null ? REQUEST : DATA;
-        }
-
-        private boolean isMatched() {
-            return match != null;
         }
 
         private boolean casMatch(Node val) {
