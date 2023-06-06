@@ -316,7 +316,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             int type = node.nodeType;
 
             do {
-                //try to append to tail
                 Node<E> t = tail;
                 if (t == head || t.isMatched() || t.nodeType == type) {//empty or same type
                     //1: offer to chain
@@ -326,13 +325,13 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                     //3: matched success
                     if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
 
-                    //4: remove from chain(cancelled)
-                    //@todo need more thinking
+                    //4: remove cancelled node from chain
                     Node prev = node.prev;
+                    Node next = node.next;
                     if (prev != null) {
-                        if (node != tail) prev.casNext(node, node.next);
-                    } else if (node != tail) {//node is head
-                        casHead(head, node.next);
+                        if (next != null) prev.casNext(node, next);
+                    } else if (next != null) {//node is head
+                        casHead(head, next);
                     }
                     return null;
                 } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
