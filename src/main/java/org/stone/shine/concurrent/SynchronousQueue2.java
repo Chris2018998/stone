@@ -257,7 +257,12 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             do {
                 Node<E> h = head;
                 if (h == null || h.nodeType == nodeTye) {//empty or same type
-
+                    //1: offer to chain
+                    this.offerToChain(node);
+                    //2: wait for matching
+                    Node<E> matched = this.waitForFilling(node, timeoutNanos);
+                    //3: matched success
+                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
 
                 } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
                     return matchedItem;
