@@ -250,11 +250,21 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 6.3: match *****************************************************************//
-        public E match(Node<E> e, long timeoutNanos) {
-            return null;
+        public E match(Node<E> node, long timeoutNanos) {
+            E matchedItem;
+            int nodeTye = node.nodeType;
+
+            do {
+                Node<E> h = head;
+                if (h == null || h.nodeType == nodeTye) {//empty or same type
+
+
+                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
+                    return matchedItem;
+                }
+            } while (true);
         }
     }
-
 
     //****************************************************************************************************************//
     //                                      7: Matcher Impl By Queue                                                  //
