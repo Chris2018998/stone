@@ -45,7 +45,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
     }
 
-
     private BufferMatcher<E> matcher;
 
     //****************************************************************************************************************//
@@ -254,6 +253,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
     }
 
+
     //****************************************************************************************************************//
     //                                      7: Matcher Impl By Queue                                                  //
     //****************************************************************************************************************//
@@ -319,21 +319,22 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                 //try to append to tail
                 Node<E> t = tail;
                 if (t == head || t.isMatched() || t.nodeType == type) {//empty or same type
+                    //1: offer to chain
                     this.offerToChain(node);
+                    //2: wait for matching
                     Node<E> matched = this.waitForFilling(node, timeout);
-                    if (matched == node) {//cancelled(interrupted or timeout)
-                        //@todo need more thinking
-                        Node prev = node.prev;
-                        if (prev != null) {
-                            if (node != tail) prev.casNext(node, node.next);
-                        } else if (node != tail) {//node is head
-                            casHead(head, node.next);
-                        }
-                        return null;
-                    } else {
-                        return matched.nodeType == DATA ? matched.item : node.item;
-                    }
+                    //3: matched success
+                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
 
+                    //4: remove from chain(cancelled)
+                    //@todo need more thinking
+                    Node prev = node.prev;
+                    if (prev != null) {
+                        if (node != tail) prev.casNext(node, node.next);
+                    } else if (node != tail) {//node is head
+                        casHead(head, node.next);
+                    }
+                    return null;
                 } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
                     return matchedItem;
                 }
@@ -365,7 +366,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             Thread currentThread = node.waiter;
             boolean timed = timeout > 0;
             long deadline = timed ? System.nanoTime() + timeout : 0;
-            int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on first node
+            int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on head node
 
             do {
                 //1: read match node
