@@ -318,11 +318,11 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             do {
                 //try to append to tail
                 Node<E> t = tail;
-                if (t == head || t.nodeType == type) {//empty or same type
+                if (t == head || t.isMatched() || t.nodeType == type) {//empty or same type
                     this.offerToChain(node);
                     Node<E> matched = this.waitForFilling(node, timeout);
                     if (matched == node) {//cancelled(interrupted or timeout)
-                        //@todo need more think
+                        //@todo need more thinking
                         Node prev = node.prev;
                         if (prev != null) {
                             if (node != tail) prev.casNext(node, node.next);
@@ -422,6 +422,10 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         Node(E item) {
             this.item = item;
             this.nodeType = item == null ? REQUEST : DATA;
+        }
+
+        private boolean isMatched() {
+            return match != null && match != this;
         }
 
         private boolean casMatch(Node val) {
