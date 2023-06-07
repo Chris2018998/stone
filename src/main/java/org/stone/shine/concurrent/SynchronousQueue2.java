@@ -271,6 +271,42 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
             return null;
         }
+
+        //******************************* 7.5: Wait for being matched ************************************************//
+        private Node<E> waitForFilling(Node<E> node, long timeout) {
+            boolean isFailed = false;//interrupted or timeout,cancel node by self
+            Thread currentThread = node.waiter;
+            boolean timed = timeout > 0;
+            long deadline = timed ? System.nanoTime() + timeout : 0;
+            int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on head node
+
+            do {
+                //1: read match node
+                Node<E> matched = node.match;
+                if (matched != null) return matched;
+
+                //2: cancel node when failed
+                if (isFailed) {
+                    node.casMatch(node);
+                } else if (spinCount > 0) {
+                    if (head.next == node)
+                        spinCount--;
+                    else
+                        spinCount = 0;
+                } else if (timed) {//4:time parking
+                    final long parkTime = deadline - System.nanoTime();
+                    if (parkTime > spinForTimeoutThreshold) {
+                        LockSupport.parkNanos(this, parkTime);
+                        isFailed = currentThread.isInterrupted();
+                    } else if (parkTime <= 0) {
+                        isFailed = true;
+                    }
+                } else {//5: parking without time
+                    LockSupport.park(this);
+                    isFailed = currentThread.isInterrupted();
+                }
+            } while (true);
+        }
     }
 
     //****************************************************************************************************************//
