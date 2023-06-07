@@ -199,35 +199,156 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //****************************************************************************************************************//
     //                                      5: BufferMatcher Interface                                                //
     //****************************************************************************************************************//
-    private interface BufferMatcher<E> {
-
-        E tryMatch(Node<E> e);
-
-        E match(Node<E> e, long timeoutNanos);
-    }
-
-    //****************************************************************************************************************//
-    //                                      6: Matcher Impl By Stack                                                  //
-    //****************************************************************************************************************//
-    private static final class StackMatcher<E> implements BufferMatcher<E> {
+    private static abstract class BufferMatcher<E> {
         private static final long headOffset;
+        private static final long tailOffset;
 
         static {
             try {
-                Class<?> k = StackMatcher.class;
+                Class<?> k = BufferMatcher.class;
                 headOffset = U.objectFieldOffset
                         (k.getDeclaredField("head"));
+                tailOffset = U.objectFieldOffset
+                        (k.getDeclaredField("tail"));
             } catch (Exception e) {
                 throw new Error(e);
             }
         }
 
-        private transient volatile Node<E> head = new Node<>(null);
+        protected transient volatile Node<E> head;
+        protected transient volatile Node<E> tail;
 
-        //******************************* 6.1: Chain Cas(1)***********************************************************//
-        private void casHead(Node oldHead, Node newHead) {
-            if (oldHead == head) U.compareAndSwapObject(this, headOffset, oldHead, newHead);
+        //******************************* 5.1: Chain Cas(2)***********************************************************//
+        boolean casHead(Node oldHead, Node newHead) {
+            return oldHead == head && U.compareAndSwapObject(this, headOffset, oldHead, newHead);
         }
+
+        void casTail(Node oldTail, Node newTail) {
+            if (oldTail == tail) U.compareAndSwapObject(this, tailOffset, oldTail, newTail);
+        }
+
+        //******************************* 5.2: abstract methods(2)****************************************************//
+        abstract E tryMatch(Node<E> e);
+
+        abstract E match(Node<E> e, long timeoutNanos);
+    }
+
+    //****************************************************************************************************************//
+    //                                      6: Matcher Impl By Queue                                                  //
+    //****************************************************************************************************************//
+    private static final class QueueMatcher<E> extends BufferMatcher<E> {
+        //******************************* 6.1: tryMatch **************************************************************//
+        public final E tryMatch(Node<E> node) {
+            Node<E> curNode = head;
+            int nodeTye = node.nodeType;
+
+            do {
+                //1: exit loop when meet same type node
+                if (curNode == null || curNode.nodeType == nodeTye) return null;
+
+                //2: try to match current node
+                if (curNode.match == null && curNode.casMatch(node)) {//match success
+                    Node<E> h = head;
+                    Node<E> next = curNode.next;
+                    if (next != null)
+                        casHead(h, next);
+                    else if (h != curNode)
+                        casHead(h, curNode);
+                    return curNode.nodeType == DATA ? curNode.item : node.item;
+                }
+
+                //3: read next node
+                curNode = curNode.next;
+            } while (true);
+        }
+
+        //******************************* 6.2: match *****************************************************************//
+        public final E match(Node<E> node, long timeout) {
+            E matchedItem;
+            int type = node.nodeType;
+
+            do {
+                Node<E> t = tail;
+                if (t == head || t.isMatched() || t.nodeType == type) {//empty or same type
+                    //1: offer to chain
+                    this.offerToChain(node);
+                    //2: wait for matching
+                    Node<E> matched = this.waitForFilling(node, timeout);
+                    //3: matched success
+                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
+
+                    //4: remove cancelled node from chain
+                    Node prev = node.prev;
+                    Node next = node.next;
+                    if (prev != null) {
+                        if (next != null) prev.casNext(node, next);
+                    } else if (next != null) {//node is head
+                        casHead(head, next);
+                    }
+                    return null;
+                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
+                    return matchedItem;
+                }
+            } while (true);
+        }
+
+        //******************************* 6.3: offer to chain ********************************************************//
+        private void offerToChain(Node<E> node) {
+            if (node.waiter == null) node.waiter = Thread.currentThread();
+
+            do {
+                Node<E> t = tail;
+                if (t != null) {
+                    node.prev = t;
+                    if ((t.nodeType == node.nodeType || t.match != null) && t.casNext(null, node)) {
+                        casTail(t, node);
+                        return;
+                    }
+                } else if (head == null && casHead(null, node)) {
+                    this.tail = node;
+                    return;
+                }
+            } while (true);
+        }
+
+        //******************************* 6.4: Wait for being matched ************************************************//
+        private Node<E> waitForFilling(Node<E> node, long timeout) {
+            boolean isFailed = false;//interrupted or timeout,cancel node by self
+            Thread currentThread = node.waiter;
+            boolean timed = timeout > 0;
+            long deadline = timed ? System.nanoTime() + timeout : 0;
+            int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on head node
+
+            do {
+                //1: read match node
+                Node<E> matched = node.match;
+                if (matched != null) return matched;
+
+                //2: cancel node when failed
+                if (isFailed) {
+                    node.casMatch(node);
+                } else if (spinCount > 0) {
+                    spinCount--;//3: decrement spin count until 0
+                } else if (timed) {//4:time parking
+                    final long parkTime = deadline - System.nanoTime();
+                    if (parkTime > spinForTimeoutThreshold) {
+                        LockSupport.parkNanos(this, parkTime);
+                        isFailed = currentThread.isInterrupted();
+                    } else if (parkTime <= 0) {
+                        isFailed = true;
+                    }
+                } else {//5: parking without time
+                    LockSupport.park(this);
+                    isFailed = currentThread.isInterrupted();
+                }
+            } while (true);
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                      7: Matcher Impl By Stack                                                  //
+    //****************************************************************************************************************//
+    private static final class StackMatcher<E> extends BufferMatcher<E> {
 
         //******************************* 6.2: tryMatch **************************************************************//
         public E tryMatch(Node<E> node) {
@@ -293,145 +414,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                         spinCount--;
                     else
                         spinCount = 0;
-                } else if (timed) {//4:time parking
-                    final long parkTime = deadline - System.nanoTime();
-                    if (parkTime > spinForTimeoutThreshold) {
-                        LockSupport.parkNanos(this, parkTime);
-                        isFailed = currentThread.isInterrupted();
-                    } else if (parkTime <= 0) {
-                        isFailed = true;
-                    }
-                } else {//5: parking without time
-                    LockSupport.park(this);
-                    isFailed = currentThread.isInterrupted();
-                }
-            } while (true);
-        }
-    }
-
-    //****************************************************************************************************************//
-    //                                      7: Matcher Impl By Queue                                                  //
-    //****************************************************************************************************************//
-    private static final class QueueMatcher<E> implements BufferMatcher<E> {
-        private static final long headOffset;
-        private static final long tailOffset;
-
-        static {
-            try {
-                Class<?> k = QueueMatcher.class;
-                headOffset = U.objectFieldOffset
-                        (k.getDeclaredField("head"));
-                tailOffset = U.objectFieldOffset
-                        (k.getDeclaredField("tail"));
-            } catch (Exception e) {
-                throw new Error(e);
-            }
-        }
-
-        private transient volatile Node<E> head;
-        private transient volatile Node<E> tail;
-
-        //******************************* 7.1: Chain Cas(2)***********************************************************//
-        private boolean casHead(Node oldHead, Node newHead) {
-            return oldHead == head && U.compareAndSwapObject(this, headOffset, oldHead, newHead);
-        }
-
-        private void casTail(Node oldTail, Node newTail) {
-            if (oldTail == tail) U.compareAndSwapObject(this, tailOffset, oldTail, newTail);
-        }
-
-        //******************************* 7.2: tryMatch **************************************************************//
-        public final E tryMatch(Node<E> node) {
-            Node<E> curNode = head;
-            int nodeTye = node.nodeType;
-
-            do {
-                //1: exit loop when meet same type node
-                if (curNode == null || curNode.nodeType == nodeTye) return null;
-
-                //2: try to match current node
-                if (curNode.match == null && curNode.casMatch(node)) {//match success
-                    Node<E> h = head;
-                    Node<E> next = curNode.next;
-                    if (next != null)
-                        casHead(h, next);
-                    else if (h != curNode)
-                        casHead(h, curNode);
-                    return curNode.nodeType == DATA ? curNode.item : node.item;
-                }
-
-                //3: read next node
-                curNode = curNode.next;
-            } while (true);
-        }
-
-        //******************************* 7.3: match *****************************************************************//
-        public final E match(Node<E> node, long timeout) {
-            E matchedItem;
-            int type = node.nodeType;
-
-            do {
-                Node<E> t = tail;
-                if (t == head || t.isMatched() || t.nodeType == type) {//empty or same type
-                    //1: offer to chain
-                    this.offerToChain(node);
-                    //2: wait for matching
-                    Node<E> matched = this.waitForFilling(node, timeout);
-                    //3: matched success
-                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
-
-                    //4: remove cancelled node from chain
-                    Node prev = node.prev;
-                    Node next = node.next;
-                    if (prev != null) {
-                        if (next != null) prev.casNext(node, next);
-                    } else if (next != null) {//node is head
-                        casHead(head, next);
-                    }
-                    return null;
-                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
-                    return matchedItem;
-                }
-            } while (true);
-        }
-
-        //******************************* 7.4: offer to chain ********************************************************//
-        private void offerToChain(Node<E> node) {
-            if (node.waiter == null) node.waiter = Thread.currentThread();
-
-            do {
-                Node<E> t = tail;
-                if (t != null) {
-                    node.prev = t;
-                    if ((t.nodeType == node.nodeType || t.match != null) && t.casNext(null, node)) {
-                        casTail(t, node);
-                        return;
-                    }
-                } else if (head == null && casHead(null, node)) {
-                    this.tail = node;
-                    return;
-                }
-            } while (true);
-        }
-
-        //******************************* 7.5: Wait for being matched ************************************************//
-        private Node<E> waitForFilling(Node<E> node, long timeout) {
-            boolean isFailed = false;//interrupted or timeout,cancel node by self
-            Thread currentThread = node.waiter;
-            boolean timed = timeout > 0;
-            long deadline = timed ? System.nanoTime() + timeout : 0;
-            int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on head node
-
-            do {
-                //1: read match node
-                Node<E> matched = node.match;
-                if (matched != null) return matched;
-
-                //2: cancel node when failed
-                if (isFailed) {
-                    node.casMatch(node);
-                } else if (spinCount > 0) {
-                    spinCount--;//3: decrement spin count until 0
                 } else if (timed) {//4:time parking
                     final long parkTime = deadline - System.nanoTime();
                     if (parkTime > spinForTimeoutThreshold) {
