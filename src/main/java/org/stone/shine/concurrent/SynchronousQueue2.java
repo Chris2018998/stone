@@ -91,13 +91,13 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //                                          3: poll/take methods(3)                                               //
     //****************************************************************************************************************//
     public E poll() {
-        return matcher.tryMatch(new Node<>((E) null));
+        return matcher.tryMatch(new Node<>(null));
     }
 
     public E take() throws InterruptedException {
         if (Thread.interrupted()) throw new InterruptedException();
 
-        E matchedItem = matcher.match(new Node<>((E) null), 0);
+        E matchedItem = matcher.match(new Node<>(null), 0);
 
         boolean isInterrupted = Thread.interrupted();//clear interrupted status
         if (matchedItem == null && isInterrupted) throw new InterruptedException();
@@ -107,7 +107,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         if (Thread.interrupted()) throw new InterruptedException();
 
-        E matchedItem = matcher.match(new Node<>((E) null), unit.toNanos(timeout));
+        E matchedItem = matcher.match(new Node<>(null), unit.toNanos(timeout));
 
         boolean isInterrupted = Thread.interrupted();//clear interrupted status
         if (matchedItem == null && isInterrupted) throw new InterruptedException();
@@ -251,23 +251,25 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
         //******************************* 6.3: match *****************************************************************//
         public E match(Node<E> node, long timeoutNanos) {
-            E matchedItem;
-            int nodeTye = node.nodeType;
+//            E matchedItem;
+//            int nodeTye = node.nodeType;
+//
+//            do {
+//                Node<E> h = head;
+//                if (h == null || h.nodeType == nodeTye) {//empty or same type
+//                    //1: offer to chain
+//                    this.offerToChain(node);
+//                    //2: wait for matching
+//                    Node<E> matched = this.waitForFilling(node, timeoutNanos);
+//                    //3: matched success
+//                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
+//
+//                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
+//                    return matchedItem;
+//                }
+//            } while (true);
 
-            do {
-                Node<E> h = head;
-                if (h == null || h.nodeType == nodeTye) {//empty or same type
-                    //1: offer to chain
-                    this.offerToChain(node);
-                    //2: wait for matching
-                    Node<E> matched = this.waitForFilling(node, timeoutNanos);
-                    //3: matched success
-                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
-
-                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
-                    return matchedItem;
-                }
-            } while (true);
+            return null;
         }
     }
 
@@ -365,7 +367,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                 Node<E> t = tail;
                 if (t != null) {
                     node.prev = t;
-                    if (t.casNext(null, node)) {
+                    if ((t.nodeType == node.nodeType || t.match != null) && t.casNext(null, node)) {
                         casTail(t, node);
                         return;
                     }
