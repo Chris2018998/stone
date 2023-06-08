@@ -237,7 +237,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //                                      6: Matcher Impl By Queue                                                  //
     //****************************************************************************************************************//
     private static final class QueueMatcher<E> extends BufferMatcher<E> {
-        //******************************* 6.1: tryMatch **************************************************************//
         public final E tryMatch(Node<E> node) {
             Node<E> curNode = head;
             int nodeTye = node.nodeType;
@@ -273,7 +272,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                     //1: offer to chain
                     this.offerToChain(node);
                     //2: wait for matching
-                    Node<E> matched = this.waitForFilling(node, timeout);
+                    Node<E> matched = this.awaitFulfill(node, timeout);
                     //3: matched success
                     if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
 
@@ -312,7 +311,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 6.4: Wait for being matched ************************************************//
-        private Node<E> waitForFilling(Node<E> node, long timeout) {
+        private Node<E> awaitFulfill(Node<E> node, long timeout) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
             boolean timed = timeout > 0;
@@ -350,7 +349,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //****************************************************************************************************************//
     private static final class StackMatcher<E> extends BufferMatcher<E> {
 
-        //******************************* 6.2: tryMatch **************************************************************//
         public E tryMatch(Node<E> node) {
             int nodeTye = node.nodeType;
 
@@ -370,7 +368,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             } while (true);
         }
 
-        //******************************* 6.3: match *****************************************************************//
+        //******************************* 7.2: match *****************************************************************//
         public E match(Node<E> node, long timeoutNanos) {
 //            E matchedItem;
 //            int nodeTye = node.nodeType;
@@ -381,7 +379,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 //                    //1: offer to chain
 //                    this.offerToChain(node);
 //                    //2: wait for matching
-//                    Node<E> matched = this.waitForFilling(node, timeoutNanos);
+//                    Node<E> matched = this.awaitFulfill(node, timeoutNanos);
 //                    //3: matched success
 //                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
 //
@@ -393,8 +391,25 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             return null;
         }
 
-        //******************************* 7.5: Wait for being matched ************************************************//
-        private Node<E> waitForFilling(Node<E> node, long timeout) {
+        //******************************* 7.3: offer to chain ********************************************************//
+        private void offerToChain(Node<E> node) {
+            if (node.waiter == null) node.waiter = Thread.currentThread();
+            do {
+                Node<E> h = head;
+                if (h != null) {
+                    node.prev = h;
+                    Node hn = h.next;
+                    node.next = hn;
+                    if ((h.nodeType == node.nodeType) && h.casNext(hn, node))//<----inset as next node after head
+                        return;
+                } else if (casHead(null, node)) {
+                    return;
+                }
+            } while (true);
+        }
+
+        //******************************* 7.4: Wait for being matched ************************************************//
+        private Node<E> awaitFulfill(Node<E> node, long timeout) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
             boolean timed = timeout > 0;
