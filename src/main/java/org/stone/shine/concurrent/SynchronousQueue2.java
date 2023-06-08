@@ -370,25 +370,32 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
         //******************************* 7.2: match *****************************************************************//
         public E match(Node<E> node, long timeoutNanos) {
-//            E matchedItem;
-//            int nodeTye = node.nodeType;
-//
-//            do {
-//                Node<E> h = head;
-//                if (h == null || h.nodeType == nodeTye) {//empty or same type
-//                    //1: offer to chain
-//                    this.offerToChain(node);
-//                    //2: wait for matching
-//                    Node<E> matched = this.awaitFulfill(node, timeoutNanos);
-//                    //3: matched success
-//                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
-//
-//                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
-//                    return matchedItem;
-//                }
-//            } while (true);
+            E matchedItem;
+            int nodeTye = node.nodeType;
 
-            return null;
+            do {
+                Node<E> h = head;
+                if (h == null || h.nodeType == nodeTye) {//empty or same type
+                    //1: offer to chain
+                    this.offerToChain(node);
+                    //2: wait for matching
+                    Node<E> matched = this.awaitFulfill(node, timeoutNanos);
+                    //3: matched success
+                    if (matched != node) return matched.nodeType == DATA ? matched.item : node.item;
+
+                    //4: remove cancelled node from chain
+                    Node prev = node.prev;
+                    Node next = node.next;
+                    if (prev != null) {
+                        prev.casNext(node, next);
+                    } else if (next != null) {//node is head
+                        casHead(head, next);
+                    }
+                    return null;
+                } else if ((matchedItem = tryMatch(node)) != null) {//match transfer
+                    return matchedItem;
+                }
+            } while (true);
         }
 
         //******************************* 7.3: offer to chain ********************************************************//
@@ -398,9 +405,9 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                 Node<E> h = head;
                 if (h != null) {
                     node.prev = h;
-                    Node hn = h.next;
+                    Node<E> hn = h.next;
                     node.next = hn;
-                    if ((h.nodeType == node.nodeType) && h.casNext(hn, node))//<----inset as next node after head
+                    if ((h.nodeType == node.nodeType) && h.casNext(hn, node))//<----inset as next node of head
                         return;
                 } else if (casHead(null, node)) {
                     return;
