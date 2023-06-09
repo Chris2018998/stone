@@ -238,7 +238,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        if(Thread.interrupted())throw new InterruptedException();
+        if (Thread.interrupted()) throw new InterruptedException();
         if (transferer.transfer(e, false, 0) == null) {
             Thread.interrupted();
             throw new InterruptedException();
@@ -256,7 +256,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        if(Thread.interrupted())throw new InterruptedException();
+        if (Thread.interrupted()) throw new InterruptedException();
         if (transferer.transfer(e, true, unit.toNanos(timeout)) != null)
             return true;
         if (!Thread.interrupted())
@@ -286,7 +286,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        if(Thread.interrupted())throw new InterruptedException();
+        if (Thread.interrupted()) throw new InterruptedException();
         E e = transferer.transfer(null, false, 0);
         //if (e != null)return e;
         //Thread.interrupted();
@@ -307,7 +307,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        if(Thread.interrupted())throw new InterruptedException();
+        if (Thread.interrupted()) throw new InterruptedException();
         E e = transferer.transfer(null, true, unit.toNanos(timeout));
 
 //        if (e != null || !Thread.interrupted()) return e;
