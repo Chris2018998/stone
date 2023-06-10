@@ -242,24 +242,27 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //                                      6: Matcher Impl By Queue                                                  //
     //****************************************************************************************************************//
     private static final class QueueMatcher<E> extends BufferMatcher<E> {
+
         public final E tryMatch(Node<E> s) {
-            Node<E> current = head.next;
-            if (current == null) return null;
+            Node<E> h = head;
+            Node<E> current = h.next;
+            final boolean isData = s.isData;
+            if (current == null || current.isData == isData) return null;
 
             E matchedItem = null;
             do {
                 if (current.match == null && current.casMatch(s)) {
                     LockSupport.unpark(current.waiter);
-                    matchedItem = s.isData ? s.item : current.item;
+                    matchedItem = isData ? s.item : current.item;
                     break;
                 }
 
                 Node<E> nextNode = current.next;
-                if (nextNode == null) break;
+                if (nextNode == null || nextNode.isData == isData) break;
                 current = nextNode;
             } while (true);
 
-            casHead(head, current);
+            casHead(h, current);
             return matchedItem;
         }
 
@@ -267,7 +270,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         public final E match(Node<E> s, long nanos) {
             final boolean isData = s.isData;
             E matchedItem;
-
 
             do {
                 Node t = tail;
@@ -282,10 +284,9 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                         if (s != tail) t.casNext(s, s.next);
                         return null;
                     }
-
                     casHead(h, s);
                     return isData ? s.item : x.item;
-                } else if ((matchedItem = tryMatch(s)) != null) {
+                } else if ((matchedItem = this.tryMatch(s)) != null) {
                     return matchedItem;
                 }
             } while (true);
@@ -311,7 +312,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
                     nanos = deadline - System.nanoTime();
                     if (nanos <= 0L) {
                         failed = true;
-                    } else {
+                    } else if (nanos > spinForTimeoutThreshold) {
                         LockSupport.parkNanos(this, nanos);
                         failed = waitThread.isInterrupted();
                     }
