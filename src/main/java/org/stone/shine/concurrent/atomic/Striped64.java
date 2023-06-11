@@ -53,7 +53,7 @@ abstract class Striped64 extends Number {
 
     transient volatile long base;
     transient volatile Cell[] cells;
-    transient volatile int cellsBusy;//cells lock
+    private transient volatile int cellsBusy;//cells lock
 
     private static int getProbe(int probe) {
         if (probe == 0) {
@@ -77,12 +77,12 @@ abstract class Striped64 extends Number {
         return newCells;
     }
 
-    final boolean casCellsBusy() {
-        return UNSAFE.compareAndSwapInt(this, CELLSBUSY, 0, 1);
+    private boolean casBase(long cmp, long val) {
+        return UNSAFE.compareAndSwapLong(this, BASE, cmp, val);
     }
 
-    final boolean casBase(long cmp, long val) {
-        return UNSAFE.compareAndSwapLong(this, BASE, cmp, val);
+    private boolean casCellsBusy() {
+        return UNSAFE.compareAndSwapInt(this, CELLSBUSY, 0, 1);
     }
 
     //****************************************************************************************************************//
