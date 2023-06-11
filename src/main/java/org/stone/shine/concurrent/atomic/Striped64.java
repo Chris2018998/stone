@@ -122,6 +122,7 @@ abstract class Striped64 extends Number {
                     retrySize--;
                 } else {
                     //@todo expand cells
+                    retrySize = 16;
                 }
             } else if (casCellsBusy()) {//create initial cells array
                 try {
