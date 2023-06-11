@@ -31,8 +31,6 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     private static final int maxTimedSpins = (NCPUS < 2) ? 0 : 32;
     private static final int maxUntimedSpins = maxTimedSpins * 16;
     private static final long spinForTimeoutThreshold = 1000L;
-    private static final int DATA = 1;
-    private static final int REQUEST = 2;
     private static final Unsafe U;
 
     static {
@@ -274,16 +272,17 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
             do {
                 Node t = tail;
                 Node h = head;
-
                 if (h == t || t.isData == isData) { // empty or same-mode
                     if (!t.casNext(null, s)) continue;
                     casTail(t, s);
 
                     Node<E> x = awaitFulfill(s, nanos);
                     if (x == s) {//cancelled
-                        if (s != tail) t.casNext(s, s.next);
+                        Node newNext = s.next;
+                        if (newNext != null) t.casNext(s, newNext);//s at middle
                         return null;
                     }
+
                     casHead(h, s);
                     return isData ? s.item : x.item;
                 } else if ((matchedItem = this.tryMatch(s)) != null) {
@@ -342,8 +341,8 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         private Node<E> awaitFulfill(Node<E> node, long timeout) {
             boolean isFailed = false;//interrupted or timeout,cancel node by self
             Thread currentThread = node.waiter;
-            boolean timed = timeout > 0;
-            long deadline = timed ? System.nanoTime() + timeout : 0;
+            boolean timed = timeout > 0L;
+            long deadline = timed ? System.nanoTime() + timeout : 0L;
             int spinCount = head.next == node ? (timed ? maxTimedSpins : maxUntimedSpins) : 0;//spin on head node
 
             do {
