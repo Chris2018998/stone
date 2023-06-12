@@ -71,10 +71,22 @@ import java.util.concurrent.atomic.AtomicLong;
 public class LongAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
 
+    //initial value
+    private final long initial;
+
     /**
      * Creates a new adder with initial sum of zero.
      */
     public LongAdder() {
+        this.initial = 0;
+    }
+
+    /**
+     * Creates a new adder with initial value
+     */
+    public LongAdder(long initial) {
+        this.initial = initial;
+        this.base = initial;
     }
 
     /**
@@ -132,7 +144,7 @@ public class LongAdder extends Striped64 implements Serializable {
     public void reset() {
         Cell[] as = cells;
         Cell a;
-        base = 0L;
+        base = initial;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -155,7 +167,7 @@ public class LongAdder extends Striped64 implements Serializable {
         Cell[] as = cells;
         Cell a;
         long sum = base;
-        base = 0L;
+        base = initial;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null) {
