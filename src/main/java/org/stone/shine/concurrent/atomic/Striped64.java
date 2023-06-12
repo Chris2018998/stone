@@ -120,9 +120,9 @@ abstract class Striped64 extends Number {
                 //when expand cells?
                 if (retrySize > 0) {
                     retrySize--;
-                } else if (casCellsBusy()) {
+                } else if (array.length < NCPU && casCellsBusy()) {
                     try {
-
+                        
                     } finally {
                         cellsBusy = 0;
                     }
