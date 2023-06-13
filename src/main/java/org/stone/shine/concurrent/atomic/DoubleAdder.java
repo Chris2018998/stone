@@ -274,7 +274,7 @@ public class DoubleAdder extends Striped64 implements Serializable {
     }
 
     private static class DoubleAddrOperator implements DoubleBinaryOperator {
-        public double applyAsDouble(double left, double right) {
+        public final double applyAsDouble(double left, double right) {
             return left + right;
         }
     }
