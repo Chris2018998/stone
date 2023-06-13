@@ -93,8 +93,9 @@ public class LongAccumulator extends Striped64 implements Serializable {
      * @param identity            identity (initial value) for the accumulator function
      */
     public LongAccumulator(LongBinaryOperator accumulatorFunction, long identity) {
+        if (accumulatorFunction == null) throw new NullPointerException();
         this.function = accumulatorFunction;
-        base = this.identity = identity;
+        this.base = this.identity = identity;
     }
 
     /**
