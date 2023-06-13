@@ -94,17 +94,18 @@ abstract class Striped64 extends Number {
 
         do {
             //1: try to add to base
-            long currentV = base;
-            if (casBase(currentV, fn.applyAsLong(currentV, x))) return;
+            long value = base;
+            if (casBase(value, fn.applyAsLong(value, x))) return;
 
-            //2:if cell is not null
+            //2: if cell is not null
             Cell[] array = cells;
-            if (array != null) {
+            if (array != null) {//cells is not null
+
                 int index = (array.length - 1) & getProbe(probe);
                 Cell cell = array[index];
                 if (cell != null) {
-                    long cellV = cell.value;
-                    if (cell.cas(cellV, fn.applyAsLong(cellV, x))) return;
+                    value = cell.value;
+                    if (cell.cas(value, fn.applyAsLong(value, x))) return;
                 } else if (casCellsBusy()) {//need fill a new cell
                     try {
                         Cell[] array2 = cells;
@@ -122,7 +123,13 @@ abstract class Striped64 extends Number {
                     retrySize--;
                 } else if (array.length < NCPU && casCellsBusy()) {
                     try {
-
+                        Cell[] oldCells = this.cells;
+                        if (oldCells == array) {
+                            cells = createCells(oldCells, oldCells.length << 1, x, oldCells.length);
+                            return;
+                        } else {
+                            retrySize = 16;
+                        }
                     } finally {
                         cellsBusy = 0;
                     }
@@ -131,8 +138,11 @@ abstract class Striped64 extends Number {
                 }
             } else if (casCellsBusy()) {//create initial cells array
                 try {
-                    this.cells = createCells(null, 2, x, 0);
-                    return;
+                    Cell[] oldCells = this.cells;
+                    if (oldCells == null) {
+                        cells = createCells(null, 2, x, 0);
+                        return;
+                    }
                 } finally {
                     cellsBusy = 0;
                 }
