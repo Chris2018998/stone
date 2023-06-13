@@ -95,7 +95,7 @@ abstract class Striped64 extends Number {
         do {
             //1: try to add to base
             long currentV = base;
-            if (casBase(currentV, fn != null ? fn.applyAsLong(currentV, x) : currentV + x)) return;
+            if (casBase(currentV, fn.applyAsLong(currentV, x))) return;
 
             //2:if cell is not null
             Cell[] array = cells;
@@ -104,7 +104,7 @@ abstract class Striped64 extends Number {
                 Cell cell = array[index];
                 if (cell != null) {
                     long cellV = cell.value;
-                    if (cell.cas(cellV, fn != null ? fn.applyAsLong(cellV, x) : cellV + x)) return;
+                    if (cell.cas(cellV, fn.applyAsLong(cellV, x))) return;
                 } else if (casCellsBusy()) {//need fill a new cell
                     try {
                         Cell[] array2 = cells;
@@ -122,7 +122,7 @@ abstract class Striped64 extends Number {
                     retrySize--;
                 } else if (array.length < NCPU && casCellsBusy()) {
                     try {
-                        
+
                     } finally {
                         cellsBusy = 0;
                     }
