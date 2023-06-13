@@ -280,7 +280,7 @@ public class LongAdder extends Striped64 implements Serializable {
     }
 
     private static class LongAddrOperator implements LongBinaryOperator {
-        public long applyAsLong(long left, long right) {
+        public final long applyAsLong(long left, long right) {
             return left + right;
         }
     }
