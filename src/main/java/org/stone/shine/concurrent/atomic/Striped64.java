@@ -125,7 +125,7 @@ abstract class Striped64 extends Number {
                     try {
                         Cell[] oldCells = this.cells;
                         if (oldCells == array) {
-                            cells = createCells(oldCells, oldCells.length << 1, x, oldCells.length);
+                            this.cells = createCells(oldCells, oldCells.length << 1, x, oldCells.length);
                             return;
                         } else {
                             retrySize = 16;
