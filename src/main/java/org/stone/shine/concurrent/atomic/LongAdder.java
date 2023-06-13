@@ -36,6 +36,7 @@ package org.stone.shine.concurrent.atomic;
 
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongBinaryOperator;
 
 /**
  * One or more variables that together maintain an initially zero
@@ -70,6 +71,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class LongAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
+    private static final LongAddrOperator operator = new LongAddrOperator();
 
     //initial value
     private final long initial;
@@ -95,7 +97,7 @@ public class LongAdder extends Striped64 implements Serializable {
      * @param x the value to add
      */
     public void add(long x) {
-        super.longAccumulate(x, null);
+        super.longAccumulate(x, operator);
     }
 
     /**
@@ -274,6 +276,12 @@ public class LongAdder extends Striped64 implements Serializable {
             LongAdder a = new LongAdder();
             a.base = value;
             return a;
+        }
+    }
+
+    private static class LongAddrOperator implements LongBinaryOperator {
+        public long applyAsLong(long left, long right) {
+            return left + right;
         }
     }
 }
