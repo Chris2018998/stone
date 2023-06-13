@@ -36,6 +36,7 @@
 package org.stone.shine.concurrent.atomic;
 
 import java.io.Serializable;
+import java.util.function.DoubleBinaryOperator;
 
 /**
  * One or more variables that together maintain an initially zero
@@ -63,6 +64,7 @@ import java.io.Serializable;
  */
 public class DoubleAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
+    private static final DoubleBinaryOperator operator = new DoubleAddrOperator();
 
     //initial value
     private final double initial;
@@ -98,7 +100,7 @@ public class DoubleAdder extends Striped64 implements Serializable {
      * @param x the value to add
      */
     public void add(double x) {
-        super.doubleAccumulate(x, null);
+        super.doubleAccumulate(x, operator);
     }
 
     /**
@@ -271,4 +273,9 @@ public class DoubleAdder extends Striped64 implements Serializable {
         }
     }
 
+    private static class DoubleAddrOperator implements DoubleBinaryOperator {
+        public double applyAsDouble(double left, double right) {
+            return left + right;
+        }
+    }
 }
