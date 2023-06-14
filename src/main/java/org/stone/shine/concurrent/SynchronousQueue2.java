@@ -30,7 +30,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     private static final int NCPUS = Runtime.getRuntime().availableProcessors();
     private static final int maxTimedSpins = (NCPUS < 2) ? 0 : 32;
     private static final int maxUntimedSpins = maxTimedSpins * 16;
-    private static final long spinForTimeoutThreshold = 1000L;
+    private static final long spinForTimeoutThreshold = 1023L;
     private static final Unsafe U;
 
     static {
