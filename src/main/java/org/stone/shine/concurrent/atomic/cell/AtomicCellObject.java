@@ -15,7 +15,7 @@ package org.stone.shine.concurrent.atomic.cell;
  * @author Chris Liao
  * @version 1.0
  */
-public class AtomicCellObject {
+public abstract class AtomicCellObject {
 
 
 }
