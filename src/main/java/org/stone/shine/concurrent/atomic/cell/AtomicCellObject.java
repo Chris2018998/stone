@@ -18,4 +18,6 @@ package org.stone.shine.concurrent.atomic.cell;
 public abstract class AtomicCellObject {
 
 
+
+
 }
