@@ -91,13 +91,21 @@ public class LongAdder extends Striped64 implements Serializable {
         this.base = initial;
     }
 
+    public static void main(String[] ags) {
+        LongAdder adder = new LongAdder();
+        adder.add(2);
+        System.out.println(adder.sum());
+    }
+
     /**
      * Adds the given value.
      *
      * @param x the value to add
      */
     public void add(long x) {
-        super.longAccumulate(x, operator);
+        long v = base;
+        if (casBase(v, v + x)) return;
+        longAccumulate(x, operator);
     }
 
     /**
