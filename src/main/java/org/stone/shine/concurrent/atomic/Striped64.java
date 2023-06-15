@@ -138,7 +138,68 @@ abstract class Striped64 extends Number {
     //                                          3: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
     final void doubleAccumulate(double x, DoubleBinaryOperator fn) {
+        int h = (int) Thread.currentThread().getId();
+        do {
+            long v = base;
+            if (casBase(v, Double.doubleToRawLongBits(fn.applyAsDouble(Double.longBitsToDouble(v), x)))) return;
 
+            Cell[] as = cells;
+            if (as != null) {
+                h = advanceProbe(h);
+                int p = as.length - 1 & h;
+                Cell cell = as[p];
+                if (cell == null) {
+                    if (cellsBusy == 0 && casCellsBusy()) {
+                        try {
+                            Cell[] rs = cells;
+                            if ((cell = rs[p]) == null) {
+                                rs[p] = new Cell(Double.doubleToRawLongBits(x));
+                                return;
+                            }
+                        } finally {
+                            cellsBusy = 0;
+                        }
+
+                        v = cell.value;
+                        if (cell.cas(v, Double.doubleToRawLongBits(fn.applyAsDouble(Double.longBitsToDouble(v), x))))
+                            return;
+                    }
+                } else {
+                    v = cell.value;
+                    if (cell.cas(v, Double.doubleToRawLongBits(fn.applyAsDouble(Double.longBitsToDouble(v), x))))
+                        return;
+                }
+
+                //cells expand control
+                if (cells.length >= NCPU) continue;
+                if (cellsBusy == 0 && casCellsBusy()) {
+                    try {
+                        as = cells;
+                        int n = as.length;
+                        if (n < NCPU) {
+                            Cell[] rs = new Cell[n << 1];
+                            System.arraycopy(as, 0, rs, 0, n);
+                            rs[n] = new Cell(Double.doubleToRawLongBits(x));
+                            cells = rs;
+                            return;
+                        }
+                    } finally {
+                        cellsBusy = 0;
+                    }
+                }
+            } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
+                try {
+                    if (cells == null) {
+                        Cell[] rs = new Cell[2];
+                        rs[0] = new Cell(Double.doubleToRawLongBits(x));
+                        cells = rs;
+                        return;
+                    }
+                } finally {
+                    cellsBusy = 0;
+                }
+            }
+        } while (true);
     }
 
     //****************************************************************************************************************//
