@@ -12,7 +12,6 @@ package org.stone.shine.concurrent.atomic;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 
@@ -31,8 +30,6 @@ abstract class Striped64 extends Number {
     private static final long CELLSBUSY;
     private static final sun.misc.Unsafe UNSAFE;
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
-    private static final int PROBE_INCREMENT = 0x9e3779b9;
-    private static final AtomicInteger probeGenerator = new AtomicInteger();
 
     static {
         try {
@@ -55,29 +52,14 @@ abstract class Striped64 extends Number {
     transient volatile Cell[] cells;
     private transient volatile int cellsBusy;//cells lock
 
-    private static int getProbe(int probe) {
-        if (probe == 0) {
-            int p = probeGenerator.addAndGet(PROBE_INCREMENT);
-            return p == 0 ? 1 : p;
-        } else {
-            probe ^= probe << 13;
-            probe ^= probe >>> 17;
-            probe ^= probe << 5;
-            return probe;
-        }
+    private static int advanceProbe(int probe) {
+        probe ^= probe << 13;
+        probe ^= probe >>> 17;
+        probe ^= probe << 5;
+        return probe;
     }
 
-    private static Cell[] createCells(Cell[] oldCells, int newLen, long x, int index) {
-        Cell[] newCells = new Cell[newLen];
-        if (oldCells != null) {
-            int oldLen = oldCells.length;
-            System.arraycopy(oldCells, oldLen, newCells, 0, oldLen);
-        }
-        newCells[index] = new Cell(x);
-        return newCells;
-    }
-
-    private boolean casBase(long cmp, long val) {
+    boolean casBase(long cmp, long val) {
         return UNSAFE.compareAndSwapLong(this, BASE, cmp, val);
     }
 
@@ -89,58 +71,60 @@ abstract class Striped64 extends Number {
     //                                          2: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
     final void longAccumulate(long x, LongBinaryOperator fn) {
-        int probe = 0;
-        int retrySize = 16;
+        int h = (int) Thread.currentThread().getId();
 
         do {
-            //1: try to add to base
-            long value = base;
-            if (casBase(value, fn.applyAsLong(value, x))) return;
+            long v = base;
+            if (casBase(v, fn.applyAsLong(v, x))) return;
 
-            //2: if cell is not null
-            Cell[] array = cells;
-            if (array != null) {//cells is not null
-
-                int index = (array.length - 1) & getProbe(probe);
-                Cell cell = array[index];
-                if (cell != null) {
-                    value = cell.value;
-                    if (cell.cas(value, fn.applyAsLong(value, x))) return;
-                } else if (casCellsBusy()) {//need fill a new cell
-                    try {
-                        Cell[] array2 = cells;
-                        if (array == array2 && array2[index] == null) {
-                            array2[index] = new Cell(x);
-                            return;
+            Cell[] as = cells;
+            if (as != null) {
+                h = advanceProbe(h);
+                int p = as.length - 1 & h;
+                Cell cell = as[p];
+                if (cell == null) {
+                    if (cellsBusy == 0 && casCellsBusy()) {
+                        try {
+                            Cell[] rs = cells;
+                            if ((cell = rs[p]) == null) {
+                                rs[p] = new Cell(x);
+                                return;
+                            }
+                        } finally {
+                            cellsBusy = 0;
                         }
-                    } finally {
-                        cellsBusy = 0;
-                    }
-                }
 
-                //when expand cells?
-                if (retrySize > 0) {
-                    retrySize--;
-                } else if (array.length < NCPU && casCellsBusy()) {
-                    try {
-                        Cell[] oldCells = this.cells;
-                        if (oldCells == array) {
-                            this.cells = createCells(oldCells, oldCells.length << 1, x, oldCells.length);
-                            return;
-                        } else {
-                            retrySize = 16;
-                        }
-                    } finally {
-                        cellsBusy = 0;
+                        v = cell.value;
+                        if (cell.cas(v, fn.applyAsLong(v, x))) return;
                     }
                 } else {
-                    retrySize = 16;
+                    v = cell.value;
+                    if (cell.cas(v, fn.applyAsLong(v, x))) return;
                 }
-            } else if (casCellsBusy()) {//create initial cells array
+
+                //cells expand control
+                if (cells.length >= NCPU) continue;
+                if (cellsBusy == 0 && casCellsBusy()) {
+                    try {
+                        as = cells;
+                        int n = as.length;
+                        if (n < NCPU) {
+                            Cell[] rs = new Cell[n << 1];
+                            System.arraycopy(as, 0, rs, 0, n);
+                            rs[n] = new Cell(x);
+                            cells = rs;
+                            return;
+                        }
+                    } finally {
+                        cellsBusy = 0;
+                    }
+                }
+            } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    Cell[] oldCells = this.cells;
-                    if (oldCells == null) {
-                        cells = createCells(null, 2, x, 0);
+                    if (cells == null) {
+                        Cell[] rs = new Cell[2];
+                        rs[0] = new Cell(x);
+                        cells = rs;
                         return;
                     }
                 } finally {
@@ -150,7 +134,6 @@ abstract class Striped64 extends Number {
         } while (true);
     }
 
-
     //****************************************************************************************************************//
     //                                          3: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
@@ -159,19 +142,14 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          4: Cell(copy from JDK)                                                //
+    //                                          4: AtomicCell(copy from JDK)                                                //
     //****************************************************************************************************************//
     @sun.misc.Contended
     static final class Cell {
         private static final long valueOffset;
-        private static final sun.misc.Unsafe UNSAFE;
 
         static {
             try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                UNSAFE = (Unsafe) theUnsafe.get(null);
-
                 Class<?> ak = Cell.class;
                 valueOffset = UNSAFE.objectFieldOffset
                         (ak.getDeclaredField("value"));
