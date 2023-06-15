@@ -104,7 +104,7 @@ public class DoubleAdder extends Striped64 implements Serializable {
         long v = base;
         double v2 = Double.longBitsToDouble(v);
         if (casBase(v, Double.doubleToRawLongBits(v2 + x))) return;
-        super.doubleAccumulate(x, operator);
+        doubleAccumulate(x, operator);
     }
 
     /**
