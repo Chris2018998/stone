@@ -105,7 +105,7 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
         long v = base;
         double v2 = Double.longBitsToDouble(v);
         if (casBase(v, Double.doubleToRawLongBits(function.applyAsDouble(v2, x)))) return;
-        super.doubleAccumulate(x, function);
+        doubleAccumulate(x, function);
     }
 
     /**
