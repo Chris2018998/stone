@@ -30,7 +30,7 @@ abstract class Striped64 extends Number {
     private static final long CELLSBUSY;
     private static final sun.misc.Unsafe UNSAFE;
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
-    private static final int RETRY_SIZE = 16;
+    private static final int RETRY_SIZE = NCPU;
 
     static {
         try {
@@ -122,12 +122,10 @@ abstract class Striped64 extends Number {
                 }
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    if (cells == null) {
-                        Cell[] rs = new Cell[2];
-                        rs[0] = new Cell(x);
-                        cells = rs;
-                        return;
-                    }
+                    Cell[] rs = new Cell[2];
+                    rs[0] = new Cell(x);
+                    cells = rs;
+                    return;
                 } finally {
                     cellsBusy = 0;
                 }
@@ -191,12 +189,10 @@ abstract class Striped64 extends Number {
                 }
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    if (cells == null) {
-                        Cell[] rs = new Cell[2];
-                        rs[0] = new Cell(Double.doubleToRawLongBits(x));
-                        cells = rs;
-                        return;
-                    }
+                    Cell[] rs = new Cell[2];
+                    rs[0] = new Cell(Double.doubleToRawLongBits(x));
+                    cells = rs;
+                    return;
                 } finally {
                     cellsBusy = 0;
                 }
