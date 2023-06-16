@@ -30,7 +30,7 @@ abstract class Striped64 extends Number {
     private static final long CELLSBUSY;
     private static final sun.misc.Unsafe UNSAFE;
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
-    private static final int RETRY_SIZE = NCPU;
+    private static final int RETRY_SIZE = 16;
 
     static {
         try {
@@ -72,8 +72,8 @@ abstract class Striped64 extends Number {
     //                                          2: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
     final void longAccumulate(long x, LongBinaryOperator fn) {
-        int h = (int) Thread.currentThread().getId();
         int retrySize = RETRY_SIZE;
+        int h = (int) Thread.currentThread().getId();
 
         do {
             long v = base;
@@ -82,7 +82,8 @@ abstract class Striped64 extends Number {
             Cell[] as = cells;
             if (as != null) {
                 h = advanceProbe(h);
-                int p = as.length - 1 & h;
+                final int n = as.length;
+                final int p = n - 1 & h;
                 Cell c = as[p];
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
@@ -105,24 +106,20 @@ abstract class Striped64 extends Number {
                 }
 
                 //cells expand control
-                if (retrySize > 0) if (--retrySize > 0) continue;
-                if (cells.length >= NCPU) continue;
-                if (cellsBusy == 0 && casCellsBusy()) {
+                if (n >= NCPU) continue;
+                if (retrySize > 0) {
+                    retrySize--;
+                } else if (as == cells && cellsBusy == 0 && casCellsBusy()) {
                     try {
-                        as = cells;
-                        int n = as.length;
-                        if (n < NCPU) {
-                            Cell[] rs = new Cell[n << 1];
-                            System.arraycopy(as, 0, rs, 0, n);
-                            rs[n] = new Cell(x);
-                            cells = rs;
-                            return;
-                        }
+                        Cell[] rs = new Cell[n << 1];
+                        System.arraycopy(as, 0, rs, 0, n);
+                        rs[n] = new Cell(x);
+                        cells = rs;
+                        return;
                     } finally {
                         cellsBusy = 0;
                     }
                 }
-                retrySize = RETRY_SIZE;//reset
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
                     if (cells == null) {
@@ -142,8 +139,8 @@ abstract class Striped64 extends Number {
     //                                          3: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
     final void doubleAccumulate(double x, DoubleBinaryOperator fn) {
-        int h = (int) Thread.currentThread().getId();
         int retrySize = RETRY_SIZE;
+        int h = (int) Thread.currentThread().getId();
 
         do {
             long v = base;
@@ -152,7 +149,8 @@ abstract class Striped64 extends Number {
             Cell[] as = cells;
             if (as != null) {
                 h = advanceProbe(h);
-                int p = as.length - 1 & h;
+                final int n = as.length;
+                final int p = n - 1 & h;
                 Cell c = as[p];
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
@@ -177,24 +175,20 @@ abstract class Striped64 extends Number {
                 }
 
                 //cells expand control
-                if (retrySize > 0) if (--retrySize > 0) continue;
-                if (cells.length >= NCPU) continue;
-                if (retrySize == 0 && cellsBusy == 0 && casCellsBusy()) {
+                if (n >= NCPU) continue;
+                if (retrySize > 0) {
+                    retrySize--;
+                } else if (as == cells && cellsBusy == 0 && casCellsBusy()) {
                     try {
-                        as = cells;
-                        int n = as.length;
-                        if (n < NCPU) {
-                            Cell[] rs = new Cell[n << 1];
-                            System.arraycopy(as, 0, rs, 0, n);
-                            rs[n] = new Cell(Double.doubleToRawLongBits(x));
-                            cells = rs;
-                            return;
-                        }
+                        Cell[] rs = new Cell[n << 1];
+                        System.arraycopy(as, 0, rs, 0, n);
+                        rs[n] = new Cell(Double.doubleToRawLongBits(x));
+                        cells = rs;
+                        return;
                     } finally {
                         cellsBusy = 0;
                     }
                 }
-                retrySize = RETRY_SIZE;
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
                     if (cells == null) {
