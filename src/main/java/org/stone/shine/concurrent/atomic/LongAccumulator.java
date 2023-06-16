@@ -105,8 +105,8 @@ public class LongAccumulator extends Striped64 implements Serializable {
      */
     public void accumulate(long x) {
         long v = base;
-        if (casBase(v, function.applyAsLong(v, x))) return;
-        longAccumulate(x, function);
+        if (!casBase(v, function.applyAsLong(v, x)))
+            longAccumulate(x, function);
     }
 
     /**
