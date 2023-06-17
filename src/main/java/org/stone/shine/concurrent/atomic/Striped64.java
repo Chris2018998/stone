@@ -18,7 +18,7 @@ import java.util.function.LongBinaryOperator;
 import static java.lang.System.arraycopy;
 
 /**
- * parts of this file are copy from JDK
+ * Cell Impl
  *
  * @author Chris Liao
  * @version 1.0
@@ -26,10 +26,10 @@ import static java.lang.System.arraycopy;
 abstract class Striped64 extends Number {
 
     //****************************************************************************************************************//
-    //                                          1: Copy from JDK                                                      //
+    //                                          1: bas                                                                //
     //****************************************************************************************************************//
-    private static final long BASE;
     private static final long CELLSBUSY;
+    private static final long cellValueOffset;
     private static final sun.misc.Unsafe UNSAFE;
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
     private static final int RETRY_SIZE = NCPU;
@@ -42,19 +42,46 @@ abstract class Striped64 extends Number {
             UNSAFE = (Unsafe) theUnsafe.get(null);
 
             Class<?> sk = Striped64.class;
-            BASE = UNSAFE.objectFieldOffset
-                    (sk.getDeclaredField("base"));
             CELLSBUSY = UNSAFE.objectFieldOffset
                     (sk.getDeclaredField("cellsBusy"));
+            Class<?> ak = Cell.class;
+            cellValueOffset = UNSAFE.objectFieldOffset
+                    (ak.getDeclaredField("value"));
         } catch (Exception e) {
             throw new Error(e);
         }
     }
 
-    transient volatile long base;
+    transient Cell baseCell;
     transient volatile Cell[] cells;
     private transient volatile int cellsBusy;//cells lock
 
+    //****************************************************************************************************************//
+    //                                          2: constructor(by chris2018998）                                      //
+    //****************************************************************************************************************//
+    Striped64() {
+        this.baseCell = new Cell(0);
+    }
+
+    Striped64(long baseV) {
+        this.baseCell = new Cell(baseV);
+    }
+
+    Striped64(long baseV, int cellSize, long cellInitVal) {
+        if (cellSize <= 0)
+            throw new IllegalArgumentException("Cell size must be greater than zero");
+        if (cellSize % 2 != 0)
+            throw new IllegalArgumentException("Cell size is not a power of two");
+
+        this.baseCell = new Cell(baseV);
+        this.cells = new Cell[cellSize];
+        for (int i = 0; i < cells.length; i++)
+            cells[i] = new Cell(cellInitVal);
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: statics or cas (4)                                                 //
+    //****************************************************************************************************************//
     private static int advanceProbe(int probe) {
         probe ^= probe << 13;
         probe ^= probe >>> 17;
@@ -62,8 +89,15 @@ abstract class Striped64 extends Number {
         return probe;
     }
 
-    boolean casBase(long cmp, long val) {
-        return UNSAFE.compareAndSwapLong(this, BASE, cmp, val);
+    static boolean casCell(long x, Cell c, LongBinaryOperator fn) {
+        long v = c.value;
+        return UNSAFE.compareAndSwapLong(c, cellValueOffset, v, fn.applyAsLong(v, x));
+    }
+
+    static boolean casCell(double x, Cell c, DoubleBinaryOperator fn) {
+        long v = c.value;
+        double v2 = Double.longBitsToDouble(v);
+        return UNSAFE.compareAndSwapLong(c, cellValueOffset, v, Double.doubleToRawLongBits(fn.applyAsDouble(v2, x)));
     }
 
     private boolean casCellsBusy() {
@@ -71,22 +105,22 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          2: re-write method(by chris2018998）                                  //
+    //                                          4: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
     final void longAccumulate(long x, LongBinaryOperator fn) {
         int retrySize = RETRY_SIZE;
-        int h = (int) Thread.currentThread().getId();
+        int h = (int) (System.currentTimeMillis() + Thread.currentThread().getId());//seed
 
         do {
-            long v = base;
-            if (casBase(v, fn.applyAsLong(v, x))) return;
-
             Cell[] as = cells;
             if (as != null) {
+                //1: get a cell by hash
                 h = advanceProbe(h);
                 int n = as.length;
-                int p = n - 1 & h;
+                int p = (n - 1) & h;
                 Cell c = as[p];
+
+                //2: create a new cell by lock
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
                         try {
@@ -98,16 +132,15 @@ abstract class Striped64 extends Number {
                         } finally {
                             cellsBusy = 0;
                         }
-
-                        v = c.value;
-                        if (c.cas(v, fn.applyAsLong(v, x))) return;
+                    } else {//lock failed
+                        c = baseCell;
                     }
-                } else {
-                    v = c.value;
-                    if (c.cas(v, fn.applyAsLong(v, x))) return;
                 }
 
-                //cells expand control
+                //3: cas cell
+                if (casCell(x, c, fn)) return;
+
+                //4: cells expand control
                 if (n >= NCPU) continue;
                 if (retrySize > 0) {
                     retrySize--;
@@ -140,22 +173,22 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          3: re-write method(by chris2018998）                                  //
+    //                                          5: re-write method(by chris2018998）                                  //
     //****************************************************************************************************************//
     final void doubleAccumulate(double x, DoubleBinaryOperator fn) {
         int retrySize = RETRY_SIZE;
-        int h = (int) Thread.currentThread().getId();
+        int h = (int) (System.currentTimeMillis() + Thread.currentThread().getId());//seed
 
         do {
-            long v = base;
-            if (casBase(v, Double.doubleToRawLongBits(fn.applyAsDouble(Double.longBitsToDouble(v), x)))) return;
-
             Cell[] as = cells;
             if (as != null) {
+                //1: get a cell by hash
                 h = advanceProbe(h);
                 int n = as.length;
-                int p = n - 1 & h;
+                int p = (n - 1) & h;
                 Cell c = as[p];
+
+                //2: create a new cell by lock
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
                         try {
@@ -167,18 +200,15 @@ abstract class Striped64 extends Number {
                         } finally {
                             cellsBusy = 0;
                         }
-
-                        v = c.value;
-                        if (c.cas(v, Double.doubleToRawLongBits(fn.applyAsDouble(Double.longBitsToDouble(v), x))))
-                            return;
+                    } else {//lock failed
+                        c = baseCell;
                     }
-                } else {
-                    v = c.value;
-                    if (c.cas(v, Double.doubleToRawLongBits(fn.applyAsDouble(Double.longBitsToDouble(v), x))))
-                        return;
                 }
 
-                //cells expand control
+                //3: cas cell
+                if (casCell(x, c, fn)) return;
+
+                //4: cells expand control
                 if (n >= NCPU) continue;
                 if (retrySize > 0) {
                     retrySize--;
@@ -211,30 +241,15 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          4: AtomicCell(copy from JDK)                                          //
+    //                                          6: Cell Class                                                         //
     //****************************************************************************************************************//
     @sun.misc.Contended
     static final class Cell {
-        private static final long valueOffset;
-
-        static {
-            try {
-                Class<?> ak = Cell.class;
-                valueOffset = UNSAFE.objectFieldOffset
-                        (ak.getDeclaredField("value"));
-            } catch (Exception e) {
-                throw new Error(e);
-            }
-        }
 
         volatile long value;
 
         private Cell(long x) {
             value = x;
-        }
-
-        final boolean cas(long cmp, long val) {
-            return UNSAFE.compareAndSwapLong(this, valueOffset, cmp, val);
         }
     }
 }
