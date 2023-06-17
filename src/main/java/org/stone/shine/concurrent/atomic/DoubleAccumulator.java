@@ -93,7 +93,8 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
     public DoubleAccumulator(DoubleBinaryOperator accumulatorFunction, double identity) {
         if (accumulatorFunction == null) throw new NullPointerException();
         this.function = accumulatorFunction;
-        this.base = this.identity = Double.doubleToRawLongBits(identity);
+        this.identity = Double.doubleToRawLongBits(identity);
+        this.baseCell.value = this.identity;
     }
 
     /**
@@ -102,10 +103,8 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
      * @param x the value
      */
     public void accumulate(double x) {
-        long v = base;
-        double v2 = Double.longBitsToDouble(v);
-        if (casBase(v, Double.doubleToRawLongBits(function.applyAsDouble(v2, x)))) return;
-        doubleAccumulate(x, function);
+        if (!casCell(x, baseCell, function))
+            doubleAccumulate(x, function);
     }
 
     /**
@@ -118,9 +117,10 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
      * @return the current value
      */
     public double get() {
-        Cell[] as = cells;
         Cell a;
-        double result = Double.longBitsToDouble(base);
+        Cell[] as = cells;
+
+        double result = Double.longBitsToDouble(baseCell.value);
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -140,9 +140,10 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
      * updating.
      */
     public void reset() {
-        Cell[] as = cells;
         Cell a;
-        base = identity;
+        Cell[] as = cells;
+
+        baseCell.value = identity;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -162,10 +163,11 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
      * @return the value before reset
      */
     public double getThenReset() {
-        Cell[] as = cells;
         Cell a;
-        double result = Double.longBitsToDouble(base);
-        base = identity;
+        Cell[] as = cells;
+
+        double result = Double.longBitsToDouble(baseCell.value);
+        baseCell.value = identity;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null) {
@@ -286,7 +288,7 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
         private Object readResolve() {
             double d = Double.longBitsToDouble(identity);
             DoubleAccumulator a = new DoubleAccumulator(function, d);
-            a.base = Double.doubleToRawLongBits(value);
+            a.baseCell.value = Double.doubleToRawLongBits(value);
             return a;
         }
     }
