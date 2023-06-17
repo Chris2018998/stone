@@ -120,7 +120,7 @@ abstract class Striped64 extends Number {
                 int p = (n - 1) & h;
                 Cell c = as[p];
 
-                //2: create a new cell by lock
+                //2: create a new cell
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
                         try {
@@ -188,7 +188,7 @@ abstract class Striped64 extends Number {
                 int p = (n - 1) & h;
                 Cell c = as[p];
 
-                //2: create a new cell by lock
+                //2: create a new cell
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
                         try {
