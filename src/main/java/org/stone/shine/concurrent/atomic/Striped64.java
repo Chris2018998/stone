@@ -146,7 +146,8 @@ abstract class Striped64 extends Number {
                     retrySize--;
                 } else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
-                        if ((n = cells.length) < NCPU) {
+                        as = cells;
+                        if ((n = as.length) < NCPU) {
                             Cell[] rs = new Cell[n << 1];
                             arraycopy(as, 0, rs, 0, n);
                             rs[n] = new Cell(x);
@@ -214,7 +215,8 @@ abstract class Striped64 extends Number {
                     retrySize--;
                 } else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
-                        if ((n = cells.length) < NCPU) {
+                        as = cells;
+                        if ((n = as.length) < NCPU) {
                             Cell[] rs = new Cell[n << 1];
                             arraycopy(as, 0, rs, 0, n);
                             rs[n] = new Cell(Double.doubleToRawLongBits(x));
