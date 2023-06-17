@@ -62,7 +62,7 @@ import java.util.function.DoubleBinaryOperator;
  * @author Doug Lea
  * @since 1.8
  */
-public class DoubleAdder extends Striped64 implements Serializable {
+public final class DoubleAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
     private static final DoubleBinaryOperator operator = new DoubleAddrOperator();
 
