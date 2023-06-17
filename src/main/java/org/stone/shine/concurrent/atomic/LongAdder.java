@@ -69,7 +69,7 @@ import java.util.function.LongBinaryOperator;
  * @author Doug Lea
  * @since 1.8
  */
-public class LongAdder extends Striped64 implements Serializable {
+public final class LongAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
     private static final LongAddrOperator operator = new LongAddrOperator();
 
