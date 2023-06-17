@@ -95,7 +95,8 @@ public class LongAccumulator extends Striped64 implements Serializable {
     public LongAccumulator(LongBinaryOperator accumulatorFunction, long identity) {
         if (accumulatorFunction == null) throw new NullPointerException();
         this.function = accumulatorFunction;
-        this.base = this.identity = identity;
+        this.identity = identity;
+        this.baseCell.value = identity;
     }
 
     /**
@@ -104,8 +105,7 @@ public class LongAccumulator extends Striped64 implements Serializable {
      * @param x the value
      */
     public void accumulate(long x) {
-        long v = base;
-        if (!casBase(v, function.applyAsLong(v, x)))
+        if (!casCell(x, baseCell, function))
             longAccumulate(x, function);
     }
 
@@ -119,9 +119,10 @@ public class LongAccumulator extends Striped64 implements Serializable {
      * @return the current value
      */
     public long get() {
-        Cell[] as = cells;
         Cell a;
-        long result = base;
+        Cell[] as = cells;
+
+        long result = baseCell.value;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -140,9 +141,10 @@ public class LongAccumulator extends Striped64 implements Serializable {
      * updating.
      */
     public void reset() {
-        Cell[] as = cells;
         Cell a;
-        base = identity;
+        Cell[] as = cells;
+
+        baseCell.value = identity;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -164,8 +166,9 @@ public class LongAccumulator extends Striped64 implements Serializable {
     public long getThenReset() {
         Cell[] as = cells;
         Cell a;
-        long result = base;
-        base = identity;
+        long result = baseCell.value;
+
+        baseCell.value = identity;
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null) {
@@ -285,7 +288,7 @@ public class LongAccumulator extends Striped64 implements Serializable {
          */
         private Object readResolve() {
             LongAccumulator a = new LongAccumulator(function, identity);
-            a.base = value;
+            a.baseCell.value = value;
             return a;
         }
     }
