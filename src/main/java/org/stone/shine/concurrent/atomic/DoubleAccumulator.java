@@ -77,7 +77,7 @@ import java.util.function.DoubleBinaryOperator;
  * @author Doug Lea
  * @since 1.8
  */
-public class DoubleAccumulator extends Striped64 implements Serializable {
+public final class DoubleAccumulator extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
 
     private final DoubleBinaryOperator function;
