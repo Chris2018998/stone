@@ -67,7 +67,7 @@ abstract class Striped64 extends Number {
         this.baseCell = new Cell(baseV);
     }
 
-    Striped64(long baseV, int cellSize, long cellInitVal) {
+    Striped64(long baseV, int cellSize, long cellVal) {
         if (cellSize <= 0)
             throw new IllegalArgumentException("Cell size must be greater than zero");
         if (cellSize % 2 != 0)
@@ -76,7 +76,7 @@ abstract class Striped64 extends Number {
         this.baseCell = new Cell(baseV);
         this.cells = new Cell[cellSize];
         for (int i = 0; i < cells.length; i++)
-            cells[i] = new Cell(cellInitVal);
+            cells[i] = new Cell(cellVal);
     }
 
     //****************************************************************************************************************//
@@ -245,7 +245,6 @@ abstract class Striped64 extends Number {
     //****************************************************************************************************************//
     @sun.misc.Contended
     static final class Cell {
-
         volatile long value;
 
         private Cell(long x) {
