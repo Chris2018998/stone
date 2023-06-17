@@ -15,6 +15,8 @@ import java.lang.reflect.Field;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 
+import static java.lang.System.arraycopy;
+
 /**
  * parts of this file are copy from JDK
  *
@@ -82,8 +84,8 @@ abstract class Striped64 extends Number {
             Cell[] as = cells;
             if (as != null) {
                 h = advanceProbe(h);
-                final int n = as.length;
-                final int p = n - 1 & h;
+                int n = as.length;
+                int p = n - 1 & h;
                 Cell c = as[p];
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
@@ -109,23 +111,27 @@ abstract class Striped64 extends Number {
                 if (n >= NCPU) continue;
                 if (retrySize > 0) {
                     retrySize--;
-                } else if (as == cells && cellsBusy == 0 && casCellsBusy()) {
+                } else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
-                        Cell[] rs = new Cell[n << 1];
-                        System.arraycopy(as, 0, rs, 0, n);
-                        rs[n] = new Cell(x);
-                        cells = rs;
-                        return;
+                        if ((n = cells.length) < NCPU) {
+                            Cell[] rs = new Cell[n << 1];
+                            arraycopy(as, 0, rs, 0, n);
+                            rs[n] = new Cell(x);
+                            cells = rs;
+                            return;
+                        }
                     } finally {
                         cellsBusy = 0;
                     }
                 }
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    Cell[] rs = new Cell[2];
-                    rs[0] = new Cell(x);
-                    cells = rs;
-                    return;
+                    if (cells == null) {
+                        Cell[] rs = new Cell[2];
+                        rs[0] = new Cell(x);
+                        cells = rs;
+                        return;
+                    }
                 } finally {
                     cellsBusy = 0;
                 }
@@ -147,8 +153,8 @@ abstract class Striped64 extends Number {
             Cell[] as = cells;
             if (as != null) {
                 h = advanceProbe(h);
-                final int n = as.length;
-                final int p = n - 1 & h;
+                int n = as.length;
+                int p = n - 1 & h;
                 Cell c = as[p];
                 if (c == null) {
                     if (cellsBusy == 0 && casCellsBusy()) {
@@ -176,23 +182,27 @@ abstract class Striped64 extends Number {
                 if (n >= NCPU) continue;
                 if (retrySize > 0) {
                     retrySize--;
-                } else if (as == cells && cellsBusy == 0 && casCellsBusy()) {
+                } else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
-                        Cell[] rs = new Cell[n << 1];
-                        System.arraycopy(as, 0, rs, 0, n);
-                        rs[n] = new Cell(Double.doubleToRawLongBits(x));
-                        cells = rs;
-                        return;
+                        if ((n = cells.length) < NCPU) {
+                            Cell[] rs = new Cell[n << 1];
+                            arraycopy(as, 0, rs, 0, n);
+                            rs[n] = new Cell(Double.doubleToRawLongBits(x));
+                            cells = rs;
+                            return;
+                        }
                     } finally {
                         cellsBusy = 0;
                     }
                 }
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    Cell[] rs = new Cell[2];
-                    rs[0] = new Cell(Double.doubleToRawLongBits(x));
-                    cells = rs;
-                    return;
+                    if (cells == null) {
+                        Cell[] rs = new Cell[2];
+                        rs[0] = new Cell(Double.doubleToRawLongBits(x));
+                        cells = rs;
+                        return;
+                    }
                 } finally {
                     cellsBusy = 0;
                 }
@@ -201,7 +211,7 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          4: AtomicCell(copy from JDK)                                                //
+    //                                          4: AtomicCell(copy from JDK)                                          //
     //****************************************************************************************************************//
     @sun.misc.Contended
     static final class Cell {
