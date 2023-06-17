@@ -73,22 +73,30 @@ public class LongAdder extends Striped64 implements Serializable {
     private static final long serialVersionUID = 7249069246863182397L;
     private static final LongAddrOperator operator = new LongAddrOperator();
 
-    //initial value
-    private final long initial;
+    //initBase value
+    private final long initBase;
 
     /**
-     * Creates a new adder with initial sum of zero.
+     * Creates a new adder with initBase sum of zero.
      */
     public LongAdder() {
-        this.initial = 0;
+        this.initBase = 0;
     }
 
     /**
-     * Creates a new adder with initial value
+     * Creates a new adder with initBase value
      */
-    public LongAdder(long initial) {
-        this.initial = initial;
-        this.base = initial;
+    public LongAdder(long initBase) {
+        super(initBase);
+        this.initBase = initBase;
+    }
+
+    /**
+     * Creates a new adder with initBase value and initial cell count
+     */
+    public LongAdder(long initBase, int cellSize) {
+        super(initBase, cellSize, 0);
+        this.initBase = initBase;
     }
 
     /**
@@ -97,8 +105,7 @@ public class LongAdder extends Striped64 implements Serializable {
      * @param x the value to add
      */
     public void add(long x) {
-        long v = base;
-        if (!casBase(v, v + x))
+        if (!casCell(x, baseCell, operator))
             longAccumulate(x, operator);
     }
 
@@ -126,9 +133,10 @@ public class LongAdder extends Striped64 implements Serializable {
      * @return the sum
      */
     public long sum() {
-        Cell[] as = cells;
         Cell a;
-        long sum = base;
+        Cell[] as = cells;
+        long sum = baseCell.value;
+
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -146,9 +154,10 @@ public class LongAdder extends Striped64 implements Serializable {
      * known that no threads are concurrently updating.
      */
     public void reset() {
-        Cell[] as = cells;
         Cell a;
-        base = initial;
+        Cell[] as = cells;
+        baseCell.value = initBase;
+
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null)
@@ -170,8 +179,9 @@ public class LongAdder extends Striped64 implements Serializable {
     public long sumThenReset() {
         Cell[] as = cells;
         Cell a;
-        long sum = base;
-        base = initial;
+        long sum = baseCell.value;
+        baseCell.value = initBase;
+
         if (as != null) {
             for (int i = 0; i < as.length; ++i) {
                 if ((a = as[i]) != null) {
@@ -268,15 +278,15 @@ public class LongAdder extends Striped64 implements Serializable {
         }
 
         /**
-         * Return a {@code LongAdder} object with initial state
+         * Return a {@code LongAdder} object with initBase state
          * held by this proxy.
          *
-         * @return a {@code LongAdder} object with initial state
+         * @return a {@code LongAdder} object with initBase state
          * held by this proxy.
          */
         private Object readResolve() {
             LongAdder a = new LongAdder();
-            a.base = value;
+            a.baseCell.value = value;
             return a;
         }
     }
