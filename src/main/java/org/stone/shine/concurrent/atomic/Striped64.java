@@ -26,7 +26,7 @@ import static java.lang.System.arraycopy;
 abstract class Striped64 extends Number {
 
     //****************************************************************************************************************//
-    //                                          1: bas                                                                //
+    //                                          1: base                                                               //
     //****************************************************************************************************************//
     private static final long CELLSBUSY;
     private static final long cellValueOffset;
@@ -90,13 +90,13 @@ abstract class Striped64 extends Number {
     }
 
     static boolean casCell(long x, Cell c, LongBinaryOperator fn) {
-        long v = c.value;
+        final long v = c.value;
         return UNSAFE.compareAndSwapLong(c, cellValueOffset, v, fn.applyAsLong(v, x));
     }
 
     static boolean casCell(double x, Cell c, DoubleBinaryOperator fn) {
-        long v = c.value;
-        double v2 = Double.longBitsToDouble(v);
+        final long v = c.value;
+        final double v2 = Double.longBitsToDouble(v);
         return UNSAFE.compareAndSwapLong(c, cellValueOffset, v, Double.doubleToRawLongBits(fn.applyAsDouble(v2, x)));
     }
 
@@ -109,7 +109,7 @@ abstract class Striped64 extends Number {
     //****************************************************************************************************************//
     final void longAccumulate(long x, LongBinaryOperator fn) {
         int retrySize = RETRY_SIZE;
-        int h = (int) (System.currentTimeMillis() + Thread.currentThread().getId());//seed
+        int h = (int) Thread.currentThread().getId();//seed
 
         do {
             Cell[] as = cells;
@@ -160,7 +160,7 @@ abstract class Striped64 extends Number {
                 }
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    if (cells == null) {
+                    if (cells == null) {//recheck
                         Cell[] rs = new Cell[2];
                         rs[0] = new Cell(x);
                         cells = rs;
@@ -178,7 +178,7 @@ abstract class Striped64 extends Number {
     //****************************************************************************************************************//
     final void doubleAccumulate(double x, DoubleBinaryOperator fn) {
         int retrySize = RETRY_SIZE;
-        int h = (int) (System.currentTimeMillis() + Thread.currentThread().getId());//seed
+        int h = (int) Thread.currentThread().getId();//seed
 
         do {
             Cell[] as = cells;
