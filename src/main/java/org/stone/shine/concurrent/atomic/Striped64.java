@@ -161,9 +161,7 @@ abstract class Striped64 extends Number {
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
                     if (cells == null) {//recheck
-                        Cell[] rs = new Cell[2];
-                        rs[0] = new Cell(x);
-                        cells = rs;
+                        cells = new Cell[]{new Cell(x), null};
                         return;
                     }
                 } finally {
@@ -229,10 +227,8 @@ abstract class Striped64 extends Number {
                 }
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
-                    if (cells == null) {
-                        Cell[] rs = new Cell[2];
-                        rs[0] = new Cell(Double.doubleToRawLongBits(x));
-                        cells = rs;
+                    if (cells == null) {//recheck
+                        cells = new Cell[]{new Cell(Double.doubleToRawLongBits(x)), null};
                         return;
                     }
                 } finally {
