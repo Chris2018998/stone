@@ -16,6 +16,7 @@ import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 
 import static java.lang.System.arraycopy;
+import static org.stone.util.CommonUtil.NCPU;
 
 /**
  * Cell Impl
@@ -31,7 +32,6 @@ abstract class Striped64 extends Number {
     private static final long CELLSBUSY;
     private static final long cellValueOffset;
     private static final sun.misc.Unsafe UNSAFE;
-    private static final int NCPU = Runtime.getRuntime().availableProcessors();
     private static final int RETRY_SIZE = NCPU;
 
     static {
@@ -161,7 +161,7 @@ abstract class Striped64 extends Number {
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
                     if (cells == null) {//recheck
-                        cells = new Cell[]{new Cell(x), null};
+                        cells = new Cell[]{null, new Cell(x)};
                         return;
                     }
                 } finally {
@@ -228,7 +228,7 @@ abstract class Striped64 extends Number {
             } else if (cellsBusy == 0 && casCellsBusy()) {//cells is null
                 try {
                     if (cells == null) {//recheck
-                        cells = new Cell[]{new Cell(Double.doubleToRawLongBits(x)), null};
+                        cells = new Cell[]{null, new Cell(Double.doubleToRawLongBits(x))};
                         return;
                     }
                 } finally {
