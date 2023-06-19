@@ -32,6 +32,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
+import static org.stone.util.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Object Generic Pool Implementation
@@ -315,7 +316,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     Thread.yield();
                 } else {//here:(state == null)
                     long t = deadline - System.nanoTime();
-                    if (t > 0L) {
+                    if (t > spinForTimeoutThreshold) {
                         if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
                             parentPool.submitServantTask(this);
                         }
@@ -323,7 +324,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                         LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
                             cause = new ObjectGetInterruptedException("Object get request interrupted in wait queue");
-                    } else {//timeout
+                    } else if (t <= 0L) {//timeout
                         cause = new ObjectGetTimeoutException("Object get timeout in wait queue");
                     }
                 }//end (state == BOWER_NORMAL)
