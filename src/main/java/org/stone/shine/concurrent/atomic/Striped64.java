@@ -9,9 +9,8 @@
  */
 package org.stone.shine.concurrent.atomic;
 
-import sun.misc.Unsafe;
+import org.stone.util.CommonUtil;
 
-import java.lang.reflect.Field;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 
@@ -36,17 +35,9 @@ abstract class Striped64 extends Number {
 
     static {
         try {
-            //UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(null);
-
-            Class<?> sk = Striped64.class;
-            CELLSBUSY = UNSAFE.objectFieldOffset
-                    (sk.getDeclaredField("cellsBusy"));
-            Class<?> ak = Cell.class;
-            cellValueOffset = UNSAFE.objectFieldOffset
-                    (ak.getDeclaredField("value"));
+            UNSAFE = CommonUtil.UNSAFE;
+            cellValueOffset = CommonUtil.objectFieldOffset(Cell.class, "value");
+            CELLSBUSY = CommonUtil.objectFieldOffset(Striped64.class, "cellsBusy");
         } catch (Exception e) {
             throw new Error(e);
         }
