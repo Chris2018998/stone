@@ -28,16 +28,16 @@ abstract class Striped64 extends Number {
     //****************************************************************************************************************//
     //                                          1: base                                                               //
     //****************************************************************************************************************//
-    private static final long CELLSBUSY;
+    private static final long cellsBusyOffset;
     private static final long cellValueOffset;
-    private static final sun.misc.Unsafe UNSAFE;
     private static final int RETRY_SIZE = NCPU;
+    private static final sun.misc.Unsafe UNSAFE;
 
     static {
         try {
             UNSAFE = CommonUtil.UNSAFE;
             cellValueOffset = CommonUtil.objectFieldOffset(Cell.class, "value");
-            CELLSBUSY = CommonUtil.objectFieldOffset(Striped64.class, "cellsBusy");
+            cellsBusyOffset = CommonUtil.objectFieldOffset(Striped64.class, "cellsBusy");
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -92,7 +92,7 @@ abstract class Striped64 extends Number {
     }
 
     private boolean casCellsBusy() {
-        return UNSAFE.compareAndSwapInt(this, CELLSBUSY, 0, 1);
+        return UNSAFE.compareAndSwapInt(this, cellsBusyOffset, 0, 1);
     }
 
     //****************************************************************************************************************//
@@ -134,7 +134,7 @@ abstract class Striped64 extends Number {
                 //4: cells expand control
                 if (n >= NCPU) continue;
                 if (retrySize > 0) {
-                    retrySize--;
+                    --retrySize;
                 } else if (cellsBusy == 0 && casCellsBusy()) {
                     try {
                         as = cells;
@@ -158,6 +158,8 @@ abstract class Striped64 extends Number {
                 } finally {
                     cellsBusy = 0;
                 }
+            } else if (casCell(x, baseCell, fn)) {
+                return;
             }
         } while (true);
     }
@@ -225,6 +227,8 @@ abstract class Striped64 extends Number {
                 } finally {
                     cellsBusy = 0;
                 }
+            } else if (casCell(x, baseCell, fn)) {
+                return;
             }
         } while (true);
     }
