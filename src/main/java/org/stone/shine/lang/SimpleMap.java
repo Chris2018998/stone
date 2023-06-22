@@ -26,26 +26,30 @@ class SimpleMap {
 
     SimpleMap(Object firstKey, Object firstValue) {
         this.table = new Entry[16];
-        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
-        int index = table.length - 1 & firstKey.hashCode();
+        int index = getTableIndexByKey(firstKey);
         table[index] = new Entry(firstKey, firstValue);
         this.size = 1;
+        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
     }
 
     public Entry get(Object key) {
-        int index = table.length - 1 & key.hashCode();
+        int index = getTableIndexByKey(key);
         return null;
     }
 
     public void set(Object key, Object value) {
-        int index = table.length - 1 & key.hashCode();
+        int index = getTableIndexByKey(key);
     }
 
     public void remove(Object key) {
-        int index = table.length - 1 & key.hashCode();
+        int index = getTableIndexByKey(key);
     }
 
-    private void expand() {
+    private int getTableIndexByKey(Object key) {
+        return table.length - 1 & key.hashCode();
+    }
+
+    private void expandTable() {
 
     }
 
