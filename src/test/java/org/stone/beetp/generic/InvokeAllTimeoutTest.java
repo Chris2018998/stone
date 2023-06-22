@@ -31,7 +31,7 @@ public class InvokeAllTimeoutTest extends TestCase {
 
         boolean existException = false;
         List<BeeTaskHandle> handleList = service.invokeAll(taskList, 3, TimeUnit.SECONDS);
-        System.out.println("handleList:"+handleList);
+        System.out.println("handleList:" + handleList);
 
         for (BeeTaskHandle handle : handleList) {
             if (handle.isCancelled() || handle.isCallException()) {

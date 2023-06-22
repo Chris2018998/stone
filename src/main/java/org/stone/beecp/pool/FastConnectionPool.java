@@ -13,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stone.beecp.*;
 import org.stone.beecp.pool.exception.*;
-import org.stone.util.atomic.IntegerFieldUpdaterImpl;
-import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
+import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -36,8 +36,8 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.util.CommonUtil.isBlank;
-import static org.stone.util.CommonUtil.spinForTimeoutThreshold;
+import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * JDBC Connection Pool Implementation

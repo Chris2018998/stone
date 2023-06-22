@@ -16,13 +16,16 @@
 
 package org.stone.study;
 
+import org.stone.shine.util.concurrent.SynchronousQueue2;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -32,6 +35,8 @@ import java.util.concurrent.locks.LockSupport;
  * @author Chris Liao
  */
 public class ConsumerTest {
+
+
     private static final Object transferObject = new Object();
 
     public static void main(String[] args) throws Exception {
@@ -40,11 +45,14 @@ public class ConsumerTest {
         System.out.println(".................ConsumerTest......................");
         ArrayList<Long> timeList = new ArrayList<Long>(5);
 
-        timeList.add(testQueue("ArrayBlockingQueue", new ArrayBlockingQueue<Object>(1000), producerSize, consumerSize, operateSize));
-        timeList.add(testQueue("LinkedBlockingQueue2", new LinkedBlockingQueue<Object>(), producerSize, consumerSize, operateSize));
-        timeList.add(testQueue("LinkedTransferQueue", new LinkedTransferQueue<Object>(), producerSize, consumerSize, operateSize));
-        timeList.add(testQueue("SynchronousQueue", new SynchronousQueue<Object>(), producerSize, consumerSize, operateSize));
-        timeList.add(testQueue("MyTransferQueue", new MyTransferQueue<Object>(), producerSize, consumerSize, operateSize));
+//        timeList.add(testQueue("ArrayBlockingQueue", new ArrayBlockingQueue<Object>(1000), producerSize, consumerSize, operateSize));
+//        timeList.add(testQueue("LinkedBlockingQueue2", new LinkedBlockingQueue<Object>(), producerSize, consumerSize, operateSize));
+//        timeList.add(testQueue("LinkedTransferQueue", new LinkedTransferQueue<Object>(), producerSize, consumerSize, operateSize));
+//        timeList.add(testQueue("MyTransferQueue", new MyTransferQueue<Object>(), producerSize, consumerSize, operateSize));
+
+        //timeList.add(testQueue("SynchronousQueue", new java.util.concurrent.SynchronousQueue<Object>(true), producerSize, consumerSize, operateSize));
+        //timeList.add(testQueue("SynchronousQueue1", new SynchronousQueue<Object>(true), producerSize, consumerSize, operateSize));
+        timeList.add(testQueue("SynchronousQueue2", new SynchronousQueue2<Object>(true), producerSize, consumerSize, operateSize));
         Collections.sort(timeList);
         System.out.println(timeList);
     }

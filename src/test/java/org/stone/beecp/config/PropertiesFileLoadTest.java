@@ -14,7 +14,7 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Map;
 
-import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * @author Chris Liao

@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.util.CommonUtil.isBlank;
-import static org.stone.util.CommonUtil.trimString;
+import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.trimString;
 
 /**
  * Object pool configuration

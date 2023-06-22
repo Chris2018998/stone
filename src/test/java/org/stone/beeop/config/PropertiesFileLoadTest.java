@@ -12,7 +12,7 @@ import org.stone.beeop.BeeObjectSourceConfigException;
 
 import java.net.URL;
 
-import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * @author Chris.Liao

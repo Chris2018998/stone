@@ -9,13 +9,13 @@
  */
 package org.stone.shine.util.concurrent.atomic;
 
-import org.stone.util.CommonUtil;
+import org.stone.tools.CommonUtil;
 
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.LongBinaryOperator;
 
 import static java.lang.System.arraycopy;
-import static org.stone.util.CommonUtil.NCPU;
+import static org.stone.tools.CommonUtil.NCPU;
 
 /**
  * Cell Impl

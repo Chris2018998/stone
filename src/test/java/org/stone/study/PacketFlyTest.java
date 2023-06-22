@@ -16,13 +16,16 @@
 
 package org.stone.study;
 
+import org.stone.shine.util.concurrent.SynchronousQueue2;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -37,16 +40,19 @@ public class PacketFlyTest {
         int consumerSize = producerSize;
         System.out.println(".................PacketFlyTest......................");
         ArrayList<Long> timeList = new ArrayList<Long>(5);
-        timeList.add(testQueue("MyTransferQueue", new MyTransferQueue<TransferPacket>(), producerSize,
-                consumerSize));
-        timeList.add(testQueue("ArrayBlockingQueue", new ArrayBlockingQueue<TransferPacket>(producerSize), producerSize,
-                consumerSize));
-        timeList.add(testQueue("LinkedBlockingQueue2", new LinkedBlockingQueue<TransferPacket>(), producerSize,
-                consumerSize));
-        timeList.add(testQueue("LinkedTransferQueue", new LinkedTransferQueue<TransferPacket>(), producerSize,
-                consumerSize));
-        timeList.add(testQueue("SynchronousQueue", new SynchronousQueue<TransferPacket>(), producerSize,
-                consumerSize));
+//        timeList.add(testQueue("MyTransferQueue", new MyTransferQueue<TransferPacket>(), producerSize,
+//                consumerSize));
+//        timeList.add(testQueue("ArrayBlockingQueue", new ArrayBlockingQueue<TransferPacket>(producerSize), producerSize,
+//                consumerSize));
+//        timeList.add(testQueue("LinkedBlockingQueue2", new LinkedBlockingQueue<TransferPacket>(), producerSize,
+//                consumerSize));
+//        timeList.add(testQueue("LinkedTransferQueue", new LinkedTransferQueue<TransferPacket>(), producerSize,
+//                consumerSize));
+
+        //timeList.add(testQueue("SynchronousQueue", new SynchronousQueue<TransferPacket>(true), producerSize,consumerSize));
+        //timeList.add(testQueue("SynchronousQueue1", new SynchronousQueue<TransferPacket>(true), producerSize, consumerSize));
+        timeList.add(testQueue("SynchronousQueue2", new SynchronousQueue2<TransferPacket>(true), producerSize, consumerSize));
+
 
         Collections.sort(timeList);
         System.out.println(timeList);

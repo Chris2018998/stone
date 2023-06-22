@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * JDBC Connection Pool Implementation,which

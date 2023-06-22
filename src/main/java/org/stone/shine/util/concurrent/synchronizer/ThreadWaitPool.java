@@ -18,7 +18,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
 import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
 import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.INTERRUPTED;
 import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.SIGNAL;
-import static org.stone.util.CommonUtil.objectEquals;
+import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * Base Wait-Wakeup Pool

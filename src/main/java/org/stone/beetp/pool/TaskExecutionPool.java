@@ -13,7 +13,7 @@ import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskRejectedException;
-import org.stone.util.atomic.IntegerFieldUpdaterImpl;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.LinkedList;
 import java.util.List;

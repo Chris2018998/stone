@@ -16,7 +16,7 @@ import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWrit
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
-import static org.stone.util.CommonUtil.objectEquals;
+import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * ReadLockToLockWriteLock test case

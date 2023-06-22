@@ -25,7 +25,7 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
 
-import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * BeeDataSource factory

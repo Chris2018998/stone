@@ -15,7 +15,7 @@ import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 import java.sql.SQLException;
 
-import static org.stone.util.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * XaConnection Factory implementation by XADataSource

@@ -19,7 +19,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 
-import static org.stone.util.CommonUtil.objectEquals;
+import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * @author Chris Liao

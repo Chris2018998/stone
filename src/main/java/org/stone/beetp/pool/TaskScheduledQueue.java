@@ -9,7 +9,7 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.util.SortedArray;
+import org.stone.tools.SortedArray;
 
 import java.util.Comparator;
 

@@ -14,7 +14,7 @@ import org.stone.shine.concurrent.ConcurrentMockThread;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
-import static org.stone.util.CommonUtil.objectEquals;
+import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * mock thread

@@ -11,7 +11,7 @@ package org.stone.shine.util.concurrent.synchronizer;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.util.CommonUtil.spinForTimeoutThreshold;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Time parker class,supply three Implementation with park methods of {@link LockSupport} class

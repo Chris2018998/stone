@@ -35,8 +35,8 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.util.CommonUtil.isBlank;
-import static org.stone.util.CommonUtil.trimString;
+import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.trimString;
 
 /**
  * Connection pool configuration under dataSource

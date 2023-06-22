@@ -13,8 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
-import org.stone.util.atomic.IntegerFieldUpdaterImpl;
-import org.stone.util.atomic.ReferenceFieldUpdaterImpl;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
+import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -32,7 +32,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
-import static org.stone.util.CommonUtil.spinForTimeoutThreshold;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Object Generic Pool Implementation

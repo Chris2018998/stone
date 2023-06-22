@@ -16,7 +16,7 @@ import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.pool.exception.*;
-import org.stone.util.atomic.IntegerFieldUpdaterImpl;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;

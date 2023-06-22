@@ -7,7 +7,7 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.util.atomic;
+package org.stone.tools.atomic;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 

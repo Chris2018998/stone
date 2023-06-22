@@ -9,8 +9,8 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import org.stone.util.atomic.UnsafeAdaptor;
-import org.stone.util.atomic.UnsafeAdaptorHolder;
+import org.stone.tools.atomic.UnsafeAdaptor;
+import org.stone.tools.atomic.UnsafeAdaptorHolder;
 
 /**
  * node cas updater

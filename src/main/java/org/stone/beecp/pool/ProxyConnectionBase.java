@@ -14,7 +14,7 @@ import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.util.CommonUtil.objectEquals;
+import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * connection proxy

@@ -7,7 +7,7 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.util;
+package org.stone.tools;
 
 import sun.misc.Unsafe;
 
