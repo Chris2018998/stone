@@ -9,7 +9,7 @@
  */
 package org.stone.shine.concurrent.countDownLatch.threads;
 
-import org.stone.shine.concurrent.CountDownLatch;
+import org.stone.shine.util.concurrent.CountDownLatch;
 
 /**
  * CountDownLatch Mock Thread

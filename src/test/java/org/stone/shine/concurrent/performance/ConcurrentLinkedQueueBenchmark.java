@@ -5,6 +5,7 @@ import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.stone.shine.util.concurrent.ConcurrentLinkedQueue;
 
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +62,7 @@ public class ConcurrentLinkedQueueBenchmark {
                 queue = new java.util.concurrent.ConcurrentLinkedQueue<Integer>();
                 break;
             case "Stone-ConcurrentLinkedQueue":
-                queue = new org.stone.shine.concurrent.ConcurrentLinkedQueue<Integer>();
+                queue = new ConcurrentLinkedQueue<Integer>();
                 break;
         }
     }

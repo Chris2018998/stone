@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestCase;
-import org.stone.shine.concurrent.LinkedTransferQueue;
+import org.stone.shine.util.concurrent.LinkedTransferQueue;
 
 /**
  * LinkedTransferQueue Test case

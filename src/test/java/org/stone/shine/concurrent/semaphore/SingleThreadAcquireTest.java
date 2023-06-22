@@ -11,7 +11,7 @@ package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.Semaphore;
+import org.stone.shine.util.concurrent.Semaphore;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;

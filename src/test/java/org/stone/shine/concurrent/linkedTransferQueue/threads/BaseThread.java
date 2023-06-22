@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.linkedTransferQueue.threads;
 
 import org.stone.shine.concurrent.ConcurrentMockThread;
-import org.stone.shine.concurrent.LinkedTransferQueue;
+import org.stone.shine.util.concurrent.LinkedTransferQueue;
 
 import java.util.concurrent.TimeUnit;
 

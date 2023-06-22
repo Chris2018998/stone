@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.countDownLatch.threads;
 
 import org.stone.shine.concurrent.ConcurrentMockThread;
-import org.stone.shine.concurrent.CountDownLatch;
+import org.stone.shine.util.concurrent.CountDownLatch;
 
 import java.util.concurrent.TimeUnit;
 

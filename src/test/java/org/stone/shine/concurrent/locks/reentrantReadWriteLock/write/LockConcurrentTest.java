@@ -11,7 +11,7 @@ package org.stone.shine.concurrent.locks.reentrantReadWriteLock.write;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.synchronizer.locks.ReentrantReadWriteLock;
+import org.stone.shine.util.concurrent.synchronizer.locks.ReentrantReadWriteLock;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;

@@ -9,7 +9,7 @@
  */
 package org.stone.shine.concurrent.synchronousQueue.threads;
 
-import org.stone.shine.concurrent.SynchronousQueue;
+import org.stone.shine.util.concurrent.SynchronousQueue;
 
 import java.util.concurrent.TimeUnit;
 

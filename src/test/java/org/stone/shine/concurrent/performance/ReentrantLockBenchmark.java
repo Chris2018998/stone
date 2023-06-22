@@ -5,6 +5,7 @@ import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.stone.shine.util.concurrent.synchronizer.locks.ReentrantLock;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -58,7 +59,7 @@ public class ReentrantLockBenchmark {
                 lock = new java.util.concurrent.locks.ReentrantLock();
                 break;
             case "Stone-Lock":
-                lock = new org.stone.shine.synchronizer.locks.ReentrantLock();
+                lock = new ReentrantLock();
                 break;
         }
     }

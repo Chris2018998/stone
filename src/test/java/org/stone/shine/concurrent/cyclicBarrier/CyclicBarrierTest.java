@@ -7,7 +7,7 @@
  */
 package org.stone.shine.concurrent.cyclicBarrier;
 
-import org.stone.shine.concurrent.CyclicBarrier2;
+import org.stone.shine.util.concurrent.CyclicBarrier2;
 
 import java.util.concurrent.BrokenBarrierException;
 

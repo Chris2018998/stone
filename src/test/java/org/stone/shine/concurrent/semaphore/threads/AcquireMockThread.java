@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.semaphore.threads;
 
 import org.stone.shine.concurrent.ConcurrentMockThread;
-import org.stone.shine.concurrent.Semaphore;
+import org.stone.shine.util.concurrent.Semaphore;
 
 import java.util.concurrent.TimeUnit;
 

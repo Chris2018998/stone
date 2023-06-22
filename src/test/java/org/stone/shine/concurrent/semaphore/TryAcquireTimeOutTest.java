@@ -11,7 +11,7 @@ package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.Semaphore;
+import org.stone.shine.util.concurrent.Semaphore;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
 
 import java.util.concurrent.TimeUnit;
