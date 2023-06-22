@@ -19,22 +19,33 @@ import java.lang.ref.WeakReference;
  */
 
 class SimpleMap {
-    private static final int INITIAL_CAPACITY = 16;
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     private int size = 0;
     private Entry[] table;
     private int threshold;
 
     SimpleMap(Object firstKey, Object firstValue) {
+        this.table = new Entry[16];
+        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
+        int index = table.length - 1 & firstKey.hashCode();
+        table[index] = new Entry(firstKey, firstValue);
     }
 
-    public Entry getEntry(Object key) {
+    public Entry get(Object key) {
+        int index = table.length - 1 & key.hashCode();
         return null;
     }
 
     public void set(Object key, Object value) {
+        int index = table.length - 1 & key.hashCode();
     }
 
     public void remove(Object key) {
+        int index = table.length - 1 & key.hashCode();
+    }
+
+    private void expand() {
+
     }
 
     private static class Entry extends WeakReference<Object> {
