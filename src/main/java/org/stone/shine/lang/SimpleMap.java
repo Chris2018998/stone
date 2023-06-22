@@ -29,6 +29,7 @@ class SimpleMap {
         this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
         int index = table.length - 1 & firstKey.hashCode();
         table[index] = new Entry(firstKey, firstValue);
+        this.size = 1;
     }
 
     public Entry get(Object key) {
