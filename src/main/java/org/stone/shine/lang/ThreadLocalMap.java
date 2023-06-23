@@ -77,7 +77,7 @@ class ThreadLocalMap {
         return newTable;
     }
 
-    private static int searchTable(Entry[] table, ThreadLocal key, boolean setInd) {
+    private static int searchTable(Entry[] table, ThreadLocal<?> key, boolean setInd) {
         final int maxIndex = table.length - 1;
         final int hashIndex = maxIndex & key.hashCode();
 
@@ -105,18 +105,18 @@ class ThreadLocalMap {
     //***************************************************************************************************************//
     //                                           2: map Methods(3)                                                   //
     //***************************************************************************************************************//
-    public Object get(ThreadLocal key) {
+    public Object get(ThreadLocal<?> key) {
         int index = searchTable(table, key, false);
         if (index > -1) return table[index].value;
         return null;
     }
 
-    public void remove(ThreadLocal key) {
+    public void remove(ThreadLocal<?> key) {
         int index = searchTable(table, key, false);
         if (index > -1) table[index] = null;
     }
 
-    public void set(ThreadLocal key, Object value) {
+    public void set(ThreadLocal<?> key, Object value) {
         int index = searchTable(table, key, true);
         Entry entry = table[index];
         if (entry != null) {//replace entry value
@@ -133,10 +133,10 @@ class ThreadLocalMap {
     //***************************************************************************************************************//
     //                                          3: Map Entry                                                         //
     //***************************************************************************************************************//
-    private static class Entry extends WeakReference<ThreadLocal> {
+    private static class Entry extends WeakReference<ThreadLocal<?>> {
         private Object value;
 
-        private Entry(ThreadLocal k, Object v) {
+        private Entry(ThreadLocal<?> k, Object v) {
             super(k);
             this.value = v;
         }
