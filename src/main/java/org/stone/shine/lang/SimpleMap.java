@@ -57,12 +57,17 @@ class SimpleMap {
         return tableLen & key.hashCode();
     }
 
-    private void expandTable() {
+    private void expandTable(Entry newEntry) {
+        //1: create a new Array
         int oldLen = table.length;
         int newLen = oldLen << 1;
         Entry[] newTable = new Entry[newLen];
-        newLen = newLen - 1;
 
+        //2: set the new element to index(why? Priority for new when expand)
+        newLen = newLen - 1;
+        newTable[getTableIndex(newEntry.get(), newLen)] = newEntry;
+
+        //3: copy other elements to the new array
         for (int i = 0; i < oldLen; i++) {
             Entry entry = table[i];
             if (entry == null) continue;//not filled
@@ -70,14 +75,19 @@ class SimpleMap {
             if (key == null) continue;//gc
 
             int newIndex = getTableIndex(key, newLen);
-            if (newTable[newIndex] != null) {//find new pos index
-
-            }
+            if (newTable[newIndex] != null)//try to search a new pos index
+                newIndex = searchValidIndex(newTable, newIndex);
 
             newTable[newIndex] = entry;
         }
 
+        //replace the old table
         this.table = newTable;
+    }
+
+    private int searchValidIndex(Entry[] newTable, int curIndex) {
+
+
     }
 
     //***************************************************************************************************************//
