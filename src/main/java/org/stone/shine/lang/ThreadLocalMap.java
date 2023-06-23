@@ -78,10 +78,12 @@ class ThreadLocalMap {
             if (entry != null && entry.get() == null) //clear gc entry
                 entry = table[searchIndex] = null;
 
-            if (entry == null) {
-                if (firstEmptyIndex == -1) firstEmptyIndex = searchIndex;
-            } else if (entry.get() == key) {
-                if (keyMatchedIndex == -1) keyMatchedIndex = searchIndex;
+            if (keyMatchedIndex == -1) {
+                if (entry != null && entry.get() == key) {
+                    keyMatchedIndex = searchIndex;
+                } else if (firstEmptyIndex == -1 && entry == null) {
+                    firstEmptyIndex = searchIndex;
+                }
             }
 
             if (++searchIndex > maxIndex) searchIndex = 0;
