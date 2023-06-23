@@ -12,7 +12,7 @@ package org.stone.shine.lang;
 import java.lang.ref.WeakReference;
 
 /**
- * A Simple Map
+ * Thread Local Map Impl
  *
  * @author Chris Liao
  * @version 1.0
