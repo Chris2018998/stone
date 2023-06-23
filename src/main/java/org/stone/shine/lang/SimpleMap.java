@@ -92,7 +92,7 @@ class SimpleMap {
 
         while (searchIndex != curIndex) {
             Entry entry = newTable[searchIndex];
-            if (entry == null || entry.get() == null) return searchIndex;
+            if (entry == null || entry.get() == null) break;
             if (++searchIndex > maxIndex) searchIndex = 0;
         }
         return searchIndex;
