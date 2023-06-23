@@ -32,7 +32,7 @@ class ThreadLocalMap {
         this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
     }
 
-    //support InheritThreadLocalMap
+    //support InheritThreadLocal
     ThreadLocalMap(ThreadLocalMap parent) {
         //@todo
     }
