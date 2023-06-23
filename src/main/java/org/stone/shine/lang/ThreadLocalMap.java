@@ -34,7 +34,19 @@ class ThreadLocalMap {
 
     //support InheritThreadLocal
     ThreadLocalMap(ThreadLocalMap parent) {
-        //@todo
+        Entry[] parentTable = parent.table;
+        this.table = new Entry[parentTable.length];
+        for (Entry entry : parentTable) {
+            if (entry == null) continue;
+            ThreadLocal key = entry.get();
+            if (key == null) continue;
+
+            int index = searchTable(table, key, true);
+            table[index] = entry;
+            this.size++;
+        }
+
+        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
     }
 
     //***************************************************************************************************************//
@@ -68,9 +80,9 @@ class ThreadLocalMap {
     private static int searchTable(Entry[] table, ThreadLocal key, boolean setInd) {
         final int maxIndex = table.length - 1;
         final int hashIndex = maxIndex & key.hashCode();
-        int searchIndex = -1, keyMatchedIndex = -1, firstEmptyIndex = -1;
 
         //loop array(search and clear gc entry)
+        int searchIndex = -1, keyMatchedIndex = -1, firstEmptyIndex = -1;
         while (searchIndex != hashIndex) {
             if (searchIndex == -1) searchIndex = hashIndex;
 
