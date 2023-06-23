@@ -26,35 +26,58 @@ class SimpleMap {
 
     SimpleMap(Object firstKey, Object firstValue) {
         this.table = new Entry[16];
-        int index = getTableIndexByKey(firstKey);
+        int index = getTableIndex(firstKey, table.length - 1);
         table[index] = new Entry(firstKey, firstValue);
         this.size = 1;
         this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
     }
 
+
+    //***************************************************************************************************************//
+    //                                           1: Private Methods                                                  //
+    //***************************************************************************************************************//
     public Entry get(Object key) {
-        int index = getTableIndexByKey(key);
+        int index = getTableIndex(key, table.length - 1);
         return null;
     }
 
     public void set(Object key, Object value) {
-        int index = getTableIndexByKey(key);
+        int index = getTableIndex(key, table.length - 1);
     }
 
     public void remove(Object key) {
-        int index = getTableIndexByKey(key);
+        int index = getTableIndex(key, table.length - 1);
     }
 
 
     //***************************************************************************************************************//
     //                                           2: Private Methods                                                  //
     //***************************************************************************************************************//
-    private int getTableIndexByKey(Object key) {
-        return table.length - 1 & key.hashCode();
+    private int getTableIndex(Object key, int tableLen) {
+        return tableLen & key.hashCode();
     }
 
     private void expandTable() {
+        int oldLen = table.length;
+        int newLen = oldLen << 1;
+        Entry[] newTable = new Entry[newLen];
+        newLen = newLen - 1;
 
+        for (int i = 0; i < oldLen; i++) {
+            Entry entry = table[i];
+            if (entry == null) continue;//not filled
+            Object key = entry.get();
+            if (key == null) continue;//gc
+
+            int newIndex = getTableIndex(key, newLen);
+            if (newTable[newIndex] != null) {//find new pos index
+
+            }
+
+            newTable[newIndex] = entry;
+        }
+
+        this.table = newTable;
     }
 
     //***************************************************************************************************************//
