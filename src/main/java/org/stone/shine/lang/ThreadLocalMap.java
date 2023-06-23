@@ -42,7 +42,7 @@ class ThreadLocalMap {
             if (key == null) continue;
 
             int index = searchTable(table, key, true);
-            table[index] = entry;
+            this.table[index] = entry;
             this.size++;
         }
 
@@ -82,10 +82,8 @@ class ThreadLocalMap {
         final int hashIndex = maxIndex & key.hashCode();
 
         //loop array(search and clear gc entry)
-        int searchIndex = -1, keyMatchedIndex = -1, firstEmptyIndex = -1;
-        while (searchIndex != hashIndex) {
-            if (searchIndex == -1) searchIndex = hashIndex;
-
+        int searchIndex = hashIndex, keyMatchedIndex = -1, firstEmptyIndex = -1;
+        do {
             Entry entry = table[searchIndex];
             if (entry != null && entry.get() == null) //clear gc entry
                 entry = table[searchIndex] = null;
@@ -99,9 +97,28 @@ class ThreadLocalMap {
             }
 
             if (++searchIndex > maxIndex) searchIndex = 0;
-        }
+        } while (searchIndex != hashIndex);
 
         return keyMatchedIndex > -1 ? keyMatchedIndex : firstEmptyIndex;
+    }
+
+    public static void main(String[] args) {
+        ThreadLocal local1 = new ThreadLocal();
+        ThreadLocalMap localMap = new ThreadLocalMap(local1, 1234);
+
+        int size = Integer.MAX_VALUE;
+        long time1 = System.currentTimeMillis();
+        for (int i = 0; i < size; i++) {
+            local1.set(i);
+        }
+        long time2 = System.currentTimeMillis();
+        for (int i = 0; i < size; i++) {
+            localMap.set(local1, i);
+        }
+        long time3 = System.currentTimeMillis();
+
+        System.out.println(time2 - time1);
+        System.out.println(time3 - time2);
     }
 
     //***************************************************************************************************************//
