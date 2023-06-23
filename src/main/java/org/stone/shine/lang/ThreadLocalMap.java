@@ -94,6 +94,14 @@ class ThreadLocalMap {
         return firstSetIndex;
     }
 
+    private static void clearTable(Entry[] table) {
+        final int maxIndex = table.length - 1;
+        for (int i = 0; i < maxIndex; i++) {
+            Entry entry = table[i];
+            if (entry != null && entry.get() == null) table[i] = null;
+        }
+    }
+
     //***************************************************************************************************************//
     //                                           2: map Methods(3)                                                   //
     //***************************************************************************************************************//
