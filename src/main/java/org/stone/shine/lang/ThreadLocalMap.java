@@ -24,7 +24,7 @@ class ThreadLocalMap {
     private Entry[] table;
     private int threshold;
 
-    ThreadLocalMap(Object firstKey, Object firstValue) {
+    ThreadLocalMap(ThreadLocal firstKey, Object firstValue) {
         this.table = new Entry[16];
         int index = table.length - 1 & firstKey.hashCode();
         table[index] = new Entry(firstKey, firstValue);
@@ -51,7 +51,7 @@ class ThreadLocalMap {
         for (int i = 0; i < oldLen; i++) {
             Entry entry = oldTable[i];
             if (entry == null) continue;//need't filled
-            Object key = entry.get();
+            ThreadLocal key = entry.get();
             if (key == null) continue;
 
             int index = newLen & key.hashCode();
@@ -65,7 +65,7 @@ class ThreadLocalMap {
         return newTable;
     }
 
-    private static int searchTable(Entry[] table, Object key, boolean setInd) {
+    private static int searchTable(Entry[] table, ThreadLocal key, boolean setInd) {
         final int maxIndex = table.length - 1;
         final int index = maxIndex & key.hashCode();
         //1: compare the key matched entry
@@ -97,18 +97,18 @@ class ThreadLocalMap {
     //***************************************************************************************************************//
     //                                           2: map Methods(3)                                                   //
     //***************************************************************************************************************//
-    public Object get(Object key) {
+    public Object get(ThreadLocal key) {
         int index = searchTable(table, key, false);
         if (index > -1) return table[index].value;
         return null;
     }
 
-    public void remove(Object key) {
+    public void remove(ThreadLocal key) {
         int index = searchTable(table, key, false);
         if (index > -1) table[index] = null;
     }
 
-    public void set(Object key, Object value) {
+    public void set(ThreadLocal key, Object value) {
         int index = searchTable(table, key, true);
         Entry entry = table[index];
         if (entry != null && entry.get() == key) {//replace entry value
@@ -125,10 +125,10 @@ class ThreadLocalMap {
     //***************************************************************************************************************//
     //                                          3: Map Entry                                                         //
     //***************************************************************************************************************//
-    private static class Entry extends WeakReference<Object> {
+    private static class Entry extends WeakReference<ThreadLocal> {
         private Object value;
 
-        private Entry(Object k, Object v) {
+        private Entry(ThreadLocal k, Object v) {
             super(k);
             this.value = v;
         }
