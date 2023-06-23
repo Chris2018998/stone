@@ -85,9 +85,17 @@ class SimpleMap {
         this.table = newTable;
     }
 
-    private int searchValidIndex(Entry[] newTable, int curIndex) {
+    private int searchValidIndex(Entry[] newTable, final int curIndex) {
+        int maxIndex = newTable.length - 1;
+        int searchIndex = curIndex + 1;
+        if (searchIndex > maxIndex) searchIndex = 0;
 
-
+        while (searchIndex != curIndex) {
+            Entry entry = newTable[searchIndex];
+            if (entry == null || entry.get() == null) return searchIndex;
+            if (++searchIndex > maxIndex) searchIndex = 0;
+        }
+        return searchIndex;
     }
 
     //***************************************************************************************************************//
