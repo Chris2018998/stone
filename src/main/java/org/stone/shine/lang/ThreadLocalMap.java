@@ -81,7 +81,7 @@ class ThreadLocalMap {
             if (keyMatchedIndex == -1) {
                 if (entry != null && entry.get() == key) {
                     keyMatchedIndex = searchIndex;
-                } else if (setInd && firstEmptyIndex == -1 && entry == null) {
+                } else if (firstEmptyIndex == -1 && entry == null && setInd) {
                     firstEmptyIndex = searchIndex;
                 }
             }
