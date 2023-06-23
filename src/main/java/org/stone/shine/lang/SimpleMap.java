@@ -32,99 +32,96 @@ class SimpleMap {
         this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
     }
 
-
     //***************************************************************************************************************//
-    //                                           1: Private Methods                                                  //
+    //                                           2: private static Methods                                           //
     //***************************************************************************************************************//
-    public void set(Object key, Object value) {
-        if (table.length * DEFAULT_LOAD_FACTOR >= threshold) {
-            expandTable(new Entry(key, value));
-        } else {
-            final int maxIndex = table.length - 1;
-            final int index = maxIndex & key.hashCode();
-            int firstFillIndex = -1;
-            Entry searchedEntry = table[index];
-            if (searchedEntry != null) {
-                if (searchedEntry.get() == key) {
-                    searchedEntry.value = value;
-                    return;
-                } else if (searchedEntry.get() == null) {
-                    firstFillIndex = index;
-                }
-            }
+    private static int searchTable(Entry[] table, Object key, boolean setInd) {
+        final int maxIndex = table.length - 1;
+        final int index = maxIndex & key.hashCode();
+        //1: compare the key matched entry
+        Entry entry = table[index];
+        if (entry != null && entry.get() == key)
+            return index;
 
-            //search index
-            int searchIndex = index + 1;
-            if (searchIndex > maxIndex) searchIndex = 0;
-            while (searchIndex != index) {
-                Entry entry = table[searchIndex];
-                if (entry.get() == key) {
-                    entry.value = value;
-                    return;
-                }
+        //2: if entry null or key has been in gc state,then record its index
+        int firstSetIndex = -1;
+        if (setInd && (entry == null || entry.get() == null))
+            firstSetIndex = index;
 
-                if (firstFillIndex == -1 && (entry == null || entry.get() == null))
-                    firstFillIndex = searchIndex;
-                if (++searchIndex > maxIndex) searchIndex = 0;
-            }
+        //3: search key matched entry
+        int searchIndex = index + 1;
+        if (searchIndex > maxIndex) searchIndex = 0;
+        while (searchIndex != index) {
+            entry = table[searchIndex];
+            if (entry != null && entry.get() == key) return index;
 
-            table[firstFillIndex] = new Entry(key, value);
+            if (setInd && firstSetIndex == -1 && (entry == null || entry.get() == null))
+                firstSetIndex = searchIndex;
+
+            if (++searchIndex > maxIndex) searchIndex = 0;
         }
+
+        return firstSetIndex;
     }
 
-    public Entry get(Object key) {
-        int index = table.length - 1 & key.hashCode();
-    }
-
-    public void remove(Object key) {
-        int index = table.length - 1 & key.hashCode();
-
-    }
-
-    //***************************************************************************************************************//
-    //                                           2: Private Methods                                                  //
-    //***************************************************************************************************************//
-    private void expandTable(Entry newEntry) {
+    private static Entry[] expandTable(Entry[] oldTable) {
         //1: create a new Array
-        int oldLen = table.length;
+        int oldLen = oldTable.length;
         int newLen = oldLen << 1;
         Entry[] newTable = new Entry[newLen];
 
-
-        //2: set the new element to index(why? Priority for new when expand)
-        newLen = newLen - 1;
-        newTable[newLen & newEntry.get().hashCode()] = newEntry;
-
-        //3: copy other elements to the new array
-        for (int i = 0; i < oldLen; i++) {
-            Entry entry = table[i];
-            if (entry == null) continue;//not filled
-            Object key = entry.get();
-            if (key == null) continue;//gc
-
-            int newIndex = newLen & key.hashCode();
-            if (newTable[newIndex] != null)//try to search a new pos index
-                newIndex = searchValidIndex(newTable, newIndex);
-
-            newTable[newIndex] = entry;
-        }
-
-        //replace the old table
-        this.table = newTable;
-        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
+        return null;
+        //@todo
+//
+//        //2: set the new element to index(why? Priority for new when expand)
+//        newLen = newLen - 1;
+//        newTable[newLen & newEntry.get().hashCode()] = newEntry;
+//
+//        //3: copy other elements to the new array
+//        for (int i = 0; i < oldLen; i++) {
+//            Entry entry = table[i];
+//            if (entry == null) continue;//not filled
+//            Object key = entry.get();
+//            if (key == null) continue;//gc
+//
+//            int newIndex = newLen & key.hashCode();
+//            if (newTable[newIndex] != null)//try to search a new pos index
+//                newIndex = searchValidIndex(newTable, newIndex);
+//
+//            newTable[newIndex] = entry;
+//        }
+//
+//        //replace the old table
+//        this.table = newTable;
+//        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
     }
 
-    private int searchValidIndex(Entry[] table, final int curIndex) {
-        final int maxIndex = table.length - 1;
-        int searchIndex = curIndex + 1;
-        if (searchIndex > maxIndex) searchIndex = 0;
+    //***************************************************************************************************************//
+    //                                           2: map Methods(3)                                                   //
+    //***************************************************************************************************************//
+    public Object get(Object key) {
+        int index = searchTable(table, key, false);
+        if (index > -1) return table[index].value;
+        return null;
+    }
 
-        while (searchIndex != curIndex) {
-            Entry entry = table[searchIndex];
-            if (entry == null || entry.get() == null) break;
-            if (++searchIndex > maxIndex) searchIndex = 0;
+    public void remove(Object key) {
+        int index = searchTable(table, key, false);
+        if (index > -1) table[index] = null;
+    }
+
+    public void set(Object key, Object value) {
+        int index = searchTable(table, key, true);
+        Entry entry = table[index];
+        if (entry != null && entry.get() == key) {//replace entry value
+            entry.value = value;
+        } else if (entry == null || entry.get() == null) {
+            table[index] = new Entry(key, value);
+            if (++size >= threshold) {//expand table
+                this.table = expandTable(table);
+                this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
+            }
         }
-        return searchIndex;
     }
 
     //***************************************************************************************************************//
