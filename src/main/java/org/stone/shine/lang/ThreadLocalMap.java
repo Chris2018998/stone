@@ -67,31 +67,28 @@ class ThreadLocalMap {
 
     private static int searchTable(Entry[] table, ThreadLocal key, boolean setInd) {
         final int maxIndex = table.length - 1;
-        final int index = maxIndex & key.hashCode();
-        //1: compare the key matched entry
-        Entry entry = table[index];
-        if (entry != null && entry.get() == key)
-            return index;
+        final int hashIndex = maxIndex & key.hashCode();
+        int searchIndex = -1, keyMatchedIndex = -1, firstEmptyIndex = -1;
 
-        //2: if entry null or key has been in gc state,then record its index
-        int firstSetIndex = -1;
-        if (setInd && (entry == null || entry.get() == null))
-            firstSetIndex = index;
+        //loop array(search and clear gc entry)
+        while (searchIndex != hashIndex) {
+            if (searchIndex == -1) searchIndex = hashIndex;
 
-        //3: search key matched entry
-        int searchIndex = index + 1;
-        if (searchIndex > maxIndex) searchIndex = 0;
-        while (searchIndex != index) {
-            entry = table[searchIndex];
-            if (entry != null && entry.get() == key) return index;
+            Entry entry = table[searchIndex];
+            if (entry != null && entry.get() == null) //clear gc entry
+                entry = table[searchIndex] = null;
 
-            if (setInd && firstSetIndex == -1 && (entry == null || entry.get() == null))
-                firstSetIndex = searchIndex;
+            if (entry == null) {
+                if (firstEmptyIndex == -1) firstEmptyIndex = searchIndex;
+            } else if (entry.get() == key) {
+                if (keyMatchedIndex == -1) keyMatchedIndex = searchIndex;
+            }
 
             if (++searchIndex > maxIndex) searchIndex = 0;
         }
 
-        return firstSetIndex;
+        if (keyMatchedIndex > -1) return keyMatchedIndex;
+        return firstEmptyIndex;
     }
 
     private static void clearTable(Entry[] table) {
