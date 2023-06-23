@@ -35,6 +35,31 @@ class SimpleMap {
     //***************************************************************************************************************//
     //                                           2: private static Methods                                           //
     //***************************************************************************************************************//
+    private static Entry[] expandTable(Entry[] oldTable) {
+        //1: create a new Array
+        int oldLen = oldTable.length;
+        int newLen = oldLen << 1;
+        Entry[] newTable = new Entry[newLen];
+        newLen--;
+
+        //2: copy entry to new array
+        for (int i = 0; i < oldLen; i++) {
+            Entry entry = oldTable[i];
+            if (entry == null) continue;//need't filled
+            Object key = entry.get();
+            if (key == null) continue;
+
+            int index = newLen & key.hashCode();
+            if (newTable[index] == null) {
+                newTable[index] = new Entry(key, entry.value);
+            } else {
+                index = searchTable(newTable, key, true);
+                newTable[index] = entry;
+            }
+        }
+        return newTable;
+    }
+
     private static int searchTable(Entry[] table, Object key, boolean setInd) {
         final int maxIndex = table.length - 1;
         final int index = maxIndex & key.hashCode();
@@ -64,37 +89,6 @@ class SimpleMap {
         return firstSetIndex;
     }
 
-    private static Entry[] expandTable(Entry[] oldTable) {
-        //1: create a new Array
-        int oldLen = oldTable.length;
-        int newLen = oldLen << 1;
-        Entry[] newTable = new Entry[newLen];
-
-        return null;
-        //@todo
-//
-//        //2: set the new element to index(why? Priority for new when expand)
-//        newLen = newLen - 1;
-//        newTable[newLen & newEntry.get().hashCode()] = newEntry;
-//
-//        //3: copy other elements to the new array
-//        for (int i = 0; i < oldLen; i++) {
-//            Entry entry = table[i];
-//            if (entry == null) continue;//not filled
-//            Object key = entry.get();
-//            if (key == null) continue;//gc
-//
-//            int newIndex = newLen & key.hashCode();
-//            if (newTable[newIndex] != null)//try to search a new pos index
-//                newIndex = searchValidIndex(newTable, newIndex);
-//
-//            newTable[newIndex] = entry;
-//        }
-//
-//        //replace the old table
-//        this.table = newTable;
-//        this.threshold = (int) (table.length * DEFAULT_LOAD_FACTOR);
-    }
 
     //***************************************************************************************************************//
     //                                           2: map Methods(3)                                                   //
