@@ -86,7 +86,7 @@ class SimpleMap {
     }
 
     private int searchValidIndex(Entry[] newTable, final int curIndex) {
-        int maxIndex = newTable.length - 1;
+        final int maxIndex = newTable.length - 1;
         int searchIndex = curIndex + 1;
         if (searchIndex > maxIndex) searchIndex = 0;
 
