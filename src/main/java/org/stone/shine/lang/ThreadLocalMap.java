@@ -109,9 +109,9 @@ class ThreadLocalMap {
     public void set(ThreadLocal key, Object value) {
         int index = searchTable(table, key, true);
         Entry entry = table[index];
-        if (entry != null && entry.get() == key) {//replace entry value
+        if (entry != null) {//replace entry value
             entry.value = value;
-        } else if (entry == null || entry.get() == null) {
+        } else {
             table[index] = new Entry(key, value);
             if (++size >= threshold) {//expand table
                 this.table = expandTable(table);
