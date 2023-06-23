@@ -89,8 +89,7 @@ class ThreadLocalMap {
             if (++searchIndex > maxIndex) searchIndex = 0;
         }
 
-        if (keyMatchedIndex > -1) return keyMatchedIndex;
-        return firstEmptyIndex;
+        return keyMatchedIndex > -1 ? keyMatchedIndex : firstEmptyIndex;
     }
 
     private static void clearTable(Entry[] table) {
