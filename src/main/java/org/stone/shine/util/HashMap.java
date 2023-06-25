@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
 
@@ -42,9 +41,9 @@ public class HashMap<K, V> {
         private Node<K, V> prev;
         private Node<K, V> after;
         //for tree node
-        private boolean isTreeNode;
         private Node<K, V> left;
         private Node<K, V> right;
+        private boolean isInTree;
 
         Node(int hash, K key, V value, Node<K, V> next) {
             this.hash = hash;
