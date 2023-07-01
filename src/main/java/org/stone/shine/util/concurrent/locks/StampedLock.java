@@ -21,12 +21,14 @@ public class StampedLock implements java.io.Serializable {
 
     private volatile long lockState;
 
+    //read():  00000000 00000000 00000000 00000000   00000000 00000000 00000000 00000000
+    //read():
+
+    //write: 01111111 00000000 00000000 00000000   00000000 00000000 00000000 00000000
     //****************************************************************************************************************//
     //                                          1: Read Lock                                                          //
     //****************************************************************************************************************//
-
-    public void unlockRead(long stamp) {
-    }
+    public void unlockRead(long stamp) { }
 
     public boolean isReadLocked() {
         return true;
