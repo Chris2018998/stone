@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.locks.reentrantLock;
 
 import org.stone.shine.concurrent.ConcurrentMockThread;
-import org.stone.shine.util.concurrent.synchronizer.locks.ReentrantLock;
+import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.concurrent.TimeUnit;
 

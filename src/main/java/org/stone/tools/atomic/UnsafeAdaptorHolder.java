@@ -19,8 +19,8 @@ public final class UnsafeAdaptorHolder {
     public static final UnsafeAdaptor U;
     private static final String SunMiscUnsafeClassName = "sun.misc.Unsafe";
     private static final String JdkMiscUnsafeClassName = "jdk.internal.misc.Unsafe";
-    private static final String SunMiscUnsafeAdaptorImplClass = "UnsafeAdaptorSunMiscImpl";//low version
-    private static final String JdkMiscUnsafeAdaptorImplClass = "org.stone.util.atomic.UnsafeAdaptorJdkMiscImpl";//high version
+    private static final String SunMiscUnsafeAdaptorImplClass = "org.stone.tools.atomic.UnsafeAdaptorSunMiscImpl";//low version
+    private static final String JdkMiscUnsafeAdaptorImplClass = "org.stone.tools.atomic.UnsafeAdaptorJdkMiscImpl";//high version
 
     static {
         String adaptorImplClassName;

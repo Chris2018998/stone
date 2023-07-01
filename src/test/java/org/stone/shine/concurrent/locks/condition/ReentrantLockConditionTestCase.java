@@ -10,7 +10,7 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestCase;
-import org.stone.shine.util.concurrent.synchronizer.locks.ReentrantLock;
+import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.concurrent.locks.Condition;
 

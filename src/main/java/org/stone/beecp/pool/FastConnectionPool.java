@@ -949,8 +949,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         void interruptWaitingThreads() {
             for (Thread thread : getQueuedThreads()) {
-                Thread.State state = thread.getState();
-                if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                State state = thread.getState();
+                if (state == State.WAITING || state == State.TIMED_WAITING) {
                     thread.interrupt();
                 }
             }

@@ -35,7 +35,7 @@
 
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.locks.ReentrantLock;
+import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;

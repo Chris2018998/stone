@@ -86,7 +86,7 @@ public class ThreadLocal<T> {
     }
 
     public T get() {
-        //modify by chris  2023-06-23 begin
+        //modify by chris 2023-06-23 begin
         Thread t = Thread.currentThread();
         ThreadLocalMap map = getMap(t);
         return map != null ? (T) map.get(this) : initialValue();

@@ -11,7 +11,7 @@ package org.stone.shine.concurrent.locks.reentrantLock;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.util.concurrent.synchronizer.locks.ReentrantLock;
+import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.concurrent.locks.LockSupport;
 
