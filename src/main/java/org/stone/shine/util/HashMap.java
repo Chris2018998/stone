@@ -18,13 +18,14 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class StampedLock implements java.io.Serializable {
-
-    private volatile long lockState;
-    //read Lock(Locking):  01000000 00000000 00000000 00000001   00000000 00000000 00000000 00000000
+	
+	//read Lock(Locking):  01000000 00000000 00000000 00000001   00000000 00000000 00000000 00000000
     //read Lock(Released): 01000000 00000000 00000000 00000000   00000000 00000000 00000000 00000000
 
     //write Lock(Locking): 01100000 00000000 00000000 00000001   00000000 00000000 00000000 00000000
     //write Lock(Released):01100000 00000000 00000000 00000000   00000000 00000000 00000000 00000000
+    private volatile long lockState;
+
 
     //****************************************************************************************************************//
     //                                          1: cal next stamp                                                     //
