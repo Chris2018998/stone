@@ -7,86 +7,78 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.shine.util.concurrent.locks;
+package org.stone.shine.util;
 
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Objects;
 
 /**
- * Stamped Lock Impl
+ * Map Impl
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class StampedLock implements java.io.Serializable {
+public class HashMap<K, V> {
+    //class HashMap<K, V> implements Map<K, V>, Cloneable, Serializable {
+    private static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;
+    private static final int MAXIMUM_CAPACITY = 1 << 30;
+    private static final float DEFAULT_LOAD_FACTOR = 0.75f;
+    private static final int TREEIFY_THRESHOLD = 8;
+    private static final int UNTREEIFY_THRESHOLD = 6;
+    private static final int MIN_TREEIFY_CAPACITY = 64;
+    private final float loadFactor = DEFAULT_LOAD_FACTOR;
+    private transient Node<K, V>[] table;
+    private transient int tableSize;
+    private int threshold;
 
-    //read Lock(Locking):  01000000 00000000 00000000 00000001   00000000 00000000 00000000 00000000
-    //read Lock(Released): 01000000 00000000 00000000 00000000   00000000 00000000 00000000 00000000
-    //write Lock(Locking): 01100000 00000000 00000000 00000001   00000000 00000000 00000000 00000000
-    //write Lock(Released):01100000 00000000 00000000 00000000   00000000 00000000 00000000 00000000
-    private volatile long lockState;
+    private static class Node<K, V> implements Map.Entry<K, V> {
+        private final int hash;
+        private final K key;
+        private V value;
+        private Node<K, V> next;
 
+        //for linkedHashMap
+        private Node<K, V> prev;
+        private Node<K, V> after;
+        //for tree node
+        private Node<K, V> left;
+        private Node<K, V> right;
+        private boolean isInTree;
 
-    //****************************************************************************************************************//
-    //                                          1: cal next stamp                                                     //
-    //****************************************************************************************************************//
-    private long getNextReadStamp() {
-        return lockState;//@todo
-    }
+        Node(int hash, K key, V value, Node<K, V> next) {
+            this.hash = hash;
+            this.key = key;
+            this.value = value;
+            this.next = next;
+        }
 
-    private long getNextWriteStamp() {
-        return lockState;//@todo
-    }
+        public final K getKey() {
+            return key;
+        }
 
-    //****************************************************************************************************************//
-    //                                          1: Read Lock                                                          //
-    //****************************************************************************************************************//
-    public void unlockRead(long stamp) {
+        public final V getValue() {
+            return value;
+        }
 
-    }
+        public final String toString() {
+            return key + "=" + value;
+        }
 
-    public boolean isReadLocked() {
-        return true;
-    }
+        public final int hashCode() {
+            return Objects.hashCode(key) ^ Objects.hashCode(value);
+        }
 
-    public long readLock() {
-        return 1;
-    }
+        public final V setValue(V newValue) {
+            V oldValue = value;
+            value = newValue;
+            return oldValue;
+        }
 
-    public long readLockInterruptibly() throws InterruptedException {
-        return 1;
-    }
-
-    public long tryReadLock() {
-        return 1;
-    }
-
-    public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
-        return 1;
-    }
-
-    //****************************************************************************************************************//
-    //                                          2: Write Lock                                                         //
-    //****************************************************************************************************************//
-    public void unlockWrite(long stamp) {
-    }
-
-    public boolean isWriteLocked() {
-        return true;
-    }
-
-    public long writeLock() {
-        return 1;
-    }
-
-    public long writeLockInterruptibly() throws InterruptedException {
-        return 1;
-    }
-
-    public long tryWriteLock() {
-        return 1;
-    }
-
-    public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
-        return 1;
+        public final boolean equals(Object o) {
+            if (o == this) return true;
+            Map.Entry<?, ?> e = (Map.Entry<?, ?>) o;
+            return Objects.equals(key, e.getKey())
+                    && Objects.equals(value, e.getValue());
+        }
     }
 }
