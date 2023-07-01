@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class StampedLock implements java.io.Serializable {
 
-    private long lockState;
+    private volatile long lockState;
 
     //****************************************************************************************************************//
     //                                          1: Read Lock                                                          //
@@ -73,6 +73,4 @@ public class StampedLock implements java.io.Serializable {
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         return 1;
     }
-
-
 }
