@@ -22,16 +22,16 @@ public class StampedLock implements java.io.Serializable {
     private volatile long stamp = 0L;
 
     //mod:0 or 1
-    private static long incrementStamp(long currentStamp, boolean write) {
-        long hiv = currentStamp >> 32;
-        long lov = currentStamp << 32 >> 32;
+    private static long incrementStamp(long stamp, boolean write) {
+        long hiv = stamp >> 32;
+        long lov = stamp << 32 >> 32;
 
         if (hiv == 0) {//unuse
 
         } else {//locking
 
         }
-
+        
         if (lov >= Exceeded) lov = 0;
         return hiv << 32 | lov;
     }
