@@ -26,6 +26,15 @@ public class StampedLock implements java.io.Serializable {
         System.out.println(((int) stamp + 1));
     }
 
+    private static long decrementStamp(long stamp) {
+        int high = (int) (stamp >> 32);
+        if (high > 0) {
+            int low = (int) stamp;
+            stamp = (long) high << 32 | low & 0xFFFFFFFFL;
+        }
+        return stamp;
+    }
+
     //Even number == write;Odd number == read
     private static long incrementStamp(long stamp, boolean writeLock) {
         int low = (int) stamp;
@@ -48,18 +57,10 @@ public class StampedLock implements java.io.Serializable {
                 low++;
             }
         }
-        
+
         return (long) high << 32 | low & 0xFFFFFFFFL;
     }
 
-    private static long decrementStamp(long stamp) {
-        int high = (int) (stamp >> 32);
-        if (high > 0) {
-            int low = (int) stamp;
-            stamp = (long) high << 32 | low & 0xFFFFFFFFL;
-        }
-        return stamp;
-    }
 
     //****************************************************************************************************************//
     //                                          1: Read Lock                                                          //
