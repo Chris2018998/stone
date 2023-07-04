@@ -127,45 +127,4 @@ public class StampedLock implements java.io.Serializable {
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         return 1;
     }
-
-//    public static void main(String[] ags) {
-//        int SHARED_SHIFT = 16;
-//        int EXCLUSIVE_MASK = 1 << SHARED_SHIFT - 1;
-//        long half = 1L << 32;
-//        long compare = half | Integer.MIN_VALUE;
-//
-//        String text1 = "0000000000000000000000000000000001111111111111111111111111111111";
-//        String text2 = "0000000000000000000000000000000101111111111111111111111111111111";
-//        long value = Long.parseLong(text2, 2);
-//        long height = value >> 32;
-//        long low = value << 32 >> 32;
-//        System.out.println(height);
-//        System.out.println(low);
-//
-//        long newValue = ++height << 32 | ++low;
-//        System.out.println(convertBytes(Long.toBinaryString(newValue), 64, 1));
-//    }
-
-//    private static String convertBytes(String text, int totalSize, int splitSize) {
-//        int len = totalSize - text.length();
-//        if (len > 0) {
-//            StringBuffer buf = new StringBuffer(len);
-//            for (int i = 0; i < len; i++) buf.append("0");
-//            text = buf.toString() + text;
-//        }
-//
-//        System.out.println(text);
-//        return text;
-//        int startPos = 0, endPos;
-//        StringBuffer splitBuf = new StringBuffer(totalSize);
-//        while (startPos < totalSize) {
-//            endPos = startPos + splitSize;
-//            if (endPos > totalSize) endPos = totalSize;
-//
-//            if (startPos > 0) splitBuf.append(" ");
-//            splitBuf.append(text, startPos, endPos);
-//            startPos = endPos;
-//        }
-//        return splitBuf.toString();
-//    }
 }
