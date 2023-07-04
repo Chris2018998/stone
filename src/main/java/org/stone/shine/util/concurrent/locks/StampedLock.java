@@ -68,8 +68,10 @@ public class StampedLock implements java.io.Serializable {
             low += writeNumber && writeLock ? 2 : 1;
         } else if (writeLock) {//in locked
             return -1;
-        } else {//read lock(Reentrant)
+        } else if (!writeNumber) {//read lock(Reentrant)
             high++;
+        } else {
+            return -1;
         }
 
         return (long) high << 32 | low & 0xFFFFFFFFL;
