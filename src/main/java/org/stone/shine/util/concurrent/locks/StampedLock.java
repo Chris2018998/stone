@@ -19,28 +19,44 @@ import java.util.concurrent.TimeUnit;
  */
 public class StampedLock implements java.io.Serializable {
     private static final int Exceeded = 2147483647;
-    private volatile long stamp = 0L;
+    private volatile long stamp = 2147483648L;
 
-    //mod:0 or 1
-    private static long incrementStamp(long stamp, boolean write) {
-        long hiv = stamp >> 32;
-        long lov = stamp << 32 >> 32;
+    public static void main(String[] ags) {
+        long stamp = 2147483648L;
+        System.out.println(((int) stamp + 1));
+    }
 
-        if (hiv == 0) {//unuse
+    //Even number == write;Odd number == read
+    private static long incrementStamp(long stamp, boolean writeLock) {
+        int low = (int) stamp;
+        int high = (int) (stamp >> 32);
+        boolean writeNumber = (low & 1) == 0;//low is an even number
 
-        } else {//locking
+        if (writeLock) {//need write lock stamp
+            if (high > 0) return 0;
+            low += writeNumber ? 2 : 1;
+        } else if (writeNumber) {//stamp is write number
+            if (high > 0) return 0;//lock in write
 
+            high = 1;
+            low++;
+        } else {//
+            if (high > 0) {
+                high++;//increment reentrant count
+            } else {
+                high = 1;
+                low++;
+            }
         }
         
-        if (lov >= Exceeded) lov = 0;
-        return hiv << 32 | lov;
+        return (long) high << 32 | low & 0xFFFFFFFFL;
     }
 
     private static long decrementStamp(long stamp) {
-        long hiv = stamp >> 32;//clear low-32 bits
-        if (hiv > 0) {
-            long lov = stamp << 32 >> 32;//clear height-32 bits
-            stamp = --hiv << 32 | lov;
+        int high = (int) (stamp >> 32);
+        if (high > 0) {
+            int low = (int) stamp;
+            stamp = (long) high << 32 | low & 0xFFFFFFFFL;
         }
         return stamp;
     }
