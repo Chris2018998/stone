@@ -43,6 +43,8 @@ public class StampedLock implements java.io.Serializable {
 
         if (writeLock) {//need write lock stamp
             if (high > 0) return 0;
+
+            high = 1;
             low += writeNumber ? 2 : 1;
         } else if (writeNumber) {//stamp is write number
             if (high > 0) return 0;//lock in write
