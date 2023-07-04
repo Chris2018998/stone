@@ -49,38 +49,27 @@ public class StampedLock implements java.io.Serializable {
         System.out.println(((int) stamp + 1));
     }
 
-    private static long decrementStamp(long stamp) {
+    private static long releaseStamp(long stamp) {
         int high = (int) (stamp >> 32);
         if (high > 0) {
             int low = (int) stamp;
-            stamp = (long) high << 32 | low & 0xFFFFFFFFL;
+            stamp = (long) (--high) << 32 | low & 0xFFFFFFFFL;
         }
         return stamp;
     }
 
-    //Even number == write;Odd number == read
-    private static long incrementStamp(long stamp, boolean writeLock) {
+    private static long lockStamp(long stamp, boolean writeLock) {
         int low = (int) stamp;
         int high = (int) (stamp >> 32);
         boolean writeNumber = (low & 1) == 0;//low is an even number
 
-        if (writeLock) {//need write lock stamp
-            if (high > 0) return 0;
-
+        if (high == 0) {//in ununsing
             high = 1;
-            low += writeNumber ? 2 : 1;
-        } else if (writeNumber) {//stamp is write number
-            if (high > 0) return 0;//lock in write
-
-            high = 1;
-            low++;
-        } else {//
-            if (high > 0) {
-                high++;//increment reentrant count
-            } else {
-                high = 1;
-                low++;
-            }
+            low += writeNumber && writeLock ? 2 : 1;
+        } else if (writeLock) {//in locked
+            return -1;
+        } else {//read lock
+            high++;
         }
 
         return (long) high << 32 | low & 0xFFFFFFFFL;
