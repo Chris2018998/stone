@@ -160,7 +160,7 @@ public class StampedLock implements java.io.Serializable {
 
         private final Thread thread;
         private final boolean isWrite;
-        private volatile int state;////0:need signal,1:interrupted or timeout
+        private volatile int state;//0:need signal,1:interrupted or timeout
 
         private WaitNode(boolean isWrite) {
             this.isWrite = isWrite;

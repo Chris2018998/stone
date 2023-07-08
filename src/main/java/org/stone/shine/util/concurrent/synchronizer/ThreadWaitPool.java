@@ -203,11 +203,11 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                         6: Park methods(2)                                                     //
     //****************************************************************************************************************//
-    protected final void parkNodeThread(CasNode node, ThreadParkSupport parker, boolean throwsIE) throws InterruptedException {
+    protected final void parkNodeThread(CasNode node, ThreadSpinPark parker, boolean throwsIE) throws InterruptedException {
         parkNodeThread(node, parker, throwsIE, true);
     }
 
-    protected final void parkNodeThread(CasNode node, ThreadParkSupport parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
+    protected final void parkNodeThread(CasNode node, ThreadSpinPark parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
         if (parker.parkUtilInterrupted() && throwsIE) {//not timeout and park interrupted
             if (!casState(node, null, INTERRUPTED)) {
                 Object state = node.state;

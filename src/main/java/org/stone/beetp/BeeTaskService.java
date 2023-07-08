@@ -223,7 +223,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
                 //5.2:maybe all tasks failed or the last task cancelled by pool
                 if (callback.doneCount.get() == taskSize) break;
 
-                //5.3:parking(ThreadParkSupport is a better choice?)
+                //5.3:parking(ThreadSpinPark is a better choice?)
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
                     if (parkTime <= 0) throw new TaskResultGetTimeoutException();

@@ -23,7 +23,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.INIT;
 public final class ThreadWaitConfig<E> implements java.io.Serializable {
 
     //************************************************A: park config**************************************************//
-    private final ThreadParkSupport parkSupport;
+    private final ThreadSpinPark parkSupport;
 
     //************************************************B: wait node config*********************************************//
     //node type
@@ -48,29 +48,29 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
     //                                              1: constructors methods(6)                                        //
     //****************************************************************************************************************//
     public ThreadWaitConfig() {
-        this.parkSupport = new ThreadParkSupport(allowThrowsIE);
+        this.parkSupport = new ThreadSpinPark(allowThrowsIE);
     }
 
     public ThreadWaitConfig(Object blocker) {
-        this.parkSupport = new ThreadParkSupport.ThreadBlockerParkSupport(blocker, allowThrowsIE);
+        this.parkSupport = new ThreadSpinPark.ThreadBlockerParkSupport(blocker, allowThrowsIE);
     }
 
     public ThreadWaitConfig(long deadlineMs) {
-        this.parkSupport = new ThreadParkSupport.MillisecondsUtilParkSupport(deadlineMs, allowThrowsIE);
+        this.parkSupport = new ThreadSpinPark.MillisecondsUtilParkSupport(deadlineMs, allowThrowsIE);
     }
 
     public ThreadWaitConfig(long deadlineMs, Object blocker) {
-        this.parkSupport = new ThreadParkSupport.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker, allowThrowsIE);
+        this.parkSupport = new ThreadSpinPark.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker, allowThrowsIE);
     }
 
     public ThreadWaitConfig(long timeout, TimeUnit unit) {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        this.parkSupport = new ThreadParkSupport.NanoSecondsParkSupport(unit.toNanos(timeout), allowThrowsIE);
+        this.parkSupport = new ThreadSpinPark.NanoSecondsParkSupport(unit.toNanos(timeout), allowThrowsIE);
     }
 
     public ThreadWaitConfig(long timeout, TimeUnit unit, Object blocker) {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        this.parkSupport = new ThreadParkSupport.NanoSecondsBlockerParkSupport(unit.toNanos(timeout), blocker, allowThrowsIE);
+        this.parkSupport = new ThreadSpinPark.NanoSecondsBlockerParkSupport(unit.toNanos(timeout), blocker, allowThrowsIE);
     }
 
     //****************************************************************************************************************//
@@ -101,7 +101,7 @@ public final class ThreadWaitConfig<E> implements java.io.Serializable {
         this.casNode = casNode;
     }
 
-    public final ThreadParkSupport getThreadParkSupport() {
+    public final ThreadSpinPark getThreadParkSupport() {
         return parkSupport;
     }
 

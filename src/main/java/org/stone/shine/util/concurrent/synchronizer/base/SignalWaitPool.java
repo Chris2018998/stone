@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinPark;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitPool;
 
@@ -43,7 +43,7 @@ public class SignalWaitPool extends ThreadWaitPool {
         //3:get control parameters from config
         final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadParkSupport parker = config.getThreadParkSupport();
+        final ThreadSpinPark parker = config.getThreadParkSupport();
 
         //4:spin control
         try {
