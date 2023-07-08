@@ -9,9 +9,10 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
+import org.stone.tools.CommonUtil;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Stamped Lock Impl
@@ -144,13 +145,45 @@ public class StampedLock implements java.io.Serializable {
     //                                          3: Wait Node                                                          //
     //****************************************************************************************************************//
     private static class WaitNode {
+        private static final long stateOffset;
+        private static final sun.misc.Unsafe UNSAFE;
+
+        static {
+            try {
+                UNSAFE = CommonUtil.UNSAFE;
+                stateOffset = CommonUtil.objectFieldOffset(WaitNode.class, "state");
+            } catch (Exception e) {
+                throw new Error(e);
+            }
+        }
+
         private final Thread thread;
         private final boolean isWrite;
-        private AtomicInteger state;
+        private volatile int state;////0:need signal,1:interrupted or timeout
 
-        public WaitNode(boolean isWrite) {
+        private WaitNode(boolean isWrite) {
             this.isWrite = isWrite;
             this.thread = Thread.currentThread();
+        }
+
+        public Thread getThread() {
+            return thread;
+        }
+
+        public boolean isWrite() {
+            return isWrite;
+        }
+
+        public int getState() {
+            return state;
+        }
+
+        public void setState(int state) {
+            this.state = state;
+        }
+
+        public boolean compareAndSetState(int exp, int upd) {
+            return UNSAFE.compareAndSwapInt(this, stateOffset, exp, upd);
         }
     }
 }
