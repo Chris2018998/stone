@@ -9,7 +9,9 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Stamped Lock Impl
@@ -43,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 public class StampedLock implements java.io.Serializable {
     private static final int Exceeded = 2147483647;
     private volatile long stamp = 2147483648L;
+    private ConcurrentLinkedQueue waitQueue = new ConcurrentLinkedQueue();//temporary
 
     public static void main(String[] ags) {
         long stamp = 2147483648L;
@@ -82,14 +85,6 @@ public class StampedLock implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                          1: Read Lock                                                          //
     //****************************************************************************************************************//
-    public void unlockRead(long stamp) {
-
-    }
-
-    public boolean isReadLocked() {
-        return true;
-    }
-
     public long readLock() {
         return 1;
     }
@@ -106,14 +101,21 @@ public class StampedLock implements java.io.Serializable {
         return 1;
     }
 
+    public void unlockRead(long stamp) {
+
+    }
+
+    public boolean isReadLocked() {
+        int low = (int) stamp;
+        int high = (int) (stamp >> 32);
+        return high > 0 && (low & 1) != 0;//Odd number == read
+    }
+
     //****************************************************************************************************************//
     //                                          2: Write Lock                                                         //
     //****************************************************************************************************************//
     public void unlockWrite(long stamp) {
-    }
 
-    public boolean isWriteLocked() {
-        return true;
     }
 
     public long writeLock() {
@@ -130,5 +132,25 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         return 1;
+    }
+
+    public boolean isWriteLocked() {
+        int low = (int) stamp;
+        int high = (int) (stamp >> 32);
+        return high > 0 && (low & 1) == 0;//even number  == write
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: Wait Node                                                          //
+    //****************************************************************************************************************//
+    private static class WaitNode {
+        private final Thread thread;
+        private final boolean isWrite;
+        private AtomicInteger state;
+
+        public WaitNode(boolean isWrite) {
+            this.isWrite = isWrite;
+            this.thread = Thread.currentThread();
+        }
     }
 }
