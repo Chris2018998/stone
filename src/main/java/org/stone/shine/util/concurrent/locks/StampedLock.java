@@ -62,14 +62,14 @@ public class StampedLock implements java.io.Serializable {
     private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1: CAS Block                                                          //
+    //                                          1: CAS(2)                                                             //
     //****************************************************************************************************************//
-    private static boolean compareAndSetStamp(StampedLock lock, long exp, long upd) {
-        return UNSAFE.compareAndSwapLong(lock, stampOffset, exp, upd);
+    private static boolean compareAndSetNodeState(WaitNode node, int exp, int upd) {
+        return UNSAFE.compareAndSwapInt(node, nodeStateOffset, exp, upd);
     }
 
-    public static boolean compareAndSetNodeState(WaitNode node, int exp, int upd) {
-        return UNSAFE.compareAndSwapInt(node, nodeStateOffset, exp, upd);
+    private static boolean compareAndSetLockStamp(StampedLock lock, long exp, long upd) {
+        return UNSAFE.compareAndSwapLong(lock, stampOffset, exp, upd);
     }
 
     //****************************************************************************************************************//
@@ -124,7 +124,7 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryReadLock() {
         long newStamp = getLockStamp(this.stamp, false);
-        if (newStamp > 0) compareAndSetStamp(this, stamp, newStamp);
+        if (newStamp > 0) compareAndSetLockStamp(this, stamp, newStamp);
         return newStamp;
     }
 
@@ -136,7 +136,7 @@ public class StampedLock implements java.io.Serializable {
         long currentStamp = this.stamp;
         if (!validate(stamp, currentStamp)) return;
         long newStamp = getReleaseStamp(currentStamp);
-        if (newStamp != currentStamp && compareAndSetStamp(this, currentStamp, newStamp)) {
+        if (newStamp != currentStamp && compareAndSetLockStamp(this, currentStamp, newStamp)) {
             int high = (int) (stamp >> 32);
             if (high == 0) {
                 //wakeup other waiter
@@ -157,7 +157,7 @@ public class StampedLock implements java.io.Serializable {
         long currentStamp = this.stamp;
         if (!validate(stamp, currentStamp)) return;
         long newStamp = getReleaseStamp(currentStamp);
-        if (newStamp != currentStamp && compareAndSetStamp(this, currentStamp, newStamp)) {
+        if (newStamp != currentStamp && compareAndSetLockStamp(this, currentStamp, newStamp)) {
             int high = (int) (stamp >> 32);
             if (high == 0) {
                 //wakeup other waiter
@@ -175,7 +175,7 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryWriteLock() {
         long newStamp = getLockStamp(this.stamp, true);
-        if (newStamp > 0) compareAndSetStamp(this, stamp, newStamp);
+        if (newStamp > 0) compareAndSetLockStamp(this, stamp, newStamp);
         return newStamp;
     }
 
