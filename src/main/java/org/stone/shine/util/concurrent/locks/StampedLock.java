@@ -49,6 +49,10 @@ public class StampedLock implements java.io.Serializable {
         System.out.println(((int) stamp + 1));
     }
 
+    private static boolean validateStamp(long stamp1, long stamp2) {
+        return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;
+    }
+
     private static long releaseStamp(long stamp) {
         int high = (int) (stamp >> 32);
         if (high > 0) {
