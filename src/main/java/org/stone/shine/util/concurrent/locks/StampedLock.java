@@ -44,9 +44,9 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class StampedLock implements java.io.Serializable {
-    private static final int Exceeded = 2147483647;
+    private static final int MAX_COUNT = 2147483647;
     private volatile long stamp = 2147483648L;
-    private ConcurrentLinkedQueue waitQueue = new ConcurrentLinkedQueue();//temporary
+    private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
 
     public static void main(String[] ags) {
         long stamp = 2147483648L;
@@ -77,6 +77,7 @@ public class StampedLock implements java.io.Serializable {
         } else if (writeLock || writeNumber) {//write lock and write or read lock and write lock
             return -1;
         } else {//read lock(Reentrant)
+            if (high + 1 <= 0) throw new Error("Maximum lock count exceeded");
             high++;
         }
 
