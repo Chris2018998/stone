@@ -44,16 +44,15 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class StampedLock implements java.io.Serializable {
-    //****************************************************************************************************************//
-    //                                          1: CAS Block                                                          //
-    //****************************************************************************************************************//
     private static final sun.misc.Unsafe UNSAFE;
-    private static long stampOffset;
+    private static final long stampOffset;
+    private static final long nodeStateOffset;
 
     static {
         try {
             UNSAFE = CommonUtil.UNSAFE;
             stampOffset = CommonUtil.objectFieldOffset(StampedLock.class, "stamp");
+            nodeStateOffset = CommonUtil.objectFieldOffset(WaitNode.class, "state");
         } catch (Exception e) {
             throw new Error(e);
         }
@@ -61,6 +60,17 @@ public class StampedLock implements java.io.Serializable {
 
     private volatile long stamp = 2147483648L;
     private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
+
+    //****************************************************************************************************************//
+    //                                          1: CAS Block                                                          //
+    //****************************************************************************************************************//
+    private static boolean compareAndSetStamp(StampedLock lock, long exp, long upd) {
+        return UNSAFE.compareAndSwapLong(lock, stampOffset, exp, upd);
+    }
+
+    public static boolean compareAndSetNodeState(WaitNode node, int exp, int upd) {
+        return UNSAFE.compareAndSwapInt(node, nodeStateOffset, exp, upd);
+    }
 
     //****************************************************************************************************************//
     //                                          2: Static(3)                                                          //
@@ -104,10 +114,6 @@ public class StampedLock implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                          3: Read Lock                                                          //
     //****************************************************************************************************************//
-    private boolean compareAndSetStamp(long exp, long upd) {
-        return UNSAFE.compareAndSwapLong(this, stampOffset, exp, upd);
-    }
-
     public long readLock() {
         return 1;
     }
@@ -118,7 +124,7 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryReadLock() {
         long newStamp = getLockStamp(this.stamp, false);
-        if (newStamp > 0) compareAndSetStamp(this.stamp, newStamp);
+        if (newStamp > 0) compareAndSetStamp(this, stamp, newStamp);
         return newStamp;
     }
 
@@ -130,7 +136,7 @@ public class StampedLock implements java.io.Serializable {
         long currentStamp = this.stamp;
         if (!validate(stamp, currentStamp)) return;
         long newStamp = getReleaseStamp(currentStamp);
-        if (newStamp != currentStamp && compareAndSetStamp(currentStamp, newStamp)) {
+        if (newStamp != currentStamp && compareAndSetStamp(this, currentStamp, newStamp)) {
             int high = (int) (stamp >> 32);
             if (high == 0) {
                 //wakeup other waiter
@@ -151,7 +157,7 @@ public class StampedLock implements java.io.Serializable {
         long currentStamp = this.stamp;
         if (!validate(stamp, currentStamp)) return;
         long newStamp = getReleaseStamp(currentStamp);
-        if (newStamp != currentStamp && compareAndSetStamp(currentStamp, newStamp)) {
+        if (newStamp != currentStamp && compareAndSetStamp(this, currentStamp, newStamp)) {
             int high = (int) (stamp >> 32);
             if (high == 0) {
                 //wakeup other waiter
@@ -169,7 +175,7 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryWriteLock() {
         long newStamp = getLockStamp(this.stamp, true);
-        if (newStamp > 0) compareAndSetStamp(this.stamp, newStamp);
+        if (newStamp > 0) compareAndSetStamp(this, stamp, newStamp);
         return newStamp;
     }
 
@@ -187,18 +193,6 @@ public class StampedLock implements java.io.Serializable {
     //                                          5: Wait Node                                                          //
     //****************************************************************************************************************//
     private static class WaitNode {
-        private static final long stateOffset;
-        private static final sun.misc.Unsafe UNSAFE;
-
-        static {
-            try {
-                UNSAFE = CommonUtil.UNSAFE;
-                stateOffset = CommonUtil.objectFieldOffset(WaitNode.class, "state");
-            } catch (Exception e) {
-                throw new Error(e);
-            }
-        }
-
         private final Thread thread;
         private final boolean isWrite;
         private volatile int state;//0:need signal,1:interrupted or timeout
@@ -206,6 +200,10 @@ public class StampedLock implements java.io.Serializable {
         private WaitNode(boolean isWrite) {
             this.isWrite = isWrite;
             this.thread = Thread.currentThread();
+        }
+
+        public int getSate() {
+            return state;
         }
 
         public Thread getThread() {
@@ -216,16 +214,5 @@ public class StampedLock implements java.io.Serializable {
             return isWrite;
         }
 
-        public int getState() {
-            return state;
-        }
-
-        public void setState(int state) {
-            this.state = state;
-        }
-
-        public boolean compareAndSetState(int exp, int upd) {
-            return UNSAFE.compareAndSwapInt(this, stateOffset, exp, upd);
-        }
     }
 }
