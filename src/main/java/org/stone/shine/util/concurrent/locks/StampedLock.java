@@ -44,7 +44,9 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class StampedLock implements java.io.Serializable {
-    private static final int MAX_COUNT = 2147483647;
+    //****************************************************************************************************************//
+    //                                          1: CAS Block                                                          //
+    //****************************************************************************************************************//
     private static final sun.misc.Unsafe UNSAFE;
     private static long stampOffset;
 
@@ -60,6 +62,9 @@ public class StampedLock implements java.io.Serializable {
     private volatile long stamp = 2147483648L;
     private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
 
+    //****************************************************************************************************************//
+    //                                          2: Static(3)                                                          //
+    //****************************************************************************************************************//
     public static void main(String[] ags) {
         long stamp = 2147483648L;
         System.out.println(((int) stamp + 1));
@@ -97,7 +102,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          1: Read Lock                                                          //
+    //                                          3: Read Lock                                                          //
     //****************************************************************************************************************//
     private boolean compareAndSetStamp(long exp, long upd) {
         return UNSAFE.compareAndSwapLong(this, stampOffset, exp, upd);
@@ -140,7 +145,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          2: Write Lock                                                         //
+    //                                          4: Write Lock                                                         //
     //****************************************************************************************************************//
     public void unlockWrite(long stamp) {
         long currentStamp = this.stamp;
@@ -179,7 +184,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          3: Wait Node                                                          //
+    //                                          5: Wait Node                                                          //
     //****************************************************************************************************************//
     private static class WaitNode {
         private static final long stateOffset;
