@@ -45,6 +45,18 @@ import java.util.concurrent.TimeUnit;
  */
 public class StampedLock implements java.io.Serializable {
     private static final int MAX_COUNT = 2147483647;
+    private static final sun.misc.Unsafe UNSAFE;
+    private static long stampOffset;
+
+    static {
+        try {
+            UNSAFE = CommonUtil.UNSAFE;
+            stampOffset = CommonUtil.objectFieldOffset(StampedLock.class, "stamp");
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+
     private volatile long stamp = 2147483648L;
     private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
 
@@ -57,7 +69,7 @@ public class StampedLock implements java.io.Serializable {
         return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;
     }
 
-    private static long releaseStamp(long stamp) {
+    private static long getReleaseStamp(long stamp) {
         int high = (int) (stamp >> 32);
         if (high > 0) {
             int low = (int) stamp;
@@ -66,7 +78,7 @@ public class StampedLock implements java.io.Serializable {
         return stamp;
     }
 
-    private static long lockStamp(long stamp, boolean writeLock) {
+    private static long getLockStamp(long stamp, boolean writeLock) {
         int low = (int) stamp;
         int high = (int) (stamp >> 32);
         boolean writeNumber = (low & 1) == 0;//low is an even number
@@ -87,6 +99,10 @@ public class StampedLock implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                          1: Read Lock                                                          //
     //****************************************************************************************************************//
+    private boolean compareAndSetStamp(long exp, long upd) {
+        return UNSAFE.compareAndSwapLong(this, stampOffset, exp, upd);
+    }
+
     public long readLock() {
         return 1;
     }
@@ -96,7 +112,9 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long tryReadLock() {
-        return 1;
+        long newStamp = getLockStamp(this.stamp, false);
+        if (newStamp > 0) compareAndSetStamp(this.stamp, newStamp);
+        return newStamp;
     }
 
     public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
@@ -104,7 +122,15 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public void unlockRead(long stamp) {
-
+        long currentStamp = this.stamp;
+        if (!validate(stamp, currentStamp)) return;
+        long newStamp = getReleaseStamp(currentStamp);
+        if (newStamp != currentStamp && compareAndSetStamp(currentStamp, newStamp)) {
+            int high = (int) (stamp >> 32);
+            if (high == 0) {
+                //wakeup other waiter
+            }
+        }
     }
 
     public boolean isReadLocked() {
@@ -117,7 +143,15 @@ public class StampedLock implements java.io.Serializable {
     //                                          2: Write Lock                                                         //
     //****************************************************************************************************************//
     public void unlockWrite(long stamp) {
-
+        long currentStamp = this.stamp;
+        if (!validate(stamp, currentStamp)) return;
+        long newStamp = getReleaseStamp(currentStamp);
+        if (newStamp != currentStamp && compareAndSetStamp(currentStamp, newStamp)) {
+            int high = (int) (stamp >> 32);
+            if (high == 0) {
+                //wakeup other waiter
+            }
+        }
     }
 
     public long writeLock() {
@@ -129,7 +163,9 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long tryWriteLock() {
-        return 1;
+        long newStamp = getLockStamp(this.stamp, true);
+        if (newStamp > 0) compareAndSetStamp(this.stamp, newStamp);
+        return newStamp;
     }
 
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
