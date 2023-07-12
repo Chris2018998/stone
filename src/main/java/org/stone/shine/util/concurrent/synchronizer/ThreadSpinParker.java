@@ -25,24 +25,24 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * <pre>{@code
  * class ConditionX {
  *    public final void await() throws InterruptedException {
- *       ThreadSpinBlocker parker = ThreadSpinBlocker.create();
+ *       ThreadSpinParker parker = ThreadSpinParker.create();
  *       await(parker):
  *    }
  *    public final void await(long nanosTimeout) throws InterruptedException {
- *      ThreadSpinBlocker parker = ThreadSpinBlocker.create(nanosTimeout,false);
+ *      ThreadSpinParker parker = ThreadSpinParker.create(nanosTimeout,false);
  *      await(parker):
  *    }
  *    public final boolean awaitUntil(Date deadline) throws InterruptedException {
- *      ThreadSpinBlocker parker = ThreadSpinBlocker.create(deadline.getParkTime(),true);
+ *      ThreadSpinParker parker = ThreadSpinParker.create(deadline.getParkTime(),true);
  *      await(parker):
  *    }
  *   public final boolean await(long parkTime, TimeUnit unit)throws InterruptedException {
  *      long nanosTimeout = unit.toNanos(timeout);
- *      ThreadSpinBlocker parker = ThreadSpinBlocker.create(nanosTimeout,false);
+ *      ThreadSpinParker parker = ThreadSpinParker.create(nanosTimeout,false);
  *      await(parker):
  *   }
  *   //spin control
- *   private void await(ThreadSpinBlocker  parker)throws InterruptedException {
+ *   private void await(ThreadSpinParker  parker)throws InterruptedException {
  *      //spin source code.........
  *   }
  *  }//class end
@@ -53,7 +53,7 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * @version 1.0
  */
 
-public class ThreadSpinBlocker {
+public class ThreadSpinParker {
     final boolean allowInterrupted;
     protected long deadline;
     protected boolean timeout;
@@ -64,7 +64,7 @@ public class ThreadSpinBlocker {
     //****************************************************************************************************************//
     //                                              constructors(1)                                                   //
     //****************************************************************************************************************//
-    ThreadSpinBlocker(boolean allowInterrupted) {
+    ThreadSpinParker(boolean allowInterrupted) {
         this.allowInterrupted = allowInterrupted;
     }
 
@@ -111,7 +111,7 @@ public class ThreadSpinBlocker {
     //****************************************************************************************************************//
     //                                           blocker park Implement                                               //
     //****************************************************************************************************************//
-    static class ThreadBlockerParkSupport extends ThreadSpinBlocker {
+    static class ThreadBlockerParkSupport extends ThreadSpinParker {
         ThreadBlockerParkSupport(Object blocker, boolean allowInterrupted) {
             super(allowInterrupted);
             this.blocker = blocker;
@@ -130,7 +130,7 @@ public class ThreadSpinBlocker {
     //****************************************************************************************************************//
     //                                            NanoSeconds park Implement                                          //
     //****************************************************************************************************************//
-    static class NanoSecondsParkSupport extends ThreadSpinBlocker {
+    static class NanoSecondsParkSupport extends ThreadSpinParker {
         private final long nanoTime;
 
         NanoSecondsParkSupport(long nanoTime, boolean allowInterrupted) {
@@ -182,7 +182,7 @@ public class ThreadSpinBlocker {
     //****************************************************************************************************************//
     //                                       MilliSeconds parkUtil Implement                                          //
     //****************************************************************************************************************//
-    static class MillisecondsUtilParkSupport extends ThreadSpinBlocker {
+    static class MillisecondsUtilParkSupport extends ThreadSpinParker {
         MillisecondsUtilParkSupport(long deadline, boolean allowInterrupted) {
             super(allowInterrupted);
             this.deadline = deadline;

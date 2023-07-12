@@ -27,7 +27,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 
-public abstract class ThreadWaitPool<E> {
+public abstract class ThreadWaitingPool<E> {
     //private final CasNodeChain waitQueue = new CasNodeChain();
     private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
 
@@ -203,11 +203,11 @@ public abstract class ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                         6: Park methods(2)                                                     //
     //****************************************************************************************************************//
-    protected final void parkNodeThread(CasNode node, ThreadSpinBlocker parker, boolean throwsIE) throws InterruptedException {
+    protected final void parkNodeThread(CasNode node, ThreadSpinParker parker, boolean throwsIE) throws InterruptedException {
         parkNodeThread(node, parker, throwsIE, true);
     }
 
-    protected final void parkNodeThread(CasNode node, ThreadSpinBlocker parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
+    protected final void parkNodeThread(CasNode node, ThreadSpinParker parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
         if (parker.parkUtilInterrupted() && throwsIE) {//not timeout and park interrupted
             if (!casState(node, null, INTERRUPTED)) {
                 Object state = node.state;

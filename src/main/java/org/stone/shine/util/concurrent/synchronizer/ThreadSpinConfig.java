@@ -20,10 +20,10 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.INIT;
  * @version 1.0
  */
 
-public final class ThreadBlockConfig<E> implements java.io.Serializable {
+public final class ThreadSpinConfig<E> implements java.io.Serializable {
 
     //************************************************A: park config**************************************************//
-    private final ThreadSpinBlocker parkSupport;
+    private final ThreadSpinParker blocker;
 
     //************************************************B: wait node config*********************************************//
     //node type
@@ -47,30 +47,30 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              1: constructors methods(6)                                        //
     //****************************************************************************************************************//
-    public ThreadBlockConfig() {
-        this.parkSupport = new ThreadSpinBlocker(allowThrowsIE);
+    public ThreadSpinConfig() {
+        this.blocker = new ThreadSpinParker(allowThrowsIE);
     }
 
-    public ThreadBlockConfig(Object blocker) {
-        this.parkSupport = new ThreadSpinBlocker.ThreadBlockerParkSupport(blocker, allowThrowsIE);
+    public ThreadSpinConfig(Object blocker) {
+        this.blocker = new ThreadSpinParker.ThreadBlockerParkSupport(blocker, allowThrowsIE);
     }
 
-    public ThreadBlockConfig(long deadlineMs) {
-        this.parkSupport = new ThreadSpinBlocker.MillisecondsUtilParkSupport(deadlineMs, allowThrowsIE);
+    public ThreadSpinConfig(long deadlineMs) {
+        this.blocker = new ThreadSpinParker.MillisecondsUtilParkSupport(deadlineMs, allowThrowsIE);
     }
 
-    public ThreadBlockConfig(long deadlineMs, Object blocker) {
-        this.parkSupport = new ThreadSpinBlocker.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker, allowThrowsIE);
+    public ThreadSpinConfig(long deadlineMs, Object blocker) {
+        this.blocker = new ThreadSpinParker.MillisecondsBlockerUtilParkSupport(deadlineMs, blocker, allowThrowsIE);
     }
 
-    public ThreadBlockConfig(long timeout, TimeUnit unit) {
+    public ThreadSpinConfig(long timeout, TimeUnit unit) {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        this.parkSupport = new ThreadSpinBlocker.NanoSecondsParkSupport(unit.toNanos(timeout), allowThrowsIE);
+        this.blocker = new ThreadSpinParker.NanoSecondsParkSupport(unit.toNanos(timeout), allowThrowsIE);
     }
 
-    public ThreadBlockConfig(long timeout, TimeUnit unit, Object blocker) {
+    public ThreadSpinConfig(long timeout, TimeUnit unit, Object blocker) {
         if (unit == null) throw new IllegalArgumentException("time unit can't be null");
-        this.parkSupport = new ThreadSpinBlocker.NanoSecondsBlockerParkSupport(unit.toNanos(timeout), blocker, allowThrowsIE);
+        this.blocker = new ThreadSpinParker.NanoSecondsBlockerParkSupport(unit.toNanos(timeout), blocker, allowThrowsIE);
     }
 
     //****************************************************************************************************************//
@@ -101,8 +101,8 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
         this.casNode = casNode;
     }
 
-    public final ThreadSpinBlocker getThreadParkSupport() {
-        return parkSupport;
+    public final ThreadSpinParker getThreadParkSupport() {
+        return blocker;
     }
 
     public final boolean isOutsideOfWaitPool() {
@@ -133,10 +133,10 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              5: ThreadBlockConfig reset                                         //
+    //                                              5: ThreadSpinConfig reset                                         //
     //****************************************************************************************************************//
     public final void reset() {
-        this.parkSupport.reset();
+        this.blocker.reset();
         this.nodeType = null;
         this.nodeValue = null;
         this.casNode = null;

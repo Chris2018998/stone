@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinBlocker;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinParker;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 
 import java.util.Iterator;
 
@@ -26,7 +26,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOU
  * @author Chris Liao
  * @version 1.0
  */
-public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
+public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //Request
     private static final Object Node_Type_Get = new Object();
     //Data
@@ -61,7 +61,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         return false;
     }
 
-    public final boolean offer(E e, ThreadBlockConfig<E> config) {
+    public final boolean offer(E e, ThreadSpinConfig<E> config) {
         try {
             if (transfer(e, config)) return true;
         } catch (InterruptedException ex) {
@@ -81,7 +81,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     }
 
     //transfer a object to waiter
-    public final boolean transfer(E e, ThreadBlockConfig<E> config) throws InterruptedException {
+    public final boolean transfer(E e, ThreadSpinConfig<E> config) throws InterruptedException {
         if (e == null) throw new NullPointerException();
 
         //step1: try to transfer
@@ -102,7 +102,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         return node != null ? node.getValue() : null;
     }
 
-    public final E get(ThreadBlockConfig<E> config) throws InterruptedException {
+    public final E get(ThreadSpinConfig<E> config) throws InterruptedException {
         //step1: try to get
         E e = tryGet();
         if (e != null) return e;
@@ -117,7 +117,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
     //****************************************************************************************************************//
     //                                          4: core methods                                                       //
     //****************************************************************************************************************//
-    private Object doWait(ThreadBlockConfig<E> config) throws InterruptedException {
+    private Object doWait(ThreadSpinConfig<E> config) throws InterruptedException {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //1:create wait node and offer to wait queue
@@ -127,7 +127,7 @@ public final class TransferWaitPool<E> extends ThreadWaitPool<E> {
         //2:get control parameters from config
         final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadSpinBlocker parker = config.getThreadParkSupport();
+        final ThreadSpinParker parker = config.getThreadParkSupport();
 
         //3:spin control
         try {

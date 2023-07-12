@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
@@ -41,7 +41,7 @@ public final class CountDownLatch implements ResultCall {
     //wait without parkTime
     public void await() throws InterruptedException {
         try {
-            waitPool.doCall(this, null, new ThreadBlockConfig());
+            waitPool.doCall(this, null, new ThreadSpinConfig());
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -52,7 +52,7 @@ public final class CountDownLatch implements ResultCall {
     //true means all programs over
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
-            waitPool.doCall(this, null, new ThreadBlockConfig(timeout, unit));
+            waitPool.doCall(this, null, new ThreadSpinConfig(timeout, unit));
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {

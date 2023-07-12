@@ -17,10 +17,10 @@ package org.stone.shine.util.concurrent.synchronizer;
  */
 public final class CasStaticState {
 
-    //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
+    //Simple signal to exit waiting(used in class{#link ThreadWaitingPool})
     public static final Object INIT = new Object();
 
-    //Simple signal to exit waiting(used in class{#link ThreadWaitPool})
+    //Simple signal to exit waiting(used in class{#link ThreadWaitingPool})
     public static final Object SIGNAL = new Object();
 
     //Thread waited timeout

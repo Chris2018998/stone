@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceAction;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
@@ -245,7 +245,7 @@ public class Semaphore {
      */
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
-        this.waitPool.acquire(permitAction, permits, new ThreadBlockConfig());
+        this.waitPool.acquire(permitAction, permits, new ThreadSpinConfig());
     }
 
     /**
@@ -273,7 +273,7 @@ public class Semaphore {
     public void acquireUninterruptibly(int permits) {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
-            ThreadBlockConfig config = new ThreadBlockConfig();
+            ThreadSpinConfig config = new ThreadSpinConfig();
             config.allowThrowsIE(false);
             this.waitPool.acquire(permitAction, permits, config);
         } catch (Exception e) {
@@ -365,7 +365,7 @@ public class Semaphore {
      */
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
-        return this.waitPool.acquire(permitAction, permits, new ThreadBlockConfig(timeout, unit));
+        return this.waitPool.acquire(permitAction, permits, new ThreadSpinConfig(timeout, unit));
     }
 
     /**

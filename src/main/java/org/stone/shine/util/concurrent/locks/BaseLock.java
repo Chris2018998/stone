@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.locks;
 
 import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
@@ -81,7 +81,7 @@ class BaseLock implements Lock {
      */
     public void lock() {
         try {
-            ThreadBlockConfig config = new ThreadBlockConfig();
+            ThreadSpinConfig config = new ThreadSpinConfig();
             config.setNodeType(acquireType);
             config.allowThrowsIE(false);
             waitPool.acquire(lockAction, 1, config);
@@ -137,7 +137,7 @@ class BaseLock implements Lock {
      *                              of lock acquisition is supported)
      */
     public void lockInterruptibly() throws InterruptedException {
-        ThreadBlockConfig config = new ThreadBlockConfig();
+        ThreadSpinConfig config = new ThreadSpinConfig();
         config.setNodeType(acquireType);
         waitPool.acquire(lockAction, 1, config);
     }
@@ -231,7 +231,7 @@ class BaseLock implements Lock {
      *                              acquisition is supported)
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        ThreadBlockConfig config = new ThreadBlockConfig(time, unit);
+        ThreadSpinConfig config = new ThreadSpinConfig(time, unit);
         config.setNodeType(acquireType);
         return waitPool.acquire(lockAction, 1, config);
     }
@@ -349,12 +349,12 @@ class BaseLock implements Lock {
         }
 
         public void await() throws InterruptedException {
-            this.doAwait(new ThreadBlockConfig());
+            this.doAwait(new ThreadSpinConfig());
         }
 
         public void awaitUninterruptibly() {
             try {
-                ThreadBlockConfig config = new ThreadBlockConfig();
+                ThreadSpinConfig config = new ThreadSpinConfig();
                 config.allowThrowsIE(false);
                 this.doAwait(config);
             } catch (InterruptedException e) {
@@ -363,26 +363,26 @@ class BaseLock implements Lock {
         }
 
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
-            ThreadBlockConfig config = new ThreadBlockConfig(nanosTimeout, TimeUnit.NANOSECONDS);
+            ThreadSpinConfig config = new ThreadSpinConfig(nanosTimeout, TimeUnit.NANOSECONDS);
             this.doAwait(config);
             return config.getThreadParkSupport().getRemainTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
-            ThreadBlockConfig config = new ThreadBlockConfig(time, unit);
+            ThreadSpinConfig config = new ThreadSpinConfig(time, unit);
             this.doAwait(config);
             return config.getThreadParkSupport().isTimeout();
         }
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
-            ThreadBlockConfig config = new ThreadBlockConfig(deadline.getTime());
+            ThreadSpinConfig config = new ThreadSpinConfig(deadline.getTime());
             this.doAwait(config);
             return config.getThreadParkSupport().isTimeout();
         }
 
         //do await
-        private void doAwait(ThreadBlockConfig config) throws InterruptedException {
+        private void doAwait(ThreadSpinConfig config) throws InterruptedException {
             //1:condition wait under current thread must hold the lock
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
@@ -407,7 +407,7 @@ class BaseLock implements Lock {
             //5:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             conditionNode.setState(null);
             conditionNode.setType(AcquireTypes.TYPE_EXCLUSIVE);
-            ThreadBlockConfig lockConfig = new ThreadBlockConfig();
+            ThreadSpinConfig lockConfig = new ThreadSpinConfig();
             lockConfig.setCasNode(conditionNode);
             lock.waitPool.acquire(lockAction, holdCount, lockConfig);//restore hold size before unlock
 

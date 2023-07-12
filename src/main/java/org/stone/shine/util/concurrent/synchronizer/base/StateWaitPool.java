@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinBlocker;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinParker;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
@@ -25,7 +25,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOU
  * @version 1.0
  */
 
-public class StateWaitPool extends ThreadWaitPool {
+public class StateWaitPool extends ThreadWaitingPool {
 
     //state validator
     private final ResultValidator validator;
@@ -45,7 +45,7 @@ public class StateWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object doWait(ThreadBlockConfig config) throws InterruptedException {
+    public final Object doWait(ThreadSpinConfig config) throws InterruptedException {
         return doWait(validator, config);
     }
 
@@ -57,7 +57,7 @@ public class StateWaitPool extends ThreadWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object doWait(ResultValidator validator, ThreadBlockConfig config) throws InterruptedException {
+    public final Object doWait(ResultValidator validator, ThreadSpinConfig config) throws InterruptedException {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
         if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
@@ -68,7 +68,7 @@ public class StateWaitPool extends ThreadWaitPool {
         //2:get control parameters from config
         final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadSpinBlocker parker = config.getThreadParkSupport();
+        final ThreadSpinParker parker = config.getThreadParkSupport();
 
         //3: spin control
         try {

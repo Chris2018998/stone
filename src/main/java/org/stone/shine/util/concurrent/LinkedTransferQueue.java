@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool;
 
 import java.util.AbstractQueue;
@@ -90,7 +90,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
         if (e == null) throw new NullPointerException();
-        return this.waitPool.offer(e, new ThreadBlockConfig(timeout, unit));
+        return this.waitPool.offer(e, new ThreadSpinConfig(timeout, unit));
     }
 
     //****************************************************************************************************************//
@@ -125,7 +125,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public void transfer(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        this.waitPool.transfer(e, new ThreadBlockConfig());
+        this.waitPool.transfer(e, new ThreadSpinConfig());
     }
 
     /**
@@ -144,7 +144,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean tryTransfer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        return this.waitPool.transfer(e, new ThreadBlockConfig(timeout, unit));
+        return this.waitPool.transfer(e, new ThreadSpinConfig(timeout, unit));
     }
 
     //****************************************************************************************************************//
@@ -159,7 +159,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        return this.waitPool.get(new ThreadBlockConfig<E>());
+        return this.waitPool.get(new ThreadSpinConfig<E>());
     }
 
     /**
@@ -183,7 +183,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return this.waitPool.get(new ThreadBlockConfig<E>(timeout, unit));
+        return this.waitPool.get(new ThreadSpinConfig<E>(timeout, unit));
     }
 
 
