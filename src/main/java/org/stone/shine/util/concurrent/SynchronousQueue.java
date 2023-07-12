@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool;
 
 import java.util.AbstractQueue;
@@ -73,7 +73,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        this.waitPool.transfer(e, new ThreadWaitConfig<E>());
+        this.waitPool.transfer(e, new ThreadBlockConfig<E>());
     }
 
     /**
@@ -87,7 +87,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        return this.waitPool.transfer(e, new ThreadWaitConfig<E>(timeout, unit));
+        return this.waitPool.transfer(e, new ThreadBlockConfig<E>(timeout, unit));
     }
 
     //****************************************************************************************************************//
@@ -102,7 +102,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        return this.waitPool.get(new ThreadWaitConfig<E>());
+        return this.waitPool.get(new ThreadBlockConfig<E>());
     }
 
     /**
@@ -115,7 +115,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return this.waitPool.get(new ThreadWaitConfig<E>(timeout, unit));
+        return this.waitPool.get(new ThreadBlockConfig<E>(timeout, unit));
     }
 
     /**

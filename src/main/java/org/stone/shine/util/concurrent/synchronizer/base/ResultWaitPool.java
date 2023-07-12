@@ -10,8 +10,8 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinPark;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinBlocker;
+import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
@@ -63,7 +63,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @return object, if call result check passed by validator
      * @throws Exception exception from call or InterruptedException after thread park
      */
-    public final Object doCall(ResultCall call, Object arg, ThreadWaitConfig config) throws Exception {
+    public final Object doCall(ResultCall call, Object arg, ThreadBlockConfig config) throws Exception {
         return this.doCall(call, arg, validator, config);
     }
 
@@ -78,7 +78,7 @@ public class ResultWaitPool extends ThreadWaitPool {
      * @return object, if call result check passed by validator
      * @throws Exception exception from call or InterruptedException after thread park
      */
-    public final Object doCall(ResultCall call, Object arg, ResultValidator validator, ThreadWaitConfig config) throws Exception {
+    public final Object doCall(ResultCall call, Object arg, ResultValidator validator, ThreadBlockConfig config) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("result call can't be null");
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
@@ -99,7 +99,7 @@ public class ResultWaitPool extends ThreadWaitPool {
         //4:get control parameters from config
         final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadSpinPark parker = config.getThreadParkSupport();
+        final ThreadSpinBlocker parker = config.getThreadParkSupport();
 
         //5:spin control
         try {

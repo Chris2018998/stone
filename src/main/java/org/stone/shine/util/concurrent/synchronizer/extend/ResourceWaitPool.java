@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.extend;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
@@ -73,7 +73,7 @@ public class ResourceWaitPool {
     }
 
     //acquireWithType
-    public final boolean acquire(ResourceAction action, int size, ThreadWaitConfig config) throws InterruptedException {
+    public final boolean acquire(ResourceAction action, int size, ThreadBlockConfig config) throws InterruptedException {
         try {
             return (boolean) callPool.doCall(action, size, config);
         } catch (InterruptedException e) {

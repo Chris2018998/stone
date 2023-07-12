@@ -10,8 +10,8 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinPark;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadSpinBlocker;
+import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitPool;
 
 import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
@@ -32,7 +32,7 @@ public class SignalWaitPool extends ThreadWaitPool {
      * @return true, if get a signal then return true,timeout return false
      * @throws InterruptedException exception from call or InterruptedException after thread park
      */
-    public final boolean doWait(ThreadWaitConfig config) throws InterruptedException {
+    public final boolean doWait(ThreadBlockConfig config) throws InterruptedException {
         //1:check call parameter
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
@@ -43,7 +43,7 @@ public class SignalWaitPool extends ThreadWaitPool {
         //3:get control parameters from config
         final boolean throwsIE = config.isAllowThrowsIE();
         final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadSpinPark parker = config.getThreadParkSupport();
+        final ThreadSpinBlocker parker = config.getThreadParkSupport();
 
         //4:spin control
         try {

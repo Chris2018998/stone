@@ -11,8 +11,8 @@ package org.stone.shine.concurrent.countDownLatch;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.util.concurrent.CountDownLatch;
 import org.stone.shine.concurrent.countDownLatch.threads.GeneralAwaitThread;
+import org.stone.shine.util.concurrent.CountDownLatch;
 
 import java.util.concurrent.locks.LockSupport;
 

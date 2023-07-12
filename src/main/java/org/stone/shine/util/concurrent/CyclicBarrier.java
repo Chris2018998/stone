@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadBlockConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
@@ -98,18 +98,18 @@ public final class CyclicBarrier {
     //****************************************************************************************************************//
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
-            return doAwait(new ThreadWaitConfig());
+            return doAwait(new ThreadBlockConfig());
         } catch (TimeoutException e) {
             throw new Error(e);
         }
     }
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
-        return doAwait(new ThreadWaitConfig(timeout, unit));
+        return doAwait(new ThreadBlockConfig(timeout, unit));
     }
 
     //await implement,return board ticket no(seat no)
-    private int doAwait(ThreadWaitConfig config) throws InterruptedException, BrokenBarrierException, TimeoutException {
+    private int doAwait(ThreadBlockConfig config) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //hall passengers can continue here for next trip
