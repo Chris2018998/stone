@@ -12,6 +12,7 @@ package org.stone.shine.util.concurrent.synchronizer;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.locks.LockSupport.*;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Time parker class,supply three Implementation with park methods of {@link @java.util.concurrent.locks.LockSupport} class
@@ -54,8 +55,7 @@ import static java.util.concurrent.locks.LockSupport.*;
  */
 
 public class ThreadBlockSupport {
-    private static final long minSpinForTimeoutThreshold = 1024L;
-    long blockNanos = minSpinForTimeoutThreshold;//compute before parking,if less than zero or equals zero means timeout
+    long blockNanos = spinForTimeoutThreshold + 1;//compute before parking,if less than zero or equals zero means timeout
     long deadlineNanos;//nanoseconds
     Object blockObject;
     boolean interrupted;
@@ -84,12 +84,11 @@ public class ThreadBlockSupport {
     }
 
     public void reset() {
-        this.blockNanos = minSpinForTimeoutThreshold;
         this.interrupted = false;
     }
 
     public long computeBlockTime() {
-        return minSpinForTimeoutThreshold;
+        return blockNanos;
     }
 
     public boolean block() {
