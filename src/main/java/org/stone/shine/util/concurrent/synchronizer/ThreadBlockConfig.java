@@ -30,7 +30,9 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     private CasNode casNode;
 
     //***********************************************block configuration**********************************************//
+    //block impl by LockSupport.park Methods
     private ThreadBlockSupport blockSupport;
+    //if interrupted then throws InterruptionException when this ind is true
     private boolean supportInterrupted = true;
 
     //***********************************************wakeup configuration*********************************************//
