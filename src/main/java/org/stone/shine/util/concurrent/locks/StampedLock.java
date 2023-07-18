@@ -60,10 +60,21 @@ public class StampedLock implements java.io.Serializable {
 
     private volatile long stamp = 2147483648L;
     private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
+    //****************************************************************************************************************//
+    //                                          1: static(5)                                                          //
+    //****************************************************************************************************************//
+    private static int highInt(long v) {
+        return (int) (v >>> 32);
+    }
 
-    //****************************************************************************************************************//
-    //                                          1: CAS(2)                                                             //
-    //****************************************************************************************************************//
+    private static int lowInt(long v) {
+        return (int) (v & 0xFFFFFFFFL);
+    }
+
+    private static long contact(int h, int l) {
+        return ((long) h << 32) | (l & 0xFFFFFFFFL);
+    }
+
     private static boolean compareAndSetNodeState(WaitNode node, int exp, int upd) {
         return UNSAFE.compareAndSwapInt(node, nodeStateOffset, exp, upd);
     }
@@ -75,10 +86,7 @@ public class StampedLock implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                          2: Static(3)                                                          //
     //****************************************************************************************************************//
-    public static void main(String[] ags) {
-        long stamp = 2147483648L;
-        System.out.println(((int) stamp + 1));
-    }
+
 
     private static boolean validate(long stamp1, long stamp2) {
         return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;
