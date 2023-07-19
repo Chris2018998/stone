@@ -9,14 +9,12 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinParker;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitBasePool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 
 /**
  * execute the call inside pool and match its result with a validator,if passed the return result value;
@@ -25,7 +23,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOU
  * @author Chris Liao
  * @version 1.0
  */
-public class ResultWaitPool extends ThreadWaitingPool {
+public class ResultWaitPool extends ThreadWaitBasePool {
     //true,use fair mode
     private final boolean fair;
 
@@ -94,7 +92,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:get wait node from config object
-        final CasNode node = config.getCasNode();
+        final SyncNode node = config.getCasNode();
 
         //4:get control parameters from config
         final boolean throwsIE = config.isAllowThrowsIE();

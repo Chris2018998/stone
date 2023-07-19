@@ -9,16 +9,14 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinParker;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitBasePool;
 
 import java.util.Iterator;
 
-import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.SIGNAL;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 
 /**
  * transfer wait pool
@@ -26,7 +24,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOU
  * @author Chris Liao
  * @version 1.0
  */
-public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
+public final class TransferWaitPool<E> extends ThreadWaitBasePool<E> {
     //Request
     private static final Object Node_Type_Get = new Object();
     //Data
@@ -98,7 +96,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //                                          3: get methods                                                        //
     //****************************************************************************************************************//
     public final E tryGet() {
-        CasNode<E> node = this.getWokenUpNode(fair, SIGNAL, Node_Type_Data);
+        SyncNode<E> node = this.getWokenUpNode(fair, SIGNAL, Node_Type_Data);
         return node != null ? node.getValue() : null;
     }
 
@@ -121,7 +119,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //1:create wait node and offer to wait queue
-        CasNode node = config.getCasNode();
+        SyncNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config
@@ -179,9 +177,9 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //                                          6: iterator methods(4)                                                //
     //****************************************************************************************************************//
     public E peek() {
-        Iterator<CasNode> nodeIterator = super.ascendingIterator();
+        Iterator<SyncNode> nodeIterator = super.ascendingIterator();
         while (nodeIterator.hasNext()) {
-            CasNode node = nodeIterator.next();
+            SyncNode node = nodeIterator.next();
             if (Node_Type_Data == node.getType()) return (E) node.getValue();
         }
         return null;
@@ -189,9 +187,9 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
 
     public boolean remove(Object o) {
         if (o == null) return false;
-        Iterator<CasNode> nodeIterator = super.ascendingIterator();
+        Iterator<SyncNode> nodeIterator = super.ascendingIterator();
         while (nodeIterator.hasNext()) {
-            CasNode node = nodeIterator.next();
+            SyncNode node = nodeIterator.next();
             if (node.getType() == Node_Type_Data && o.equals(node.getValue())) {
                 nodeIterator.remove();
                 return true;
@@ -202,9 +200,9 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
 
     public boolean contains(Object o) {
         if (o == null) return false;
-        Iterator<CasNode> nodeIterator = super.ascendingIterator();
+        Iterator<SyncNode> nodeIterator = super.ascendingIterator();
         while (nodeIterator.hasNext()) {
-            CasNode node = nodeIterator.next();
+            SyncNode node = nodeIterator.next();
             if (node.getType() == Node_Type_Data && o.equals(node.getValue())) return true;
         }
         return false;
@@ -215,10 +213,10 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     }
 
     private static class DataIterator<E> implements Iterator {
-        private final Iterator<CasNode> nodeIterator;
-        private CasNode currentDataNode;
+        private final Iterator<SyncNode> nodeIterator;
+        private SyncNode currentDataNode;
 
-        public DataIterator(Iterator<CasNode> nodeIterator) {
+        public DataIterator(Iterator<SyncNode> nodeIterator) {
             this.nodeIterator = nodeIterator;
         }
 
@@ -229,7 +227,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         public boolean hasNext() {
             this.currentDataNode = null;
             while (nodeIterator.hasNext()) {
-                CasNode node = nodeIterator.next();
+                SyncNode node = nodeIterator.next();
                 if (Node_Type_Data == node.getType()) {
                     currentDataNode = node;
                     return true;

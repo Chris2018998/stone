@@ -9,8 +9,7 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
@@ -387,7 +386,7 @@ class BaseLock implements Lock {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
             //2:create a reusable node(why before unlock?)
-            CasNode conditionNode = config.getCasNode();
+            SyncNode conditionNode = config.getCasNode();
             super.appendNode(conditionNode);
 
             //3:full release(exclusive count should be zero):support full release for reentrant

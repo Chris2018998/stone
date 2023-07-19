@@ -18,7 +18,7 @@ import org.stone.tools.atomic.UnsafeAdaptorHolder;
  * @author Chris Liao
  * @version 1.0
  */
-public final class CasNodeUpdater {
+public final class SyncNodeUpdater {
     private final static UnsafeAdaptor U;
     private final static long stateOffSet;
 
@@ -30,33 +30,33 @@ public final class CasNodeUpdater {
     static {
         try {
             U = UnsafeAdaptorHolder.U;
-            Class nodeClass = CasNode.class;
+            Class nodeClass = SyncNode.class;
             //ThreadNode.state
             stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));
             //ThreadNode.prev
             prevOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("prev"));
             //ThreadNode.next
             nextOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("next"));
-            //CasNodeChain.tail
-            tailOffSet = U.objectFieldOffset(CasNodeChain.class.getDeclaredField("tail"));
+            //SyncNodeChain.tail
+            tailOffSet = U.objectFieldOffset(SyncNodeChain.class.getDeclaredField("tail"));
         } catch (Exception e) {
             throw new Error(e);
         }
     }
 
-    static boolean casTail(CasNodeChain chain, CasNode expect, CasNode update) {
+    static boolean casTail(SyncNodeChain chain, SyncNode expect, SyncNode update) {
         return U.compareAndSwapObject(chain, tailOffSet, expect, update);
     }
 
-    public static boolean casPrev(CasNode n, CasNode curPrev, CasNode newPrev) {
+    public static boolean casPrev(SyncNode n, SyncNode curPrev, SyncNode newPrev) {
         return U.compareAndSwapObject(n, prevOffSet, curPrev, newPrev);
     }
 
-    public static boolean casNext(CasNode n, CasNode curNext, CasNode newNext) {
+    public static boolean casNext(SyncNode n, SyncNode curNext, SyncNode newNext) {
         return U.compareAndSwapObject(n, nextOffSet, curNext, newNext);
     }
 
-    public static boolean casState(CasNode node, Object expect, Object update) {
+    public static boolean casState(SyncNode node, Object expect, Object update) {
         return node.state == expect && U.compareAndSwapObject(node, stateOffSet, expect, update);
     }
 }

@@ -27,7 +27,7 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     //node type
     private Object nodeState;
     //node object
-    private CasNode casNode;
+    private SyncNode<E> syncNode;
 
     //***********************************************block configuration**********************************************//
     //block impl by LockSupport.park Methods
@@ -48,7 +48,7 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              1: constructors                                                   //
     //****************************************************************************************************************//
-    public ThreadBlockConfig(long blockTime, TimeUnit timeUnit, boolean isUtilBlock, Object blockObject) {
+    public ThreadBlockConfig(long blockTime, TimeUnit timeUnit, Object blockObject, boolean isUtilBlock) {
         if (blockTime > 0) {
             if (timeUnit == null) throw new IllegalArgumentException("time unit can't be null");
             if (isUtilBlock) {
@@ -91,9 +91,11 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
         this.nodeState = nodeState;
     }
 
-    public final CasNode getCasNode() {
-        if (casNode != null) return casNode;
-        return this.casNode = new CasNode<>(nodeType, nodeValue);
+    public final SyncNode getSyncNode() {
+        if (syncNode != null) return syncNode;
+        this.syncNode = new SyncNode<>(nodeState, nodeType, nodeValue);
+        this.syncNode.setOwnerThread();
+        return this.syncNode;
     }
 
     //****************************************************************************************************************//
@@ -150,9 +152,16 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     //                                              5: ThreadBlockConfig reset                                        //
     //****************************************************************************************************************//
     public final void reset() {
-        this.blockSupport.reset();
-        this.nodeType = null;
         this.nodeValue = null;
-        this.casNode = null;
+        this.nodeType = null;
+        this.nodeState = null;
+        this.syncNode = null;
+        this.blockSupport.reset();
+        this.supportInterrupted = true;
+
+        this.wakeupOneOnFailure = true;
+        this.wakeupSameTypeOnFailure = false;
+        this.wakeupOtherOnSuccess = false;
+        this.wakeupSameTypeOnSuccess = false;
     }
 }

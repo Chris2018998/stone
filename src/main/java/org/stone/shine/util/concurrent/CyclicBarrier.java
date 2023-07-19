@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
@@ -18,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
 
 /**
  * @author Chris Liao

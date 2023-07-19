@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceAction;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;

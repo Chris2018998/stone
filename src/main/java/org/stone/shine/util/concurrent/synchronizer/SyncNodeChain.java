@@ -20,61 +20,61 @@ import java.util.NoSuchElementException;
  * @version 1.0
  */
 
-final class CasNodeChain {
-    private final CasNode head = new CasNode(null);
-    private volatile CasNode tail = head;
+final class SyncNodeChain {
+    private final SyncNode head = new SyncNode(null);
+    private volatile SyncNode tail = head;
 
-    CasNodeChain() {
+    SyncNodeChain() {
         head.thread = null;
     }
 
-    final void offer(CasNode node) {
-        CasNode t;
+    final void offer(SyncNode node) {
+        SyncNode t;
         do {
             t = tail;
             node.prev = t;
-            if (CasNodeUpdater.casTail(this, t, node)) {//append to tail.next
+            if (SyncNodeUpdater.casTail(this, t, node)) {//append to tail.next
                 t.next = node;
                 return;
             }
         } while (true);
     }
 
-    final boolean remove(CasNode node) {
-        node.setState(CasStaticState.REMOVED);
+    final boolean remove(SyncNode node) {
+        node.setState(SyncNodeState.REMOVED);
 
         //1: find out not removed pre-node
-        CasNode pred = node.prev;
-        while (pred.state == CasStaticState.REMOVED)
+        SyncNode pred = node.prev;
+        while (pred.state == SyncNodeState.REMOVED)
             node.prev = pred = pred.prev;
 
         //2:remove node from chain
-        CasNode predNext = pred.next;
-        if (node == tail && CasNodeUpdater.casTail(this, node, pred)) {
-            CasNodeUpdater.casNext(pred, predNext, null);
+        SyncNode predNext = pred.next;
+        if (node == tail && SyncNodeUpdater.casTail(this, node, pred)) {
+            SyncNodeUpdater.casNext(pred, predNext, null);
         } else {
-            CasNode next = node.next;
-            CasNodeUpdater.casNext(pred, predNext, next);
+            SyncNode next = node.next;
+            SyncNodeUpdater.casNext(pred, predNext, next);
         }
         return true;
     }
 
-    final Iterator<CasNode> iterator() {
+    final Iterator<SyncNode> iterator() {
         return new AscItr(head.next);
     }
 
-    final Iterator<CasNode> descendingIterator() {
-        CasNode t = tail;
+    final Iterator<SyncNode> descendingIterator() {
+        SyncNode t = tail;
         return new DescItr(t != head ? t : null);
     }
 
     //****************************************************************************************************************//
     //                                          Iterator implement                                                    //
     //****************************************************************************************************************//
-    private static abstract class PointerItr implements Iterator<CasNode> {
+    private static abstract class PointerItr implements Iterator<SyncNode> {
         private final ChainPointer pointer;
 
-        PointerItr(CasNode currentNode) {
+        PointerItr(SyncNode currentNode) {
             this.pointer = new ChainPointer(currentNode);
         }
 
@@ -87,14 +87,14 @@ final class CasNodeChain {
             return pointer.nextNode != null;
         }
 
-        public CasNode next() {
+        public SyncNode next() {
             //1:check current node and item
             if (pointer.curNode == null) throw new NoSuchElementException();
 
             //2:retry to find a valid node start at current node
             findNextNode(pointer);
 
-            CasNode nextNode = pointer.nextNode;
+            SyncNode nextNode = pointer.nextNode;
             if (nextNode == null) throw new ConcurrentModificationException();
             pointer.movePointerToNext();
             return nextNode;
@@ -109,16 +109,16 @@ final class CasNodeChain {
     }
 
     private static class AscItr extends PointerItr {
-        AscItr(CasNode currentNode) {
+        AscItr(SyncNode currentNode) {
             super(currentNode);
         }
 
         public void findNextNode(ChainPointer pointer) {
-            CasNode curNode = pointer.curNode;
-            CasNode nextNode = pointer.isAtFirst() ? curNode : curNode.next;
+            SyncNode curNode = pointer.curNode;
+            SyncNode nextNode = pointer.isAtFirst() ? curNode : curNode.next;
 
             while (nextNode != null) {
-                if (nextNode.state != CasStaticState.REMOVED) {//find a valid node
+                if (nextNode.state != SyncNodeState.REMOVED) {//find a valid node
                     pointer.setNextNode(nextNode);
                     break;
                 }
@@ -128,16 +128,16 @@ final class CasNodeChain {
     }
 
     private static class DescItr extends PointerItr {
-        DescItr(CasNode currentNode) {
+        DescItr(SyncNode currentNode) {
             super(currentNode);
         }
 
         public void findNextNode(ChainPointer pointer) {
-            CasNode curNode = pointer.curNode;
-            CasNode nextNode = pointer.isAtFirst() ? curNode : curNode.prev;
+            SyncNode curNode = pointer.curNode;
+            SyncNode nextNode = pointer.isAtFirst() ? curNode : curNode.prev;
 
             while (nextNode != null) {
-                if (nextNode.state != CasStaticState.REMOVED) {//find a valid node
+                if (nextNode.state != SyncNodeState.REMOVED) {//find a valid node
                     pointer.setNextNode(nextNode);
                     break;
                 }
@@ -147,11 +147,11 @@ final class CasNodeChain {
     }
 
     private static class ChainPointer {
-        private final CasNode firstNode;
-        private CasNode curNode;
-        private CasNode nextNode;
+        private final SyncNode firstNode;
+        private SyncNode curNode;
+        private SyncNode nextNode;
 
-        ChainPointer(CasNode firstNode) {
+        ChainPointer(SyncNode firstNode) {
             this.firstNode = firstNode;
             this.curNode = firstNode;
         }
@@ -160,7 +160,7 @@ final class CasNodeChain {
             return curNode == firstNode;
         }
 
-        void setNextNode(CasNode nextNode) {
+        void setNextNode(SyncNode nextNode) {
             this.nextNode = nextNode;
         }
 

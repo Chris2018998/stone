@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 

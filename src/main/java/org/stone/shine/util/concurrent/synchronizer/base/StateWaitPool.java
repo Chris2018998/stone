@@ -9,14 +9,12 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinParker;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitBasePool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 
 /**
  * Expected state wait pool,which can be applied in ThreadPoolExecutor implementation
@@ -25,7 +23,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOU
  * @version 1.0
  */
 
-public class StateWaitPool extends ThreadWaitingPool {
+public class StateWaitPool extends ThreadWaitBasePool {
 
     //state validator
     private final ResultValidator validator;
@@ -62,7 +60,7 @@ public class StateWaitPool extends ThreadWaitingPool {
         if (validator == null) throw new IllegalArgumentException("result validator can't be null");
 
         //1:create wait node and offer to wait queue
-        final CasNode node = config.getCasNode();
+        final SyncNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //2:get control parameters from config

@@ -9,12 +9,11 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.extend;
 
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
 
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
 
 /**
  * resource wait pool

@@ -47,6 +47,13 @@ public class StampedLock implements java.io.Serializable {
     private static final sun.misc.Unsafe UNSAFE;
     private static final long stampOffset;
     private static final long nodeStateOffset;
+    //****************************************************************************************************************//
+    //                                          1: static(5)                                                          //
+    //****************************************************************************************************************//
+    private static final int MOVE_SHIFT = 32;
+    private static final long CLN_HIGH_MASK = 0xFFFFFFFFL;//4294967295L;
+    private static final int WRITE_LOCK_FLAG = 0;
+    private static final int READ_LOCK_FLAG = 1;
 
     static {
         try {
@@ -60,19 +67,20 @@ public class StampedLock implements java.io.Serializable {
 
     private volatile long stamp = 2147483648L;
     private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
+
     //****************************************************************************************************************//
-    //                                          1: static(5)                                                          //
+    //                                          2: Static(3)                                                          //
     //****************************************************************************************************************//
-    private static int highInt(long v) {
-        return (int) (v >>> 32);
+    private static int lowInt(long v) {
+        return (int) (v & CLN_HIGH_MASK);
     }
 
-    private static int lowInt(long v) {
-        return (int) (v & 0xFFFFFFFFL);
+    private static int highInt(long v) {
+        return (int) (v >>> MOVE_SHIFT);
     }
 
     private static long contact(int h, int l) {
-        return ((long) h << 32) | (l & 0xFFFFFFFFL);
+        return ((long) h << MOVE_SHIFT) | (l & CLN_HIGH_MASK);
     }
 
     private static boolean compareAndSetNodeState(WaitNode node, int exp, int upd) {
@@ -82,11 +90,6 @@ public class StampedLock implements java.io.Serializable {
     private static boolean compareAndSetLockStamp(StampedLock lock, long exp, long upd) {
         return UNSAFE.compareAndSwapLong(lock, stampOffset, exp, upd);
     }
-
-    //****************************************************************************************************************//
-    //                                          2: Static(3)                                                          //
-    //****************************************************************************************************************//
-
 
     private static boolean validate(long stamp1, long stamp2) {
         return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;

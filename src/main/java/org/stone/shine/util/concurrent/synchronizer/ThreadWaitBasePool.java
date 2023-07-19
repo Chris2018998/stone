@@ -15,9 +15,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static java.util.concurrent.locks.LockSupport.unpark;
-import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.INTERRUPTED;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -27,16 +26,16 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 
-public abstract class ThreadWaitingPool<E> {
-    //private final CasNodeChain waitQueue = new CasNodeChain();
-    private final ConcurrentLinkedDeque<CasNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
+public abstract class ThreadWaitBasePool<E> {
+    //private final SyncNodeChain waitQueue = new SyncNodeChain();
+    private final ConcurrentLinkedDeque<SyncNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
     //                                          1: static Methods(3)                                                  //
     //****************************************************************************************************************//
-    private static CasNode wakeupOne(final Iterator<CasNode> iterator, final Object toState, final Object type) {
+    private static SyncNode wakeupOne(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (type != null && !objectEquals(type, node.type)) continue;
             if (casState(node, null, toState)) {
                 unpark(node.thread);
@@ -46,10 +45,10 @@ public abstract class ThreadWaitingPool<E> {
         return null;
     }
 
-    private static int wakeupAll(final Iterator<CasNode> iterator, final Object toState, final Object type) {
+    private static int wakeupAll(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
         int count = 0;
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (type != null && !objectEquals(type, node.type)) continue;
             if (casState(node, null, toState)) {
                 unpark(node.thread);
@@ -62,16 +61,16 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          2: queue Methods(8)                                                   //
     //****************************************************************************************************************//
-    protected final void appendNode(CasNode node) {
+    protected final void appendNode(SyncNode node) {
         waitQueue.offer(node);
     }
 
-    protected final boolean removeNode(CasNode node) {
+    protected final boolean removeNode(SyncNode node) {
         return waitQueue.remove(node);
     }
 
-    protected final CasNode appendDataNode(Object type, Object value) {
-        CasNode node = new CasNode(type, value);
+    protected final SyncNode appendDataNode(Object type, Object value) {
+        SyncNode node = new SyncNode(null, type, value);
         node.thread = null;
         waitQueue.offer(node);
         return node;
@@ -111,44 +110,44 @@ public abstract class ThreadWaitingPool<E> {
         return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType) != null ? 1 : 0;
     }
 
-    protected final CasNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
+    protected final SyncNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
         return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType);
     }
 
     //****************************************************************************************************************//
     //                                         5: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
-    protected final Iterator<CasNode> ascendingIterator() {
+    protected final Iterator<SyncNode> ascendingIterator() {
         return waitQueue.iterator();
     }
 
     public final boolean hasQueuedPredecessors() {
-        CasNode node = waitQueue.peek();
+        SyncNode node = waitQueue.peek();
         return node != null && node.thread != Thread.currentThread();
     }
 
     protected final boolean existsTypeNode(Object nodeType) {
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (nodeType == null || objectEquals(nodeType, node.type)) return true;
         }
         return false;
     }
 
     public final boolean hasQueuedThreads() {
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (node.state == null && node.thread != null) return true;
         }
         return false;
     }
 
     public final boolean hasQueuedThread(Thread thread) {
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (node.thread == thread) return true;
         }
         return false;
@@ -156,9 +155,9 @@ public abstract class ThreadWaitingPool<E> {
 
     public final int getQueueLength() {
         int count = 0;
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (node.state == null) count++;
         }
         return count;
@@ -166,9 +165,9 @@ public abstract class ThreadWaitingPool<E> {
 
     public final Collection<Thread> getQueuedThreads() {
         LinkedList<Thread> threadList = new LinkedList<>();
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (node.state == null && node.thread != null) threadList.add(node.thread);
         }
         return threadList;
@@ -178,9 +177,9 @@ public abstract class ThreadWaitingPool<E> {
         if (nodeType == null) return getQueueLength();
 
         int count = 0;
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (objectEquals(nodeType, node.type) && node.state == null) count++;
         }
         return count;
@@ -190,9 +189,9 @@ public abstract class ThreadWaitingPool<E> {
         if (nodeType == null) return getQueuedThreads();
 
         LinkedList<Thread> threadList = new LinkedList<>();
-        Iterator<CasNode> iterator = waitQueue.iterator();
+        Iterator<SyncNode> iterator = waitQueue.iterator();
         while (iterator.hasNext()) {
-            CasNode node = iterator.next();
+            SyncNode node = iterator.next();
             if (objectEquals(nodeType, node.type) && node.state == null && node.thread != null)
                 threadList.add(node.thread);
         }
@@ -200,21 +199,21 @@ public abstract class ThreadWaitingPool<E> {
     }
 
 
-    //****************************************************************************************************************//
-    //                                         6: Park methods(2)                                                     //
-    //****************************************************************************************************************//
-    protected final void parkNodeThread(CasNode node, ThreadSpinParker parker, boolean throwsIE) throws InterruptedException {
-        parkNodeThread(node, parker, throwsIE, true);
-    }
-
-    protected final void parkNodeThread(CasNode node, ThreadSpinParker parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
-        if (parker.parkUtilInterrupted() && throwsIE) {//not timeout and park interrupted
-            if (!casState(node, null, INTERRUPTED)) {
-                Object state = node.state;
-                if (state != null && wakeupOtherOnIE) this.wakeupOne(state, node.type);
-            }
-
-            throw new InterruptedException();
-        }
-    }
+//    //****************************************************************************************************************//
+//    //                                         6: Park methods(2)                                                     //
+//    //****************************************************************************************************************//
+//    protected final void parkNodeThread(SyncNode node, ThreadSpinParker parker, boolean throwsIE) throws InterruptedException {
+//        parkNodeThread(node, parker, throwsIE, true);
+//    }
+//
+//    protected final void parkNodeThread(SyncNode node, ThreadSpinParker parker, boolean throwsIE, boolean wakeupOtherOnIE) throws InterruptedException {
+//        if (parker.parkUtilInterrupted() && throwsIE) {//not timeout and park interrupted
+//            if (!casState(node, null, INTERRUPTED)) {
+//                Object state = node.state;
+//                if (state != null && wakeupOtherOnIE) this.wakeupOne(state, node.type);
+//            }
+//
+//            throw new InterruptedException();
+//        }
+//    }
 }

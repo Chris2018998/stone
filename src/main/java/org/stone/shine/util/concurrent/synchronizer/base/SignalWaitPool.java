@@ -9,13 +9,11 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.CasNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinParker;
-import org.stone.shine.util.concurrent.synchronizer.ThreadSpinConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitBasePool;
 
-import static org.stone.shine.util.concurrent.synchronizer.CasNodeUpdater.casState;
-import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 
 /**
  * Signal Wait Pool,caller try to get a signal from pool,if not get,then wait for it util timeout
@@ -23,7 +21,7 @@ import static org.stone.shine.util.concurrent.synchronizer.CasStaticState.TIMEOU
  * @author Chris Liao
  * @version 1.0
  */
-public class SignalWaitPool extends ThreadWaitingPool {
+public class SignalWaitPool extends ThreadWaitBasePool {
 
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
@@ -37,7 +35,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
 
         //2:create wait node and offer to wait queue
-        final CasNode node = config.getCasNode();
+        final SyncNode node = config.getCasNode();
         if (config.isOutsideOfWaitPool()) super.appendNode(node);
 
         //3:get control parameters from config
