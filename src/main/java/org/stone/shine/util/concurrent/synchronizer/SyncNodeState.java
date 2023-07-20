@@ -17,11 +17,8 @@ package org.stone.shine.util.concurrent.synchronizer;
  */
 public final class SyncNodeState {
 
-    //Simple signal to exit waiting(used in class{#link ThreadWaitBasePool})
-    public static final Object INIT = new Object();
-
-    //Simple signal to exit waiting(used in class{#link ThreadWaitBasePool})
-    public static final Object SIGNAL = new Object();
+    //new node
+    public static final Object NEW = new Object();
 
     //Thread waited timeout
     public static final Object TIMEOUT = new Object();
@@ -29,7 +26,7 @@ public final class SyncNodeState {
     //Thread interrupted during waiting
     public static final Object INTERRUPTED = new Object();
 
-    //node removed state
+    //node has removed from chain
     public static final Object REMOVED = new Object();
 
 }
