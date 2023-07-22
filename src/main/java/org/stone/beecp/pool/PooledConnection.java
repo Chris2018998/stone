@@ -14,6 +14,7 @@ import org.stone.beecp.pool.exception.ConnectionRecycleException;
 import javax.transaction.xa.XAResource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
@@ -43,6 +44,7 @@ final class PooledConnection implements Cloneable {
     private final boolean enableDefaultOnReadOnly;
     private final boolean enableDefaultOnAutoCommit;
     private final boolean enableDefaultOnTransactionIsolation;
+    private final List<Integer> fatalErrorCodeList;
 
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
@@ -72,7 +74,8 @@ final class PooledConnection implements Cloneable {
             boolean enableDefaultOnSchema,
             boolean enableDefaultOnReadOnly,
             boolean enableDefaultOnAutoCommit,
-            boolean enableDefaultOnTransactionIsolation) {
+            boolean enableDefaultOnTransactionIsolation,
+            List<Integer> fatalErrorCodeList) {
 
         this.defaultAutoCommit = defaultAutoCommit;
         this.defaultTransactionIsolation = defaultTransactionIsolation;
@@ -91,6 +94,7 @@ final class PooledConnection implements Cloneable {
         this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
         this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
         this.curAutoCommit = defaultAutoCommit;
+        this.fatalErrorCodeList = fatalErrorCodeList;
     }
 
     PooledConnection setDefaultAndCopy(Connection rawConn, int state, XAResource rawXaRes) throws SQLException, CloneNotSupportedException {
@@ -224,5 +228,13 @@ final class PooledConnection implements Cloneable {
             }
         }
         this.openStmSize = 0;
+    }
+
+    //****************Fatal error code *******************************************************************************/
+    void checkErrorCode(int code) {
+        if (proxyInUsing != null && fatalErrorCodeList != null && fatalErrorCodeList.contains(code)) {
+            this.proxyInUsing.abort(null);//will remove from pool
+            this.proxyInUsing = null;
+        }
     }
 }
