@@ -292,7 +292,7 @@ final class ProxyClassGenerator {
 
             methodBuffer.delete(0, methodBuffer.length());
             methodBuffer.append("{");
-
+            methodBuffer.append(" try{");
             if (ctMethod.getReturnType() == CtClass.voidType) {
                 if (methodName.startsWith("execute")) methodBuffer.append("p.commitDirtyInd=!p.curAutoCommit;");
                 methodBuffer.append(rawName + methodName + "($$);");
@@ -315,6 +315,7 @@ final class ProxyClassGenerator {
                         methodBuffer.append("return " + rawName + methodName + "($$);");
                 }
             }
+            methodBuffer.append(" }catch(SQLException e){ p.checkErrorCode(e.getErrorCode());throw e;}");
             methodBuffer.append("}");
             newCtMethod.setBody(methodBuffer.toString());
             statementProxyClass.addMethod(newCtMethod);
@@ -337,6 +338,7 @@ final class ProxyClassGenerator {
             methodBuffer.delete(0, methodBuffer.length());
             methodBuffer.append("{")
                     .append("checkClosed();");
+            methodBuffer.append(" try{");
             if (ctMethod.getReturnType() == ctResultSetClass) {
                 methodBuffer.append("return new ProxyResultSet(raw." + methodName + "($$),p);");
             } else if (ctMethod.getReturnType() == CtClass.voidType) {
@@ -344,7 +346,7 @@ final class ProxyClassGenerator {
             } else {
                 methodBuffer.append("return raw." + methodName + "($$);");
             }
-
+            methodBuffer.append(" }catch(SQLException e){ p.checkErrorCode(e.getErrorCode());throw e;}");
             methodBuffer.append("}");
             newCtMethod.setBody(methodBuffer.toString());
             ctProxyDatabaseMetaDataClass.addMethod(newCtMethod);
@@ -366,6 +368,7 @@ final class ProxyClassGenerator {
             methodBuffer.append("{");
             if (methodName.equals("close"))
                 continue;
+            methodBuffer.append(" try{");
             if (methodName.startsWith("insert") || methodName.startsWith("update") || methodName.startsWith("delete")) {
                 if (ctMethod.getReturnType() == CtClass.voidType) {
                     methodBuffer.append("raw." + methodName + "($$);").append(" p.updateAccessTime();");
@@ -380,7 +383,7 @@ final class ProxyClassGenerator {
                     methodBuffer.append("return raw." + methodName + "($$);");
                 }
             }
-
+            methodBuffer.append(" }catch(SQLException e){ p.checkErrorCode(e.getErrorCode());throw e;}");
             methodBuffer.append("}");
             newCtMethodm.setBody(methodBuffer.toString());
             ctResultSetClassProxyClass.addMethod(newCtMethodm);
