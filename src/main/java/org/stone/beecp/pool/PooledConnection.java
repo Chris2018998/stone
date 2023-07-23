@@ -44,7 +44,8 @@ final class PooledConnection implements Cloneable {
     private final boolean enableDefaultOnReadOnly;
     private final boolean enableDefaultOnAutoCommit;
     private final boolean enableDefaultOnTransactionIsolation;
-    private final List<Integer> fatalErrorCodeList;
+    private final List<Integer> sqlExceptionCodeList;
+    private final List<String> sqlExceptionStateList;
 
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
@@ -75,7 +76,8 @@ final class PooledConnection implements Cloneable {
             boolean enableDefaultOnReadOnly,
             boolean enableDefaultOnAutoCommit,
             boolean enableDefaultOnTransactionIsolation,
-            List<Integer> fatalErrorCodeList) {
+            List<Integer> sqlExceptionCodeList,
+            List<String> sqlExceptionStateList) {
 
         this.defaultAutoCommit = defaultAutoCommit;
         this.defaultTransactionIsolation = defaultTransactionIsolation;
@@ -94,7 +96,8 @@ final class PooledConnection implements Cloneable {
         this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
         this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
         this.curAutoCommit = defaultAutoCommit;
-        this.fatalErrorCodeList = fatalErrorCodeList;
+        this.sqlExceptionCodeList = sqlExceptionCodeList;
+        this.sqlExceptionStateList = sqlExceptionStateList;
     }
 
     PooledConnection setDefaultAndCopy(Connection rawConn, int state, XAResource rawXaRes) throws SQLException, CloneNotSupportedException {
@@ -231,8 +234,16 @@ final class PooledConnection implements Cloneable {
     }
 
     //****************Fatal error code check*******************************************************************************/
-    void checkErrorCode(int code) {
-        if (code != 0 && proxyInUsing != null && fatalErrorCodeList != null && fatalErrorCodeList.contains(code)) {
+    void checkSQLException(SQLException e) {
+        int code = e.getErrorCode();
+        if (code != 0 && proxyInUsing != null && sqlExceptionCodeList != null && sqlExceptionCodeList.contains(code)) {
+            this.proxyInUsing.abort(null);//will remove from pool
+            this.proxyInUsing = null;
+            return;
+        }
+
+        String state = e.getSQLState();
+        if (state != null && proxyInUsing != null && sqlExceptionStateList != null && sqlExceptionStateList.contains(state)) {
             this.proxyInUsing.abort(null);//will remove from pool
             this.proxyInUsing = null;
         }
