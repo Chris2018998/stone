@@ -10,12 +10,12 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitBasePool;
+import org.stone.shine.util.concurrent.synchronizer.SyncWakeupPool;
 
 import java.util.Iterator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 
 /**
@@ -24,7 +24,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
  * @author Chris Liao
  * @version 1.0
  */
-public final class TransferWaitPool<E> extends ThreadWaitBasePool<E> {
+public final class TransferWaitPool<E> extends SyncWakeupPool<E> {
     //Request
     private static final Object Node_Type_Get = new Object();
     //Data

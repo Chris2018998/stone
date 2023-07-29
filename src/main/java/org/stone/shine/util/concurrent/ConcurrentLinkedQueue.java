@@ -13,7 +13,7 @@ import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 
 import java.util.*;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.REMOVED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casNext;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 

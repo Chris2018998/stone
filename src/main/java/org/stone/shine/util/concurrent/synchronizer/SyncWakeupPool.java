@@ -14,9 +14,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import static java.util.concurrent.locks.LockSupport.unpark;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -26,37 +23,9 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 
-public abstract class ThreadWaitBasePool<E> {
+public abstract class SyncWakeupPool<E> {
     //private final SyncNodeChain waitQueue = new SyncNodeChain();
     private final ConcurrentLinkedDeque<SyncNode> waitQueue = new ConcurrentLinkedDeque<>();//temporary
-
-    //****************************************************************************************************************//
-    //                                          1: static Methods(3)                                                  //
-    //****************************************************************************************************************//
-    private static SyncNode wakeupOne(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
-        while (iterator.hasNext()) {
-            SyncNode node = iterator.next();
-            if (type != null && !objectEquals(type, node.type)) continue;
-            if (casState(node, null, toState)) {
-                unpark(node.thread);
-                return node;
-            }
-        }
-        return null;
-    }
-
-    private static int wakeupAll(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
-        int count = 0;
-        while (iterator.hasNext()) {
-            SyncNode node = iterator.next();
-            if (type != null && !objectEquals(type, node.type)) continue;
-            if (casState(node, null, toState)) {
-                unpark(node.thread);
-                count++;
-            }
-        }
-        return count;
-    }
 
     //****************************************************************************************************************//
     //                                          2: queue Methods(8)                                                   //
@@ -76,20 +45,46 @@ public abstract class ThreadWaitBasePool<E> {
         return node;
     }
 
-    //****************************************************************************************************************//
-    //                                          3: Wakeup All                                                         //
-    //****************************************************************************************************************//
-    public final int wakeupAll() {
-        return wakeupAll(waitQueue.iterator(), SIGNAL, null);
-    }
 
-    public final int wakeupAll(Object toState) {
-        return wakeupAll(waitQueue.iterator(), toState, null);
-    }
+//    //****************************************************************************************************************//
+//    //                                          1: static Methods(3)                                                  //
+//    //****************************************************************************************************************//
+//    private static SyncNode wakeupOne(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
+//        while (iterator.hasNext()) {
+//            SyncNode node = iterator.next();
+//            if (type != null && !objectEquals(type, node.type)) continue;
+//            if (casState(node, null, toState)) {
+//                unpark(node.thread);
+//                return node;
+//            }
+//        }
+//        return null;
+//    }
+//
+//    private static int wakeupAll(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
+//        int count = 0;
+//        while (iterator.hasNext()) {
+//            SyncNode node = iterator.next();
+//            if (type != null && !objectEquals(type, node.type)) continue;
+//            if (casState(node, null, toState)) {
+//                unpark(node.thread);
+//                count++;
+//            }
+//        }
+//        return count;
+//    }
 
-    public final int wakeupAll(Object toState, Object byType) {
-        return wakeupAll(waitQueue.iterator(), toState, byType);
-    }
+//    public final int wakeupAll() {
+//        return wakeupAll(waitQueue.iterator(), SIGNAL, null);
+//    }
+//
+//    public final int wakeupAll(Object toState) {
+//        return wakeupAll(waitQueue.iterator(), toState, null);
+//    }
+//
+//    public final int wakeupAll(Object toState, Object byType) {
+//        return wakeupAll(waitQueue.iterator(), toState, byType);
+//    }
 
     //****************************************************************************************************************//
     //                                          4: Wakeup One                                                         //
@@ -113,6 +108,7 @@ public abstract class ThreadWaitBasePool<E> {
     protected final SyncNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
         return wakeupOne(fromHead ? waitQueue.iterator() : waitQueue.descendingIterator(), toState, byType);
     }
+
 
     //****************************************************************************************************************//
     //                                         5: Monitor Methods(6)                                                  //

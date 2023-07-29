@@ -13,7 +13,7 @@ import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.SIGNAL;
 
 /**
  * resource wait pool

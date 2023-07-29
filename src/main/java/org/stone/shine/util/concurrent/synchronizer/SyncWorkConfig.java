@@ -18,7 +18,8 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 
-public final class ThreadBlockConfig<E> implements java.io.Serializable {
+public final class SyncWorkConfig<E> implements java.io.Serializable {
+
     //************************************************node configuration**********************************************//
     //node value
     private E nodeValue;
@@ -31,7 +32,7 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
 
     //***********************************************block configuration**********************************************//
     //block impl by LockSupport.park Methods
-    private ThreadBlockSupport blockSupport;
+    private SyncParkSupport parkSupport;
     //if interrupted then throws InterruptionException when this ind is true
     private boolean supportInterrupted = true;
 
@@ -48,21 +49,21 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              1: constructors                                                   //
     //****************************************************************************************************************//
-    public ThreadBlockConfig(long blockTime, TimeUnit timeUnit, Object blockObject, boolean isUtilBlock) {
+    public SyncWorkConfig(long blockTime, TimeUnit timeUnit, Object blockObject, boolean isUtilBlock) {
         if (blockTime > 0) {
             if (timeUnit == null) throw new IllegalArgumentException("time unit can't be null");
             if (isUtilBlock) {
                 long blockTimeMillis = timeUnit.toMillis(blockTime);
-                this.blockSupport = blockObject == null ? new ThreadBlockSupport.UtilMillsBlockSupport1(blockTimeMillis) :
-                        new ThreadBlockSupport.UtilMillsBlockSupport2(blockTimeMillis, blockObject);
+                this.parkSupport = blockObject == null ? new SyncParkSupport.UtilMillsBlockSupport1(blockTimeMillis) :
+                        new SyncParkSupport.UtilMillsBlockSupport2(blockTimeMillis, blockObject);
             } else {
                 long blockNanos = timeUnit.toNanos(blockTime);
-                this.blockSupport = blockObject == null ? new ThreadBlockSupport.NanoSecondsBlockSupport(blockNanos) :
-                        new ThreadBlockSupport.NanoSecondsBlockSupport2(blockNanos, blockObject);
+                this.parkSupport = blockObject == null ? new SyncParkSupport.NanoSecondsBlockSupport(blockNanos) :
+                        new SyncParkSupport.NanoSecondsBlockSupport2(blockNanos, blockObject);
             }
         } else {
-            this.blockSupport = blockObject == null ? new ThreadBlockSupport() :
-                    new ThreadBlockSupport.ThreadBlockSupport2(blockObject);
+            this.parkSupport = blockObject == null ? new SyncParkSupport() :
+                    new SyncParkSupport.ThreadBlockSupport2(blockObject);
         }
     }
 
@@ -101,8 +102,8 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              4: block configuration(3)                                         //
     //****************************************************************************************************************//
-    public ThreadBlockSupport getBlockSupport() {
-        return blockSupport;
+    public SyncParkSupport getParkSupport() {
+        return parkSupport;
     }
 
     public boolean isSupportInterrupted() {
@@ -149,14 +150,14 @@ public final class ThreadBlockConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              5: ThreadBlockConfig reset                                        //
+    //                                              5: SyncWorkConfig reset                                        //
     //****************************************************************************************************************//
     public final void reset() {
         this.nodeValue = null;
         this.nodeType = null;
         this.nodeState = null;
         this.syncNode = null;
-        this.blockSupport.reset();
+        this.parkSupport.reset();
         this.supportInterrupted = true;
 
         this.wakeupNextOnFailure = true;

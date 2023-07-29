@@ -26,24 +26,24 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * <pre>{@code
  * class ConditionX {
  *    public final void await() throws InterruptedException {
- *       ThreadBlockSupport parker = ThreadBlockSupport.create();
- *       await(parker):
+ *       SyncParkSupport parker = SyncParkSupport.create();
+ *       await(parker);
  *    }
  *    public final void await(long nanosTimeout) throws InterruptedException {
- *      ThreadBlockSupport parker = ThreadBlockSupport.create(nanosTimeout,false);
- *      await(parker):
+ *      SyncParkSupport parker = SyncParkSupport.create(nanosTimeout,false);
+ *      await(parker);
  *    }
  *    public final boolean awaitUntil(Date deadlineNanos) throws InterruptedException {
- *      ThreadBlockSupport parker = ThreadBlockSupport.create(deadlineNanos.getBlockNanos(),true);
- *      await(parker):
+ *      SyncParkSupport parker = SyncParkSupport.create(deadlineNanos.getBlockNanos(),true);
+ *      await(parker);
  *    }
  *   public final boolean await(long blockNanos, TimeUnit unit)throws InterruptedException {
  *      long nanosTimeout = unit.toNanos(timeout);
- *      ThreadBlockSupport parker = ThreadBlockSupport.create(nanosTimeout,false);
- *      await(parker):
+ *      SyncParkSupport parker = SyncParkSupport.create(nanosTimeout,false);
+ *      await(parker);
  *   }
  *   //spin control
- *   private void await(ThreadBlockSupport  parker)throws InterruptedException {
+ *   private void await(SyncParkSupport  parker)throws InterruptedException {
  *      //spin source code.........
  *   }
  *  }//class end
@@ -54,13 +54,13 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * @version 1.0
  */
 
-public class ThreadBlockSupport {
+public class SyncParkSupport {
     long blockNanos = spinForTimeoutThreshold + 1;//compute before parking,if less than zero or equals zero means timeout
     long deadlineNanos;//nanoseconds
     Object blockObject;
     boolean interrupted;
 
-    ThreadBlockSupport() {
+    SyncParkSupport() {
     }
 
     public final long getBlockNanos() {
@@ -99,7 +99,7 @@ public class ThreadBlockSupport {
     //****************************************************************************************************************//
     //                                           object block Implement                                               //
     //****************************************************************************************************************//
-    static class ThreadBlockSupport2 extends ThreadBlockSupport {
+    static class ThreadBlockSupport2 extends SyncParkSupport {
         ThreadBlockSupport2(Object blocker) {
             this.blockObject = blocker;
         }
@@ -117,7 +117,7 @@ public class ThreadBlockSupport {
     //****************************************************************************************************************//
     //                                            NanoSeconds block Implement                                         //
     //****************************************************************************************************************//
-    static class NanoSecondsBlockSupport extends ThreadBlockSupport {
+    static class NanoSecondsBlockSupport extends SyncParkSupport {
         private final long nanoTime;
 
         NanoSecondsBlockSupport(long nanoTime) {
@@ -166,7 +166,7 @@ public class ThreadBlockSupport {
     //****************************************************************************************************************//
     //                                       MilliSeconds block Implement                                             //
     //****************************************************************************************************************//
-    static class UtilMillsBlockSupport1 extends ThreadBlockSupport {
+    static class UtilMillsBlockSupport1 extends SyncParkSupport {
         final long deadlineMillis;//nanoseconds or milliseconds
 
         UtilMillsBlockSupport1(long deadline) {

@@ -15,15 +15,15 @@ package org.stone.shine.util.concurrent.synchronizer;
  * @author Chris Liao
  * @version 1.0
  */
-public final class SyncNodeState {
+public final class SyncNodeStates {
 
-    //new node
-    public static final Object NEW = new Object();
+    //RUNNING
+    public static final Object RUNNING = new Object();
 
-    //Thread waited timeout
+    //timeout
     public static final Object TIMEOUT = new Object();
 
-    //Thread interrupted during waiting
+    //interruption
     public static final Object INTERRUPTED = new Object();
 
     //node has removed from chain

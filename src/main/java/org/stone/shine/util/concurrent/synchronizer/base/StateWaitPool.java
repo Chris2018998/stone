@@ -10,10 +10,10 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.ThreadWaitBasePool;
+import org.stone.shine.util.concurrent.synchronizer.SyncWakeupPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 
 /**
@@ -23,7 +23,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
  * @version 1.0
  */
 
-public class StateWaitPool extends ThreadWaitBasePool {
+public class StateWaitPool extends SyncWakeupPool {
 
     //state validator
     private final ResultValidator validator;

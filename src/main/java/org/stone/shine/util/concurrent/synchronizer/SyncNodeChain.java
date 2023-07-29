@@ -41,11 +41,11 @@ final class SyncNodeChain {
     }
 
     final boolean remove(SyncNode node) {
-        node.setState(SyncNodeState.REMOVED);
+        node.setState(SyncNodeStates.REMOVED);
 
         //1: find out not removed pre-node
         SyncNode pred = node.prev;
-        while (pred.state == SyncNodeState.REMOVED)
+        while (pred.state == SyncNodeStates.REMOVED)
             node.prev = pred = pred.prev;
 
         //2:remove node from chain
@@ -118,7 +118,7 @@ final class SyncNodeChain {
             SyncNode nextNode = pointer.isAtFirst() ? curNode : curNode.next;
 
             while (nextNode != null) {
-                if (nextNode.state != SyncNodeState.REMOVED) {//find a valid node
+                if (nextNode.state != SyncNodeStates.REMOVED) {//find a valid node
                     pointer.setNextNode(nextNode);
                     break;
                 }
@@ -137,7 +137,7 @@ final class SyncNodeChain {
             SyncNode nextNode = pointer.isAtFirst() ? curNode : curNode.prev;
 
             while (nextNode != null) {
-                if (nextNode.state != SyncNodeState.REMOVED) {//find a valid node
+                if (nextNode.state != SyncNodeStates.REMOVED) {//find a valid node
                     pointer.setNextNode(nextNode);
                     break;
                 }

@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeState.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.SIGNAL;
 
 /**
  * @author Chris Liao
