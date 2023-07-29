@@ -31,7 +31,7 @@ public class GetTimeoutTest extends TestCase {
         config.setWorkInDaemon(true);
         config.setMaxWorkerSize(1);
         BeeTaskService service = new BeeTaskService(config);
-        BeeTaskHandle handle = service.submit(new BlockTask());//block worker thread
+        BeeTaskHandle handle = service.submit(new BlockTask());//park worker thread
 
         try {
             handle.get(2, TimeUnit.SECONDS);

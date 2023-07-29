@@ -133,7 +133,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      *  1. The original algorithms used bit-marked pointers, but
      *     the ones here use mode bits in nodes, leading to a number
      *     of further adaptations.
-     *  2. SynchronousQueues must block threads waiting to become
+     *  2. SynchronousQueues must park threads waiting to become
      *     fulfilled.
      *  3. Support for cancellation via timeout and interrupts,
      *     including cleaning out cancelled nodes/threads
@@ -741,7 +741,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         SNode awaitFulfill(SNode s, boolean timed, long nanos) {
             /*
-             * When a node/thread is about to block, it sets its waiter
+             * When a node/thread is about to park, it sets its waiter
              * field and then rechecks state at least one more time
              * before actually parking, thus covering race vs
              * fulfiller noticing that waiter is non-null so should be
@@ -883,7 +883,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             /**
              * Tries to match node s to this node, if so, waking up thread.
              * Fulfillers call tryMatch to identify their waiters.
-             * Waiters block until they have been matched.
+             * Waiters park until they have been matched.
              *
              * @param s the node to match
              * @return true if successfully matched to s

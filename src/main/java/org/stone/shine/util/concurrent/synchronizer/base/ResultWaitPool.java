@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncWakeupPool;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
@@ -23,7 +23,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
  * @author Chris Liao
  * @version 1.0
  */
-public class ResultWaitPool extends SyncWakeupPool {
+public class ResultWaitPool extends ThreadWaitingPool {
     //true,use fair mode
     private final boolean fair;
 

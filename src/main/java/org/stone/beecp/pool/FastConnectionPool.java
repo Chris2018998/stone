@@ -509,7 +509,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                         if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
                             LockSupport.unpark(this);
 
-                        LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
+                        LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
                             cause = new ConnectionGetInterruptedException("Connection get request interrupted in wait queue");
                     } else if (t <= 0L) {//timeout

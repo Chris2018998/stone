@@ -14,7 +14,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * A synchronize node chain
+ * A synchronization node chain
  *
  * @author Chris Liao
  * @version 1.0

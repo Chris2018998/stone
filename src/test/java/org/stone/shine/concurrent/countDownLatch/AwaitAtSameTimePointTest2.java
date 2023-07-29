@@ -42,7 +42,7 @@ public class AwaitAtSameTimePointTest2 extends TestCase {
         long timePointToAWait = ConcurrentTimeUtil.getConcurrentNanoSeconds(2);
         long timePointToWakeAll = timePointToAWait + TimeUnit.SECONDS.toNanos(2);
 
-        //3:create countWait threads and block them
+        //3:create countWait threads and park them
         SameTimePointToAwaitThread[] sameTimePointWaitThreads = new SameTimePointToAwaitThread[count];
         for (int i = 0; i < count; i++) {
             sameTimePointWaitThreads[i] = new SameTimePointToAwaitThread(latch, timePointToAWait, "await", Global_Timeout, Global_TimeUnit);
@@ -55,7 +55,7 @@ public class AwaitAtSameTimePointTest2 extends TestCase {
             countDownThreads[i].start();
         }
 
-        //5:block main thread
+        //5:park main thread
         latch.await();
 
         //6:count value should be zero

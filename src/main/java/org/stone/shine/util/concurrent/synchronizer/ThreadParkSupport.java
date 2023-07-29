@@ -10,14 +10,16 @@
 package org.stone.shine.util.concurrent.synchronizer;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
-import static java.util.concurrent.locks.LockSupport.*;
+import static java.util.concurrent.locks.LockSupport.parkNanos;
+import static java.util.concurrent.locks.LockSupport.parkUntil;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Time parker class,supply three Implementation with park methods of {@link @java.util.concurrent.locks.LockSupport} class
  * 1:park
- * 2:blockNanos
+ * 2:parkNanos
  * 3:parkUntil
  *
  * <p>
@@ -26,24 +28,24 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * <pre>{@code
  * class ConditionX {
  *    public final void await() throws InterruptedException {
- *       SyncParkSupport parker = SyncParkSupport.create();
+ *       ThreadParkSupport parker = ThreadParkSupport.create();
  *       await(parker);
  *    }
  *    public final void await(long nanosTimeout) throws InterruptedException {
- *      SyncParkSupport parker = SyncParkSupport.create(nanosTimeout,false);
+ *      ThreadParkSupport parker = ThreadParkSupport.create(nanosTimeout,false);
  *      await(parker);
  *    }
  *    public final boolean awaitUntil(Date deadlineNanos) throws InterruptedException {
- *      SyncParkSupport parker = SyncParkSupport.create(deadlineNanos.getBlockNanos(),true);
+ *      ThreadParkSupport parker = ThreadParkSupport.create(deadlineNanos.getParkNanos(),true);
  *      await(parker);
  *    }
- *   public final boolean await(long blockNanos, TimeUnit unit)throws InterruptedException {
+ *   public final boolean await(long parkNanos, TimeUnit unit)throws InterruptedException {
  *      long nanosTimeout = unit.toNanos(timeout);
- *      SyncParkSupport parker = SyncParkSupport.create(nanosTimeout,false);
+ *      ThreadParkSupport parker = ThreadParkSupport.create(nanosTimeout,false);
  *      await(parker);
  *   }
  *   //spin control
- *   private void await(SyncParkSupport  parker)throws InterruptedException {
+ *   private void await(ThreadParkSupport  parker)throws InterruptedException {
  *      //spin source code.........
  *   }
  *  }//class end
@@ -54,17 +56,24 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * @version 1.0
  */
 
-public class SyncParkSupport {
-    long blockNanos = spinForTimeoutThreshold + 1;//compute before parking,if less than zero or equals zero means timeout
+public class ThreadParkSupport {
+    boolean timePark;
+    long parkNanos;//compute before parking,if less than zero or equals zero means timeout
     long deadlineNanos;//nanoseconds
     Object blockObject;
     boolean interrupted;
 
-    SyncParkSupport() {
+    ThreadParkSupport() {
+        this.timePark = false;
+        this.parkNanos = spinForTimeoutThreshold + 1;//dummy value for park method,that's means not timeout
     }
 
-    public final long getBlockNanos() {
-        return blockNanos;
+    public final boolean isTimePark() {
+        return timePark;
+    }
+
+    public final long getParkNanos() {
+        return parkNanos;
     }
 
     public final long getDeadlineNanos() {
@@ -72,40 +81,40 @@ public class SyncParkSupport {
     }
 
     public final boolean isTimeout() {
-        return blockNanos <= 0;
+        return parkNanos <= 0;
     }
 
     public final boolean isInterrupted() {
         return interrupted;
     }
 
-    public String toString() {
-        return "Implementation with method 'park()'";
+    public long computeParkNanos() {
+        return parkNanos;
+    }
+
+    public boolean park() {
+        LockSupport.park();
+        return this.interrupted = Thread.interrupted();
     }
 
     public void reset() {
         this.interrupted = false;
     }
 
-    public long computeBlockTime() {
-        return blockNanos;
-    }
-
-    public boolean block() {
-        park();
-        return this.interrupted = Thread.interrupted();
+    public String toString() {
+        return "Implementation with method 'park()'";
     }
 
     //****************************************************************************************************************//
-    //                                           object block Implement                                               //
+    //                                           object park Implement                                                //
     //****************************************************************************************************************//
-    static class ThreadBlockSupport2 extends SyncParkSupport {
-        ThreadBlockSupport2(Object blocker) {
+    static class ThreadParkSupport2 extends ThreadParkSupport {
+        ThreadParkSupport2(Object blocker) {
             this.blockObject = blocker;
         }
 
-        public final boolean block() {
-            park(blockObject);
+        public final boolean park() {
+            LockSupport.park(blockObject);
             return this.interrupted = Thread.interrupted();
         }
 
@@ -115,12 +124,13 @@ public class SyncParkSupport {
     }
 
     //****************************************************************************************************************//
-    //                                            NanoSeconds block Implement                                         //
+    //                                            NanoSeconds park Implement                                          //
     //****************************************************************************************************************//
-    static class NanoSecondsBlockSupport extends SyncParkSupport {
+    static class NanoSecondsParkSupport extends ThreadParkSupport {
         private final long nanoTime;
 
-        NanoSecondsBlockSupport(long nanoTime) {
+        NanoSecondsParkSupport(long nanoTime) {
+            this.timePark = true;
             this.nanoTime = nanoTime;
             this.deadlineNanos = System.nanoTime() + nanoTime;
         }
@@ -130,12 +140,12 @@ public class SyncParkSupport {
             this.deadlineNanos = System.nanoTime() + nanoTime;
         }
 
-        public long computeBlockTime() {
-            return this.blockNanos = deadlineNanos - System.nanoTime();
+        public long computeParkNanos() {
+            return this.parkNanos = deadlineNanos - System.nanoTime();
         }
 
-        public boolean block() {
-            parkNanos(blockNanos);
+        public boolean park() {
+            parkNanos(parkNanos);
             return this.interrupted = Thread.interrupted();
         }
 
@@ -147,14 +157,14 @@ public class SyncParkSupport {
     //****************************************************************************************************************//
     //                                    NanoSeconds blockObject park Implement                                      //
     //****************************************************************************************************************//
-    static class NanoSecondsBlockSupport2 extends NanoSecondsBlockSupport {
-        NanoSecondsBlockSupport2(long nanoTime, Object blocker) {
+    static class NanoSecondsParkSupport2 extends NanoSecondsParkSupport {
+        NanoSecondsParkSupport2(long nanoTime, Object blocker) {
             super(nanoTime);
             this.blockObject = blocker;
         }
 
-        public final boolean block() {
-            parkNanos(blockObject, blockNanos);
+        public final boolean park() {
+            parkNanos(blockObject, parkNanos);
             return this.interrupted = Thread.interrupted();
         }
 
@@ -164,21 +174,22 @@ public class SyncParkSupport {
     }
 
     //****************************************************************************************************************//
-    //                                       MilliSeconds block Implement                                             //
+    //                                       MilliSeconds park Implement                                              //
     //****************************************************************************************************************//
-    static class UtilMillsBlockSupport1 extends SyncParkSupport {
+    static class UtilMillsParkSupport1 extends ThreadParkSupport {
         final long deadlineMillis;//nanoseconds or milliseconds
 
-        UtilMillsBlockSupport1(long deadline) {
+        UtilMillsParkSupport1(long deadline) {
+            this.timePark = true;
             this.deadlineMillis = deadline;
             this.deadlineNanos = TimeUnit.MILLISECONDS.toNanos(deadlineMillis);//nanoseconds
         }
 
-        public final long computeBlockTime() {
-            return this.blockNanos = deadlineNanos - System.nanoTime();
+        public final long computeParkNanos() {
+            return this.parkNanos = deadlineNanos - System.nanoTime();
         }
 
-        public boolean block() {
+        public boolean park() {
             parkUntil(deadlineMillis);
             return interrupted = Thread.interrupted();
         }
@@ -193,15 +204,15 @@ public class SyncParkSupport {
     }
 
     //****************************************************************************************************************//
-    //                                       MilliSeconds block util Implement                                        //
+    //                                       MilliSeconds park util Implement                                         //
     //****************************************************************************************************************//
-    static class UtilMillsBlockSupport2 extends UtilMillsBlockSupport1 {
-        UtilMillsBlockSupport2(long deadline, Object blocker) {
+    static class UtilMillsParkSupport2 extends UtilMillsParkSupport1 {
+        UtilMillsParkSupport2(long deadline, Object blocker) {
             super(deadline);
             this.blockObject = blocker;
         }
 
-        public boolean block() {
+        public boolean park() {
             parkUntil(blockObject, deadlineMillis);
             return this.interrupted = Thread.interrupted();
         }

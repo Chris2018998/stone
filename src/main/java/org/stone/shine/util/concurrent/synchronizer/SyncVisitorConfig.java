@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 
-public final class SyncWorkConfig<E> implements java.io.Serializable {
+public final class SyncVisitorConfig<E> implements java.io.Serializable {
 
     //************************************************node configuration**********************************************//
     //node value
@@ -30,9 +30,9 @@ public final class SyncWorkConfig<E> implements java.io.Serializable {
     //node object
     private SyncNode<E> syncNode;
 
-    //***********************************************block configuration**********************************************//
-    //block impl by LockSupport.park Methods
-    private SyncParkSupport parkSupport;
+    //***********************************************park configuration**********************************************//
+    //park impl by LockSupport.park Methods
+    private ThreadParkSupport parkSupport;
     //if interrupted then throws InterruptionException when this ind is true
     private boolean supportInterrupted = true;
 
@@ -49,21 +49,21 @@ public final class SyncWorkConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              1: constructors                                                   //
     //****************************************************************************************************************//
-    public SyncWorkConfig(long blockTime, TimeUnit timeUnit, Object blockObject, boolean isUtilBlock) {
+    public SyncVisitorConfig(long blockTime, TimeUnit timeUnit, Object blockObject, boolean isUtilBlock) {
         if (blockTime > 0) {
             if (timeUnit == null) throw new IllegalArgumentException("time unit can't be null");
             if (isUtilBlock) {
                 long blockTimeMillis = timeUnit.toMillis(blockTime);
-                this.parkSupport = blockObject == null ? new SyncParkSupport.UtilMillsBlockSupport1(blockTimeMillis) :
-                        new SyncParkSupport.UtilMillsBlockSupport2(blockTimeMillis, blockObject);
+                this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(blockTimeMillis) :
+                        new ThreadParkSupport.UtilMillsParkSupport2(blockTimeMillis, blockObject);
             } else {
                 long blockNanos = timeUnit.toNanos(blockTime);
-                this.parkSupport = blockObject == null ? new SyncParkSupport.NanoSecondsBlockSupport(blockNanos) :
-                        new SyncParkSupport.NanoSecondsBlockSupport2(blockNanos, blockObject);
+                this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(blockNanos) :
+                        new ThreadParkSupport.NanoSecondsParkSupport2(blockNanos, blockObject);
             }
         } else {
-            this.parkSupport = blockObject == null ? new SyncParkSupport() :
-                    new SyncParkSupport.ThreadBlockSupport2(blockObject);
+            this.parkSupport = blockObject == null ? new ThreadParkSupport() :
+                    new ThreadParkSupport.ThreadParkSupport2(blockObject);
         }
     }
 
@@ -100,9 +100,9 @@ public final class SyncWorkConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              4: block configuration(3)                                         //
+    //                                              4: park configuration(3)                                         //
     //****************************************************************************************************************//
-    public SyncParkSupport getParkSupport() {
+    public ThreadParkSupport getParkSupport() {
         return parkSupport;
     }
 
@@ -150,7 +150,7 @@ public final class SyncWorkConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              5: SyncWorkConfig reset                                        //
+    //                                              5: SyncVisitorConfig reset                                        //
     //****************************************************************************************************************//
     public final void reset() {
         this.nodeValue = null;

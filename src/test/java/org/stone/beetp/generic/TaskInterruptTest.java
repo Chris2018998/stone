@@ -31,8 +31,8 @@ public class TaskInterruptTest extends TestCase {
         config.setMaxWorkerSize(1);
         BeeTaskService service = new BeeTaskService(config);
 
-        BeeTaskHandle handle = service.submit(new BlockTask());//block worker thread
-        Thread.sleep(2000);//block main thread
+        BeeTaskHandle handle = service.submit(new BlockTask());//park worker thread
+        Thread.sleep(2000);//park main thread
         handle.cancel(true);
 
         try {

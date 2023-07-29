@@ -45,7 +45,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
 
     /**
      * Inserts the specified element at the tail of this queue.
-     * As the queue is unbounded, this method will never block.
+     * As the queue is unbounded, this method will never park.
      *
      * @throws NullPointerException if the specified element is null
      */
@@ -79,7 +79,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
 
     /**
      * Inserts the specified element at the tail of this queue.
-     * As the queue is unbounded, this method will never block or
+     * As the queue is unbounded, this method will never park or
      * return {@code false}.
      *
      * @return {@code true} (as specified by

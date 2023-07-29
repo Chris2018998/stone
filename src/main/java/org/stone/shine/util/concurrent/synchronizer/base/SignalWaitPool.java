@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncWakeupPool;
+import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
@@ -21,7 +21,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
  * @author Chris Liao
  * @version 1.0
  */
-public class SignalWaitPool extends SyncWakeupPool {
+public class SignalWaitPool extends ThreadWaitingPool {
 
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.

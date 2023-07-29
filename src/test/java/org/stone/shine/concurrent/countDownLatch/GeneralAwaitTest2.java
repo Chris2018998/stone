@@ -34,7 +34,7 @@ public class GeneralAwaitTest2 extends TestCase {
         CountDownThread[] countDownThreads = new CountDownThread[count];
         for (int i = 0; i < count; i++) countDownThreads[i] = new CountDownThread(latch);
 
-        //2:create countWait threads and block them
+        //2:create countWait threads and park them
         GeneralAwaitThread[] waitThreads = new GeneralAwaitThread[count];
         for (int i = 0; i < count; i++) {
             waitThreads[i] = new GeneralAwaitThread(latch, "await", Global_Timeout, Global_TimeUnit);
@@ -44,7 +44,7 @@ public class GeneralAwaitTest2 extends TestCase {
         //3:crate count down threads
         for (int i = 0; i < count; i++) countDownThreads[i].start();
 
-        //4:block main thread
+        //4:park main thread
         latch.await();
 
         //5:count value should be zero

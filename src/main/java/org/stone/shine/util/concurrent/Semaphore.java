@@ -423,7 +423,7 @@ public class Semaphore {
      * Shrinks the number of available permits by the indicated
      * reduction. This method can be useful in subclasses that use
      * semaphores to track resources that become unavailable. This
-     * method differs from {@code acquireWithType} in that it does not block
+     * method differs from {@code acquireWithType} in that it does not park
      * waiting for permits to become available.
      *
      * @param reduction the number of permits to remove

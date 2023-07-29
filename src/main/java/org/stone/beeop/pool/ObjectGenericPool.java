@@ -46,7 +46,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private static final AtomicIntegerFieldUpdater<ObjectGenericPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectGenericPool.class, "poolState");
     private static final Logger Log = LoggerFactory.getLogger(ObjectGenericPool.class);
 
-    //clone block begin
+    //clone begin
     private final String poolHostIP;
     private final long poolThreadId;
     private final String poolThreadName;
@@ -69,7 +69,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private final ObjectHandleFactory handleFactory;
     private final KeyedObjectPool parentPool;
     private boolean printRuntimeLog;
-    //clone block end
+    //clone end
 
     //set in clone method
     private Object key;
@@ -321,7 +321,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                             parentPool.submitServantTask(this);
                         }
 
-                        LockSupport.parkNanos(t);//block exit:1:get transfer 2:timeout 3:interrupted
+                        LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
                         if (Thread.interrupted())
                             cause = new ObjectGetInterruptedException("Object get request interrupted in wait queue");
                     } else if (t <= 0L) {//timeout

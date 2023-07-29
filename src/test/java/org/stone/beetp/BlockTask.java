@@ -7,7 +7,7 @@
 package org.stone.beetp;
 
 /**
- * block task
+ * park task
  *
  * @author Chris Liao
  * @version 1.0

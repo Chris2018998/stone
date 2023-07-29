@@ -36,7 +36,7 @@ public class OneCountAwaitTest extends TestCase {
         CountDownThread[] countDownThreads = new CountDownThread[count];
         for (int i = 0; i < count; i++) countDownThreads[i] = new CountDownThread(latch);
 
-        //2:create countWait threads and block them
+        //2:create countWait threads and park them
         int waitCount = 1000;
         GeneralAwaitThread[] waitThreads = new GeneralAwaitThread[waitCount];
         for (int i = 0; i < waitCount; i++) {
@@ -47,7 +47,7 @@ public class OneCountAwaitTest extends TestCase {
         //3:crate count down threads
         for (int i = 0; i < count; i++) countDownThreads[i].start();
 
-        //4:block main thread
+        //4:park main thread
         latch.await();
 
         //5:count value should be zero
