@@ -39,12 +39,10 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
     //***********************************************wakeup configuration*********************************************//
     //wakeup next waiter on action success;
     private boolean wakeupNextOnSuccess;
-    //wakeup next waiter with same type
-    private boolean wakeupSameTypeOnSuccess;
     //wakeup next waiter on action failure(timeout,interrupted)
     private boolean wakeupNextOnFailure = true;
-    //wakeup next waiter with same type on
-    private boolean wakeupSameTypeOnFailure;
+    //wakeup next waiter with same type
+    private boolean wakeupSameType;
 
     //****************************************************************************************************************//
     //                                              1: constructors                                                   //
@@ -127,7 +125,7 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              4: wakeup configuration(8)                                        //
+    //                                              4: wakeup configuration(6)                                        //
     //****************************************************************************************************************//
     public boolean isWakeupNextOnSuccess() {
         return wakeupNextOnSuccess;
@@ -135,14 +133,6 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
 
     public void setWakeupNextOnSuccess(boolean wakeupNextOnSuccess) {
         this.wakeupNextOnSuccess = wakeupNextOnSuccess;
-    }
-
-    public boolean isWakeupSameTypeOnSuccess() {
-        return wakeupSameTypeOnSuccess;
-    }
-
-    public void setWakeupSameTypeOnSuccess(boolean wakeupSameTypeOnSuccess) {
-        this.wakeupSameTypeOnSuccess = wakeupSameTypeOnSuccess;
     }
 
     public boolean isWakeupNextOnFailure() {
@@ -153,12 +143,12 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
         this.wakeupNextOnFailure = wakeupNextOnFailure;
     }
 
-    public boolean isWakeupSameTypeOnFailure() {
-        return wakeupSameTypeOnFailure;
+    public boolean isWakeupSameType() {
+        return wakeupSameType;
     }
 
-    public void setWakeupSameTypeOnFailure(boolean wakeupSameTypeOnFailure) {
-        this.wakeupSameTypeOnFailure = wakeupSameTypeOnFailure;
+    public void setWakeupSameType(boolean wakeupSameType) {
+        this.wakeupSameType = wakeupSameType;
     }
 
     //****************************************************************************************************************//
@@ -173,8 +163,7 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
         this.supportInterrupted = true;
 
         this.wakeupNextOnFailure = true;
-        this.wakeupSameTypeOnFailure = false;
         this.wakeupNextOnSuccess = false;
-        this.wakeupSameTypeOnSuccess = false;
+        this.wakeupSameType = false;
     }
 }
