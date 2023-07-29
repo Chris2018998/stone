@@ -13,7 +13,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -28,7 +30,7 @@ public abstract class ThreadWaitingPool<E> {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          2: queue Methods(8)                                                   //
+    //                                          1: queue Methods(3)                                                   //
     //****************************************************************************************************************//
     protected final void appendNode(SyncNode node) {
         waitChain.offer(node);
@@ -44,73 +46,51 @@ public abstract class ThreadWaitingPool<E> {
         return node;
     }
 
+    //****************************************************************************************************************//
+    //                                          2: leave from pool(1)                                                 //
+    //****************************************************************************************************************//
+    protected final SyncNode leaveFromPool(SyncNode current, boolean wakeupOne, boolean fromHead, Object nodeType, Object toState) {
+        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
-//    //****************************************************************************************************************//
-//    //                                          1: static Methods(3)                                                  //
-//    //****************************************************************************************************************//
-//    private static SyncNode wakeupOne(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
-//        while (iterator.hasNext()) {
-//            SyncNode node = iterator.next();
-//            if (type != null && !objectEquals(type, node.type)) continue;
-//            if (casState(node, null, toState)) {
-//                unpark(node.thread);
-//                return node;
-//            }
-//        }
-//        return null;
-//    }
-//
-//    private static int wakeupAll(final Iterator<SyncNode> iterator, final Object toState, final Object type) {
-//        int count = 0;
-//        while (iterator.hasNext()) {
-//            SyncNode node = iterator.next();
-//            if (type != null && !objectEquals(type, node.type)) continue;
-//            if (casState(node, null, toState)) {
-//                unpark(node.thread);
-//                count++;
-//            }
-//        }
-//        return count;
-//    }
+        //1: remove current node(wakeup occurred by this)
+        if (current != null) {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (current == qNode) {
+                    iterator.remove();
+                    break;
+                }
+            }
+        }
 
-//    public final int wakeupAll() {
-//        return wakeupAll(waitChain.iterator(), SIGNAL, null);
-//    }
-//
-//    public final int wakeupAll(Object toState) {
-//        return wakeupAll(waitChain.iterator(), toState, null);
-//    }
-//
-//    public final int wakeupAll(Object toState, Object byType) {
-//        return wakeupAll(waitChain.iterator(), toState, byType);
-//    }
+        //2: need't wakeup one waiter,so return null
+        if (!wakeupOne) return null;
+
+        //3: retrieve type matched node and unpark its thread
+        if (nodeType == null) {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    return qNode;
+                }
+            }
+        } else {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (nodeType == qNode.type && casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    return qNode;
+                }
+            }
+        }
+
+        //4: not found matched node
+        return null;
+    }
 
     //****************************************************************************************************************//
-    //                                          4: Wakeup One                                                         //
-    //****************************************************************************************************************//
-    public final int wakeupOne() {
-        return wakeupOne(waitChain.iterator(), SIGNAL, null) != null ? 1 : 0;
-    }
-
-    public final int wakeupOne(Object toState) {
-        return wakeupOne(waitChain.iterator(), toState, null) != null ? 1 : 0;
-    }
-
-    public final int wakeupOne(Object toState, Object byType) {
-        return wakeupOne(waitChain.iterator(), toState, byType) != null ? 1 : 0;
-    }
-
-    public final int wakeupOne(boolean fromHead, Object toState, Object byType) {
-        return wakeupOne(fromHead ? waitChain.iterator() : waitChain.descendingIterator(), toState, byType) != null ? 1 : 0;
-    }
-
-    protected final SyncNode getWokenUpNode(boolean fromHead, Object toState, Object byType) {
-        return wakeupOne(fromHead ? waitChain.iterator() : waitChain.descendingIterator(), toState, byType);
-    }
-
-
-    //****************************************************************************************************************//
-    //                                         5: Monitor Methods(6)                                                  //
+    //                                         3: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
     protected final Iterator<SyncNode> ascendingIterator() {
         return waitChain.iterator();
