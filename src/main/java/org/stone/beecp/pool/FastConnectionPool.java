@@ -319,15 +319,19 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
         if (defaultAutoCommit == null && poolConfig.isEnableDefaultOnAutoCommit())
             defaultAutoCommit = rawCon.getAutoCommit();
+        if (defaultAutoCommit == null) defaultAutoCommit = Boolean.TRUE;
 
         //step2:get transactionIsolation default value
         Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
         if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnTransactionIsolation())
             defaultTransactionIsolation = rawCon.getTransactionIsolation();
+        if (defaultTransactionIsolation == null) defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
 
         //step3:get readOnly default value
         Boolean defaultReadOnly = poolConfig.isDefaultReadOnly();
-        if (defaultReadOnly == null && poolConfig.isEnableDefaultOnReadOnly()) defaultReadOnly = rawCon.isReadOnly();
+        if (defaultReadOnly == null && poolConfig.isEnableDefaultOnReadOnly())
+            defaultReadOnly = rawCon.isReadOnly();
+        if (defaultReadOnly == null) defaultReadOnly = Boolean.FALSE;
 
         //step4:get catalog default value
         String defaultCatalog = poolConfig.getDefaultCatalog();
@@ -403,20 +407,27 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //step9:create a pooled connection with some value,other pooled connection will copy it
         return new PooledConnection(
-                defaultAutoCommit,
-                defaultTransactionIsolation,
-                defaultReadOnly,
-                defaultCatalog,
-                defaultSchema,
-                defaultNetworkTimeout,
-                supportNetworkTimeoutInd,
-                networkTimeoutExecutor,
                 this,
-                poolConfig.isEnableDefaultOnCatalog(),
-                poolConfig.isEnableDefaultOnSchema(),
-                poolConfig.isEnableDefaultOnReadOnly(),
+                //1:defaultAutoCommit
                 poolConfig.isEnableDefaultOnAutoCommit(),
+                defaultAutoCommit,
+                //2:defaultTransactionIsolation
                 poolConfig.isEnableDefaultOnTransactionIsolation(),
+                defaultTransactionIsolation,
+                //3:defaultReadOnly
+                poolConfig.isEnableDefaultOnReadOnly(),
+                defaultReadOnly,
+                //4:defaultCatalog
+                poolConfig.isEnableDefaultOnCatalog(),
+                defaultCatalog,
+                //5:defaultCatalog
+                poolConfig.isEnableDefaultOnSchema(),
+                defaultSchema,
+                //6:defaultNetworkTimeout
+                supportNetworkTimeoutInd,
+                defaultNetworkTimeout,
+                networkTimeoutExecutor,
+                //7:others
                 poolConfig.getSqlExceptionCodeList(),
                 poolConfig.getSqlExceptionStateList());
     }

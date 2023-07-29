@@ -114,7 +114,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //default value set indicator on transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-
     /**
      * connection factory class,which is one implementation class of
      * 1:<class>RawConnectionFactory</class>
