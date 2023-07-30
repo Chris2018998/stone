@@ -10,10 +10,13 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitorConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.*;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Signal Wait Pool,caller try to get a signal from pool,if not get,then wait for it util timeout
@@ -30,37 +33,40 @@ public class SignalWaitPool extends ThreadWaitingPool {
      * @return true, if get a signal then return true,timeout return false
      * @throws InterruptedException exception from call or InterruptedException after thread park
      */
-    public final boolean doWait(ThreadSpinConfig config) throws InterruptedException {
+    public final boolean doWait(SyncVisitorConfig config) throws InterruptedException {
         //1:check call parameter
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
+        if (Thread.interrupted()) throw new InterruptedException();
 
-        //2:create wait node and offer to wait queue
-        final SyncNode node = config.getCasNode();
-        if (config.isOutsideOfWaitPool()) super.appendNode(node);
+        //2:offer to wait queue
+        SyncNode node = appendNode(config.getSyncNode());
 
         //3:get control parameters from config
-        final boolean throwsIE = config.isAllowThrowsIE();
-        final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadSpinParker parker = config.getThreadParkSupport();
+        boolean allowInterrupted = config.supportInterrupted();
+        ThreadParkSupport parkSupport = config.getParkSupport();
 
         //4:spin control
         try {
             do {
                 //4.1: read node state
-                Object state = node.getState();//any not null value regard as wakeup signal
-                if (state != null) return true;
+                Object signal = node.getState();//any not null value regard as wakeup signal
+                if (signal != null) {
+                    if (signal == TIMEOUT) return false;
+                    if (signal == INTERRUPTED) throw new InterruptedException();
+                    return true;
+                }
 
-                //4.2: timeout test
-                if (parker.isTimeout()) {
-                    //4.2.1: try cas state from null to TIMEOUT(more static states,@see{@link ThreadNodeState})then return false
-                    if (casState(node, null, TIMEOUT)) return false;
-                } else {
-                    //4.3: park current thread(lock condition need't wakeup other waiters in condition queue,because all waiters will move to syn queue)
-                    parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
+                //4.2: fail check
+                if (parkSupport.isTimeout()) {
+                    casState(node, signal, TIMEOUT);
+                } else if (parkSupport.isInterrupted() && allowInterrupted) {
+                    casState(node, signal, INTERRUPTED);
+                } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
+                    parkSupport.park();
                 }
             } while (true);
         } finally {
-            super.removeNode(node);
+            this.leaveFromPool(node, false, true, node.getType(), RUNNING);
         }
     }
 }

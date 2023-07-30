@@ -44,6 +44,7 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
     //wakeup next waiter with same type
     private boolean wakeupSameType;
 
+
     //****************************************************************************************************************//
     //                                              1: constructors                                                   //
     //****************************************************************************************************************//
@@ -116,7 +117,7 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
         return parkSupport;
     }
 
-    public boolean isSupportInterrupted() {
+    public boolean supportInterrupted() {
         return supportInterrupted;
     }
 

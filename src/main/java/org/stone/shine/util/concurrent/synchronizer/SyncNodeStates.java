@@ -20,9 +20,6 @@ public final class SyncNodeStates {
     //RUNNING
     public static final Object RUNNING = new Object();
 
-    //CALLED
-    public static final Object CANCELLED = new Object();
-
     //timeout
     public static final Object TIMEOUT = new Object();
 

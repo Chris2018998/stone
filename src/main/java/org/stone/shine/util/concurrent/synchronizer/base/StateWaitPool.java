@@ -20,14 +20,13 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
- * Expected state wait pool,which can be applied in ThreadPoolExecutor implementation
+ * Wait to get a expected state from pool
  *
  * @author Chris Liao
  * @version 1.0
  */
 
 public class StateWaitPool extends ThreadWaitingPool {
-
     //state validator
     private final ResultValidator validator;
 
@@ -40,56 +39,48 @@ public class StateWaitPool extends ThreadWaitingPool {
     }
 
     /**
-     * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
-     *
-     * @param config thread wait config
-     * @return true that the caller got a signal from other,false that the caller wait timeout in pool
+     * @param config Visitor config
+     * @return a expected state
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
     public final Object doWait(SyncVisitorConfig config) throws InterruptedException {
-        return doWait(validator, config);
+        return doWait(config, validator);
     }
 
     /**
      * try to wait for expected state in pool,if not get,then wait until a wakeup signal or wait timeout.
      *
-     * @param validator result call validator
-     * @param config    thread wait config
+     * @param config    Visitor config
+     * @param validator state validator
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object doWait(ResultValidator validator, SyncVisitorConfig config) throws InterruptedException {
-        //1:check
-        if (config == null) throw new IllegalArgumentException("wait config can't be null");
-        if (validator == null) throw new IllegalArgumentException("result validator can't be null");
+    public final Object doWait(SyncVisitorConfig config, ResultValidator validator) throws InterruptedException {
+        //1:config check
+        if (config == null) throw new IllegalArgumentException("Visitor Config can't be null");
+        if (validator == null) throw new IllegalArgumentException("State validator can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
 
-        //2:append to wait queue
-        SyncNode node = config.getSyncNode();
-        super.appendNode(node);
+        //2:offer to wait queue
+        SyncNode node = appendNode(config.getSyncNode());
 
         //3:get control parameters from config
-        boolean successGot = false;
-        boolean allowInterrupted = config.isSupportInterrupted();
+        boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
-        //3: spin control
+        //4: spin control（Logic from BeeCP）
         try {
             do {
-                //3.1: read node state
+                //4.1: read node state
                 Object state = node.getState();
-                //3.2: if state is not null,then test it
+                //4.2: if state is not null,then test it
                 if (state != null) {
-                    if (validator.isExpected(state)) {
-                        successGot = true;
-                        return state;
-                    }
-
                     if (state == TIMEOUT) return validator.resultOnTimeout();
                     if (state == INTERRUPTED) throw new InterruptedException();
+                    if (validator.isExpected(state)) return state;
                 }
 
-                //3.3: fail check
+                //4.3: fail check
                 if (parkSupport.isTimeout()) {
                     casState(node, state, TIMEOUT);
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
@@ -102,9 +93,7 @@ public class StateWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            boolean wakeupOne = successGot ? config.isWakeupNextOnSuccess() : config.isWakeupNextOnFailure();
-            Object nodeType = (wakeupOne && config.isWakeupSameType()) ? node.getType() : null;
-            super.leaveFromPool(node, wakeupOne, true, nodeType, RUNNING);
+            this.leaveFromPool(node, false, true, node.getType(), RUNNING);
         }
     }
 }
