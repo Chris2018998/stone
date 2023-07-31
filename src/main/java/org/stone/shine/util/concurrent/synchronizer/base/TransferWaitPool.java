@@ -10,7 +10,7 @@
 //package org.stone.shine.util.concurrent.synchronizer.base;
 //
 //import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-//import org.stone.shine.util.concurrent.synchronizer.SyncVisitorConfig;
+//import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 //import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 //
 //import java.util.Iterator;
@@ -59,7 +59,7 @@
 //        return false;
 //    }
 //
-//    public final boolean offer(E e, SyncVisitorConfig<E> config) {
+//    public final boolean offer(E e, SyncVisitConfig<E> config) {
 //        try {
 //            if (transfer(e, config)) return true;
 //        } catch (InterruptedException ex) {
@@ -79,7 +79,7 @@
 //    }
 //
 //    //transfer a object to waiter
-//    public final boolean transfer(E e, SyncVisitorConfig<E> config) throws InterruptedException {
+//    public final boolean transfer(E e, SyncVisitConfig<E> config) throws InterruptedException {
 //        if (e == null) throw new NullPointerException();
 //
 //        //step1: try to transfer
@@ -100,7 +100,7 @@
 //        return node != null ? node.getValue() : null;
 //    }
 //
-//    public final E get(SyncVisitorConfig<E> config) throws InterruptedException {
+//    public final E get(SyncVisitConfig<E> config) throws InterruptedException {
 //        //step1: try to get
 //        E e = tryGet();
 //        if (e != null) return e;
@@ -115,7 +115,7 @@
 //    //****************************************************************************************************************//
 //    //                                          4: core methods                                                       //
 //    //****************************************************************************************************************//
-//    private Object doWait(SyncVisitorConfig<E> config) throws InterruptedException {
+//    private Object doWait(SyncVisitConfig<E> config) throws InterruptedException {
 //        if (config == null) throw new IllegalArgumentException("wait config can't be null");
 //
 //        //1:create wait node and offer to wait queue

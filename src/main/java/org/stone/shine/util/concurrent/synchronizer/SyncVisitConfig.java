@@ -12,15 +12,13 @@ package org.stone.shine.util.concurrent.synchronizer;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Thread wait control parameter for wait pool,which is once-only use object
+ * synchronization Visit Config
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-public final class SyncVisitorConfig<E> implements java.io.Serializable {
-
-    //************************************************node configuration**********************************************//
+public final class SyncVisitConfig<E> implements java.io.Serializable {
     //node value
     private E nodeValue;
     //node type
@@ -30,37 +28,38 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
     //node object
     private SyncNode<E> syncNode;
 
-    //***********************************************park configuration**********************************************//
-    //park impl by LockSupport.park Methods
+    //***********************************************spin configuration***********************************************//
+    //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
     private ThreadParkSupport parkSupport;
-    //if interrupted then throws InterruptionException when this ind is true
+    //InterruptedException thrown ind
     private boolean supportInterrupted = true;
 
     //***********************************************wakeup configuration*********************************************//
-    //wakeup next waiter on action success;
+    //similar to AQS SHARED mode on acquisition success
     private boolean wakeupNextOnSuccess;
-    //wakeup next waiter on action failure(timeout,interrupted)
+    //store some node type
+    private Object wakeupNodeTypeOnSuccess;
+    //similar to AQS CANCELLED
     private boolean wakeupNextOnFailure = true;
-    //wakeup next waiter with same type
-    private boolean wakeupSameType;
-
+    //store some node type
+    private Object wakeupNodeTypeOnFailure;
 
     //****************************************************************************************************************//
     //                                              1: constructors                                                   //
     //****************************************************************************************************************//
-    public SyncVisitorConfig() {
+    public SyncVisitConfig() {
         this(0, null, null, false);
     }
 
-    public SyncVisitorConfig(long parkTime, TimeUnit timeUnit) {
+    public SyncVisitConfig(long parkTime, TimeUnit timeUnit) {
         this(parkTime, timeUnit, null, false);
     }
 
-    public SyncVisitorConfig(long parkTime, TimeUnit timeUnit, boolean isParkUtil) {
+    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, boolean isParkUtil) {
         this(parkTime, timeUnit, null, isParkUtil);
     }
 
-    public SyncVisitorConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isParkUtil) {
+    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isParkUtil) {
         if (parkTime > 0) {
             if (timeUnit == null) throw new IllegalArgumentException("time unit can't be null");
             if (isParkUtil) {
@@ -78,7 +77,9 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
         }
     }
 
-    //*************************************************node configuration*********************************************//
+    //****************************************************************************************************************//
+    //                                              2:node methods(3)                                                 //
+    //****************************************************************************************************************//
     public E getNodeValue() {
         return nodeValue;
     }
@@ -111,7 +112,7 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              4: park configuration(3)                                         //
+    //                                              3: spin configuration(3)                                         //
     //****************************************************************************************************************//
     public ThreadParkSupport getParkSupport() {
         return parkSupport;
@@ -136,6 +137,14 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
         this.wakeupNextOnSuccess = wakeupNextOnSuccess;
     }
 
+    public Object getWakeupNodeTypeOnSuccess() {
+        return wakeupNodeTypeOnSuccess;
+    }
+
+    public void setWakeupNodeTypeOnSuccess(Object wakeupNodeTypeOnSuccess) {
+        this.wakeupNodeTypeOnSuccess = wakeupNodeTypeOnSuccess;
+    }
+
     public boolean isWakeupNextOnFailure() {
         return wakeupNextOnFailure;
     }
@@ -144,16 +153,16 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
         this.wakeupNextOnFailure = wakeupNextOnFailure;
     }
 
-    public boolean isWakeupSameType() {
-        return wakeupSameType;
+    public Object getWakeupNodeTypeOnFailure() {
+        return wakeupNodeTypeOnFailure;
     }
 
-    public void setWakeupSameType(boolean wakeupSameType) {
-        this.wakeupSameType = wakeupSameType;
+    public void setWakeupNodeTypeOnFailure(Object wakeupNodeTypeOnFailure) {
+        this.wakeupNodeTypeOnFailure = wakeupNodeTypeOnFailure;
     }
 
     //****************************************************************************************************************//
-    //                                              5: SyncVisitorConfig reset                                        //
+    //                                              5: SyncVisitConfig reset                                          //
     //****************************************************************************************************************//
     public final void reset() {
         this.nodeValue = null;
@@ -165,6 +174,6 @@ public final class SyncVisitorConfig<E> implements java.io.Serializable {
 
         this.wakeupNextOnFailure = true;
         this.wakeupNextOnSuccess = false;
-        this.wakeupSameType = false;
+        this.wakeupNodeTypeOnSuccess = null;
     }
 }

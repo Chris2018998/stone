@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitorConfig;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
@@ -43,7 +43,7 @@ public class StateWaitPool extends ThreadWaitingPool {
      * @return a expected state
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object doWait(SyncVisitorConfig config) throws InterruptedException {
+    public final Object doWait(SyncVisitConfig config) throws InterruptedException {
         return doWait(config, validator);
     }
 
@@ -55,7 +55,7 @@ public class StateWaitPool extends ThreadWaitingPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object doWait(SyncVisitorConfig config, ResultValidator validator) throws InterruptedException {
+    public final Object doWait(SyncVisitConfig config, ResultValidator validator) throws InterruptedException {
         //1:config check
         if (config == null) throw new IllegalArgumentException("Visitor Config can't be null");
         if (validator == null) throw new IllegalArgumentException("State validator can't be null");
@@ -93,6 +93,7 @@ public class StateWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
+            //here:don't wakeup other
             this.leaveFromPool(node, false, true, node.getType(), RUNNING);
         }
     }

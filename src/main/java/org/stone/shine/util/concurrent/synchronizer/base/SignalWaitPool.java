@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitorConfig;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 
@@ -33,7 +33,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
      * @return true, if get a signal then return true,timeout return false
      * @throws InterruptedException exception from call or InterruptedException after thread park
      */
-    public final boolean doWait(SyncVisitorConfig config) throws InterruptedException {
+    public final boolean doWait(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
         if (config == null) throw new IllegalArgumentException("wait config can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
@@ -45,7 +45,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
         boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
-        //4:spin control
+        //4: spin control（Logic from BeeCP）
         try {
             do {
                 //4.1: read node state
@@ -66,6 +66,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
+            //here:don't wakeup other
             this.leaveFromPool(node, false, true, node.getType(), RUNNING);
         }
     }
