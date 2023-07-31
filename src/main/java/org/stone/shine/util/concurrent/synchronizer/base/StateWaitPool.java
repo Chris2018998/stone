@@ -94,7 +94,7 @@ public class StateWaitPool extends ThreadWaitingPool {
             } while (true);
         } finally {
             //here:don't wakeup other
-            this.leaveFromPool(node, false, true, node.getType(), RUNNING);
+            this.leaveFromWaitQueue(node, false, true, node.getType(), RUNNING);
         }
     }
 }

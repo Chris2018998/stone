@@ -48,9 +48,37 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     //****************************************************************************************************************//
-    //                                          2: leave from pool(1)                                                 //
+    //                                          3: wakeup(1)                                                          //
     //****************************************************************************************************************//
-    protected final SyncNode leaveFromPool(SyncNode current, boolean wakeup, boolean fromHead, Object nodeType, Object toState) {
+    protected final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
+        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
+
+        //2: retrieve type matched node and unpark its thread
+        if (nodeType == null) {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    return qNode;
+                }
+            }
+        } else {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (nodeType == qNode.type && casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    return qNode;
+                }
+            }
+        }
+        //3: not found matched node
+        return null;
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: leave from pool(1)                                                 //
+    //****************************************************************************************************************//
+    protected final SyncNode leaveFromWaitQueue(SyncNode current, boolean wakeup, boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //1: remove current node(wakeup occurred by this)
@@ -86,6 +114,7 @@ public abstract class ThreadWaitingPool<E> {
         //3: not found matched node
         return null;
     }
+
 
     //****************************************************************************************************************//
     //                                         3: Monitor Methods(6)                                                  //
