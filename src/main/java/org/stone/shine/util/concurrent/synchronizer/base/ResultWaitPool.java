@@ -84,22 +84,26 @@ public class ResultWaitPool extends ThreadWaitingPool {
         if (validator == null) throw new IllegalArgumentException("Result validator can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
 
-        //2:offer to wait queue
+        //2: execute call
+        Object result = call.call(arg);
+        if (validator.isExpected(result)) return result;
+
+        //3:offer to wait queue
         config.setNodeState(RUNNING);
         SyncNode node = appendAsWaitNode(config.getSyncNode());
 
-        //3:get control parameters from config
+        //4:get control parameters from config
         boolean success = false;
         boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
-        //4: spin control（Logic from BeeCP）
+        //5:spin control（Logic from BeeCP）
         try {
             do {
-                //4.1: read node state
+                //5.1: read node state
                 Object state = node.getState();
                 if (state == RUNNING) {
-                    Object result = call.call(arg);
+                    result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
                         return result;
@@ -108,7 +112,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 if (state == TIMEOUT) return validator.resultOnTimeout();
                 if (state == INTERRUPTED) throw new InterruptedException();
 
-                //4.3: fail check
+                //5.3: fail check
                 if (parkSupport.isTimeout()) {
                     casState(node, state, TIMEOUT);
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
