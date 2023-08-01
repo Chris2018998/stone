@@ -30,7 +30,7 @@ public abstract class ThreadWaitingPool<E> {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1: queue Methods(3)                                                   //
+    //                                          1: queue Methods(4)                                                   //
     //****************************************************************************************************************//
     protected final boolean removeNode(SyncNode node) {
         return waitChain.remove(node);
@@ -43,6 +43,10 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     protected final SyncNode appendAsWaitNode(Object state, Object type, E value) {
+        return appendAsWaitNode(new SyncNode<E>(state, type, value));
+    }
+
+    protected final SyncNode appendAsDataNode(Object state, Object type, E value) {
         SyncNode node = new SyncNode<E>(state, type, value);
         waitChain.offer(node);
         return node;
