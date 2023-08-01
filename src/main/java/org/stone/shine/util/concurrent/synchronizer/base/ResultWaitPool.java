@@ -67,8 +67,6 @@ public class ResultWaitPool extends ThreadWaitingPool {
     }
 
     /**
-     * execute the call inside pool and match its result with a validator,if passed the return result value;
-     * false then wait util other's wakeup to execute call again.
      *
      * @param call      executed in pool to get result
      * @param arg       call argument
