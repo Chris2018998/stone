@@ -70,11 +70,11 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * execute the call inside pool and match its result with a validator,if passed the return result value;
      * false then wait util other's wakeup to execute call again.
      *
-     * @param call      executed in pool to get result
-     * @param arg       call argument
-     * @param validator result call validator
-     * @param config    thread wait config
-     * @return object, if call result check passed by validator
+     * @param call executed in pool to get result
+     * @param arg  call argument
+     * @param config thread wait config
+     * @param validator result validatore
+     * @return passed result
      * @throws Exception exception from call or InterruptedException after thread park
      */
     public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config, ResultValidator validator) throws Exception {
