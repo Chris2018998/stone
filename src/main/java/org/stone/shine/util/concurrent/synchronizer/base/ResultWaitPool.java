@@ -66,17 +66,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         return this.doCall(call, arg, config, validator);
     }
 
-    /**
-     * execute the call inside pool and match its result with a validator,if passed the return result value;
-     * false then wait util other's wakeup to execute call again.
-     *
-     * @param call      executed in pool to get result
-     * @param arg       call argument
-     * @param validator result call validator
-     * @param config    thread wait config
-     * @return object, if call result check passed by validator
-     * @throws Exception exception from call or InterruptedException after thread park
-     */
+ 
     public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config, ResultValidator validator) throws Exception {
         //1:check call parameter
         if (call == null) throw new IllegalArgumentException("Result call can't be null");
