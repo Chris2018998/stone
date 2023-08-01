@@ -39,7 +39,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //2:offer to wait queue
-        SyncNode node = appendNode(config.getSyncNode());
+        SyncNode node = appendAsWaitNode(config.getSyncNode());
 
         //3:get control parameters from config
         boolean allowInterrupted = config.supportInterrupted();

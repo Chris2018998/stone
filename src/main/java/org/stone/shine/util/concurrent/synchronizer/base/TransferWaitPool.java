@@ -120,7 +120,7 @@
 //
 //        //1:create wait node and offer to wait queue
 //        SyncNode node = config.getCasNode();
-//        if (config.isOutsideOfWaitPool()) super.appendNode(node);
+//        if (config.isOutsideOfWaitPool()) super.appendAsWaitNode(node);
 //
 //        //2:get control parameters from config
 //        final boolean throwsIE = config.isAllowThrowsIE();

@@ -57,13 +57,12 @@ public class StateWaitPool extends ThreadWaitingPool {
      */
     public final Object doWait(SyncVisitConfig config, ResultValidator validator) throws InterruptedException {
         //1:config check
-        if (config == null) throw new IllegalArgumentException("Visitor Config can't be null");
+        if (config == null) throw new IllegalArgumentException("Visit config can't be null");
         if (validator == null) throw new IllegalArgumentException("State validator can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
 
         //2:offer to wait queue
-        SyncNode node = appendNode(config.getSyncNode());
-
+        SyncNode node = appendAsWaitNode(config.getSyncNode());
         //3:get control parameters from config
         boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();

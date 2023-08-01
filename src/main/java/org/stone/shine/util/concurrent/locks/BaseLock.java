@@ -387,7 +387,7 @@ class BaseLock implements Lock {
 
             //2:create a reusable node(why before unlock?)
             SyncNode conditionNode = config.getCasNode();
-            super.appendNode(conditionNode);
+            super.appendAsWaitNode(conditionNode);
 
             //3:full release(exclusive count should be zero):support full release for reentrant
             int holdCount = lockAction.getHoldCount();

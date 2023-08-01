@@ -10,11 +10,14 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.*;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * execute the call inside pool and match its result with a validator,if passed the return result value;
@@ -26,8 +29,6 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
 public class ResultWaitPool extends ThreadWaitingPool {
     //true,use fair mode
     private final boolean fair;
-
-
     //result validator(equals validator is default)
     private final ResultValidator validator;
 
@@ -61,8 +62,8 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @return object, if call result check passed by validator
      * @throws Exception exception from call or InterruptedException after thread park
      */
-    public final Object doCall(ResultCall call, Object arg, ThreadSpinConfig config) throws Exception {
-        return this.doCall(call, arg, validator, config);
+    public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
+        return this.doCall(call, arg, config, validator);
     }
 
     /**
@@ -76,52 +77,55 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @return object, if call result check passed by validator
      * @throws Exception exception from call or InterruptedException after thread park
      */
-    public final Object doCall(ResultCall call, Object arg, ResultValidator validator, ThreadSpinConfig config) throws Exception {
+    public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config, ResultValidator validator) throws Exception {
         //1:check call parameter
-        if (call == null) throw new IllegalArgumentException("result call can't be null");
-        if (config == null) throw new IllegalArgumentException("wait config can't be null");
-        if (validator == null) throw new IllegalArgumentException("result validator can't be null");
+        if (call == null) throw new IllegalArgumentException("Result call can't be null");
+        if (config == null) throw new IllegalArgumentException("Visit config can't be null");
+        if (validator == null) throw new IllegalArgumentException("Result validator can't be null");
+        if (Thread.interrupted()) throw new InterruptedException();
 
-        //2:try to execute call
-        if (config.isOutsideOfWaitPool()) {
-            if (!fair || !this.hasQueuedPredecessors()) {
-                Object result = call.call(arg);
-                if (validator.isExpected(result)) return result;
-            }
-            super.appendNode(config.getCasNode());
-        }
+        //2:offer to wait queue
+        config.setNodeState(RUNNING);
+        SyncNode node = appendAsWaitNode(config.getSyncNode());
 
-        //3:get wait node from config object
-        final SyncNode node = config.getCasNode();
+        //3:get control parameters from config
+        boolean success = false;
+        boolean allowInterrupted = config.supportInterrupted();
+        ThreadParkSupport parkSupport = config.getParkSupport();
 
-        //4:get control parameters from config
-        final boolean throwsIE = config.isAllowThrowsIE();
-        final boolean wakeupOtherOnIE = config.isTransferSignalOnIE();
-        final ThreadSpinParker parker = config.getThreadParkSupport();
-
-        //5:spin control
+        //4: spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: read node state
+                //4.1: read node state
                 Object state = node.getState();
-                if (state != null) {//init value of node is not null
+                if (state == RUNNING) {
                     Object result = call.call(arg);
-                    if (validator.isExpected(result)) return result;
+                    if (validator.isExpected(result)) {
+                        success = true;
+                        return result;
+                    }
                 }
+                if (state == TIMEOUT) return validator.resultOnTimeout();
+                if (state == INTERRUPTED) throw new InterruptedException();
 
-                //5.3: timeout test
-                if (parker.isTimeout()) {
-                    if (state != null || casState(node, state, TIMEOUT))
-                        return validator.resultOnTimeout();
+                //4.3: fail check
+                if (parkSupport.isTimeout()) {
+                    casState(node, state, TIMEOUT);
+                } else if (parkSupport.isInterrupted() && allowInterrupted) {
+                    casState(node, state, INTERRUPTED);
                 } else if (state != null) {
                     node.setState(null);
                     Thread.yield();
-                } else {
-                    parkNodeThread(node, parker, throwsIE, wakeupOtherOnIE);
+                } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
+                    parkSupport.park();
                 }
             } while (true);
         } finally {
-            super.removeNode(node);
+            if (success) {
+                this.leaveFromWaitQueue(node, config.isWakeupNextOnSuccess(), true, config.getWakeupNodeTypeOnSuccess(), RUNNING);
+            } else {
+                this.leaveFromWaitQueue(node, config.isWakeupNextOnFailure(), true, config.getWakeupNodeTypeOnFailure(), RUNNING);
+            }
         }
     }
 }
