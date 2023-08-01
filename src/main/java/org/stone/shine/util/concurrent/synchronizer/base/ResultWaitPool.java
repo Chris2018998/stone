@@ -84,7 +84,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         if (validator == null) throw new IllegalArgumentException("Result validator can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
 
-        //2: execute call
+        //2:execute call
         Object result = call.call(arg);
         if (validator.isExpected(result)) return result;
 
@@ -102,7 +102,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
             do {
                 //5.1: read node state
                 Object state = node.getState();
-                if (state == RUNNING) {
+                if (state == RUNNING) {//RUNNING is a signal
                     result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
