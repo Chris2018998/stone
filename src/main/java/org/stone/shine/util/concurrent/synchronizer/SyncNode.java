@@ -33,7 +33,7 @@ public final class SyncNode<E> {
         this.state = state;
     }
 
-    SyncNode(Object state, Object type, E value) {
+    public SyncNode(Object state, Object type, E value) {
         this.state = state;
         this.type = type;
         this.value = value;

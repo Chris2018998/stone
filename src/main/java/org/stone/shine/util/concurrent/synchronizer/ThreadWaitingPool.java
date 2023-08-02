@@ -32,21 +32,21 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          1: queue Methods(4)                                                   //
     //****************************************************************************************************************//
-    protected final boolean removeNode(SyncNode node) {
+    protected final boolean removeNode(SyncNode<E> node) {
         return waitChain.remove(node);
     }
 
-    protected final SyncNode appendAsWaitNode(SyncNode node) {
+    protected final SyncNode<E> appendAsWaitNode(SyncNode node) {
         node.setOwnerThread();
         waitChain.offer(node);
         return node;
     }
 
-    protected final SyncNode appendAsWaitNode(Object state, Object type, E value) {
+    protected final SyncNode<E> appendAsWaitNode(Object state, Object type, E value) {
         return appendAsWaitNode(new SyncNode<E>(state, type, value));
     }
 
-    protected final SyncNode appendAsDataNode(Object state, Object type, E value) {
+    protected final SyncNode<E> appendAsDataNode(Object state, Object type, E value) {
         SyncNode node = new SyncNode<E>(state, type, value);
         waitChain.offer(node);
         return node;

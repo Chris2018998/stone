@@ -78,7 +78,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     public final boolean tryTransfer(E e) {
         if (e == null) throw new NullPointerException();
-        return this.wakeupOne(fair, e, Node_Type_Get) != null;
+        return this.wakeupOne(fair, Node_Type_Get, e) != null;
     }
 
     //transfer a object to waiter
@@ -99,8 +99,9 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //                                          3: get methods                                                        //
     //****************************************************************************************************************//
     public final E tryGet() {
-        SyncNode<E> node = this.appendAsDataNode(null, Node_Type_Get, null);
-        return node != null ? node.getValue() : null;
+        SyncNode<E> node = new SyncNode<E>(null, Node_Type_Get, null);
+        SyncNode<E> wakeNode = this.wakeupOne(fair, Node_Type_Data, node);
+        return wakeNode != null ? wakeNode.getValue() : null;
     }
 
     public final E get(SyncVisitConfig<E> config) throws InterruptedException {
@@ -109,7 +110,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         if (e != null) return e;
 
         //step2:create wait node(then to wait)
-        config.setNodeInfo(Node_Type_Get, null);
+        config.setNodeType(Node_Type_Get);
 
         //step3:create wait node(then to wait)
         return (E) doWait(config);
