@@ -144,8 +144,8 @@ public final class CyclicBarrier {
             try {
                 //parameter zero means that passengers is in waiting hall(no ticket)
                 long curFlightNo = seatNo > 0 ? flightNo : 0;
-                config.setNodeType(curFlightNo);
-                config.setNodeValue(seatNo);
+                config.setNodeInfo(curFlightNo, seatNo);
+
                 if (!(boolean) waitPool.doCall(currentFlight, seatNo, config))
                     throw new TimeoutException();
 

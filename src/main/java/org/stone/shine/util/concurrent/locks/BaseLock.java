@@ -85,6 +85,7 @@ class BaseLock implements Lock {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(acquireType);
+
             config.setSupportInterrupted(false);
             if (acquireType == TYPE_SHARED) {
                 config.setWakeupNextOnSuccess(true);
