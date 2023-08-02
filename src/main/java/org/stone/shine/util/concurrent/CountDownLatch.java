@@ -43,8 +43,7 @@ public final class CountDownLatch implements ResultCall {
     public void await() throws InterruptedException {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
-            config.setWakeupNodeTypeOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(config.getNodeType());
+            config.setWakeupNextOnSuccess(true);
             waitPool.doCall(this, null, config);
         } catch (InterruptedException e) {
             throw e;
@@ -57,8 +56,7 @@ public final class CountDownLatch implements ResultCall {
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
             SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
-            config.setWakeupNodeTypeOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(config.getNodeType());
+            config.setWakeupNextOnSuccess(true);
             waitPool.doCall(this, null, config);
         } catch (InterruptedException e) {
             throw e;
