@@ -55,7 +55,7 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          2: wakeup(1)                                                          //
     //****************************************************************************************************************//
-    protected final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
+    public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread
@@ -80,6 +80,31 @@ public abstract class ThreadWaitingPool<E> {
         return null;
     }
 
+    public final int wakeupAll(boolean fromHead, Object nodeType, Object toState) {
+        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
+        int wakeupCount = 0;
+
+        //2: retrieve type matched node and unpark its thread
+        if (nodeType == null) {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    wakeupCount++;
+                }
+            }
+        } else {
+            while (iterator.hasNext()) {
+                SyncNode qNode = iterator.next();
+                if (nodeType == qNode.type && casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    wakeupCount++;
+                }
+            }
+        }
+        return wakeupCount;
+    }
+
     //****************************************************************************************************************//
     //                                          3: leave from pool(1)                                                 //
     //****************************************************************************************************************//
@@ -96,6 +121,7 @@ public abstract class ThreadWaitingPool<E> {
         }
 
         if (wakeup) {
+            iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
             //2: retrieve type matched node and unpark its thread
             if (nodeType == null) {
                 while (iterator.hasNext()) {

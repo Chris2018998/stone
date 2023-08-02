@@ -9,11 +9,13 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.extend;
 
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.SIGNAL;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 
 /**
  * resource wait pool
@@ -60,8 +62,12 @@ public class ResourceWaitPool {
         return callPool.hasQueuedThread(thread);
     }
 
-    public final int wakeupAll(Object nodeType) {
-        return callPool.wakeupAll(SIGNAL, nodeType);
+    public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
+        return callPool.wakeupOne(fromHead, nodeType, toState);
+    }
+
+    public final int wakeupAll(boolean fromHead, Object nodeType, Object toState) {
+        return callPool.wakeupAll(fromHead, nodeType, toState);
     }
 
     //****************************************************************************************************************//
@@ -72,7 +78,7 @@ public class ResourceWaitPool {
     }
 
     //acquireWithType
-    public final boolean acquire(ResourceAction action, int size, ThreadSpinConfig config) throws InterruptedException {
+    public final boolean acquire(ResourceAction action, int size, SyncVisitConfig config) throws InterruptedException {
         try {
             return (boolean) callPool.doCall(action, size, config);
         } catch (InterruptedException e) {
@@ -87,7 +93,7 @@ public class ResourceWaitPool {
     //release
     public final boolean release(ResourceAction action, int size) {
         if (action.tryRelease(size)) {
-            callPool.wakeupOne();
+            callPool.wakeupOne(true, null, RUNNING);
             return true;
         }
         return false;

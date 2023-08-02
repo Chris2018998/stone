@@ -10,6 +10,8 @@
 package org.stone.shine.util.concurrent.locks;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
@@ -19,6 +21,8 @@ import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+
+import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
 /**
  * Lock super class(ReentrantLock,WriteLockImpl,ReadLockImpl)
@@ -80,9 +84,13 @@ class BaseLock implements Lock {
      */
     public void lock() {
         try {
-            ThreadSpinConfig config = new ThreadSpinConfig();
+            SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(acquireType);
-            config.allowThrowsIE(false);
+            config.setSupportInterrupted(false);
+            if (acquireType == TYPE_SHARED) {
+                config.setWakeupNextOnSuccess(true);
+                config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            }
             waitPool.acquire(lockAction, 1, config);
         } catch (Exception e) {
             //do nothing
@@ -136,8 +144,13 @@ class BaseLock implements Lock {
      *                              of lock acquisition is supported)
      */
     public void lockInterruptibly() throws InterruptedException {
-        ThreadSpinConfig config = new ThreadSpinConfig();
+        SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(acquireType);
+        config.setSupportInterrupted(true);
+        if (acquireType == TYPE_SHARED) {
+            config.setWakeupNextOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+        }
         waitPool.acquire(lockAction, 1, config);
     }
 
@@ -230,8 +243,13 @@ class BaseLock implements Lock {
      *                              acquisition is supported)
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        ThreadSpinConfig config = new ThreadSpinConfig(time, unit);
+        SyncVisitConfig config = new SyncVisitConfig(time, unit);
         config.setNodeType(acquireType);
+        config.setSupportInterrupted(true);
+        if (acquireType == TYPE_SHARED) {
+            config.setWakeupNextOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+        }
         return waitPool.acquire(lockAction, 1, config);
     }
 
@@ -348,13 +366,13 @@ class BaseLock implements Lock {
         }
 
         public void await() throws InterruptedException {
-            this.doAwait(new ThreadSpinConfig());
+            this.doAwait(new SyncVisitConfig());
         }
 
         public void awaitUninterruptibly() {
             try {
-                ThreadSpinConfig config = new ThreadSpinConfig();
-                config.allowThrowsIE(false);
+                SyncVisitConfig config = new SyncVisitConfig();
+                config.setSupportInterrupted(false);
                 this.doAwait(config);
             } catch (InterruptedException e) {
                 //in fact,InterruptedException never throws here
@@ -362,26 +380,26 @@ class BaseLock implements Lock {
         }
 
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
-            ThreadSpinConfig config = new ThreadSpinConfig(nanosTimeout, TimeUnit.NANOSECONDS);
+            SyncVisitConfig config = new SyncVisitConfig(nanosTimeout, TimeUnit.NANOSECONDS);
             this.doAwait(config);
-            return config.getThreadParkSupport().getRemainTime();
+            return config.getParkSupport().getRemainTime();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
-            ThreadSpinConfig config = new ThreadSpinConfig(time, unit);
+            SyncVisitConfig config = new SyncVisitConfig(time, unit);
             this.doAwait(config);
-            return config.getThreadParkSupport().isTimeout();
+            return config.getParkSupport().isTimeout();
         }
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
-            ThreadSpinConfig config = new ThreadSpinConfig(deadline.getTime());
+            SyncVisitConfig config = new SyncVisitConfig(deadline.getTime(), TimeUnit.MILLISECONDS, true);
             this.doAwait(config);
-            return config.getThreadParkSupport().isTimeout();
+            return config.getParkSupport().isTimeout();
         }
 
         //do await
-        private void doAwait(ThreadSpinConfig config) throws InterruptedException {
+        private void doAwait(SyncVisitConfig config) throws InterruptedException {
             //1:condition wait under current thread must hold the lock
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
@@ -406,7 +424,7 @@ class BaseLock implements Lock {
             //5:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             conditionNode.setState(null);
             conditionNode.setType(AcquireTypes.TYPE_EXCLUSIVE);
-            ThreadSpinConfig lockConfig = new ThreadSpinConfig();
+            SyncVisitConfig lockConfig = new SyncVisitConfig();
             lockConfig.setCasNode(conditionNode);
             lock.waitPool.acquire(lockAction, holdCount, lockConfig);//restore hold size before unlock
 
@@ -416,12 +434,12 @@ class BaseLock implements Lock {
 
         public void signal() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            super.wakeupOne();//node wait(step2) in the doAwait method
+            super.wakeupOne(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            int count = super.wakeupAll();//node wait(step2) in the doAwait method
+            int count = super.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
     }
 }

@@ -80,6 +80,10 @@ public class ThreadParkSupport {
         return deadlineNanos;
     }
 
+    public final long getRemainTime() {
+        return deadlineNanos - System.nanoTime();
+    }
+
     public final boolean isTimeout() {
         return parkNanos <= 0;
     }

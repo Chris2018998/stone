@@ -67,11 +67,10 @@ public class ResultWaitPool extends ThreadWaitingPool {
     }
 
     /**
-     *
      * @param call      executed in pool to get result
      * @param arg       call argument
      * @param config    thread wait config
-     * @param validator result validatore
+     * @param validator result validator
      * @return passed result
      * @throws Exception exception from call or InterruptedException after thread park
      */

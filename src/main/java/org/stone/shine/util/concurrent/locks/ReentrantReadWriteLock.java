@@ -16,6 +16,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+
 /**
  * ReadWrite Lock Implementation
  *
@@ -220,7 +222,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 holdCounter.holdCount++;
 
                 //first read head then wakeup others wait in share node
-                if (sharedCount == 1) waitPool.wakeupAll(AcquireTypes.TYPE_SHARED);
+                if (sharedCount == 1) waitPool.wakeupOne(true, AcquireTypes.TYPE_SHARED, RUNNING);
                 return true;
             }
             return false;
