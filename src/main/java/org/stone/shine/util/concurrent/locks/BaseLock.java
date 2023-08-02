@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
@@ -403,29 +402,29 @@ class BaseLock implements Lock {
             //1:condition wait under current thread must hold the lock
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
 
-            //2:create a reusable node(why before unlock?)
-            SyncNode conditionNode = config.getCasNode();
-            super.appendAsWaitNode(conditionNode);
-
-            //3:full release(exclusive count should be zero):support full release for reentrant
+            //2:full release(exclusive count should be zero):support full release for reentrant
             int holdCount = lockAction.getHoldCount();
             lock.waitPool.release(lockAction, holdCount);
+
+            //3:create a reusable node(why before unlock?)
+            //SyncNode conditionNode = super.appendAsWaitNode(config.getSyncNode());
 
             //4:execute condition waiting
             InterruptedException waitInterruptedException = null;
             try {
                 //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
-                config.setOutsideOfWaitPool(false);
+                //config.setOutsideOfWaitPool(false);
                 super.doWait(config);
             } catch (InterruptedException e) {
                 waitInterruptedException = e;
             }
 
             //5:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
-            conditionNode.setState(null);
-            conditionNode.setType(AcquireTypes.TYPE_EXCLUSIVE);
+            //conditionNode.setState(null);
+            //conditionNode.setType(AcquireTypes.TYPE_EXCLUSIVE);
             SyncVisitConfig lockConfig = new SyncVisitConfig();
-            lockConfig.setCasNode(conditionNode);
+            lockConfig.setNodeType(AcquireTypes.TYPE_EXCLUSIVE);
+            //lockConfig.setSyncNode(conditionNode);
             lock.waitPool.acquire(lockAction, holdCount, lockConfig);//restore hold size before unlock
 
             //6:throw occurred interrupt exception on condition wait

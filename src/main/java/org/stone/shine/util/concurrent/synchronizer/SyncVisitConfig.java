@@ -111,6 +111,10 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         return this.syncNode;
     }
 
+    public final void setSyncNode(SyncNode syncNode) {
+        this.syncNode = syncNode;
+    }
+
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                         //
     //****************************************************************************************************************//

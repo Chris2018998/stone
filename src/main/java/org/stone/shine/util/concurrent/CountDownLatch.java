@@ -9,6 +9,8 @@
  */
 package org.stone.shine.util.concurrent;
 
+import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
@@ -40,7 +42,10 @@ public final class CountDownLatch implements ResultCall {
     //wait without parkTime
     public void await() throws InterruptedException {
         try {
-            waitPool.doCall(this, null, new ThreadSpinConfig());
+            SyncVisitConfig config = new SyncVisitConfig();
+            config.setWakeupNodeTypeOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(config.getNodeType());
+            waitPool.doCall(this, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -51,7 +56,10 @@ public final class CountDownLatch implements ResultCall {
     //true means all programs over
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
-            waitPool.doCall(this, null, new ThreadSpinConfig(timeout, unit));
+            SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
+            config.setWakeupNodeTypeOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(config.getNodeType());
+            waitPool.doCall(this, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -69,7 +77,8 @@ public final class CountDownLatch implements ResultCall {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) waitPool.wakeupAll();//the last item over,then notify all waiters(runnable)to leave
+                if (c == 1)
+                    waitPool.wakeupOne(true, null, SyncNodeStates.RUNNING);//the last item over,then notify all waiters(runnable)to leave
                 return;
             }
         } while (true);

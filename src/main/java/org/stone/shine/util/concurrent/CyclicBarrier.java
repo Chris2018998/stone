@@ -9,6 +9,8 @@
  */
 package org.stone.shine.util.concurrent;
 
+import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
@@ -16,8 +18,6 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.SIGNAL;
 
 /**
  * @author Chris Liao
@@ -97,18 +97,18 @@ public final class CyclicBarrier {
     //****************************************************************************************************************//
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
-            return doAwait(new ThreadSpinConfig());
+            return doAwait(new SyncVisitConfig());
         } catch (TimeoutException e) {
             throw new Error(e);
         }
     }
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
-        return doAwait(new ThreadSpinConfig(timeout, unit));
+        return doAwait(new SyncVisitConfig(timeout, unit));
     }
 
     //await implement,return board ticket no(seat no)
-    private int doAwait(ThreadSpinConfig config) throws InterruptedException, BrokenBarrierException, TimeoutException {
+    private int doAwait(SyncVisitConfig config) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //hall passengers can continue here for next trip
@@ -119,7 +119,7 @@ public final class CyclicBarrier {
             int seatNo = currentFlight.buyFlightTicket();//range[1 -- seatSize],0 means that not got a ticket
             if (seatNo == seatSize) {//the last passenger coming
                 //wakeup other passengers in room(in sleeping)
-                waitPool.wakeupAll(SIGNAL, flightNo);
+                waitPool.wakeupAll(true, flightNo, SyncNodeStates.RUNNING);
                 if (!currentFlight.compareAndSetState(State_Open, State_Flying))//flying state change failed,means flight cancelled
                     throw new BrokenBarrierException();
 
@@ -136,7 +136,7 @@ public final class CyclicBarrier {
 
                 //new flight set:begin
                 this.generationFlight = new GenerationFlight(seatSize);
-                waitPool.wakeupAll(SIGNAL, 0);//wakeup hall passengers to buy ticket of next trip
+                waitPool.wakeupAll(true, 0, SyncNodeStates.RUNNING);//wakeup hall passengers to buy ticket of next trip
                 return seatNo;
             }
 
@@ -144,7 +144,8 @@ public final class CyclicBarrier {
             try {
                 //parameter zero means that passengers is in waiting hall(no ticket)
                 long curFlightNo = seatNo > 0 ? flightNo : 0;
-                config.setNodeValue(curFlightNo, seatNo);
+                config.setNodeType(curFlightNo);
+                config.setNodeValue(seatNo);
                 if (!(boolean) waitPool.doCall(currentFlight, seatNo, config))
                     throw new TimeoutException();
 
@@ -157,7 +158,7 @@ public final class CyclicBarrier {
                     int state = currentFlight.getState();
                     if (state == State_Flying || state == State_Arrived) return seatNo;
                     if (state == State_Open && currentFlight.compareAndSetState(state, State_Cancelled)) {
-                        waitPool.wakeupAll();
+                        waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                     }
                 }
 
@@ -184,7 +185,7 @@ public final class CyclicBarrier {
             return true;
         } else if (state == State_Open) {//reset boarding to new
             if (currentFlight.compareAndSetState(State_Open, State_Cancelled)) {
-                waitPool.wakeupAll();
+                waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                 this.generationFlight = new GenerationFlight(seatSize);
                 return true;
             } else {

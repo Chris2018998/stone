@@ -50,7 +50,7 @@ public final class SyncNode<E> {
         return type;
     }
 
-    final void setType(Object type) {
+    public final void setType(Object type) {
         this.type = type;
     }
 
