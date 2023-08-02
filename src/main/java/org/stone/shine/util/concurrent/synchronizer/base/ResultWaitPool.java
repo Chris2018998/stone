@@ -109,7 +109,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 if (state == TIMEOUT) return validator.resultOnTimeout();
                 if (state == INTERRUPTED) throw new InterruptedException();
 
-                //5.3: fail check
+                //5.2: fail check
                 if (parkSupport.isTimeout()) {
                     casState(node, state, TIMEOUT);
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
