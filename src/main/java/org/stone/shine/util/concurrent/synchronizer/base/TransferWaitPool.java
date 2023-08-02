@@ -146,12 +146,9 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
 
                 //4.3: fail check
                 if (parkSupport.isTimeout()) {
-                    casState(node, state, TIMEOUT);
+                    casState(node, null, TIMEOUT);
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
-                    casState(node, state, INTERRUPTED);
-                } else if (state != null) {
-                    node.setState(null);
-                    Thread.yield();
+                    casState(node, null, INTERRUPTED);
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
                     parkSupport.park();
                 }
