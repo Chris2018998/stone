@@ -53,7 +53,7 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     //****************************************************************************************************************//
-    //                                          2: wakeup(1)                                                          //
+    //                                          2: wakeup(2)                                                          //
     //****************************************************************************************************************//
     public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
