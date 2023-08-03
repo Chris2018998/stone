@@ -186,5 +186,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.wakeupNextOnFailure = true;
         this.wakeupNextOnSuccess = false;
         this.wakeupNodeTypeOnSuccess = null;
+        this.wakeupNodeTypeOnFailure = null;
     }
 }

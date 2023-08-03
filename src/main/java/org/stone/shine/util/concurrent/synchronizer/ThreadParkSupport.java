@@ -9,9 +9,9 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 import static java.util.concurrent.locks.LockSupport.parkUntil;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
@@ -78,10 +78,6 @@ public class ThreadParkSupport {
 
     public final long getDeadlineNanos() {
         return deadlineNanos;
-    }
-
-    public final long getRemainTime() {
-        return deadlineNanos - System.nanoTime();
     }
 
     public final boolean isTimeout() {
@@ -186,17 +182,18 @@ public class ThreadParkSupport {
         UtilMillsParkSupport1(long deadline) {
             this.timePark = true;
             this.deadlineMillis = deadline;
-            this.deadlineNanos = TimeUnit.MILLISECONDS.toNanos(deadlineMillis);//nanoseconds
+            this.deadlineNanos = MILLISECONDS.toNanos(deadlineMillis);//nanoseconds
         }
 
         public final long computeParkNanos() {
-            return this.parkNanos = deadlineNanos - System.nanoTime();
+            return this.parkNanos = MILLISECONDS.toNanos(deadlineMillis - System.currentTimeMillis());
         }
 
         public boolean park() {
             parkUntil(deadlineMillis);
             return interrupted = Thread.interrupted();
         }
+
 
         public String toString() {
             return "Implementation with method 'parkUntil(milliseconds)'";

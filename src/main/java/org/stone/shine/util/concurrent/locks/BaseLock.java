@@ -85,7 +85,6 @@ class BaseLock implements Lock {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(acquireType);
-
             config.setSupportInterrupted(false);
             if (acquireType == TYPE_SHARED) {
                 config.setWakeupNextOnSuccess(true);
@@ -146,7 +145,6 @@ class BaseLock implements Lock {
     public void lockInterruptibly() throws InterruptedException {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(acquireType);
-        config.setSupportInterrupted(true);
         if (acquireType == TYPE_SHARED) {
             config.setWakeupNextOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
@@ -245,7 +243,6 @@ class BaseLock implements Lock {
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig config = new SyncVisitConfig(time, unit);
         config.setNodeType(acquireType);
-        config.setSupportInterrupted(true);
         if (acquireType == TYPE_SHARED) {
             config.setWakeupNextOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
@@ -382,7 +379,7 @@ class BaseLock implements Lock {
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
             SyncVisitConfig config = new SyncVisitConfig(nanosTimeout, TimeUnit.NANOSECONDS);
             this.doAwait(config);
-            return config.getParkSupport().getRemainTime();
+            return config.getParkSupport().getParkNanos();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {
@@ -407,29 +404,21 @@ class BaseLock implements Lock {
             int holdCount = lockAction.getHoldCount();
             lock.waitPool.release(lockAction, holdCount);
 
-            //3:create a reusable node(why before unlock?)
-            //SyncNode conditionNode = super.appendAsWaitNode(config.getSyncNode());
-
-            //4:execute condition waiting
-            InterruptedException waitInterruptedException = null;
+            //3:waiting on condition
+            InterruptedException conditionIE = null;
             try {
-                //occurred InterruptedException,just caught it and not send the wakeup-signal to other waiter
-                //config.setOutsideOfWaitPool(false);
                 super.doWait(config);
             } catch (InterruptedException e) {
-                waitInterruptedException = e;
+                conditionIE = e;
             }
 
-            //5:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
-            //conditionNode.setState(null);
-            //conditionNode.setType(AcquireTypes.TYPE_EXCLUSIVE);
+            //4:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             SyncVisitConfig lockConfig = new SyncVisitConfig();
             lockConfig.setNodeType(AcquireTypes.TYPE_EXCLUSIVE);
-            //lockConfig.setSyncNode(conditionNode);
             lock.waitPool.acquire(lockAction, holdCount, lockConfig);//restore hold size before unlock
 
-            //6:throw occurred interrupt exception on condition wait
-            if (waitInterruptedException != null) throw waitInterruptedException;
+            //5:throw occurred interrupt exception on condition wait
+            if (conditionIE != null) throw conditionIE;
         }
 
         public void signal() {
@@ -439,7 +428,7 @@ class BaseLock implements Lock {
 
         public void signalAll() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            int count = super.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
+            super.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
     }
 }
