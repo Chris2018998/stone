@@ -82,8 +82,10 @@ public class ResultWaitPool extends ThreadWaitingPool {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //2:execute call
-        Object result = call.call(arg);
-        if (validator.isExpected(result)) return result;
+        if (!fair || !this.hasQueuedPredecessors()) {
+            Object result = call.call(arg);
+            if (validator.isExpected(result)) return result;
+        }
 
         //3:offer to wait queue
         config.setNodeState(RUNNING);
@@ -100,7 +102,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 //5.1: read node state
                 Object state = node.getState();
                 if (state == RUNNING) {//RUNNING is a signal
-                    result = call.call(arg);
+                    Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
                         return result;

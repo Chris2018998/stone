@@ -136,6 +136,8 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
                 //3.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
                 if (state != null) {//wokenUp
+                    if (state == TIMEOUT) return null;
+                    if (state == INTERRUPTED) throw new InterruptedException();
                     if (node.getType() == Node_Type_Data) {
                         return node;//that means transferred object has been got by other
                     } else {//state==Node_Type_Get

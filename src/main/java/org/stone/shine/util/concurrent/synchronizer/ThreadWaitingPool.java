@@ -32,18 +32,14 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          1: queue Methods(4)                                                   //
     //****************************************************************************************************************//
-    protected final boolean removeNode(SyncNode<E> node) {
-        return waitChain.remove(node);
+    protected final void removeNode(SyncNode<E> node) {
+        waitChain.remove(node);
     }
 
     protected final SyncNode<E> appendAsWaitNode(SyncNode node) {
         node.setOwnerThread();
         waitChain.offer(node);
         return node;
-    }
-
-    protected final SyncNode<E> appendAsWaitNode(Object state, Object type, E value) {
-        return appendAsWaitNode(new SyncNode<E>(state, type, value));
     }
 
     protected final SyncNode<E> appendAsDataNode(Object state, Object type, E value) {
@@ -81,8 +77,8 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     public final int wakeupAll(boolean fromHead, Object nodeType, Object toState) {
-        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
         int wakeupCount = 0;
+        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread
         if (nodeType == null) {
