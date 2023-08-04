@@ -91,7 +91,7 @@ public class StateWaitPool extends ThreadWaitingPool {
                     node.setState(null);
                     Thread.yield();
                 } else if (spins > 0) {
-                    spins--;
+                    --spins;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
                     parkSupport.park();
                 }

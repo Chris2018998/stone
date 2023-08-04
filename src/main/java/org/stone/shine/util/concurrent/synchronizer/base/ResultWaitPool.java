@@ -21,8 +21,8 @@ import static org.stone.tools.CommonUtil.maxTimedSpins;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
- * execute the call inside pool and match its result with a validator,if passed the return result value;
- * false then wait util other's wakeup to execute call again.
+ * Core Desc: Do some thing(execute result call),if success,return directly, but if failed,
+ * then wait util other's wakeup to continue doing the same thing.
  *
  * @author Chris Liao
  * @version 1.0
@@ -104,7 +104,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 //5.1: read node state
                 Object state = node.getState();
                 if (state != null) {
-                    if (state == RUNNING) {//RUNNING is a signal
+                    if (state == RUNNING) {//RUNNING is a signal of wakeup
                         Object result = call.call(arg);
                         if (validator.isExpected(result)) {
                             success = true;
@@ -125,7 +125,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                     node.setState(null);
                     Thread.yield();
                 } else if (spins > 0) {
-                    spins--;
+                    --spins;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
                     parkSupport.park();
                 }
