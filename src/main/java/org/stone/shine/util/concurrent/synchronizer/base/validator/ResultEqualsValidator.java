@@ -9,6 +9,8 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base.validator;
 
+import org.stone.shine.util.concurrent.synchronizer.base.ResultValidator;
+
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -18,6 +20,8 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 public final class ResultEqualsValidator extends EquivalentValidator {
+    //default validator
+    public static final ResultValidator BOOL_EQU_VALIDATOR = new ResultEqualsValidator(true, false);
 
     public ResultEqualsValidator(Object compareValue) {
         super(compareValue);
