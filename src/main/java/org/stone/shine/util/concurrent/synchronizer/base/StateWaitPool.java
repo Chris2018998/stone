@@ -74,9 +74,9 @@ public class StateWaitPool extends ThreadWaitingPool {
                 Object state = node.getState();
                 //4.2: if state is not null,then test it
                 if (state != null) {
+                    if (validator.isExpected(state)) return state;
                     if (state == TIMEOUT) return validator.resultOnTimeout();
                     if (state == INTERRUPTED) throw new InterruptedException();
-                    if (validator.isExpected(state)) return state;
                 }
 
                 //4.3: fail check

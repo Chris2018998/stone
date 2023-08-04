@@ -27,6 +27,8 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * @version 1.0
  */
 public class ResultWaitPool extends ThreadWaitingPool {
+    //default validator
+    private static final ResultValidator DEF_VALIDATOR = new ResultEqualsValidator(true, false);
     //true,use fair mode
     private final boolean fair;
     //result validator(equals validator is default)
@@ -36,11 +38,11 @@ public class ResultWaitPool extends ThreadWaitingPool {
     //                                          1: constructors(3)                                                    //
     //****************************************************************************************************************//
     public ResultWaitPool() {
-        this(false);
+        this(false, DEF_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair) {
-        this(fair, new ResultEqualsValidator(true, false));
+        this(fair, DEF_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
@@ -88,7 +90,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:offer to wait queue
-        config.setNodeState(RUNNING);
+        config.setNodeInitState(RUNNING);
         SyncNode node = appendAsWaitNode(config.getSyncNode());
 
         //4:get control parameters from config
@@ -101,15 +103,18 @@ public class ResultWaitPool extends ThreadWaitingPool {
             do {
                 //5.1: read node state
                 Object state = node.getState();
-                if (state == RUNNING) {//RUNNING is a signal
-                    Object result = call.call(arg);
-                    if (validator.isExpected(result)) {
-                        success = true;
-                        return result;
-                    }
+                if (state != null) {
+                    if (state == RUNNING) {//RUNNING is a signal
+                        Object result = call.call(arg);
+                        if (validator.isExpected(result)) {
+                            success = true;
+                            return result;
+                        }
+                    } else if (state == TIMEOUT)
+                        return validator.resultOnTimeout();
+                    else if (state == INTERRUPTED)
+                        throw new InterruptedException();
                 }
-                if (state == TIMEOUT) return validator.resultOnTimeout();
-                if (state == INTERRUPTED) throw new InterruptedException();
 
                 //5.2: fail check
                 if (parkSupport.isTimeout()) {
@@ -124,11 +129,10 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            if (success) {
+            if (success)
                 this.leaveFromWaitQueue(node, config.isWakeupNextOnSuccess(), true, config.getWakeupNodeTypeOnSuccess(), RUNNING);
-            } else {
+            else
                 this.leaveFromWaitQueue(node, config.isWakeupNextOnFailure(), true, config.getWakeupNodeTypeOnFailure(), RUNNING);
-            }
         }
     }
 }

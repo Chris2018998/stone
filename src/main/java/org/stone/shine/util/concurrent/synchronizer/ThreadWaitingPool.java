@@ -30,7 +30,7 @@ public abstract class ThreadWaitingPool<E> {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1: queue Methods(4)                                                   //
+    //                                          1: queue Methods(3)                                                   //
     //****************************************************************************************************************//
     protected final void removeNode(SyncNode<E> node) {
         waitChain.remove(node);
@@ -43,7 +43,7 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     protected final SyncNode<E> appendAsDataNode(Object state, Object type, E value) {
-        SyncNode node = new SyncNode<E>(state, type, value);
+        SyncNode<E> node = new SyncNode<E>(state, type, value);
         waitChain.offer(node);
         return node;
     }
@@ -105,39 +105,38 @@ public abstract class ThreadWaitingPool<E> {
     //                                          3: leave from pool(1)                                                 //
     //****************************************************************************************************************//
     protected final SyncNode leaveFromWaitQueue(SyncNode current, boolean wakeup, boolean fromHead, Object nodeType, Object toState) {
-        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
+        Iterator<SyncNode> iterator = fromHead ? this.waitChain.iterator() : this.waitChain.descendingIterator();
 
         //1: remove current node(wakeup occurred by this)
+        SyncNode qNode;
         while (iterator.hasNext()) {
-            SyncNode qNode = iterator.next();
+            qNode = iterator.next();
             if (current == qNode) {
                 iterator.remove();
                 break;
             }
         }
+        if (!wakeup) return null;
 
-        if (wakeup) {
-            iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
-            //2: retrieve type matched node and unpark its thread
-            if (nodeType == null) {
-                while (iterator.hasNext()) {
-                    SyncNode qNode = iterator.next();
-                    if (casState(qNode, null, toState)) {
-                        LockSupport.unpark(qNode.thread);
-                        return qNode;
-                    }
+        //2: retrieve type matched node and unpark its thread
+        iterator = this.waitChain.iterator();
+        if (nodeType == null) {
+            while (iterator.hasNext()) {
+                qNode = iterator.next();
+                if (SyncNodeUpdater.casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    return qNode;
                 }
-            } else {
-                while (iterator.hasNext()) {
-                    SyncNode qNode = iterator.next();
-                    if (nodeType == qNode.type && casState(qNode, null, toState)) {
-                        LockSupport.unpark(qNode.thread);
-                        return qNode;
-                    }
+            }
+        } else {
+            while (iterator.hasNext()) {
+                qNode = iterator.next();
+                if (nodeType == qNode.type && SyncNodeUpdater.casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
+                    return qNode;
                 }
             }
         }
-
         //3: not found matched node
         return null;
     }
@@ -151,8 +150,7 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     public final boolean hasQueuedPredecessors() {
-        SyncNode node = waitChain.peek();
-        return node != null && node.thread != Thread.currentThread();
+        return waitChain.peek() != null;
     }
 
     protected final boolean existsTypeNode(Object nodeType) {

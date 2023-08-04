@@ -89,7 +89,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         if (this.tryTransfer(e)) return true;
 
         //step2:create wait node(then to wait)
-        config.setNodeInfo(Node_Type_Data, e);
+        config.setNodeInitInfo(Node_Type_Data, e);
 
         //step3:create wait node(then to wait)
         return doWait(config) != null;

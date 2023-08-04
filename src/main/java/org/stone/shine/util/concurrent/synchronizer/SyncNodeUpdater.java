@@ -31,11 +31,11 @@ public final class SyncNodeUpdater {
         try {
             U = UnsafeAdaptorHolder.U;
             Class nodeClass = SyncNode.class;
-            //ThreadNode.state
+            //SyncNode.state
             stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));
-            //ThreadNode.prev
+            //SyncNode.prev
             prevOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("prev"));
-            //ThreadNode.next
+            //SyncNode.next
             nextOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("next"));
             //SyncNodeChain.tail
             tailOffSet = U.objectFieldOffset(SyncNodeChain.class.getDeclaredField("tail"));

@@ -20,7 +20,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNIN
 /**
  * resource wait pool
  *
- * @author Chris Liaos
+ * @author Chris Liao
  * @version 1.0
  */
 
@@ -66,12 +66,8 @@ public class ResourceWaitPool {
         return callPool.wakeupOne(fromHead, nodeType, toState);
     }
 
-    public final int wakeupAll(boolean fromHead, Object nodeType, Object toState) {
-        return callPool.wakeupAll(fromHead, nodeType, toState);
-    }
-
     //****************************************************************************************************************//
-    //                                          3: acquireWithType/release methods(4)                                 //
+    //                                          3: acquireWithType/release methods(3)                                 //
     //****************************************************************************************************************//
     public final boolean tryAcquire(ResourceAction action, int size) {
         return action.tryAcquire(size);

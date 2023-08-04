@@ -23,15 +23,15 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private E nodeValue;
     //node type
     private Object nodeType;
-    //node type
-    private Object nodeState;
+    //node init state
+    private Object initState;
     //node object
     private SyncNode<E> syncNode;
 
     //***********************************************spin configuration***********************************************//
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
     private ThreadParkSupport parkSupport;
-    //InterruptedException thrown ind
+    //InterruptedException thrown indicator
     private boolean supportInterrupted = true;
 
     //***********************************************wakeup configuration*********************************************//
@@ -45,7 +45,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private Object wakeupNodeTypeOnFailure;
 
     //****************************************************************************************************************//
-    //                                              1: constructors                                                   //
+    //                                              1:constructors(4)                                                 //
     //****************************************************************************************************************//
     public SyncVisitConfig() {
         this(0, null, null, false);
@@ -55,14 +55,14 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this(parkTime, timeUnit, null, false);
     }
 
-    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, boolean isParkUtil) {
-        this(parkTime, timeUnit, null, isParkUtil);
+    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, boolean isUtilTime) {
+        this(parkTime, timeUnit, null, isUtilTime);
     }
 
-    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isParkUtil) {
+    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isUtilTime) {
         if (parkTime > 0) {
             if (timeUnit == null) throw new IllegalArgumentException("time unit can't be null");
-            if (isParkUtil) {
+            if (isUtilTime) {
                 long blockTimeMillis = timeUnit.toMillis(parkTime);
                 this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(blockTimeMillis) :
                         new ThreadParkSupport.UtilMillsParkSupport2(blockTimeMillis, blockObject);
@@ -78,48 +78,30 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              2:node methods(8)                                                 //
+    //                                              2:set node info(5)                                                 //
     //****************************************************************************************************************//
-    public E getNodeValue() {
-        return nodeValue;
-    }
-
-    public Object getNodeType() {
-        return nodeType;
-    }
-
-    public void setNodeType(Object nodeType) {
+    public final void setNodeType(Object nodeType) {
         this.nodeType = nodeType;
     }
 
-    public Object getNodeState() {
-        return nodeState;
+    public final void setNodeInitState(Object initState) {
+        this.initState = initState;
     }
 
-    public void setNodeState(Object nodeState) {
-        this.nodeState = nodeState;
-    }
-
-    public void setNodeInfo(Object type, E value) {
+    public final void setNodeInitInfo(Object type, E value) {
         this.nodeType = type;
         this.nodeValue = value;
     }
 
-    public void setNodeInfo(Object state, Object type, E value) {
-        this.nodeState = state;
+    public final void setNodeInitInfo(Object type, E value, Object initState) {
         this.nodeType = type;
         this.nodeValue = value;
+        this.initState = initState;
     }
 
     public final SyncNode getSyncNode() {
         if (syncNode != null) return syncNode;
-        this.syncNode = new SyncNode<>(nodeState, nodeType, nodeValue);
-        this.syncNode.setOwnerThread();
-        return this.syncNode;
-    }
-
-    public final void setSyncNode(SyncNode syncNode) {
-        this.syncNode = syncNode;
+        return this.syncNode = new SyncNode<>(initState, nodeType, nodeValue);
     }
 
     //****************************************************************************************************************//
@@ -178,7 +160,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     public final void reset() {
         this.nodeValue = null;
         this.nodeType = null;
-        this.nodeState = null;
+        this.initState = null;
         this.syncNode = null;
         this.parkSupport.reset();
         this.supportInterrupted = true;
