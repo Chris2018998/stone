@@ -17,6 +17,7 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.*;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
+import static org.stone.tools.CommonUtil.maxTimedSpins;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
@@ -62,7 +63,9 @@ public class StateWaitPool extends ThreadWaitingPool {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //2:offer to wait queue
-        SyncNode node = appendAsWaitNode(config.getSyncNode());
+        SyncNode node = config.getSyncNode();
+        int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
+
         //3:get control parameters from config
         boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
@@ -87,6 +90,8 @@ public class StateWaitPool extends ThreadWaitingPool {
                 } else if (state != null) {
                     node.setState(null);
                     Thread.yield();
+                } else if (spins > 0) {
+                    spins--;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
                     parkSupport.park();
                 }

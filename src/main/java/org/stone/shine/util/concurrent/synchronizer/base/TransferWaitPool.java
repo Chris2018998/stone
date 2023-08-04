@@ -19,6 +19,7 @@ import java.util.Iterator;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERRUPTED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
+import static org.stone.tools.CommonUtil.maxTimedSpins;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
@@ -124,7 +125,8 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         if (Thread.interrupted()) throw new InterruptedException();
 
         //1:create wait node and offer to wait queue
-        SyncNode node = appendAsWaitNode(config.getSyncNode());
+        SyncNode node = config.getSyncNode();
+        int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //2:get control parameters from config
         boolean allowInterrupted = config.supportInterrupted();
@@ -150,6 +152,8 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
                     casState(node, null, TIMEOUT);
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
                     casState(node, null, INTERRUPTED);
+                } else if (spins > 0) {
+                    spins--;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
                     parkSupport.park();
                 }
