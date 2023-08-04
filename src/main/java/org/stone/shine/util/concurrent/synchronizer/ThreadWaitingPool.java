@@ -36,10 +36,10 @@ public abstract class ThreadWaitingPool<E> {
         waitChain.remove(node);
     }
 
-    protected final SyncNode<E> appendAsWaitNode(SyncNode node) {
+    protected final boolean appendAsWaitNode(SyncNode node) {
         node.setOwnerThread();
         waitChain.offer(node);
-        return node;
+        return node == waitChain.peek();
     }
 
     protected final SyncNode<E> appendAsDataNode(Object state, Object type, E value) {
