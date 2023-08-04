@@ -28,8 +28,6 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * @version 1.0
  */
 public class ResultWaitPool extends ThreadWaitingPool {
-    //default validator
-    private static final ResultValidator DEF_VALIDATOR = new ResultEqualsValidator(true, false);
     //true,use fair mode
     private final boolean fair;
     //result validator(equals validator is default)
@@ -39,11 +37,11 @@ public class ResultWaitPool extends ThreadWaitingPool {
     //                                          1: constructors(3)                                                    //
     //****************************************************************************************************************//
     public ResultWaitPool() {
-        this(false, DEF_VALIDATOR);
+        this(false, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair) {
-        this(fair, DEF_VALIDATOR);
+        this(fair, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
