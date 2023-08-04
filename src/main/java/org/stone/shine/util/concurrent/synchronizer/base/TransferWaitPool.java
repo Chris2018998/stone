@@ -153,7 +153,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
                     casState(node, null, INTERRUPTED);
                 } else if (spins > 0) {
-                    spins--;
+                    --spins;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
                     parkSupport.park();
                 }

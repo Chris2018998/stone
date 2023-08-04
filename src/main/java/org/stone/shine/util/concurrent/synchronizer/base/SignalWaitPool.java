@@ -52,17 +52,13 @@ public class SignalWaitPool extends ThreadWaitingPool {
             do {
                 //4.1: read node state
                 Object signal = node.getState();//any not null value regard as wakeup signal
-                if (signal != null) {
-                    if (signal == TIMEOUT) return false;
-                    if (signal == INTERRUPTED) throw new InterruptedException();
-                    return true;
-                }
+                if (signal != null) return true;
 
                 //4.2: fail check
                 if (parkSupport.isTimeout()) {
-                    casState(node, null, TIMEOUT);
+                    if (casState(node, null, TIMEOUT)) return false;
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
-                    casState(node, null, INTERRUPTED);
+                    if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
                 } else if (spins > 0) {
                     --spins;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {

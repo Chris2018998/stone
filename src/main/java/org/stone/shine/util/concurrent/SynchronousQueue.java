@@ -75,7 +75,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         if (e == null) throw new NullPointerException();
         SyncVisitConfig config = new SyncVisitConfig<E>();
         config.setWakeupNextOnFailure(false);
-        this.waitPool.transfer(e, new SyncVisitConfig<E>());
+        this.waitPool.transfer(e, config);
     }
 
     /**
@@ -106,7 +106,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        return this.waitPool.get(new SyncVisitConfig<E>());
+        SyncVisitConfig<E> config = new SyncVisitConfig<E>();
+        config.setWakeupNextOnFailure(false);
+        return this.waitPool.get(config);
     }
 
     /**

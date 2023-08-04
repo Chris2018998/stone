@@ -30,7 +30,7 @@ public abstract class ThreadWaitingPool<E> {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1: queue Methods(3)                                                   //
+    //                                          1:queue Methods(3)                                                    //
     //****************************************************************************************************************//
     protected final void removeNode(SyncNode<E> node) {
         waitChain.remove(node);
@@ -140,7 +140,6 @@ public abstract class ThreadWaitingPool<E> {
         //3: not found matched node
         return null;
     }
-
 
     //****************************************************************************************************************//
     //                                         4: Monitor Methods(6)                                                  //

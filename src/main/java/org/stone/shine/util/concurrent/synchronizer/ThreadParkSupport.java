@@ -17,13 +17,13 @@ import static java.util.concurrent.locks.LockSupport.parkUntil;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
- * Time parker class,supply three Implementation with park methods of {@link @java.util.concurrent.locks.LockSupport} class
+ * Time parker class,supply three Implementation with park methods of {@link java.util.concurrent.locks.LockSupport} class
  * 1:park
  * 2:parkNanos
  * 3:parkUntil
  *
  * <p>
- * Class objective:reduce spin similar code (for example:some await methods in class:{@link @java.util.concurrent.locks.AbstractQueuedSynchronizer})
+ * Class objective:reduce spin similar code (for example:some await methods in class:{@link java.util.concurrent.locks.AbstractQueuedSynchronizer})
  * Usage demo:
  * <pre>{@code
  * class ConditionX {

@@ -89,7 +89,6 @@ public class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:offer to wait queue
-        config.setNodeInitState(RUNNING);
         SyncNode node = config.getSyncNode();
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
@@ -101,26 +100,19 @@ public class ResultWaitPool extends ThreadWaitingPool {
         //5:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: read node state
-                Object state = node.getState();
-                if (state != null) {
-                    if (state == RUNNING) {//RUNNING is a signal of wakeup
-                        Object result = call.call(arg);
-                        if (validator.isExpected(result)) {
-                            success = true;
-                            return result;
-                        }
-                    } else if (state == TIMEOUT)
-                        return validator.resultOnTimeout();
-                    else if (state == INTERRUPTED)
-                        throw new InterruptedException();
+                //5.1: execute call
+                Object result = call.call(arg);
+                if (validator.isExpected(result)) {
+                    success = true;
+                    return result;
                 }
 
                 //5.2: fail check
+                Object state = node.getState();//(state ==null or state == RUNNING)
                 if (parkSupport.isTimeout()) {
-                    casState(node, state, TIMEOUT);
+                    if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
-                    casState(node, state, INTERRUPTED);
+                    if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
                     Thread.yield();

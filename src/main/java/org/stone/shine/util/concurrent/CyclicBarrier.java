@@ -20,6 +20,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ * CyclicBarrier Impl
+ *
  * @author Chris Liao
  * @version 1.0
  */
