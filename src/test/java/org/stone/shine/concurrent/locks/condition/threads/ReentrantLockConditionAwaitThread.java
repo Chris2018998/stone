@@ -12,8 +12,10 @@ package org.stone.shine.concurrent.locks.condition.threads;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * condition test thread
@@ -26,6 +28,7 @@ public class ReentrantLockConditionAwaitThread extends BaseThread {
     private Date deadline;
     private boolean locked1;
     private boolean locked2;
+    private CountDownLatch countDown = new CountDownLatch(1);
 
     public ReentrantLockConditionAwaitThread(ReentrantLock lock, Condition condition, String methodName) {
         super(condition, methodName);
@@ -43,6 +46,10 @@ public class ReentrantLockConditionAwaitThread extends BaseThread {
         this.lock = lock;
     }
 
+    public CountDownLatch getCountDownLatch() {
+        return countDown;
+    }
+
     public boolean isLocked1() {
         return locked1;
     }
@@ -55,6 +62,8 @@ public class ReentrantLockConditionAwaitThread extends BaseThread {
         lock.lock();
         try {
             locked1 = lock.isHeldByCurrentThread();
+            this.countDown.countDown();
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
             if ("await".equals(methodName) && timeUnit != null) {
                 this.result = condition.await(timeout, timeUnit);
             } else if ("await".equals(methodName)) {

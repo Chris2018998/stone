@@ -28,13 +28,14 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class ReentrantLockConditionAwaitUntilTest extends ReentrantLockConditionTestCase {
 
-    public void test() {
+    public void test() throws Exception {
         //1:create wait thread
         Date deadline = new Date(System.currentTimeMillis() + TimeUnit.NANOSECONDS.toMillis(ParkDelayNanos));
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "awaitUntil", deadline);
         awaitThread.start();
 
         //2:writeLock in main thread
+        awaitThread.getCountDownLatch().await();
         LockSupport.parkNanos(Global_TimeoutNanos);
         lock.lock();
         try {

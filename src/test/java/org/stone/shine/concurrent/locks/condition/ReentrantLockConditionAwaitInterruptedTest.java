@@ -25,13 +25,19 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class ReentrantLockConditionAwaitInterruptedTest extends ReentrantLockConditionTestCase {
 
-    public void test() {
+    public static void main(String[] args) throws Throwable {
+        ReentrantLockConditionAwaitInterruptedTest test = new ReentrantLockConditionAwaitInterruptedTest();
+        test.setUp();
+        test.test();
+    }
+
+    public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await");
         awaitThread.start();
 
         //2:writeLock in main thread
-        LockSupport.parkNanos(ParkDelayNanos);
+        awaitThread.getCountDownLatch().await();
         awaitThread.interrupt();
 
         //3:writeLock for main thread

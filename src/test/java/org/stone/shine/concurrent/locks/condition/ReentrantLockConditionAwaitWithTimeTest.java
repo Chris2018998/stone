@@ -25,12 +25,13 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
 
 public class ReentrantLockConditionAwaitWithTimeTest extends ReentrantLockConditionTestCase {
 
-    public void test() {
+    public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await", Global_Timeout, Global_TimeUnit);
         awaitThread.start();
 
         //2:writeLock in main thread
+        awaitThread.getCountDownLatch().await();
         LockSupport.parkNanos(ParkDelayNanos);
         lock.lock();
         try {

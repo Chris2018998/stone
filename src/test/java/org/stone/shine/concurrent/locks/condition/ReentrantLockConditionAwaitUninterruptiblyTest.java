@@ -25,12 +25,13 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class ReentrantLockConditionAwaitUninterruptiblyTest extends ReentrantLockConditionTestCase {
 
-    public void test() {
+    public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "awaitUninterruptibly");
         awaitThread.start();
 
         //2:writeLock in main thread
+        awaitThread.getCountDownLatch().await();
         LockSupport.parkNanos(ParkDelayNanos);
         awaitThread.interrupt();
 

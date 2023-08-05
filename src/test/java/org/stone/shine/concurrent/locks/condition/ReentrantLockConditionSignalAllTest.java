@@ -33,6 +33,8 @@ public class ReentrantLockConditionSignalAllTest extends ReentrantLockConditionT
         waitThread2.start();
 
         //2:writeLock in main thread
+        waitThread1.getCountDownLatch().await();
+        waitThread2.getCountDownLatch().await();
         LockSupport.parkNanos(ParkDelayNanos);
         try {
             lock.lock();

@@ -24,14 +24,15 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
  */
 
 public class ReentrantLockConditionAwaitTest extends ReentrantLockConditionTestCase {
-
-    public void test() {
+    public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await");
         awaitThread.start();
 
         //2:writeLock in main thread
+        awaitThread.getCountDownLatch().await();
         LockSupport.parkNanos(ParkDelayNanos);
+
         lock.lock();
         try {
             lockCondition.signal();
@@ -40,7 +41,7 @@ public class ReentrantLockConditionAwaitTest extends ReentrantLockConditionTestC
         }
 
         //3:check time
-        LockSupport.parkNanos(ParkDelayNanos);
+        awaitThread.join();
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked1());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked2());
     }
