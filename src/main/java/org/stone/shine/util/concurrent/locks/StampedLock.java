@@ -9,9 +9,9 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
+import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 import org.stone.tools.CommonUtil;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 public class StampedLock implements java.io.Serializable {
     private static final sun.misc.Unsafe UNSAFE;
     private static final long stampOffset;
-    private static final long nodeStateOffset;
+
     //****************************************************************************************************************//
     //                                          1: static(5)                                                          //
     //****************************************************************************************************************//
@@ -59,17 +59,26 @@ public class StampedLock implements java.io.Serializable {
         try {
             UNSAFE = CommonUtil.UNSAFE;
             stampOffset = CommonUtil.objectFieldOffset(StampedLock.class, "stamp");
-            nodeStateOffset = CommonUtil.objectFieldOffset(WaitNode.class, "state");
         } catch (Exception e) {
             throw new Error(e);
         }
     }
 
+    //resource wait Pool
+    private ResourceWaitPool waitPool;
+    private LockAction readLockAction;
+    private LockAction writeLockAction;
     private volatile long stamp = 2147483648L;
-    private ConcurrentLinkedQueue<WaitNode> waitQueue = new ConcurrentLinkedQueue<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          2: Static(3)                                                          //
+    //                                          2: CAS(2)                                                             //
+    //****************************************************************************************************************//
+    private static boolean compareAndSetLockStamp(StampedLock lock, long exp, long upd) {
+        return UNSAFE.compareAndSwapLong(lock, stampOffset, exp, upd);
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: Stamp(6)                                                           //
     //****************************************************************************************************************//
     private static int lowInt(long v) {
         return (int) (v & CLN_HIGH_MASK);
@@ -83,60 +92,60 @@ public class StampedLock implements java.io.Serializable {
         return ((long) h << MOVE_SHIFT) | (l & CLN_HIGH_MASK);
     }
 
-    private static boolean compareAndSetNodeState(WaitNode node, int exp, int upd) {
-        return UNSAFE.compareAndSwapInt(node, nodeStateOffset, exp, upd);
-    }
-
-    private static boolean compareAndSetLockStamp(StampedLock lock, long exp, long upd) {
-        return UNSAFE.compareAndSwapLong(lock, stampOffset, exp, upd);
-    }
-
     private static boolean validate(long stamp1, long stamp2) {
         return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;
     }
 
     private static long getReleaseStamp(long stamp) {
-        int high = (int) (stamp >> 32);
-        if (high > 0) {
-            int low = (int) stamp;
-            stamp = (long) (--high) << 32 | low & 0xFFFFFFFFL;
+        int h = (int) (stamp >>> MOVE_SHIFT);
+        if (h > 0) {
+            int l = (int) (stamp & CLN_HIGH_MASK);
+            return ((long) h << MOVE_SHIFT) | (l & CLN_HIGH_MASK);
         }
         return stamp;
     }
 
-    private static long getLockStamp(long stamp, boolean writeLock) {
-        int low = (int) stamp;
-        int high = (int) (stamp >> 32);
-        boolean writeNumber = (low & 1) == 0;//low is an even number
+    //generate next stamp
+    private static long genNextStamp(long stamp, boolean acquireWrite) {
+        int h = (int) (stamp >>> MOVE_SHIFT);
+        int l = (int) (stamp & CLN_HIGH_MASK);
+        boolean isWriteNum = (l & 1) == WRITE_LOCK_FLAG;//low is an even number(write type)
 
-        if (high == 0) {//in ununsing
-            high = 1;
-            low += writeLock == writeNumber ? 2 : 1;
-        } else if (writeLock || writeNumber) {//write lock and write or read lock and write lock
+        if (h == 0) {//in ununsing
+            h = 1;
+            l += (acquireWrite == isWriteNum) ? 2 : 1;
+        } else if (acquireWrite || isWriteNum) {//write lock and write or read lock and write lock
             return -1;
         } else {//read lock(Reentrant)
-            if (high + 1 <= 0) throw new Error("Maximum lock count exceeded");
-            high++;
+            if (h + 1 <= 0) throw new Error("Maximum lock count exceeded");
+            h++;
         }
 
-        return (long) high << 32 | low & 0xFFFFFFFFL;
+        return ((long) h << MOVE_SHIFT) | (l & CLN_HIGH_MASK);
     }
 
     //****************************************************************************************************************//
-    //                                          3: Read Lock                                                          //
+    //                                          4: Read Lock                                                          //
     //****************************************************************************************************************//
+    public boolean isReadLocked() {
+        int h = (int) (stamp >>> MOVE_SHIFT);
+        int l = (int) (stamp & CLN_HIGH_MASK);
+        return h > 0 && (l & 1) == READ_LOCK_FLAG;//Odd number == read
+    }
+
+    public long tryReadLock() {
+        long newStamp = genNextStamp(this.stamp, false);
+        if (newStamp > 0) compareAndSetLockStamp(this, stamp, newStamp);
+        return newStamp;
+    }
+
     public long readLock() {
+
         return 1;
     }
 
     public long readLockInterruptibly() throws InterruptedException {
         return 1;
-    }
-
-    public long tryReadLock() {
-        long newStamp = getLockStamp(this.stamp, false);
-        if (newStamp > 0) compareAndSetLockStamp(this, stamp, newStamp);
-        return newStamp;
     }
 
     public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
@@ -155,15 +164,21 @@ public class StampedLock implements java.io.Serializable {
         }
     }
 
-    public boolean isReadLocked() {
-        int low = (int) stamp;
-        int high = (int) (stamp >> 32);
-        return high > 0 && (low & 1) != 0;//Odd number == read
-    }
-
     //****************************************************************************************************************//
     //                                          4: Write Lock                                                         //
     //****************************************************************************************************************//
+    public boolean isWriteLocked() {
+        int h = (int) (stamp >>> MOVE_SHIFT);
+        int l = (int) (stamp & CLN_HIGH_MASK);
+        return h > 0 && (l & 1) == WRITE_LOCK_FLAG;//Odd number == read
+    }
+
+    public long tryWriteLock() {
+        long newStamp = genNextStamp(this.stamp, true);
+        if (newStamp > 0) compareAndSetLockStamp(this, stamp, newStamp);
+        return newStamp;
+    }
+
     public void unlockWrite(long stamp) {
         long currentStamp = this.stamp;
         if (!validate(stamp, currentStamp)) return;
@@ -184,46 +199,7 @@ public class StampedLock implements java.io.Serializable {
         return 1;
     }
 
-    public long tryWriteLock() {
-        long newStamp = getLockStamp(this.stamp, true);
-        if (newStamp > 0) compareAndSetLockStamp(this, stamp, newStamp);
-        return newStamp;
-    }
-
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         return 1;
-    }
-
-    public boolean isWriteLocked() {
-        int low = (int) stamp;
-        int high = (int) (stamp >> 32);
-        return high > 0 && (low & 1) == 0;//even number  == write
-    }
-
-    //****************************************************************************************************************//
-    //                                          5: Wait Node                                                          //
-    //****************************************************************************************************************//
-    private static class WaitNode {
-        private final Thread thread;
-        private final boolean isWrite;
-        private volatile int state;//0:need signal,1:interrupted or timeout
-
-        private WaitNode(boolean isWrite) {
-            this.isWrite = isWrite;
-            this.thread = Thread.currentThread();
-        }
-
-        public int getSate() {
-            return state;
-        }
-
-        public Thread getThread() {
-            return thread;
-        }
-
-        public boolean isWrite() {
-            return isWrite;
-        }
-
     }
 }

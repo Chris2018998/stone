@@ -124,9 +124,9 @@ public class ResultWaitPool extends ThreadWaitingPool {
             } while (true);
         } finally {
             if (success)
-                this.leaveFromWaitQueue(node, config.isWakeupNextOnSuccess(), true, config.getWakeupNodeTypeOnSuccess(), RUNNING);
+                this.leaveFromWaitQueue(node, config.isWakeupNextOnSuccess(), config.getWakeupNodeTypeOnSuccess(), RUNNING);
             else
-                this.leaveFromWaitQueue(node, config.isWakeupNextOnFailure(), true, config.getWakeupNodeTypeOnFailure(), RUNNING);
+                this.leaveFromWaitQueue(node, config.isWakeupNextOnFailure(), config.getWakeupNodeTypeOnFailure(), RUNNING);
         }
     }
 }

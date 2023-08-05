@@ -14,7 +14,8 @@ import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.*;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERRUPTED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
@@ -66,8 +67,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            //here:don't wakeup other
-            this.leaveFromWaitQueue(node, false, true, node.getType(), RUNNING);
+            removeNode(node);
         }
     }
 }

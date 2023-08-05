@@ -32,7 +32,7 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          1:queue Methods(3)                                                    //
     //****************************************************************************************************************//
-    protected final void removeNode(SyncNode<E> node) {
+    protected final void removeNode(SyncNode node) {
         waitChain.remove(node);
     }
 
@@ -104,10 +104,10 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          3: leave from pool(1)                                                 //
     //****************************************************************************************************************//
-    protected final SyncNode leaveFromWaitQueue(SyncNode current, boolean wakeup, boolean fromHead, Object nodeType, Object toState) {
-        Iterator<SyncNode> iterator = fromHead ? this.waitChain.iterator() : this.waitChain.descendingIterator();
+    protected final SyncNode leaveFromWaitQueue(SyncNode current, boolean wakeup, Object nodeType, Object toState) {
+        Iterator<SyncNode> iterator = this.waitChain.iterator();
 
-        //1: remove current node(wakeup occurred by this)
+        //1: remove current node from queue
         SyncNode qNode;
         while (iterator.hasNext()) {
             qNode = iterator.next();
@@ -116,9 +116,11 @@ public abstract class ThreadWaitingPool<E> {
                 break;
             }
         }
+
+        //2: if not wakeup other,exit
         if (!wakeup) return null;
 
-        //2: retrieve type matched node and unpark its thread
+        //3: wakeup one
         iterator = this.waitChain.iterator();
         if (nodeType == null) {
             while (iterator.hasNext()) {
@@ -137,7 +139,8 @@ public abstract class ThreadWaitingPool<E> {
                 }
             }
         }
-        //3: not found matched node
+
+        //4: not found matched node
         return null;
     }
 
