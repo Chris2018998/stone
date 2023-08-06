@@ -17,6 +17,7 @@ import org.stone.tools.CommonUtil;
 
 import java.util.concurrent.TimeUnit;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
@@ -44,7 +45,7 @@ import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.T
  * 10：写锁转读锁，低位加1，高位不变
  * 11：读锁转写锁，高位为0时，设高位为1，低位加1
  * <p>
- * 合并（高位|低位）的值，返回给用户。
+ * 合并（高位|低位）的值，返回给锁的申请者。
  *
  * @author Chris Liao
  * @version 1.0
@@ -194,7 +195,7 @@ public class StampedLock implements java.io.Serializable {
         if (newStamp != currentStamp && compareAndSetLockStamp(this, currentStamp, newStamp)) {
             int high = (int) (stamp >> 32);
             if (high == 0) {
-                //wakeup other waiter
+                callWaitPool.wakeupOne(true, null, RUNNING);
             }
         }
     }
@@ -221,7 +222,7 @@ public class StampedLock implements java.io.Serializable {
         if (newStamp != currentStamp && compareAndSetLockStamp(this, currentStamp, newStamp)) {
             int high = (int) (stamp >> 32);
             if (high == 0) {
-                //wakeup other waiter
+                callWaitPool.wakeupOne(true, null, RUNNING);
             }
         }
     }
