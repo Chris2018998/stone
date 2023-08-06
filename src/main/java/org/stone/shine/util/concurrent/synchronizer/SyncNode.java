@@ -27,10 +27,15 @@ public final class SyncNode<E> {
     private E value;//node value
 
     //****************************************************************************************************************//
-    //                                                1: constructor(2)                                               //
+    //                                                1: constructor(3)                                               //
     //****************************************************************************************************************//
     public SyncNode(Object state) {
         this.state = state;
+    }
+
+    public SyncNode(Object state, E value) {
+        this.state = state;
+        this.value = value;
     }
 
     public SyncNode(Object state, Object type, E value) {
