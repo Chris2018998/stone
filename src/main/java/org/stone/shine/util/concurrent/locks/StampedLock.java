@@ -9,10 +9,16 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
+import org.stone.shine.util.concurrent.synchronizer.base.ResultValidator;
+import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 import org.stone.tools.CommonUtil;
 
 import java.util.concurrent.TimeUnit;
+
+import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
+import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
 /**
  * Stamped Lock Impl
@@ -64,11 +70,12 @@ public class StampedLock implements java.io.Serializable {
         }
     }
 
-    //resource wait Pool
-    private ResourceWaitPool waitPool;
-    private LockAction readLockAction;
-    private LockAction writeLockAction;
+    //call wait Pool
     private volatile long stamp = 2147483648L;
+    private ResultCall stampedReadCall = new ReadLockCall(this);
+    private ResultCall stampedWriteCall = new WriteLockCall(this);
+    private ResultValidator resultValidator = new LongResultValidator();
+    private ResultWaitPool callWaitPool = new ResultWaitPool(false, resultValidator);
 
     //****************************************************************************************************************//
     //                                          2: CAS(2)                                                             //
@@ -111,7 +118,7 @@ public class StampedLock implements java.io.Serializable {
         int l = (int) (stamp & CLN_HIGH_MASK);
         boolean isWriteNum = (l & 1) == WRITE_LOCK_FLAG;//low is an even number(write type)
 
-        if (h == 0) {//in ununsing
+        if (h == 0) {//unlock
             h = 1;
             l += (acquireWrite == isWriteNum) ? 2 : 1;
         } else if (acquireWrite || isWriteNum) {//write lock and write or read lock and write lock
@@ -140,16 +147,44 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long readLock() {
-
-        return 1;
+        try {
+            SyncVisitConfig config = new SyncVisitConfig();
+            config.setNodeType(TYPE_SHARED);
+            config.setSupportInterrupted(false);
+            config.setWakeupNextOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            return (long) callWaitPool.doCall(stampedReadCall, 1, config);
+        } catch (Exception e) {
+            return -1L;
+        }
     }
 
     public long readLockInterruptibly() throws InterruptedException {
-        return 1;
+        try {
+            SyncVisitConfig config = new SyncVisitConfig();
+            config.setNodeType(TYPE_SHARED);
+            config.setWakeupNextOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            return (long) callWaitPool.doCall(stampedReadCall, 1, config);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            return -1L;
+        }
     }
 
     public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
-        return 1;
+        try {
+            SyncVisitConfig config = new SyncVisitConfig(time, unit);
+            config.setNodeType(TYPE_SHARED);
+            config.setWakeupNextOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            return (long) callWaitPool.doCall(stampedReadCall, 1, config);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            return -1L;
+        }
     }
 
     public void unlockRead(long stamp) {
@@ -165,7 +200,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          4: Write Lock                                                         //
+    //                                          5: Write Lock                                                         //
     //****************************************************************************************************************//
     public boolean isWriteLocked() {
         int h = (int) (stamp >>> MOVE_SHIFT);
@@ -192,14 +227,74 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long writeLock() {
-        return 1;
+        try {
+            SyncVisitConfig config = new SyncVisitConfig();
+            config.setNodeType(TYPE_EXCLUSIVE);
+            config.setSupportInterrupted(false);
+            return (long) callWaitPool.doCall(stampedWriteCall, 1, config);
+        } catch (Exception e) {
+            return -1L;
+        }
     }
 
     public long writeLockInterruptibly() throws InterruptedException {
-        return 1;
+        try {
+            SyncVisitConfig config = new SyncVisitConfig();
+            config.setNodeType(TYPE_EXCLUSIVE);
+            return (long) callWaitPool.doCall(stampedWriteCall, 1, config);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            return -1L;
+        }
     }
 
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
-        return 1;
+        try {
+            SyncVisitConfig config = new SyncVisitConfig(time, unit);
+            config.setNodeType(TYPE_EXCLUSIVE);
+            return (long) callWaitPool.doCall(stampedWriteCall, 1, config);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            return -1L;
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                          6: Lock Result Call                                                   //
+    //****************************************************************************************************************//
+    private static class ReadLockCall implements ResultCall {
+        private StampedLock lock;
+
+        ReadLockCall(StampedLock lock) {
+            this.lock = lock;
+        }
+
+        public Object call(Object arg) {
+            return lock.tryReadLock();
+        }
+    }
+
+    private static class WriteLockCall implements ResultCall {
+        private StampedLock lock;
+
+        WriteLockCall(StampedLock lock) {
+            this.lock = lock;
+        }
+
+        public Object call(Object arg) {
+            return lock.tryWriteLock();
+        }
+    }
+
+    private static class LongResultValidator implements ResultValidator {
+        public Object resultOnTimeout() {
+            return -1L;
+        }
+
+        public boolean isExpected(Object result) {
+            return ((long) result != -1L);
+        }
     }
 }
