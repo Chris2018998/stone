@@ -33,6 +33,7 @@ public abstract class ThreadWaitingPool<E> {
     //                                          1:queue Methods(3)                                                    //
     //****************************************************************************************************************//
     protected final void removeNode(SyncNode node) {
+        node.clear();
         waitChain.remove(node);
     }
 
@@ -112,6 +113,7 @@ public abstract class ThreadWaitingPool<E> {
         while (iterator.hasNext()) {
             qNode = iterator.next();
             if (current == qNode) {
+                current.clear();
                 iterator.remove();
                 break;
             }

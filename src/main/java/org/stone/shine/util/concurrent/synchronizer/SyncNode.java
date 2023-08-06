@@ -75,6 +75,13 @@ public final class SyncNode<E> {
         this.thread = Thread.currentThread();
     }
 
+    final void clear() {
+        this.type = null;
+        this.state = null;
+        this.value = null;
+        this.thread = null;
+    }
+
     //****************************************************************************************************************//
     //                                          unusable fields                                                       //
     //****************************************************************************************************************//
