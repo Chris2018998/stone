@@ -211,10 +211,25 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryConvertToReadLock(long stamp) {
         long currentStamp = this.stamp;
-        if (isReadLocked(currentStamp)) {//read
+        if (currentStamp != stamp) return -1;
 
+        int h = highInt(currentStamp);
+        if (h == 1) {//locked
+            int l = lowInt(currentStamp);
+            if ((l & 1) == WRITE_LOCK_FLAG) { //read lock
+                long newStamp = contact(h, l + 1);
+                if (compareAndSetLockStamp(this, currentStamp, newStamp)) {//new read lock
+                    this.callWaitPool.wakeupOne(true, TYPE_SHARED, RUNNING);//wakeup other share type
+                    return newStamp;
+                } else {
+                    return -1L;
+                }
+            } else {
+                return currentStamp;
+            }
+        } else {
+            return -1L;
         }
-        return -1;
     }
 
     public void unlock(long stamp) {
@@ -285,8 +300,25 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long tryConvertToWriteLock(long stamp) {
-        return -1L;
-        //@todo
+        long currentStamp = this.stamp;
+        if (currentStamp != stamp) return -1;
+
+        int h = highInt(currentStamp);
+        if (h == 1) {//locked
+            int l = lowInt(currentStamp);
+            if ((l & 1) == READ_LOCK_FLAG) { //read lock
+                long newStamp = contact(h, l + 1);
+                if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
+                    return newStamp;
+                } else {
+                    return -1L;
+                }
+            } else {
+                return currentStamp;
+            }
+        } else {
+            return -1L;
+        }
     }
 
     //****************************************************************************************************************//
