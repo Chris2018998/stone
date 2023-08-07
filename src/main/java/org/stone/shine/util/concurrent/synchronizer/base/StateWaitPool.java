@@ -68,7 +68,6 @@ public class StateWaitPool extends ThreadWaitingPool {
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //3:get control parameters from config
-        boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
         //4: spin control（Logic from BeeCP）
@@ -82,7 +81,7 @@ public class StateWaitPool extends ThreadWaitingPool {
                 //4.3: fail check
                 if (parkSupport.isTimeout()) {
                     if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
-                } else if (parkSupport.isInterrupted() && allowInterrupted) {
+                } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
                     if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);

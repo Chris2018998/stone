@@ -45,7 +45,6 @@ public class SignalWaitPool extends ThreadWaitingPool {
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //3:get control parameters from config
-        boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
         //4: spin control（Logic from BeeCP）
@@ -58,7 +57,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
                 //4.2: fail check
                 if (parkSupport.isTimeout()) {
                     if (casState(node, null, TIMEOUT)) return false;
-                } else if (parkSupport.isInterrupted() && allowInterrupted) {
+                } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
                     if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
                 } else if (spins > 0) {
                     --spins;

@@ -94,13 +94,12 @@ public class ResultWaitPool extends ThreadWaitingPool {
 
         //4:get control parameters from config
         boolean success = false;
-        boolean allowInterrupted = config.supportInterrupted();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
         //5:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: execute call
+                //5.1: execute call((state ==null or state == RUNNING))
                 Object result = call.call(arg);
                 if (validator.isExpected(result)) {
                     success = true;
@@ -108,10 +107,10 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 }
 
                 //5.2: fail check
-                Object state = node.getState();//(state ==null or state == RUNNING)
+                Object state = node.getState();
                 if (parkSupport.isTimeout()) {
                     if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
-                } else if (parkSupport.isInterrupted() && allowInterrupted) {
+                } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
                     if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
