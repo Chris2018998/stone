@@ -116,15 +116,6 @@ public class StampedLock implements java.io.Serializable {
         return (l & 1) == type;
     }
 
-    private static long getReleaseStamp(long stamp) {
-        int h = (int) (stamp >>> MOVE_SHIFT);
-        if (h > 0) {
-            int l = (int) (stamp & CLN_HIGH_MASK);
-            return ((long) h << MOVE_SHIFT) | (l & CLN_HIGH_MASK);
-        }
-        return stamp;
-    }
-
     //generate next stamp
     private static long genNextStamp(long stamp, boolean acquireWrite) {
         int h = (int) (stamp >>> MOVE_SHIFT);
