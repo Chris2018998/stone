@@ -102,20 +102,18 @@ public class StampedLock implements java.io.Serializable {
         return ((long) h << MOVE_SHIFT) | (l & CLN_HIGH_MASK);
     }
 
-    private static boolean validate(long stamp1, long stamp2) {
+    private static int getLockedCount(long stamp) {
+        return (int) (stamp >>> MOVE_SHIFT);
+    }
+
+    private static boolean isSameStamp(long stamp1, long stamp2) {
         return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;
     }
 
-    private static boolean isReadLocked(long stamp) {
+    private static boolean isTypeStamp(long stamp, int type) {
         int h = (int) (stamp >>> MOVE_SHIFT);
         int l = (int) (stamp & CLN_HIGH_MASK);
-        return h > 0 && (l & 1) == READ_LOCK_FLAG;
-    }
-
-    private static boolean isWriteLocked(long stamp) {
-        int h = (int) (stamp >>> MOVE_SHIFT);
-        int l = (int) (stamp & CLN_HIGH_MASK);
-        return h > 0 && (l & 1) == WRITE_LOCK_FLAG;
+        return (l & 1) == type;
     }
 
     private static long getReleaseStamp(long stamp) {
@@ -150,7 +148,8 @@ public class StampedLock implements java.io.Serializable {
     //                                          4: Read Lock                                                          //
     //****************************************************************************************************************//
     public boolean isReadLocked() {
-        return isReadLocked(this.stamp);
+        long currentStamp = this.stamp;
+        return isTypeStamp(currentStamp, READ_LOCK_FLAG) && getLockedCount(currentStamp) > 0;
     }
 
     public long tryReadLock() {
@@ -201,8 +200,12 @@ public class StampedLock implements java.io.Serializable {
 
     public void unlockRead(long stamp) {
         long currentStamp = this.stamp;
-        if (isReadLocked(currentStamp) && currentStamp == stamp) {
-            long newStamp = getReleaseStamp(currentStamp);
+        int inStampLow = lowInt(stamp);
+        int curStampLow = lowInt(currentStamp);
+        int curStampHigh = highInt(currentStamp);
+
+        if (inStampLow == curStampLow && (curStampLow & 1) == READ_LOCK_FLAG && curStampHigh > 0) {
+            long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
                 if (highInt(newStamp) == 0) callWaitPool.wakeupOne(true, null, RUNNING);
             }
@@ -233,11 +236,12 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public void unlock(long stamp) {
-        long currentStamp = this.stamp;
-        if (isReadLocked(currentStamp)) {//read
-            unlockRead(stamp);
-        } else {
-            unlockWrite(stamp);
+        if (getLockedCount(stamp) > 0) {
+            if (isTypeStamp(stamp, READ_LOCK_FLAG)) {
+                unlockRead(stamp);
+            } else {
+                unlockWrite(stamp);
+            }
         }
     }
 
@@ -245,7 +249,8 @@ public class StampedLock implements java.io.Serializable {
     //                                          5: Write Lock                                                         //
     //****************************************************************************************************************//
     public boolean isWriteLocked() {
-        return isWriteLocked(this.stamp);
+        long currentStamp = this.stamp;
+        return isTypeStamp(currentStamp, WRITE_LOCK_FLAG) && getLockedCount(currentStamp) > 0;
     }
 
     public long tryWriteLock() {
@@ -291,11 +296,13 @@ public class StampedLock implements java.io.Serializable {
 
     public void unlockWrite(long stamp) {
         long currentStamp = this.stamp;
-        if (isWriteLocked(currentStamp) && currentStamp == stamp) {
-            long newStamp = getReleaseStamp(currentStamp);
-            if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                if (highInt(newStamp) == 0) callWaitPool.wakeupOne(true, null, RUNNING);
-            }
+        int inStampLow = lowInt(stamp);
+        int curStampLow = lowInt(currentStamp);
+        int curStampHigh = highInt(currentStamp);
+
+        if (inStampLow == curStampLow && (curStampLow & 1) == WRITE_LOCK_FLAG && curStampHigh > 0) {
+            long newStamp = contact(curStampHigh - 1, curStampLow);
+            compareAndSetLockStamp(this, currentStamp, newStamp);
         }
     }
 
