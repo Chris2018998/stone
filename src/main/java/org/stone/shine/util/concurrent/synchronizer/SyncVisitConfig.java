@@ -111,7 +111,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         return parkSupport;
     }
 
-    public boolean supportInterrupted() {
+    public final boolean supportInterrupted() {
         return supportInterrupted;
     }
 
