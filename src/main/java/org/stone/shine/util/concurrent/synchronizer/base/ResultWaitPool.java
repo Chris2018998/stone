@@ -77,10 +77,10 @@ public class ResultWaitPool extends ThreadWaitingPool {
      */
     public final Object doCall(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
+        if (Thread.interrupted()) throw new InterruptedException();
         if (call == null) throw new IllegalArgumentException("Result call can't be null");
         if (config == null) throw new IllegalArgumentException("Visit config can't be null");
         if (validator == null) throw new IllegalArgumentException("Result validator can't be null");
-        if (Thread.interrupted()) throw new InterruptedException();
 
         //2:execute call
         if (!fair || !this.hasQueuedPredecessors()) {
@@ -100,24 +100,21 @@ public class ResultWaitPool extends ThreadWaitingPool {
         //5:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: execute call(state != null)
-                Object state = node.getState();
-                if(state!=null){
-                  Object result = call.call(arg);
-                  if (validator.isExpected(result)) {
-                      success = true;
-                      return result;
-                  }
+                //5.1: execute call
+                Object result = call.call(arg);
+                if (validator.isExpected(result)) {
+                    success = true;
+                    return result;
                 }
 
                 //5.2: fail check
+                Object state = node.getState();
                 if (parkSupport.isTimeout()) {
                     if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
                 } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
                     if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
-                    Thread.yield();
                 } else if (spins > 0) {
                     --spins;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
