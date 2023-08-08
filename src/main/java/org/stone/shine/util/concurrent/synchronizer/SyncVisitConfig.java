@@ -25,8 +25,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private Object nodeType;
     //node init state
     private Object initState;
-    //node object
-    private SyncNode<E> syncNode;
 
     //***********************************************spin configuration***********************************************//
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
@@ -100,8 +98,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     public final SyncNode getSyncNode() {
-        if (syncNode != null) return syncNode;
-        return this.syncNode = new SyncNode<>(initState, nodeType, nodeValue);
+        return new SyncNode<>(initState, nodeType, nodeValue);
     }
 
     //****************************************************************************************************************//
@@ -161,7 +158,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.nodeValue = null;
         this.nodeType = null;
         this.initState = null;
-        this.syncNode = null;
         this.parkSupport.reset();
         this.supportInterrupted = true;
 
