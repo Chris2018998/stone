@@ -500,7 +500,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
                 if (cause != null) {
                     BorrowStUpd.compareAndSet(b, s, cause);
-                } else if (s instanceof PooledConnection) {
+                } else if (s !=null) {//here:s must be a PooledConnection
                     b.state = null;
                     Thread.yield();
                 } else {//here:(s == null)
