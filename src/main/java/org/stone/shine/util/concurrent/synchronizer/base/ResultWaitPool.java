@@ -89,7 +89,6 @@ public class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:offer to wait queue
-        config.setNodeInitState(RUNNING);
         SyncNode node = config.getSyncNode();
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
