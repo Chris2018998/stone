@@ -217,7 +217,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     }
 
     // Unsafe mechanics
-    static long objectFieldOffset(sun.misc.Unsafe UNSAFE,
+    static long objectFieldOffset(Unsafe UNSAFE,
                                   String field, Class<?> klazz) {
         try {
             return UNSAFE.objectFieldOffset(klazz.getDeclaredField(field));
@@ -443,7 +443,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Returns an empty spliterator in which calls to
-     * {@link java.util.Spliterator#trySplit()} always return {@code null}.
+     * {@link Spliterator#trySplit()} always return {@code null}.
      *
      * @return an empty spliterator
      * @since 1.8
@@ -605,12 +605,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         static final int FULFILLING = 2;
         // Unsafe mechanics
-        private static final sun.misc.Unsafe UNSAFE;
+        private static final Unsafe UNSAFE;
         private static final long headOffset;
 
         static {
             try {
-                UNSAFE = sun.misc.Unsafe.getUnsafe();
+                UNSAFE = Unsafe.getUnsafe();
                 Class<?> k = TransferStack.class;
                 headOffset = UNSAFE.objectFieldOffset
                         (k.getDeclaredField("head"));
@@ -841,7 +841,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         static final class SNode {
             // Unsafe mechanics
-            private static final sun.misc.Unsafe UNSAFE;
+            private static final Unsafe UNSAFE;
             private static final long matchOffset;
             private static final long nextOffset;
 
@@ -927,7 +927,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          * from non-null to null (for put) or vice versa (for take).
          */
 
-        private static final sun.misc.Unsafe UNSAFE;
+        private static final Unsafe UNSAFE;
         private static final long headOffset;
         private static final long tailOffset;
         private static final long cleanMeOffset;
@@ -1185,7 +1185,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         static final class QNode {
             // Unsafe mechanics
-            private static final sun.misc.Unsafe UNSAFE;
+            private static final Unsafe UNSAFE;
             private static final long itemOffset;
             private static final long nextOffset;
 

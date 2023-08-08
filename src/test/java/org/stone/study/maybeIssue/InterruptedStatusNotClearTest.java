@@ -1,6 +1,6 @@
 package org.stone.study.maybeIssue;
 
-import org.stone.shine.util.concurrent.SynchronousQueue2;
+import org.stone.study.SynchronousQueue2;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -16,7 +16,6 @@
 
 package org.stone.study;
 
-import org.stone.shine.util.concurrent.SynchronousQueue2;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;

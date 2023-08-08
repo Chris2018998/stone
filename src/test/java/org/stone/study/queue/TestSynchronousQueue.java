@@ -1,6 +1,6 @@
 package org.stone.study.queue;
 
-import org.stone.shine.util.concurrent.SynchronousQueue2;
+import org.stone.study.SynchronousQueue2;
 
 import java.util.concurrent.*;
 
@@ -23,7 +23,7 @@ public class TestSynchronousQueue {
                 System.out.print("\t" + length + "\t\t");
 //                 System.out.print("\t" + doTest2(new LinkedBlockingQueue<Integer>(length), N) + "/s\t\t\t");
 //                 System.out.print("\t" + doTest2(new ArrayBlockingQueue<Integer>(length), N) + "/s\t\t\t");
-                System.out.print("\t" + doTest2(new java.util.concurrent.SynchronousQueue<Integer>(true), N) + "/s\t\t\t");
+                System.out.print("\t" + doTest2(new SynchronousQueue<Integer>(true), N) + "/s\t\t\t");
                 System.out.print("\t" + doTest2(new SynchronousQueue2<Integer>(true), N) + "/s");
                 System.out.println();
             }
