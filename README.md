@@ -16,11 +16,11 @@ Stone,A Java Tools Suite
 
 ## :arrow_down: Download 
 
-Java7 or higher
+Java8 or higher
 ```xml
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.0.6</version>
+   <version>1.0.7</version>
 </dependency>
 ```
