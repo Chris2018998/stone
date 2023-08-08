@@ -89,8 +89,8 @@ public class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:offer to wait queue
+        config.setNodeInitState(RUNNING);
         SyncNode node = config.getSyncNode();
-        node.setState(RUNNING);
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //4:get control parameters from config
@@ -100,7 +100,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         //5:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: execute call((state != Null))
+                //5.1: execute call(state != null)
                 Object state = node.getState();
                 if(state!=null){
                   Object result = call.call(arg);
