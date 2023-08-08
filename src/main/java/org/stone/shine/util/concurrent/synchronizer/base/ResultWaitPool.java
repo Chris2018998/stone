@@ -100,7 +100,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         //5:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: execute call((state != RUNNING))
+                //5.1: execute call((state != Null))
                 Object state = node.getState();
                 if(state!=null){
                   Object result = call.call(arg);
