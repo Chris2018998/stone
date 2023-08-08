@@ -106,10 +106,6 @@ public class StampedLock implements java.io.Serializable {
         return (int) (stamp >>> MOVE_SHIFT);
     }
 
-    private static boolean isSameStamp(long stamp1, long stamp2) {
-        return stamp1 == stamp2 || (int) stamp1 == (int) stamp2;
-    }
-
     private static boolean isTypeStamp(long stamp, int type) {
         int h = (int) (stamp >>> MOVE_SHIFT);
         int l = (int) (stamp & CLN_HIGH_MASK);
@@ -264,8 +260,13 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          6: Lock Convert(3)                                                    //
+    //                                          6: Lock Convert or others(4)                                                    //
     //****************************************************************************************************************//
+    public boolean validate(long inStamp) {
+        long currentStamp = this.stamp;
+        return currentStamp == inStamp || lowInt(currentStamp) == lowInt(inStamp);
+    }
+
     public void unlock(long stamp) {
         if (getLockedCount(stamp) > 0) {
             if (isTypeStamp(stamp, READ_LOCK_FLAG)) {
@@ -350,7 +351,9 @@ public class StampedLock implements java.io.Serializable {
 
     private static class LongResultValidator implements ResultValidator {
 
-        public Object resultOnTimeout() { return -1L; }
+        public Object resultOnTimeout() {
+            return -1L;
+        }
 
         public boolean isExpected(Object result) {
             return ((long) result != -1L);
