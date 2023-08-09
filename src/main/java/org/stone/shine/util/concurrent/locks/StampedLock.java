@@ -71,16 +71,12 @@ import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.T
  * @version 1.0
  */
 public class StampedLock implements java.io.Serializable {
-    private final static UnsafeAdaptor U;
-    private static final long stampOffset;
-
-    //****************************************************************************************************************//
-    //                                          1: static(5)                                                          //
-    //****************************************************************************************************************//
     private static final int MOVE_SHIFT = 32;
     private static final long CLN_HIGH_MASK = 0xFFFFFFFFL;//4294967295L;
     private static final int WRITE_LOCK_FLAG = 0;
     private static final int READ_LOCK_FLAG = 1;
+    private static final UnsafeAdaptor U;
+    private static final long stampOffset;
 
     static {
         try {
@@ -104,14 +100,14 @@ public class StampedLock implements java.io.Serializable {
     private ReadWriteLockView readWriteLockView;
 
     //****************************************************************************************************************//
-    //                                          2: CAS(1)                                                             //
+    //                                          1: CAS(1)                                                             //
     //****************************************************************************************************************//
     private static boolean compareAndSetLockStamp(StampedLock lock, long exp, long upd) {
         return U.compareAndSwapLong(lock, stampOffset, exp, upd);
     }
 
     //****************************************************************************************************************//
-    //                                          3: Stamp(7)                                                           //
+    //                                          2: Stamp(7)                                                           //
     //****************************************************************************************************************//
     private static int lowInt(long v) {
         return (int) (v & CLN_HIGH_MASK);
@@ -155,7 +151,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          4: Read Lock(6)                                                       //
+    //                                          3: Read Lock(6)                                                       //
     //****************************************************************************************************************//
     public boolean isReadLocked() {
         long currentStamp = this.stamp;
@@ -226,7 +222,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          5: Write Lock(6)                                                      //
+    //                                          4: Write Lock(6)                                                      //
     //****************************************************************************************************************//
     public boolean isWriteLocked() {
         long currentStamp = this.stamp;
@@ -291,7 +287,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          6: Lock Convert or others(4)                                          //
+    //                                          5: Lock Convert or others(4)                                          //
     //****************************************************************************************************************//
     public boolean validate(long inStamp) {
         long currentStamp = this.stamp;
@@ -354,7 +350,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          7: Lock View Method(3)                                                //
+    //                                          6: Lock View Method(3)                                                //
     //****************************************************************************************************************//
     public Lock asReadLock() {
         ReadLockView v;
@@ -375,7 +371,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          8: Lock Result Call class(3)                                          //
+    //                                          7: Lock Result Call class(3)                                          //
     //****************************************************************************************************************//
     private static class ReadLockCall implements ResultCall {
         private StampedLock lock;
@@ -413,7 +409,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          9: Lock view class(3)                                                 //
+    //                                          8: Lock view class(3)                                                 //
     //****************************************************************************************************************//
     private final class ReadWriteLockView implements ReadWriteLock {
         public Lock readLock() {
