@@ -311,9 +311,8 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
                 if (cause != null) {
                     BorrowStUpd.compareAndSet(b, s, cause);
-                } else if (s !=null) {//here:s must be a PooledObject
+                } else if (s != null) {//here:s must be a PooledObject
                     b.state = null;
-                    Thread.yield();
                 } else {//here:(state == null)
                     long t = deadline - System.nanoTime();
                     if (t > spinForTimeoutThreshold) {
