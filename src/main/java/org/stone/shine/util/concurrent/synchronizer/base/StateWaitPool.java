@@ -85,7 +85,6 @@ public class StateWaitPool extends ThreadWaitingPool {
                     if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
-                    Thread.yield();
                 } else if (spins > 0) {
                     --spins;
                 } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
