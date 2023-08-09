@@ -18,36 +18,54 @@ import org.stone.tools.atomic.UnsafeAdaptor;
 import org.stone.tools.atomic.UnsafeAdaptorHolder;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
 /**
- * Stamped Lock Impl
+ * StampedLock is a stamped digit Lock implementation by wait pool,which is
+ * different to JDK{@code java.util.concurrent.locks.StampedLock}.This
+ * implementation rely on an atomic long value and consist of two parts:
+ * high-32 bits and low-32 bits,they can be convert to two independent integers,
+ * high part represent hold count of a lock;low part represent lock body.
+ * Initialization value of the atomic long is 2147483648L(high-32 bits is 0,
+ * which can reach maximum integer;low-32 bits is a minimum integer:0x7fffffff).
+ * If high part value equals zero,the lock is in idle state and can be acquired
+ * and return a positive long to outside caller.
  * <p>
- * StampedLock是stone并发包下的一个读写锁实现，它的内部有一个64位的Volatile型长整数，此数由高32位和低32位组成,
- * 分别表达不同含义，长整数的初始值为：2147483648L（可视为32高位皆为0，低32位为最小负整数）。
- * <p>
- * 1：高32位数值表达锁状态：是否持有，持有多少次。读锁持有时，高位值可大于等于1(读锁具有重入性和共享性），写锁持有时，
- * 高位值只能等于1；等于0时，表示锁已被释放或未被锁定，低位值与锁前一致（不变化）。高32位数的最高位值永久性为0，既重入
- * 的次数最高可达2147483647次（最大整数），也就是说数字戳，它永久性是一个long正数{@code stamp >= 0 }
- * <p>
- * 2：低32位数为一个可递增的整数，它指征锁的类型，偶数时为写锁，奇数时为读锁，累加值，可更换锁的类型。加1则锁更换为
- * 下一个异类锁（奇转偶，偶转奇），加2则可获得下一个同类锁(奇转奇，偶转偶)。低位数递进过程可永无尽头，其奇偶替换规律，
- * 犹如阴阳替换，所以此锁又称之为：阴阳锁。（阴表示冷的，下降的，对应写锁；阳表示热的，上升的，对应读锁）
- * <p>
- * 3：抢锁成功后，32高位值位为1，32低位递进为奇数或偶数，上锁失败返回：-1
- * 4：当高位值大于0，低位数为偶数时(当前为写锁），线程抢锁失败。
- * 5：当高位值大于0，低位值为奇数时(当前为读锁)，且抢锁类型为读锁时，则累加高位数即可。
- * 6：当高位值等于0，低位值为偶数时(前次使用为写锁)，如果抢锁是读锁，高位设1， 低位值加1。
- * 7：当高位值等于0，低位值是奇数时(前次使用为读锁)，抢占锁是读锁时，高位设1，低位累加2。
- * 8：当高位值等于0，低位值为偶数时(前次使用为写锁），如果上抢占写锁，高位设1，低位加2。
- * 9：当高位值等于0，低位值为奇数时(前次使用为读锁），如果抢占写锁，高位设1，低位加1。
- * 10：写锁转读锁，低位加1，高位不变
- * 11：读锁转写锁，高位为0时，设高位为1，低位加1
- * <p>
- * 合并（高位|低位）的值，返回给锁的申请者。
+ * {@code stamp long = high-32 | low-32 }
+ *
+ * <h3>Lock mode</h3>
+ * This stamped lock support two sub-lock mode:read mode and write mode,when the
+ * low part is a even integer(positive or negative) means in write-mode lock and odd
+ * integer is in read-mode lock.
+ * <ul>
+ * <li> {@code even integer == write-mode}</li>
+ * <li> {@code odd integer == read-mode}</li>
+ * </ul>
+ *
+ * <h3>Write Mode acquisition</h3>
+ * a: if high is greater than zero,-1L number as result will return to callers
+ * b: if high equals zero and low part is an odd integer(a read-mode digit),then set (high=1;low=low+1)
+ * c: if high equals zero and low part is an even integer(a write-mode digit),then set (high=1;low=low+2)
+ *
+ * <h3>Read Mode acquisition</h3>
+ * a: if high is greater than zero and low part is an even integer(a write-mode digit),-1L will be return
+ * b: if high is greater than zero and low part is an odd integer(a read-mode digit),then set(high=high+1;low=low)
+ * d: if high equals zero and low part is an even integer(a write-mode digit),then set(high=1;low=low+1)
+ * e: if high equals zero and low part is an odd integer(a read-mode digit),then set(high=1;low=low+2)
+ *
+ * <h3>Lock Conversion</h3>
+ * When high integer equals 1,the lock state can be converted between Read-mode and Write-mode,
+ * related methods are below
+ * <ul>
+ * <li> {@link #tryConvertToReadLock} </li>
+ * <li> {@link #tryConvertToWriteLock} </li>
+ * </ul>
  *
  * @author Chris Liao
  * @version 1.0
@@ -73,12 +91,17 @@ public class StampedLock implements java.io.Serializable {
         }
     }
 
-    //call wait Pool
+    //for call wait Pool
     private volatile long stamp = 2147483648L;
     private ResultCall stampedReadCall = new ReadLockCall(this);
     private ResultCall stampedWriteCall = new WriteLockCall(this);
     private ResultValidator resultValidator = new LongResultValidator();
     private ResultWaitPool callWaitPool = new ResultWaitPool(false, resultValidator);
+
+    //lock views
+    private ReadLockView readLockView;
+    private WriteLockView writeLockView;
+    private ReadWriteLockView readWriteLockView;
 
     //****************************************************************************************************************//
     //                                          2: CAS(1)                                                             //
@@ -140,8 +163,9 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long tryReadLock() {
-        long newStamp = genNextStamp(this.stamp, false);
-        return newStamp > 0 && compareAndSetLockStamp(this, stamp, newStamp) ? newStamp : -1L;
+        long currentStamp = this.stamp;
+        long newStamp = genNextStamp(currentStamp, false);
+        return newStamp > 0 && compareAndSetLockStamp(this, currentStamp, newStamp) ? newStamp : -1L;
     }
 
     public long readLock() {
@@ -185,7 +209,7 @@ public class StampedLock implements java.io.Serializable {
         }
     }
 
-    public void unlockRead(long stamp) {
+    public boolean unlockRead(long stamp) {
         long currentStamp = this.stamp;
         int inStampLow = lowInt(stamp);
         int curStampLow = lowInt(currentStamp);
@@ -195,8 +219,10 @@ public class StampedLock implements java.io.Serializable {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
                 if (highInt(newStamp) == 0) callWaitPool.wakeupOne(true, null, RUNNING);
+                return true;
             }
         }
+        return false;
     }
 
     //****************************************************************************************************************//
@@ -208,8 +234,9 @@ public class StampedLock implements java.io.Serializable {
     }
 
     public long tryWriteLock() {
-        long newStamp = genNextStamp(this.stamp, true);
-        return newStamp > 0 && compareAndSetLockStamp(this, stamp, newStamp) ? newStamp : -1L;
+        long currentStamp = this.stamp;
+        long newStamp = genNextStamp(currentStamp, true);
+        return newStamp > 0 && compareAndSetLockStamp(this, currentStamp, newStamp) ? newStamp : -1L;
     }
 
     public long writeLock() {
@@ -247,7 +274,7 @@ public class StampedLock implements java.io.Serializable {
         }
     }
 
-    public void unlockWrite(long stamp) {
+    public boolean unlockWrite(long stamp) {
         long currentStamp = this.stamp;
         int inStampLow = lowInt(stamp);
         int curStampLow = lowInt(currentStamp);
@@ -255,12 +282,16 @@ public class StampedLock implements java.io.Serializable {
 
         if (inStampLow == curStampLow && (curStampLow & 1) == WRITE_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
-            compareAndSetLockStamp(this, currentStamp, newStamp);
+            if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
+                callWaitPool.wakeupOne(true, null, RUNNING);
+                return true;
+            }
         }
+        return false;
     }
 
     //****************************************************************************************************************//
-    //                                          6: Lock Convert or others(4)                                                    //
+    //                                          6: Lock Convert or others(4)                                          //
     //****************************************************************************************************************//
     public boolean validate(long inStamp) {
         long currentStamp = this.stamp;
@@ -323,7 +354,28 @@ public class StampedLock implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                          7: Lock Result Call(3)                                                //
+    //                                          7: Lock View Method(3)                                                //
+    //****************************************************************************************************************//
+    public Lock asReadLock() {
+        ReadLockView v;
+        return ((v = readLockView) != null ? v :
+                (readLockView = new ReadLockView()));
+    }
+
+    public Lock asWriteLock() {
+        StampedLock.WriteLockView v;
+        return ((v = writeLockView) != null ? v :
+                (writeLockView = new StampedLock.WriteLockView()));
+    }
+
+    public ReadWriteLock asReadWriteLock() {
+        ReadWriteLockView v;
+        return ((v = readWriteLockView) != null ? v :
+                (readWriteLockView = new StampedLock.ReadWriteLockView()));
+    }
+
+    //****************************************************************************************************************//
+    //                                          8: Lock Result Call class(3)                                          //
     //****************************************************************************************************************//
     private static class ReadLockCall implements ResultCall {
         private StampedLock lock;
@@ -357,6 +409,81 @@ public class StampedLock implements java.io.Serializable {
 
         public boolean isExpected(Object result) {
             return ((long) result != -1L);
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                          9: Lock view class(3)                                                 //
+    //****************************************************************************************************************//
+    private final class ReadWriteLockView implements ReadWriteLock {
+        public Lock readLock() {
+            return asReadLock();
+        }
+
+        public Lock writeLock() {
+            return asWriteLock();
+        }
+    }
+
+    private final class ReadLockView implements Lock {
+        private long lockStamp;
+
+        public void lock() {
+            this.lockStamp = readLock();
+        }
+
+        public void lockInterruptibly() throws InterruptedException {
+            this.lockStamp = readLockInterruptibly();
+        }
+
+        public boolean tryLock() {
+            this.lockStamp = tryReadLock();
+            return lockStamp != -1L;
+        }
+
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            this.lockStamp = tryReadLock(time, unit);
+            return lockStamp != -1L;
+        }
+
+        public void unlock() {
+            if (lockStamp != -1L && unlockRead(lockStamp))
+                lockStamp = -1L;
+        }
+
+        public Condition newCondition() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private final class WriteLockView implements Lock {
+        private long lockStamp;
+
+        public void lock() {
+            this.lockStamp = writeLock();
+        }
+
+        public void lockInterruptibly() throws InterruptedException {
+            this.lockStamp = writeLockInterruptibly();
+        }
+
+        public boolean tryLock() {
+            this.lockStamp = tryWriteLock();
+            return lockStamp != -1L;
+        }
+
+        public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+            this.lockStamp = tryWriteLock(time, unit);
+            return lockStamp != -1L;
+        }
+
+        public void unlock() {
+            if (lockStamp != -1L && unlockRead(lockStamp))
+                lockStamp = -1L;
+        }
+
+        public Condition newCondition() {
+            throw new UnsupportedOperationException();
         }
     }
 }
