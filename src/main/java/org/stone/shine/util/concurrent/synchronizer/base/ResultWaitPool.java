@@ -15,8 +15,7 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.*;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
@@ -112,9 +111,9 @@ public class ResultWaitPool extends ThreadWaitingPool {
 
                 //5.2: fail check
                 if (parkSupport.isTimeout()) {
-                    if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
+                    return validator.resultOnTimeout();
                 } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
-                    if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
+                    throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
                 } else if (spins > 0) {
