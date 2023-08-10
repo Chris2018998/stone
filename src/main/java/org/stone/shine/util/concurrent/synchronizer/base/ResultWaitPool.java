@@ -37,11 +37,11 @@ public class ResultWaitPool extends ThreadWaitingPool {
     //                                          1: constructors(3)                                                    //
     //****************************************************************************************************************//
     public ResultWaitPool() {
-        this(false, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
+        this(false, ResultEqualsValidator.VAL_EQU_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair) {
-        this(fair, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
+        this(fair, ResultEqualsValidator.VAL_EQU_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
@@ -61,7 +61,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @param arg    call argument
      * @param config thread wait config
      * @return object, if call result check passed by validator
-     * @throws Exception exception from call or InterruptedException after thread park
+     * @throws {@code java.lang.Exception} from call or InterruptedException after thread park
      */
     public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return this.doCall(call, arg, validator, config);
@@ -73,7 +73,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @param config    thread wait config
      * @param validator result validator
      * @return passed result
-     * @throws Exception exception from call or InterruptedException after thread park
+     * @throws {@code java.lang.Exception} from call or InterruptedException after thread park
      */
     public final Object doCall(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
@@ -90,7 +90,8 @@ public class ResultWaitPool extends ThreadWaitingPool {
 
         //3:offer to wait queue
         SyncNode node = config.getSyncNode();
-        int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
+        boolean atFirst = appendAsWaitNode(node);
+        int spins = atFirst ? maxTimedSpins : 0;//spin count
 
         //4:get control parameters from config
         boolean success = false;
@@ -100,14 +101,16 @@ public class ResultWaitPool extends ThreadWaitingPool {
         try {
             do {
                 //5.1: execute call
-                Object result = call.call(arg);
-                if (validator.isExpected(result)) {
-                    success = true;
-                    return result;
+                Object state = node.getState();
+                if (state != null || atFirst || (atFirst = atFirst(node))) {
+                    Object result = call.call(arg);
+                    if (validator.isExpected(result)) {
+                        success = true;
+                        return result;
+                    }
                 }
 
                 //5.2: fail check
-                Object state = node.getState();
                 if (parkSupport.isTimeout()) {
                     if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
                 } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
