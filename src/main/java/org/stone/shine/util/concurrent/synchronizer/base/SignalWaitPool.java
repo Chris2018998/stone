@@ -33,12 +33,13 @@ public class SignalWaitPool extends ThreadWaitingPool {
      *
      * @param config thread wait config
      * @return true, if get a signal then return true,timeout return false
-     * @throws InterruptedException exception from call or InterruptedException after thread park
+     * @throws {@code java.lang.InterruptedException} exception from call or InterruptedException after thread park
      */
     public final boolean doWait(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
-        if (config == null) throw new IllegalArgumentException("wait config can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
+        if (config == null) throw new IllegalArgumentException("wait config can't be null");
+
 
         //2:offer to wait queue
         SyncNode node = config.getSyncNode();

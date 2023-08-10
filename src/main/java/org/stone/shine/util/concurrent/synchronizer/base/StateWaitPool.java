@@ -43,7 +43,7 @@ public class StateWaitPool extends ThreadWaitingPool {
     /**
      * @param config Visitor config
      * @return a expected state
-     * @throws InterruptedException caller waiting interrupted,then throws it
+     * @throws {@code java.lang.InterruptedException} caller waiting interrupted,then throws it
      */
     public final Object doWait(SyncVisitConfig config) throws InterruptedException {
         return doWait(config, validator);
@@ -55,13 +55,13 @@ public class StateWaitPool extends ThreadWaitingPool {
      * @param config    Visitor config
      * @param validator state validator
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
-     * @throws InterruptedException caller waiting interrupted,then throws it
+     * @throws {@code java.lang.InterruptedException} caller waiting interrupted,then throws it
      */
     public final Object doWait(SyncVisitConfig config, ResultValidator validator) throws InterruptedException {
         //1:config check
+        if (Thread.interrupted()) throw new InterruptedException();
         if (config == null) throw new IllegalArgumentException("Visit config can't be null");
         if (validator == null) throw new IllegalArgumentException("State validator can't be null");
-        if (Thread.interrupted()) throw new InterruptedException();
 
         //2:offer to wait queue
         SyncNode node = config.getSyncNode();
