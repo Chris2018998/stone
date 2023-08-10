@@ -171,7 +171,7 @@ public class StampedLock implements java.io.Serializable {
             config.setWakeupNextOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
             config.setSupportInterrupted(false);
-            return (long) callWaitPool.doCall(stampedReadCall, 1, config);
+            return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (Exception e) {
             return -1L;
         }
@@ -183,7 +183,7 @@ public class StampedLock implements java.io.Serializable {
             config.setNodeType(TYPE_SHARED);
             config.setWakeupNextOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
-            return (long) callWaitPool.doCall(stampedReadCall, 1, config);
+            return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -197,7 +197,7 @@ public class StampedLock implements java.io.Serializable {
             config.setNodeType(TYPE_SHARED);
             config.setWakeupNextOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
-            return (long) callWaitPool.doCall(stampedReadCall, 1, config);
+            return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -240,7 +240,7 @@ public class StampedLock implements java.io.Serializable {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(TYPE_EXCLUSIVE);
             config.setSupportInterrupted(false);
-            return (long) callWaitPool.doCall(stampedWriteCall, 1, config);
+            return (long) callWaitPool.doCall(stampedWriteCall, null, config);
         } catch (Exception e) {
             return -1L;
         }
@@ -250,7 +250,7 @@ public class StampedLock implements java.io.Serializable {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(TYPE_EXCLUSIVE);
-            return (long) callWaitPool.doCall(stampedWriteCall, 1, config);
+            return (long) callWaitPool.doCall(stampedWriteCall, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -262,7 +262,7 @@ public class StampedLock implements java.io.Serializable {
         try {
             SyncVisitConfig config = new SyncVisitConfig(time, unit);
             config.setNodeType(TYPE_EXCLUSIVE);
-            return (long) callWaitPool.doCall(stampedWriteCall, 1, config);
+            return (long) callWaitPool.doCall(stampedWriteCall, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -306,7 +306,7 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryConvertToReadLock(long stamp) {
         long currentStamp = this.stamp;
-        if (currentStamp != stamp) return -1;
+        if (currentStamp != stamp) return -1L;
 
         int h = highInt(currentStamp);
         if (h == 1) {//locked
@@ -314,7 +314,7 @@ public class StampedLock implements java.io.Serializable {
             if ((l & 1) == WRITE_LOCK_FLAG) { //read lock
                 long newStamp = contact(h, l + 1);
                 if (compareAndSetLockStamp(this, currentStamp, newStamp)) {//new read lock
-                    this.callWaitPool.wakeupOne(true, TYPE_SHARED, RUNNING);//wakeup other share type
+                    this.callWaitPool.wakeupOne(true, TYPE_SHARED, RUNNING);//wakeup other share node
                     return newStamp;
                 } else {
                     return -1L;
