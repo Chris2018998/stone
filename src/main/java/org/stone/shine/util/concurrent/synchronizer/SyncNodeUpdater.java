@@ -29,7 +29,7 @@ public final class SyncNodeUpdater {
 
     static {
         try {
-            U = UnsafeAdaptorHolder.U;
+            U = UnsafeAdaptorHolder.UA;
             Class nodeClass = SyncNode.class;
             //SyncNode.state
             stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));
