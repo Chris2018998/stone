@@ -42,7 +42,7 @@ public final class CyclicBarrier {
     private final long flightNo;
     //Number of seats in flight room
     private final int seatSize;
-    //Execute when set out
+    //Execute on setting out
     private final Runnable tripAction;
     //result call wait pool(core drive)
     private final ResultWaitPool waitPool;
@@ -102,7 +102,7 @@ public final class CyclicBarrier {
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
-            config.setWakeupNextOnSuccess(true);
+            config.setWakeupOneOnSuccess(true);
             return doAwait(config);
         } catch (TimeoutException e) {
             throw new Error(e);
@@ -111,7 +111,7 @@ public final class CyclicBarrier {
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
-        config.setWakeupNextOnSuccess(true);
+        config.setWakeupOneOnSuccess(true);
         return doAwait(config);
     }
 

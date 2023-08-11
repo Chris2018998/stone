@@ -74,7 +74,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         SyncVisitConfig config = new SyncVisitConfig<E>();
-        config.setWakeupNextOnFailure(false);
+        config.setWakeupOneOnFailure(false);
         this.waitPool.transfer(e, config);
     }
 
@@ -90,7 +90,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
-        config.setWakeupNextOnFailure(false);
+        config.setWakeupOneOnFailure(false);
         return this.waitPool.transfer(e, config);
     }
 
@@ -107,7 +107,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E take() throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>();
-        config.setWakeupNextOnFailure(false);
+        config.setWakeupOneOnFailure(false);
         return this.waitPool.get(config);
     }
 
@@ -122,7 +122,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
-        config.setWakeupNextOnFailure(false);
+        config.setWakeupOneOnFailure(false);
         return this.waitPool.get(config);
     }
 

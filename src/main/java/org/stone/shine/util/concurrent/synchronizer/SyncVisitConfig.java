@@ -34,11 +34,11 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     //***********************************************wakeup configuration*********************************************//
     //similar to AQS SHARED mode on acquisition success
-    private boolean wakeupNextOnSuccess;
+    private boolean wakeupOneOnSuccess;
     //store some node type
     private Object wakeupNodeTypeOnSuccess;
     //similar to AQS CANCELLED
-    private boolean wakeupNextOnFailure = true;
+    private boolean wakeupOneOnFailure = true;
     //store some node type
     private Object wakeupNodeTypeOnFailure;
 
@@ -118,12 +118,12 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              4: wakeup configuration(6)                                        //
     //****************************************************************************************************************//
-    public boolean isWakeupNextOnSuccess() {
-        return wakeupNextOnSuccess;
+    public boolean isWakeupOneOnSuccess() {
+        return wakeupOneOnSuccess;
     }
 
-    public void setWakeupNextOnSuccess(boolean wakeupNextOnSuccess) {
-        this.wakeupNextOnSuccess = wakeupNextOnSuccess;
+    public void setWakeupOneOnSuccess(boolean wakeupOneOnSuccess) {
+        this.wakeupOneOnSuccess = wakeupOneOnSuccess;
     }
 
     public Object getWakeupNodeTypeOnSuccess() {
@@ -134,12 +134,12 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.wakeupNodeTypeOnSuccess = wakeupNodeTypeOnSuccess;
     }
 
-    public boolean isWakeupNextOnFailure() {
-        return wakeupNextOnFailure;
+    public boolean isWakeupOneOnFailure() {
+        return wakeupOneOnFailure;
     }
 
-    public void setWakeupNextOnFailure(boolean wakeupNextOnFailure) {
-        this.wakeupNextOnFailure = wakeupNextOnFailure;
+    public void setWakeupOneOnFailure(boolean wakeupOneOnFailure) {
+        this.wakeupOneOnFailure = wakeupOneOnFailure;
     }
 
     public Object getWakeupNodeTypeOnFailure() {
@@ -160,8 +160,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.parkSupport.reset();
         this.supportInterrupted = true;
 
-        this.wakeupNextOnFailure = true;
-        this.wakeupNextOnSuccess = false;
+        this.wakeupOneOnFailure = true;
+        this.wakeupOneOnSuccess = false;
         this.wakeupNodeTypeOnSuccess = null;
         this.wakeupNodeTypeOnFailure = null;
     }

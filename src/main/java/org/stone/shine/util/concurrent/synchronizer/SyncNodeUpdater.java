@@ -56,7 +56,7 @@ public final class SyncNodeUpdater {
         return U.compareAndSwapObject(n, nextOffSet, curNext, newNext);
     }
 
-    public static boolean casState(SyncNode node, Object expect, Object update) {
-        return node.state == expect && U.compareAndSwapObject(node, stateOffSet, expect, update);
+    public static boolean casState(SyncNode n, Object expect, Object update) {
+        return n.state == expect && U.compareAndSwapObject(n, stateOffSet, expect, update);
     }
 }

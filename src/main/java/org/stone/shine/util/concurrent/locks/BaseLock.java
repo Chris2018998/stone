@@ -86,7 +86,7 @@ class BaseLock implements Lock {
         config.setNodeType(acquireType);
         config.setSupportInterrupted(false);
         if (acquireType == TYPE_SHARED) {
-            config.setWakeupNextOnSuccess(true);
+            config.setWakeupOneOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
         }
 
@@ -147,7 +147,7 @@ class BaseLock implements Lock {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(acquireType);
         if (acquireType == TYPE_SHARED) {
-            config.setWakeupNextOnSuccess(true);
+            config.setWakeupOneOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
         }
         waitPool.acquire(lockAction, 1, config);
@@ -245,7 +245,7 @@ class BaseLock implements Lock {
         SyncVisitConfig config = new SyncVisitConfig(time, unit);
         config.setNodeType(acquireType);
         if (acquireType == TYPE_SHARED) {
-            config.setWakeupNextOnSuccess(true);
+            config.setWakeupOneOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
         }
         return waitPool.acquire(lockAction, 1, config);
