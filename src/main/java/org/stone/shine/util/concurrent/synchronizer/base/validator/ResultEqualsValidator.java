@@ -21,7 +21,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  */
 public final class ResultEqualsValidator extends EquivalentValidator {
     //default validator
-    public static final ResultValidator VAL_EQU_VALIDATOR = new ResultEqualsValidator(true, false);
+    public static final ResultValidator BOOL_EQU_VALIDATOR = new ResultEqualsValidator(true, false);
 
     public ResultEqualsValidator(Object compareValue) {
         super(compareValue);

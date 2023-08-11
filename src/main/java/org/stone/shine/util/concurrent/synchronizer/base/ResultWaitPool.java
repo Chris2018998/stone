@@ -35,11 +35,11 @@ public class ResultWaitPool extends ThreadWaitingPool {
     //                                          1: constructors(3)                                                    //
     //****************************************************************************************************************//
     public ResultWaitPool() {
-        this(false, ResultEqualsValidator.VAL_EQU_VALIDATOR);
+        this(false, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair) {
-        this(fair, ResultEqualsValidator.VAL_EQU_VALIDATOR);
+        this(fair, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
