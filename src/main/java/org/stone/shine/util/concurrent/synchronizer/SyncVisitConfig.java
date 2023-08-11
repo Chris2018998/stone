@@ -46,7 +46,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //                                              1:constructors(4)                                                 //
     //****************************************************************************************************************//
     public SyncVisitConfig() {
-        this(0, null, null, false);
+        this(0L, null, null, false);
     }
 
     public SyncVisitConfig(long parkTime, TimeUnit timeUnit) {
@@ -58,13 +58,12 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     public SyncVisitConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isUtilTime) {
-        if (parkTime > 0) {
-            if (timeUnit == null) throw new IllegalArgumentException("time unit can't be null");
+        if (parkTime > 0L) {
             if (isUtilTime) {
-                long blockTimeMillis = timeUnit.toMillis(parkTime);
-                this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(blockTimeMillis) :
-                        new ThreadParkSupport.UtilMillsParkSupport2(blockTimeMillis, blockObject);
+                this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(parkTime) :
+                        new ThreadParkSupport.UtilMillsParkSupport2(parkTime, blockObject);
             } else {
+                if (timeUnit == null) throw new IllegalArgumentException("Time unit can't be null");
                 long blockNanos = timeUnit.toNanos(parkTime);
                 this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(blockNanos) :
                         new ThreadParkSupport.NanoSecondsParkSupport2(blockNanos, blockObject);

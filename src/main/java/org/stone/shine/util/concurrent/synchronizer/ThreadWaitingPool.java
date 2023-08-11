@@ -33,24 +33,22 @@ public abstract class ThreadWaitingPool<E> {
     //                                          1:queue Methods(3)                                                    //
     //****************************************************************************************************************//
     protected final boolean atFirst(SyncNode node) {
-        return node == waitChain.peek();
+        return node == waitChain.peekFirst();
     }
 
     protected final void removeNode(SyncNode node) {
         waitChain.removeFirstOccurrence(node);
-        node.clear();
     }
 
     protected final boolean appendAsWaitNode(SyncNode node) {
-        node.setOwnerThread();
-        waitChain.offer(node);
-        return node == waitChain.peek();
+        node.setCurrentThread();
+        waitChain.offerLast(node);
+        return node == waitChain.peekFirst();
     }
 
-    protected final SyncNode<E> appendAsDataNode(Object state, Object type, E value) {
+    protected final void appendAsDataNode(Object state, Object type, E value) {
         SyncNode<E> node = new SyncNode<E>(state, type, value);
-        waitChain.offer(node);
-        return node;
+        waitChain.offerLast(node);
     }
 
     //****************************************************************************************************************//
@@ -63,7 +61,7 @@ public abstract class ThreadWaitingPool<E> {
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.state == null && casState(qNode, null, toState)) {
+                if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
                 }
@@ -71,7 +69,7 @@ public abstract class ThreadWaitingPool<E> {
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.state == null && nodeType == qNode.type && casState(qNode, null, toState)) {
+                if (nodeType == qNode.type && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
                 }
@@ -89,7 +87,7 @@ public abstract class ThreadWaitingPool<E> {
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.state == null && casState(qNode, null, toState)) {
+                if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     wakeupCount++;
                 }
@@ -97,7 +95,7 @@ public abstract class ThreadWaitingPool<E> {
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.state == null && nodeType == qNode.type && casState(qNode, null, toState)) {
+                if (nodeType == qNode.type && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     wakeupCount++;
                 }
@@ -109,34 +107,30 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          3: leave from pool(1)                                                 //
     //****************************************************************************************************************//
-    protected final SyncNode leaveFromWaitQueue(SyncNode current, boolean wakeup, Object nodeType, Object toState) {
+    protected final void leaveFromWaitQueue(SyncNode current, boolean wakeup, Object nodeType, Object toState) {
         //1: remove current node from queue
         this.waitChain.removeFirstOccurrence(current);
-        current.clear();
-
-        //2: if not wakeup other,exit
+        //2: Iterator to wakeup one
         if (wakeup) {
             Iterator<SyncNode> iterator = this.waitChain.iterator();
             if (nodeType == null) {
                 while (iterator.hasNext()) {
                     SyncNode qNode = iterator.next();
-                    if (qNode.state == null && casState(qNode, null, toState)) {
+                    if (casState(qNode, null, toState)) {
                         LockSupport.unpark(qNode.thread);
-                        return qNode;
+                        return;
                     }
                 }
             } else {
                 while (iterator.hasNext()) {
                     SyncNode qNode = iterator.next();
-                    if (qNode.state == null && nodeType == qNode.type && casState(qNode, null, toState)) {
+                    if (nodeType == qNode.type && casState(qNode, null, toState)) {
                         LockSupport.unpark(qNode.thread);
-                        return qNode;
+                        return;
                     }
                 }
             }
         }
-        //4: not found matched node
-        return null;
     }
 
     //****************************************************************************************************************//

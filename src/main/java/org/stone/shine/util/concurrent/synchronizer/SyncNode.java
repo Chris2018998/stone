@@ -71,7 +71,7 @@ public final class SyncNode<E> {
         return this.thread;
     }
 
-    final void setOwnerThread() {
+    final void setCurrentThread() {
         this.thread = Thread.currentThread();
     }
 
