@@ -21,7 +21,7 @@ final class LockAtomicState extends AtomicIntState {
 
     private Thread exclusiveOwnerThread;
 
-    Thread getExclusiveOwnerThread() {
+    final Thread getExclusiveOwnerThread() {
         return exclusiveOwnerThread;
     }
 

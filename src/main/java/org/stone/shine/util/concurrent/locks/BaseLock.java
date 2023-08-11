@@ -82,14 +82,15 @@ class BaseLock implements Lock {
      * {@code Lock} implementation.
      */
     public void lock() {
+        SyncVisitConfig config = new SyncVisitConfig();
+        config.setNodeType(acquireType);
+        config.setSupportInterrupted(false);
+        if (acquireType == TYPE_SHARED) {
+            config.setWakeupNextOnSuccess(true);
+            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+        }
+
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setNodeType(acquireType);
-            config.setSupportInterrupted(false);
-            if (acquireType == TYPE_SHARED) {
-                config.setWakeupNextOnSuccess(true);
-                config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
-            }
             waitPool.acquire(lockAction, 1, config);
         } catch (Exception e) {
             //do nothing
@@ -379,7 +380,7 @@ class BaseLock implements Lock {
         public long awaitNanos(long nanosTimeout) throws InterruptedException {
             SyncVisitConfig config = new SyncVisitConfig(nanosTimeout, TimeUnit.NANOSECONDS);
             this.doAwait(config);
-            return config.getParkSupport().getParkNanos();
+            return config.getParkSupport().getLastParkNanos();
         }
 
         public boolean await(long time, TimeUnit unit) throws InterruptedException {

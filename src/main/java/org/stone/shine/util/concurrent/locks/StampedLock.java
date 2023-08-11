@@ -13,7 +13,6 @@ import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultValidator;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
-import org.stone.tools.CommonUtil;
 import org.stone.tools.atomic.UnsafeAdaptor;
 import org.stone.tools.atomic.UnsafeAdaptorHolder;
 
@@ -80,19 +79,19 @@ public class StampedLock implements java.io.Serializable {
 
     static {
         try {
-            U = UnsafeAdaptorHolder.U;
-            stampOffset = CommonUtil.objectFieldOffset(StampedLock.class, "stamp");
+            U = UnsafeAdaptorHolder.UA;
+            stampOffset = U.objectFieldOffset(StampedLock.class.getDeclaredField("stamp"));
         } catch (Exception e) {
             throw new Error(e);
         }
     }
 
     //for call wait Pool
+    private final ResultCall stampedReadCall = new ReadLockCall(this);
+    private final ResultCall stampedWriteCall = new WriteLockCall(this);
+    private final ResultValidator resultValidator = new LongResultValidator();
+    private final ResultWaitPool callWaitPool = new ResultWaitPool(false, resultValidator);
     private volatile long stamp = 2147483648L;
-    private ResultCall stampedReadCall = new ReadLockCall(this);
-    private ResultCall stampedWriteCall = new WriteLockCall(this);
-    private ResultValidator resultValidator = new LongResultValidator();
-    private ResultWaitPool callWaitPool = new ResultWaitPool(false, resultValidator);
 
     //lock views
     private ReadLockView readLockView;

@@ -61,8 +61,7 @@ public final class ReentrantLock extends BaseLock {
 
         public final boolean tryRelease(int size) {
             if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
-                int curState = lockState.getState();
-                curState = curState - size;//full release(occur in condition wait)
+                int curState = lockState.getState() - size;//full release(occur in condition wait)
 
                 if (curState < 0) throw new Error("lock count decrement exceeded");
                 if (curState == 0) lockState.setExclusiveOwnerThread(null);
