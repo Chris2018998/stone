@@ -9,10 +9,6 @@
  */
 package org.stone.tools;
 
-import sun.misc.Unsafe;
-
-import java.lang.reflect.Field;
-
 /**
  * common util
  *
@@ -22,26 +18,9 @@ import java.lang.reflect.Field;
 
 public class CommonUtil {
     public static final int NCPU = Runtime.getRuntime().availableProcessors();
+    public static final long spinForTimeoutThreshold = 1023L;
     public static final int maxTimedSpins = (NCPU < 2) ? 0 : 32;
     public static final int maxUntimedSpins = maxTimedSpins * 16;
-    public static final long spinForTimeoutThreshold = 1023L;
-    public static final sun.misc.Unsafe UNSAFE;
-
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafe.get(null);
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
-    public static long objectFieldOffset(Class clazz, String fieldName) throws Exception {
-        Field field = clazz.getDeclaredField(fieldName);
-        if (field.isAccessible()) field.setAccessible(true);
-        return UNSAFE.objectFieldOffset(field);
-    }
 
     public static String trimString(String value) {
         return value == null ? null : value.trim();
