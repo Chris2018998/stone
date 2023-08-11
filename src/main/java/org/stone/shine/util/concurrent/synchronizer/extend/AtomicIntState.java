@@ -25,7 +25,7 @@ public class AtomicIntState {
 
     static {
         try {
-            U = UnsafeAdaptorHolder.U;
+            U = UnsafeAdaptorHolder.UA;
             offset = U.objectFieldOffset(AtomicIntState.class.getDeclaredField("state"));
         } catch (Exception e) {
             throw new Error(e);
