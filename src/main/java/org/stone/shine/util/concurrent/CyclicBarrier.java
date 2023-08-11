@@ -13,7 +13,6 @@ import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +64,7 @@ public final class CyclicBarrier {
         this.seatSize = size;
         this.tripAction = tripAction;
         this.flightNo = System.currentTimeMillis();
-        this.waitPool = new ResultWaitPool(false, new ResultEqualsValidator(seatSize, false));
+        this.waitPool = new ResultWaitPool();
         this.generationFlight = new GenerationFlight(seatSize);
     }
 
@@ -132,7 +131,7 @@ public final class CyclicBarrier {
                 Object result = waitPool.doCall(currentFlight, seatNo, config);
                 if (Boolean.FALSE.equals(result)) throw new TimeoutException();
 
-                if (objectEquals(seatSize, result)) {//
+                if (seatNo == seatSize && objectEquals(Boolean.TRUE, result)) {
                     if (!currentFlight.compareAndSetState(State_Open, State_Flying)) throw new BrokenBarrierException();
                     //wakeup others in Flight room
                     waitPool.wakeupOne(true, curFlightNo, SyncNodeStates.RUNNING);
@@ -259,7 +258,9 @@ public final class CyclicBarrier {
         //                                           wait call method                                                 //
         //************************************************************************************************************//
         public Object call(Object arg) {
-            return passengerCount.get();
+            if (flightState.get() > State_Flying) return true;
+
+            return passengerCount.get() == seatSize;//full seated
         }
     }
 }
