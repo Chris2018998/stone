@@ -174,14 +174,14 @@ public class ThreadParkSupport {
     //****************************************************************************************************************//
     static class UtilMillsParkSupport1 extends ThreadParkSupport {
 
-        UtilMillsParkSupport1(long deadline) {
-            this.deadlineTime = deadline;
+        UtilMillsParkSupport1(long deadlineTime) {
+            this.deadlineTime = deadlineTime;
         }
 
         public void tryToPark() {
             this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
             if (this.parkNanos > 0L) {
-                parkUntil(parkNanos);
+                parkUntil(deadlineTime);
                 this.interrupted = Thread.interrupted();
             } else {
                 this.hasTimeout = true;
@@ -201,15 +201,15 @@ public class ThreadParkSupport {
     //                                       MilliSeconds Park util Implement                                         //
     //****************************************************************************************************************//
     static class UtilMillsParkSupport2 extends UtilMillsParkSupport1 {
-        UtilMillsParkSupport2(long deadline, Object blocker) {
-            super(deadline);
+        UtilMillsParkSupport2(long deadlineTime, Object blocker) {
+            super(deadlineTime);
             this.blockObject = blocker;
         }
 
         public final void tryToPark() {
             this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
             if (this.parkNanos > 0L) {
-                parkUntil(blockObject, parkNanos);
+                parkUntil(blockObject, deadlineTime);
                 this.interrupted = Thread.interrupted();
             } else {
                 this.hasTimeout = true;
