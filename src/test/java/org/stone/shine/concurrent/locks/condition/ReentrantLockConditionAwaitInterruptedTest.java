@@ -39,6 +39,7 @@ public class ReentrantLockConditionAwaitInterruptedTest extends ReentrantLockCon
         //2:writeLock in main thread
         awaitThread.getCountDownLatch().await();
         awaitThread.interrupt();
+        LockSupport.parkNanos(ParkDelayNanos);
 
         //3:writeLock for main thread
         lock.lock();
@@ -49,7 +50,7 @@ public class ReentrantLockConditionAwaitInterruptedTest extends ReentrantLockCon
         }
 
         //4:check time
-        LockSupport.parkNanos(ParkDelayNanos);
+        awaitThread.join();
         if (awaitThread.getInterruptedException() == null) TestUtil.assertError("test failed");
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked1());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked2());

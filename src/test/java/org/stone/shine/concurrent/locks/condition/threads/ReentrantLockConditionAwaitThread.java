@@ -63,7 +63,6 @@ public class ReentrantLockConditionAwaitThread extends BaseThread {
         try {
             locked1 = lock.isHeldByCurrentThread();
             this.countDown.countDown();
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
             if ("await".equals(methodName) && timeUnit != null) {
                 this.result = condition.await(timeout, timeUnit);
             } else if ("await".equals(methodName)) {

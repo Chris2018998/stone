@@ -24,6 +24,12 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
  */
 
 public class ReentrantLockConditionAwaitTest extends ReentrantLockConditionTestCase {
+    public static void main(String[] args) throws Throwable {
+        ReentrantLockConditionAwaitTest test = new ReentrantLockConditionAwaitTest();
+        test.setUp();
+        test.test();
+    }
+
     public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await");
