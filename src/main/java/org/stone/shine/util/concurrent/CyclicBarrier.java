@@ -38,18 +38,18 @@ public final class CyclicBarrier {
     //Flight is in canceled(some passengers has exited the trip)
     public static final int State_Cancelled = 4;
 
-    //Flight no(set to a property of chain node,count by this value when wakeup)
+    //Flight no(set to node type property of chain node)
     private final long flightNo;
     //Number of seats in flight room
     private final int seatSize;
     //Execute when set out
     private final Runnable tripAction;
-    //result call wait pool
+    //result call wait pool(core drive)
     private final ResultWaitPool waitPool;
 
     //Number of completed flying
     private int tripCount;
-    //result call implementation(instance recreated after flight over)
+    //result call implementation(instance recreated after resetting flight to be a new one)
     private GenerationFlight generationFlight;
 
     //****************************************************************************************************************//
@@ -81,17 +81,17 @@ public final class CyclicBarrier {
         return tripCount;
     }
 
-    //return waiting passengers in flight room
+    //return passengers in flight room（wait util final passenger be on aboard)
     public int getNumberWaiting() {
         return generationFlight.getWaitingCount();
     }
 
-    //return state of current flight
+    //return state of current flight(@see State_xxx static definition at first rows of this file)
     public int getState() {
         return generationFlight.getState();
     }
 
-    //true,flight has been cancelled
+    //true,flight has been cancelled(if exits passengers wait-timeout or Interrupted,all room passengers will leave)
     public boolean isBroken() {
         return generationFlight.isBroken();
     }
@@ -119,23 +119,27 @@ public final class CyclicBarrier {
     private int doAwait(SyncVisitConfig config) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (Thread.interrupted()) throw new InterruptedException();
 
-        //hall passengers can continue here for next trip
         while (true) {
             GenerationFlight currentFlight = generationFlight;
             if (currentFlight.isBroken()) throw new BrokenBarrierException();
             int seatNo = currentFlight.buyFlightTicket();//range[1 -- seatSize],0 means that not got a ticket
+            long curFlightNo = seatNo > 0 ? flightNo : 0;
+            config.setNodeType(curFlightNo);//flightNo using in wakeup
 
             try {
-                long curFlightNo = seatNo > 0 ? flightNo : 0;
-                config.setNodeType(curFlightNo);
+                //1: passenger gather in waiting pool(seatNo is zero,we can image that some passengers without ticket and waiting in hall for next flight)
                 Object result = waitPool.doCall(currentFlight, seatNo, config);
+                //2: call result is a false bool,exists one passenger wait timeout(the flight will be cancelled)
                 if (Boolean.FALSE.equals(result)) throw new TimeoutException();
 
+                //3: if result of the last call is boolean true,the flight room is seated full(set out)
                 if (seatNo == seatSize && objectEquals(Boolean.TRUE, result)) {
+                    //4: set the flight state to flying via cas
                     if (!currentFlight.compareAndSetState(State_Open, State_Flying)) throw new BrokenBarrierException();
-                    //wakeup others in Flight room
+                    //5: wakeup other room passengers(exit waiting)
                     waitPool.wakeupOne(true, curFlightNo, SyncNodeStates.RUNNING);
 
+                    //6: if exists a trip action,execute it
                     tripCount++;
                     if (tripAction != null) {
                         try {
@@ -144,13 +148,17 @@ public final class CyclicBarrier {
                             //don't throw out runtimeException or error from the trip action
                         }
                     }
-                    //assume flight arrival
+
+                    //7: set flight state to be arrived(current flight is over)
                     currentFlight.setState(State_Arrived);
 
-                    //new flight set:begin
+                    //8: create a new generation object(a new flight is ready)
                     this.generationFlight = new GenerationFlight(seatSize);
-                    //wakeup hall passengers to buy ticket for next trip
+
+                    //9: wakeup hall passengers to buy ticket of the new flight
                     waitPool.wakeupAll(true, 0, SyncNodeStates.RUNNING);
+
+                    //10: return the seat-No of the passenger)
                     return seatNo;
                 }
 
@@ -162,9 +170,11 @@ public final class CyclicBarrier {
                 if (seatNo > 0) {
                     int state = currentFlight.getState();
                     if (state == State_Flying || state == State_Arrived) return seatNo;
-                    if (state == State_Open && currentFlight.compareAndSetState(state, State_Cancelled)) {
+
+                    //remark flight to be in cancelled state,notify all passengers to abandon
+                    //current flight(include room and hall)
+                    if (currentFlight.compareAndSetState(state, State_Cancelled))
                         waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
-                    }
                 }
 
                 if (e instanceof TimeoutException) throw (TimeoutException) e;
