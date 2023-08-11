@@ -17,7 +17,6 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
-import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Core Desc: Do some thing(execute result call),if success,return directly, but if failed,
@@ -60,7 +59,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @param arg    call argument
      * @param config thread wait config
      * @return object, if call result check passed by validator
-     * @throws java.lang.Exception from call or InterruptedException after thread park
+     * @throws java.lang.Exception from call or InterruptedException after thread tryToPark
      */
     public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return this.doCall(call, arg, validator, config);
@@ -72,14 +71,13 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @param config    thread wait config
      * @param validator result validator
      * @return passed result
-     * @throws java.lang.Exception from call or InterruptedException after thread park
+     * @throws java.lang.Exception from call or InterruptedException after thread tryToPark
      */
     public final Object doCall(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
-        if (call == null) throw new IllegalArgumentException("Result call can't be null");
-        if (config == null) throw new IllegalArgumentException("Visit config can't be null");
-        if (validator == null) throw new IllegalArgumentException("Result validator can't be null");
+        if (call == null || config == null || validator == null)
+            throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:execute call
         if (!fair || !this.hasQueuedPredecessors()) {
@@ -99,7 +97,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
         //5:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: execute call
+                //5.1: execute call(got a signal or at first of wait queue)
                 Object state = node.getState();
                 if (state != null || atFirst || (atFirst = atFirst(node))) {
                     Object result = call.call(arg);
@@ -110,16 +108,15 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 }
 
                 //5.2: fail check
-                if (parkSupport.isTimeout()) {
-                    return validator.resultOnTimeout();
-                } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
-                    throw new InterruptedException();
-                } else if (state != null) {
+                if (parkSupport.isTimeout()) return validator.resultOnTimeout();
+                if (parkSupport.isInterrupted() && config.supportInterrupted()) throw new InterruptedException();
+
+                if (state != null) {//5.3: reset state to null for next spin
                     node.setState(null);
-                } else if (spins > 0) {
+                } else if (spins > 0) {//5.4: decr spin count and tryToPark
                     --spins;
-                } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
-                    parkSupport.park();
+                } else {//5.5: try to park
+                    parkSupport.tryToPark();
                 }
             } while (true);
         } finally {

@@ -18,7 +18,6 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERR
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
-import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Signal Wait Pool,caller try to get a signal from pool,if not get,then wait for it util timeout
@@ -33,13 +32,12 @@ public class SignalWaitPool extends ThreadWaitingPool {
      *
      * @param config thread wait config
      * @return true, if get a signal then return true,timeout return false
-     * @throws java.lang.InterruptedException exception from call or InterruptedException after thread park
+     * @throws java.lang.InterruptedException exception from call or InterruptedException after thread tryToPark
      */
     public final boolean doWait(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
-        if (config == null) throw new IllegalArgumentException("wait config can't be null");
-
+        if (config == null) throw new IllegalArgumentException("Sync config can't be null");
 
         //2:offer to wait queue
         SyncNode node = config.getSyncNode();
@@ -62,8 +60,8 @@ public class SignalWaitPool extends ThreadWaitingPool {
                     if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
                 } else if (spins > 0) {
                     --spins;
-                } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
-                    parkSupport.park();
+                } else {
+                    parkSupport.tryToPark();
                 }
             } while (true);
         } finally {

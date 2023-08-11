@@ -20,7 +20,6 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERR
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
-import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * transfer wait pool
@@ -154,8 +153,8 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
                     casState(node, null, INTERRUPTED);
                 } else if (spins > 0) {
                     --spins;
-                } else if (parkSupport.computeParkNanos() > spinForTimeoutThreshold) {
-                    parkSupport.park();
+                } else {
+                    parkSupport.tryToPark();
                 }
             } while (true);
         } finally {
