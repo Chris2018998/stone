@@ -31,7 +31,7 @@ public class ConcurrentLinkedDeque<E> extends AbstractCollection<E> implements D
 
     static {
         try {
-            U = UnsafeAdaptorHolder.U;
+            U = UnsafeAdaptorHolder.UA;
             prevOffSet = U.objectFieldOffset(Node.class.getDeclaredField("prev"));
             nextOffSet = U.objectFieldOffset(Node.class.getDeclaredField("next"));
             itemOffSet = U.objectFieldOffset(Node.class.getDeclaredField("item"));
