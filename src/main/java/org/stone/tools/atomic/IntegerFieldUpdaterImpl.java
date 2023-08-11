@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  * @version 1.0
  */
 public final class IntegerFieldUpdaterImpl<T> extends AtomicIntegerFieldUpdater<T> {
-    private final static UnsafeAdaptor unsafe = UnsafeAdaptorHolder.U;
+    private final static UnsafeAdaptor UA = UnsafeAdaptorHolder.UA;
     private final long offset;
 
     private IntegerFieldUpdaterImpl(long offset) {
@@ -27,30 +27,30 @@ public final class IntegerFieldUpdaterImpl<T> extends AtomicIntegerFieldUpdater<
 
     public static <T> AtomicIntegerFieldUpdater<T> newUpdater(Class<T> beanClass, String fieldName) {
         try {
-            return new IntegerFieldUpdaterImpl<T>(unsafe.objectFieldOffset(beanClass.getDeclaredField(fieldName)));
+            return new IntegerFieldUpdaterImpl<T>(UA.objectFieldOffset(beanClass.getDeclaredField(fieldName)));
         } catch (Throwable e) {
             return AtomicIntegerFieldUpdater.newUpdater(beanClass, fieldName);
         }
     }
 
     public final boolean compareAndSet(T bean, int expect, int update) {
-        return unsafe.compareAndSwapInt(bean, this.offset, expect, update);
+        return UA.compareAndSwapInt(bean, this.offset, expect, update);
     }
 
     public final boolean weakCompareAndSet(T bean, int expect, int update) {
-        return unsafe.compareAndSwapInt(bean, this.offset, expect, update);
+        return UA.compareAndSwapInt(bean, this.offset, expect, update);
     }
 
     public final void set(T bean, int newValue) {
-        unsafe.putIntVolatile(bean, this.offset, newValue);
+        UA.putIntVolatile(bean, this.offset, newValue);
     }
 
     public final void lazySet(T bean, int newValue) {
-        unsafe.putOrderedInt(bean, this.offset, newValue);
+        UA.putOrderedInt(bean, this.offset, newValue);
     }
 
     public final int get(T bean) {
-        return unsafe.getIntVolatile(bean, this.offset);
+        return UA.getIntVolatile(bean, this.offset);
     }
 
 }

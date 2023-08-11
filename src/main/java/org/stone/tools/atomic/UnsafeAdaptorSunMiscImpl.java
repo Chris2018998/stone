@@ -9,7 +9,6 @@
  */
 package org.stone.tools.atomic;
 
-import org.stone.tools.CommonUtil;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -21,8 +20,17 @@ import java.lang.reflect.Field;
  * @version 1.0
  */
 public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
+    private static final Unsafe U;
 
-    private static final Unsafe U = CommonUtil.UNSAFE;
+    static {
+        try {
+            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+            theUnsafe.setAccessible(true);
+            U = (Unsafe) theUnsafe.get(null);
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
 
     //****************************************************************************************************************//
     //                                            field offset                                                        //
