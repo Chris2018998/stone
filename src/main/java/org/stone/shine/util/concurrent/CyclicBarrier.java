@@ -38,8 +38,6 @@ public final class CyclicBarrier {
     //Flight is in canceled(some passengers has exited the trip)
     public static final int State_Cancelled = 4;
 
-    //Flight no(set to node type property of chain node)
-    private final long flightNo;
     //Number of seats in flight room
     private final int seatSize;
     //Execute on setting out
@@ -50,7 +48,7 @@ public final class CyclicBarrier {
     //Number of completed flying
     private int tripCount;
     //result call implementation(instance recreated after resetting flight to be a new one)
-    private GenerationFlight generationFlight;
+    private volatile GenerationFlight generationFlight;
 
     //****************************************************************************************************************//
     //                                         1:constructors                                                         //
@@ -63,7 +61,6 @@ public final class CyclicBarrier {
         if (size <= 0) throw new IllegalArgumentException("size <= 0");
         this.seatSize = size;
         this.tripAction = tripAction;
-        this.flightNo = System.currentTimeMillis();
         this.waitPool = new ResultWaitPool();
         this.generationFlight = new GenerationFlight(seatSize);
     }
@@ -123,7 +120,7 @@ public final class CyclicBarrier {
             GenerationFlight currentFlight = generationFlight;
             if (currentFlight.isBroken()) throw new BrokenBarrierException();
             int seatNo = currentFlight.buyFlightTicket();//range[1 -- seatSize],0 means that not got a ticket
-            long curFlightNo = seatNo > 0 ? flightNo : 0;
+            long curFlightNo = seatNo > 0 ? currentFlight.flightNo : 0;
             config.setNodeType(curFlightNo);//flightNo using in wakeup
 
             try {
@@ -192,16 +189,16 @@ public final class CyclicBarrier {
     }
 
     //reset flight
-    public boolean reset() {
+    public synchronized boolean reset() {
         GenerationFlight currentFlight = generationFlight;
         int state = currentFlight.getState();
-        if (state == State_Cancelled) {//reset cancelled to new
+        if (state == State_Cancelled) {//
             this.generationFlight = new GenerationFlight(seatSize);
             return true;
         } else if (state == State_Open) {//reset boarding to new
             if (currentFlight.compareAndSetState(State_Open, State_Cancelled)) {
-                waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                 this.generationFlight = new GenerationFlight(seatSize);
+                waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                 return true;
             } else {
                 return false;
@@ -215,12 +212,14 @@ public final class CyclicBarrier {
     //                                          4: ResultCall Implement                                               //
     //****************************************************************************************************************//
     private static class GenerationFlight implements ResultCall {
+        private final long flightNo;
         private final int seatSize;
         private final AtomicInteger flightState;
         private final AtomicInteger passengerCount;
 
         GenerationFlight(int seatSize) {
             this.seatSize = seatSize;
+            this.flightNo = System.currentTimeMillis();
             this.passengerCount = new AtomicInteger(0);
             this.flightState = new AtomicInteger(State_Open);
         }
@@ -228,16 +227,16 @@ public final class CyclicBarrier {
         //************************************************************************************************************//
         //                                           State methods                                                    //
         //************************************************************************************************************//
-        boolean isBroken() {
-            return flightState.get() == State_Cancelled;
-        }
-
         int getState() {
             return flightState.get();
         }
 
-        void setState(int count) {
-            flightState.set(count);
+        void setState(int state) {
+            flightState.set(state);
+        }
+
+        boolean isBroken() {
+            return flightState.get() == State_Cancelled;
         }
 
         boolean compareAndSetState(int expect, int update) {
@@ -248,8 +247,12 @@ public final class CyclicBarrier {
         //                                           passenger Count methods                                          //
         //************************************************************************************************************//
         int getWaitingCount() {
-            int count = passengerCount.get();
-            return count < seatSize ? count : seatSize - 1;
+            if (flightState.get() == State_Open) {
+                int count = passengerCount.get();
+                return count < seatSize ? count : seatSize - 1;
+            } else {
+                return 0;
+            }
         }
 
         //buy a boarding ticket,success,return a positive number(seat no),failed,return 0
