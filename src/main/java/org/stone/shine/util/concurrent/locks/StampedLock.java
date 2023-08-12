@@ -48,12 +48,12 @@ import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.T
  * </ul>
  *
  * <h3>Write Mode acquisition</h3>
- * a: if high is greater than zero,-1L number as result will return to callers
+ * a: if high is greater than zero,acquireFailedStamp number as result will return to callers
  * b: if high equals zero and low part is an odd integer(a read-mode digit),then set (high=1;low=low+1)
  * c: if high equals zero and low part is an even integer(a write-mode digit),then set (high=1;low=low+2)
  *
  * <h3>Read Mode acquisition</h3>
- * a: if high is greater than zero and low part is an even integer(a write-mode digit),-1L will be return
+ * a: if high is greater than zero and low part is an even integer(a write-mode digit),acquireFailedStamp will be return
  * b: if high is greater than zero and low part is an odd integer(a read-mode digit),then set(high=high+1;low=low)
  * d: if high equals zero and low part is an even integer(a write-mode digit),then set(high=1;low=low+1)
  * e: if high equals zero and low part is an odd integer(a read-mode digit),then set(high=1;low=low+2)
@@ -76,6 +76,7 @@ public class StampedLock implements java.io.Serializable {
     private static final int READ_LOCK_FLAG = 1;
     private static final UnsafeAdaptor U;
     private static final long stampOffset;
+    private static final long acquireFailedStamp = -1L;
 
     static {
         try {
@@ -140,7 +141,7 @@ public class StampedLock implements java.io.Serializable {
             h = 1;
             l += (acquireWrite == isWriteNum) ? 2 : 1;
         } else if (acquireWrite || isWriteNum) {//write lock and write or read lock and write lock
-            return -1L;
+            return acquireFailedStamp;
         } else {//read lock(Reentrant)
             if (h + 1 <= 0) throw new Error("Maximum lock count exceeded");
             h++;
@@ -160,7 +161,7 @@ public class StampedLock implements java.io.Serializable {
     public long tryReadLock() {
         long currentStamp = this.stamp;
         long newStamp = genNextStamp(currentStamp, false);
-        return newStamp > 0 && compareAndSetLockStamp(this, currentStamp, newStamp) ? newStamp : -1L;
+        return newStamp > 0 && compareAndSetLockStamp(this, currentStamp, newStamp) ? newStamp : acquireFailedStamp;
     }
 
     public long readLock() {
@@ -171,7 +172,7 @@ public class StampedLock implements java.io.Serializable {
             config.allowInterruption(false);
             return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (Exception e) {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -184,7 +185,7 @@ public class StampedLock implements java.io.Serializable {
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -197,7 +198,7 @@ public class StampedLock implements java.io.Serializable {
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -228,7 +229,7 @@ public class StampedLock implements java.io.Serializable {
     public long tryWriteLock() {
         long currentStamp = this.stamp;
         long newStamp = genNextStamp(currentStamp, true);
-        return newStamp > 0 && compareAndSetLockStamp(this, currentStamp, newStamp) ? newStamp : -1L;
+        return newStamp > 0 && compareAndSetLockStamp(this, currentStamp, newStamp) ? newStamp : acquireFailedStamp;
     }
 
     public long writeLock() {
@@ -238,7 +239,7 @@ public class StampedLock implements java.io.Serializable {
             config.allowInterruption(false);
             return (long) callWaitPool.doCall(stampedWriteCall, null, config);
         } catch (Exception e) {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -250,7 +251,7 @@ public class StampedLock implements java.io.Serializable {
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -262,7 +263,7 @@ public class StampedLock implements java.io.Serializable {
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -302,7 +303,7 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryConvertToReadLock(long stamp) {
         long currentStamp = this.stamp;
-        if (currentStamp != stamp) return -1L;
+        if (currentStamp != stamp) return acquireFailedStamp;
 
         int h = highInt(currentStamp);
         if (h == 1) {//locked
@@ -313,13 +314,13 @@ public class StampedLock implements java.io.Serializable {
                     this.callWaitPool.wakeupOne(true, TYPE_SHARED, RUNNING);//wakeup other share node
                     return newStamp;
                 } else {
-                    return -1L;
+                    return acquireFailedStamp;
                 }
             } else {
                 return currentStamp;
             }
         } else {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -335,13 +336,13 @@ public class StampedLock implements java.io.Serializable {
                 if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
                     return newStamp;
                 } else {
-                    return -1L;
+                    return acquireFailedStamp;
                 }
             } else {
                 return currentStamp;
             }
         } else {
-            return -1L;
+            return acquireFailedStamp;
         }
     }
 
@@ -396,11 +397,11 @@ public class StampedLock implements java.io.Serializable {
     private static class LongResultValidator implements ResultValidator {
 
         public Object resultOnTimeout() {
-            return -1L;
+            return acquireFailedStamp;
         }
 
         public boolean isExpected(Object result) {
-            return ((long) result != -1L);
+            return ((long) result != acquireFailedStamp);
         }
     }
 
@@ -430,17 +431,17 @@ public class StampedLock implements java.io.Serializable {
 
         public boolean tryLock() {
             this.lockStamp = tryReadLock();
-            return lockStamp != -1L;
+            return lockStamp != acquireFailedStamp;
         }
 
         public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
             this.lockStamp = tryReadLock(time, unit);
-            return lockStamp != -1L;
+            return lockStamp != acquireFailedStamp;
         }
 
         public void unlock() {
-            if (lockStamp != -1L && unlockRead(lockStamp))
-                lockStamp = -1L;
+            if (lockStamp != acquireFailedStamp && unlockRead(lockStamp))
+                lockStamp = acquireFailedStamp;
         }
 
         public Condition newCondition() {
@@ -461,17 +462,17 @@ public class StampedLock implements java.io.Serializable {
 
         public boolean tryLock() {
             this.lockStamp = tryWriteLock();
-            return lockStamp != -1L;
+            return lockStamp != acquireFailedStamp;
         }
 
         public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
             this.lockStamp = tryWriteLock(time, unit);
-            return lockStamp != -1L;
+            return lockStamp != acquireFailedStamp;
         }
 
         public void unlock() {
-            if (lockStamp != -1L && unlockRead(lockStamp))
-                lockStamp = -1L;
+            if (lockStamp != acquireFailedStamp && unlockRead(lockStamp))
+                lockStamp = acquireFailedStamp;
         }
 
         public Condition newCondition() {
