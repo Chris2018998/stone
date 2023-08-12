@@ -85,10 +85,8 @@ class BaseLock implements Lock {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(acquireType);
         config.allowInterruption(false);
-        if (acquireType == TYPE_SHARED) {
-            config.setWakeupOneOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
-        }
+        if (acquireType == TYPE_SHARED)
+            config.setWakeupOneOnSuccess(true, TYPE_SHARED);
 
         try {
             waitPool.acquire(lockAction, 1, config);
@@ -146,10 +144,9 @@ class BaseLock implements Lock {
     public void lockInterruptibly() throws InterruptedException {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(acquireType);
-        if (acquireType == TYPE_SHARED) {
-            config.setWakeupOneOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
-        }
+        if (acquireType == TYPE_SHARED)
+            config.setWakeupOneOnSuccess(true, TYPE_SHARED);
+
         waitPool.acquire(lockAction, 1, config);
     }
 
@@ -244,10 +241,9 @@ class BaseLock implements Lock {
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig config = new SyncVisitConfig(time, unit);
         config.setNodeType(acquireType);
-        if (acquireType == TYPE_SHARED) {
-            config.setWakeupOneOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
-        }
+        if (acquireType == TYPE_SHARED)
+            config.setWakeupOneOnSuccess(true, TYPE_SHARED);
+
         return waitPool.acquire(lockAction, 1, config);
     }
 

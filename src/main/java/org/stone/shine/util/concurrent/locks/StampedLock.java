@@ -167,8 +167,7 @@ public class StampedLock implements java.io.Serializable {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(TYPE_SHARED);
-            config.setWakeupOneOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            config.setWakeupOneOnSuccess(true, TYPE_SHARED);
             config.allowInterruption(false);
             return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (Exception e) {
@@ -180,8 +179,7 @@ public class StampedLock implements java.io.Serializable {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setNodeType(TYPE_SHARED);
-            config.setWakeupOneOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            config.setWakeupOneOnSuccess(true, TYPE_SHARED);
             return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (InterruptedException e) {
             throw e;
@@ -194,8 +192,7 @@ public class StampedLock implements java.io.Serializable {
         try {
             SyncVisitConfig config = new SyncVisitConfig(time, unit);
             config.setNodeType(TYPE_SHARED);
-            config.setWakeupOneOnSuccess(true);
-            config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
+            config.setWakeupOneOnSuccess(true, TYPE_SHARED);
             return (long) callWaitPool.doCall(stampedReadCall, null, config);
         } catch (InterruptedException e) {
             throw e;

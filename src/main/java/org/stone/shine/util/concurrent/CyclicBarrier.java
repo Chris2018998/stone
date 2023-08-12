@@ -44,7 +44,7 @@ public final class CyclicBarrier {
     private final int seatSize;
     //Execute on setting out
     private final Runnable tripAction;
-    //result call wait pool(core drive)
+    //result call wait pool(driver core)
     private final ResultWaitPool waitPool;
 
     //Number of completed flying

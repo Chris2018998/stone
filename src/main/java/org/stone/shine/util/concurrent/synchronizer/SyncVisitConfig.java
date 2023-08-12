@@ -103,7 +103,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                         //
     //****************************************************************************************************************//
-    public ThreadParkSupport getParkSupport() {
+    public final ThreadParkSupport getParkSupport() {
         return parkSupport;
     }
 
@@ -116,38 +116,40 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              4: wakeup configuration(6)                                        //
+    //                                              4: wakeup configuration(8)                                        //
     //****************************************************************************************************************//
-    public boolean isWakeupOneOnSuccess() {
+    public final boolean isWakeupOneOnSuccess() {
         return wakeupOneOnSuccess;
     }
 
-    public void setWakeupOneOnSuccess(boolean wakeupOneOnSuccess) {
-        this.wakeupOneOnSuccess = wakeupOneOnSuccess;
+    public final void setWakeupOneOnSuccess(boolean wakeupInd) {
+        this.wakeupOneOnSuccess = wakeupInd;
     }
 
-    public Object getWakeupNodeTypeOnSuccess() {
+    public final Object getWakeupNodeTypeOnSuccess() {
         return wakeupNodeTypeOnSuccess;
     }
 
-    public void setWakeupNodeTypeOnSuccess(Object wakeupNodeTypeOnSuccess) {
-        this.wakeupNodeTypeOnSuccess = wakeupNodeTypeOnSuccess;
+    public final void setWakeupOneOnSuccess(boolean wakeupInd, Object nodeType) {
+        this.wakeupOneOnSuccess = wakeupInd;
+        this.wakeupNodeTypeOnSuccess = nodeType;
     }
 
-    public boolean isWakeupOneOnFailure() {
+    public final boolean isWakeupOneOnFailure() {
         return wakeupOneOnFailure;
     }
 
-    public void setWakeupOneOnFailure(boolean wakeupOneOnFailure) {
-        this.wakeupOneOnFailure = wakeupOneOnFailure;
+    public final void setWakeupOneOnFailure(boolean wakeupInd) {
+        this.wakeupOneOnFailure = wakeupInd;
     }
 
-    public Object getWakeupNodeTypeOnFailure() {
+    public final Object getWakeupNodeTypeOnFailure() {
         return wakeupNodeTypeOnFailure;
     }
 
-    public void setWakeupNodeTypeOnFailure(Object wakeupNodeTypeOnFailure) {
-        this.wakeupNodeTypeOnFailure = wakeupNodeTypeOnFailure;
+    public final void setWakeupOneOnFailure(boolean wakeupInd, Object nodeType) {
+        this.wakeupOneOnFailure = wakeupInd;
+        this.wakeupNodeTypeOnFailure = nodeType;
     }
 
     //****************************************************************************************************************//
