@@ -23,11 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 public class Phaser {
-
     private final ResultWaitPool waitPool;
+    private Phaser root;
+    private Phaser parent;
+    private volatile Phase currentPhase;
 
     //****************************************************************************************************************//
-    //                                      1:Constructors(3)                                                         //
+    //                                      1: Constructors(3)                                                        //
     //****************************************************************************************************************//
     public Phaser(int parties) {
         this(null, parties);
@@ -38,11 +40,24 @@ public class Phaser {
     }
 
     public Phaser(Phaser parent, int parties) {
+        this.parent = parent;
+        this.currentPhase = new Phase(0, parties);
         this.waitPool = new ResultWaitPool();
     }
 
     //****************************************************************************************************************//
-    //                                      2:add parties(2)                                                          //
+    //                                      2: related Parent                                                         //
+    //****************************************************************************************************************//
+    public Phaser getRoot() {
+        return root;
+    }
+
+    public Phaser getParent() {
+        return parent;
+    }
+
+    //****************************************************************************************************************//
+    //                                      3: add parties(2)                                                         //
     //****************************************************************************************************************//
     public int register() {
         return 0;
@@ -55,7 +70,7 @@ public class Phaser {
     }
 
     //****************************************************************************************************************//
-    //                                     3:arrive Method(2) -- parties                                              //
+    //                                     4: arrive Method(2) -- parties                                             //
     //****************************************************************************************************************//
     public int arrive() {
         return 0;
@@ -72,8 +87,12 @@ public class Phaser {
         //@todo
     }
 
+    protected boolean onAdvance(int phase, int registeredParties) {
+        return registeredParties == 0;
+    }
+
     //****************************************************************************************************************//
-    //                                     4:Wait methods(3)                                                          //
+    //                                     5:Wait methods(3)                                                          //
     //****************************************************************************************************************//
     public int awaitAdvance() {
         return 0;
@@ -91,12 +110,19 @@ public class Phaser {
     }
 
     //****************************************************************************************************************//
-    //                                     5: Monitor methods(3)                                                      //
+    //                                     6: Terminated methods(2)                                                   //
     //****************************************************************************************************************//
+    public boolean isTerminated() {
+        return false;
+    }
+
     public void forceTermination() {
 
     }
 
+    //****************************************************************************************************************//
+    //                                     7: Monitor methods(3)                                                      //
+    //****************************************************************************************************************//
     public final int getPhase() {
         return 0;
         //@todo
@@ -117,32 +143,15 @@ public class Phaser {
         //@todo
     }
 
-    public Phaser getParent() {
-        return null;
-    }
-
-    public Phaser getRoot() {
-        return null;
-    }
-
-    public boolean isTerminated() {
-        return false;
-    }
-
-    protected boolean onAdvance(int phase, int registeredParties) {
-        return registeredParties == 0;
-    }
-
     public String toString() {
         return "";
     }
 
     //****************************************************************************************************************//
-    //                                     6: Result Call Impl                                                        //
+    //                                     8: Result Call Impl                                                        //
     //****************************************************************************************************************//
     private static class Phase implements ResultCall {
         private int phaseNo;
-
         //maybe using a long to represent(atomic)
         private AtomicInteger registeredCount;
         private AtomicInteger arrivedCount;
