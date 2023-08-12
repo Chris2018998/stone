@@ -109,7 +109,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
 
                 //5.2: fail check
                 if (parkSupport.isTimeout()) return validator.resultOnTimeout();
-                if (parkSupport.isInterrupted() && config.supportInterrupted()) throw new InterruptedException();
+                if (parkSupport.isInterrupted() && config.isAllowInterruption()) throw new InterruptedException();
 
                 if (state != null) {//5.3: reset state to null for next spin
                     node.setState(null);

@@ -80,7 +80,7 @@ public class StateWaitPool extends ThreadWaitingPool {
                 //4.3: fail check
                 if (parkSupport.isTimeout()) {
                     if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
-                } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
+                } else if (parkSupport.isInterrupted() && config.isAllowInterruption()) {
                     if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);

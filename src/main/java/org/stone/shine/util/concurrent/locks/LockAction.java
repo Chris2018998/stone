@@ -19,7 +19,7 @@ import org.stone.shine.util.concurrent.synchronizer.extend.ResourceAction;
  */
 abstract class LockAction extends ResourceAction {
 
-    protected final LockAtomicState lockState;
+    final LockAtomicState lockState;
 
     LockAction(LockAtomicState lockState) {
         this.lockState = lockState;

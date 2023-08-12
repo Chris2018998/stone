@@ -274,7 +274,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             SyncVisitConfig config = new SyncVisitConfig();
-            config.setSupportInterrupted(false);
+            config.allowInterruption(false);
             this.waitPool.acquire(permitAction, permits, config);
         } catch (Exception e) {
             //do nothing

@@ -84,7 +84,7 @@ class BaseLock implements Lock {
     public void lock() {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(acquireType);
-        config.setSupportInterrupted(false);
+        config.allowInterruption(false);
         if (acquireType == TYPE_SHARED) {
             config.setWakeupOneOnSuccess(true);
             config.setWakeupNodeTypeOnSuccess(TYPE_SHARED);
@@ -370,7 +370,7 @@ class BaseLock implements Lock {
         public void awaitUninterruptibly() {
             try {
                 SyncVisitConfig config = new SyncVisitConfig();
-                config.setSupportInterrupted(false);
+                config.allowInterruption(false);
                 this.doAwait(config);
             } catch (InterruptedException e) {
                 //in fact,InterruptedException never throws here

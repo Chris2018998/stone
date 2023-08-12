@@ -56,7 +56,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
                 //4.2: fail check
                 if (parkSupport.isTimeout()) {
                     if (casState(node, null, TIMEOUT)) return false;
-                } else if (parkSupport.isInterrupted() && config.supportInterrupted()) {
+                } else if (parkSupport.isInterrupted() && config.isAllowInterruption()) {
                     if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
                 } else if (spins > 0) {
                     --spins;

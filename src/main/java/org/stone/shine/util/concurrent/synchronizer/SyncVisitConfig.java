@@ -29,8 +29,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //***********************************************spin configuration***********************************************//
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
     private ThreadParkSupport parkSupport;
-    //InterruptedException thrown indicator
-    private boolean supportInterrupted = true;
+    //indicator:true,throws InterruptedException when waiting interrupted
+    private boolean allowInterruption = true;
 
     //***********************************************wakeup configuration*********************************************//
     //similar to AQS SHARED mode on acquisition success
@@ -107,12 +107,12 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         return parkSupport;
     }
 
-    public final boolean supportInterrupted() {
-        return supportInterrupted;
+    public final boolean isAllowInterruption() {
+        return allowInterruption;
     }
 
-    public void setSupportInterrupted(boolean supportInterrupted) {
-        this.supportInterrupted = supportInterrupted;
+    public void allowInterruption(boolean allowIndicator) {
+        this.allowInterruption = allowIndicator;
     }
 
     //****************************************************************************************************************//
@@ -158,7 +158,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.nodeType = null;
         this.initState = null;
         this.parkSupport.reset();
-        this.supportInterrupted = true;
+        this.allowInterruption = true;
 
         this.wakeupOneOnFailure = true;
         this.wakeupOneOnSuccess = false;

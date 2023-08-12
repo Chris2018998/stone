@@ -128,7 +128,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //2:get control parameters from config
-        boolean allowInterrupted = config.supportInterrupted();
+        boolean allowInterrupted = config.isAllowInterruption();
         ThreadParkSupport parkSupport = config.getParkSupport();
 
         //3:spin control
