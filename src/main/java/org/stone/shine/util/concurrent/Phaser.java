@@ -9,7 +9,12 @@
  */
 package org.stone.shine.util.concurrent;
 
+import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Phaser Impl By Wait Pool
@@ -18,9 +23,158 @@ import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
  * @version 1.0
  */
 public class Phaser {
+
     private final ResultWaitPool waitPool;
 
-    public Phaser() {
+    //****************************************************************************************************************//
+    //                                      1:Constructors(3)                                                         //
+    //****************************************************************************************************************//
+    public Phaser(int parties) {
+        this(null, parties);
+    }
+
+    public Phaser(Phaser parent) {
+        this(parent, 0);
+    }
+
+    public Phaser(Phaser parent, int parties) {
         this.waitPool = new ResultWaitPool();
+    }
+
+    //****************************************************************************************************************//
+    //                                      2:add parties(2)                                                          //
+    //****************************************************************************************************************//
+    public int register() {
+        return 0;
+        //@todo
+    }
+
+    public int bulkRegister(int parties) {
+        return 0;
+        //@todo
+    }
+
+    //****************************************************************************************************************//
+    //                                     3:arrive Method(2) -- parties                                              //
+    //****************************************************************************************************************//
+    public int arrive() {
+        return 0;
+        //@todo
+    }
+
+    public int arriveAndDeregister() {
+        return 0;
+        //@todo
+    }
+
+    public int arriveAndAwaitAdvance() {
+        return 0;
+        //@todo
+    }
+
+    //****************************************************************************************************************//
+    //                                     4:Wait methods(3)                                                          //
+    //****************************************************************************************************************//
+    public int awaitAdvance() {
+        return 0;
+        //@todo
+    }
+
+    public int awaitAdvanceInterruptibly(int phase) throws InterruptedException {
+        return 0;
+        //@todo
+    }
+
+    public int awaitAdvanceInterruptibly(int phase, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+        return 0;
+        //@todo
+    }
+
+    //****************************************************************************************************************//
+    //                                     5: Monitor methods(3)                                                      //
+    //****************************************************************************************************************//
+    public void forceTermination() {
+
+    }
+
+    public final int getPhase() {
+        return 0;
+        //@todo
+    }
+
+    public int getRegisteredParties() {
+        return 0;
+        //@todo
+    }
+
+    public int getArrivedParties() {
+        return 0;
+        //@todo
+    }
+
+    public int getUnarrivedParties() {
+        return 0;
+        //@todo
+    }
+
+    public Phaser getParent() {
+        return null;
+    }
+
+    public Phaser getRoot() {
+        return null;
+    }
+
+    public boolean isTerminated() {
+        return false;
+    }
+
+    protected boolean onAdvance(int phase, int registeredParties) {
+        return registeredParties == 0;
+    }
+
+    public String toString() {
+        return "";
+    }
+
+    //****************************************************************************************************************//
+    //                                     6: Result Call Impl                                                        //
+    //****************************************************************************************************************//
+    private static class Phase implements ResultCall {
+        private int phaseNo;
+
+        //maybe using a long to represent(atomic)
+        private AtomicInteger registeredCount;
+        private AtomicInteger arrivedCount;
+        private AtomicInteger waitingCount;
+
+        Phase(int phaseNo, int initRegisterCount) {
+            this.phaseNo = phaseNo;
+            this.registeredCount = new AtomicInteger(initRegisterCount);
+            this.arrivedCount = new AtomicInteger(0);
+            this.waitingCount = new AtomicInteger(0);
+        }
+
+        int getPhaseNo() {
+            return phaseNo;
+        }
+
+        int getRegisteredCount() {
+            return registeredCount.get();
+        }
+
+        int getArrivedCount() {
+            return arrivedCount.get();
+        }
+
+        int getWaitingCount() {
+            return waitingCount.get();
+        }
+
+        //do some thing(don't block thread in implementation method)
+        public Object call(Object arg) throws Exception {
+            int registerCount = registeredCount.get();
+            return registerCount > 0 && registerCount == arrivedCount.get();//condition:leave from pool
+        }
     }
 }
