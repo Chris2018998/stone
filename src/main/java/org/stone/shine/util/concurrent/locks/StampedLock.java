@@ -74,9 +74,9 @@ public class StampedLock implements java.io.Serializable {
     private static final long CLN_HIGH_MASK = 0xFFFFFFFFL;//4294967295L;
     private static final int WRITE_LOCK_FLAG = 0;
     private static final int READ_LOCK_FLAG = 1;
+    private static final long acquireFailedStamp = -1L;
     private static final UnsafeAdaptor U;
     private static final long stampOffset;
-    private static final long acquireFailedStamp = -1L;
 
     static {
         try {
