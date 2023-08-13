@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
- * CyclicBarrier Impl
+ * CyclicBarrier Impl By Wait Pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -83,7 +83,7 @@ public final class CyclicBarrier {
         return generationFlight.getWaitingCount();
     }
 
-    //return state of current flight(@see State_xxx static definition at first rows of this file)
+    //return state of current flight(@see State_xxx static definition at first rows of this file body)
     public int getState() {
         return generationFlight.getState();
     }
@@ -125,7 +125,7 @@ public final class CyclicBarrier {
 
             try {
                 //1: passenger gather in waiting pool(seatNo is zero,we can image that some passengers without ticket and waiting in hall for next flight)
-                Object result = waitPool.doCall(currentFlight, seatNo, config);
+                Object result = waitPool.get(currentFlight, seatNo, config);
                 //2: call result is a false bool,exists one passenger wait timeout(the flight will be cancelled)
                 if (Boolean.FALSE.equals(result)) throw new TimeoutException();
 

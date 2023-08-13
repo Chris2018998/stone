@@ -76,7 +76,7 @@ public class ResourceWaitPool {
     //acquireWithType
     public final boolean acquire(ResourceAction action, int size, SyncVisitConfig config) throws InterruptedException {
         try {
-            return (boolean) callPool.doCall(action, size, config);
+            return (boolean) callPool.get(action, size, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {

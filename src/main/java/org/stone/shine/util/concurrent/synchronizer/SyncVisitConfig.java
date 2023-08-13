@@ -75,7 +75,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              2:set node info(5)                                                 //
+    //                                              2:set node info(5)                                                //
     //****************************************************************************************************************//
     public final void setNodeType(Object nodeType) {
         this.nodeType = nodeType;
@@ -101,7 +101,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              3: spin configuration(3)                                         //
+    //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
     public final ThreadParkSupport getParkSupport() {
         return parkSupport;

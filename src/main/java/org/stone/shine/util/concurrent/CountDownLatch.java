@@ -44,7 +44,7 @@ public final class CountDownLatch implements ResultCall {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setWakeupOneOnSuccess(true);
-            waitPool.doCall(this, null, config);
+            waitPool.get(this, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -57,7 +57,7 @@ public final class CountDownLatch implements ResultCall {
         try {
             SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
             config.setWakeupOneOnSuccess(true);
-            waitPool.doCall(this, null, config);
+            waitPool.get(this, null, config);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {

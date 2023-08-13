@@ -34,7 +34,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
      * @return true, if get a signal then return true,timeout return false
      * @throws java.lang.InterruptedException exception from call or InterruptedException after thread tryToPark
      */
-    public final boolean doWait(SyncVisitConfig config) throws InterruptedException {
+    public final boolean get(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
         if (config == null) throw new IllegalArgumentException("Sync config can't be null");

@@ -92,7 +92,7 @@ public class Phaser {
     }
 
     //****************************************************************************************************************//
-    //                                     5:Wait methods(3)                                                          //
+    //                                     5: Wait methods(3)                                                         //
     //****************************************************************************************************************//
     public int awaitAdvance() {
         return 0;
@@ -124,8 +124,7 @@ public class Phaser {
     //                                     7: Monitor methods(3)                                                      //
     //****************************************************************************************************************//
     public final int getPhase() {
-        return 0;
-        //@todo
+        return currentPhase.phaseNo;
     }
 
     public int getRegisteredParties() {
@@ -152,9 +151,12 @@ public class Phaser {
     //****************************************************************************************************************//
     private static class Phase implements ResultCall {
         private int phaseNo;
-        //maybe using a long to represent(atomic)
+        private boolean overInd;
+
         private AtomicInteger registeredCount;
+
         private AtomicInteger arrivedCount;
+
         private AtomicInteger waitingCount;
 
         Phase(int phaseNo, int initRegisterCount) {
@@ -167,6 +169,7 @@ public class Phaser {
         int getPhaseNo() {
             return phaseNo;
         }
+
 
         int getRegisteredCount() {
             return registeredCount.get();

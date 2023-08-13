@@ -404,7 +404,7 @@ class BaseLock implements Lock {
             //3:waiting on condition
             InterruptedException conditionIE = null;
             try {
-                super.doWait(config);
+                super.get(config);
             } catch (InterruptedException e) {
                 conditionIE = e;
             }

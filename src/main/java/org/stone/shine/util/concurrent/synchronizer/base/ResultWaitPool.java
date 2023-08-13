@@ -61,8 +61,8 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @return object, if call result check passed by validator
      * @throws java.lang.Exception from call or InterruptedException after thread tryToPark
      */
-    public final Object doCall(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
-        return this.doCall(call, arg, validator, config);
+    public final Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
+        return this.get(call, arg, validator, config);
     }
 
     /**
@@ -73,7 +73,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
      * @return passed result
      * @throws java.lang.Exception from call or InterruptedException after thread tryToPark
      */
-    public final Object doCall(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
+    public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
         if (call == null || config == null || validator == null)
