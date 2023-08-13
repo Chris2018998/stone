@@ -34,7 +34,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
      * @return true, if get a signal then return true,timeout return false
      * @throws java.lang.InterruptedException exception from call or InterruptedException after thread tryToPark
      */
-    public final boolean get(SyncVisitConfig config) throws InterruptedException {
+    public final Object get(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
         if (config == null) throw new IllegalArgumentException("Sync config can't be null");
@@ -51,7 +51,7 @@ public class SignalWaitPool extends ThreadWaitingPool {
             do {
                 //4.1: read node state
                 Object signal = node.getState();//any not null value regard as wakeup signal
-                if (signal != null) return true;
+                if (signal != null) return signal;
 
                 //4.2: fail check
                 if (parkSupport.isTimeout()) {
