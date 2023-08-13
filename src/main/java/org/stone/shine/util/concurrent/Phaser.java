@@ -26,7 +26,7 @@ public class Phaser {
     private final ResultWaitPool waitPool;
     private Phaser root;
     private Phaser parent;
-    private volatile Phase currentPhase;
+    private volatile PhaseParty currentPhase;
 
     //****************************************************************************************************************//
     //                                      1: Constructors(3)                                                        //
@@ -41,7 +41,7 @@ public class Phaser {
 
     public Phaser(Phaser parent, int parties) {
         this.parent = parent;
-        this.currentPhase = new Phase(0, parties);
+        this.currentPhase = new PhaseParty(0, parties);
         this.waitPool = new ResultWaitPool();
     }
 
@@ -149,7 +149,7 @@ public class Phaser {
     //****************************************************************************************************************//
     //                                     8: Result Call Impl                                                        //
     //****************************************************************************************************************//
-    private static class Phase implements ResultCall {
+    private static class PhaseParty implements ResultCall {
         private int phaseNo;
         private boolean overInd;
 
@@ -159,7 +159,7 @@ public class Phaser {
 
         private AtomicInteger waitingCount;
 
-        Phase(int phaseNo, int initRegisterCount) {
+        PhaseParty(int phaseNo, int initRegisterCount) {
             this.phaseNo = phaseNo;
             this.registeredCount = new AtomicInteger(initRegisterCount);
             this.arrivedCount = new AtomicInteger(0);
