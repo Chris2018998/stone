@@ -9,12 +9,16 @@
  */
 package org.stone.shine.util.concurrent;
 
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 
 /**
  * Phaser Impl By Wait Pool
@@ -23,10 +27,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 public class Phaser {
+    private static final GamePhase TerminatedPhase = new GamePhase(-1, -1);
     private final ResultWaitPool waitPool;
     private Phaser root;
     private Phaser parent;
-    private volatile PhaseParty currentPhase;
+    private AtomicReference<GamePhase> phaseRef;
 
     //****************************************************************************************************************//
     //                                      1: Constructors(3)                                                        //
@@ -40,9 +45,10 @@ public class Phaser {
     }
 
     public Phaser(Phaser parent, int parties) {
+        if (parties < 0) throw new IllegalArgumentException();
         this.parent = parent;
-        this.currentPhase = new PhaseParty(0, parties);
         this.waitPool = new ResultWaitPool();
+        this.phaseRef = new AtomicReference<GamePhase>(new GamePhase(0, parties));
     }
 
     //****************************************************************************************************************//
@@ -60,51 +66,82 @@ public class Phaser {
     //                                      3: add parties(2)                                                         //
     //****************************************************************************************************************//
     public int register() {
-        return 0;
-        //@todo
+        return bulkRegister(1);
     }
 
     public int bulkRegister(int parties) {
-        return 0;
-        //@todo
+        if (parties < 0) throw new IllegalArgumentException();
+
+        for (; ; ) {
+            GamePhase curPhase = this.phaseRef.get();
+            if (curPhase == TerminatedPhase) return TerminatedPhase.phaseNo;
+
+            AtomicInteger atomicTargetCount = curPhase.targetCount;
+            int targetCount = atomicTargetCount.get();
+            if (targetCount == curPhase.arrivedCount.get()) continue;
+
+            if (atomicTargetCount.compareAndSet(targetCount, targetCount + parties))
+                return curPhase.getPhaseNo();
+        }
     }
 
     //****************************************************************************************************************//
     //                                     4: arrive Method(2) -- parties                                             //
     //****************************************************************************************************************//
     public int arrive() {
-        return 0;
-        //@todo
+        return doArrived(1);
     }
 
     public int arriveAndDeregister() {
-        return 0;
-        //@todo
+        return doArrived(2);
     }
 
     public int arriveAndAwaitAdvance() {
-        return 0;
-        //@todo
+        return doArrived(3);
     }
 
     protected boolean onAdvance(int phase, int registeredParties) {
         return registeredParties == 0;
     }
 
+    //1: arrive 2: arriveAndDeregister 3: arriveAndAwaitAdvance
+    private int doArrived(int arrivalType) {
+        //@todo
+        return 0;
+    }
+
     //****************************************************************************************************************//
     //                                     5: Wait methods(3)                                                         //
     //****************************************************************************************************************//
     public int awaitAdvance() {
-        return 0;
-        //@todo
+        SyncVisitConfig config = new SyncVisitConfig();
+        config.setWakeupOneOnSuccess(true);
+        config.setNodeType(phaseRef.get().phaseNo);
+        config.allowInterruption(false);
+        try {
+            return doAwait(config);
+        } catch (InterruptedException e) {
+            return TerminatedPhase.getPhaseNo();
+        }
     }
 
     public int awaitAdvanceInterruptibly(int phase) throws InterruptedException {
-        return 0;
-        //@todo
+        SyncVisitConfig config = new SyncVisitConfig();
+        config.setNodeType(phase);
+        config.setWakeupOneOnSuccess(true);
+        return doAwait(config);
     }
 
     public int awaitAdvanceInterruptibly(int phase, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
+        SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
+        config.setNodeType(phase);
+        config.setWakeupOneOnSuccess(true);
+        int phaseNo = doAwait(config);
+        if (config.getParkSupport().isTimeout()) throw new TimeoutException();
+        return phaseNo;
+    }
+
+    private int doAwait(SyncVisitConfig config) throws InterruptedException {
         return 0;
         //@todo
     }
@@ -113,33 +150,34 @@ public class Phaser {
     //                                     6: Terminated methods(2)                                                   //
     //****************************************************************************************************************//
     public boolean isTerminated() {
-        return false;
+        return phaseRef.get() == TerminatedPhase;
     }
 
     public void forceTermination() {
-
+        GamePhase phase = phaseRef.get();
+        if (phase != TerminatedPhase && phaseRef.compareAndSet(phase, TerminatedPhase)) {
+            this.waitPool.wakeupOne(true, null, RUNNING);
+        }
     }
 
     //****************************************************************************************************************//
     //                                     7: Monitor methods(3)                                                      //
     //****************************************************************************************************************//
     public final int getPhase() {
-        return currentPhase.phaseNo;
+        return phaseRef.get().phaseNo;
     }
 
     public int getRegisteredParties() {
-        return 0;
-        //@todo
+        return phaseRef.get().targetCount.get();
     }
 
     public int getArrivedParties() {
-        return 0;
-        //@todo
+        return phaseRef.get().arrivedCount.get();
     }
 
     public int getUnarrivedParties() {
-        return 0;
-        //@todo
+        int unarrival = phaseRef.get().targetCount.get() - phaseRef.get().arrivedCount.get();
+        return unarrival > 0 ? unarrival : 0;
     }
 
     public String toString() {
@@ -149,44 +187,40 @@ public class Phaser {
     //****************************************************************************************************************//
     //                                     8: Result Call Impl                                                        //
     //****************************************************************************************************************//
-    private static class PhaseParty implements ResultCall {
+    private static class GamePhase implements ResultCall {
         private int phaseNo;
-        private boolean overInd;
-
-        private AtomicInteger registeredCount;
-
+        private AtomicInteger targetCount;
         private AtomicInteger arrivedCount;
 
-        private AtomicInteger waitingCount;
-
-        PhaseParty(int phaseNo, int initRegisterCount) {
+        GamePhase(int phaseNo, int expectedCount) {
             this.phaseNo = phaseNo;
-            this.registeredCount = new AtomicInteger(initRegisterCount);
+            this.targetCount = new AtomicInteger(expectedCount);
             this.arrivedCount = new AtomicInteger(0);
-            this.waitingCount = new AtomicInteger(0);
         }
 
         int getPhaseNo() {
             return phaseNo;
         }
 
-
-        int getRegisteredCount() {
-            return registeredCount.get();
+        int getTargetCount() {
+            return targetCount.get();
         }
 
         int getArrivedCount() {
             return arrivedCount.get();
         }
 
-        int getWaitingCount() {
-            return waitingCount.get();
+        boolean compareAndSetTargetCount(int expect, int update) {
+            return targetCount.compareAndSet(expect, update);
         }
 
-        //do some thing(don't block thread in implementation method)
+        boolean compareAndSetArrivedCount(int expect, int update) {
+            return arrivedCount.compareAndSet(expect, update);
+        }
+
         public Object call(Object arg) throws Exception {
-            int registerCount = registeredCount.get();
-            return registerCount > 0 && registerCount == arrivedCount.get();//condition:leave from pool
+            Phaser phaser = (Phaser) arg;
+            return phaser.phaseRef.get() != this;
         }
     }
 }
