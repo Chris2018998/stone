@@ -28,7 +28,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNIN
  * @version 1.0
  */
 public class Phaser {
-    private static final GamePhase TerminatedPhase = new GamePhase(-1, -1, null);
+    private static final GamePhase TerminatedPhase = new GamePhase(-1, 0, null);
     private static final AtomicReferenceFieldUpdater<Phaser, GamePhase> PhaseUpd = ReferenceFieldUpdaterImpl.newUpdater(Phaser.class, GamePhase.class, "phase");
     private final ResultWaitPool waitPool;
     private Phaser root;
@@ -48,6 +48,7 @@ public class Phaser {
 
     public Phaser(Phaser parent, int parties) {
         if (parties < 0) throw new IllegalArgumentException();
+
         this.parent = parent;
         this.waitPool = new ResultWaitPool();
         this.phase = new GamePhase(0, parties, this);
@@ -79,7 +80,7 @@ public class Phaser {
             GamePhase curPhase = this.phase;
             if (curPhase == TerminatedPhase) return TerminatedPhase.phaseNo;
 
-            AtomicInteger atomicTargetCount = curPhase.targetCount;
+            AtomicInteger atomicTargetCount = curPhase.targetNumber;
             int targetCount = atomicTargetCount.get();
             if (targetCount == curPhase.arrivedCount.get()) continue;
 
@@ -173,7 +174,7 @@ public class Phaser {
     }
 
     public int getRegisteredParties() {
-        return phase.getTargetCount();
+        return phase.getTargetNumber();
     }
 
     public int getArrivedParties() {
@@ -195,15 +196,15 @@ public class Phaser {
     //                                     8: Result Call Impl                                                        //
     //****************************************************************************************************************//
     private static class GamePhase implements ResultCall {
-        private int phaseNo;
-        private Phaser owner;
-        private AtomicInteger targetCount;
-        private AtomicInteger arrivedCount;
+        private final int phaseNo;
+        private final Phaser owner;
+        private final AtomicInteger targetNumber;
+        private final AtomicInteger arrivedCount;
 
-        GamePhase(int phaseNo, int expectedCount, Phaser owner) {
+        GamePhase(int phaseNo, int targetNum, Phaser owner) {
             this.owner = owner;
             this.phaseNo = phaseNo;
-            this.targetCount = new AtomicInteger(expectedCount);
+            this.targetNumber = new AtomicInteger(targetNum);
             this.arrivedCount = new AtomicInteger(0);
         }
 
@@ -211,8 +212,8 @@ public class Phaser {
             return phaseNo;
         }
 
-        int getTargetCount() {
-            return targetCount.get();
+        int getTargetNumber() {
+            return targetNumber.get();
         }
 
         int getArrivedCount() {
@@ -220,12 +221,12 @@ public class Phaser {
         }
 
         int getUnarrivedCount() {
-            int count = targetCount.get() - arrivedCount.get();
+            int count = targetNumber.get() - arrivedCount.get();
             return count > 0 ? count : 0;
         }
 
-        boolean compareAndSetTargetCount(int expect, int update) {
-            return targetCount.compareAndSet(expect, update);
+        boolean compareAndSetTargetNumber(int expect, int update) {
+            return targetNumber.compareAndSet(expect, update);
         }
 
         boolean compareAndSetArrivedCount(int expect, int update) {
