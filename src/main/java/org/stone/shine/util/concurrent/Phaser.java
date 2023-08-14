@@ -51,6 +51,7 @@ public class Phaser {
         this.parent = parent;
         this.waitPool = new ResultWaitPool();
         this.phase = new GamePhase(0, parties, this);
+        if (parent != null) parent.register();
     }
 
     //****************************************************************************************************************//
