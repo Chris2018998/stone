@@ -90,7 +90,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
         if (e == null) throw new NullPointerException();
-        return this.waitPool.offer(e, new SyncVisitConfig(timeout, unit));
+        SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
+        config.setWakeupOneOnFailure(false);
+        config.allowInterruption(false);
+        return this.waitPool.offer(e, config);
     }
 
     //****************************************************************************************************************//
@@ -125,7 +128,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public void transfer(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        this.waitPool.transfer(e, new SyncVisitConfig());
+        SyncVisitConfig config = new SyncVisitConfig();
+        config.setWakeupOneOnFailure(false);
+        this.waitPool.transfer(e, config);
     }
 
     /**
@@ -144,7 +149,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean tryTransfer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        return this.waitPool.transfer(e, new SyncVisitConfig(timeout, unit));
+        SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
+        config.setWakeupOneOnFailure(false);
+        return this.waitPool.transfer(e, config);
     }
 
     //****************************************************************************************************************//
@@ -159,7 +166,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
-        return this.waitPool.get(new SyncVisitConfig<E>());
+        SyncVisitConfig<E> config = new SyncVisitConfig();
+        config.setWakeupOneOnFailure(false);
+        return this.waitPool.get(config);
     }
 
     /**
@@ -183,7 +192,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return this.waitPool.get(new SyncVisitConfig<E>(timeout, unit));
+        SyncVisitConfig<E> config = new SyncVisitConfig(timeout, unit);
+        config.setWakeupOneOnFailure(false);
+        return this.waitPool.get(config);
     }
 
 
