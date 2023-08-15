@@ -20,7 +20,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Signal Wait Pool,caller try to get a signal from pool,if not get,then wait for it util timeout
+ * Signal-WaitPool
  *
  * @author Chris Liao
  * @version 1.0

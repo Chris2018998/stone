@@ -22,7 +22,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * transfer wait pool
+ * Transfer-WaitPool
  *
  * @author Chris Liao
  * @version 1.0

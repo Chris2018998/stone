@@ -21,7 +21,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casSt
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Wait to get a expected state from pool
+ * State-WaitPool
  *
  * @author Chris Liao
  * @version 1.0

@@ -19,8 +19,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNIN
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Core Desc: Do some thing(execute result call),if success,return directly, but if failed,
- * then wait util other's wakeup to continue doing the same thing.
+ * Result-WaitPool,get a result from pool(execute result call object)
  *
  * @author Chris Liao
  * @version 1.0
