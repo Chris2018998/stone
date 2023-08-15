@@ -30,7 +30,7 @@ public abstract class ThreadWaitingPool<E> {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1:queue Methods(3)                                                    //
+    //                                          1:queue Methods(4)                                                    //
     //****************************************************************************************************************//
     protected final boolean atFirst(SyncNode node) {
         return node == waitChain.peekFirst();
@@ -106,36 +106,7 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     //****************************************************************************************************************//
-    //                                          3: leave from pool(1)                                                 //
-    //****************************************************************************************************************//
-    protected final void leaveFromWaitQueue(SyncNode current, boolean wakeup, Object nodeType, Object toState) {
-        //1: remove current node from queue
-        this.waitChain.removeFirstOccurrence(current);
-        //2: Iterator to wakeup one
-        if (wakeup) {
-            Iterator<SyncNode> iterator = this.waitChain.iterator();
-            if (nodeType == null) {
-                while (iterator.hasNext()) {
-                    SyncNode qNode = iterator.next();
-                    if (casState(qNode, null, toState)) {
-                        LockSupport.unpark(qNode.thread);
-                        return;
-                    }
-                }
-            } else {
-                while (iterator.hasNext()) {
-                    SyncNode qNode = iterator.next();
-                    if (objectEquals(nodeType, qNode.type) && casState(qNode, null, toState)) {
-                        LockSupport.unpark(qNode.thread);
-                        return;
-                    }
-                }
-            }
-        }
-    }
-
-    //****************************************************************************************************************//
-    //                                         4: Monitor Methods(6)                                                  //
+    //                                         3: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
     protected final Iterator<SyncNode> ascendingIterator() {
         return waitChain.iterator();
