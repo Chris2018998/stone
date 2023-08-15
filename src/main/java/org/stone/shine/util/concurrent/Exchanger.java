@@ -22,8 +22,8 @@ import java.util.concurrent.TimeoutException;
  * @version 1.0
  */
 public class Exchanger<E> {
-    private TransferWaitPool<E> waitPool = new TransferWaitPool<>();
-
+    private final TransferWaitPool<E> waitPool = new TransferWaitPool<>();
+    
     public Object exchange(E x) throws InterruptedException {
         SyncVisitConfig config = new SyncVisitConfig();
         return waitPool.transfer(x, config);
@@ -32,7 +32,7 @@ public class Exchanger<E> {
     public Object exchange(E x, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
         Object v = waitPool.transfer(x, config);
-        if (v == null && config.getParkSupport().isTimeout()) throw new TimeoutException();
+        if (config.getParkSupport().isTimeout()) throw new TimeoutException();
         return v;
     }
 }
