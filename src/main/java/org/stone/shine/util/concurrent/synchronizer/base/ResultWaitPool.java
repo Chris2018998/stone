@@ -120,10 +120,12 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            if (success)
-                this.leaveFromWaitQueue(node, config.isWakeupOneOnSuccess(), config.getWakeupNodeTypeOnSuccess(), RUNNING);
-            else
-                this.leaveFromWaitQueue(node, config.isWakeupOneOnFailure(), config.getWakeupNodeTypeOnFailure(), RUNNING);
+            super.removeNode(node);
+            if (success) {
+                if (config.isWakeupOneOnSuccess())
+                    this.wakeupOne(true, config.getWakeupNodeTypeOnSuccess(), RUNNING);
+            } else if (config.isWakeupOneOnFailure())
+                this.wakeupOne(true, config.getWakeupNodeTypeOnFailure(), RUNNING);
         }
     }
 }
