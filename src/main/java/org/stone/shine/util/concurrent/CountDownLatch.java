@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class CountDownLatch implements ResultCall {
     //Number of programs(Remaining)
     private AtomicInteger count;
-    //result call wait pool
+    //result wait pool
     private ResultWaitPool waitPool;
 
     //create wait pool in constructor

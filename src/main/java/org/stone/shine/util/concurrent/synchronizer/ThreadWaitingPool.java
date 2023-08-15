@@ -40,27 +40,26 @@ public abstract class ThreadWaitingPool<E> {
         waitChain.removeFirstOccurrence(node);
     }
 
+    protected final void appendAsDataNode(SyncNode node) {
+        waitChain.offerLast(node);
+    }
+
     protected final boolean appendAsWaitNode(SyncNode node) {
         node.setCurrentThread();
         waitChain.offerLast(node);
         return node == waitChain.peekFirst();
     }
 
-    protected final void appendAsDataNode(Object state, Object type, E value) {
-        SyncNode<E> node = new SyncNode<E>(state, type, value);
-        waitChain.offerLast(node);
-    }
-
     //****************************************************************************************************************//
     //                                          2: wakeup(2)                                                          //
     //****************************************************************************************************************//
-    public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
+    public final SyncNode<E> wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode qNode = iterator.next();
+                SyncNode<E> qNode = iterator.next();
                 if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
@@ -68,7 +67,7 @@ public abstract class ThreadWaitingPool<E> {
             }
         } else {
             while (iterator.hasNext()) {
-                SyncNode qNode = iterator.next();
+                SyncNode<E> qNode = iterator.next();
                 if (objectEquals(nodeType, qNode.type) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
@@ -86,7 +85,7 @@ public abstract class ThreadWaitingPool<E> {
         //2: retrieve type matched node and unpark its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode qNode = iterator.next();
+                SyncNode<E> qNode = iterator.next();
                 if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     wakeupCount++;

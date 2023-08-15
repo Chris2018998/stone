@@ -96,7 +96,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.initState = initState;
     }
 
-    public final SyncNode getSyncNode() {
+    public final SyncNode<E> getSyncNode() {
         return new SyncNode<>(initState, nodeType, nodeValue);
     }
 

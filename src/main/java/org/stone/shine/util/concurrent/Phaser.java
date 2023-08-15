@@ -233,7 +233,7 @@ public class Phaser {
             return arrivedCount.compareAndSet(expect, update);
         }
 
-        public Object call(Object arg) throws Exception {
+        public Object call(Object arg) {
             return owner.phase != this;
         }
     }

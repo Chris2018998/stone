@@ -9,6 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool;
 
@@ -18,6 +19,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Data;
+import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Poll;
 
 /**
  * SynchronousQueue implementation by wait Pool
@@ -61,7 +65,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
-        return this.waitPool.tryTransfer(e);
+        return this.waitPool.tryTransfer(new SyncNode<E>(null, Node_Type_Data, e), Node_Type_Poll) != null;
     }
 
     /**
@@ -73,9 +77,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public void put(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        SyncVisitConfig config = new SyncVisitConfig<E>();
+        SyncVisitConfig<E> config = new SyncVisitConfig<E>();
+        config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
-        this.waitPool.transfer(e, config);
+        this.waitPool.transfer(null, config, Node_Type_Poll);
     }
 
     /**
@@ -90,8 +95,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
+        config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
-        return this.waitPool.transfer(e, config);
+        return this.waitPool.transfer(null, config, Node_Type_Poll) != null;
     }
 
     //****************************************************************************************************************//
@@ -108,7 +114,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public E take() throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>();
         config.setWakeupOneOnFailure(false);
-        return this.waitPool.get(config);
+        SyncNode<E> pairNode = this.waitPool.poll(config);
+        return pairNode != null ? pairNode.getValue() : null;
     }
 
     /**
@@ -123,7 +130,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
         config.setWakeupOneOnFailure(false);
-        return this.waitPool.get(config);
+        SyncNode<E> pairNode = this.waitPool.poll(config);
+        return pairNode != null ? pairNode.getValue() : null;
     }
 
     /**
@@ -134,7 +142,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * element is available
      */
     public E poll() {
-        return this.waitPool.tryGet();
+        SyncNode<E> pairNode = this.waitPool.poll();
+        return pairNode != null ? pairNode.getValue() : null;
     }
 
     //****************************************************************************************************************//
