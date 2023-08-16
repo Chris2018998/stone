@@ -28,7 +28,7 @@ import static org.stone.tools.CommonUtil.maxTimedSpins;
  * @version 1.0
  */
 public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
-    public static final Object Node_Type_Poll = new Object();
+    public static final Object Node_Type_Get = new Object();
     public static final Object Node_Type_Data = new Object();
 
     //true,use fair mode to execute call
@@ -55,25 +55,20 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //                                          1: offer methods(3)                                                   //
     //****************************************************************************************************************//
     //try to transfer node to a waiter,success return the wait node,failed append to queue as a node
-    public final SyncNode<E> offer(SyncNode<E> n) {
-        if (n == null) throw new IllegalArgumentException("element can't be null");
-
-        SyncNode<E> pairNode = tryTransfer(n, Node_Type_Poll);
-        if (pairNode != null) return pairNode;
-
-        this.appendAsDataNode(n);//append to queue
+    public final SyncNode<E> offer(SyncNode<E> node) {
+        if (node == null) throw new IllegalArgumentException("Node can't be null");
+        SyncNode<E> pairNode = tryTransfer(node, Node_Type_Get);
+        if (pairNode != null) return pairNode;//matched node
+        this.appendAsDataNode(node);//append to queue
         return null;
     }
 
     //try to transfer the node to a waiter during specified period
     public final SyncNode<E> offer(SyncVisitConfig<E> config) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("element can't be null");
-
-        SyncNode<E> node = config.getSyncNode();
-        SyncNode<E> pairNode = transfer(node, config, Node_Type_Poll);
-        if (pairNode != null) return pairNode;
-
-        this.appendAsDataNode(node);
+        if (config == null) throw new IllegalArgumentException("Config can't be null");
+        SyncNode<E> pairNode = transfer(config, Node_Type_Get);
+        if (pairNode != null) return pairNode;//matched node
+        this.appendAsDataNode(config.getSyncNode());
         return null;
     }
 
@@ -81,40 +76,42 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     //                                          2: transfer methods(2)                                                //
     //****************************************************************************************************************//
     public final SyncNode<E> tryTransfer(SyncNode<E> node, Object toNodeType) {
+        if (node == null) throw new IllegalArgumentException("Node can't be null");
         return this.wakeupOne(fair, toNodeType, node);
     }
 
-    public final SyncNode<E> transfer(SyncNode<E> node, SyncVisitConfig<E> config, Object toNodeType) throws InterruptedException {
-        if (node == null) node = config.getSyncNode();
-        SyncNode<E> pairNode = tryTransfer(node, toNodeType);
+    public final SyncNode<E> transfer(SyncVisitConfig<E> config, Object toNodeType) throws InterruptedException {
+        if (config == null) throw new IllegalArgumentException("Config can't be null");
+
+        //1: try to transfer to one waiter
+        SyncNode<E> pairNode = tryTransfer(config.getSyncNode(), toNodeType);
         if (pairNode != null) return pairNode;
 
-        return doWait(config);
+        //2: wait for transferring
+        pairNode = doWait(config);
+        if (pairNode != null) return pairNode;
+
+        return null;
     }
 
     //****************************************************************************************************************//
-    //                                          3: poll methods(2)                                                //
+    //                                          3: poll methods(2)                                                    //
     //****************************************************************************************************************//
     public final SyncNode<E> poll() {
-        SyncNode<E> node = new SyncNode<>(Node_Type_Poll, null);
-        return tryTransfer(node, Node_Type_Data);
+        return tryTransfer(new SyncNode<E>(null, Node_Type_Get, null), Node_Type_Data);
     }
 
     public final SyncNode<E> poll(SyncVisitConfig<E> config) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("config can't be null");
+        if (config == null) throw new IllegalArgumentException("Config can't be null");
 
-        SyncNode<E> node = config.getSyncNode();
-        SyncNode<E> pollNode = transfer(node, config, Node_Type_Data);
-        if (pollNode != null) return pollNode;
-
-        return doWait(config);
+        return transfer(config, Node_Type_Data);
     }
 
     //****************************************************************************************************************//
     //                                          4: core methods                                                       //
     //****************************************************************************************************************//
     private SyncNode<E> doWait(SyncVisitConfig<E> config) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("wait config can't be null");
+        if (config == null) throw new IllegalArgumentException("Config can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
 
         //1:create wait node and offer to wait queue
@@ -163,11 +160,11 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     }
 
     public boolean hasWaitingConsumer() {
-        return super.existsTypeNode(Node_Type_Poll);
+        return super.existsTypeNode(Node_Type_Get);
     }
 
     public int getWaitingConsumerCount() {
-        return super.getQueueLength(Node_Type_Poll);
+        return super.getQueueLength(Node_Type_Get);
     }
 
     public int size() {
@@ -180,8 +177,8 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
     public E peek() {
         Iterator<SyncNode> nodeIterator = super.ascendingIterator();
         while (nodeIterator.hasNext()) {
-            SyncNode node = nodeIterator.next();
-            if (Node_Type_Data == node.getType()) return (E) node.getValue();
+            SyncNode<E> node = nodeIterator.next();
+            if (Node_Type_Data == node.getType()) return node.getValue();
         }
         return null;
     }
@@ -215,9 +212,9 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
 
     private static class DataIterator<E> implements Iterator {
         private final Iterator<SyncNode> nodeIterator;
-        private SyncNode currentDataNode;
+        private SyncNode<E> currentDataNode;
 
-        public DataIterator(Iterator<SyncNode> nodeIterator) {
+        DataIterator(Iterator<SyncNode> nodeIterator) {
             this.nodeIterator = nodeIterator;
         }
 
@@ -228,7 +225,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         public boolean hasNext() {
             this.currentDataNode = null;
             while (nodeIterator.hasNext()) {
-                SyncNode node = nodeIterator.next();
+                SyncNode<E> node = nodeIterator.next();
                 if (Node_Type_Data == node.getType()) {
                     currentDataNode = node;
                     return true;
@@ -238,7 +235,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool<E> {
         }
 
         public E next() {
-            return currentDataNode != null ? (E) (currentDataNode.getValue()) : null;
+            return currentDataNode != null ? currentDataNode.getValue() : null;
         }
     }
 }
