@@ -21,7 +21,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Data;
-import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Poll;
+import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Get;
 
 /**
  * SynchronousQueue implementation by wait Pool
@@ -65,7 +65,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
-        return this.waitPool.tryTransfer(new SyncNode<E>(null, Node_Type_Data, e), Node_Type_Poll) != null;
+        return this.waitPool.offer(new SyncNode<E>(null, Node_Type_Data, e)) != null;
     }
 
     /**
@@ -80,7 +80,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         SyncVisitConfig<E> config = new SyncVisitConfig<E>();
         config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
-        this.waitPool.transfer(null, config, Node_Type_Poll);
+        this.waitPool.transfer(config, Node_Type_Get);
     }
 
     /**
@@ -97,7 +97,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
         config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
-        return this.waitPool.transfer(null, config, Node_Type_Poll) != null;
+        return this.waitPool.transfer(config, Node_Type_Get) != null;
     }
 
     //****************************************************************************************************************//
@@ -113,6 +113,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E take() throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>();
+        config.setNodeType(Node_Type_Get);
         config.setWakeupOneOnFailure(false);
         SyncNode<E> pairNode = this.waitPool.poll(config);
         return pairNode != null ? pairNode.getValue() : null;
@@ -129,6 +130,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
+        config.setNodeType(Node_Type_Get);
         config.setWakeupOneOnFailure(false);
         SyncNode<E> pairNode = this.waitPool.poll(config);
         return pairNode != null ? pairNode.getValue() : null;

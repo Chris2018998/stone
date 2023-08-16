@@ -31,14 +31,14 @@ public class Exchanger<E> {
     public E exchange(E x) throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<>();
         config.setNodeInitInfo(Node_Type_Data, x);
-        SyncNode<E> pairNode = waitPool.transfer(null, config, Node_Type_Data);
+        SyncNode<E> pairNode = waitPool.transfer(config, Node_Type_Data);
         return pairNode.getValue();
     }
 
     public E exchange(E x, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
         SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout, unit);
         config.setNodeInitInfo(Node_Type_Data, x);
-        SyncNode<E> pairNode = waitPool.transfer(null, config, Node_Type_Data);
+        SyncNode<E> pairNode = waitPool.transfer(config, Node_Type_Data);
         if (config.getParkSupport().isTimeout()) throw new TimeoutException();
         return pairNode.getValue();
     }

@@ -12,6 +12,7 @@ package org.stone.shine.util.concurrent;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
+import org.stone.tools.CommonUtil;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 
 import java.util.concurrent.TimeUnit;
@@ -28,12 +29,14 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNIN
  * @version 1.0
  */
 public class Phaser {
+    //update to phase via cas when termination
     private static final GamePhase TerminatedPhase = new GamePhase(-1, 0, null);
     private static final AtomicReferenceFieldUpdater<Phaser, GamePhase> PhaseUpd = ReferenceFieldUpdaterImpl.newUpdater(Phaser.class, GamePhase.class, "phase");
+
     private final ResultWaitPool waitPool;
     private Phaser root;
     private Phaser parent;
-    private volatile GamePhase phase;
+    private volatile GamePhase phase;//current phase，it is a implementation of result call
 
     //****************************************************************************************************************//
     //                                      1: Constructors(3)                                                        //
@@ -51,7 +54,7 @@ public class Phaser {
 
         this.parent = parent;
         this.waitPool = new ResultWaitPool();
-        this.phase = new GamePhase(0, parties, this);
+        this.phase = new GamePhase(0, parties, this);//create a initial phase as default
         if (parent != null) parent.register();
     }
 
@@ -74,18 +77,13 @@ public class Phaser {
     }
 
     public int bulkRegister(int parties) {
-        if (parties < 0) throw new IllegalArgumentException();
+        if (parties < 0) throw new IllegalArgumentException("Parties must be greater than 0");
 
         for (; ; ) {
             GamePhase curPhase = this.phase;
             if (curPhase == TerminatedPhase) return TerminatedPhase.phaseNo;
-
-            AtomicInteger atomicTargetCount = curPhase.targetNumber;
-            int targetCount = atomicTargetCount.get();
-            if (targetCount == curPhase.arrivedCount.get()) continue;
-
-            if (atomicTargetCount.compareAndSet(targetCount, targetCount + parties))
-                return curPhase.getPhaseNo();
+            if (curPhase.isAllArrived()) continue;//all parties has been arrived of the phase,so continue
+            if (curPhase.casTargetNumber(parties)) return curPhase.getPhaseNo();
         }
     }
 
@@ -110,23 +108,50 @@ public class Phaser {
 
     //1: arrive 2: arriveAndDeregister 3: arriveAndAwaitAdvance
     private int doArrived(int arrivalType) {
-        //@todo
-        return 0;
+        for (; ; ) {
+            GamePhase curPhase = this.phase;
+            if (curPhase == TerminatedPhase) return TerminatedPhase.getPhaseNo();
+            if (curPhase.isAllArrived()) continue;//current Phase has over,so jump to read next
+
+            if (curPhase.increaseArrivedCount()) {//increase an arrival success
+                int phaseNo = curPhase.getPhaseNo();
+                int targetNumber = curPhase.getTargetNumber();
+                if (arrivalType == 2) targetNumber--;//deregister
+
+                if (curPhase.isAllArrived()) {//all parties arrived,then wakeup all waiters in pool
+                    int newPhaseNo = phaseNo + 1;
+                    this.phase = new GamePhase(newPhaseNo, targetNumber, this);//create a new phase
+                    this.waitPool.wakeupOne(true, phaseNo, RUNNING);
+
+                    //a new phase has generated
+                    this.onAdvance(newPhaseNo, targetNumber);
+                    return newPhaseNo;
+                } else {
+                    if (arrivalType == 2) {
+                        curPhase.casTargetNumber(-1);
+                        return phaseNo;
+                    } else if (arrivalType == 3) {
+                        return awaitAdvance();
+                    }
+                }
+            }
+        }//for end
     }
 
     //****************************************************************************************************************//
     //                                     5: Wait methods(3)                                                         //
     //****************************************************************************************************************//
+    //wait for a new phase
     public int awaitAdvance() {
         SyncVisitConfig config = new SyncVisitConfig();
-        config.setWakeupOneOnSuccess(true);
         config.setNodeType(phase.getPhaseNo());
-        config.allowInterruption(false);
+        config.setWakeupOneOnSuccess(true);
+        config.allowInterruption(false);//forbidden interruption
 
         try {
             return doAwait(config);
         } catch (InterruptedException e) {
-            return TerminatedPhase.getPhaseNo();
+            return phase.getPhaseNo();
         }
     }
 
@@ -134,6 +159,7 @@ public class Phaser {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(phase);
         config.setWakeupOneOnSuccess(true);
+
         return doAwait(config);
     }
 
@@ -148,8 +174,22 @@ public class Phaser {
     }
 
     private int doAwait(SyncVisitConfig config) throws InterruptedException {
-        return 0;
-        //@todo
+        GamePhase currentPhase = this.phase;
+        if (currentPhase == TerminatedPhase) return TerminatedPhase.phaseNo;
+
+        //parameter PhaseNo equals the current PhaseNo,then waiting util new Phase
+        if (CommonUtil.objectEquals(currentPhase.getPhaseNo(), config.getNodeType())) {
+            try {
+                waitPool.get(currentPhase, null, config);
+                return this.phase.getPhaseNo();
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new Error();
+            }
+        } else {
+            return currentPhase.getPhaseNo();
+        }
     }
 
     //****************************************************************************************************************//
@@ -162,7 +202,7 @@ public class Phaser {
     public void forceTermination() {
         GamePhase currentPhase = phase;
         if (currentPhase != TerminatedPhase && PhaseUpd.compareAndSet(this, currentPhase, TerminatedPhase)) {
-            this.waitPool.wakeupOne(true, null, RUNNING);
+            this.waitPool.wakeupOne(true, null, RUNNING);//wakeup all waiters in pool to end waiting
         }
     }
 
@@ -193,8 +233,8 @@ public class Phaser {
     }
 
     //****************************************************************************************************************//
-    //                                     8: Result Call Impl                                                        //
-    //****************************************************************************************************************//
+//                                     8: Result Call Impl                                                        //
+//****************************************************************************************************************//
     private static class GamePhase implements ResultCall {
         private final int phaseNo;
         private final Phaser owner;
@@ -220,17 +260,25 @@ public class Phaser {
             return arrivedCount.get();
         }
 
+        boolean isAllArrived() {
+            return arrivedCount.get() >= targetNumber.get();
+        }
+
         int getUnarrivedCount() {
             int count = targetNumber.get() - arrivedCount.get();
             return count > 0 ? count : 0;
         }
 
-        boolean compareAndSetTargetNumber(int expect, int update) {
-            return targetNumber.compareAndSet(expect, update);
+        boolean casTargetNumber(int incrCount) {
+            int currentCount = targetNumber.get();
+            return targetNumber.compareAndSet(currentCount, currentCount + incrCount);
         }
 
-        boolean compareAndSetArrivedCount(int expect, int update) {
-            return arrivedCount.compareAndSet(expect, update);
+        boolean increaseArrivedCount() {
+            if (targetNumber.get() == 0)
+                throw new IllegalStateException("Attempted arrival of unregistered party for 0");
+            int currentCount = arrivedCount.get();
+            return arrivedCount.compareAndSet(currentCount, currentCount + 1);
         }
 
         public Object call(Object arg) {

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TransferQueue;
 
 import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Data;
-import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Poll;
+import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Get;
 
 /**
  * LinkedTransferQueue implementation by wait Pool
@@ -79,7 +79,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
-        return this.waitPool.offer(new SyncNode<E>(Node_Type_Data ,e))!=null;
+        this.waitPool.offer(new SyncNode<E>(null, Node_Type_Data, e));
+        return true;
     }
 
     /**
@@ -95,13 +96,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
     public boolean offer(E e, long timeout, TimeUnit unit) {
         if (e == null) throw new NullPointerException();
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
+        config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
         config.allowInterruption(false);
         try {
-            return this.waitPool.offer(config) != null;
-        }catch(Exception ee){
-            return false;
+            this.waitPool.offer(config);
+        } catch (Exception ee) {
+            //do nothing
         }
+        return true;
     }
 
     //****************************************************************************************************************//
@@ -120,8 +123,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean tryTransfer(E e) {
         if (e == null) throw new NullPointerException();
-        SyncNode node= new SyncNode<E>(Node_Type_Data ,e);
-        return this.waitPool.tryTransfer(node,Node_Type_Poll)!=null;
+        SyncNode node = new SyncNode<E>(null, Node_Type_Data, e);
+        return this.waitPool.tryTransfer(node, Node_Type_Get) != null;
     }
 
     /**
@@ -137,10 +140,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public void transfer(E e) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        SyncVisitConfig<E> config = new SyncVisitConfig();
-        config.setNodeInitInfo(Node_Type_Data,e);
+        SyncVisitConfig<E> config = new SyncVisitConfig<>();
+        config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
-        this.waitPool.transfer(null,config,Node_Type_Poll);
+        this.waitPool.transfer(config, Node_Type_Get);
     }
 
     /**
@@ -159,10 +162,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean tryTransfer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         if (e == null) throw new NullPointerException();
-        SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout,unit);
-        config.setNodeInitInfo(Node_Type_Data,e);
+        SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout, unit);
+        config.setNodeInitInfo(Node_Type_Data, e);
         config.setWakeupOneOnFailure(false);
-        return this.waitPool.transfer(null,config,Node_Type_Poll)!=null;
+        return this.waitPool.transfer(config, Node_Type_Get) != null;
     }
 
     //****************************************************************************************************************//
@@ -178,10 +181,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public E take() throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<>();
-        config.setNodeType(Node_Type_Poll);
+        config.setNodeType(Node_Type_Get);
         config.setWakeupOneOnFailure(false);
-        SyncNode<E> pairNdoe=this.waitPool.poll(config);
-        return pairNdoe!=null?pairNdoe.getValue():null;
+        SyncNode<E> pairNdoe = this.waitPool.poll(config);
+        return pairNdoe != null ? pairNdoe.getValue() : null;
     }
 
     /**
@@ -192,8 +195,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * element is available
      */
     public E poll() {
-        SyncNode<E> pairNdoe=this.waitPool.poll();
-        return pairNdoe!=null?pairNdoe.getValue():null;
+        SyncNode<E> pairNdoe = this.waitPool.poll();
+        return pairNdoe != null ? pairNdoe.getValue() : null;
     }
 
     /**
@@ -206,11 +209,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * @throws InterruptedException {@inheritDoc}
      */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout,unit);
-        config.setNodeType(Node_Type_Poll);
+        SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout, unit);
+        config.setNodeType(Node_Type_Get);
         config.setWakeupOneOnFailure(false);
-        SyncNode<E> pairNdoe=this.waitPool.poll(config);
-        return pairNdoe!=null?pairNdoe.getValue():null;
+        SyncNode<E> pairNdoe = this.waitPool.poll(config);
+        return pairNdoe != null ? pairNdoe.getValue() : null;
     }
 
 
