@@ -131,10 +131,11 @@ public class ResultWaitPool extends ThreadWaitingPool {
         } finally {
             super.removeNode(node);
             if (success) {
-                if (config.isWakeupOneOnSuccess())
-                    this.wakeupOne(true, config.getWakeupNodeTypeOnSuccess(), RUNNING);
-            } else if (config.isWakeupOneOnFailure())
-                this.wakeupOne(true, config.getWakeupNodeTypeOnFailure(), RUNNING);
+                if (config.isPropagatedOnSuccess())
+                    this.wakeupOne(true, node.getType(), RUNNING);//wakeup same type
+            } else {
+                this.wakeupOne(true, null, RUNNING);//any type node
+            }
         }
     }
 }

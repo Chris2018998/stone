@@ -97,7 +97,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
         if (e == null) throw new NullPointerException();
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
         config.setNodeInitInfo(Node_Type_Data, e);
-        config.setWakeupOneOnFailure(false);
         config.allowInterruption(false);
         try {
             this.waitPool.offer(config);
@@ -142,7 +141,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
         if (e == null) throw new NullPointerException();
         SyncVisitConfig<E> config = new SyncVisitConfig<>();
         config.setNodeInitInfo(Node_Type_Data, e);
-        config.setWakeupOneOnFailure(false);
         this.waitPool.transfer(config, Node_Type_Get);
     }
 
@@ -164,7 +162,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
         if (e == null) throw new NullPointerException();
         SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout, unit);
         config.setNodeInitInfo(Node_Type_Data, e);
-        config.setWakeupOneOnFailure(false);
         return this.waitPool.transfer(config, Node_Type_Get) != null;
     }
 
@@ -182,7 +179,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
     public E take() throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<>();
         config.setNodeType(Node_Type_Get);
-        config.setWakeupOneOnFailure(false);
         SyncNode<E> pairNdoe = this.waitPool.poll(config);
         return pairNdoe != null ? pairNdoe.getValue() : null;
     }
@@ -211,7 +207,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<>(timeout, unit);
         config.setNodeType(Node_Type_Get);
-        config.setWakeupOneOnFailure(false);
         SyncNode<E> pairNdoe = this.waitPool.poll(config);
         return pairNdoe != null ? pairNdoe.getValue() : null;
     }

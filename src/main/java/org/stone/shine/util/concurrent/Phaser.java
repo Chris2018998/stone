@@ -145,7 +145,7 @@ public class Phaser {
     public int awaitAdvance() {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(phase.getPhaseNo());
-        config.setWakeupOneOnSuccess(true);
+        config.setPropagatedOnSuccess(true);
         config.allowInterruption(false);//forbidden interruption
 
         try {
@@ -158,7 +158,7 @@ public class Phaser {
     public int awaitAdvanceInterruptibly(int phase) throws InterruptedException {
         SyncVisitConfig config = new SyncVisitConfig();
         config.setNodeType(phase);
-        config.setWakeupOneOnSuccess(true);
+        config.setPropagatedOnSuccess(true);
 
         return doAwait(config);
     }
@@ -166,7 +166,7 @@ public class Phaser {
     public int awaitAdvanceInterruptibly(int phase, long timeout, TimeUnit unit) throws InterruptedException, TimeoutException {
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
         config.setNodeType(phase);
-        config.setWakeupOneOnSuccess(true);
+        config.setPropagatedOnSuccess(true);
 
         int phaseNo = doAwait(config);
         if (config.getParkSupport().isTimeout()) throw new TimeoutException();

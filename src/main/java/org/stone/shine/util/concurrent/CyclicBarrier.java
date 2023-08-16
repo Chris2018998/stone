@@ -99,7 +99,6 @@ public final class CyclicBarrier {
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
-            config.setWakeupOneOnSuccess(true);
             return doAwait(config);
         } catch (TimeoutException e) {
             throw new Error(e);
@@ -108,7 +107,6 @@ public final class CyclicBarrier {
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
-        config.setWakeupOneOnSuccess(true);
         return doAwait(config);
     }
 

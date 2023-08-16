@@ -79,7 +79,6 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         if (e == null) throw new NullPointerException();
         SyncVisitConfig<E> config = new SyncVisitConfig<E>();
         config.setNodeInitInfo(Node_Type_Data, e);
-        config.setWakeupOneOnFailure(false);
         this.waitPool.transfer(config, Node_Type_Get);
     }
 
@@ -96,7 +95,6 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
         if (e == null) throw new NullPointerException();
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
         config.setNodeInitInfo(Node_Type_Data, e);
-        config.setWakeupOneOnFailure(false);
         return this.waitPool.transfer(config, Node_Type_Get) != null;
     }
 
@@ -114,7 +112,6 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public E take() throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>();
         config.setNodeType(Node_Type_Get);
-        config.setWakeupOneOnFailure(false);
         SyncNode<E> pairNode = this.waitPool.poll(config);
         return pairNode != null ? pairNode.getValue() : null;
     }
@@ -131,7 +128,6 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         SyncVisitConfig<E> config = new SyncVisitConfig<E>(timeout, unit);
         config.setNodeType(Node_Type_Get);
-        config.setWakeupOneOnFailure(false);
         SyncNode<E> pairNode = this.waitPool.poll(config);
         return pairNode != null ? pairNode.getValue() : null;
     }

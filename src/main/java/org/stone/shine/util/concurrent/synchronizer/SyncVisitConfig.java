@@ -33,16 +33,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private ThreadParkSupport parkSupport;
     //indicator:true,throws InterruptedException when waiting interrupted
     private boolean allowInterruption = true;
-
-    //***********************************************wakeup configuration*********************************************//
     //similar to AQS SHARED mode on acquisition success
-    private boolean wakeupOneOnSuccess;
-    //store some node type
-    private Object wakeupNodeTypeOnSuccess;
-    //similar to AQS CANCELLED
-    private boolean wakeupOneOnFailure = true;
-    //store some node type
-    private Object wakeupNodeTypeOnFailure;
+    private boolean propagatedOnSuccess;
 
     //****************************************************************************************************************//
     //                                              1:constructors(4)                                                 //
@@ -122,45 +114,16 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.allowInterruption = allowIndicator;
     }
 
-    //****************************************************************************************************************//
-    //                                              4: wakeup configuration(8)                                        //
-    //****************************************************************************************************************//
-    public final boolean isWakeupOneOnSuccess() {
-        return wakeupOneOnSuccess;
+    public boolean isPropagatedOnSuccess() {
+        return propagatedOnSuccess;
     }
 
-    public final void setWakeupOneOnSuccess(boolean wakeupInd) {
-        this.wakeupOneOnSuccess = wakeupInd;
-    }
-
-    public final Object getWakeupNodeTypeOnSuccess() {
-        return wakeupNodeTypeOnSuccess;
-    }
-
-    public final void setWakeupOneOnSuccess(boolean wakeupInd, Object nodeType) {
-        this.wakeupOneOnSuccess = wakeupInd;
-        this.wakeupNodeTypeOnSuccess = nodeType;
-    }
-
-    public final boolean isWakeupOneOnFailure() {
-        return wakeupOneOnFailure;
-    }
-
-    public final void setWakeupOneOnFailure(boolean wakeupInd) {
-        this.wakeupOneOnFailure = wakeupInd;
-    }
-
-    public final Object getWakeupNodeTypeOnFailure() {
-        return wakeupNodeTypeOnFailure;
-    }
-
-    public final void setWakeupOneOnFailure(boolean wakeupInd, Object nodeType) {
-        this.wakeupOneOnFailure = wakeupInd;
-        this.wakeupNodeTypeOnFailure = nodeType;
+    public void setPropagatedOnSuccess(boolean propagatedOnSuccess) {
+        this.propagatedOnSuccess = propagatedOnSuccess;
     }
 
     //****************************************************************************************************************//
-    //                                              5: SyncVisitConfig reset                                          //
+    //                                              4: SyncVisitConfig reset                                          //
     //****************************************************************************************************************//
     public final void reset() {
         this.node = null;
@@ -169,10 +132,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.initState = null;
         this.parkSupport.reset();
         this.allowInterruption = true;
-
-        this.wakeupOneOnFailure = true;
-        this.wakeupOneOnSuccess = false;
-        this.wakeupNodeTypeOnSuccess = null;
-        this.wakeupNodeTypeOnFailure = null;
+        this.propagatedOnSuccess = false;
     }
 }
