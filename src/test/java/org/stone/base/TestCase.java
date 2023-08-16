@@ -25,6 +25,19 @@ public class TestCase {
         //do nothing
     }
 
+    //call back by TestCaseThread
+    public void callback1() {
+    }
+
+    public void callback2() {
+    }
+
+    public void callback3() {
+    }
+
+    public void callback4() {
+    }
+
     void run() throws Throwable {
         try {
             setUp();
