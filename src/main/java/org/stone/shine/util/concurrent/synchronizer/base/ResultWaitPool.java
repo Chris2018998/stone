@@ -15,7 +15,9 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
@@ -85,9 +87,14 @@ public class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:offer to wait queue
+        int spins = 0;//spin count
+        boolean isAtFirst = false;
         SyncNode node = config.getSyncNode();
-        boolean atFirst = appendAsWaitNode(node);
-        int spins = atFirst ? maxTimedSpins : 0;//spin count
+        if (appendAsWaitNode(node)) {//init state must be null
+            isAtFirst = true;
+            spins = maxTimedSpins;
+            casState(node, null, RUNNING);
+        }
 
         //4:get control parameters from config
         boolean success = false;
@@ -98,7 +105,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
                 Object state = node.getState();
-                if (state != null || atFirst || (atFirst = atFirst(node))) {
+                if (state == RUNNING || isAtFirst || (isAtFirst = atFirst(node))) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
@@ -107,10 +114,13 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 }
 
                 //5.2: fail check
-                if (parkSupport.isTimeout()) return validator.resultOnTimeout();
-                if (parkSupport.isInterrupted() && config.isAllowInterruption()) throw new InterruptedException();
-
-                if (state != null) {//5.3: reset state to null for next spin
+                if (parkSupport.isTimeout()) {
+                    if (state != null || casState(node, null, REMOVED))
+                        return validator.resultOnTimeout();
+                } else if (parkSupport.isInterrupted() && config.isAllowInterruption()) {
+                    if (state != null || casState(node, null, REMOVED))
+                        throw new InterruptedException();
+                } else if (state != null) {//5.3: reset state to null for next spin
                     node.setState(null);
                 } else if (spins > 0) {//5.4: decr spin count and tryToPark
                     --spins;
