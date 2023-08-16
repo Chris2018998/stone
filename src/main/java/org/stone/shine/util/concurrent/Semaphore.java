@@ -245,7 +245,9 @@ public class Semaphore {
      */
     public void acquire(int permits) throws InterruptedException {
         if (permits <= 0) throw new IllegalArgumentException();
-        this.waitPool.acquire(permitAction, permits, new SyncVisitConfig());
+        SyncVisitConfig config = new SyncVisitConfig();
+        config.setPropagatedOnSuccess(true);
+        this.waitPool.acquire(permitAction, permits, config);
     }
 
     /**
@@ -274,6 +276,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             SyncVisitConfig config = new SyncVisitConfig();
+            config.setPropagatedOnSuccess(true);
             config.allowInterruption(false);
             this.waitPool.acquire(permitAction, permits, config);
         } catch (Exception e) {
