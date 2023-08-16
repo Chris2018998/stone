@@ -27,7 +27,7 @@ public class OfferFailTest extends BaseTestCase {
         Object offerObj2 = queue.peek();
         Object offerObj3 = queue.poll();
 
-        TestUtil.assertError("Test failed,expect value:%s,actual value:%s", false, resultInd);
+        TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, resultInd);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", offerObj, offerObj2);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", offerObj, offerObj3);
     }

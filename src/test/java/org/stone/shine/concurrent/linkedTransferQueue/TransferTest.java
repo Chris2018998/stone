@@ -34,6 +34,8 @@ public class TransferTest extends BaseTestCase {
         if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("Test failed");
 
         Object transferObj2 = queue.poll();
+
+        mockThread.join();
         TestUtil.assertError("test failed expect value:%s,actual value:%s", transferObj, transferObj2);
     }
 }

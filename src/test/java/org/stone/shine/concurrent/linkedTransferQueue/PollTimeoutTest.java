@@ -13,7 +13,6 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * LinkedTransferQueue Test case
@@ -30,7 +29,7 @@ public class PollTimeoutTest extends BaseTestCase {
         mockThread.start();
 
         //3:park main thread 3 seconds and check mock thread result
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", null, mockThread.getResult());
     }
 }

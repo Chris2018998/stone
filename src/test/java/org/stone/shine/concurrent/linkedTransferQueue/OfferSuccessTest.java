@@ -12,10 +12,6 @@ package org.stone.shine.concurrent.linkedTransferQueue;
 import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
-
 /**
  * LinkedTransferQueue Test case
  *
@@ -24,15 +20,15 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
  */
 
 public class OfferSuccessTest extends BaseTestCase {
+
     public void test() throws Exception {
         PollThread mockThread = new PollThread(queue, "take");
+        mockThread.setOwnerCase(this);
         mockThread.start();
 
-        LockSupport.parkNanos(ParkDelayNanos);
         Object offerObj = new Object();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.offer(offerObj));
-        LockSupport.parkNanos(ParkDelayNanos);
-
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", offerObj, mockThread.getResult());
     }
 }

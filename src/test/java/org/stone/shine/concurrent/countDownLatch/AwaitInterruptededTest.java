@@ -14,9 +14,8 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.countDownLatch.threads.GeneralAwaitThread;
 import org.stone.shine.util.concurrent.CountDownLatch;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;
 
 /**
  * CountDownLatch Test Case
@@ -25,17 +24,20 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
  * @version 1.0
  */
 public class AwaitInterruptededTest extends TestCase {
+    public void callback1() {
+        Thread.currentThread().interrupt();
+    }
+
     public void test() throws Exception {
         CountDownLatch latch = new CountDownLatch(1);
 
         //1:create a wait thread
         GeneralAwaitThread waitThread = new GeneralAwaitThread(latch, "await", Global_Timeout, Global_TimeUnit);
+        waitThread.setOwnerCase(this);
         waitThread.start();
 
         //2:park main thread 2 seconds
-        LockSupport.parkNanos(ParkDelayNanos);
-        waitThread.interrupt();
-        LockSupport.parkNanos(Global_TimeoutNanos);//wait for 'interruptedException' be set
+        waitThread.join();
 
         //3:get timeout indicator from await thread
         InterruptedException e = waitThread.getInterruptedException();

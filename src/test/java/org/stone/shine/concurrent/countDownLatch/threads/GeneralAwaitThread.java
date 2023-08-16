@@ -32,6 +32,7 @@ public class GeneralAwaitThread extends BaseThread {
 
     public void run() {
         try {
+            if (super.ownerCase != null) ownerCase.callback1();
             if ("await".equals(methodName) && timeUnit != null) {
                 this.result = latch.await(timeout, timeUnit);
             } else if ("await".equals(methodName)) {

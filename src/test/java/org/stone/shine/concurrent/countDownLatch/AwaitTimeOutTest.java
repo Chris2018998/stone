@@ -14,9 +14,8 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.countDownLatch.threads.GeneralAwaitThread;
 import org.stone.shine.util.concurrent.CountDownLatch;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;
 
 /**
  * CountDownLatch Test Case
@@ -30,12 +29,11 @@ public class AwaitTimeOutTest extends TestCase {
 
         //1:create a wait thread
         GeneralAwaitThread waitThread = new GeneralAwaitThread(latch, "await", Global_Timeout, Global_TimeUnit);
+        waitThread.setOwnerCase(this);
         waitThread.start();
 
-        //2:park main thread 1 seconds
-        LockSupport.parkNanos(ParkDelayNanos);
-
         //3:check timeout == true
+        waitThread.join();
         if (latch.getCount() == 0) TestUtil.assertError("Await timeout test failed ");
     }
 }

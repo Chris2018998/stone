@@ -32,8 +32,7 @@ public class TryTransferTimeInterruptTest extends BaseTestCase {
 
         LockSupport.parkNanos(ParkDelayNanos);
         mockThread.interrupt();
-        LockSupport.parkNanos(ParkDelayNanos);
-
+        mockThread.join();
         if (mockThread.getInterruptedException() == null) TestUtil.assertError("Test failed");
     }
 }

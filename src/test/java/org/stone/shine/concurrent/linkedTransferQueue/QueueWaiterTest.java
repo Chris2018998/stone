@@ -31,7 +31,6 @@ public class QueueWaiterTest extends BaseTestCase {
         mockThread2.start();
 
         LockSupport.parkNanos(ParkDelayNanos);
-
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.hasWaitingConsumer());
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", 2, queue.getWaitingConsumerCount());
     }

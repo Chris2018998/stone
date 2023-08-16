@@ -32,8 +32,8 @@ public class TryTransferWithTimeTest extends BaseTestCase {
 
         LockSupport.parkNanos(ParkDelayNanos);
         Object transferObj2 = queue.poll();
-        LockSupport.parkNanos(ParkDelayNanos);
 
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", transferObj, transferObj2);
     }

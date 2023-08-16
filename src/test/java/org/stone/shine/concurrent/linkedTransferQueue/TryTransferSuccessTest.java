@@ -32,7 +32,8 @@ public class TryTransferSuccessTest extends BaseTestCase {
         LockSupport.parkNanos(ParkDelayNanos);
         Object transferObj = new Object();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.tryTransfer(transferObj));
-        LockSupport.parkNanos(ParkDelayNanos);
+
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", transferObj, mockThread.getResult());
     }
 }

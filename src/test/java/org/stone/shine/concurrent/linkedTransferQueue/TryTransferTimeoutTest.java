@@ -12,9 +12,8 @@ package org.stone.shine.concurrent.linkedTransferQueue;
 import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.TransferThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;
 
 /**
  * LinkedTransferQueue Test case
@@ -30,7 +29,7 @@ public class TryTransferTimeoutTest extends BaseTestCase {
         TransferThread mockThread = new TransferThread(queue, "tryTransfer", transferObj, Global_Timeout, Global_TimeUnit);
         mockThread.start();
 
-        LockSupport.parkNanos(Global_TimeoutNanos);
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", false, mockThread.getResult());
     }
 }

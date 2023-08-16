@@ -35,7 +35,7 @@ public class AwaitAtSameTimePointTest1 extends TestCase {
         for (int i = 0; i < count; i++) countDownThreads[i] = new CountDownThread(latch);
 
         //2:cal the expect time point value to wait(2 seconds)
-        long timePointToAWait = ConcurrentTimeUtil.getConcurrentNanoSeconds(2);
+        long timePointToAWait = ConcurrentTimeUtil.getConcurrentNanoSeconds(1);
 
         //3:create countWait threads and park them
         SameTimePointToAwaitThread[] sameTimePointWaitThreads = new SameTimePointToAwaitThread[count];
