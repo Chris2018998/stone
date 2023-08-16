@@ -42,7 +42,7 @@ public class PollOneTest extends TestCase {
         pollThread.start();
 
         //3: check result
-        LockSupport.parkNanos(ParkDelayNanos);
+        pollThread.join();
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", offerObject, pollThread.getResult());
     }
 }

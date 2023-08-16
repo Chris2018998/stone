@@ -38,10 +38,10 @@ public class PutInterruptedTest extends TestCase {
         LockSupport.parkNanos(ParkDelayNanos);
         if (mockThread.getState() != Thread.State.WAITING)
             TestUtil.assertError("Test failed,put thread not in waiting");
-
         //4:interrupt the mock thread
         mockThread.interrupt();
-        LockSupport.parkNanos(ParkDelayNanos);
+
+        mockThread.join();
         if (mockThread.getInterruptedException() == null)
             TestUtil.assertError("Test failed,put thread not be interrupted");
     }

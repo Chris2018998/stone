@@ -44,7 +44,7 @@ public class PollWithTimeTest extends TestCase {
         queue.offer(offerObject);
 
         //5:poll object from queue
-        LockSupport.parkNanos(ParkDelayNanos);
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", offerObject, mockThread.getResult());
     }
 }

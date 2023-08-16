@@ -12,10 +12,6 @@ package org.stone.shine.concurrent.locks.condition;
 import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantWriteLockConditionAwaitThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
-
 /**
  * writeLock condition test
  *
@@ -25,14 +21,16 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class WriteLockConditionAwaitInterruptedTest extends WriteLockConditionTestCase {
 
-    public void test() {
+    //call back by TestCaseThread
+    public void callback1() {
+        Thread.currentThread().interrupt();
+    }
+
+    public void test() throws Exception {
         //1:create wait thread
         ReentrantWriteLockConditionAwaitThread awaitThread = new ReentrantWriteLockConditionAwaitThread(lock, lockCondition, "await");
+        awaitThread.setOwnerCase(this);
         awaitThread.start();
-
-        //2:writeLock in main thread
-        LockSupport.parkNanos(ParkDelayNanos);
-        awaitThread.interrupt();
 
         //3:writeLock for main thread
         lock.lock();
@@ -43,7 +41,7 @@ public class WriteLockConditionAwaitInterruptedTest extends WriteLockConditionTe
         }
 
         //4:check time
-        LockSupport.parkNanos(ParkDelayNanos);
+        awaitThread.join();
         if (awaitThread.getInterruptedException() == null) TestUtil.assertError("test failed");
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked1());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked2());

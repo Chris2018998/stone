@@ -56,6 +56,7 @@ public class ReentrantWriteLockConditionAwaitThread extends BaseThread {
         lock.lock();
         try {
             this.locked1 = (Boolean) TestUtil.invokeMethod(lock, "isHeldByCurrentThread");
+            if (this.ownerCase != null) ownerCase.callback1();
             if ("await".equals(methodName) && timeUnit != null) {
                 this.result = condition.await(timeout, timeUnit);
             } else if ("await".equals(methodName)) {

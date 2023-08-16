@@ -38,7 +38,7 @@ public class OfferToOneWaiter extends TestCase {
         LockSupport.parkNanos(ParkDelayNanos);
         Object offerObject = new Object();
         boolean offerResult = queue.offer(offerObject);
-        LockSupport.parkNanos(ParkDelayNanos);
+        pollThread.join();
 
         //3: check result
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, offerResult);

@@ -15,7 +15,6 @@ import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
 
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 /**
  * synchronousQueue Test case
@@ -34,7 +33,7 @@ public class PollTimeoutTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 3 seconds and check mock thread result
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
+        mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", null, mockThread.getResult());
     }
 }
