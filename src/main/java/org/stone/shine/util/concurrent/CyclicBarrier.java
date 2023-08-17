@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
- * CyclicBarrier Impl By Wait Pool
+ * CyclicBarrier,a synchronization impl by wait pool,which can be regarded as a recycled flight
  *
  * @author Chris Liao
  * @version 1.0
@@ -42,16 +42,16 @@ public final class CyclicBarrier {
     private final int seatSize;
     //Execute on setting out
     private final Runnable tripAction;
-    //result call wait pool(driver core)
+    //result call wait pool
     private final ResultWaitPool waitPool;
 
     //Number of completed flying
     private int tripCount;
     //result call implementation(instance recreated after resetting flight to be a new one)
-    private volatile GenerationFlight generationFlight;
+    private volatile GenerationFlight flight;
 
     //****************************************************************************************************************//
-    //                                         1:constructors                                                         //
+    //                                         1: constructors                                                        //
     //****************************************************************************************************************//
     public CyclicBarrier(int size) {
         this(size, null);
@@ -62,7 +62,7 @@ public final class CyclicBarrier {
         this.seatSize = size;
         this.tripAction = tripAction;
         this.waitPool = new ResultWaitPool();
-        this.generationFlight = new GenerationFlight(seatSize);
+        this.flight = new GenerationFlight(seatSize);
     }
 
     //****************************************************************************************************************//
@@ -80,17 +80,17 @@ public final class CyclicBarrier {
 
     //return passengers in flight room（wait util final passenger be on aboard)
     public int getNumberWaiting() {
-        return generationFlight.getWaitingCount();
+        return flight.getWaitingCount();
     }
 
     //return state of current flight(@see State_xxx static definition at first rows of this file body)
     public int getState() {
-        return generationFlight.getState();
+        return flight.getState();
     }
 
     //true,flight has been cancelled(if exits passengers wait-timeout or Interrupted,all room passengers will leave)
     public boolean isBroken() {
-        return generationFlight.isBroken();
+        return flight.isBroken();
     }
 
     //****************************************************************************************************************//
@@ -117,7 +117,7 @@ public final class CyclicBarrier {
         if (Thread.interrupted()) throw new InterruptedException();
 
         while (true) {
-            GenerationFlight currentFlight = generationFlight;
+            GenerationFlight currentFlight = flight;
             if (currentFlight.isBroken()) throw new BrokenBarrierException();
             int seatNo = currentFlight.buyFlightTicket();//range[1 -- seatSize],0 means that not got a ticket
             long curFlightNo = seatNo > 0 ? currentFlight.flightNo : 0;
@@ -150,7 +150,7 @@ public final class CyclicBarrier {
                     currentFlight.setState(State_Arrived);
 
                     //8: create a new generation object(a new flight is ready)
-                    this.generationFlight = new GenerationFlight(seatSize);
+                    this.flight = new GenerationFlight(seatSize);
 
                     //9: wakeup hall passengers to buy ticket of the new flight
                     waitPool.wakeupAll(true, 0, SyncNodeStates.RUNNING);
@@ -190,14 +190,14 @@ public final class CyclicBarrier {
 
     //reset flight
     public synchronized boolean reset() {
-        GenerationFlight currentFlight = generationFlight;
+        GenerationFlight currentFlight = flight;
         int state = currentFlight.getState();
         if (state == State_Cancelled) {//
-            this.generationFlight = new GenerationFlight(seatSize);
+            this.flight = new GenerationFlight(seatSize);
             return true;
         } else if (state == State_Open) {//reset boarding to new
             if (currentFlight.compareAndSetState(State_Open, State_Cancelled)) {
-                this.generationFlight = new GenerationFlight(seatSize);
+                this.flight = new GenerationFlight(seatSize);
                 waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                 return true;
             } else {

@@ -19,13 +19,12 @@ import java.util.concurrent.TimeoutException;
 import static org.stone.shine.util.concurrent.synchronizer.base.TransferWaitPool.Node_Type_Data;
 
 /**
- * Exchanger Impl By Wait Pool
+ * Exchanger,a synchronization impl by wait pool
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class Exchanger<E> {
-
     private final TransferWaitPool<E> waitPool = new TransferWaitPool<>();
 
     public E exchange(E x) throws InterruptedException {

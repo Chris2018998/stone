@@ -18,15 +18,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * CountDownLatch
+ * CountDownLatch,a synchronization impl by wait pool,which can be regarded as a theater
  *
  * @author Chris Liao
  * @version 1.0
  */
 public final class CountDownLatch implements ResultCall {
-    //Number of programs(Remaining)
     private AtomicInteger count;
-    //result wait pool
     private ResultWaitPool waitPool;
 
     //create wait pool in constructor
@@ -37,9 +35,8 @@ public final class CountDownLatch implements ResultCall {
     }
 
     //****************************************************************************************************************//
-    //                                      1:wait methods(seat down to watch programs)                               //
+    //                                      1: wait methods                                                           //
     //****************************************************************************************************************//
-    //wait without parkTime
     public void await() throws InterruptedException {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
@@ -52,7 +49,6 @@ public final class CountDownLatch implements ResultCall {
         }
     }
 
-    //true means all programs over
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
             SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
@@ -67,35 +63,32 @@ public final class CountDownLatch implements ResultCall {
     }
 
     //****************************************************************************************************************//
-    //                                          2:count method called after one show over                             //
+    //                                          2: method of count and count down                                     //
     //****************************************************************************************************************//
+    public int getCount() {
+        return count.get();
+    }
+
+    //method of result call
+    public Object call(Object arg) {
+        return count.get() == 0;
+    }
+
     public void countDown() {
         int c;
         do {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1)
-                    waitPool.wakeupOne(true, null, SyncNodeStates.RUNNING);//the last item over,then notify all waiters(runnable)to leave
+                if (c == 1) waitPool.wakeupOne(true, null, SyncNodeStates.RUNNING);
                 return;
             }
         } while (true);
     }
 
     //****************************************************************************************************************//
-    //                                          3:monitor method and instance desc                                    //
+    //                                          3: monitor method and instance desc                                   //
     //****************************************************************************************************************//
-    //monitor method,return remained number of programs
-    public long getCount() {
-        return count.get();
-    }
-
-    //count reach zero,which means all programs over
-    public Object call(Object arg) {
-        return count.get() == 0;
-    }
-
-    //Description of instance
     public String toString() {
         return super.toString() + "[Count = " + count.get() + "]";
     }

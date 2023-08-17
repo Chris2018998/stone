@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 
 /**
- * Phaser Impl By Wait Pool
+ * Phaser,a synchronization impl by wait pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -77,7 +77,7 @@ public class Phaser {
     }
 
     public int bulkRegister(int parties) {
-        if (parties < 0) throw new IllegalArgumentException("Parties must be greater than 0");
+        if (parties <= 0) throw new IllegalArgumentException("Parties must be greater than 0");
 
         for (; ; ) {
             GamePhase curPhase = this.phase;
@@ -116,7 +116,7 @@ public class Phaser {
             if (curPhase.increaseArrivedCount()) {//increase an arrival success
                 int phaseNo = curPhase.getPhaseNo();
                 int targetNumber = curPhase.getTargetNumber();
-                if (arrivalType == 2) targetNumber--;//deregister
+                if (arrivalType == 2) targetNumber--;//arriveAndDeregister
 
                 if (curPhase.isAllArrived()) {//all parties arrived,then wakeup all waiters in pool
                     int newPhaseNo = phaseNo + 1;
@@ -126,11 +126,11 @@ public class Phaser {
                     //a new phase has generated
                     this.onAdvance(newPhaseNo, targetNumber);
                     return newPhaseNo;
-                } else {
-                    if (arrivalType == 2) {
+                } else {//exists un-arrival
+                    if (arrivalType == 2) {//arriveAndDeregister
                         curPhase.casTargetNumber(-1);
                         return phaseNo;
-                    } else if (arrivalType == 3) {
+                    } else if (arrivalType == 3) {//arriveAndAwaitAdvance
                         return awaitAdvance();
                     }
                 }
