@@ -42,6 +42,7 @@ public abstract class ThreadWaitingPool<E> {
 
     protected final void appendAsDataNode(SyncNode node) {
         node.thread = null;
+        node.setState(null);
         waitChain.offerLast(node);
     }
 
