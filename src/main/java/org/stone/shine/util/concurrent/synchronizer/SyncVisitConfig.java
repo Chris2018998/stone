@@ -19,6 +19,22 @@ import java.util.concurrent.TimeUnit;
  */
 
 public final class SyncVisitConfig<E> implements java.io.Serializable {
+    //greater than zero,it's value of time(or milliseconds)
+    private final long parkTime;
+    //time unit,convert parkTime to nanoSeconds
+    private final TimeUnit timeUnit;
+    //blocker object using in LockSupport.park
+    private final Object blockObject;
+    //true,the value of parkTime must be milliseconds
+    private final boolean isUtilTime;
+
+    //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
+    private ThreadParkSupport parkSupport;
+    //similar to AQS SHARED mode
+    private boolean propagatedOnSuccess;
+    //indicator:true,throws InterruptedException when waiting interrupted
+    private boolean allowInterruption = true;
+
     //node value
     private E nodeValue;
     //node type
@@ -27,14 +43,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private Object initState;
     //chain node
     private SyncNode<E> node;
-
-    //***********************************************spin configuration***********************************************//
-    //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
-    private ThreadParkSupport parkSupport;
-    //indicator:true,throws InterruptedException when waiting interrupted
-    private boolean allowInterruption = true;
-    //similar to AQS SHARED mode on acquisition success
-    private boolean propagatedOnSuccess;
 
     //****************************************************************************************************************//
     //                                              1:constructors(4)                                                 //
@@ -51,21 +59,14 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this(parkTime, timeUnit, null, isUtilTime);
     }
 
-    public SyncVisitConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isUtilTime) {
-        if (parkTime > 0L) {
-            if (isUtilTime) {
-                this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(parkTime) :
-                        new ThreadParkSupport.UtilMillsParkSupport2(parkTime, blockObject);
-            } else {
-                if (timeUnit == null) throw new IllegalArgumentException("Time unit can't be null");
-                long blockNanos = timeUnit.toNanos(parkTime);
-                this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(blockNanos) :
-                        new ThreadParkSupport.NanoSecondsParkSupport2(blockNanos, blockObject);
-            }
-        } else {
-            this.parkSupport = blockObject == null ? new ThreadParkSupport() :
-                    new ThreadParkSupport.ThreadParkSupport2(blockObject);
-        }
+    private SyncVisitConfig(long parkTime, TimeUnit timeUnit, Object blockObject, boolean isUtilTime) {
+        if (parkTime > 0L && !isUtilTime && timeUnit == null)
+            throw new IllegalArgumentException("Time unit can't be null");
+
+        this.parkTime = parkTime;
+        this.timeUnit = timeUnit;
+        this.blockObject = blockObject;
+        this.isUtilTime = isUtilTime;
     }
 
     //****************************************************************************************************************//
@@ -103,6 +104,21 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
     public final ThreadParkSupport getParkSupport() {
+        if (parkSupport == null) {
+            if (parkTime > 0L) {
+                if (isUtilTime) {
+                    this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(parkTime) :
+                            new ThreadParkSupport.UtilMillsParkSupport2(parkTime, blockObject);
+                } else {
+                    long blockNanos = timeUnit.toNanos(parkTime);
+                    this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(blockNanos) :
+                            new ThreadParkSupport.NanoSecondsParkSupport2(blockNanos, blockObject);
+                }
+            } else {
+                this.parkSupport = blockObject == null ? new ThreadParkSupport() :
+                        new ThreadParkSupport.ThreadParkSupport2(blockObject);
+            }
+        }
         return parkSupport;
     }
 
@@ -130,7 +146,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.nodeValue = null;
         this.nodeType = null;
         this.initState = null;
-        this.parkSupport.reset();
+        this.parkSupport = null;
         this.allowInterruption = true;
         this.propagatedOnSuccess = false;
     }
