@@ -13,8 +13,8 @@ import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.shine.util.concurrent.Semaphore;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeUnit;
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_Timeout;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * Semaphore Test case
@@ -46,7 +46,7 @@ public class SingleThreadAcquireTest extends TestCase {
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 1, semaphore.availablePermits());
 
         //4:tryAcquire(TimeUnit) test
-        semaphore.tryAcquire(Global_Timeout, Global_TimeUnit);
+        semaphore.tryAcquire(Wait_Time, Wait_TimeUnit);
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 0, semaphore.availablePermits());
         semaphore.release();
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 1, semaphore.availablePermits());
@@ -71,7 +71,7 @@ public class SingleThreadAcquireTest extends TestCase {
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 1, semaphore.availablePermits());
 
         //8:tryAcquire(permits,TimeUnit) test
-        semaphore.tryAcquire(1, Global_Timeout, Global_TimeUnit);
+        semaphore.tryAcquire(1, Wait_Time, Wait_TimeUnit);
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 0, semaphore.availablePermits());
         semaphore.release();
         TestUtil.assertError("fair test expect value:%s,actual value:%s", 1, semaphore.availablePermits());

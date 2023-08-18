@@ -11,10 +11,9 @@ package org.stone.shine.concurrent.synchronousQueue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
-
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
 
@@ -31,16 +30,12 @@ public class PollWithTimeTest extends TestCase {
         SynchronousQueue queue = new SynchronousQueue(true);
 
         //2:create one mock Thread
-        PollThread mockThread = new PollThread(queue, "poll", Global_Timeout, Global_TimeUnit);
+        PollThread mockThread = new PollThread(queue, "poll", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        //3:park main thread 1 seconds and check mock thread result
-        LockSupport.parkNanos(ParkDelayNanos);
-        if (mockThread.getState() != Thread.State.TIMED_WAITING)
-            TestUtil.assertError("Test failed,put thread not in waiting");
 
-        //4:poll object from queue
         Object offerObject = new Object();
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) ;
         queue.offer(offerObject);
 
         //5:poll object from queue

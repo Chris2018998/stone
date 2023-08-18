@@ -32,7 +32,6 @@ public class PollThread extends BaseThread {
 
     public void run() {
         try {
-            if (this.ownerCase != null) ownerCase.callback1();
             if ("poll".equals(methodName) && timeUnit != null) {
                 this.result = queue.poll(timeout, timeUnit);
             } else if ("poll".equals(methodName)) {

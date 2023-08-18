@@ -11,12 +11,11 @@ package org.stone.shine.concurrent.synchronousQueue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * synchronousQueue Test case
@@ -35,12 +34,14 @@ public class OfferToOneWaiter extends TestCase {
         pollThread.start();
 
         //2: try transfer object to waiter(poll thread)
-        LockSupport.parkNanos(ParkDelayNanos);
+
+        boolean offerResult = false;
         Object offerObject = new Object();
-        boolean offerResult = queue.offer(offerObject);
-        pollThread.join();
+        if (ConcurrentTimeUtil.isInWaiting(pollThread, ParkNanos))
+            offerResult = queue.offer(offerObject);
 
         //3: check result
+        pollThread.join();
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, offerResult);
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", offerObject, pollThread.getResult());
     }

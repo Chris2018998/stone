@@ -12,7 +12,8 @@ package org.stone.shine.concurrent.linkedTransferQueue;
 import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.OfferThread;
 
-import java.util.concurrent.TimeUnit;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * LinkedTransferQueue Test case
@@ -25,7 +26,7 @@ public class OfferTimeoutTest extends BaseTestCase {
 
     public void test() throws Exception {
         //1:create one mock Thread
-        OfferThread mockThread = new OfferThread(queue, "offer", new Object(), 1, TimeUnit.SECONDS);
+        OfferThread mockThread = new OfferThread(queue, "offer", new Object(), Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
         //3:park main thread 3 seconds and check mock thread result

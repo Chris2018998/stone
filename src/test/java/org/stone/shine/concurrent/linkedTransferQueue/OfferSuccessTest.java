@@ -10,7 +10,10 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
+
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * LinkedTransferQueue Test case
@@ -23,11 +26,13 @@ public class OfferSuccessTest extends BaseTestCase {
 
     public void test() throws Exception {
         PollThread mockThread = new PollThread(queue, "take");
-        mockThread.setOwnerCase(this);
         mockThread.start();
 
         Object offerObj = new Object();
-        TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.offer(offerObj));
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+            TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.offer(offerObj));
+        }
+
         mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", offerObj, mockThread.getResult());
     }

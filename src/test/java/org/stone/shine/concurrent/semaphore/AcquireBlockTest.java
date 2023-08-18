@@ -11,12 +11,11 @@ package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
 import org.stone.shine.util.concurrent.Semaphore;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * Semaphore Test case
@@ -37,8 +36,11 @@ public class AcquireBlockTest extends TestCase {
         mockThread.start();
 
         //park main thread 2 seconds and check mock thread state
-        LockSupport.parkNanos(ParkDelayNanos);
-        if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");
-        mockThread.interrupt();
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+            mockThread.interrupt();
+            return;
+        }
+
+        TestUtil.assertError("mock thread not in waiting");
     }
 }

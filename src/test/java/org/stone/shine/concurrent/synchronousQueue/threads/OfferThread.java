@@ -34,7 +34,6 @@ public class OfferThread extends BaseThread {
 
     public void run() {
         try {
-            if (this.ownerCase != null) ownerCase.callback1();
             if ("offer".equals(methodName) && timeUnit != null) {
                 this.result = queue.offer(offerObject, timeout, timeUnit);
             } else if ("offer".equals(methodName)) {

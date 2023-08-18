@@ -13,10 +13,6 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.OfferThread;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
-
 /**
  * LinkedTransferQueue Test case
  *
@@ -33,7 +29,7 @@ public class PollOneTest extends BaseTestCase {
         offerThread.start();
 
         //2: crate a poll thread
-        LockSupport.parkNanos(ParkDelayNanos);
+        offerThread.join();
         PollThread pollThread = new PollThread(queue, "poll");
         pollThread.start();
 

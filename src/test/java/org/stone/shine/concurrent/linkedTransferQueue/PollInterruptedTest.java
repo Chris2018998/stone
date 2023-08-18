@@ -10,11 +10,10 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * synchronousQueue Test case
@@ -31,12 +30,10 @@ public class PollInterruptedTest extends BaseTestCase {
         mockThread.start();
 
         //3:park main thread 1 seconds and check mock thread result
-        LockSupport.parkNanos(ParkDelayNanos);
-        if (mockThread.getState() != Thread.State.WAITING)
-            TestUtil.assertError("Test failed,put thread not in waiting");
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+            mockThread.interrupt();
 
         //4:interrupt the mock thread
-        mockThread.interrupt();
         mockThread.join();
         if (mockThread.getInterruptedException() == null)
             TestUtil.assertError("Test failed,put thread not be interrupted");

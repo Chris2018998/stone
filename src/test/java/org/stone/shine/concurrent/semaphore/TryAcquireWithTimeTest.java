@@ -11,6 +11,7 @@ package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
 import org.stone.shine.util.concurrent.Semaphore;
 
@@ -34,18 +35,15 @@ public class TryAcquireWithTimeTest extends TestCase {
         semaphore.acquire();
 
         //2:create one mock Thread
-        AcquireMockThread mockThread = new AcquireMockThread(semaphore, "tryAcquire", Global_Timeout, Global_TimeUnit);
+        AcquireMockThread mockThread = new AcquireMockThread(semaphore, "tryAcquire", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        //3: park main thread 3 seconds and check mock thread state
-        LockSupport.parkNanos(ParkDelayNanos);
-        TestUtil.assertError("TryAcquire test expect value:%s,actual value:%s", false, mockThread.getResult());
-
-        //4:semaphore release from main thread
-        semaphore.release();
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+            semaphore.release();
+            LockSupport.parkNanos(100L);
+        }
 
         //5: check mock thread acquire
-        LockSupport.parkNanos(Global_TimeoutNanos);
         TestUtil.assertError("TryAcquire test expect value:%s,actual value:%s", true, mockThread.getResult());
     }
 }

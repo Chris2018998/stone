@@ -14,7 +14,8 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
 
-import java.util.concurrent.TimeUnit;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * synchronousQueue Test case
@@ -29,7 +30,7 @@ public class PollTimeoutTest extends TestCase {
         SynchronousQueue queue = new SynchronousQueue(true);
 
         //2:create one mock Thread
-        PollThread mockThread = new PollThread(queue, "poll", 1, TimeUnit.SECONDS);
+        PollThread mockThread = new PollThread(queue, "poll", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
         //3:park main thread 3 seconds and check mock thread result

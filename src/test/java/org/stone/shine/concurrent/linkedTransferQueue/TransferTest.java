@@ -10,11 +10,10 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.TransferThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeoutNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * LinkedTransferQueue Test case
@@ -25,15 +24,22 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeoutNanos;
 
 public class TransferTest extends BaseTestCase {
 
+    public static void main(String[] args) throws Exception {
+        TransferTest tester = new TransferTest();
+        tester.setUp();
+        tester.test();
+    }
+
+
     public void test() throws Exception {
         Object transferObj = new Object();
         TransferThread mockThread = new TransferThread(queue, "transfer", transferObj);
         mockThread.start();
 
-        LockSupport.parkNanos(Global_TimeoutNanos);
-        if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("Test failed");
-
-        Object transferObj2 = queue.poll();
+        //2: detect wait thread
+        Object transferObj2 = null;
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+            transferObj2 = queue.poll();
 
         mockThread.join();
         TestUtil.assertError("test failed expect value:%s,actual value:%s", transferObj, transferObj2);

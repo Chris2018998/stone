@@ -10,9 +10,8 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.OfferThread;
-
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
 
@@ -33,14 +32,14 @@ public class OfferWithTimeTest extends BaseTestCase {
     public void test() throws Exception {
         //1:create one mock Thread
         Object object = new Object();
-        OfferThread mockThread = new OfferThread(queue, "offer", object, Global_Timeout, Global_TimeUnit);
-        mockThread.setOwnerCase(this);
+        OfferThread mockThread = new OfferThread(queue, "offer", object, Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        //2:park main thread 1 seconds and check mock thread result
-        LockSupport.parkNanos(ParkDelayNanos);
-        Object object2 = queue.poll();
+        Object object2 = null;
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+            object2 = queue.poll();
 
+        //2:park main thread
         mockThread.join();
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", object, object2);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, mockThread.getResult());

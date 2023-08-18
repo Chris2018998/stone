@@ -10,9 +10,8 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
-
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
 
@@ -27,12 +26,11 @@ public class PollWithTimeTest extends BaseTestCase {
 
     public void test() throws Exception {
         //2:create one mock Thread
-        PollThread mockThread = new PollThread(queue, "poll", Global_Timeout, Global_TimeUnit);
+        PollThread mockThread = new PollThread(queue, "poll", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
         //3:park main thread 1 seconds and check mock thread result
-        LockSupport.parkNanos(ParkDelayNanos);
-        if (mockThread.getState() != Thread.State.TIMED_WAITING)
+        if (!ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
             TestUtil.assertError("Test failed,put thread not in waiting");
 
         //4:poll object from queue
