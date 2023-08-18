@@ -513,7 +513,6 @@ public class Semaphore {
 
         public Object call(Object size) {
             int acquireSize = (int) size;
-
             int currentPermits;
             do {
                 currentPermits = this.permitSize.getState();

@@ -87,7 +87,7 @@ public final class CountDownLatch implements ResultCall {
     }
 
     //****************************************************************************************************************//
-    //                                          3: monitor method and instance desc                                   //
+    //                                          3: desc of instance                                                   //
     //****************************************************************************************************************//
     public String toString() {
         return super.toString() + "[Count = " + count.get() + "]";

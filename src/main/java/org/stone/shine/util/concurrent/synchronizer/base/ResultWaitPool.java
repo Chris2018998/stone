@@ -122,7 +122,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                         throw new InterruptedException();
                 } else if (state != null) {//5.3: reset state to null for next spin
                     node.setState(null);
-                } else if (spins > 0) {//5.4: decr spin count and tryToPark
+                } else if (spins > 0) {//5.4: decr spin count
                     --spins;
                 } else {//5.5: try to park
                     parkSupport.tryToPark();

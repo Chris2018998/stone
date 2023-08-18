@@ -387,7 +387,7 @@ class BaseLock implements Lock {
 
         public boolean awaitUntil(Date deadline) throws InterruptedException {
             if (deadline == null) throw new IllegalArgumentException("dead line can't be null");
-            SyncVisitConfig config = new SyncVisitConfig(deadline.getTime(), TimeUnit.MILLISECONDS, true);
+            SyncVisitConfig config = new SyncVisitConfig(deadline);
             this.doAwait(config);
             return config.getParkSupport().isTimeout();
         }

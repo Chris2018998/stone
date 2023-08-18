@@ -41,8 +41,8 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     protected final void appendAsDataNode(SyncNode node) {
+        node.state = null;
         node.thread = null;
-        node.setState(null);
         waitChain.offerLast(node);
     }
 
@@ -101,7 +101,6 @@ public abstract class ThreadWaitingPool<E> {
                     wakeupCount++;
                 }
             }
-
         }
         return wakeupCount;
     }
@@ -114,14 +113,14 @@ public abstract class ThreadWaitingPool<E> {
     }
 
     public final boolean hasQueuedPredecessors() {
-        return waitChain.peek() != null;
+        return waitChain.peekFirst() != null;
     }
 
     protected final boolean existsTypeNode(Object nodeType) {
         Iterator<SyncNode> iterator = waitChain.iterator();
         while (iterator.hasNext()) {
             SyncNode node = iterator.next();
-            if (nodeType == null || objectEquals(nodeType, node.type)) return true;
+            if (objectEquals(nodeType, node.type)) return true;
         }
         return false;
     }

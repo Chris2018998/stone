@@ -45,15 +45,15 @@ public final class SyncNodeUpdater {
     }
 
     static boolean casTail(SyncNodeChain chain, SyncNode expect, SyncNode update) {
-        return U.compareAndSwapObject(chain, tailOffSet, expect, update);
+        return chain.tail == expect && U.compareAndSwapObject(chain, tailOffSet, expect, update);
     }
 
     public static boolean casPrev(SyncNode n, SyncNode curPrev, SyncNode newPrev) {
-        return U.compareAndSwapObject(n, prevOffSet, curPrev, newPrev);
+        return n.prev == curPrev && U.compareAndSwapObject(n, prevOffSet, curPrev, newPrev);
     }
 
     public static boolean casNext(SyncNode n, SyncNode curNext, SyncNode newNext) {
-        return U.compareAndSwapObject(n, nextOffSet, curNext, newNext);
+        return n.next == curNext && U.compareAndSwapObject(n, nextOffSet, curNext, newNext);
     }
 
     public static boolean casState(SyncNode n, Object expect, Object update) {

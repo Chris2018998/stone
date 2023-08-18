@@ -98,6 +98,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
         config.setNodeInitInfo(Node_Type_Data, e);
         config.allowInterruption(false);
+
         try {
             this.waitPool.offer(config);
         } catch (Exception ee) {
@@ -191,8 +192,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      * element is available
      */
     public E poll() {
-        SyncNode<E> pairNdoe = this.waitPool.poll();
-        return pairNdoe != null ? pairNdoe.getValue() : null;
+        SyncNode<E> pairNode = this.waitPool.poll();
+        return pairNode != null ? pairNode.getValue() : null;
     }
 
     /**

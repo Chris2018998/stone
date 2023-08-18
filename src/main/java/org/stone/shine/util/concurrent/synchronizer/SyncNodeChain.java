@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
 
 final class SyncNodeChain {
     private final SyncNode head = new SyncNode(null);
-    private volatile SyncNode tail = head;
+    volatile SyncNode tail = head;
 
     SyncNodeChain() {
         head.thread = null;
