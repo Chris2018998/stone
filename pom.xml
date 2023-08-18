@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>1.0.10</version>
+    <version>1.0.11</version>
     <name>stone</name>
     <url>https://www.github.com/Chris2018998/stone</url>
     <description>Java Tools Suite</description>
@@ -124,7 +124,7 @@
                         <include>org/stone/beecp/TestRunner.java</include>
                         <include>org/stone/beeop/TestRunner.java</include>
                         <include>org/stone/beetp/TestRunner.java</include>
-                       <!--<include>org/stone/shine/TestRunner.java</include> -->
+                        <include>org/stone/shine/TestRunner.java</include>
                     </includes>
                 </configuration>
             </plugin>
