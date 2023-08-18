@@ -10,6 +10,7 @@
 package org.stone.shine.concurrent;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * base Test thread
@@ -18,13 +19,20 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class ConcurrentTimeUtil {
-    public static final long Global_Timeout = 2;
-    public static final TimeUnit Global_TimeUnit = TimeUnit.SECONDS;
-    public static final long Global_TimeoutNanos = Global_TimeUnit.toNanos(Global_Timeout + 1);
+    public static final long ParkNanos = 5L;
+    public static final long Wait_Time = 100L;
+    public static final TimeUnit Wait_TimeUnit = TimeUnit.MILLISECONDS;
 
-    public static final long ParkDelayNanos = TimeUnit.SECONDS.toNanos(1);
-
-    public static long getConcurrentNanoSeconds(int seconds) {
-        return System.nanoTime() + TimeUnit.SECONDS.toNanos(seconds);
+    public static boolean isInWaiting(Thread thread, long parkNanos) {
+        for (; ; ) {
+            Thread.State curState = thread.getState();
+            if (curState == Thread.State.WAITING || curState == Thread.State.TIMED_WAITING) {
+                return true;
+            } else if (curState == Thread.State.TERMINATED) {
+                return false;
+            } else {
+                LockSupport.parkNanos(parkNanos);
+            }
+        }
     }
 }

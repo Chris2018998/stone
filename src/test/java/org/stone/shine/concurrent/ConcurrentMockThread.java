@@ -9,8 +9,6 @@
  */
 package org.stone.shine.concurrent;
 
-import org.stone.base.TestCaseThread;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -19,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  * @version 1.0
  */
-public abstract class ConcurrentMockThread extends TestCaseThread {
+public abstract class ConcurrentMockThread extends Thread {
     //parameters
     protected String methodName;
     protected long timeout;
