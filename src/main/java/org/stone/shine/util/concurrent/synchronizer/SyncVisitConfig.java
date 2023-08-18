@@ -101,13 +101,13 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         if (parkSupport == null) {
             if (deadlineDate != null) {
                 long deadline = deadlineDate.getTime();
-                this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadline) :
+                return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadline) :
                         new ThreadParkSupport.UtilMillsParkSupport2(deadline, blockObject);
             } else if (parkNanos > 0L) {
-                this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
+                return this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
                         new ThreadParkSupport.NanoSecondsParkSupport2(parkNanos, blockObject);
             } else {
-                this.parkSupport = blockObject == null ? new ThreadParkSupport() :
+                return this.parkSupport = blockObject == null ? new ThreadParkSupport() :
                         new ThreadParkSupport.ThreadParkSupport2(blockObject);
             }
         }

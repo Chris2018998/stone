@@ -88,10 +88,9 @@ public class ResultWaitPool extends ThreadWaitingPool {
 
         //3:offer to wait queue
         int spins = 0;//spin count
-        boolean isAtFirst = false;
+        boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (appendAsWaitNode(node)) {//init state must be null
-            isAtFirst = true;
+        if (isAtFirst = appendAsWaitNode(node)) {//init state must be null
             spins = maxTimedSpins;
             casState(node, null, RUNNING);
         }
@@ -129,7 +128,7 @@ public class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            super.removeNode(node);
+            removeNode(node);
             if (success) {
                 if (config.isPropagatedOnSuccess())
                     this.wakeupOne(true, node.getType(), RUNNING);//wakeup same type

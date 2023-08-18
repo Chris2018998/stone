@@ -131,8 +131,7 @@ public class ThreadParkSupport {
         }
 
         public void tryToPark() {
-            this.parkNanos = deadlineTime - System.nanoTime();
-            if (this.parkNanos > 0L) {
+            if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
                 parkNanos(parkNanos);
                 this.interrupted = Thread.interrupted();
             } else {
@@ -155,8 +154,7 @@ public class ThreadParkSupport {
         }
 
         public final void tryToPark() {
-            this.parkNanos = deadlineTime - System.nanoTime();
-            if (this.parkNanos > 0L) {
+            if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
                 parkNanos(blockObject, parkNanos);
                 this.interrupted = Thread.interrupted();
             } else {

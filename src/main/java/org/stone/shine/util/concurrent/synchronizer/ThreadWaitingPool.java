@@ -70,7 +70,7 @@ public abstract class ThreadWaitingPool<E> {
         } else {
             while (iterator.hasNext()) {
                 SyncNode<E> qNode = iterator.next();
-                if (objectEquals(nodeType, qNode.type) && casState(qNode, null, toState)) {
+                if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
                 }
@@ -96,7 +96,7 @@ public abstract class ThreadWaitingPool<E> {
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (objectEquals(nodeType, qNode.type) && casState(qNode, null, toState)) {
+                if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     wakeupCount++;
                 }
