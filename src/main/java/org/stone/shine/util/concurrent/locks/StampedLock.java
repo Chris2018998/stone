@@ -126,7 +126,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     private static boolean isTypeStamp(long stamp, int type) {
-        int h = (int) (stamp >>> MOVE_SHIFT);
+        //int h = (int) (stamp >>> MOVE_SHIFT);
         int l = (int) (stamp & CLN_HIGH_MASK);
         return (l & 1) == type;
     }

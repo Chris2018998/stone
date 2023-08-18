@@ -67,19 +67,8 @@ public final class SyncNode<E> {
         this.state = newState;
     }
 
-    public final Thread getOwnerThread() {
-        return this.thread;
-    }
-
     final void setCurrentThread() {
         this.thread = Thread.currentThread();
-    }
-
-    final void clear() {
-        this.type = null;
-        this.state = null;
-        this.value = null;
-        this.thread = null;
     }
 
     //****************************************************************************************************************//

@@ -64,7 +64,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     //****************************************************************************************************************//
-    //                                              2:set node info(5)                                                //
+    //                                              2:set node info(4)                                                //
     //****************************************************************************************************************//
     public final Object getNodeType() {
         return this.nodeType;
@@ -74,19 +74,9 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.nodeType = nodeType;
     }
 
-    public final void setNodeInitState(Object initState) {
-        this.initState = initState;
-    }
-
     public final void setNodeInitInfo(Object type, E value) {
         this.nodeType = type;
         this.nodeValue = value;
-    }
-
-    public final void setNodeInitInfo(Object type, E value, Object initState) {
-        this.nodeType = type;
-        this.nodeValue = value;
-        this.initState = initState;
     }
 
     public final SyncNode<E> getSyncNode() {

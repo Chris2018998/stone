@@ -25,7 +25,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 
-public abstract class ThreadWaitingPool<E> {
+public abstract class ThreadWaitingPool {
     //private final SyncNodeChain waitChain = new SyncNodeChain();
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
@@ -55,13 +55,13 @@ public abstract class ThreadWaitingPool<E> {
     //****************************************************************************************************************//
     //                                          2: wakeup(2)                                                          //
     //****************************************************************************************************************//
-    public final SyncNode<E> wakeupOne(boolean fromHead, Object nodeType, Object toState) {
+    public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode<E> qNode = iterator.next();
+                SyncNode qNode = iterator.next();
                 if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
@@ -69,7 +69,7 @@ public abstract class ThreadWaitingPool<E> {
             }
         } else {
             while (iterator.hasNext()) {
-                SyncNode<E> qNode = iterator.next();
+                SyncNode qNode = iterator.next();
                 if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
@@ -80,17 +80,15 @@ public abstract class ThreadWaitingPool<E> {
         return null;
     }
 
-    public final int wakeupAll(boolean fromHead, Object nodeType, Object toState) {
-        int wakeupCount = 0;
+    public final void wakeupAll(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode<E> qNode = iterator.next();
+                SyncNode qNode = iterator.next();
                 if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
-                    wakeupCount++;
                 }
             }
         } else {
@@ -98,11 +96,9 @@ public abstract class ThreadWaitingPool<E> {
                 SyncNode qNode = iterator.next();
                 if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
-                    wakeupCount++;
                 }
             }
         }
-        return wakeupCount;
     }
 
     //****************************************************************************************************************//
@@ -112,7 +108,7 @@ public abstract class ThreadWaitingPool<E> {
         return waitChain.iterator();
     }
 
-    public final boolean hasQueuedPredecessors() {
+    protected final boolean hasQueuedPredecessors() {
         return waitChain.peekFirst() != null;
     }
 

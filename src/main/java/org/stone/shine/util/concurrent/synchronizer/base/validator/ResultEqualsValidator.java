@@ -32,6 +32,6 @@ public final class ResultEqualsValidator extends EquivalentValidator {
     }
 
     public final boolean isExpected(Object result) {
-        return objectEquals(result, compareValue);
+        return objectEquals(compareValue, result);
     }
 }
