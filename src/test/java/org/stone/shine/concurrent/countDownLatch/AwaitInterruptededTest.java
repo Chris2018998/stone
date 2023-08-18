@@ -11,10 +11,9 @@ package org.stone.shine.concurrent.countDownLatch;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.countDownLatch.threads.ZeroCountWaitThread;
 import org.stone.shine.util.concurrent.CountDownLatch;
-
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
@@ -35,18 +34,11 @@ public class AwaitInterruptededTest extends TestCase {
 
         //1:create a wait thread
         ZeroCountWaitThread waitThread = new ZeroCountWaitThread(latch, "await");
-        waitThread.setOwnerCase(this);
         waitThread.start();
 
         //2: detect wait thread
-        while (waitThread.isAlive()) {
-            if (waitThread.getState() == Thread.State.WAITING) {
-                waitThread.interrupt();
-                break;
-            } else {
-                LockSupport.parkNanos(ParkNanos);
-            }
-        }
+        if (ConcurrentTimeUtil.isInWaiting(waitThread, ParkNanos))
+            waitThread.interrupt();
 
         //3:get timeout indicator from await thread
         waitThread.join();

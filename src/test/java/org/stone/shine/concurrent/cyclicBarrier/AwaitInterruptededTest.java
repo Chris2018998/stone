@@ -11,10 +11,9 @@ package org.stone.shine.concurrent.cyclicBarrier;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.cyclicBarrier.threads.BarrierAwaitThread;
 import org.stone.shine.util.concurrent.CyclicBarrier;
-
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
@@ -38,15 +37,11 @@ public class AwaitInterruptededTest extends TestCase {
         waitThread.start();
 
         //2: detect wait thread
-        while (waitThread.isAlive()) {
-            if (waitThread.getState() == Thread.State.WAITING) {
-                waitThread.interrupt();
-            } else {
-                LockSupport.parkNanos(ParkNanos);
-            }
-        }
+        if (ConcurrentTimeUtil.isInWaiting(waitThread, ParkNanos))
+            waitThread.interrupt();
 
         //3: check InterruptedException
+        waitThread.join();
         InterruptedException e = waitThread.getInterruptedException();
         if (e == null) TestUtil.assertError("Await Interrupteded Test failed ");
     }
