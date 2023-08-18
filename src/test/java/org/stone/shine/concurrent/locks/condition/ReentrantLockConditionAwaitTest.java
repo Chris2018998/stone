@@ -10,11 +10,10 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantLockConditionAwaitThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock condition test
@@ -36,14 +35,13 @@ public class ReentrantLockConditionAwaitTest extends ReentrantLockConditionTestC
         awaitThread.start();
 
         //2:writeLock in main thread
-        awaitThread.getCountDownLatch().await();
-        LockSupport.parkNanos(ParkDelayNanos);
-
-        lock.lock();
-        try {
-            lockCondition.signal();
-        } finally {
-            lock.unlock();
+        if (ConcurrentTimeUtil.isInWaiting(awaitThread, ParkNanos)) {
+            lock.lock();
+            try {
+                lockCondition.signal();
+            } finally {
+                lock.unlock();
+            }
         }
 
         //3:check time

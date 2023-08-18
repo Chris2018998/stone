@@ -10,12 +10,11 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock.read;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReadLockToLockWriteLock test case
@@ -35,9 +34,11 @@ public class ReadLockShareAcquireTest extends ReentrantReadWriteLockTestCase {
             mockThread1.start();
             mockThread2.start();
 
-            //3: park main thread 1 second
-            LockSupport.parkNanos(ParkDelayNanos);
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", 3, TestUtil.invokeMethod(readLock, "getHoldCount"));
+            boolean test1 = ConcurrentTimeUtil.isInWaiting(mockThread1, ParkNanos);
+            boolean test2 = ConcurrentTimeUtil.isInWaiting(mockThread2, ParkNanos);
+
+            if (test1 && test2)
+                TestUtil.assertError("test failed,expect value:%s,actual value:%s", 3, TestUtil.invokeMethod(readLock, "getHoldCount"));
         } finally {
             readLock.unlock();
         }

@@ -13,8 +13,8 @@ import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * ReentrantLock test case
@@ -32,24 +32,15 @@ public class TryLockTimeoutTest extends TestCase {
         lock.lock();
 
         //2: create mock thread
-        LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock", 1, TimeUnit.SECONDS);
+        LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
         try {
-            //3: park main thread 1 second
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
-
+            mockThread.join();
             //4: check lock state
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", false, mockThread.getResult());
-
-            lockByMock = true;
         } finally {
-            //5: unlock
-            if (lockByMock) {
-                mockThread.unlock();
-            } else {
-                lock.unlock();//unlock from main
-            }
+            lock.unlock();//unlock from main
         }
     }
 }

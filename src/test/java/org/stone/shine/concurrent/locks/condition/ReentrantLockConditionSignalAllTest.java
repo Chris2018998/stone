@@ -10,11 +10,10 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantLockConditionAwaitThread;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock condition test
@@ -25,6 +24,12 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class ReentrantLockConditionSignalAllTest extends ReentrantLockConditionTestCase {
 
+    public static void main(String[] args) throws Throwable {
+        ReentrantLockConditionSignalAllTest test = new ReentrantLockConditionSignalAllTest();
+        test.setUp();
+        test.test();
+    }
+
     public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread waitThread1 = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await");
@@ -33,18 +38,20 @@ public class ReentrantLockConditionSignalAllTest extends ReentrantLockConditionT
         waitThread2.start();
 
         //2:writeLock in main thread
-        waitThread1.getCountDownLatch().await();
-        waitThread2.getCountDownLatch().await();
-        LockSupport.parkNanos(ParkDelayNanos);
-        try {
+        boolean test1 = ConcurrentTimeUtil.isInWaiting(waitThread1, ParkNanos);
+        boolean test2 = ConcurrentTimeUtil.isInWaiting(waitThread2, ParkNanos);
+        if (test1 && test2) {
             lock.lock();
-            lockCondition.signalAll();
-        } finally {
-            lock.unlock();
+            try {
+                lockCondition.signalAll();
+            } finally {
+                lock.unlock();
+            }
         }
 
         //3:check writeLock state
-        LockSupport.parkNanos(ParkDelayNanos);
+        waitThread1.join();
+        waitThread2.join();
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, waitThread1.isLocked1());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, waitThread1.isLocked2());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, waitThread2.isLocked1());

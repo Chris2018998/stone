@@ -13,8 +13,8 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * ReadLockToLockWriteLock test case
@@ -30,24 +30,14 @@ public class WriteLockToReadLockTryLockTimeoutTest extends ReentrantReadWriteLoc
         writeLock.lock();
 
         //2: create mock thread
-        ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(readLock, "tryLock", 1, TimeUnit.SECONDS);
+        ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(readLock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
         try {
-            //3: park main thread 1 second
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
-
-            //4: check writeLock state
+            mockThread.join();
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", false, mockThread.getResult());
-
-            lockByMock = true;
         } finally {
-            //5: unlock
-            if (lockByMock) {
-                mockThread.unlock();
-            } else {
-                writeLock.unlock();//unlock from main
-            }
+            writeLock.unlock();//unlock from main
         }
     }
 }

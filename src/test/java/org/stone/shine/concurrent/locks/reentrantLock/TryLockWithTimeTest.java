@@ -11,9 +11,8 @@ package org.stone.shine.concurrent.locks.reentrantLock;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
-
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
 
@@ -27,35 +26,22 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
 public class TryLockWithTimeTest extends TestCase {
 
     public void test() throws Exception {
-        boolean lockByMock = false;
         //1: create lock and acquire in main thread
         ReentrantLock lock = new ReentrantLock();
         lock.lock();
 
         //2: create mock thread
-        LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock", Global_Timeout, Global_TimeUnit);
+        LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        try {
-            //3: park main thread 2 second
-            LockSupport.parkNanos(ParkDelayNanos);
-
-            //4: unlock from main thread
+        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
             lock.unlock();
-
-            //5: check lock state
-            LockSupport.parkNanos(ParkDelayNanos);
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, lock.isLocked());
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", 1, lock.getHoldCount());
-            lockByMock = true;
-        } finally {
-            //6: unlock
-            if (lockByMock) {
-                mockThread.unlock();
-            } else {
-                lock.unlock();//unlock from main
-            }
         }
+
+        //5: check lock state
+        mockThread.join();
+        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
+        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, lock.isLocked());
+        TestUtil.assertError("test failed,expect value:%s,actual value:%s", 1, lock.getHoldCount());
     }
 }

@@ -12,11 +12,8 @@ package org.stone.shine.concurrent.locks.condition;
 import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantWriteLockConditionAwaitThread;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeoutNanos;
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * writeLock condition test
@@ -27,24 +24,16 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class WriteLockConditionAwaitTimeoutTest extends WriteLockConditionTestCase {
 
-    public void test() {
+    public void test() throws Exception {
         //1:create wait thread
-        ReentrantWriteLockConditionAwaitThread awaitThread = new ReentrantWriteLockConditionAwaitThread(lock, lockCondition, "await", ParkDelayNanos, TimeUnit.NANOSECONDS);
+        ReentrantWriteLockConditionAwaitThread awaitThread = new ReentrantWriteLockConditionAwaitThread(lock, lockCondition, "await", Wait_Time, Wait_TimeUnit);
         awaitThread.start();
 
-        //2:writeLock in main thread
-        LockSupport.parkNanos(Global_TimeoutNanos);
-        lock.lock();
-        try {
-            lockCondition.signal();
-        } finally {
-            lock.unlock();
-        }
-
         //3:check mock thread
-        LockSupport.parkNanos(ParkDelayNanos);
-        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.getResult());//timeout
+        awaitThread.join();
+        if (!(Boolean) awaitThread.getResult()) TestUtil.assertError("test failed,await timeout");
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked1());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked2());
+
     }
 }

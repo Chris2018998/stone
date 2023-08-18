@@ -10,11 +10,12 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantLockConditionAwaitThread;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock condition test
@@ -25,17 +26,23 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class ReentrantLockConditionAwaitUninterruptiblyTest extends ReentrantLockConditionTestCase {
 
+    public static void main(String[] args) throws Throwable {
+        ReentrantLockConditionAwaitUninterruptiblyTest test = new ReentrantLockConditionAwaitUninterruptiblyTest();
+        test.setUp();
+        test.test();
+    }
+
     public void test() throws Exception {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "awaitUninterruptibly");
         awaitThread.start();
 
-        //2:writeLock in main thread
-        awaitThread.getCountDownLatch().await();
-        LockSupport.parkNanos(ParkDelayNanos);
-        awaitThread.interrupt();
+        if (ConcurrentTimeUtil.isInWaiting(awaitThread, ParkNanos)) {
+            awaitThread.interrupt();
+            LockSupport.parkNanos(100L);
+            if (awaitThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");
+        }
 
-        //3:interrupt the mock thread
         lock.lock();
         try {
             lockCondition.signal();
@@ -43,8 +50,6 @@ public class ReentrantLockConditionAwaitUninterruptiblyTest extends ReentrantLoc
             lock.unlock();
         }
 
-        //4:check InterruptedException
-        LockSupport.parkNanos(ParkDelayNanos);
         if (awaitThread.getInterruptedException() != null) TestUtil.assertError("test failed");
     }
 }

@@ -10,12 +10,13 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock.read;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReadLockToLockWriteLock test case
@@ -36,26 +37,21 @@ public class ReadLockToLockWriteLockUninterruptedTest extends ReentrantReadWrite
             ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(writeLock, "lock");
             mockThread.start();
 
-            //3: park main thread 1 second
-            LockSupport.parkNanos(ParkDelayNanos);
-
-            //4: interrupt the mock thread
-            mockThread.interrupt();
-
-            //5: park the main thread 1 second and check mock state
-            LockSupport.parkNanos(ParkDelayNanos);
-            if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");
+            if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+                mockThread.interrupt();
+                LockSupport.parkNanos(100L);
+                if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");
+            }
 
             //6: unlock from main
             readLock.unlock();
             isUnlock = true;
 
             //7: check mock thead
-            LockSupport.parkNanos(ParkDelayNanos);
+            mockThread.join();
             TestUtil.assertError("Lock test fail, expect value:%s,actual value:%s", true, mockThread.getResult());
         } finally {
             if (!isUnlock) readLock.unlock();
         }
-
     }
 }

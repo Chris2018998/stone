@@ -15,7 +15,8 @@ import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -37,7 +38,7 @@ public class TryLockTest extends TestCase {
 
         try {
             //3: park main thread 1 second
-            LockSupport.parkNanos(ParkDelayNanos);
+            LockSupport.parkNanos(Wait_TimeUnit.toNanos(Wait_Time));
 
             //4: check lock state
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());

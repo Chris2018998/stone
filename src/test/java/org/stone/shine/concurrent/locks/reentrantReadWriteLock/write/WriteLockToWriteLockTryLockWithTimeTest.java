@@ -10,6 +10,7 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock.write;
 
 import org.stone.base.TestUtil;
+import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
@@ -32,22 +33,18 @@ public class WriteLockToWriteLockTryLockWithTimeTest extends ReentrantReadWriteL
         writeLock.lock();
 
         //2: create mock thread
-        ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(writeLock, "tryLock", Global_Timeout, Global_TimeUnit);
+        ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(writeLock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
         try {
-            //3: park main thread 1 second
-            LockSupport.parkNanos(ParkDelayNanos);
-
-            //4: unlock from main thread
-            writeLock.unlock();
+            if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+                writeLock.unlock();
 
             //5: check writeLock state
-            LockSupport.parkNanos(ParkDelayNanos);
+            LockSupport.parkNanos(Wait_Time);
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, TestUtil.invokeMethod(writeLock, "isLocked"));
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", 1, TestUtil.invokeMethod(writeLock, "getHoldCount"));
-
             lockByMock = true;
         } finally {
             //6: unlock

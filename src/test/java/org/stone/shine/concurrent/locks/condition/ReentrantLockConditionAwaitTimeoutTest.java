@@ -12,11 +12,8 @@ package org.stone.shine.concurrent.locks.condition;
 import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantLockConditionAwaitThread;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Global_TimeoutNanos;
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
 
 /**
  * ReentrantLock condition test
@@ -27,24 +24,20 @@ import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkDelayNanos;
 
 public class ReentrantLockConditionAwaitTimeoutTest extends ReentrantLockConditionTestCase {
 
+    public static void main(String[] args) throws Throwable {
+        ReentrantLockConditionAwaitTimeoutTest test = new ReentrantLockConditionAwaitTimeoutTest();
+        test.setUp();
+        test.test();
+    }
+
     public void test() throws Exception {
         //1:create wait thread
-        ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await", ParkDelayNanos, TimeUnit.NANOSECONDS);
+        ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "await", Wait_Time, Wait_TimeUnit);
         awaitThread.start();
 
-        //2:writeLock in main thread
-        awaitThread.getCountDownLatch().await();
-        LockSupport.parkNanos(Global_TimeoutNanos);
-        lock.lock();
-        try {
-            lockCondition.signal();
-        } finally {
-            lock.unlock();
-        }
-
         //3:check mock thread
-        LockSupport.parkNanos(ParkDelayNanos);
-        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.getResult());//timeout
+        awaitThread.join();
+        if (!(Boolean) awaitThread.getResult()) TestUtil.assertError("test failed,await timeout");
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked1());
         TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, awaitThread.isLocked2());
     }
