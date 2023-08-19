@@ -27,19 +27,15 @@ public final class SyncNode<E> {
     private E value;//node value
 
     //****************************************************************************************************************//
-    //                                                1: constructor(3)                                               //
+    //                                                1: constructor(2)                                               //
     //****************************************************************************************************************//
+    //used in queues(ConcurrentLinkedQueue,ConcurrentLinkedDeque)
     public SyncNode(Object state) {
         this.state = state;
     }
 
-    public SyncNode(Object state, E value) {
-        this.state = state;
-        this.value = value;
-    }
-
-    public SyncNode(Object state, Object type, E value) {
-        this.state = state;
+    //used in wait-pools
+    public SyncNode(Object type, E value) {
         this.type = type;
         this.value = value;
     }

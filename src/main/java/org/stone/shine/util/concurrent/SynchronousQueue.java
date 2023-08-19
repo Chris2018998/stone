@@ -65,7 +65,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E> implements BlockingQue
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
-        return this.waitPool.offer(new SyncNode<E>(null, Node_Type_Data, e)) != null;
+        return this.waitPool.offer(new SyncNode<E>(Node_Type_Data, e)) != null;
     }
 
     /**

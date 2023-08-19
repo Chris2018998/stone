@@ -79,7 +79,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
-        this.waitPool.offer(new SyncNode<E>(null, Node_Type_Data, e));
+        this.waitPool.offer(new SyncNode<E>(Node_Type_Data, e));
         return true;
     }
 
@@ -123,7 +123,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E> implements Transfer
      */
     public boolean tryTransfer(E e) {
         if (e == null) throw new NullPointerException();
-        SyncNode node = new SyncNode<E>(null, Node_Type_Data, e);
+        SyncNode node = new SyncNode<E>(Node_Type_Data, e);
         return this.waitPool.tryTransfer(node, Node_Type_Get) != null;
     }
 

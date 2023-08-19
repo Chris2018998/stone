@@ -98,7 +98,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
     //                                          3: poll methods(2)                                                    //
     //****************************************************************************************************************//
     public final SyncNode poll() {
-        return tryTransfer(new SyncNode<E>(null, Node_Type_Get, null), Node_Type_Data);
+        return tryTransfer(new SyncNode<E>(Node_Type_Get, null), Node_Type_Data);
     }
 
     public final SyncNode poll(SyncVisitConfig config) throws InterruptedException {

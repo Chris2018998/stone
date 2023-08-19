@@ -24,8 +24,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private E nodeValue;
     //node type
     private Object nodeType;
-    //node init state
-    private Object initState;
     //chain node
     private SyncNode<E> node;
 
@@ -80,7 +78,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     public final SyncNode<E> getSyncNode() {
-        if (node == null) node = new SyncNode<>(initState, nodeType, nodeValue);
+        if (node == null) node = new SyncNode<>(nodeType, nodeValue);
         return node;
     }
 
@@ -118,19 +116,5 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public void setPropagatedOnSuccess(boolean propagatedOnSuccess) {
         this.propagatedOnSuccess = propagatedOnSuccess;
-    }
-
-    //****************************************************************************************************************//
-    //                                              4: SyncVisitConfig reset                                          //
-    //****************************************************************************************************************//
-    public final void reset() {
-        this.node = null;
-        this.nodeValue = null;
-        this.nodeType = null;
-        this.initState = null;
-        this.blockObject = null;
-        this.parkSupport = null;
-        this.allowInterruption = true;
-        this.propagatedOnSuccess = false;
     }
 }
