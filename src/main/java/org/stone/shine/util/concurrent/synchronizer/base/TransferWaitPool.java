@@ -88,10 +88,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
         if (pairNode != null) return pairNode;
 
         //2: wait for transferring
-        pairNode = doWait(config);
-        if (pairNode != null) return pairNode;
-
-        return null;
+        return doWait(config);
     }
 
     //****************************************************************************************************************//
