@@ -51,7 +51,7 @@ public class ConnectionHoldTimeoutTest extends TestCase {
             if (pool.getUsingSize() != 1)
                 TestUtil.assertError("Using connections not as expected 1");
 
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
             if (pool.getUsingSize() != 0)
                 TestUtil.assertError("Using connections not as expected 0 after hold timeout");
 
@@ -62,7 +62,7 @@ public class ConnectionHoldTimeoutTest extends TestCase {
                 System.out.println(e);
             }
 
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
         } finally {
             if (con != null)
                 TestUtil.oclose(con);

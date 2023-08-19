@@ -45,7 +45,7 @@ public class ConnectionIdleTimeoutTest extends TestCase {
         if (pool.getTotalSize() != initSize) TestUtil.assertError("Total connections not as expected:" + initSize);
         if (pool.getIdleSize() != initSize) TestUtil.assertError("Idle connections not as expected:" + initSize);
 
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
 
         if (pool.getTotalSize() != 0) TestUtil.assertError("Total connections not as expected:" + 0);
         if (pool.getIdleSize() != 0) TestUtil.assertError("Idle connections not a sexpected:" + 0);
