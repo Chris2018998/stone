@@ -53,7 +53,7 @@ public class ObjectIdleTimeoutTest extends TestCase {
             TestUtil.assertError("Total object not as expected:" + initSize);
         if (idleSize != initSize) TestUtil.assertError("Idle object not as expected:" + initSize);
 
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
         monitorVo = obs.getPoolMonitorVo();
         usingSize = monitorVo.getUsingSize();
         idleSize = monitorVo.getIdleSize();

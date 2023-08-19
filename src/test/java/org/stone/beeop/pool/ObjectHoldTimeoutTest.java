@@ -49,7 +49,7 @@ public class ObjectHoldTimeoutTest extends TestCase {
             if (monitorVo.getUsingSize() != 1)
                 TestUtil.assertError("Using objects not as expected 1");
 
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
 
             monitorVo = obs.getPoolMonitorVo();
             int usingSize = monitorVo.getUsingSize();
@@ -63,7 +63,7 @@ public class ObjectHoldTimeoutTest extends TestCase {
             } catch (Exception e) {
                 System.out.println(e);
             }
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(2));
         } finally {
             if (handle != null) handle.close();
         }
