@@ -29,10 +29,8 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 
 public class ConcurrentLinkedDequeBenchmark {
-    private static final Integer age = new Integer(45);
-    public static Queue<Integer> queue;
+    public static Queue queue;
     @Param({"JDK-ConcurrentLinkedDeque", "Stone-ConcurrentLinkedDeque"})
-    //@Param({"ConcurrentLinkedQueue2"})
     public String queueName;
 
     public static void main(String[] args) throws Exception {
@@ -44,9 +42,10 @@ public class ConcurrentLinkedDequeBenchmark {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public static Queue<Integer> offerTest() throws Exception {
-        queue.offer(age);
-        return queue;
+    public void queueTest() throws Exception {
+        Object item = new Object();
+        queue.offer(item);
+        queue.remove(item);
     }
 
     @Setup(Level.Trial)

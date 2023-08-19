@@ -43,7 +43,7 @@ public class ReentrantLockBenchmark {
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public static void testLock() throws Exception {
+    public void testLock() throws Exception {
         lock.lock();
         try {
 

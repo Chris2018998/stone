@@ -28,8 +28,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class ConcurrentLinkedQueueBenchmark {
-    private static final Integer age = new Integer(45);
-    public static Queue<Integer> queue;
+    public static Queue queue;
     @Param({"JDK-ConcurrentLinkedQueue", "Stone-ConcurrentLinkedQueue"})
     //@Param({"Stone-ConcurrentLinkedQueue"})
     public String queueName;
@@ -41,18 +40,12 @@ public class ConcurrentLinkedQueueBenchmark {
         new Runner(opt).run();
     }
 
-//    @Benchmark
-//    @CompilerControl(CompilerControl.Mode.INLINE)
-//    public static Queue<Integer> offerTest() throws Exception {
-//        queue.offer(age);
-//        return queue;
-//    }
-
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
-    public static Queue<Integer> pollTest() throws Exception {
-        queue.peek();
-        return queue;
+    public void queueTest() throws Exception {
+        Object item = new Object();
+        queue.offer(item);
+        queue.remove(item);
     }
 
     @Setup(Level.Trial)
