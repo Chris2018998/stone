@@ -26,7 +26,7 @@ import static org.stone.tools.CommonUtil.maxTimedSpins;
  * @author Chris Liao
  * @version 1.0
  */
-public class ResultWaitPool extends ThreadWaitingPool {
+public final class ResultWaitPool extends ThreadWaitingPool {
     //true,use fair mode
     private final boolean fair;
     //result validator(equals validator is default)

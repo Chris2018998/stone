@@ -27,7 +27,7 @@ import static org.stone.tools.CommonUtil.maxTimedSpins;
  * @version 1.0
  */
 
-public class StateWaitPool extends ThreadWaitingPool {
+public final class StateWaitPool extends ThreadWaitingPool {
     //state validator
     private final ResultValidator validator;
 
