@@ -24,7 +24,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNIN
  * @version 1.0
  */
 
-public class ResourceWaitPool {
+public final class ResourceWaitPool {
     //result call pool
     private final ResultWaitPool callPool;
 
