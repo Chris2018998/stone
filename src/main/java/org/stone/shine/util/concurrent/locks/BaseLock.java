@@ -333,32 +333,47 @@ class BaseLock implements Lock {
     }
 
     //****************************************************************************************************************//
-    //                                          5: Condition Methods(4)                                               //
+    //                                          5: Condition Methods(3)                                               //
     //****************************************************************************************************************//
     public boolean hasWaiters(Condition condition) {
-        return castConditionToLocal(condition).hasQueuedThreads();
+        return castConditionToLocal(condition).hasWaiters();
     }
 
     public int getWaitQueueLength(Condition condition) {
-        return castConditionToLocal(condition).getQueueLength();
+        return castConditionToLocal(condition).getWaitQueueLength();
     }
 
     protected Collection<Thread> getWaitingThreads(Condition condition) {
-        return castConditionToLocal(condition).getQueuedThreads();
+        return castConditionToLocal(condition).getWaitingThreads();
     }
 
     //****************************************************************************************************************//
     //                                       6: Lock Condition Impl                                                  //                                                                                  //
     //****************************************************************************************************************//
-    private static class LockConditionImpl extends SignalWaitPool implements Condition {
+    private static class LockConditionImpl implements Condition {
         private final BaseLock lock;
         private final LockAction lockAction;
+        private final SignalWaitPool signalPool;
 
         LockConditionImpl(BaseLock lock) {
             this.lock = lock;
             this.lockAction = lock.lockAction;
+            this.signalPool = new SignalWaitPool();
         }
 
+        boolean hasWaiters() {
+            return signalPool.hasQueuedThreads();
+        }
+
+        int getWaitQueueLength() {
+            return signalPool.getQueueLength();
+        }
+
+        Collection<Thread> getWaitingThreads() {
+            return signalPool.getQueuedThreads();
+        }
+
+        /******************************************** await begin *****************************************************/
         public void await() throws InterruptedException {
             this.doAwait(new SyncVisitConfig());
         }
@@ -404,7 +419,7 @@ class BaseLock implements Lock {
             //3:waiting on condition
             InterruptedException conditionIE = null;
             try {
-                super.get(config);
+                signalPool.get(config);
             } catch (InterruptedException e) {
                 conditionIE = e;
             }
@@ -418,14 +433,15 @@ class BaseLock implements Lock {
             if (conditionIE != null) throw conditionIE;
         }
 
+        /******************************************** signal begin ****************************************************/
         public void signal() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            super.wakeupOne(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
+            signalPool.wakeupOne(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            super.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
+            signalPool.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
     }
 }
