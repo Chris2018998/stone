@@ -30,7 +30,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //parkTime(@see LockSupport.parkNanos)
     private long parkNanos;
     //deadline Date(@see LockSupport.parkUtil)
-    private Date deadlineDate;
+    private long deadlineMills;
     //thread block object(@see LockSupport.park(blocker))
     private Object blockObject;
 
@@ -49,7 +49,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public SyncVisitConfig(Date deadlineDate) {
         if (deadlineDate == null) throw new IllegalArgumentException("Deadline date can't be null");
-        this.deadlineDate = deadlineDate;
+        this.deadlineMills = deadlineDate.getTime();
     }
 
     public SyncVisitConfig(long time, TimeUnit timeUnit) {
@@ -87,10 +87,9 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     public final ThreadParkSupport getParkSupport() {
         if (parkSupport == null) {
-            if (deadlineDate != null) {
-                long deadline = deadlineDate.getTime();
-                return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadline) :
-                        new ThreadParkSupport.UtilMillsParkSupport2(deadline, blockObject);
+            if (this.deadlineMills > 0）｛
+                return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadlineMills):
+                        new ThreadParkSupport.UtilMillsParkSupport2(deadlineMills,blockObject);
             } else if (parkNanos > 0L) {
                 return this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
                         new ThreadParkSupport.NanoSecondsParkSupport2(parkNanos, blockObject);
