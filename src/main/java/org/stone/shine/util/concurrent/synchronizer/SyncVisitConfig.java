@@ -86,19 +86,17 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
     public final ThreadParkSupport getParkSupport() {
-        if (parkSupport == null) {
-            if (this.deadlineMills > 0）｛
-                return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadlineMills):
-                        new ThreadParkSupport.UtilMillsParkSupport2(deadlineMills,blockObject);
-            } else if (parkNanos > 0L) {
-                return this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
-                        new ThreadParkSupport.NanoSecondsParkSupport2(parkNanos, blockObject);
-            } else {
-                return this.parkSupport = blockObject == null ? new ThreadParkSupport() :
-                        new ThreadParkSupport.ThreadParkSupport2(blockObject);
-            }
+        if (parkSupport !=null) return parkSupport;
+        if (deadlineMills > 0）｛
+            return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadlineMills) :
+                    new ThreadParkSupport.UtilMillsParkSupport2(deadlineMills,blockObject);
+        } else if (parkNanos > 0L) {
+            return this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
+                    new ThreadParkSupport.NanoSecondsParkSupport2(parkNanos, blockObject);
+        } else {
+            return this.parkSupport = blockObject == null ? new ThreadParkSupport() :
+                   new ThreadParkSupport.ThreadParkSupport2(blockObject);
         }
-        return parkSupport;
     }
 
     public final boolean isAllowInterruption() {
