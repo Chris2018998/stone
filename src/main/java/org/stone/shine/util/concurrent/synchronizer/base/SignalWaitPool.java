@@ -25,7 +25,7 @@ import static org.stone.tools.CommonUtil.maxTimedSpins;
  * @author Chris Liao
  * @version 1.0
  */
-public class SignalWaitPool extends ThreadWaitingPool {
+public final class SignalWaitPool extends ThreadWaitingPool {
 
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.
