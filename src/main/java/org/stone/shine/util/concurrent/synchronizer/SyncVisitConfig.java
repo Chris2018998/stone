@@ -33,9 +33,9 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private long deadlineMills;
     //thread block object(@see LockSupport.park(blocker))
     private Object blockObject;
-
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
     private ThreadParkSupport parkSupport;
+
     //similar to AQS SHARED mode
     private boolean propagatedOnSuccess;
     //indicator:true,throws InterruptedException when waiting interrupted
@@ -78,27 +78,13 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     public final SyncNode<E> getSyncNode() {
-        if (node == null) node = new SyncNode<>(nodeType, nodeValue);
-        return node;
+        if (node != null) return node;
+        return this.node = new SyncNode<>(nodeType, nodeValue);
     }
 
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
-    public final ThreadParkSupport getParkSupport() {
-        if (parkSupport !=null) return parkSupport;
-        if (deadlineMills > 0）｛
-            return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadlineMills) :
-                    new ThreadParkSupport.UtilMillsParkSupport2(deadlineMills,blockObject);
-        } else if (parkNanos > 0L) {
-            return this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
-                    new ThreadParkSupport.NanoSecondsParkSupport2(parkNanos, blockObject);
-        } else {
-            return this.parkSupport = blockObject == null ? new ThreadParkSupport() :
-                   new ThreadParkSupport.ThreadParkSupport2(blockObject);
-        }
-    }
-
     public final boolean isAllowInterruption() {
         return allowInterruption;
     }
@@ -113,5 +99,19 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public void setPropagatedOnSuccess(boolean propagatedOnSuccess) {
         this.propagatedOnSuccess = propagatedOnSuccess;
+    }
+
+    public final ThreadParkSupport getParkSupport() {
+        if (parkSupport != null) return parkSupport;
+        if (deadlineMills > 0L) {
+            return this.parkSupport = blockObject == null ? new ThreadParkSupport.UtilMillsParkSupport1(deadlineMills) :
+                    new ThreadParkSupport.UtilMillsParkSupport2(deadlineMills, blockObject);
+        } else if (parkNanos > 0L) {
+            return this.parkSupport = blockObject == null ? new ThreadParkSupport.NanoSecondsParkSupport(parkNanos) :
+                    new ThreadParkSupport.NanoSecondsParkSupport2(parkNanos, blockObject);
+        } else {
+            return this.parkSupport = blockObject == null ? new ThreadParkSupport() :
+                    new ThreadParkSupport.ThreadParkSupport2(blockObject);
+        }
     }
 }
