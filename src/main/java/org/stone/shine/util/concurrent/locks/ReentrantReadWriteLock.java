@@ -9,11 +9,11 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
+import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 
 import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
@@ -45,7 +45,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     public ReentrantReadWriteLock(boolean fair) {
         LockAtomicState lockState = new LockAtomicState();
         ResourceWaitPool waitPool = new ResourceWaitPool(fair);
-        this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState));
+        this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState, waitPool));
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState, waitPool));
     }
 
@@ -80,19 +80,19 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //                                       3:readLock/writeLock                                                     //                                                                                  //
     //****************************************************************************************************************//
     //Returns the lock used for reading.
-    public Lock readLock() {
+    public ReadLock readLock() {
         return readerLock;
     }
 
     //Returns the lock used for writing.
-    public Lock writeLock() {
+    public WriteLock writeLock() {
         return writerLock;
     }
 
     //****************************************************************************************************************//
     //                                      4: WriteLock/ReadLock Impl                                                //                                                                                  //
     //****************************************************************************************************************//
-    private static class WriteLock extends BaseLock {
+    public static class WriteLock extends BaseLock {
         WriteLock(ResourceWaitPool waitPool, LockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_EXCLUSIVE);
         }
@@ -102,7 +102,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
     }
 
-    private static class ReadLock extends BaseLock {
+    public static class ReadLock extends BaseLock {
         ReadLock(ResourceWaitPool waitPool, LockAction lockAction) {
             super(waitPool, lockAction, AcquireTypes.TYPE_SHARED);
         }
@@ -120,8 +120,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //                                       5: Write Lock Action Impl                                                //
     //****************************************************************************************************************//
     private static class WriteLockAction extends LockAction {
-        WriteLockAction(LockAtomicState lockState) {
+        private final ResourceWaitPool waitPool;
+
+        WriteLockAction(LockAtomicState lockState, ResourceWaitPool waitPool) {
             super(lockState);
+            this.waitPool = waitPool;
         }
 
         public int getHoldCount() {
@@ -155,7 +158,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 writeCount = writeCount - size;//support full release for reentrant
 
                 lockState.setState(decrementExclusivePart(curState, size));
-                if (writeCount == 0) lockState.setExclusiveOwnerThread(null);
+                if (writeCount == 0) {
+                    lockState.setExclusiveOwnerThread(null);
+                    if (sharedCount(curState) > 0)
+                        waitPool.wakeupOne(true, AcquireTypes.TYPE_SHARED, SyncNodeStates.RUNNING);
+                }
                 return writeCount == 0;
             } else {
                 return false;
