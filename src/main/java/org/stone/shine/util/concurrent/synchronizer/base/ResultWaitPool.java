@@ -103,8 +103,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         try {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
-                Object state = node.getState();
-                if (state != null && (isAtFirst || (isAtFirst = atFirst(node)))) {
+                if (isAtFirst || (isAtFirst = atFirst(node))) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
@@ -113,6 +112,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 }
 
                 //5.2: fail check
+                Object state = node.getState();
                 if (parkSupport.isTimeout()) {
                     if (state != null || casState(node, null, REMOVED))
                         return validator.resultOnTimeout();
