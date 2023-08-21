@@ -104,7 +104,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
                 Object state = node.getState();
-                if (state != null || isAtFirst || (isAtFirst = atFirst(node))) {
+                if (state != null && (isAtFirst || (isAtFirst = atFirst(node)))) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
