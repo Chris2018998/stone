@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 
@@ -158,11 +157,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                 writeCount = writeCount - size;//support full release for reentrant
 
                 lockState.setState(decrementExclusivePart(curState, size));
-                if (writeCount == 0) {
-                    lockState.setExclusiveOwnerThread(null);
-                    if (sharedCount(curState) > 0)
-                        waitPool.wakeupOne(true, AcquireTypes.TYPE_SHARED, SyncNodeStates.RUNNING);
-                }
+                if (writeCount == 0) lockState.setExclusiveOwnerThread(null);
                 return writeCount == 0;
             } else {
                 return false;
