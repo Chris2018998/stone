@@ -30,8 +30,8 @@ public class ReadWriteLockTest {
         System.out.println("<INFO>:Five threads have blocking in AQS wait queue(acquiring read lock)");
 
         //5: Release write lock in main thread(after unlock,read lock is still hold by main thread)
-        System.out.println("<INFO>:Main thread will release the write-lock,who will get the lock?");
         writeLock.unlock();
+        System.out.println("<INFO>:Main thread released the write-lock,who got the lock?");
 
         //6: Read thread go through with Share mode,will be propagate to others
         //here,I think those read-lock threads should be got read lock,but not effect
