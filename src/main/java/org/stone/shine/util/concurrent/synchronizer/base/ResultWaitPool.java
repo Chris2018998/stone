@@ -82,16 +82,14 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:test before call
-        boolean tryCallInd;
+        boolean tryCallInd = false;
         SyncNode firstNode = this.firstNode();
         if (fair) {
             tryCallInd = firstNode == null;
         } else if (firstNode == null) {
             tryCallInd = true;
-        } else {
-            tryCallInd = true;
-            if (config.isTryCallWhenSameTypeOfFirst())//avoid write lock starvation
-                tryCallInd = CommonUtil.objectEquals(config.getNodeType(), firstNode.getType());
+        } else if (config.isTryCallWhenSameTypeOfFirst()) {//avoid write lock starvation
+            tryCallInd = CommonUtil.objectEquals(config.getNodeType(), firstNode.getType());
         }
 
         //3:execute call
