@@ -24,6 +24,11 @@ import java.util.concurrent.locks.Lock;
  */
 
 public class LockMultipleAcquireTest extends TestCase {
+    public static void main(String[] args) throws Throwable {
+        LockMultipleAcquireTest tester = new LockMultipleAcquireTest();
+        tester.setUp();
+        tester.test();
+    }
 
     public void test() throws Exception {
         //1: create writeLock and acquire in main thread
@@ -31,10 +36,10 @@ public class LockMultipleAcquireTest extends TestCase {
 
         int size = 1000;
         LockTestThread[] testThread = new LockTestThread[size];
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < size; i++) {
             testThread[i] = new LockTestThread("Thread" + i, lock);
-        for (int i = 0; i < size; i++)
             testThread[i].start();
+        }
 
         for (int i = 0; i < size; i++)
             testThread[i].join();
@@ -62,6 +67,7 @@ public class LockMultipleAcquireTest extends TestCase {
             try {
                 this.acquired = true;
             } catch (Exception e) {
+                e.printStackTrace();
             } finally {
                 lock.unlock();
             }
