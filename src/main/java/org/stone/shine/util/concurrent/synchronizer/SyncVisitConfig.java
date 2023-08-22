@@ -40,6 +40,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private boolean propagatedOnSuccess;
     //indicator:true,throws InterruptedException when waiting interrupted
     private boolean allowInterruption = true;
+    //execute call when first node type equals caller(only using it in ResultWaitPool)
+    private boolean tryCallWhenSameTypeOfFirst;
 
     //****************************************************************************************************************//
     //                                              1:constructors(3)                                                 //
@@ -91,6 +93,14 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public void allowInterruption(boolean allowIndicator) {
         this.allowInterruption = allowIndicator;
+    }
+
+    public boolean isTryCallWhenSameTypeOfFirst() {
+        return tryCallWhenSameTypeOfFirst;
+    }
+
+    public void setTryCallWhenSameTypeOfFirst(boolean tryCallWhenSameTypeOfFirst) {
+        this.tryCallWhenSameTypeOfFirst = tryCallWhenSameTypeOfFirst;
     }
 
     public boolean isPropagatedOnSuccess() {

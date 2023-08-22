@@ -108,8 +108,8 @@ public abstract class ThreadWaitingPool {
         return waitChain.iterator();
     }
 
-    protected final boolean hasQueuedPredecessors() {
-        return waitChain.peekFirst() != null;
+    protected final SyncNode firstNode() {
+        return waitChain.peekFirst();
     }
 
     protected final boolean existsTypeNode(Object nodeType) {

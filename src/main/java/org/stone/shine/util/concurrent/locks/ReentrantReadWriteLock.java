@@ -158,6 +158,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
                 lockState.setState(decrementExclusivePart(curState, size));
                 if (writeCount == 0) lockState.setExclusiveOwnerThread(null);
+
                 return writeCount == 0;
             } else {
                 return false;

@@ -14,6 +14,7 @@ import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
+import org.stone.tools.CommonUtil;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
@@ -80,29 +81,41 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         if (call == null || config == null || validator == null)
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
-        //2:execute call
-        if (!fair || !this.hasQueuedPredecessors()) {
+        //2:test before call
+        boolean tryCallInd;
+        SyncNode firstNode = this.firstNode();
+        if (fair) {
+            tryCallInd = firstNode == null;
+        } else if (firstNode == null) {
+            tryCallInd = true;
+        } else {
+            tryCallInd = true;
+            if (config.isTryCallWhenSameTypeOfFirst())//avoid write lock starvation
+                tryCallInd = CommonUtil.objectEquals(config.getNodeType(), firstNode.getType());
+        }
+
+        //3:execute call
+        if (tryCallInd) {
             Object result = call.call(arg);
             if (validator.isExpected(result)) return result;
         }
 
-        //3:offer to wait queue
+        //4:offer to wait queue
         int spins = 0;//spin count
         boolean isAtFirst;
         SyncNode node = config.getSyncNode();
         if (isAtFirst = appendAsWaitNode(node)) {//init state must be null
             spins = maxTimedSpins;
-            casState(node, null, RUNNING);
+            //casState(node, null, RUNNING);
         }
 
-        //4:get control parameters from config
+        //5:get control parameters from config
         boolean success = false;
         ThreadParkSupport parkSupport = config.getParkSupport();
-
-        //5:spin control（Logic from BeeCP）
+        //6:spin control（Logic from BeeCP）
         try {
             do {
-                //5.1: execute call(got a signal or at first of wait queue)
+                //6.1: execute call(got a signal or at first of wait queue)
                 if (isAtFirst || (isAtFirst = atFirst(node))) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
@@ -111,7 +124,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     }
                 }
 
-                //5.2: fail check
+                //6.2: fail check
                 Object state = node.getState();
                 if (parkSupport.isTimeout()) {
                     if (state != null || casState(node, null, REMOVED))
