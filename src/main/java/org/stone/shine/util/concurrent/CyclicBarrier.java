@@ -100,6 +100,7 @@ public final class CyclicBarrier {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setPropagatedOnSuccess(true);
+            config.setTryCallWhenSameTypeOfFirst(true);
             return doAwait(config);
         } catch (TimeoutException e) {
             throw new Error(e);
@@ -109,6 +110,7 @@ public final class CyclicBarrier {
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
         config.setPropagatedOnSuccess(true);
+        config.setTryCallWhenSameTypeOfFirst(true);
         return doAwait(config);
     }
 
@@ -153,7 +155,7 @@ public final class CyclicBarrier {
                     this.flight = new GenerationFlight(seatSize);
 
                     //9: wakeup hall passengers to buy ticket of the new flight
-                    waitPool.wakeupAll(true, 0, SyncNodeStates.RUNNING);
+                    waitPool.wakeupOne(true, null, SyncNodeStates.RUNNING);
 
                     //10: return the seat-No of the passenger)
                     return seatNo;
