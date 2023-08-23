@@ -11,11 +11,8 @@ package org.stone.shine.concurrent.synchronousQueue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.OfferThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * synchronousQueue Test case
@@ -34,7 +31,7 @@ public class PutInterruptedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 3 seconds and check mock thread result
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(mockThread))
             mockThread.interrupt();
 
         mockThread.join();

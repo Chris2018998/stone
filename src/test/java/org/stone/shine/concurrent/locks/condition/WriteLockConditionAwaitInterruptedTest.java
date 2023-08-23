@@ -10,10 +10,7 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantWriteLockConditionAwaitThread;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * writeLock condition test
@@ -34,7 +31,7 @@ public class WriteLockConditionAwaitInterruptedTest extends WriteLockConditionTe
         ReentrantWriteLockConditionAwaitThread awaitThread = new ReentrantWriteLockConditionAwaitThread(lock, lockCondition, "await");
         awaitThread.start();
 
-        if (ConcurrentTimeUtil.isInWaiting(awaitThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(awaitThread)) {
             awaitThread.interrupt();
         }
 

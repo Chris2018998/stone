@@ -11,13 +11,13 @@ package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
 import org.stone.shine.util.concurrent.Semaphore;
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * Semaphore Test case
@@ -38,7 +38,7 @@ public class TryAcquireWithTimeTest extends TestCase {
         AcquireMockThread mockThread = new AcquireMockThread(semaphore, "tryAcquire", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(mockThread)) {
             semaphore.release();
             LockSupport.parkNanos(100L);
         }

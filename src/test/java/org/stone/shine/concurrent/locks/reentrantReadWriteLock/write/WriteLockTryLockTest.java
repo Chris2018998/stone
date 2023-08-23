@@ -15,7 +15,7 @@ import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWrit
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_Time;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**

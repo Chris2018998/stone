@@ -11,10 +11,10 @@ package org.stone.shine.concurrent.locks.reentrantLock;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * ReentrantLock test case
@@ -34,7 +34,7 @@ public class TryLockWithTimeTest extends TestCase {
         LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(mockThread)) {
             lock.unlock();
         }
 

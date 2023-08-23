@@ -11,10 +11,7 @@ package org.stone.shine.concurrent.locks.reentrantLock;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock test case
@@ -33,7 +30,7 @@ public class LockInterruptiblyTest extends TestCase {
             LockAcquireThread mockThread = new LockAcquireThread(lock, "lockInterruptibly");
             mockThread.start();
 
-            if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+            if (TestUtil.joinUtilWaiting(mockThread)) {
                 mockThread.interrupt();
             }
 

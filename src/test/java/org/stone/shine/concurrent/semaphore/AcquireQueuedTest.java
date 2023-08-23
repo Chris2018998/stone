@@ -11,11 +11,8 @@ package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
 import org.stone.shine.util.concurrent.Semaphore;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * Semaphore Test case
@@ -37,7 +34,7 @@ public class AcquireQueuedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 2 second
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(mockThread)) {
             //4:mock interrupt
             TestUtil.assertError("test fail,expect value:%s,actual value:%s", true, semaphore.hasQueuedThreads());
             TestUtil.assertError("test fail,expect value:%s,actual value:%s", 1, semaphore.getQueueLength());

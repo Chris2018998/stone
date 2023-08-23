@@ -11,12 +11,9 @@ package org.stone.shine.concurrent.synchronousQueue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.OfferThread;
 import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * synchronousQueue Test case
@@ -37,7 +34,7 @@ public class PollOneTest extends TestCase {
 
         //2: crate a poll thread
         PollThread pollThread = new PollThread(queue, "poll");
-        if (ConcurrentTimeUtil.isInWaiting(offerThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(offerThread))
             pollThread.start();
 
         //3: check result

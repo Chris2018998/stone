@@ -10,10 +10,7 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantLockConditionAwaitThread;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock condition test
@@ -38,8 +35,8 @@ public class ReentrantLockConditionSignalAllTest extends ReentrantLockConditionT
         waitThread2.start();
 
         //2:writeLock in main thread
-        boolean test1 = ConcurrentTimeUtil.isInWaiting(waitThread1, ParkNanos);
-        boolean test2 = ConcurrentTimeUtil.isInWaiting(waitThread2, ParkNanos);
+        boolean test1 = TestUtil.joinUtilWaiting(waitThread1);
+        boolean test2 = TestUtil.joinUtilWaiting(waitThread2);
         if (test1 && test2) {
             lock.lock();
             try {

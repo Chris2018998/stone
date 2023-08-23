@@ -1,6 +1,6 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock;
 
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
+import org.stone.base.TestUtil;
 import org.stone.shine.util.concurrent.locks.ReentrantReadWriteLock;
 
 //import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -15,19 +15,19 @@ public class ReadWriteLockAlternateTest {
         int i = 1;
         Thread thread1 = new ReadThread("读线程[" + (i++) + "]");
         thread1.start();
-        if (!ConcurrentTimeUtil.isInWaiting(thread1, 5L)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.joinUtilWaiting(thread1)) throw new java.lang.IllegalStateException();
 
         Thread thread2 = new WriteThread("写线程[" + (i++) + "]");
         thread2.start();
-        if (!ConcurrentTimeUtil.isInWaiting(thread2, 5L)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.joinUtilWaiting(thread2)) throw new java.lang.IllegalStateException();
 
         Thread thread13 = new ReadThread("读线程[" + (i++) + "]");
         thread13.start();
-        if (!ConcurrentTimeUtil.isInWaiting(thread13, 5L)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.joinUtilWaiting(thread13)) throw new java.lang.IllegalStateException();
 
         Thread thread4 = new WriteThread("写线程[" + (i++) + "]");
         thread4.start();
-        if (!ConcurrentTimeUtil.isInWaiting(thread4, 5L)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.joinUtilWaiting(thread4)) throw new java.lang.IllegalStateException();
 
         writeLock.unlock();
     }

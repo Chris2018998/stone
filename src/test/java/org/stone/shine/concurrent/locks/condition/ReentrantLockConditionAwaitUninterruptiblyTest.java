@@ -10,12 +10,9 @@
 package org.stone.shine.concurrent.locks.condition;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.condition.threads.ReentrantLockConditionAwaitThread;
 
 import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock condition test
@@ -37,7 +34,7 @@ public class ReentrantLockConditionAwaitUninterruptiblyTest extends ReentrantLoc
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "awaitUninterruptibly");
         awaitThread.start();
 
-        if (ConcurrentTimeUtil.isInWaiting(awaitThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(awaitThread)) {
             awaitThread.interrupt();
             LockSupport.parkNanos(100L);
             if (awaitThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");

@@ -10,13 +10,10 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock.write;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
 import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReadLockToLockWriteLock test case
@@ -43,7 +40,7 @@ public class WriteLockToReadLockLockUninterruptedTest extends ReentrantReadWrite
             ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(readLock, "lock");
             mockThread.start();
 
-            if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+            if (TestUtil.joinUtilWaiting(mockThread)) {
                 mockThread.interrupt();
                 LockSupport.parkNanos(100L);
                 if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");

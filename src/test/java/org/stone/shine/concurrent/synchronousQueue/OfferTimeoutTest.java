@@ -14,8 +14,8 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.OfferThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * synchronousQueue Test case

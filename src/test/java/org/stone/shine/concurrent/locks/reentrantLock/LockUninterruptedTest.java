@@ -11,12 +11,9 @@ package org.stone.shine.concurrent.locks.reentrantLock;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReentrantLock test case
@@ -38,7 +35,7 @@ public class LockUninterruptedTest extends TestCase {
             LockAcquireThread mockThread = new LockAcquireThread(lock, "lock");
             mockThread.start();
 
-            if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+            if (TestUtil.joinUtilWaiting(mockThread)) {
                 mockThread.interrupt();
                 LockSupport.parkNanos(100L);
                 if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");

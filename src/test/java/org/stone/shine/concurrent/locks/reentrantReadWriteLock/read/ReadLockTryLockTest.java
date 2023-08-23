@@ -15,7 +15,6 @@ import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWrit
 
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -34,7 +33,14 @@ public class ReadLockTryLockTest extends ReentrantReadWriteLockTestCase {
 
         try {
             //3: park main thread 1 second
-            LockSupport.parkNanos(Wait_Time);
+            for (; ; ) {
+                Thread.State curState = mockThread.getState();
+                if (curState == Thread.State.TERMINATED) {
+                    break;
+                } else {
+                    LockSupport.parkNanos(5L);
+                }
+            }
 
             //4: check writeLock state
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());

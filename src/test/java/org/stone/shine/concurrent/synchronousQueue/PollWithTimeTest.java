@@ -11,11 +11,11 @@ package org.stone.shine.concurrent.synchronousQueue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * synchronousQueue Test case
@@ -35,7 +35,7 @@ public class PollWithTimeTest extends TestCase {
 
 
         Object offerObject = new Object();
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) ;
+        if (TestUtil.joinUtilWaiting(mockThread)) ;
         queue.offer(offerObject);
 
         //5:poll object from queue

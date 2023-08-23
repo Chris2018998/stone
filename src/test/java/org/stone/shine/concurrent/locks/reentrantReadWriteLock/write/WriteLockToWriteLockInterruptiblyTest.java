@@ -10,11 +10,8 @@
 package org.stone.shine.concurrent.locks.reentrantReadWriteLock.write;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * ReadLockToLockWriteLock test case
@@ -33,7 +30,7 @@ public class WriteLockToWriteLockInterruptiblyTest extends ReentrantReadWriteLoc
             ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(writeLock, "lockInterruptibly");
             mockThread.start();
 
-            if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+            if (TestUtil.joinUtilWaiting(mockThread))
                 mockThread.interrupt();
 
             mockThread.join();

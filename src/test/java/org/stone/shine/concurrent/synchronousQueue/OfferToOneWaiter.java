@@ -11,11 +11,8 @@ package org.stone.shine.concurrent.synchronousQueue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.synchronousQueue.threads.PollThread;
 import org.stone.shine.util.concurrent.SynchronousQueue;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * synchronousQueue Test case
@@ -37,7 +34,7 @@ public class OfferToOneWaiter extends TestCase {
 
         boolean offerResult = false;
         Object offerObject = new Object();
-        if (ConcurrentTimeUtil.isInWaiting(pollThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(pollThread))
             offerResult = queue.offer(offerObject);
 
         //3: check result

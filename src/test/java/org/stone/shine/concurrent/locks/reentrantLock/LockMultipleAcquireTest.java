@@ -23,6 +23,12 @@ import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 public class LockMultipleAcquireTest extends TestCase {
 
+    public static void main(String[] args) throws Throwable {
+        LockMultipleAcquireTest tester = new LockMultipleAcquireTest();
+        tester.setUp();
+        tester.test();
+    }
+
     public void test() throws Exception {
         //1: create lock and acquire in main thread
         ReentrantLock lock = new ReentrantLock();

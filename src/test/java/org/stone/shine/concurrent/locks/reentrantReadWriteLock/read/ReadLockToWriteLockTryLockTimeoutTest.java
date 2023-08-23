@@ -13,8 +13,8 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_Time;
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.Wait_TimeUnit;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * ReadLockToLockWriteLock test case

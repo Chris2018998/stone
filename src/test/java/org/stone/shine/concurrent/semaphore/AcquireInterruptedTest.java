@@ -10,11 +10,9 @@
 package org.stone.shine.concurrent.semaphore;
 
 import org.stone.base.TestCase;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.semaphore.threads.AcquireMockThread;
 import org.stone.shine.util.concurrent.Semaphore;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * Semaphore Test case
@@ -35,7 +33,7 @@ public class AcquireInterruptedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 5 seconds and check mock thread state
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(mockThread)) {
             mockThread.interrupt();
             return;
         }
