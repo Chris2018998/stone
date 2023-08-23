@@ -13,8 +13,6 @@ import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBookFactory;
 
-import java.util.concurrent.CountDownLatch;
-
 /**
  * @author Chris.Liao
  * @version 1.0
@@ -25,7 +23,7 @@ public class ObjectGetTimeoutTest extends TestCase {
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setMaxActive(1);
-        config.setMaxWait(3000);
+        config.setMaxWait(1000);
         config.setObjectFactoryClassName(JavaBookFactory.class.getName());
         obs = new BeeObjectSource(config);
     }
@@ -38,11 +36,10 @@ public class ObjectGetTimeoutTest extends TestCase {
         BeeObjectHandle handle = null;
         try {
             handle = obs.getObjectHandle();
-            CountDownLatch lacth = new CountDownLatch(1);
-            TestThread testTh = new TestThread(lacth);
+            TestThread testTh = new TestThread();
             testTh.start();
 
-            lacth.await();
+            testTh.join();
             if (testTh.e == null)
                 TestUtil.assertError("Object get timeout");
             else
@@ -55,11 +52,6 @@ public class ObjectGetTimeoutTest extends TestCase {
 
     class TestThread extends Thread {
         Exception e = null;
-        CountDownLatch lacth;
-
-        TestThread(CountDownLatch lacth) {
-            this.lacth = lacth;
-        }
 
         public void run() {
             ObjectBaseHandle proxy = null;
@@ -75,7 +67,6 @@ public class ObjectGetTimeoutTest extends TestCase {
                         e1.printStackTrace();
                     }
             }
-            lacth.countDown();
         }
     }
 }

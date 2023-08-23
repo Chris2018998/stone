@@ -14,7 +14,6 @@ import org.stone.beecp.JdbcConfig;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.concurrent.CountDownLatch;
 
 public class ConnectionGetTimeoutTest extends TestCase {
     private BeeDataSource ds;
@@ -25,7 +24,7 @@ public class ConnectionGetTimeoutTest extends TestCase {
         config.setDriverClassName(JdbcConfig.JDBC_DRIVER);
         config.setUsername(JdbcConfig.JDBC_USER);
         config.setPassword(JdbcConfig.JDBC_PASSWORD);
-        config.setMaxWait(3000);
+        config.setMaxWait(1000);
         config.setMaxActive(1);
         config.setBorrowSemaphoreSize(1);
         ds = new BeeDataSource(config);
@@ -39,28 +38,22 @@ public class ConnectionGetTimeoutTest extends TestCase {
         Connection con = null;
         try {
             con = ds.getConnection();
-            CountDownLatch lacth = new CountDownLatch(1);
-            TestThread testTh = new TestThread(lacth);
-            testTh.start();
+            GetMockThread mockThread = new GetMockThread();
+            mockThread.start();
 
-            lacth.await();
-            if (testTh.e == null)
+            mockThread.join();
+            if (mockThread.e == null)
                 TestUtil.assertError("Connect timeout test failed");
             else
-                System.out.println(testTh.e);
+                System.out.println(mockThread.e);
         } finally {
             if (con != null)
                 TestUtil.oclose(con);
         }
     }
 
-    class TestThread extends Thread {
+    class GetMockThread extends Thread {
         SQLException e = null;
-        CountDownLatch lacth;
-
-        TestThread(CountDownLatch lacth) {
-            this.lacth = lacth;
-        }
 
         public void run() {
             Connection con2 = null;
@@ -72,7 +65,6 @@ public class ConnectionGetTimeoutTest extends TestCase {
                 if (con2 != null)
                     TestUtil.oclose(con2);
             }
-            lacth.countDown();
         }
     }
 }

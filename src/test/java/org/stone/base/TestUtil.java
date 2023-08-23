@@ -18,6 +18,8 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.tools.CommonUtil.objectEquals;
 
@@ -26,7 +28,9 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 public class TestUtil {
-    private final static Logger log = LoggerFactory.getLogger(TestUtil.class);
+    public static final long Wait_Time = 100L;
+    public static final TimeUnit Wait_TimeUnit = TimeUnit.MILLISECONDS;
+    private static final Logger log = LoggerFactory.getLogger(TestUtil.class);
 
     public static void assertError(String message) {
         throw new AssertionError(message);
@@ -83,6 +87,30 @@ public class TestUtil {
             c.close();
         } catch (Throwable e) {
             log.warn("Warning:Error at closing resultSet:", e);
+        }
+    }
+
+    public static boolean joinUtilTerminated(Thread thread) {
+        for (; ; ) {
+            Thread.State curState = thread.getState();
+            if (curState == Thread.State.TERMINATED) {
+                return true;
+            } else {
+                LockSupport.parkNanos(5L);
+            }
+        }
+    }
+
+    public static boolean joinUtilWaiting(Thread thread) {
+        for (; ; ) {
+            Thread.State curState = thread.getState();
+            if (curState == Thread.State.WAITING || curState == Thread.State.TIMED_WAITING) {
+                return true;
+            } else if (curState == Thread.State.TERMINATED) {
+                return false;
+            } else {
+                LockSupport.parkNanos(5L);
+            }
         }
     }
 }
