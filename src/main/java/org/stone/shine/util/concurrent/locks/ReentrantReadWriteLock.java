@@ -29,15 +29,15 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     private static final int SHARED_UNIT = (1 << SHARED_SHIFT);
     private static final int MAX_COUNT = (1 << SHARED_SHIFT) - 1;
     private static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
+
+    //lock state
+    private final LockAtomicState lockState;
     //wait pool
     private final ResourceWaitPool waitPool;
     //Inner class providing readLock
     private final ReentrantReadWriteLock.ReadLock readerLock;
     //Inner class providing writeLock
     private final ReentrantReadWriteLock.WriteLock writerLock;
-    //lock state
-    LockAtomicState lockState;
-
 
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
