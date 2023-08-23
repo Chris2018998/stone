@@ -210,7 +210,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setHoldTimeout(long holdTimeout) {
-        if (holdTimeout > 0) this.holdTimeout = holdTimeout;
+        this.holdTimeout = holdTimeout;
     }
 
     public int getValidTestTimeout() {
@@ -481,8 +481,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");
         if (idleTimeout <= 0)
             throw new BeeObjectSourceConfigException("idleTimeout must be greater than zero");
-        if (holdTimeout <= 0)
-            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
+//        if (holdTimeout <= 0)
+//            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
         if (maxWait <= 0)
             throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
 
