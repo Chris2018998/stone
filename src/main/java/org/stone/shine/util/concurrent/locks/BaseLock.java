@@ -356,7 +356,7 @@ class BaseLock implements Lock {
     //****************************************************************************************************************//
     //                                       6: Lock Condition Impl                                                  //                                                                                  //
     //****************************************************************************************************************//
-    private static class LockConditionImpl implements Condition {
+    static class LockConditionImpl implements Condition {
         private final BaseLock lock;
         private final LockAction lockAction;
         private final SignalWaitPool signalPool;

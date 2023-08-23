@@ -12,6 +12,7 @@ package org.stone.shine.util.concurrent.locks;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 
+import java.util.Collection;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -28,11 +29,15 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     private static final int SHARED_UNIT = (1 << SHARED_SHIFT);
     private static final int MAX_COUNT = (1 << SHARED_SHIFT) - 1;
     private static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
-
+    //wait pool
+    private final ResourceWaitPool waitPool;
     //Inner class providing readLock
     private final ReentrantReadWriteLock.ReadLock readerLock;
     //Inner class providing writeLock
     private final ReentrantReadWriteLock.WriteLock writerLock;
+    //lock state
+    LockAtomicState lockState;
+
 
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
@@ -42,8 +47,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public ReentrantReadWriteLock(boolean fair) {
-        LockAtomicState lockState = new LockAtomicState();
-        ResourceWaitPool waitPool = new ResourceWaitPool(fair);
+        this.lockState = new LockAtomicState();
+        this.waitPool = new ResourceWaitPool(fair);
         this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState, waitPool));
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState, waitPool));
     }
@@ -75,6 +80,14 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         return c - SHARED_UNIT * size;
     }
 
+    private static BaseLock.LockConditionImpl getLockConditionImpl(Condition condition) {
+        if (condition == null)
+            throw new NullPointerException();
+        if (!(condition instanceof BaseLock.LockConditionImpl))
+            throw new IllegalArgumentException("not owner");
+        return (BaseLock.LockConditionImpl) condition;
+    }
+
     //****************************************************************************************************************//
     //                                       3:readLock/writeLock                                                     //                                                                                  //
     //****************************************************************************************************************//
@@ -86,6 +99,81 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //Returns the lock used for writing.
     public WriteLock writeLock() {
         return writerLock;
+    }
+
+    //****************************************************************************************************************//
+    //                                       4: Lock Methods(16)                                                      //
+    //****************************************************************************************************************//
+    public final boolean isFair() {
+        return waitPool.isFair();
+    }
+
+    protected Thread getOwner() {
+        return writerLock.getOwner();
+    }
+
+    public int getReadLockCount() {
+        return readerLock.getHoldCount();
+    }
+
+    public boolean isWriteLocked() {
+        return writerLock.isLocked();
+    }
+
+    public boolean isWriteLockedByCurrentThread() {
+        return writerLock.isLocked() && writerLock.getOwner() == Thread.currentThread();
+    }
+
+    public int getWriteHoldCount() {
+        return writerLock.getHoldCount();
+    }
+
+    public int getReadHoldCount() {
+        return readerLock.getHoldCount();
+    }
+
+    protected Collection<Thread> getQueuedWriterThreads() {
+        return writerLock.getQueuedThreads();
+    }
+
+    protected Collection<Thread> getQueuedReaderThreads() {
+        return waitPool.getQueuedThreads();
+    }
+
+    public final boolean hasQueuedThreads() {
+        return waitPool.hasQueuedThreads();
+    }
+
+    public final boolean hasQueuedThread(Thread thread) {
+        return waitPool.hasQueuedThread(thread);
+    }
+
+    public final int getQueueLength() {
+        return waitPool.getQueueLength();
+    }
+
+    protected Collection<Thread> getQueuedThreads() {
+        return waitPool.getQueuedThreads();
+    }
+
+    public boolean hasWaiters(Condition condition) {
+        return getLockConditionImpl(condition).hasWaiters();
+    }
+
+    public int getWaitQueueLength(Condition condition) {
+        return getLockConditionImpl(condition).getWaitQueueLength();
+    }
+
+    protected Collection<Thread> getWaitingThreads(Condition condition) {
+        return getLockConditionImpl(condition).getWaitingThreads();
+    }
+
+    public String toString() {
+        int c = lockState.getState();
+        int w = exclusiveCount(c);
+        int r = sharedCount(c);
+        return super.toString() +
+                "[Write locks = " + w + ", Read locks = " + r + "]";
     }
 
     //****************************************************************************************************************//
