@@ -681,7 +681,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     this.tryWakeupServantThread();
                 }
             } else if (state == CON_USING) {
-                if (System.currentTimeMillis() - p.lastAccessTime >= this.holdTimeoutMs) {//hold timeout
+                if (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs) {//hold timeout
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) {
                         oclose(proxyInUsing);
@@ -745,7 +745,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 } else if (state == CON_USING) {
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) {
-                        if (force || System.currentTimeMillis() - p.lastAccessTime >= this.holdTimeoutMs) {//force close or hold timeout
+                        if (force || (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs)) {//force close or hold timeout
                             oclose(proxyInUsing);
                             if (ConStUpd.compareAndSet(p, CON_IDLE, CON_CLOSED))
                                 this.removePooledConn(p, source);
