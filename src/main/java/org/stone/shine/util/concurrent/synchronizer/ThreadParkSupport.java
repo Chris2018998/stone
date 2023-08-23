@@ -56,9 +56,9 @@ import static java.util.concurrent.locks.LockSupport.parkUntil;
  */
 
 public class ThreadParkSupport {
-    Object blockObject;
-    long deadlineTime;//time point(nanoseconds or milliseconds),value greater than 0,current is a time park
     long parkNanos;//value of last park time
+    long deadlineTime;//time point(nanoseconds or milliseconds),value greater than 0,current is a time park
+    Object blockObject;
 
     boolean hasTimeout;
     boolean interrupted;
