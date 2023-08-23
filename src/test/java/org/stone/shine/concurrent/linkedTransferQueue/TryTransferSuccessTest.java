@@ -10,10 +10,7 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * LinkedTransferQueue Test case
@@ -29,7 +26,7 @@ public class TryTransferSuccessTest extends BaseTestCase {
         mockThread.start();
 
         Object transferObj = new Object();
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos)) {
+        if (TestUtil.joinUtilWaiting(mockThread)) {
             TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.tryTransfer(transferObj));
         }
 

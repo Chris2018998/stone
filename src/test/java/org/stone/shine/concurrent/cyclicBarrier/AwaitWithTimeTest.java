@@ -11,11 +11,11 @@ package org.stone.shine.concurrent.cyclicBarrier;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.cyclicBarrier.threads.BarrierAwaitThread;
 import org.stone.shine.util.concurrent.CyclicBarrier;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * CyclicBarrier Test Case
@@ -36,7 +36,7 @@ public class AwaitWithTimeTest extends TestCase {
         BarrierAwaitThread waitThread = new BarrierAwaitThread(barrier, "await", Wait_Time, Wait_TimeUnit);
         waitThread.start();
 
-        if (ConcurrentTimeUtil.isInWaiting(waitThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(waitThread))
             barrier.await();
 
         //3:get timeout indicator from await thread

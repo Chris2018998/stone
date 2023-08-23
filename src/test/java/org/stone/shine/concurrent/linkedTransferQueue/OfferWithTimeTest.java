@@ -10,10 +10,10 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.OfferThread;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * LinkedTransferQueue Test case
@@ -36,7 +36,7 @@ public class OfferWithTimeTest extends BaseTestCase {
         mockThread.start();
 
         Object object2 = null;
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(mockThread))
             object2 = queue.poll();
 
         //2:park main thread

@@ -10,11 +10,12 @@
 package org.stone.shine.concurrent.countDownLatch;
 
 import org.stone.base.TestCase;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
+import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.countDownLatch.threads.ZeroCountWaitThread;
 import org.stone.shine.util.concurrent.CountDownLatch;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * CountDownLatch Test Case
@@ -36,7 +37,7 @@ public class AwaitWithTimeTest extends TestCase {
         waitThread.start();
 
         //2: detect wait thread
-        if (ConcurrentTimeUtil.isInWaiting(waitThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(waitThread))
             latch.countDown();
 
         //3:get timeout indicator from await thread

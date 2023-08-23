@@ -10,10 +10,7 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.TransferThread;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * LinkedTransferQueue Test case
@@ -38,7 +35,7 @@ public class TransferTest extends BaseTestCase {
 
         //2: detect wait thread
         Object transferObj2 = null;
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(mockThread))
             transferObj2 = queue.poll();
 
         mockThread.join();

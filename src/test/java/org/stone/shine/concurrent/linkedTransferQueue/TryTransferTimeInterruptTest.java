@@ -10,10 +10,10 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.TransferThread;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * LinkedTransferQueue Test case
@@ -29,7 +29,7 @@ public class TryTransferTimeInterruptTest extends BaseTestCase {
         TransferThread mockThread = new TransferThread(queue, "tryTransfer", transferObj, Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+        if (TestUtil.joinUtilWaiting(mockThread))
             mockThread.interrupt();
 
         mockThread.join();

@@ -10,10 +10,10 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
 
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.*;
+import static org.stone.base.TestUtil.Wait_Time;
+import static org.stone.base.TestUtil.Wait_TimeUnit;
 
 /**
  * LinkedTransferQueue Test case
@@ -30,7 +30,7 @@ public class PollWithTimeTest extends BaseTestCase {
         mockThread.start();
 
         //3:park main thread 1 seconds and check mock thread result
-        if (!ConcurrentTimeUtil.isInWaiting(mockThread, ParkNanos))
+        if (!TestUtil.joinUtilWaiting(mockThread))
             TestUtil.assertError("Test failed,put thread not in waiting");
 
         //4:poll object from queue

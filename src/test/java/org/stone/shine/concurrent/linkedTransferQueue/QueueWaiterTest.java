@@ -10,10 +10,7 @@
 package org.stone.shine.concurrent.linkedTransferQueue;
 
 import org.stone.base.TestUtil;
-import org.stone.shine.concurrent.ConcurrentTimeUtil;
 import org.stone.shine.concurrent.linkedTransferQueue.threads.PollThread;
-
-import static org.stone.shine.concurrent.ConcurrentTimeUtil.ParkNanos;
 
 /**
  * LinkedTransferQueue Test case
@@ -36,8 +33,8 @@ public class QueueWaiterTest extends BaseTestCase {
         PollThread mockThread2 = new PollThread(queue, "take");
         mockThread2.start();
 
-        ConcurrentTimeUtil.isInWaiting(mockThread1, ParkNanos);
-        ConcurrentTimeUtil.isInWaiting(mockThread2, ParkNanos);
+        TestUtil.joinUtilWaiting(mockThread1);
+        TestUtil.joinUtilWaiting(mockThread2);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.hasWaitingConsumer());
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", 2, queue.getWaitingConsumerCount());
         mockThread1.interrupt();
