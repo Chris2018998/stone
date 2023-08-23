@@ -289,7 +289,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setHoldTimeout(long holdTimeout) {
-        if (holdTimeout > 0) this.holdTimeout = holdTimeout;
+        this.holdTimeout = holdTimeout;
     }
 
     public String getValidTestSql() {
@@ -647,8 +647,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         //fix issue:#19 Chris-2020-08-16 end
         if (idleTimeout <= 0)
             throw new BeeDataSourceConfigException("idleTimeout must be greater than zero");
-        if (holdTimeout <= 0)
-            throw new BeeDataSourceConfigException("holdTimeout must be greater than zero");
+//        if (holdTimeout <= 0)
+//            throw new BeeDataSourceConfigException("holdTimeout must be greater than zero");
         if (maxWait <= 0)
             throw new BeeDataSourceConfigException("maxWait must be greater than zero");
         //fix issue:#1 The check of validationQuerySQL has logic problem. Chris-2019-05-01 begin
