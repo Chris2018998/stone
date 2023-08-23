@@ -30,7 +30,7 @@ public class InvokeAnyTimeoutTest extends TestCase {
         taskList.add(new ExceptionTask());
         taskList.add(new BlockTask());
         try {
-            service.invokeAny(taskList, 2, TimeUnit.SECONDS);
+            service.invokeAny(taskList, 100, TimeUnit.MILLISECONDS);
             TestUtil.assertError("Invoke any task timeout failed");
         } catch (TaskResultGetTimeoutException e) {
             //

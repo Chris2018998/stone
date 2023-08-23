@@ -21,17 +21,17 @@ public class InvokeAllTimeoutTest extends TestCase {
     public void test() throws Exception {
         BeeTaskServiceConfig config = new BeeTaskServiceConfig();
         config.setWorkInDaemon(true);
-        config.setMaxWorkerSize(2);
+        config.setMaxWorkerSize(1);
         BeeTaskService service = new BeeTaskService(config);
 
-        List<BeeTask> taskList = new ArrayList<>();
-        taskList.add(new HelloTask());
-        taskList.add(new HelloTask());
+        List<BeeTask> taskList = new ArrayList<>(3);
         taskList.add(new BlockTask());
+        taskList.add(new HelloTask());
+        taskList.add(new HelloTask());
 
         boolean existException = false;
-        List<BeeTaskHandle> handleList = service.invokeAll(taskList, 3, TimeUnit.SECONDS);
-        System.out.println("handleList:" + handleList);
+        List<BeeTaskHandle> handleList = service.invokeAll(taskList, 100, TimeUnit.MILLISECONDS);
+        //System.out.println("handleList:" + handleList);
 
         for (BeeTaskHandle handle : handleList) {
             if (handle.isCancelled() || handle.isCallException()) {

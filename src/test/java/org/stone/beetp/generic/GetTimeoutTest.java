@@ -34,7 +34,7 @@ public class GetTimeoutTest extends TestCase {
         BeeTaskHandle handle = service.submit(new BlockTask());//park worker thread
 
         try {
-            handle.get(2, TimeUnit.SECONDS);
+            handle.get(100, TimeUnit.MILLISECONDS);
             TestUtil.assertError("Time out test Failed");
         } catch (TaskResultGetTimeoutException e) {
             //
