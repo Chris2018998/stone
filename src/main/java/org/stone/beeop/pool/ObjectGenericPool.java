@@ -457,7 +457,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     this.tryWakeupServantThread();
                 }
             } else if (state == OBJECT_USING) {
-                if (System.currentTimeMillis() - p.lastAccessTime - this.holdTimeoutMs >= 0L) {//hold timeout
+                if (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
                         tryCloseObjectHandle(handleInUsing);
@@ -512,7 +512,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                 } else if (state == OBJECT_USING) {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
-                        if (forceCloseUsing || System.currentTimeMillis() - p.lastAccessTime - this.holdTimeoutMs >= 0L) {
+                        if (forceCloseUsing || (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L)) {
                             tryCloseObjectHandle(handleInUsing);
                             if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED))
                                 this.removePooledEntry(p, removeReason);
