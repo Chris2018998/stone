@@ -2,8 +2,8 @@ package org.stone.shine.concurrent.locks.reentrantReadWriteLock;
 
 import org.stone.base.TestUtil;
 
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-//import org.stone.shine.util.concurrent.locks.ReentrantReadWriteLock;
+//import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.stone.shine.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ReadWriteLockReleaseTest {
     private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -51,6 +51,8 @@ public class ReadWriteLockReleaseTest {
             readLock.lock();
             this.time = System.nanoTime();
             System.out.println("Has gotten readLock");
+            System.out.println("Read count:" + lock.getReadLockCount());
+            System.out.println("Concurrent hold Read count:" + lock.getReadHoldCount());
             readLock.unlock();
         }
     }

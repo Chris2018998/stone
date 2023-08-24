@@ -37,14 +37,16 @@ public class WriteLockToWriteLockTryLockWithTimeTest extends ReentrantReadWriteL
         mockThread.start();
 
         try {
-            if (TestUtil.joinUtilWaiting(mockThread))
+            if (TestUtil.joinUtilWaiting(mockThread)) {
                 writeLock.unlock();
+                lockByMock=true;
+            }
 
             //5: check writeLock state
-            LockSupport.parkNanos(Wait_Time);
+            mockThread.join();
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
             TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, TestUtil.invokeMethod(writeLock, "isLocked"));
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", 1, TestUtil.invokeMethod(writeLock, "getHoldCount"));
+            TestUtil.assertError("test failed,expect value:%s,actual value:%s", 0, TestUtil.invokeMethod(writeLock, "getHoldCount"));
             lockByMock = true;
         } finally {
             //6: unlock
