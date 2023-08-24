@@ -95,7 +95,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.allowInterruption = allowIndicator;
     }
 
-    public boolean isTryCallWhenSameTypeOfFirst() {
+    public final boolean isTryCallWhenSameTypeOfFirst() {
         return tryCallWhenSameTypeOfFirst;
     }
 
