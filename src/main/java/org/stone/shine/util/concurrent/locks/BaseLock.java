@@ -11,6 +11,7 @@ package org.stone.shine.util.concurrent.locks;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.base.ShareCallTester;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
@@ -87,7 +88,7 @@ class BaseLock implements Lock {
         config.allowInterruption(false);
         if (acquireType == TYPE_SHARED) {
             config.setPropagatedOnSuccess(true);
-            config.setTryCallWhenSameTypeOfFirst(true);
+            config.setCallTester(ShareCallTester.Tester);
         }
 
         try {
@@ -148,7 +149,7 @@ class BaseLock implements Lock {
         config.setNodeType(acquireType);
         if (acquireType == TYPE_SHARED) {
             config.setPropagatedOnSuccess(true);
-            config.setTryCallWhenSameTypeOfFirst(true);
+            config.setCallTester(ShareCallTester.Tester);
         }
 
         waitPool.acquire(lockAction, 1, config);
@@ -247,7 +248,7 @@ class BaseLock implements Lock {
         config.setNodeType(acquireType);
         if (acquireType == TYPE_SHARED) {
             config.setPropagatedOnSuccess(true);
-            config.setTryCallWhenSameTypeOfFirst(true);
+            config.setCallTester(ShareCallTester.Tester);
         }
 
         return waitPool.acquire(lockAction, 1, config);
@@ -357,8 +358,9 @@ class BaseLock implements Lock {
         return castConditionToLocal(condition).getWaitingThreads();
     }
 
+
     //****************************************************************************************************************//
-    //                                       6: Lock Condition Impl                                                  //                                                                                  //
+    //                                       6: Lock Condition Impl                                                   //                                                                                  //
     //****************************************************************************************************************//
     static class LockConditionImpl implements Condition {
         private final BaseLock lock;

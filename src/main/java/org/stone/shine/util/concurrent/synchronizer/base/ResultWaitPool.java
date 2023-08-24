@@ -17,7 +17,6 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
-import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * Result-WaitPool,get a result from pool(execute result call object)
@@ -28,7 +27,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
 public final class ResultWaitPool extends ThreadWaitingPool {
     //true,use fair mode
     private final boolean fair;
-    //result validator(equals validator is default)
+    //result validator(bool validator is default)
     private final ResultValidator validator;
 
     //****************************************************************************************************************//
@@ -80,8 +79,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:test before call
-        SyncNode firstNode = this.firstNode();
-        if (firstNode == null || !fair && config.isTryCallWhenSameTypeOfFirst() && objectEquals(config.getNodeType(), firstNode.getType())) {
+        if (config.getCallTester().canCall(fair, this.firstNode(), config)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;

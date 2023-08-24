@@ -9,6 +9,8 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
+import org.stone.shine.util.concurrent.synchronizer.base.ResultCallTest;
+
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -40,8 +42,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private boolean propagatedOnSuccess;
     //indicator:true,throws InterruptedException when waiting interrupted
     private boolean allowInterruption = true;
-    //execute call when first node type equals caller(only using it in ResultWaitPool)
-    private boolean tryCallWhenSameTypeOfFirst;
+    //call tester
+    private ResultCallTest callTester = ResultCallTest.Tester;
 
     //****************************************************************************************************************//
     //                                              1:constructors(3)                                                 //
@@ -95,12 +97,12 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.allowInterruption = allowIndicator;
     }
 
-    public final boolean isTryCallWhenSameTypeOfFirst() {
-        return tryCallWhenSameTypeOfFirst;
+    public ResultCallTest getCallTester() {
+        return callTester;
     }
 
-    public void setTryCallWhenSameTypeOfFirst(boolean tryCallWhenSameTypeOfFirst) {
-        this.tryCallWhenSameTypeOfFirst = tryCallWhenSameTypeOfFirst;
+    public void setCallTester(ResultCallTest callTester) {
+        this.callTester = callTester;
     }
 
     public boolean isPropagatedOnSuccess() {
