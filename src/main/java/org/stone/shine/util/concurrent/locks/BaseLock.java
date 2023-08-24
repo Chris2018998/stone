@@ -11,7 +11,7 @@ package org.stone.shine.util.concurrent.locks;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.base.ShareCallTester;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitTester;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
@@ -88,7 +88,7 @@ class BaseLock implements Lock {
         config.allowInterruption(false);
         if (acquireType == TYPE_SHARED) {
             config.setPropagatedOnSuccess(true);
-            config.setCallTester(ShareCallTester.Tester);
+            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
         }
 
         try {
@@ -149,7 +149,7 @@ class BaseLock implements Lock {
         config.setNodeType(acquireType);
         if (acquireType == TYPE_SHARED) {
             config.setPropagatedOnSuccess(true);
-            config.setCallTester(ShareCallTester.Tester);
+            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
         }
 
         waitPool.acquire(lockAction, 1, config);
@@ -248,7 +248,7 @@ class BaseLock implements Lock {
         config.setNodeType(acquireType);
         if (acquireType == TYPE_SHARED) {
             config.setPropagatedOnSuccess(true);
-            config.setCallTester(ShareCallTester.Tester);
+            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
         }
 
         return waitPool.acquire(lockAction, 1, config);
