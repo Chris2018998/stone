@@ -9,8 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import org.stone.shine.util.concurrent.synchronizer.base.ResultCallTest;
-
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -42,8 +40,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     private boolean propagatedOnSuccess;
     //indicator:true,throws InterruptedException when waiting interrupted
     private boolean allowInterruption = true;
-    //call tester
-    private ResultCallTest callTester = ResultCallTest.Tester;
+    //visit tester
+    private SyncVisitTester visitTester = SyncVisitTester.COMMON_VISIT_TESTER;
 
     //****************************************************************************************************************//
     //                                              1:constructors(3)                                                 //
@@ -97,12 +95,12 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.allowInterruption = allowIndicator;
     }
 
-    public ResultCallTest getCallTester() {
-        return callTester;
+    public SyncVisitTester getVisitTester() {
+        return visitTester;
     }
 
-    public void setCallTester(ResultCallTest callTester) {
-        this.callTester = callTester;
+    public void setVisitTester(SyncVisitTester visitTester) {
+        this.visitTester = visitTester;
     }
 
     public boolean isPropagatedOnSuccess() {
