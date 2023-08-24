@@ -39,7 +39,7 @@ public final class ReentrantLock extends BaseLock {
         }
 
         public final int getHoldCount() {
-            return lockState.getState();
+            return lockState.getExclusiveOwnerThread() == Thread.currentThread() ? lockState.getState() : 0;
         }
 
         public final Object call(Object size) {

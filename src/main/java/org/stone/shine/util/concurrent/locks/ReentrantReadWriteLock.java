@@ -49,7 +49,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     public ReentrantReadWriteLock(boolean fair) {
         this.lockState = new LockAtomicState();
         this.waitPool = new ResourceWaitPool(fair);
-        this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState, waitPool));
+        this.writerLock = new WriteLock(waitPool, new WriteLockAction(lockState));
         this.readerLock = new ReadLock(waitPool, new ReadLockAction(lockState, waitPool));
     }
 
@@ -113,7 +113,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public int getReadLockCount() {
-        return readerLock.getHoldCount();
+        return sharedCount(lockState.getState());
+    }
+
+    public int getWriteLockCount() {
+        return exclusiveCount(lockState.getState());
     }
 
     public boolean isWriteLocked() {
@@ -121,7 +125,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public boolean isWriteLockedByCurrentThread() {
-        return writerLock.isLocked() && writerLock.getOwner() == Thread.currentThread();
+        return writerLock.getOwner() == Thread.currentThread();
     }
 
     public int getWriteHoldCount() {
@@ -185,7 +189,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public int getHoldCount() {
-            return exclusiveCount(getLockAtomicState());
+            return lockAction.getHoldCount();
         }
     }
 
@@ -195,7 +199,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public int getHoldCount() {
-            return sharedCount(getLockAtomicState());
+            return lockAction.getHoldCount();
         }
 
         public Condition newCondition() {
@@ -207,15 +211,12 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //                                       5: Write Lock Action Impl                                                //
     //****************************************************************************************************************//
     private static class WriteLockAction extends LockAction {
-        private final ResourceWaitPool waitPool;
-
-        WriteLockAction(LockAtomicState lockState, ResourceWaitPool waitPool) {
+        WriteLockAction(LockAtomicState lockState) {
             super(lockState);
-            this.waitPool = waitPool;
         }
 
         public int getHoldCount() {
-            return exclusiveCount(lockState.getState());
+            return lockState.getExclusiveOwnerThread() == Thread.currentThread() ? exclusiveCount(lockState.getState()) : 0;
         }
 
         public Object call(Object size) {
@@ -273,7 +274,8 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public int getHoldCount() {
-            return sharedCount(lockState.getState());
+            SharedHoldCounter counter = sharedHoldThreadLocal.get();
+            return counter != null ? counter.holdCount : 0;
         }
 
         public Object call(Object size) {

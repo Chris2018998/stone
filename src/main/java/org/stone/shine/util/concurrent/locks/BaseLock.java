@@ -31,10 +31,10 @@ import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.T
  */
 
 class BaseLock implements Lock {
+    //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
+    protected final LockAction lockAction;
     //resource acquire type
     private final Object acquireType;
-    //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
-    private final LockAction lockAction;
     //resource wait Pool
     private final ResourceWaitPool waitPool;
     //Lock State
@@ -299,8 +299,12 @@ class BaseLock implements Lock {
         return lockState.getState() != 0;
     }
 
-    public int getHoldCount() {
+    public int getLockCount() {
         return lockState.getState();
+    }
+
+    public int getHoldCount() {
+        return lockAction.getHoldCount();
     }
 
     protected Thread getOwner() {
