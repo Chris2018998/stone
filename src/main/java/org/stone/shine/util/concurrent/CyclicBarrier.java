@@ -11,9 +11,9 @@ package org.stone.shine.util.concurrent;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitTester;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.base.ShareCallTester;
 
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.TimeUnit;
@@ -101,7 +101,7 @@ public final class CyclicBarrier {
         try {
             SyncVisitConfig config = new SyncVisitConfig();
             config.setPropagatedOnSuccess(true);
-            config.setCallTester(ShareCallTester.Tester);
+            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
             return doAwait(config);
         } catch (TimeoutException e) {
             throw new Error(e);
@@ -111,7 +111,7 @@ public final class CyclicBarrier {
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
         SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
         config.setPropagatedOnSuccess(true);
-        config.setCallTester(ShareCallTester.Tester);
+        config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
         return doAwait(config);
     }
 
