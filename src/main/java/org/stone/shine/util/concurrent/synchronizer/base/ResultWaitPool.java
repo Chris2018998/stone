@@ -14,12 +14,10 @@ import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
-import org.stone.tools.CommonUtil;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
+import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * Result-WaitPool,get a result from pool(execute result call object)
@@ -82,38 +80,27 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:test before call
-        boolean tryCallInd = false;
         SyncNode firstNode = this.firstNode();
-        if (fair) {
-            tryCallInd = firstNode == null;
-        } else if (firstNode == null) {
-            tryCallInd = true;
-        } else if (config.isTryCallWhenSameTypeOfFirst()) {//avoid write lock starvation
-            tryCallInd = CommonUtil.objectEquals(config.getNodeType(), firstNode.getType());
-        }
-
-        //3:execute call
-        if (tryCallInd) {
+        if (firstNode == null || !fair && config.isTryCallWhenSameTypeOfFirst() && objectEquals(config.getNodeType(), firstNode.getType())) {
             Object result = call.call(arg);
-            if (validator.isExpected(result)) return result;
+            if (validator.isExpected(result))
+                return result;
         }
 
-        //4:offer to wait queue
+        //3:offer to wait queue
         int spins = 0;//spin count
         boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node)) {//init state must be null
+        if (isAtFirst = appendAsWaitNode(node)) //init state must be null
             spins = maxTimedSpins;
-            //casState(node, null, RUNNING);
-        }
 
-        //5:get control parameters from config
+        //4:get control parameters from config
         boolean success = false;
         ThreadParkSupport parkSupport = config.getParkSupport();
-        //6:spin control（Logic from BeeCP）
+        //5:spin control（Logic from BeeCP）
         try {
             do {
-                //6.1: execute call(got a signal or at first of wait queue)
+                //5.1: execute call(got a signal or at first of wait queue)
                 if (isAtFirst || (isAtFirst = atFirst(node))) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
@@ -122,21 +109,17 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     }
                 }
 
-                //6.2: fail check
-                Object state = node.getState();
-                if (parkSupport.isTimeout()) {
-                    if (state != null || casState(node, null, REMOVED))
-                        return validator.resultOnTimeout();
-                } else if (parkSupport.isInterrupted() && config.isAllowInterruption()) {
-                    if (state != null || casState(node, null, REMOVED))
-                        throw new InterruptedException();
-                } else if (state != null) {//5.3: reset state to null for next spin
+                //5.2: fail check
+                if (parkSupport.isTimeout())
+                    return validator.resultOnTimeout();
+                if (parkSupport.isInterrupted() && config.isAllowInterruption())
+                    throw new InterruptedException();
+                if (node.getState() != null)
                     node.setState(null);
-                } else if (spins > 0) {//5.4: decr spin count
+                if (spins > 0) //5.4: decr spin count
                     --spins;
-                } else {//5.5: try to park
+                else //5.5: try to park
                     parkSupport.tryToPark();
-                }
             } while (true);
         } finally {
             removeNode(node);
