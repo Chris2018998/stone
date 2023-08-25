@@ -41,7 +41,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //indicator:true,throws InterruptedException when waiting interrupted
     private boolean allowInterruption = true;
     //visit tester
-    private SyncVisitTester visitTester = SyncVisitTester.COMMON_VISIT_TESTER;
+    private SyncVisitTester visitTester = SyncVisitTester.BASE_VISIT_TESTER;
 
     //****************************************************************************************************************//
     //                                              1:constructors(3)                                                 //
