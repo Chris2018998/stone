@@ -73,23 +73,23 @@ public abstract class ThreadWaitingPool {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
                 Object state = qNode.getState();
-                if (state != REMOVED) {
-                    if (casState(qNode, null, toState))
-                        LockSupport.unpark(qNode.thread);
-                    return qNode;
-                }
+                if (state == REMOVED) continue;
+                if (casState(qNode, null, toState))
+                    LockSupport.unpark(qNode.thread);
+                return qNode;
+
             }
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
                 Object state = qNode.getState();
-                if (state != REMOVED) {
-                    if (!CommonUtil.objectEquals(nodeType, qNode.type))
-                        return qNode;
-                    if (casState(qNode, null, toState))
-                        LockSupport.unpark(qNode.thread);
+                if (state == REMOVED) continue;
+                if (!CommonUtil.objectEquals(nodeType, qNode.type))
                     return qNode;
-                }
+                if (casState(qNode, null, toState))
+                    LockSupport.unpark(qNode.thread);
+                return qNode;
+
             }
         }
         //3: not found matched node
