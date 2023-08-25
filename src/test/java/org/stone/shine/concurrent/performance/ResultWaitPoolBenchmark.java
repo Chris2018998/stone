@@ -41,7 +41,7 @@ public class ResultWaitPoolBenchmark {
                 //do nothing
             } finally {
                 if (call.incr() > 5) System.out.println("Atomic Int is greater than 5");
-                pool.wakeupOne(true, null, RUNNING);
+                pool.wakeupFirst(true, null, RUNNING);
             }
         }
     }
