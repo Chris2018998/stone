@@ -15,8 +15,7 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERRUPTED;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
@@ -63,8 +62,11 @@ public final class StateWaitPool extends ThreadWaitingPool {
             throw new IllegalArgumentException("Illegal argument,please check(validator,syncConfig)");
 
         //2:offer to wait queue
+        int spins = 0;//spin count
+        boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
+        if (isAtFirst = appendAsWaitNode(node)) //init state must be null
+            spins = maxTimedSpins;
 
         //3:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
@@ -79,9 +81,9 @@ public final class StateWaitPool extends ThreadWaitingPool {
 
                 //4.3: fail check
                 if (parkSupport.isTimeout()) {
-                    if (casState(node, state, TIMEOUT)) return validator.resultOnTimeout();
+                    if (casState(node, state, REMOVED)) return validator.resultOnTimeout();
                 } else if (parkSupport.isInterrupted() && config.isAllowInterruption()) {
-                    if (casState(node, state, INTERRUPTED)) throw new InterruptedException();
+                    if (casState(node, state, REMOVED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
                 } else if (spins > 0) {
@@ -91,7 +93,7 @@ public final class StateWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            removeNode(node);
+            removeNode(isAtFirst, node);
         }
     }
 }

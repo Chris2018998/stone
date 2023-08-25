@@ -63,7 +63,7 @@ public final class ResourceWaitPool {
     }
 
     public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
-        return callPool.wakeupOne(fromHead, nodeType, toState);
+        return callPool.wakeupFirst(fromHead, nodeType, toState);
     }
 
     //****************************************************************************************************************//
@@ -89,7 +89,7 @@ public final class ResourceWaitPool {
     //release
     public final boolean release(ResourceAction action, int size) {
         if (action.tryRelease(size)) {
-            callPool.wakeupOne(true, null, RUNNING);
+            callPool.wakeupFirst(true, null, RUNNING);
             return true;
         }
         return false;

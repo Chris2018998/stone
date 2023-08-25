@@ -15,11 +15,21 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Result-WaitPool,get a result from pool(execute result call object)
+ * Result Wait Pool, Outside caller to call pool's get method to take an object(execute ResultCall),
+ * if not expected, then wait in pool util being wake-up by other or timeout or interrupted, and leave from pool.
+ * Some Key points about pool are below
+ * 1) Assume that exists a running permit,who get it who run.
+ * 2) The permit can be transferred among with these waiters
+ * 3) If a Waiter is at head of the wait queue, it will get the  permit automatically
+ * 4) When waiters leave from pool,they should check whether get the permit(transferred),maybe transfer it to other
+ * 4.1) If failure in pool(timeout or interrupted), need transfer it to next waiter.
+ * 4.2) if success and indicator of pro is true,need transfer to next
  *
  * @author Chris Liao
  * @version 1.0
@@ -79,7 +89,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:test before call
-        if (config.getCallTester().canCall(fair, this.firstNode(), config)) {
+        if (config.getVisitTester().test(fair, firstNode(), config)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
@@ -120,13 +130,19 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     parkSupport.tryToPark();
             } while (true);
         } finally {
-            removeNode(node);
-            if (success) {
-                if (config.isPropagatedOnSuccess())
-                    this.wakeupOne(true, node.getType(), RUNNING);//wakeup same type
+            boolean wakeup = false;
+            Object wakeupType = null;
+            if (success) { //must hold a running permit,but need propagate it other?
+                if (config.isPropagatedOnSuccess()) {
+                    wakeup = true;
+                    wakeupType = node.getType();
+                }
             } else {
-                this.wakeupOne(true, null, RUNNING);//any type node
+                wakeup = node.getState() != null || !casState(node, null, REMOVED);
             }
+
+            this.removeNode(isAtFirst, node);//remove from queue of pool
+            if (wakeup) this.wakeupFirst(true, wakeupType, RUNNING);//any type node
         }
     }
 }

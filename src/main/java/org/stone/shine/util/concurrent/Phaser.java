@@ -121,7 +121,7 @@ public class Phaser {
                 if (curPhase.isAllArrived()) {//all parties arrived,then wakeup all waiters in pool
                     int newPhaseNo = phaseNo + 1;
                     this.phase = new GamePhase(newPhaseNo, targetNumber, this);//create a new phase
-                    this.waitPool.wakeupOne(true, phaseNo, RUNNING);
+                    this.waitPool.wakeupFirst(true, phaseNo, RUNNING);
 
                     //a new phase has generated
                     this.onAdvance(newPhaseNo, targetNumber);
@@ -202,7 +202,7 @@ public class Phaser {
     public void forceTermination() {
         GamePhase currentPhase = phase;
         if (currentPhase != TerminatedPhase && PhaseUpd.compareAndSet(this, currentPhase, TerminatedPhase)) {
-            this.waitPool.wakeupOne(true, null, RUNNING);//wakeup all waiters in pool to end waiting
+            this.waitPool.wakeupFirst(true, null, RUNNING);//wakeup all waiters in pool to end waiting
         }
     }
 

@@ -17,7 +17,7 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import java.util.Iterator;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERRUPTED;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.TIMEOUT;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
@@ -77,7 +77,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
     //****************************************************************************************************************//
     public final SyncNode tryTransfer(SyncNode node, Object toNodeType) {
         if (node == null) throw new IllegalArgumentException("Node can't be null");
-        return this.wakeupOne(fair, toNodeType, node);
+        return this.transferOne(fair, toNodeType, node);
     }
 
     public final SyncNode transfer(SyncVisitConfig config, Object toNodeType) throws InterruptedException {
@@ -124,18 +124,14 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
             do {
                 //3.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
-                if (state != null) {//wokenUp
-                    if (state == TIMEOUT) return null;
-                    if (state == INTERRUPTED) throw new InterruptedException();
-                    if (state instanceof SyncNode)
-                        return (SyncNode) state;
-                }
+                if (state != null && state instanceof SyncNode) //wokenUp
+                    return (SyncNode) state;
 
                 //3.3: fail check
                 if (parkSupport.isTimeout()) {
-                    casState(node, null, TIMEOUT);
+                    if (casState(node, null, REMOVED)) return null;
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
-                    casState(node, null, INTERRUPTED);
+                    if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
                 } else if (spins > 0) {
@@ -145,7 +141,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            super.removeNode(node);
+            super.removeNode(false, node);
         }
     }
 
