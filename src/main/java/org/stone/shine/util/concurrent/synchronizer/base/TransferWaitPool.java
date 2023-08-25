@@ -16,7 +16,6 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 
 import java.util.Iterator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.INTERRUPTED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
@@ -131,7 +130,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
                 if (parkSupport.isTimeout()) {
                     if (casState(node, null, REMOVED)) return null;
                 } else if (parkSupport.isInterrupted() && allowInterrupted) {
-                    if (casState(node, null, INTERRUPTED)) throw new InterruptedException();
+                    if (casState(node, null, REMOVED)) throw new InterruptedException();
                 } else if (state != null) {
                     node.setState(null);
                 } else if (spins > 0) {
