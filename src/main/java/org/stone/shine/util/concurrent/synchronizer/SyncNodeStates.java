@@ -20,12 +20,6 @@ public final class SyncNodeStates {
     //RUNNING
     public static final Object RUNNING = new Object();
 
-    //timeout
-    public static final Object TIMEOUT = new Object();
-
-    //interruption
-    public static final Object INTERRUPTED = new Object();
-
     //node has removed from chain
     public static final Object REMOVED = new Object();
 
