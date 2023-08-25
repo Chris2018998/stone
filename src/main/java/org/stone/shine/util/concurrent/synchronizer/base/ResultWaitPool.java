@@ -91,10 +91,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         int spins = 0;//spin count
         boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node)) { //init state must be null
+        if (isAtFirst = appendAsWaitNode(node))  //self-in
             spins = maxTimedSpins;
-            node.setState(RUNNING);
-        }
 
         //4:get control parameters from config
         boolean success = false;
@@ -116,20 +114,21 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     return validator.resultOnTimeout();
                 if (parkSupport.isInterrupted() && config.isAllowInterruption())
                     throw new InterruptedException();
-                if (node.getState() != null)
-                    node.setState(null);
+
                 if (spins > 0) //5.4: decr spin count
                     --spins;
-                else //5.5: try to park
+                else { //5.5: try to park
+                    if (node.getState() != null) node.setState(null);
                     parkSupport.tryToPark();
+                }
             } while (true);
         } finally {
-            this.removeNode(isAtFirst, node);//remove from queue of pool
+            this.removeNode(isAtFirst, node);//self-out
             if (success) {
                 if (config.isPropagatedOnSuccess())
-                    this.wakeupFirst(true, node.getType(), RUNNING);//any type node
+                    this.wakeupFirst(true, node.getType(), RUNNING);//same type
             } else {
-                this.wakeupFirst(true, null, RUNNING);//any type node
+                this.wakeupFirst(true, null, RUNNING);//any type
             }
         }
     }
