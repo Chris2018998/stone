@@ -15,21 +15,13 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
  * Result Wait Pool, Outside caller to call pool's get method to take an object(execute ResultCall),
- * if not expected, then wait in pool util being wake-up by other or timeout or interrupted, and leave from pool.
+ * if not expected,then wait in pool util being wake-up by other or timeout or interrupted, and leave from pool.
  * Some Key points about pool are below
- * 1) Assume that exists a running permit,who get it who run.
- * 2) The permit can be transferred among with these waiters
- * 3) If a Waiter is at head of the wait queue, it will get the  permit automatically
- * 4) When waiters leave from pool,they should check whether get the permit(transferred),maybe transfer it to other
- * 4.1) If failure in pool(timeout or interrupted), need transfer it to next waiter.
- * 4.2) if success and indicator of pro is true,need transfer to next
  *
  * @author Chris Liao
  * @version 1.0
@@ -99,8 +91,10 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         int spins = 0;//spin count
         boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node)) //init state must be null
+        if (isAtFirst = appendAsWaitNode(node)) { //init state must be null
             spins = maxTimedSpins;
+            node.setState(RUNNING);
+        }
 
         //4:get control parameters from config
         boolean success = false;
@@ -130,19 +124,13 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     parkSupport.tryToPark();
             } while (true);
         } finally {
-            boolean wakeup = false;
-            Object wakeupType = null;
-            if (success) { //must hold a running permit,but need propagate it other?
-                if (config.isPropagatedOnSuccess()) {
-                    wakeup = true;
-                    wakeupType = node.getType();
-                }
-            } else {
-                wakeup = node.getState() != null || !casState(node, null, REMOVED);
-            }
-
             this.removeNode(isAtFirst, node);//remove from queue of pool
-            if (wakeup) this.wakeupFirst(true, wakeupType, RUNNING);//any type node
+            if (success) {
+                if (config.isPropagatedOnSuccess())
+                    this.wakeupFirst(true, node.getType(), RUNNING);//any type node
+            } else {
+                this.wakeupFirst(true, null, RUNNING);//any type node
+            }
         }
     }
 }
