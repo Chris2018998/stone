@@ -19,7 +19,7 @@ import org.stone.tools.CommonUtil;
  */
 
 public class SyncVisitTester {
-    public static final SyncVisitTester COMMON_VISIT_TESTER = new SyncVisitTester();
+    public static final SyncVisitTester BASE_VISIT_TESTER = new SyncVisitTester();
 
     public static final SyncVisitTester SHARE_VISIT_TESTER = new ShareVisitTester();
 
