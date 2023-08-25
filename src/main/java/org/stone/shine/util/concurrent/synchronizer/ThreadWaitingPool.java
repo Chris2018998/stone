@@ -63,37 +63,31 @@ public abstract class ThreadWaitingPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: wakeup(2)                                                          //
+    //                                          2: wakeup(3)                                                          //
     //****************************************************************************************************************//
-    public final SyncNode wakeupFirst(boolean fromHead, Object nodeType, Object toState) {
-        Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
+    public final void wakeupFirst(Object nodeType, Object toState) {
+        Iterator<SyncNode> iterator = waitChain.iterator();
 
         //2: retrieve type matched node and unpark its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                Object state = qNode.getState();
-                if (state == REMOVED) continue;
+                if (qNode.getState() == REMOVED) continue;
                 if (casState(qNode, null, toState))
                     LockSupport.unpark(qNode.thread);
-                return qNode;
-
+                return;
             }
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                Object state = qNode.getState();
-                if (state == REMOVED) continue;
+                if (qNode.getState() == REMOVED) continue;
                 if (!CommonUtil.objectEquals(nodeType, qNode.type))
-                    return qNode;
+                    return;
                 if (casState(qNode, null, toState))
                     LockSupport.unpark(qNode.thread);
-                return qNode;
-
+                return;
             }
         }
-        //3: not found matched node
-        return null;
     }
 
     public final SyncNode transferOne(boolean fromHead, Object nodeType, Object toState) {
@@ -122,7 +116,7 @@ public abstract class ThreadWaitingPool {
     }
 
 
-    public final void wakeupAll(boolean fromHead, Object nodeType, Object toState) {
+    public final void transferAll(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread

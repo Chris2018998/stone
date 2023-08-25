@@ -448,12 +448,12 @@ class BaseLock implements Lock {
         /******************************************** signal begin ****************************************************/
         public void signal() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            signalPool.wakeupFirst(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
+            signalPool.transferOne(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
             if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
-            signalPool.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
+            signalPool.transferAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
     }
 }

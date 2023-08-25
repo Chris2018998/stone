@@ -137,7 +137,7 @@ public final class CyclicBarrier {
                     //4: set the flight state to flying via cas
                     if (!currentFlight.compareAndSetState(State_Open, State_Flying)) throw new BrokenBarrierException();
                     //5: wakeup other room passengers(exit waiting)
-                    waitPool.wakeupFirst(true, curFlightNo, SyncNodeStates.RUNNING);
+                    waitPool.wakeupFirst(curFlightNo, SyncNodeStates.RUNNING);
 
                     //6: if exists a trip action,execute it
                     tripCount++;
@@ -156,7 +156,7 @@ public final class CyclicBarrier {
                     this.flight = new GenerationFlight(seatSize);
 
                     //9: wakeup hall passengers to buy ticket of the new flight
-                    waitPool.wakeupFirst(true, null, SyncNodeStates.RUNNING);
+                    waitPool.wakeupFirst(null, SyncNodeStates.RUNNING);
 
                     //10: return the seat-No of the passenger)
                     return seatNo;
@@ -174,7 +174,7 @@ public final class CyclicBarrier {
                     //remark flight to be in cancelled state,notify all passengers to abandon
                     //current flight(include room and hall)
                     if (currentFlight.compareAndSetState(state, State_Cancelled))
-                        waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
+                        waitPool.transferAll(true, null, SyncNodeStates.RUNNING);
                 }
 
                 if (e instanceof TimeoutException) throw (TimeoutException) e;
@@ -201,7 +201,7 @@ public final class CyclicBarrier {
         } else if (state == State_Open) {//reset boarding to new
             if (currentFlight.compareAndSetState(State_Open, State_Cancelled)) {
                 this.flight = new GenerationFlight(seatSize);
-                waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
+                waitPool.transferAll(true, null, SyncNodeStates.RUNNING);
                 return true;
             } else {
                 return false;

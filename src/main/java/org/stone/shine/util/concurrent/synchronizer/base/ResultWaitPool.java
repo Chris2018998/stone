@@ -126,9 +126,9 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             this.removeNode(isAtFirst, node);//self-out
             if (success) {
                 if (config.isPropagatedOnSuccess())
-                    this.wakeupFirst(true, node.getType(), RUNNING);//same type
+                    this.wakeupFirst(node.getType(), RUNNING);//same type
             } else {
-                this.wakeupFirst(true, null, RUNNING);//any type
+                this.wakeupFirst(null, RUNNING);//any type
             }
         }
     }
