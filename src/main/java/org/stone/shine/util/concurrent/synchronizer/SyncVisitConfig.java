@@ -100,7 +100,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     }
 
     public void setVisitTester(SyncVisitTester visitTester) {
-        this.visitTester = visitTester;
+        if (visitTester != null) this.visitTester = visitTester;
     }
 
     public boolean isPropagatedOnSuccess() {
