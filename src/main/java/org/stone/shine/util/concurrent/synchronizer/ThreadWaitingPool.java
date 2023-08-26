@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
@@ -62,27 +63,33 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     //                                          2: wakeup(3)                                                          //
     //****************************************************************************************************************//
-    public final void wakeupFirst(Object nodeType, Object toState) {//use in result wait pool
+    public final void wakeupFirst(Object nodeType) {//use in result wait pool
         Iterator<SyncNode> iterator = waitChain.iterator();
 
         //find a valid node as first
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode first = iterator.next();//assume it is first node
-                if (first.getState() == REMOVED) continue;
-                if (casState(first, null, toState))
-                    LockSupport.unpark(first.thread);
-                return;
+                SyncNode first = iterator.next();//assume it is first valid node
+                if (first.getState() == REMOVED) {
+                    iterator.remove();
+                } else {
+                    if (casState(first, null, RUNNING))
+                        LockSupport.unpark(first.thread);
+                    return;
+                }
             }
         } else {
             while (iterator.hasNext()) {
-                SyncNode first = iterator.next();//assume it is first node
-                if (first.getState() == REMOVED) continue;
-                if (!CommonUtil.objectEquals(nodeType, first.type))
+                SyncNode first = iterator.next();//assume it is first valid node
+                if (first.getState() == REMOVED) {
+                    iterator.remove();
+                } else {
+                    if (!CommonUtil.objectEquals(nodeType, first.type))
+                        return;
+                    if (casState(first, null, RUNNING))
+                        LockSupport.unpark(first.thread);
                     return;
-                if (casState(first, null, toState))
-                    LockSupport.unpark(first.thread);
-                return;
+                }
             }
         }
     }

@@ -137,7 +137,7 @@ public final class CyclicBarrier {
                     //4: set the flight state to flying via cas
                     if (!currentFlight.compareAndSetState(State_Open, State_Flying)) throw new BrokenBarrierException();
                     //5: wakeup other room passengers(exit waiting)
-                    waitPool.wakeupFirst(curFlightNo, SyncNodeStates.RUNNING);
+                    waitPool.wakeupFirst(curFlightNo);
 
                     //6: if exists a trip action,execute it
                     tripCount++;
@@ -156,7 +156,7 @@ public final class CyclicBarrier {
                     this.flight = new GenerationFlight(seatSize);
 
                     //9: wakeup hall passengers to buy ticket of the new flight
-                    waitPool.wakeupFirst(null, SyncNodeStates.RUNNING);
+                    waitPool.wakeupFirst(null);
 
                     //10: return the seat-No of the passenger)
                     return seatNo;

@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
@@ -80,7 +79,7 @@ public final class CountDownLatch implements ResultCall {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) waitPool.wakeupFirst(null, SyncNodeStates.RUNNING);
+                if (c == 1) waitPool.wakeupFirst(null);
                 return;
             }
         } while (true);

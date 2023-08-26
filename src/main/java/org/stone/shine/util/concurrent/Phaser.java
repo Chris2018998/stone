@@ -20,8 +20,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-
 /**
  * Phaser,a synchronization impl by wait pool
  *
@@ -121,7 +119,7 @@ public class Phaser {
                 if (curPhase.isAllArrived()) {//all parties arrived,then wakeup all waiters in pool
                     int newPhaseNo = phaseNo + 1;
                     this.phase = new GamePhase(newPhaseNo, targetNumber, this);//create a new phase
-                    this.waitPool.wakeupFirst(phaseNo, RUNNING);
+                    this.waitPool.wakeupFirst(phaseNo);
 
                     //a new phase has generated
                     this.onAdvance(newPhaseNo, targetNumber);
@@ -202,7 +200,7 @@ public class Phaser {
     public void forceTermination() {
         GamePhase currentPhase = phase;
         if (currentPhase != TerminatedPhase && PhaseUpd.compareAndSet(this, currentPhase, TerminatedPhase)) {
-            this.waitPool.wakeupFirst(null, RUNNING);//wakeup all waiters in pool to end waiting
+            this.waitPool.wakeupFirst(null);//wakeup all waiters in pool to end waiting
         }
     }
 

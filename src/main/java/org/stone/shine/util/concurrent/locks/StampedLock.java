@@ -21,7 +21,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
@@ -211,7 +210,7 @@ public class StampedLock implements java.io.Serializable {
         if (inStampLow == curStampLow && (curStampLow & 1) == READ_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                if (highInt(newStamp) == 0) callWaitPool.wakeupFirst(null, RUNNING);
+                if (highInt(newStamp) == 0) callWaitPool.wakeupFirst(null);
                 return true;
             }
         }
@@ -276,7 +275,7 @@ public class StampedLock implements java.io.Serializable {
         if (inStampLow == curStampLow && (curStampLow & 1) == WRITE_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                callWaitPool.wakeupFirst(null, RUNNING);
+                callWaitPool.wakeupFirst(null);
                 return true;
             }
         }
@@ -311,7 +310,7 @@ public class StampedLock implements java.io.Serializable {
             if ((l & 1) == WRITE_LOCK_FLAG) { //read lock
                 long newStamp = contact(h, l + 1);
                 if (compareAndSetLockStamp(this, currentStamp, newStamp)) {//new read lock
-                    this.callWaitPool.wakeupFirst(TYPE_SHARED, RUNNING);//wakeup other share node
+                    this.callWaitPool.wakeupFirst(TYPE_SHARED);//wakeup other share node
                     return newStamp;
                 } else {
                     return acquireFailedStamp;

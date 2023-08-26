@@ -15,7 +15,7 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
@@ -91,7 +91,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         int spins = 0;//spin count
         boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node))//self-in
+        if (isAtFirst = appendAsWaitNode(node)) //self-in
             spins = maxTimedSpins;
 
         //4:get control parameters from config
@@ -101,7 +101,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         try {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
-                if (isAtFirst || (isAtFirst = atFirst(node)) || node.getState() != null) {
+                if (isAtFirst || (isAtFirst = atFirst(node))) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
@@ -124,12 +124,13 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            this.removeNode(node);//self-out
+            node.setState(REMOVED);
+            removeNode(node);//self-out(state may be in REMOVED)
             if (success) {
                 if (config.isPropagatedOnSuccess())
-                    this.wakeupFirst(node.getType(), RUNNING);//same type
+                    wakeupFirst(node.getType());//same type
             } else {
-                this.wakeupFirst(null, RUNNING);//any type
+                wakeupFirst(null);//any type
             }
         }
     }

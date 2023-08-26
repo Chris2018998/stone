@@ -15,8 +15,6 @@ import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-
 /**
  * resource wait pool
  *
@@ -89,7 +87,7 @@ public final class ResourceWaitPool {
     //release
     public final boolean release(ResourceAction action, int size) {
         if (action.tryRelease(size)) {
-            callPool.wakeupFirst(null, RUNNING);
+            callPool.wakeupFirst(null);
             return true;
         }
         return false;
