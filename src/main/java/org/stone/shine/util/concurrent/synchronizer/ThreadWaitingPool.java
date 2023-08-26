@@ -94,6 +94,7 @@ public abstract class ThreadWaitingPool {
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
+                if (qNode.getState() == REMOVED) continue;
                 if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
@@ -102,6 +103,7 @@ public abstract class ThreadWaitingPool {
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
+                if (qNode.getState() == REMOVED) continue;
                 if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
@@ -119,20 +121,17 @@ public abstract class ThreadWaitingPool {
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                Object state = qNode.getState();
-                if (state != REMOVED) {
-                    if (casState(qNode, null, toState))
-                        LockSupport.unpark(qNode.thread);
-                }
+                if (qNode.getState() == REMOVED) continue;
+                if (casState(qNode, null, toState))
+                    LockSupport.unpark(qNode.thread);
+
             }
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                Object state = qNode.getState();
-                if (state != REMOVED) {
-                    if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
-                        LockSupport.unpark(qNode.thread);
-                    }
+                if (qNode.getState() == REMOVED) continue;
+                if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
+                    LockSupport.unpark(qNode.thread);
                 }
             }
         }
