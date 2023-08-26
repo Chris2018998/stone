@@ -43,11 +43,8 @@ public abstract class ThreadWaitingPool {
         return node == waitChain.peekFirst();
     }
 
-    protected final void removeNode(boolean isAtFirst, SyncNode node) {
-        if (isAtFirst)
-            waitChain.pop();
-        else
-            waitChain.removeFirstOccurrence(node);
+    protected final void removeNode(SyncNode node) {
+        waitChain.removeFirstOccurrence(node);
     }
 
     protected final void appendAsDataNode(SyncNode node) {
@@ -65,32 +62,32 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     //                                          2: wakeup(3)                                                          //
     //****************************************************************************************************************//
-    public final void wakeupFirst(Object nodeType, Object toState) {
+    public final void wakeupFirst(Object nodeType, Object toState) {//use in result wait pool
         Iterator<SyncNode> iterator = waitChain.iterator();
 
-        //2: retrieve type matched node and unpark its thread
+        //find a valid node as first
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode qNode = iterator.next();
-                if (qNode.getState() == REMOVED) continue;
-                if (casState(qNode, null, toState))
-                    LockSupport.unpark(qNode.thread);
+                SyncNode first = iterator.next();//assume it is first node
+                if (first.getState() == REMOVED) continue;
+                if (casState(first, null, toState))
+                    LockSupport.unpark(first.thread);
                 return;
             }
         } else {
             while (iterator.hasNext()) {
-                SyncNode qNode = iterator.next();
-                if (qNode.getState() == REMOVED) continue;
-                if (!CommonUtil.objectEquals(nodeType, qNode.type))
+                SyncNode first = iterator.next();//assume it is first node
+                if (first.getState() == REMOVED) continue;
+                if (!CommonUtil.objectEquals(nodeType, first.type))
                     return;
-                if (casState(qNode, null, toState))
-                    LockSupport.unpark(qNode.thread);
+                if (casState(first, null, toState))
+                    LockSupport.unpark(first.thread);
                 return;
             }
         }
     }
 
-    public final SyncNode transferOne(boolean fromHead, Object nodeType, Object toState) {
+    public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread
@@ -115,8 +112,7 @@ public abstract class ThreadWaitingPool {
         return null;
     }
 
-
-    public final void transferAll(boolean fromHead, Object nodeType, Object toState) {
+    public final void wakeupAll(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
         //2: retrieve type matched node and unpark its thread

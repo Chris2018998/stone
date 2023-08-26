@@ -63,7 +63,7 @@ public final class ResourceWaitPool {
     }
 
     public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
-        return callPool.transferOne(fromHead, nodeType, toState);
+        return callPool.wakeupOne(fromHead, nodeType, toState);
     }
 
     //****************************************************************************************************************//

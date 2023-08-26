@@ -39,11 +39,8 @@ public final class SignalWaitPool extends ThreadWaitingPool {
         if (config == null) throw new IllegalArgumentException("Sync config can't be null");
 
         //2:offer to wait queue
-        int spins = 0;//spin count
-        boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node)) //init state must be null
-            spins = maxTimedSpins;
+        int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //3:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
@@ -67,7 +64,7 @@ public final class SignalWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            removeNode(isAtFirst, node);
+            removeNode(node);
         }
     }
 }

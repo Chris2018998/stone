@@ -174,7 +174,7 @@ public final class CyclicBarrier {
                     //remark flight to be in cancelled state,notify all passengers to abandon
                     //current flight(include room and hall)
                     if (currentFlight.compareAndSetState(state, State_Cancelled))
-                        waitPool.transferAll(true, null, SyncNodeStates.RUNNING);
+                        waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                 }
 
                 if (e instanceof TimeoutException) throw (TimeoutException) e;
@@ -201,7 +201,7 @@ public final class CyclicBarrier {
         } else if (state == State_Open) {//reset boarding to new
             if (currentFlight.compareAndSetState(State_Open, State_Cancelled)) {
                 this.flight = new GenerationFlight(seatSize);
-                waitPool.transferAll(true, null, SyncNodeStates.RUNNING);
+                waitPool.wakeupAll(true, null, SyncNodeStates.RUNNING);
                 return true;
             } else {
                 return false;

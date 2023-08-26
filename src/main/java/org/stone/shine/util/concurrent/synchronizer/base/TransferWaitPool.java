@@ -76,7 +76,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
     //****************************************************************************************************************//
     public final SyncNode tryTransfer(SyncNode node, Object toNodeType) {
         if (node == null) throw new IllegalArgumentException("Node can't be null");
-        return this.transferOne(fair, toNodeType, node);
+        return this.wakeupOne(fair, toNodeType, node);
     }
 
     public final SyncNode transfer(SyncVisitConfig config, Object toNodeType) throws InterruptedException {
@@ -123,7 +123,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
             do {
                 //3.1: read node state
                 Object state = node.getState();//any not null value regard as wakeup signal
-                if (state != null && state instanceof SyncNode) //wokenUp
+                if (state instanceof SyncNode) //wokenUp
                     return (SyncNode) state;
 
                 //3.3: fail check
@@ -140,7 +140,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            super.removeNode(false, node);
+            removeNode(node);
         }
     }
 

@@ -91,7 +91,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         int spins = 0;//spin count
         boolean isAtFirst;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node))  //self-in
+        if (isAtFirst = appendAsWaitNode(node))//self-in
             spins = maxTimedSpins;
 
         //4:get control parameters from config
@@ -101,7 +101,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         try {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
-                if (isAtFirst || (isAtFirst = atFirst(node))) {
+                if (isAtFirst || (isAtFirst = atFirst(node)) || node.getState() != null) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
@@ -109,21 +109,22 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     }
                 }
 
-                //5.2: fail check
-                if (parkSupport.isTimeout())
-                    return validator.resultOnTimeout();
-                if (parkSupport.isInterrupted() && config.isAllowInterruption())
-                    throw new InterruptedException();
-
-                if (spins > 0) //5.4: decr spin count
+                if (spins > 0) {//must be at first
                     --spins;
-                else { //5.5: try to park
+                } else {
+                    //reset to be null
                     if (node.getState() != null) node.setState(null);
+                    //5.3: try to park
                     parkSupport.tryToPark();
+                    //5.4: fail check
+                    if (parkSupport.isTimeout())
+                        return validator.resultOnTimeout();
+                    if (parkSupport.isInterrupted() && config.isAllowInterruption())
+                        throw new InterruptedException();
                 }
             } while (true);
         } finally {
-            this.removeNode(isAtFirst, node);//self-out
+            this.removeNode(node);//self-out
             if (success) {
                 if (config.isPropagatedOnSuccess())
                     this.wakeupFirst(node.getType(), RUNNING);//same type
