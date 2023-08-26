@@ -69,25 +69,25 @@ public abstract class ThreadWaitingPool {
         //find a valid node as first
         if (nodeType == null) {
             while (iterator.hasNext()) {
-                SyncNode first = iterator.next();//assume it is first valid node
-                if (first.getState() == REMOVED) {
+                SyncNode node = iterator.next();//assume it is first valid node
+                if (node.getState() == REMOVED) {
                     iterator.remove();
                 } else {
-                    if (casState(first, null, RUNNING))
-                        LockSupport.unpark(first.thread);
+                    if (casState(node, null, RUNNING))
+                        LockSupport.unpark(node.thread);
                     return;
                 }
             }
         } else {
             while (iterator.hasNext()) {
-                SyncNode first = iterator.next();//assume it is first valid node
-                if (first.getState() == REMOVED) {
+                SyncNode node = iterator.next();//assume it is first valid node
+                if (node.getState() == REMOVED) {
                     iterator.remove();
                 } else {
-                    if (!CommonUtil.objectEquals(nodeType, first.type))
+                    if (!CommonUtil.objectEquals(nodeType, node.type))
                         return;
-                    if (casState(first, null, RUNNING))
-                        LockSupport.unpark(first.thread);
+                    if (casState(node, null, RUNNING))
+                        LockSupport.unpark(node.thread);
                     return;
                 }
             }
@@ -101,8 +101,9 @@ public abstract class ThreadWaitingPool {
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.getState() == REMOVED) continue;
-                if (casState(qNode, null, toState)) {
+                if (qNode.getState() == REMOVED) {
+                    iterator.remove();
+                } else if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
                 }
@@ -110,8 +111,9 @@ public abstract class ThreadWaitingPool {
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.getState() == REMOVED) continue;
-                if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
+                if (qNode.getState() == REMOVED) {
+                    iterator.remove();
+                } else if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                     return qNode;
                 }
@@ -128,16 +130,18 @@ public abstract class ThreadWaitingPool {
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.getState() == REMOVED) continue;
-                if (casState(qNode, null, toState))
+                if (qNode.getState() == REMOVED) {
+                    iterator.remove();
+                } else if (casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
-
+                }
             }
         } else {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
-                if (qNode.getState() == REMOVED) continue;
-                if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
+                if (qNode.getState() == REMOVED) {
+                    iterator.remove();
+                } else if ((nodeType == qNode.type || nodeType.equals(qNode.type)) && casState(qNode, null, toState)) {
                     LockSupport.unpark(qNode.thread);
                 }
             }

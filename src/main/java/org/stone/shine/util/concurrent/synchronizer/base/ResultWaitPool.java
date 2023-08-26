@@ -25,7 +25,7 @@ import static org.stone.tools.CommonUtil.maxTimedSpins;
  * Some Key points about pool are below
  * 1) Assume that exists a running permit,who get it who run
  * 2) The permit can be transferred among with these waiters
- * 3) If a waiter is at head of the wait queue, it will get the  permit automatically
+ * 3) If a waiter is at first of the wait queue,it will get the permit automatically
  * 4) When waiters leave from pool,they should check whether getting the permit(transferred),maybe transfer it to other
  * 4.1) If failure in pool(timeout or interrupted), need transfer it to next waiter.
  * 4.2) if success and indicator of propagation is true,need transfer to next

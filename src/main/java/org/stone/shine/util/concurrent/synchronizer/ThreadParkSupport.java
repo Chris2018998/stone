@@ -66,10 +66,6 @@ public class ThreadParkSupport {
     ThreadParkSupport() {
     }
 
-    public final long getDeadlineTime() {
-        return deadlineTime;
-    }
-
     public final long getLastParkNanos() {
         return parkNanos;
     }
