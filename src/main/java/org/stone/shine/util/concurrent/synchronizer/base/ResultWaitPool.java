@@ -16,12 +16,20 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
  * Result Wait Pool, Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout or interrupted, and leave from pool.
  * Some Key points about pool are below
+ * 1) Assume that exists a running permit,who get it who run
+ * 2) The permit can be transferred among with these waiters
+ * 3) If a waiter is at head of the wait queue, it will get the  permit automatically
+ * 4) When waiters leave from pool,they should check whether getting the permit(transferred),maybe transfer it to other
+ * 4.1) If failure in pool(timeout or interrupted), need transfer it to next waiter.
+ * 4.2) if success and indicator of pro is true,need transfer to next
  *
  * @author Chris Liao
  * @version 1.0
@@ -89,10 +97,12 @@ public final class ResultWaitPool extends ThreadWaitingPool {
 
         //3:offer to wait queue
         int spins = 0;//spin count
-        boolean isAtFirst;
+        Object state = null;
         SyncNode node = config.getSyncNode();
-        if (isAtFirst = appendAsWaitNode(node)) //self-in
+        if (appendAsWaitNode(node)) { //self-in
             spins = maxTimedSpins;
+            node.setState(state = RUNNING);
+        }
 
         //4:get control parameters from config
         boolean success = false;
@@ -101,7 +111,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         try {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
-                if (isAtFirst || (isAtFirst = atFirst(node))) {
+                if (state == RUNNING) {
                     Object result = call.call(arg);
                     if (validator.isExpected(result)) {
                         success = true;
@@ -121,17 +131,23 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                         return validator.resultOnTimeout();
                     if (parkSupport.isInterrupted() && config.isAllowInterruption())
                         throw new InterruptedException();
+
+                    state = node.getState();
                 }
             } while (true);
         } finally {
-            node.setState(REMOVED);
-            removeNode(node);//self-out(state may be in REMOVED)
+            boolean wakeupInd = false;
+            Object wakeupType = null;
             if (success) {
-                if (config.isPropagatedOnSuccess())
-                    wakeupFirst(node.getType());//same type
-            } else {
-                wakeupFirst(null);//any type
+                if (wakeupInd = config.isPropagatedOnSuccess())
+                    wakeupType = node.getType();//same type
+            } else if (node.getState() == null && !casState(node, null, REMOVED)) { //failed,RUNNING filled by other
+                wakeupInd = true;//has got running permit,so transfer it to other waiter
             }
+
+            node.setState(REMOVED);//mark as removed state
+            removeNode(node);//self-out
+            if (wakeupInd) wakeupFirst(wakeupType);//FIFO
         }
     }
 }
