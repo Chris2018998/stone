@@ -17,7 +17,6 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
@@ -98,6 +97,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         //3:offer to wait queue
         int spins = 0;//spin count
         Object state = null;
+        boolean success = false;
         SyncNode node = config.getSyncNode();
         if (appendAsWaitNode(node)) { //self-in
             spins = maxTimedSpins;
@@ -105,7 +105,6 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //4:get control parameters from config
-        boolean success = false;
         ThreadParkSupport parkSupport = config.getParkSupport();
         //5:spin control（Logic from BeeCP）
         try {
@@ -123,7 +122,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     --spins;
                 } else {
                     //reset to be null
-                    if (node.getState() != null) node.setState(null);
+                    if (state != null) node.setState(null);
                     //5.3: try to park
                     parkSupport.tryToPark();
                     //5.4: fail check
@@ -136,18 +135,15 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            boolean wakeupInd = false;
-            Object wakeupType = null;
-            if (success) {
-                if (wakeupInd = config.isPropagatedOnSuccess())
-                    wakeupType = node.getType();//same type
-            } else if (node.getState() == null && !casState(node, null, REMOVED)) { //failed,RUNNING filled by other
-                wakeupInd = true;//has got running permit,so transfer it to other waiter
-            }
-
             node.setState(REMOVED);//mark as removed state
             removeNode(node);//self-out
-            if (wakeupInd) wakeupFirst(wakeupType);//FIFO
+
+            if (success) {
+                if (config.isPropagatedOnSuccess())
+                    wakeupFirst(node.getType());
+            } else {
+                wakeupFirst(null);
+            }
         }
     }
 }
