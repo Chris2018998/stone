@@ -17,13 +17,14 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
  * Result Wait Pool, Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout or interrupted, and leave from pool.
  * Some Key points about pool are below
- * 1) Assume that exists a running permit,who get it who run
+ * 1) Assume that exists a runnable permit,who get it who run
  * 2) The permit can be transferred among with these waiters
  * 3) If a waiter is at first of the wait queue,it will get the permit automatically
  * 4) When waiters leave from pool,they should check whether getting the permit(transferred),maybe transfer it to other
@@ -135,14 +136,17 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            node.setState(REMOVED);//mark as removed state
             if (success) {
+                node.setState(REMOVED);//mark as removed state
                 if (config.isPropagatedOnSuccess())
                     wakeupFirst(node.getType());
                 else
                     removeNode(node);//self-out
-            } else {
+            } else if (node.getState() == RUNNING || !casState(node, null, REMOVED)) {//get the runnable permit
+                node.setState(REMOVED);//mark as removed state
                 wakeupFirst(null);
+            } else {//cas null to removed success(maybe a middle node)
+                removeNode(node);//self-out
             }
         }
     }
