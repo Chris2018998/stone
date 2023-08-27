@@ -16,7 +16,6 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
@@ -97,13 +96,11 @@ public final class ResultWaitPool extends ThreadWaitingPool {
 
         //3:offer to wait queue
         int spins = 0;//spin count
-        Object state = null;
+        boolean atFirst;
         boolean success = false;
         SyncNode node = config.getSyncNode();
-        if (appendAsWaitNode(node)) { //self-in
-            node.setState(state = RUNNING);
+        if (atFirst = appendAsWaitNode(node))//self-in
             spins = maxTimedSpins;
-        }
 
         //4:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
@@ -111,7 +108,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         try {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
-                if (state == RUNNING) {
+                if (atFirst || (atFirst = atFirst(node))) {
                     Object result = call.call(arg);
                     if (success = validator.isExpected(result))
                         return result;
@@ -121,7 +118,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     --spins;
                 } else {
                     //reset to be null
-                    if (state != null) node.setState(null);
+                    if (node.getState() != null) node.setState(null);
                     //5.3: try to park
                     parkSupport.tryPark();
                     //5.4: fail check
@@ -129,20 +126,17 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                         return validator.resultOnTimeout();
                     if (parkSupport.isInterrupted() && config.isAllowInterruption())
                         throw new InterruptedException();
-
-                    state = node.getState();
                 }
             } while (true);
         } finally {
+            node.setState(REMOVED);
             if (success) {
-                node.setState(REMOVED);
                 if (config.isPropagatedOnSuccess())
                     wakeupFirst(node.getType());
                 else
                     removeNode(node);//self-out
             } else {
-                removeNode(node);//self-out
-                if (node.getState() == RUNNING) wakeupFirst(null);
+                wakeupFirst(null);
             }
         }
     }

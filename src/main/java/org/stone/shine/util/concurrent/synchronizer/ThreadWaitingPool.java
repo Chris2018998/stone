@@ -40,6 +40,10 @@ public abstract class ThreadWaitingPool {
         return waitChain.peekFirst();
     }
 
+    protected final boolean atFirst(SyncNode node) {
+        return waitChain.peekFirst() == node;
+    }
+
     protected final void removeNode(SyncNode node) {
         waitChain.removeFirstOccurrence(node);
     }
