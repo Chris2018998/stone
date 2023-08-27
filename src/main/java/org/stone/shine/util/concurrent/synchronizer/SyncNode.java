@@ -85,4 +85,8 @@ public final class SyncNode<E> {
     public SyncNode setNext(SyncNode next) {
         return this.next = next;
     }
+
+    public String toString() {
+        return thread + ":" + type + ":" + state;
+    }
 }
