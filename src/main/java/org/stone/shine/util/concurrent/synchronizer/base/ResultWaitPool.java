@@ -136,11 +136,11 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             } while (true);
         } finally {
             node.setState(REMOVED);//mark as removed state
-            removeNode(node);//self-out
-
             if (success) {
                 if (config.isPropagatedOnSuccess())
                     wakeupFirst(node.getType());
+                else
+                    removeNode(node);//self-out
             } else {
                 wakeupFirst(null);
             }
