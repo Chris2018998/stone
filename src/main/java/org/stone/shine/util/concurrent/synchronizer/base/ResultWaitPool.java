@@ -104,11 +104,11 @@ public final class ResultWaitPool extends ThreadWaitingPool {
 
         //4:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
-        //5:spin control（Logic from BeeCP）
+        //5:spin control
         try {
             do {
                 //5.1: execute call(got a signal or at first of wait queue)
-                if (atFirst || (atFirst = atFirst(node))) {
+                if (atFirst) {
                     Object result = call.call(arg);
                     if (success = validator.isExpected(result))
                         return result;
@@ -126,6 +126,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                         return validator.resultOnTimeout();
                     if (parkSupport.isInterrupted() && config.isAllowInterruption())
                         throw new InterruptedException();
+
+                    if (!atFirst) atFirst = atFirst(node);
                 }
             } while (true);
         } finally {
