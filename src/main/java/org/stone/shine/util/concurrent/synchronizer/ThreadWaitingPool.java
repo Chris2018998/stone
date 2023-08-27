@@ -61,31 +61,17 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     public final void wakeupFirst(Object nodeType) {//use in result wait pool
         Iterator<SyncNode> iterator = waitChain.iterator();
-
-        //find out a not removed node
-        if (nodeType == null) {
-            while (iterator.hasNext()) {
-                SyncNode node = iterator.next();
-                if (node.getState() == REMOVED) {
-                    iterator.remove();
-                } else {//null state or running state
-                    if (casState(node, null, RUNNING))
-                        LockSupport.unpark(node.thread);
+        while (iterator.hasNext()) {
+            SyncNode node = iterator.next();
+            Object state = node.getState();
+            if (state == REMOVED) {
+                iterator.remove();
+            } else {//null state or running state
+                if (nodeType != null && !CommonUtil.objectEquals(nodeType, node.type))
                     return;
-                }
-            }
-        } else {
-            while (iterator.hasNext()) {
-                SyncNode node = iterator.next();
-                if (node.getState() == REMOVED) {
-                    iterator.remove();
-                } else {//null state or running state
-                    if (!CommonUtil.objectEquals(nodeType, node.type))
-                        return;
-                    if (casState(node, null, RUNNING))
-                        LockSupport.unpark(node.thread);
-                    return;
-                }
+                if (state == null && casState(node, null, RUNNING))
+                    LockSupport.unpark(node.thread);
+                return;
             }
         }
     }
