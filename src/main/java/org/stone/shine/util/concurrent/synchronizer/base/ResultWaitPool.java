@@ -17,12 +17,12 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Result Wait Pool, Outside caller to call pool's get method to take an object(execute ResultCall),
- * if not expected,then wait in pool util being wake-up by other or timeout or interrupted, and leave from pool.
+ * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
+ * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
+ * <p>
  * Some Key points about pool are below
  * 1) Assume that exists a runnable permit,who get it who run
  * 2) The permit can be transferred among with these waiters
@@ -88,7 +88,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         if (call == null || config == null || validator == null)
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
-        //2:test before call
+        //2:test before call,if passed,then execute call
         if (config.getVisitTester().test(fair, firstNode(), config)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
@@ -101,8 +101,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         boolean success = false;
         SyncNode node = config.getSyncNode();
         if (appendAsWaitNode(node)) { //self-in
-            spins = maxTimedSpins;
             node.setState(state = RUNNING);
+            spins = maxTimedSpins;
         }
 
         //4:get control parameters from config
@@ -113,8 +113,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 //5.1: execute call(got a signal or at first of wait queue)
                 if (state == RUNNING) {
                     Object result = call.call(arg);
-                    if (validator.isExpected(result)) {
-                        success = true;
+                    if (success = validator.isExpected(result)) {
+                        node.setState(REMOVED);
                         return result;
                     }
                 }
@@ -137,16 +137,13 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             } while (true);
         } finally {
             if (success) {
-                node.setState(REMOVED);//mark as removed state
                 if (config.isPropagatedOnSuccess())
                     wakeupFirst(node.getType());
                 else
                     removeNode(node);//self-out
-            } else if (node.getState() == RUNNING || !casState(node, null, REMOVED)) {//get the runnable permit
-                node.setState(REMOVED);//mark as removed state
-                wakeupFirst(null);
-            } else {//cas null to removed success(maybe a middle node)
+            } else {
                 removeNode(node);//self-out
+                if (node.getState() == RUNNING) wakeupFirst(null);
             }
         }
     }

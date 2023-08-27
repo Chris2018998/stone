@@ -33,7 +33,7 @@ import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.T
 
 class BaseLock implements Lock {
     //Lock Acquire Action(ReentrantLockAction,WriteLockAction,ReadLockAction)
-    protected final LockAction lockAction;
+    final LockAction lockAction;
     //resource acquire type
     private final Object acquireType;
     //resource wait Pool
