@@ -68,7 +68,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
      * @param arg    call argument
      * @param config thread wait config
      * @return object, if call result check passed by validator
-     * @throws java.lang.Exception from call or InterruptedException after thread tryToPark
+     * @throws java.lang.Exception from call or InterruptedException after thread tryPark
      */
     public final Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return this.get(call, arg, validator, config);
@@ -80,7 +80,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
      * @param config    thread wait config
      * @param validator result validator
      * @return passed result
-     * @throws java.lang.Exception from call or InterruptedException after thread tryToPark
+     * @throws java.lang.Exception from call or InterruptedException after thread tryPark
      */
     public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
@@ -113,10 +113,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 //5.1: execute call(got a signal or at first of wait queue)
                 if (state == RUNNING) {
                     Object result = call.call(arg);
-                    if (success = validator.isExpected(result)) {
-                        node.setState(REMOVED);
+                    if (success = validator.isExpected(result))
                         return result;
-                    }
                 }
 
                 if (spins > 0) {//must be at first
@@ -125,7 +123,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     //reset to be null
                     if (state != null) node.setState(null);
                     //5.3: try to park
-                    parkSupport.tryToPark();
+                    parkSupport.tryPark();
                     //5.4: fail check
                     if (parkSupport.isTimeout())
                         return validator.resultOnTimeout();
@@ -137,6 +135,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             } while (true);
         } finally {
             if (success) {
+                node.setState(REMOVED);
                 if (config.isPropagatedOnSuccess())
                     wakeupFirst(node.getType());
                 else

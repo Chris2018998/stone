@@ -136,7 +136,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.tryToPark();
+                    parkSupport.tryPark();
                 }
             } while (true);
         } finally {

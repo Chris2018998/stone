@@ -86,7 +86,7 @@ public final class StateWaitPool extends ThreadWaitingPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.tryToPark();
+                    parkSupport.tryPark();
                 }
             } while (true);
         } finally {

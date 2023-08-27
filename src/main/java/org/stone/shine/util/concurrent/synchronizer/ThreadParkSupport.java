@@ -83,7 +83,7 @@ public class ThreadParkSupport {
         this.interrupted = false;
     }
 
-    public void tryToPark() {
+    public void tryPark() {
         LockSupport.park();
         this.interrupted = Thread.interrupted();
     }
@@ -104,7 +104,7 @@ public class ThreadParkSupport {
             return "Implementation by method 'LockSupport.park(blockObject)'";
         }
 
-        public final void tryToPark() {
+        public final void tryPark() {
             LockSupport.park(blockObject);
             this.interrupted = Thread.interrupted();
         }
@@ -126,7 +126,7 @@ public class ThreadParkSupport {
             this.deadlineTime = System.nanoTime() + nanoTime;
         }
 
-        public void tryToPark() {
+        public void tryPark() {
             if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
                 parkNanos(parkNanos);
                 this.interrupted = Thread.interrupted();
@@ -149,7 +149,7 @@ public class ThreadParkSupport {
             this.blockObject = blocker;
         }
 
-        public final void tryToPark() {
+        public final void tryPark() {
             if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
                 parkNanos(blockObject, parkNanos);
                 this.interrupted = Thread.interrupted();
@@ -172,7 +172,7 @@ public class ThreadParkSupport {
             this.deadlineTime = deadlineTime;
         }
 
-        public void tryToPark() {
+        public void tryPark() {
             this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
             if (this.parkNanos > 0L) {
                 parkUntil(deadlineTime);
@@ -200,7 +200,7 @@ public class ThreadParkSupport {
             this.blockObject = blocker;
         }
 
-        public final void tryToPark() {
+        public final void tryPark() {
             this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
             if (this.parkNanos > 0L) {
                 parkUntil(blockObject, deadlineTime);

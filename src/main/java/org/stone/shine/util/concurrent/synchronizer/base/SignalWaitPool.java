@@ -31,7 +31,7 @@ public final class SignalWaitPool extends ThreadWaitingPool {
      *
      * @param config thread wait config
      * @return true, if get a signal then return true,timeout return false
-     * @throws java.lang.InterruptedException exception from call or InterruptedException after thread tryToPark
+     * @throws java.lang.InterruptedException exception from call or InterruptedException after thread tryPark
      */
     public final Object get(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
@@ -60,7 +60,7 @@ public final class SignalWaitPool extends ThreadWaitingPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.tryToPark();
+                    parkSupport.tryPark();
                 }
             } while (true);
         } finally {
