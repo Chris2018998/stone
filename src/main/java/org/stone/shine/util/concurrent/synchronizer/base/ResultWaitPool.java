@@ -132,8 +132,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 if (atFirst || peekFirst() == node) {
                     popFirst();
                     wakeupFirst(null);
-                } else {//not at first
-                    removeNode(node);
+                } else {//not at first of wait queue
+                    removeNode(node);//self-out
                 }
             }
         }//end finally
