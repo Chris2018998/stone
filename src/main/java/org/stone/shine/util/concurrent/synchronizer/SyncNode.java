@@ -67,6 +67,18 @@ public final class SyncNode<E> {
         this.thread = Thread.currentThread();
     }
 
+    public final void setStateWhenNotNull(Object newState) {
+        if (state != null) state = newState;
+    }
+
+    final boolean setStateWhenNull(Object newState) {
+        if (state == null) {
+            state = newState;
+            return true;
+        }
+        return false;
+    }
+
     //****************************************************************************************************************//
     //                                          unusable fields                                                       //
     //****************************************************************************************************************//

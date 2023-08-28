@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
@@ -69,12 +70,8 @@ public abstract class ThreadWaitingPool {
     public final void wakeupFirst(Object nodeType) {//use in result wait pool
         SyncNode first = this.waitChain.peekFirst();
         if (first != null) {
-            if (nodeType == null || CommonUtil.objectEquals(nodeType, first.type)) {
-                if (first.getState() == null) {
-                    first.setState(SyncNodeStates.RUNNING);
-                    LockSupport.unpark(first.thread);
-                }
-            }
+            if (nodeType == null || CommonUtil.objectEquals(nodeType, first.type))
+                if (first.setStateWhenNull(RUNNING)) LockSupport.unpark(first.thread);
         }
     }
 
