@@ -13,8 +13,6 @@ import org.stone.base.TestUtil;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReadWriteLockAcquireThread;
 import org.stone.shine.concurrent.locks.reentrantReadWriteLock.ReentrantReadWriteLockTestCase;
 
-import java.util.concurrent.locks.LockSupport;
-
 import static org.stone.base.TestUtil.Wait_Time;
 import static org.stone.base.TestUtil.Wait_TimeUnit;
 
@@ -39,7 +37,7 @@ public class WriteLockToWriteLockTryLockWithTimeTest extends ReentrantReadWriteL
         try {
             if (TestUtil.joinUtilWaiting(mockThread)) {
                 writeLock.unlock();
-                lockByMock=true;
+                lockByMock = true;
             }
 
             //5: check writeLock state

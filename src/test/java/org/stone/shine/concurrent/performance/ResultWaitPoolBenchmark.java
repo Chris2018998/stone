@@ -12,9 +12,7 @@ import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
-
-@Threads(4)
+@Threads(50)
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 5, time = 1)
@@ -23,6 +21,7 @@ import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNIN
 public class ResultWaitPoolBenchmark {
     private static ResultWaitPool pool;
     private static AtomicResultCall call;
+    private static SyncVisitConfig config;
 
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
@@ -34,13 +33,11 @@ public class ResultWaitPoolBenchmark {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static void testLock() throws Exception {
-        SyncVisitConfig config = new SyncVisitConfig();
-        config.allowInterruption(false);
         if (Boolean.TRUE.equals(pool.get(call, null, config))) {
             try {
                 //do nothing
             } finally {
-                if (call.incr() > 5) System.out.println("Atomic Int is greater than 5");
+                call.incr();
                 pool.wakeupFirst(null);
             }
         }
@@ -50,6 +47,8 @@ public class ResultWaitPoolBenchmark {
     public void setup(BenchmarkParams params) {
         call = new AtomicResultCall();
         pool = new ResultWaitPool();
+        config = new SyncVisitConfig();
+        config.allowInterruption(false);
     }
 
     @TearDown(Level.Trial)

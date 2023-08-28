@@ -26,6 +26,11 @@ import java.util.concurrent.locks.LockSupport;
  */
 
 public class LockConcurrentTest extends TestCase {
+    public static void main(String[] args) throws Throwable {
+        LockConcurrentTest test = new LockConcurrentTest();
+        test.setUp();
+        test.test();
+    }
 
     public void test() throws Exception {
         //1: create writeLock and acquire in main thread
