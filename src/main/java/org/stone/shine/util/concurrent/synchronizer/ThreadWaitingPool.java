@@ -33,7 +33,7 @@ public abstract class ThreadWaitingPool {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1:queue Methods(4)                                                    //
+    //                                          1:queue Methods(6)                                                    //
     //****************************************************************************************************************//
     protected final void popFirst() {
         waitChain.pop();
@@ -43,7 +43,9 @@ public abstract class ThreadWaitingPool {
         return waitChain.peekFirst();
     }
 
-    protected final boolean atFirst(SyncNode node) { return waitChain.peekFirst() == node; }
+    protected final boolean atFirst(SyncNode node) {
+        return waitChain.peekFirst() == node;
+    }
 
     protected final void removeNode(SyncNode node) {
         waitChain.removeFirstOccurrence(node);
