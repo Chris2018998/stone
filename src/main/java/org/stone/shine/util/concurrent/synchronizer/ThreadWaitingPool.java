@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
@@ -36,13 +35,15 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     //                                          1:queue Methods(4)                                                    //
     //****************************************************************************************************************//
-    protected final SyncNode firstNode() {
+    protected final void popFirst() {
+        waitChain.pop();
+    }
+
+    protected final SyncNode peekFirst() {
         return waitChain.peekFirst();
     }
 
-    protected final boolean atFirst(SyncNode node) {
-        return waitChain.peekFirst() == node;
-    }
+    protected final boolean atFirst(SyncNode node) { return waitChain.peekFirst() == node; }
 
     protected final void removeNode(SyncNode node) {
         waitChain.removeFirstOccurrence(node);
@@ -64,18 +65,13 @@ public abstract class ThreadWaitingPool {
     //                                          2: wakeup(3)                                                          //
     //****************************************************************************************************************//
     public final void wakeupFirst(Object nodeType) {//use in result wait pool
-        Iterator<SyncNode> iterator = waitChain.iterator();
-        while (iterator.hasNext()) {
-            SyncNode node = iterator.next();
-            Object state = node.getState();
-            if (state == REMOVED) {
-                iterator.remove();
-            } else {//null state or running state
-                if (nodeType != null && !CommonUtil.objectEquals(nodeType, node.type))
-                    return;
-                if (state == null && casState(node, null, RUNNING))
-                    LockSupport.unpark(node.thread);
-                return;
+        SyncNode first = this.waitChain.peekFirst();
+        if (first != null) {
+            if (nodeType == null || CommonUtil.objectEquals(nodeType, first.type)) {
+                if (first.getState() == null) {
+                    first.setState(SyncNodeStates.RUNNING);
+                    LockSupport.unpark(first.thread);
+                }
             }
         }
     }
