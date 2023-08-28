@@ -68,10 +68,10 @@ public abstract class ThreadWaitingPool {
     //                                          2: wakeup(3)                                                          //
     //****************************************************************************************************************//
     public final void wakeupFirst(Object nodeType) {//use in result wait pool
-        SyncNode first = this.waitChain.peekFirst();
+        SyncNode first = waitChain.peekFirst();
         if (first != null) {
             if (nodeType == null || CommonUtil.objectEquals(nodeType, first.type))
-                if (first.setStateWhenNull(RUNNING)) LockSupport.unpark(first.thread);
+                if (casState(first, null, RUNNING)) LockSupport.unpark(first.thread);
         }
     }
 

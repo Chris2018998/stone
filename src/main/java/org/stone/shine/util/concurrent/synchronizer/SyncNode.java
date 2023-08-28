@@ -71,7 +71,7 @@ public final class SyncNode<E> {
         if (state != null) state = newState;
     }
 
-    final boolean setStateWhenNull(Object newState) {
+    public final boolean setStateWhenNull(Object newState) {
         if (state == null) {
             state = newState;
             return true;
