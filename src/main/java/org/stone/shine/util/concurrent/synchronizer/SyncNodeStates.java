@@ -20,7 +20,7 @@ public final class SyncNodeStates {
     //RUNNING
     public static final Object RUNNING = new Object();
 
-    //node has removed from chain
+    //REMOVED(pending to be removed from queue or have been removed)
     public static final Object REMOVED = new Object();
 
 }

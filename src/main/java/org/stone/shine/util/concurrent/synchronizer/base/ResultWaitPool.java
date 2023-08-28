@@ -101,26 +101,26 @@ public final class ResultWaitPool extends ThreadWaitingPool {
 
         try {
             do {
-                //6: execute call(got a signal or at first of wait queue)
+                //5: execute call(got a signal or at first of wait queue)
                 if (atFirst) {
                     Object result = call.call(arg);
                     if (success = validator.isExpected(result))
                         return result;
                 }
 
-                //7: Block and wait util be at first of wait queue
+                //6: Block and wait util be at first of wait queue
                 do {
-                    //7.1: reset state to be null
+                    //6.1: reset state to be null
                     node.setStateWhenNotNull(null);
-                    //7.2: try to park
+                    //6.2: try to park
                     parkSupport.tryPark();//maybe park failed
-                    //7.3: timeout check
+                    //6.3: timeout check
                     if (parkSupport.isTimeout())
                         return validator.resultOnTimeout();
-                    //7.4: interrupted check
+                    //6.4: interrupted check
                     if (parkSupport.isInterrupted() && config.isAllowInterruption())
                         throw new InterruptedException();
-                    //7.5: first position check
+                    //6.5: first position check
                 } while (!atFirst && !(atFirst = atFirst(node)));
             } while (true);
         } finally {
