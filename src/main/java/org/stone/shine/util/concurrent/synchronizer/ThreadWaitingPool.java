@@ -32,12 +32,8 @@ public abstract class ThreadWaitingPool {
     private final ConcurrentLinkedDeque<SyncNode> waitChain = new ConcurrentLinkedDeque<>();//temporary
 
     //****************************************************************************************************************//
-    //                                          1:queue Methods(6)                                                    //
+    //                                          1:queue Methods(5)                                                    //
     //****************************************************************************************************************//
-    protected final void popFirst() {
-        waitChain.pop();
-    }
-
     protected final SyncNode peekFirst() {
         return waitChain.peekFirst();
     }
@@ -65,7 +61,7 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     //                                          2: wakeup for result wait pool(2)                                     //
     //****************************************************************************************************************//
-    public final void wakeupFirst(Object wakeupType) {//use in result wait pool
+    public final void wakeupFirst(Object wakeupType) {
         SyncNode first = waitChain.peekFirst();
         if (first != null && (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type)))
             if (first.state == null && casState(first, null, RUNNING)) LockSupport.unpark(first.thread);
