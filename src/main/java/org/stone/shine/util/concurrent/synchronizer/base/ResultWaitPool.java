@@ -15,6 +15,8 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport.PARK_INTERRUPTED;
+import static org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport.PARK_TIMEOUT;
 import static org.stone.tools.CommonUtil.emptyMethod;
 
 /**
@@ -120,12 +122,11 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                         //6.1: reset state to be null
                         node.setStateWhenNotNull(null);
                         //6.2: try to park
-                        parkSupport.tryPark();//maybe park failed
+                        int re = parkSupport.tryPark();//maybe park failed
                         //6.3: timeout check
-                        if (parkSupport.isTimeout())
-                            return validator.resultOnTimeout();
+                        if (re == PARK_TIMEOUT) return validator.resultOnTimeout();
                         //6.4: interrupted check
-                        if (parkSupport.isInterrupted() && config.isAllowInterruption())
+                        if (re == PARK_INTERRUPTED && config.isAllowInterruption())
                             throw new InterruptedException();
                         //6.5: first position check
                     } while (!atFirst && !(atFirst = atFirst(node)));

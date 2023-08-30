@@ -67,18 +67,15 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     public final void wakeupFirst(Object wakeupType) {//use in result wait pool
         SyncNode first = waitChain.peekFirst();
-        if (first != null) {
-            if (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type))
-                if (casState(first, null, RUNNING)) LockSupport.unpark(first.thread);
-        }
+        if (first != null && (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type)))
+            if (first.state == null && casState(first, null, RUNNING)) LockSupport.unpark(first.thread);
     }
 
     protected final void removeAndWakeupFirst(SyncNode node, boolean wakeup, Object wakeupType) {
         waitChain.removeFirstOccurrence(node);
         if (wakeup && (node = waitChain.peekFirst()) != null) {
-            if (wakeupType == null || wakeupType == node.type || wakeupType.equals(node.type)) {
-                if (casState(node, null, RUNNING)) LockSupport.unpark(node.thread);
-            }
+            if (wakeupType == null || wakeupType == node.type || wakeupType.equals(node.type))
+                if (node.state == null && casState(node, null, RUNNING)) LockSupport.unpark(node.thread);
         }
     }
 
