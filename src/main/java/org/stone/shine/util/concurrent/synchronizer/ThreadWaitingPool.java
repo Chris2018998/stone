@@ -9,8 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import org.stone.tools.CommonUtil;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -65,16 +63,28 @@ public abstract class ThreadWaitingPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: wakeup(3)                                                          //
+    //                                          2: wakeup for result wait pool(2)                                     //
     //****************************************************************************************************************//
-    public final void wakeupFirst(Object nodeType) {//use in result wait pool
+    public final void wakeupFirst(Object wakeupType) {//use in result wait pool
         SyncNode first = waitChain.peekFirst();
         if (first != null) {
-            if (nodeType == null || CommonUtil.objectEquals(nodeType, first.type))
+            if (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type))
                 if (casState(first, null, RUNNING)) LockSupport.unpark(first.thread);
         }
     }
 
+    protected final void removeAndWakeupFirst(SyncNode node, boolean wakeup, Object wakeupType) {
+        waitChain.removeFirstOccurrence(node);
+        if (wakeup && (node = waitChain.peekFirst()) != null) {
+            if (wakeupType == null || wakeupType == node.type || wakeupType.equals(node.type)) {
+                if (casState(node, null, RUNNING)) LockSupport.unpark(node.thread);
+            }
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: wakeup(2)                                                          //
+    //****************************************************************************************************************//
     public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitChain.iterator() : waitChain.descendingIterator();
 
@@ -130,7 +140,7 @@ public abstract class ThreadWaitingPool {
     }
 
     //****************************************************************************************************************//
-    //                                         3: Monitor Methods(6)                                                  //
+    //                                         4: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
     protected final Iterator<SyncNode> ascendingIterator() {
         return waitChain.iterator();
