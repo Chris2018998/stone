@@ -15,6 +15,8 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.tools.CommonUtil.emptyMethod;
+
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
@@ -93,6 +95,7 @@ public final class ResultWaitPool extends ThreadWaitingPool {
 
         //3:offer to wait queue
         boolean success = false;
+        byte spins = 0, postSpins = 0;
         SyncNode node = config.getSyncNode();
         boolean atFirst = appendAsWaitNode(node);//self-in
 
@@ -108,35 +111,40 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                         return result;
                 }
 
-                //6: Block and wait util be at first of wait queue
-                do {
-                    //6.1: reset state to be null
-                    node.setStateWhenNotNull(null);
-                    //6.2: try to park
-                    parkSupport.tryPark();//maybe park failed
-                    //6.3: timeout check
-                    if (parkSupport.isTimeout())
-                        return validator.resultOnTimeout();
-                    //6.4: interrupted check
-                    if (parkSupport.isInterrupted() && config.isAllowInterruption())
-                        throw new InterruptedException();
+                if (spins > 0) {
+                    spins--;
+                    emptyMethod();//idea from JDK
+                } else {
+                    //6: Block and wait util be at first of wait queue
+                    do {
+                        //6.1: reset state to be null
+                        node.setStateWhenNotNull(null);
+                        //6.2: try to park
+                        parkSupport.tryPark();//maybe park failed
+                        //6.3: timeout check
+                        if (parkSupport.isTimeout())
+                            return validator.resultOnTimeout();
+                        //6.4: interrupted check
+                        if (parkSupport.isInterrupted() && config.isAllowInterruption())
+                            throw new InterruptedException();
+                        //6.5: first position check
+                    } while (!atFirst && !(atFirst = atFirst(node)));
 
-                    //6.5: first position check
-                } while (!atFirst && !(atFirst = atFirst(node)));
+                    //calculate spin count for next
+                    spins = postSpins = (byte) ((postSpins << 1) | 1);//idea from JDK
+                }
             } while (true);
         } finally {
+            boolean wakeup;
+            Object wakeupType = null;
             if (success) {
-                popFirst();
-                if (config.isPropagatedOnSuccess())
-                    wakeupFirst(node.getType());
+                if (wakeup = config.isPropagatedOnSuccess())
+                    wakeupType = node.getType();
             } else {
-                if (atFirst || peekFirst() == node) {
-                    popFirst();
-                    wakeupFirst(null);
-                } else {//not at first of wait queue
-                    removeNode(node);//self-out
-                }
+                wakeup = atFirst || peekFirst() == node;
             }
+
+            this.removeAndWakeupFirst(node, wakeup, wakeupType);
         }//end finally
     }
 }
