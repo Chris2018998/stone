@@ -56,10 +56,6 @@ import static java.util.concurrent.locks.LockSupport.parkUntil;
  */
 
 public class ThreadParkSupport {
-    public static final int PARK_TIMEOUT = -1;
-    public static final int PARK_INTERRUPTED = -2;
-    private static final int PARK_NORMAL = 0;
-
     long parkNanos;//value of last park time
     long deadlineTime;//time point(nanoseconds or milliseconds),value greater than 0,current is a time park
     Object blockObject;
@@ -87,10 +83,9 @@ public class ThreadParkSupport {
         this.interrupted = false;
     }
 
-    //-1:timeout 0: interrupted
-    public int tryPark() {
+    public boolean tryPark() {
         LockSupport.park();
-        return (this.interrupted = Thread.interrupted()) ? PARK_INTERRUPTED : PARK_NORMAL;
+        return this.interrupted = Thread.interrupted();
     }
 
     public String toString() {
@@ -109,9 +104,9 @@ public class ThreadParkSupport {
             return "Implementation by method 'LockSupport.park(blockObject)'";
         }
 
-        public final int tryPark() {
+        public final boolean tryPark() {
             LockSupport.park(blockObject);
-            return (this.interrupted = Thread.interrupted()) ? PARK_INTERRUPTED : PARK_NORMAL;
+            return this.interrupted = Thread.interrupted();
         }
     }
 
@@ -131,13 +126,13 @@ public class ThreadParkSupport {
             this.deadlineTime = System.nanoTime() + nanoTime;
         }
 
-        public int tryPark() {
+        public boolean tryPark() {
             if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
                 parkNanos(parkNanos);
-                return (this.interrupted = Thread.interrupted()) ? PARK_INTERRUPTED : PARK_NORMAL;
+                return this.interrupted = Thread.interrupted();
             } else {
                 this.hasTimeout = true;
-                return PARK_TIMEOUT;
+                return this.interrupted;
             }
         }
 
@@ -155,13 +150,13 @@ public class ThreadParkSupport {
             this.blockObject = blocker;
         }
 
-        public final int tryPark() {
+        public final boolean tryPark() {
             if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
                 parkNanos(blockObject, parkNanos);
-                return (this.interrupted = Thread.interrupted()) ? PARK_INTERRUPTED : PARK_NORMAL;
+                return this.interrupted = Thread.interrupted();
             } else {
                 this.hasTimeout = true;
-                return PARK_TIMEOUT;
+                return this.interrupted;
             }
         }
 
@@ -179,14 +174,14 @@ public class ThreadParkSupport {
             this.deadlineTime = deadlineTime;
         }
 
-        public int tryPark() {
+        public boolean tryPark() {
             this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
             if (this.parkNanos > 0L) {
                 parkUntil(deadlineTime);
-                return (this.interrupted = Thread.interrupted()) ? PARK_INTERRUPTED : PARK_NORMAL;
+                return this.interrupted = Thread.interrupted();
             } else {
                 this.hasTimeout = true;
-                return PARK_TIMEOUT;
+                return this.interrupted;
             }
         }
 
@@ -208,14 +203,14 @@ public class ThreadParkSupport {
             this.blockObject = blocker;
         }
 
-        public final int tryPark() {
+        public final boolean tryPark() {
             this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
             if (this.parkNanos > 0L) {
                 parkUntil(blockObject, deadlineTime);
-                return (this.interrupted = Thread.interrupted()) ? PARK_INTERRUPTED : PARK_NORMAL;
+                return this.interrupted = Thread.interrupted();
             } else {
                 this.hasTimeout = true;
-                return PARK_TIMEOUT;
+                return this.interrupted;
             }
         }
 
@@ -224,6 +219,3 @@ public class ThreadParkSupport {
         }
     }
 }
-
-
-
