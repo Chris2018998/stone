@@ -96,10 +96,11 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         }
 
         //3:offer to wait queue
-        boolean success = false;
         byte spins = 0, postSpins = 0;
+        boolean atFirst, success = false;
         SyncNode node = config.getSyncNode();
-        boolean atFirst = appendAsWaitNode(node);//self-in
+        if (atFirst = appendAsWaitNode(node))//self-in
+            spins = postSpins = 3;
 
         //4:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
@@ -136,16 +137,10 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                 }
             } while (true);
         } finally {
-            boolean wakeup;
-            Object wakeupType = null;
-            if (success) {
-                if (wakeup = config.isPropagatedOnSuccess())
-                    wakeupType = node.getType();
-            } else {
-                wakeup = atFirst || peekFirst() == node;
-            }
-
-            this.removeAndWakeupFirst(node, wakeup, wakeupType);
+            if (success)
+                removeAndWakeupFirst(node, config.isPropagatedOnSuccess(), node.getType());
+            else
+                removeAndWakeupFirst(node, atFirst || atFirst(node), null);
         }//end finally
     }
 }
