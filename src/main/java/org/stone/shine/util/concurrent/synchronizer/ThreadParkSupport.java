@@ -16,7 +16,7 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
 import static java.util.concurrent.locks.LockSupport.parkUntil;
 
 /**
- * Time parker class,supply three Implementation with park methods of {@link java.util.concurrent.locks.LockSupport} class
+ * Time parker class,supply three Implementation with park methods of {@link LockSupport} class
  * 1:park
  * 2:parkNanos
  * 3:parkUntil
@@ -131,8 +131,7 @@ public class ThreadParkSupport {
                 parkNanos(parkNanos);
                 return this.interrupted = Thread.interrupted();
             } else {
-                this.hasTimeout = true;
-                return this.interrupted;
+                return this.hasTimeout = true;
             }
         }
 
@@ -155,8 +154,7 @@ public class ThreadParkSupport {
                 parkNanos(blockObject, parkNanos);
                 return this.interrupted = Thread.interrupted();
             } else {
-                this.hasTimeout = true;
-                return this.interrupted;
+                return this.hasTimeout = true;
             }
         }
 
@@ -180,8 +178,7 @@ public class ThreadParkSupport {
                 parkUntil(deadlineTime);
                 return this.interrupted = Thread.interrupted();
             } else {
-                this.hasTimeout = true;
-                return this.interrupted;
+                return this.hasTimeout = true;
             }
         }
 
@@ -209,8 +206,7 @@ public class ThreadParkSupport {
                 parkUntil(blockObject, deadlineTime);
                 return this.interrupted = Thread.interrupted();
             } else {
-                this.hasTimeout = true;
-                return this.interrupted;
+                return this.hasTimeout = true;
             }
         }
 

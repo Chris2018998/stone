@@ -9,6 +9,7 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
+import org.stone.shine.util.concurrent.ConcurrentLinkedDeque;
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
@@ -41,6 +42,7 @@ public final class TransferWaitPool<E> extends ThreadWaitingPool {
     }
 
     public TransferWaitPool(boolean fair) {
+        super(new ConcurrentLinkedDeque<SyncNode>());
         this.fair = fair;
         //true:transfer from head,which similar to{@link java.util.concurrent.SynchronousQueue#TransferQueue}
         //false:transfer from tail,which similar to{@link java.util.concurrent.SynchronousQueue#TransferStack}
