@@ -96,12 +96,10 @@ public final class ResultWaitPool extends ThreadWaitingPool {
         //3:offer to wait queue
         byte spins = 0, postSpins = 0;
         boolean atFirst, success = false;
+        ThreadParkSupport parkSupport = null;
         SyncNode node = config.getSyncNode();
         if (atFirst = appendAsWaitNode(node))//self-in
             spins = postSpins = 3;
-
-        //4:get control parameters from config
-        ThreadParkSupport parkSupport = config.getParkSupport();
 
         try {
             do {
@@ -116,6 +114,8 @@ public final class ResultWaitPool extends ThreadWaitingPool {
                     spins--;
                     emptyMethod();//idea from JDK
                 } else {
+                    if (parkSupport == null) parkSupport = config.getParkSupport();
+
                     //6: Block and wait util be at first of wait queue
                     do {
                         //6.1: reset state to be null
