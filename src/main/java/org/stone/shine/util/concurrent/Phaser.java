@@ -200,7 +200,7 @@ public class Phaser {
     public void forceTermination() {
         GamePhase currentPhase = phase;
         if (currentPhase != TerminatedPhase && PhaseUpd.compareAndSet(this, currentPhase, TerminatedPhase)) {
-            this.waitPool.wakeupFirst(null);//wakeup all waiters in pool to end waiting
+            this.waitPool.wakeupFirst();//wakeup all waiters in pool to end waiting
         }
     }
 

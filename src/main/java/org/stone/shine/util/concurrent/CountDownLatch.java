@@ -79,7 +79,7 @@ public final class CountDownLatch implements ResultCall {
             c = this.count.get();
             if (c == 0) return;
             if (this.count.compareAndSet(c, c - 1)) {
-                if (c == 1) waitPool.wakeupFirst(null);
+                if (c == 1) waitPool.wakeupFirst();
                 return;
             }
         } while (true);

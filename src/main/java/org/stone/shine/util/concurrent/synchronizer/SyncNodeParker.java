@@ -66,16 +66,16 @@ public class SyncNodeParker {
     SyncNodeParker() {
     }
 
-    public final long getLastParkNanos() {
-        return parkNanos;
-    }
-
     public final boolean isTimeout() {
         return hasTimeout;
     }
 
     public final boolean isInterrupted() {
         return interrupted;
+    }
+
+    public final long getLastParkNanos() {
+        return parkNanos;
     }
 
     public void reset() {

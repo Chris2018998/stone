@@ -87,7 +87,7 @@ public final class ResourceWaitPool {
     //release
     public final boolean release(ResourceAction action, int size) {
         if (action.tryRelease(size)) {
-            callPool.wakeupFirst(null);
+            callPool.wakeupFirst();
             return true;
         }
         return false;

@@ -210,7 +210,7 @@ public class StampedLock implements java.io.Serializable {
         if (inStampLow == curStampLow && (curStampLow & 1) == READ_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                if (highInt(newStamp) == 0) callWaitPool.wakeupFirst(null);
+                if (highInt(newStamp) == 0) callWaitPool.wakeupFirst();
                 return true;
             }
         }
@@ -275,7 +275,7 @@ public class StampedLock implements java.io.Serializable {
         if (inStampLow == curStampLow && (curStampLow & 1) == WRITE_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                callWaitPool.wakeupFirst(null);
+                callWaitPool.wakeupFirst();
                 return true;
             }
         }

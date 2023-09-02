@@ -17,15 +17,7 @@ import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsV
 
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
- * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
- * <p>
- * Some Key points about pool are below
- * 1) Assume that exists a runnable permit,who get it who run
- * 2) The permit can be transferred among with these waiters
- * 3) If a waiter is at first of the wait queue,it will get the permit automatically
- * 4) When waiters leave from pool,they should check whether getting the permit(transferred),maybe transfer it to other
- * 4.1) If failure in pool(timeout or interrupted), need transfer it to next waiter.
- * 4.2) if success and indicator of propagation is true,need transfer to next
+ * if not expected,then wait in pool util being wake-up by other or timeout/interrupted,and leave from pool.
  *
  * @author Chris Liao
  * @version 1.0

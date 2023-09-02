@@ -156,7 +156,7 @@ public final class CyclicBarrier {
                     this.flight = new GenerationFlight(seatSize);
 
                     //9: wakeup hall passengers to buy ticket of the new flight
-                    waitPool.wakeupFirst(null);
+                    waitPool.wakeupFirst();
 
                     //10: return the seat-No of the passenger)
                     return seatNo;
