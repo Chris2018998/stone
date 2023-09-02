@@ -9,8 +9,8 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
-import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.resource.AcquireTypes;
+import org.stone.shine.util.concurrent.synchronizer.resource.ResourceWaitPool;
 
 import java.util.Collection;
 import java.util.concurrent.locks.Condition;

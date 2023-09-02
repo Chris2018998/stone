@@ -21,8 +21,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
-import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
+import static org.stone.shine.util.concurrent.synchronizer.resource.AcquireTypes.TYPE_EXCLUSIVE;
+import static org.stone.shine.util.concurrent.synchronizer.resource.AcquireTypes.TYPE_SHARED;
 
 /**
  * StampedLock is a stamped digit Lock implementation by wait pool,which is

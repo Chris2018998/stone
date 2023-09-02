@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
+import org.stone.shine.util.concurrent.synchronizer.resource.AtomicIntState;
 
 /**
  * Lock Atomic state
