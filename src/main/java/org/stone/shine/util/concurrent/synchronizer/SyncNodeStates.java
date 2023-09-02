@@ -10,7 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer;
 
 /**
- * Node state static definition
+ * state definition of sync node
  *
  * @author Chris Liao
  * @version 1.0

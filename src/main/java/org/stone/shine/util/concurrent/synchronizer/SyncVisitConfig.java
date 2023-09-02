@@ -29,10 +29,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     //parkTime(@see LockSupport.parkNanos)
     private long parkNanos;
-    //deadline Date(@see LockSupport.parkUtil)
-    private long deadlineMills;
-    //thread block object(@see LockSupport.park(blocker))
-    private Object blockObject;
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
     private SyncNodeParker parkSupport;
 
@@ -47,20 +43,18 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //                                              1:constructors(3)                                                 //
     //****************************************************************************************************************//
     public SyncVisitConfig() {
+        this.parkSupport = new SyncNodeParker();
     }
 
     public SyncVisitConfig(Date deadlineDate) {
         if (deadlineDate == null) throw new IllegalArgumentException("Deadline date can't be null");
-        this.deadlineMills = deadlineDate.getTime();
+        this.parkSupport = new SyncNodeParker.UtilMillsParkSupport(deadlineDate.getTime());
     }
 
     public SyncVisitConfig(long time, TimeUnit timeUnit) {
         if (timeUnit == null) throw new IllegalArgumentException("Time unit can't be null");
+        if (time <= 0L) throw new IllegalArgumentException("Time must be greater than zero");
         this.parkNanos = timeUnit.toNanos(time);
-    }
-
-    public void setBlockObject(Object blockObject) {
-        this.blockObject = blockObject;
     }
 
     //****************************************************************************************************************//
@@ -113,15 +107,6 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public final SyncNodeParker getParkSupport() {
         if (parkSupport != null) return parkSupport;
-        if (deadlineMills > 0L) {
-            return this.parkSupport = blockObject == null ? new SyncNodeParker.UtilMillsParkSupport1(deadlineMills) :
-                    new SyncNodeParker.UtilMillsParkSupport2(deadlineMills, blockObject);
-        } else if (parkNanos > 0L) {
-            return this.parkSupport = blockObject == null ? new SyncNodeParker.NanoSecondsParkSupport(parkNanos) :
-                    new SyncNodeParker.NanoSecondsParkSupport2(parkNanos, blockObject);
-        } else {
-            return this.parkSupport = blockObject == null ? new SyncNodeParker() :
-                    new SyncNodeParker.ThreadParkSupport2(blockObject);
-        }
+        return this.parkSupport = new SyncNodeParker.NanoSecondsParkSupport(parkNanos);
     }
 }
