@@ -31,17 +31,21 @@ public abstract class ThreadWaitingPool {
     //****************************************************************************************************************//
     //                                          1:constructors(2)                                                     //
     //****************************************************************************************************************//
-    public ThreadWaitingPool(Queue<SyncNode> queue) {
-        this.waitQueue = queue;
-    }
-
     public ThreadWaitingPool() {
         this.waitQueue = new ConcurrentLinkedQueue<>();
     }
 
+    public ThreadWaitingPool(Queue<SyncNode> waitQueue) {
+        this.waitQueue = waitQueue;
+    }
+
     //****************************************************************************************************************//
-    //                                          2: queue Methods(5)                                                    //
+    //                                          2: queue Methods(5)                                                   //
     //****************************************************************************************************************//
+    protected final void pollFirst() {
+        waitQueue.poll();
+    }
+
     protected final SyncNode peekFirst() {
         return waitQueue.peek();
     }
@@ -75,11 +79,13 @@ public abstract class ThreadWaitingPool {
             if (casState(first, null, RUNNING)) LockSupport.unpark(first.thread);
     }
 
-    protected final void removeAndWakeupFirst(SyncNode node, boolean wakeup, Object wakeupType) {
-        waitQueue.remove(node);
-        if (wakeup && (node = waitQueue.peek()) != null) {
-            if (wakeupType == null || wakeupType == node.type || wakeupType.equals(node.type))
-                if (casState(node, null, RUNNING)) LockSupport.unpark(node.thread);
+    protected final void wakeupFirstOnFailure(SyncNode node, boolean atFirst) {
+        if (atFirst) {
+            waitQueue.poll();
+            node = waitQueue.peek();
+            if (node != null && casState(node, null, RUNNING)) LockSupport.unpark(node.thread);
+        } else {
+            waitQueue.remove(node);
         }
     }
 

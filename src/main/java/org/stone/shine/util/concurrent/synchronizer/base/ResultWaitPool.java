@@ -15,8 +15,6 @@ import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.ThreadWaitingPool;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.tools.CommonUtil.emptyMethod;
-
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
@@ -87,66 +85,57 @@ public final class ResultWaitPool extends ThreadWaitingPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2: test before call,if passed,then execute call
-        Object result = null;
         if (config.getVisitTester().test(fair, peekFirst(), config)) {
-            result = call.call(arg);
+            Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
         }
 
         //3: offer to wait queue
-        Throwable cause = null;
-        byte spins = 0, postSpins = 0;
-        boolean atFirst, success = false;
+        boolean atFirst;
+        byte spins = 0, postSpins = 1;
         SyncNode node = config.getSyncNode();
-        if (atFirst = appendAsWaitNode(node)) spins = postSpins = 1;//self-in
+        if (atFirst = appendAsWaitNode(node)) spins = postSpins;//self-in
         ThreadParkSupport parkSupport = config.getParkSupport();
 
         //4: spin
-        ExitSpin:
         do {
             //4.1: execute call when node at first of queue
             if (atFirst) {
                 try {
-                    result = call.call(arg);
-                    if (success = validator.isExpected(result)) break;
+                    Object result = call.call(arg);
+                    if (validator.isExpected(result)) {
+                        pollFirst();
+                        if (config.isPropagatedOnSuccess()) wakeupFirst(node.getType());
+                        return result;
+                    }
                 } catch (Throwable e) {
-                    cause = e;
-                    break;
+                    wakeupFirstOnFailure(node, true);
+                    throw e;
                 }
             }
 
             //4.2: decr spin count
             if (spins > 0) {
                 --spins;
-                emptyMethod();//idea from JDK
             } else {
                 do {
                     node.setStateWhenNotNull(null);
-                    if (parkSupport.tryPark()) {//timeout or interrupted
-                        if (parkSupport.isTimeout() || config.isAllowInterruption())
-                            break ExitSpin;
+                    boolean failed = parkSupport.tryPark();//timeout or interrupted
+                    if (!atFirst) atFirst = atFirst(node);
+                    if (failed) {
+                        if (parkSupport.isTimeout()) {
+                            wakeupFirstOnFailure(node, atFirst);
+                            return validator.resultOnTimeout();
+                        } else if (config.isAllowInterruption()) {
+                            wakeupFirstOnFailure(node, atFirst);
+                            throw new InterruptedException();
+                        }
                     }
-                } while (!atFirst && !(atFirst = atFirst(node)));
+                } while (!atFirst);
 
-                spins = postSpins = (byte) ((postSpins << 1) | 1);//idea from JDK
+                spins = postSpins = (byte) (postSpins << 1);//idea from JDK
             }
         } while (true);
-
-        //5: result
-        if (success) {
-            removeAndWakeupFirst(node, config.isPropagatedOnSuccess(), node.getType());
-            return result;
-        } else {
-            removeAndWakeupFirst(node, atFirst || atFirst(node), null);
-            if (cause != null) {
-                if (cause instanceof Exception) throw (Exception) cause;
-                throw (Error) cause;
-            } else if (parkSupport.isTimeout()) {
-                return validator.resultOnTimeout();
-            } else {
-                throw new InterruptedException();
-            }
-        }
     }
 }
