@@ -15,6 +15,8 @@ import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.tools.CommonUtil.emptyMethod;
+
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout/interrupted,and leave from pool.
@@ -87,7 +89,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         boolean atFirst;
         byte spins = 0, postSpins = 1;
         SyncNode node = config.getSyncNode();
-        if (atFirst = appendAsWaitNode(node)) spins = postSpins;//self-in
+        if (atFirst = appendAsWaitNode(node)) spins = postSpins = 3;//self-in
         SyncNodeParker parkSupport = config.getParkSupport();
 
         //4: spin
@@ -110,6 +112,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             //4.2: decr spin count
             if (spins > 0) {
                 --spins;
+                emptyMethod();
             } else {
                 do {
                     node.setStateWhenNotNull(null);
