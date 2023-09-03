@@ -38,7 +38,7 @@ public class ResultWaitPoolBenchmark {
                 //do nothing
             } finally {
                 call.incr();
-                pool.wakeupFirst(null);
+                pool.wakeupFirst();
             }
         }
     }
