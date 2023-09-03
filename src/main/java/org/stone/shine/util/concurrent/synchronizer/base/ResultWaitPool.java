@@ -88,36 +88,37 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         boolean atFirst, success = false;
         SyncNode node = config.getSyncNode();
         if (atFirst = appendAsWaitNode(node))//self-in
-            spins = postSpins = 3;
+            spins = postSpins = 1;
 
-        //4:get control parameters from config
+        //4:get parkSupport from config
         SyncNodeParker parkSupport = config.getParkSupport();
+
+        //5: spin
         try {
             do {
-                //5: execute call(got a signal or at first of wait queue)
+                //5.1: execute result call
                 if (atFirst) {
                     Object result = call.call(arg);
                     if (success = validator.isExpected(result))
                         return result;
                 }
 
+                //5.2: decr spin count
                 if (spins > 0) {
                     spins--;
                 } else {
-                    //6: Block and wait util be at first of wait queue
+                    //5.3: calculate spin count for next
+                    spins = postSpins = (byte) ((postSpins << 1)|1);
                     do {
-                        //6.1: reset state to be null
+                        //5.4: reset state to null
                         node.setStateWhenNotNull(null);
-                        //6.2: try to park
+                        //5.5: try to park
                         if (parkSupport.tryPark()) {//timeout or interrupted
                             if (parkSupport.isTimeout()) return validator.resultOnTimeout();
                             if (config.isAllowInterruption()) throw new InterruptedException();
                         }
-                        //6.3: first position check
+                        //5.6: first position check
                     } while (!atFirst && !(atFirst = waitQueue.peek() == node));
-
-                    //calculate spin count for next
-                    spins = postSpins = (byte) ((postSpins << 1) | 1);//idea from JDK
                 }
             } while (true);
         } finally {
