@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
  * @author Chris Liao
  * @version 1.0
  */
-//final class SyncNodeChain<SyncNode> implements Deque<SyncNode> {
+
 final class SyncNodeChain {
     private final SyncNode head = new SyncNode(null);
     volatile SyncNode tail = head;

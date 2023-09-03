@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.resource.ResourceAction;
+import org.stone.shine.util.concurrent.synchronizer.extend.ResourceAction;
 
 /**
  * Lock Base Action

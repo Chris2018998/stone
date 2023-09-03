@@ -9,13 +9,13 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.ConcurrentLinkedDeque;
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeParker;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;

@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.resource.AtomicIntState;
-import org.stone.shine.util.concurrent.synchronizer.resource.ResourceAction;
-import org.stone.shine.util.concurrent.synchronizer.resource.ResourceWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
+import org.stone.shine.util.concurrent.synchronizer.extend.ResourceAction;
+import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;

@@ -13,8 +13,8 @@ import org.stone.shine.util.concurrent.synchronizer.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitTester;
 import org.stone.shine.util.concurrent.synchronizer.base.SignalWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.resource.AcquireTypes;
-import org.stone.shine.util.concurrent.synchronizer.resource.ResourceWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes;
+import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
 import java.util.Date;
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
-import static org.stone.shine.util.concurrent.synchronizer.resource.AcquireTypes.TYPE_SHARED;
+import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
 /**
  * Lock super class(ReentrantLock,WriteLockImpl,ReadLockImpl)
@@ -44,12 +44,12 @@ class BaseLock implements Lock {
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
     //****************************************************************************************************************//
-    //constructor1(resource by ReentrantLock)
+    //constructor1(extend by ReentrantLock)
     BaseLock(boolean fair, LockAction lockAction) {
         this(new ResourceWaitPool(fair), lockAction, AcquireTypes.TYPE_EXCLUSIVE);
     }
 
-    //constructor2(resource by WriteLockImpl,ReadLockImpl)
+    //constructor2(extend by WriteLockImpl,ReadLockImpl)
     BaseLock(ResourceWaitPool waitPool, LockAction lockAction, Object acquireType) {
         this.waitPool = waitPool;
         this.lockAction = lockAction;

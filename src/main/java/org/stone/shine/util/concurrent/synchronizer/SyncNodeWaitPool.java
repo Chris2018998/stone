@@ -26,12 +26,12 @@ import static org.stone.tools.CommonUtil.objectEquals;
  */
 
 public abstract class SyncNodeWaitPool {
-    //node wait queue
-    protected final Queue<SyncNode> waitQueue;
+    protected final Queue<SyncNode> waitQueue;//node wait queue
 
     //****************************************************************************************************************//
     //                                          1:constructors(2)                                                     //
     //****************************************************************************************************************//
+
     public SyncNodeWaitPool() {
         this.waitQueue = new ConcurrentLinkedQueue<>();
     }
@@ -50,7 +50,7 @@ public abstract class SyncNodeWaitPool {
     }
 
     protected final boolean appendAsWaitNode(SyncNode node) {
-        node.thread = Thread.currentThread();
+        node.setCurrentThread();
         waitQueue.offer(node);
         return node == waitQueue.peek();
     }
@@ -68,16 +68,6 @@ public abstract class SyncNodeWaitPool {
         SyncNode first = waitQueue.peek();
         if (first != null && (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type)))
             if (casState(first, null, RUNNING)) unpark(first.thread);
-    }
-
-    protected final void wakeupFirstOnFailure(SyncNode node, boolean atFirst) {
-        if (atFirst) {
-            waitQueue.poll();
-            node = waitQueue.peek();
-            if (node != null && casState(node, null, RUNNING)) unpark(node.thread);
-        } else {
-            waitQueue.remove(node);
-        }
     }
 
     //****************************************************************************************************************//

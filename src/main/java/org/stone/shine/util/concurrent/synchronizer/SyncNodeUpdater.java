@@ -9,8 +9,7 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import org.stone.tools.atomic.UnsafeAdaptor;
-import org.stone.tools.atomic.UnsafeAdaptorHolder;
+import sun.misc.Unsafe;
 
 /**
  * node cas updater
@@ -19,7 +18,7 @@ import org.stone.tools.atomic.UnsafeAdaptorHolder;
  * @version 1.0
  */
 public final class SyncNodeUpdater {
-    private final static UnsafeAdaptor U;
+    private final static Unsafe U;
     private final static long stateOffSet;
 
     //chain field offset
@@ -29,7 +28,7 @@ public final class SyncNodeUpdater {
 
     static {
         try {
-            U = UnsafeAdaptorHolder.UA;
+            U = org.stone.tools.atomic.UnsafeAdaptorSunMiscImpl.U;
             Class nodeClass = SyncNode.class;
             //SyncNode.state
             stateOffSet = U.objectFieldOffset(nodeClass.getDeclaredField("state"));

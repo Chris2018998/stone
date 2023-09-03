@@ -15,11 +15,9 @@ import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import static org.stone.tools.CommonUtil.emptyMethod;
-
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
- * if not expected,then wait in pool util being wake-up by other or timeout/interrupted,and leave from pool.
+ * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
  *
  * @author Chris Liao
  * @version 1.0
@@ -73,64 +71,65 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
      * @throws java.lang.Exception from call or InterruptedException after thread tryPark
      */
     public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
-        //1: check call parameter
+        //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
         if (call == null || config == null || validator == null)
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
-        //2: test before call,if passed,then execute call
+        //2:test before call,if passed,then execute call
         if (config.getVisitTester().test(fair, waitQueue.peek(), config)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
         }
 
-        //3: offer to wait queue
-        boolean atFirst;
-        byte spins = 0, postSpins = 1;
+        //3:offer to wait queue
+        byte spins = 0, postSpins = 0;
+        boolean atFirst, success = false;
         SyncNode node = config.getSyncNode();
-        if (atFirst = appendAsWaitNode(node)) spins = postSpins = 3;//self-in
+        if (atFirst = appendAsWaitNode(node))//self-in
+            spins = postSpins = 3;
+
+        //4:get control parameters from config
         SyncNodeParker parkSupport = config.getParkSupport();
-
-        //4: spin
-        do {
-            //4.1: execute call when node at first of queue
-            if (atFirst) {
-                try {
+        try {
+            do {
+                //5: execute call(got a signal or at first of wait queue)
+                if (atFirst) {
                     Object result = call.call(arg);
-                    if (validator.isExpected(result)) {
-                        waitQueue.poll();
-                        if (config.isPropagatedOnSuccess()) wakeupFirst(node.getType());
+                    if (success = validator.isExpected(result))
                         return result;
-                    }
-                } catch (Throwable e) {
-                    wakeupFirstOnFailure(node, true);
-                    throw e;
                 }
-            }
 
-            //4.2: decr spin count
-            if (spins > 0) {
-                --spins;
-                emptyMethod();
-            } else {
-                do {
-                    node.setStateWhenNotNull(null);
-                    boolean failed = parkSupport.tryPark();//timeout or interrupted
-                    if (!atFirst) atFirst = waitQueue.peek() == node;
-                    if (failed) {
-                        if (parkSupport.isTimeout()) {
-                            wakeupFirstOnFailure(node, atFirst);
-                            return validator.resultOnTimeout();
-                        } else if (config.isAllowInterruption()) {
-                            wakeupFirstOnFailure(node, atFirst);
-                            throw new InterruptedException();
+                if (spins > 0) {
+                    spins--;
+                } else {
+                    //6: Block and wait util be at first of wait queue
+                    do {
+                        //6.1: reset state to be null
+                        node.setStateWhenNotNull(null);
+                        //6.2: try to park
+                        if (parkSupport.tryPark()) {//timeout or interrupted
+                            if (parkSupport.isTimeout()) return validator.resultOnTimeout();
+                            if (config.isAllowInterruption()) throw new InterruptedException();
                         }
-                    }
-                } while (!atFirst);
+                        //6.3: first position check
+                    } while (!atFirst && !(atFirst = waitQueue.peek() == node));
 
-                spins = postSpins = (byte) (postSpins << 1);//idea from JDK
+                    //calculate spin count for next
+                    spins = postSpins = (byte) ((postSpins << 1) | 1);//idea from JDK
+                }
+            } while (true);
+        } finally {
+            if (success) {
+                waitQueue.poll();
+                if (config.isPropagatedOnSuccess()) wakeupFirst(node.getType());
+            } else if (atFirst || waitQueue.peek() == node) {
+                waitQueue.poll();
+                wakeupFirst();
+            } else {
+                waitQueue.remove(node);
             }
-        } while (true);
+        }//end finally
     }
 }
