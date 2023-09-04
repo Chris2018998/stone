@@ -95,7 +95,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         try {
             do {
                 //5.1: execute result call
-                if (atFirst || (atFirst = waitQueue.peek() == node)) {//if(state==RUNNING)  better?
+                if (atFirst) {//if(state==RUNNING)  better?
                     do {
                         Object result = call.call(arg);
                         if (success = validator.isExpected(result)) return result;
@@ -110,6 +110,9 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                     if (parkSupport.isTimeout()) return validator.resultOnTimeout();
                     if (config.isAllowInterruption()) throw new InterruptedException();
                 }
+
+                //5.3: check node whether at first after parking
+                if (!atFirst) atFirst = waitQueue.peek() == node;
             } while (true);
         } finally {
             if (success) {
