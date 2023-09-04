@@ -84,12 +84,10 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         }
 
         //3:offer to wait queue
-        byte spins = 0, postSpins = 0;
-        boolean atFirst, success = false;
+        boolean success = false;
+        byte spins = 1, postSpins = 1;
         SyncNode node = config.getSyncNode();
-        if (atFirst = appendAsWaitNode(node))//self-in
-            spins = postSpins = 1;
-
+        boolean atFirst = appendAsWaitNode(node);
         //4:get parkSupport from config
         SyncNodeParker parkSupport = config.getParkSupport();
 
@@ -97,28 +95,20 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         try {
             do {
                 //5.1: execute result call
-                if (atFirst) {
-                    Object result = call.call(arg);
-                    if (success = validator.isExpected(result))
-                        return result;
+                if (atFirst || (atFirst = waitQueue.peek() == node)) {//if(state==RUNNING)  better?
+                    do {
+                        Object result = call.call(arg);
+                        if (success = validator.isExpected(result)) return result;
+                    } while (spins > 0 && --spins > 0);
+                    //calculate spin count for next
+                    spins = postSpins = (byte) (postSpins << 1);
                 }
 
-                //5.2: decr spin count
-                if (spins > 0) {
-                    spins--;
-                } else {
-                    //5.3: calculate spin count for next
-                    spins = postSpins = (byte) ((postSpins << 1)|1);
-                    do {
-                        //5.4: reset state to null
-                        node.setStateWhenNotNull(null);
-                        //5.5: try to park
-                        if (parkSupport.tryPark()) {//timeout or interrupted
-                            if (parkSupport.isTimeout()) return validator.resultOnTimeout();
-                            if (config.isAllowInterruption()) throw new InterruptedException();
-                        }
-                        //5.6: first position check
-                    } while (!atFirst && !(atFirst = waitQueue.peek() == node));
+                //5.2: try to park
+                node.setStateWhenNotNull(null);
+                if (parkSupport.tryPark()) {//timeout or interrupted
+                    if (parkSupport.isTimeout()) return validator.resultOnTimeout();
+                    if (config.isAllowInterruption()) throw new InterruptedException();
                 }
             } while (true);
         } finally {
