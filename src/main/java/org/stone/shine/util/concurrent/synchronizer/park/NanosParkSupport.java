@@ -20,7 +20,7 @@ public final class NanosParkSupport implements ThreadParkSupport {
         this.deadlineTime = System.nanoTime() + parkNanos;
     }
 
-    public boolean block() {
+    public boolean park() {
         if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
             parkNanos(this, parkNanos);
             return this.interrupted = Thread.interrupted();

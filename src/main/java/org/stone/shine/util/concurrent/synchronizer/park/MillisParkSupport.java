@@ -22,7 +22,7 @@ public final class MillisParkSupport implements ThreadParkSupport {
         this.deadlineTime = deadlineTime;
     }
 
-    public boolean block() {
+    public boolean park() {
         this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
         if (this.parkNanos > 0L) {
             parkUntil(this, deadlineTime);

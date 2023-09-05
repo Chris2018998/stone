@@ -106,7 +106,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 //5.2: try to park
                 node.setStateWhenNotNull(null);
                 if (parkSupport == null) parkSupport = config.getParkSupport();
-                if (parkSupport.block()) {//timeout or interrupted
+                if (parkSupport.park()) {//timeout or interrupted
                     if (parkSupport.isTimeout()) return validator.resultOnTimeout();
                     if (config.isAllowInterruption()) throw new InterruptedException();
                 }

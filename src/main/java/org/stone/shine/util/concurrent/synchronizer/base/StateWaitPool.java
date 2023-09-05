@@ -86,7 +86,7 @@ public final class StateWaitPool extends SyncNodeWaitPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.block();
+                    parkSupport.park();
                 }
             } while (true);
         } finally {

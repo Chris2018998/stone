@@ -54,7 +54,7 @@ import java.util.concurrent.locks.LockSupport;
 public interface ThreadParkSupport {
 
     //true:timeout or interrupted
-    boolean block();
+    boolean park();
 
     boolean isTimeout();
 

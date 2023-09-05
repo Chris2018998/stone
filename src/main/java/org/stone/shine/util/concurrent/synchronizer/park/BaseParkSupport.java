@@ -13,7 +13,7 @@ import java.util.concurrent.locks.LockSupport;
 public final class BaseParkSupport implements ThreadParkSupport {
     private boolean interrupted;
 
-    public boolean block() {
+    public boolean park() {
         LockSupport.park(this);
         return interrupted = Thread.interrupted();
     }
