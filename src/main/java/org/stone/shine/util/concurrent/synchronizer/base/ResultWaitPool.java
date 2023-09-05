@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeParker;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 /**
@@ -56,7 +56,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
      * @param arg    call argument
      * @param config thread wait config
      * @return object, if call result check passed by validator
-     * @throws java.lang.Exception from call or InterruptedException after thread tryPark
+     * @throws java.lang.Exception from call or InterruptedException after thread park
      */
     public final Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return this.get(call, arg, validator, config);
@@ -68,7 +68,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
      * @param config    thread wait config
      * @param validator result validator
      * @return passed result
-     * @throws java.lang.Exception from call or InterruptedException after thread tryPark
+     * @throws java.lang.Exception from call or InterruptedException after thread park
      */
     public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
@@ -86,16 +86,15 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         //3:offer to wait queue
         boolean success = false;
         byte spins = 1, postSpins = 1;
+        ThreadParkSupport parkSupport = null;
         SyncNode node = config.getSyncNode();
         boolean atFirst = appendAsWaitNode(node);
-        //4:get parkSupport from config
-        SyncNodeParker parkSupport = config.getParkSupport();
 
         //5: spin
         try {
             do {
                 //5.1: execute result call
-                if (atFirst) {//if(state==RUNNING)  better?
+                if (atFirst) {
                     do {
                         Object result = call.call(arg);
                         if (success = validator.isExpected(result)) return result;
@@ -106,7 +105,8 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
 
                 //5.2: try to park
                 node.setStateWhenNotNull(null);
-                if (parkSupport.tryPark()) {//timeout or interrupted
+                if (parkSupport == null) parkSupport = config.getParkSupport();
+                if (parkSupport.block()) {//timeout or interrupted
                     if (parkSupport.isTimeout()) return validator.resultOnTimeout();
                     if (config.isAllowInterruption()) throw new InterruptedException();
                 }

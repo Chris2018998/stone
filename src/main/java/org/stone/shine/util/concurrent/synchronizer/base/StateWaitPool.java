@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeParker;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
@@ -66,7 +66,7 @@ public final class StateWaitPool extends SyncNodeWaitPool {
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //3:get control parameters from config
-        SyncNodeParker parkSupport = config.getParkSupport();
+        ThreadParkSupport parkSupport = config.getParkSupport();
 
         //4: spin control（Logic from BeeCP）
         try {
@@ -86,7 +86,7 @@ public final class StateWaitPool extends SyncNodeWaitPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.tryPark();
+                    parkSupport.block();
                 }
             } while (true);
         } finally {

@@ -76,7 +76,7 @@ public abstract class SyncNodeWaitPool {
     public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitQueue.iterator() : descendingIterator();
 
-        //2: retrieve type matched node and unpark its thread
+        //2: retrieve type matched node and un-park its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();
@@ -105,7 +105,7 @@ public abstract class SyncNodeWaitPool {
     public final void wakeupAll(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitQueue.iterator() : descendingIterator();
 
-        //2: retrieve type matched node and unpark its thread
+        //2: retrieve type matched node and un-park its thread
         if (nodeType == null) {
             while (iterator.hasNext()) {
                 SyncNode qNode = iterator.next();

@@ -9,6 +9,10 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
+import org.stone.shine.util.concurrent.synchronizer.park.BaseParkSupport;
+import org.stone.shine.util.concurrent.synchronizer.park.MillisParkSupport;
+import org.stone.shine.util.concurrent.synchronizer.park.NanosParkSupport;
+
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -32,7 +36,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //parkTime(@see LockSupport.parkUtil)
     private Date deadlineDate;
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
-    private SyncNodeParker parkSupport;
+    private ThreadParkSupport parkSupport;
 
     //similar to AQS SHARED mode
     private boolean propagatedOnSuccess;
@@ -106,13 +110,11 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.propagatedOnSuccess = propagatedOnSuccess;
     }
 
-    public final SyncNodeParker getParkSupport() {
+    public final ThreadParkSupport getParkSupport() {
         if (parkSupport != null) return parkSupport;
         if (deadlineDate != null)
-            return this.parkSupport = new SyncNodeParker.UtilMillsParkSupport(deadlineDate.getTime());
-
-        if (parkNanos == 0) return this.parkSupport = new SyncNodeParker();
-
-        return this.parkSupport = new SyncNodeParker.NanoSecondsParkSupport(parkNanos);
+            return this.parkSupport = new MillisParkSupport(deadlineDate.getTime());
+        if (parkNanos == 0) return this.parkSupport = new BaseParkSupport();
+        return this.parkSupport = new NanosParkSupport(parkNanos);
     }
 }

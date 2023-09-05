@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeParker;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -118,7 +118,7 @@ public final class TransferWaitPool<E> extends SyncNodeWaitPool {
 
         //2:get control parameters from config
         boolean allowInterrupted = config.isAllowInterruption();
-        SyncNodeParker parkSupport = config.getParkSupport();
+        ThreadParkSupport parkSupport = config.getParkSupport();
 
         //3:spin control
         try {
@@ -138,7 +138,7 @@ public final class TransferWaitPool<E> extends SyncNodeWaitPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.tryPark();
+                    parkSupport.block();
                 }
             } while (true);
         } finally {

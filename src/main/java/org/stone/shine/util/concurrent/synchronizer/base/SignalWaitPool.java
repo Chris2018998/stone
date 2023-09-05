@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer.base;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeParker;
 import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
@@ -31,7 +31,7 @@ public final class SignalWaitPool extends SyncNodeWaitPool {
      *
      * @param config thread wait config
      * @return true, if get a signal then return true,timeout return false
-     * @throws java.lang.InterruptedException exception from call or InterruptedException after thread tryPark
+     * @throws java.lang.InterruptedException exception from call or InterruptedException after thread park
      */
     public final Object get(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
@@ -43,7 +43,7 @@ public final class SignalWaitPool extends SyncNodeWaitPool {
         int spins = appendAsWaitNode(node) ? maxTimedSpins : 0;//spin count
 
         //3:get control parameters from config
-        SyncNodeParker parkSupport = config.getParkSupport();
+        ThreadParkSupport parkSupport = config.getParkSupport();
 
         //4: spin control（Logic from BeeCP）
         try {
@@ -60,7 +60,7 @@ public final class SignalWaitPool extends SyncNodeWaitPool {
                 } else if (spins > 0) {
                     --spins;
                 } else {
-                    parkSupport.tryPark();
+                    parkSupport.block();
                 }
             } while (true);
         } finally {
