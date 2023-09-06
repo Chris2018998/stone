@@ -11,6 +11,10 @@ package org.stone.shine.util.concurrent.synchronizer;
 
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.locks.LockSupport.parkNanos;
+import static java.util.concurrent.locks.LockSupport.parkUntil;
+
 /**
  * Time park class,supply three Implementation with park methods of {@link LockSupport} class
  * 1:park
@@ -51,14 +55,94 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 
-public interface ThreadParkSupport {
+public class ThreadParkSupport {
+    protected boolean interrupted;
 
-    //true:timeout or interrupted
-    boolean park();
+    ThreadParkSupport() {
+    }
 
-    boolean isTimeout();
+    public boolean park() {
+        LockSupport.park(this);
+        return interrupted = Thread.interrupted();
+    }
 
-    boolean isInterrupted();
+    public boolean isTimeout() {
+        return false;
+    }
 
-    long getLastParkNanos();
+    public boolean isInterrupted() {
+        return interrupted;
+    }
+
+    public long getLastParkNanos() {
+        return 0L;
+    }
+
+    public String toString() {
+        return "Implementation by method 'LockSupport.park(blocker)'";
+    }
+
+
+    static final class NanosParkSupport extends ThreadParkSupport {
+        private final long deadlineTime;
+        private long parkNanos;
+        private boolean hasTimeout;
+
+        NanosParkSupport(long parkNanos) {
+            this.deadlineTime = System.nanoTime() + parkNanos;
+        }
+
+        public boolean park() {
+            if ((this.parkNanos = deadlineTime - System.nanoTime()) > 0L) {
+                parkNanos(this, parkNanos);
+                return this.interrupted = Thread.interrupted();
+            } else {
+                return this.hasTimeout = true;
+            }
+        }
+
+        public boolean isTimeout() {
+            return hasTimeout;
+        }
+
+        public long getLastParkNanos() {
+            return parkNanos;
+        }
+
+        public String toString() {
+            return "Implementation by  method 'LockSupport.parkNanos(blocker,time)'";
+        }
+    }
+
+    static final class MillisParkSupport extends ThreadParkSupport {
+        private final long deadlineTime;
+        private long parkNanos;
+        private boolean hasTimeout;
+
+        MillisParkSupport(long deadlineTime) {
+            this.deadlineTime = deadlineTime;
+        }
+
+        public boolean park() {
+            this.parkNanos = MILLISECONDS.toNanos(deadlineTime - System.currentTimeMillis());
+            if (this.parkNanos > 0L) {
+                parkUntil(this, deadlineTime);
+                return this.interrupted = Thread.interrupted();
+            } else {
+                return this.hasTimeout = true;
+            }
+        }
+
+        public boolean isTimeout() {
+            return hasTimeout;
+        }
+
+        public long getLastParkNanos() {
+            return parkNanos;
+        }
+
+        public String toString() {
+            return "Implementation by method 'LockSupport.parkUntil(blocker,milliseconds)'";
+        }
+    }
 }

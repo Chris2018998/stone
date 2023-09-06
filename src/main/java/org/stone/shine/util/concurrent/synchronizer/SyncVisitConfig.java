@@ -9,10 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import org.stone.shine.util.concurrent.synchronizer.park.BaseParkSupport;
-import org.stone.shine.util.concurrent.synchronizer.park.MillisParkSupport;
-import org.stone.shine.util.concurrent.synchronizer.park.NanosParkSupport;
-
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -113,8 +109,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     public final ThreadParkSupport getParkSupport() {
         if (parkSupport != null) return parkSupport;
         if (deadlineDate != null)
-            return this.parkSupport = new MillisParkSupport(deadlineDate.getTime());
-        if (parkNanos == 0) return this.parkSupport = new BaseParkSupport();
-        return this.parkSupport = new NanosParkSupport(parkNanos);
+            return this.parkSupport = new ThreadParkSupport.MillisParkSupport(deadlineDate.getTime());
+        if (parkNanos == 0) return this.parkSupport = new ThreadParkSupport();
+        return this.parkSupport = new ThreadParkSupport.NanosParkSupport(parkNanos);
     }
 }
