@@ -67,8 +67,8 @@ public final class SyncNode<E> {
         this.thread = Thread.currentThread();
     }
 
-    public final void setStateWhenNotNull(Object newState) {
-        if (state != null) state = newState;
+    public final void setStateToNull() {
+        if (state != null) state = null;
     }
 
     //****************************************************************************************************************//
