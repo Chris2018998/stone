@@ -9,10 +9,7 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
+import org.stone.shine.util.concurrent.synchronizer.*;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 /**
@@ -40,6 +37,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
+        super(new SyncNodeChain());
         this.fair = fair;
         this.validator = validator;
     }
@@ -97,22 +95,24 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 if (atFirst) {
                     do {
                         Object result = call.call(arg);
-                        if (success = validator.isExpected(result)) return result;
+                        if (success = validator.isExpected(result))
+                            return result;
                     } while (spins > 0 && --spins > 0);
                     //calculate spin count for next
                     spins = postSpins = (byte) (postSpins << 1);
                 }
 
-                //5.2: try to park
-                node.setStateWhenNotNull(null);
+                //5.2: prepare parkSupport
                 if (parkSupport == null) parkSupport = config.getParkSupport();
-                if (parkSupport.park()) {//timeout or interrupted
-                    if (parkSupport.isTimeout()) return validator.resultOnTimeout();
-                    if (config.isAllowInterruption()) throw new InterruptedException();
-                }
 
-                //5.3: check node whether at first after parking
-                if (!atFirst) atFirst = waitQueue.peek() == node;
+                //5.3: try to park
+                do {
+                    node.setStateToNull();
+                    if (parkSupport.park()) {//timeout or interrupted
+                        if (parkSupport.isTimeout()) return validator.resultOnTimeout();
+                        if (config.isAllowInterruption()) throw new InterruptedException();
+                    }
+                } while (!atFirst && !(atFirst = waitQueue.peek() == node));
             } while (true);
         } finally {
             if (success) {
