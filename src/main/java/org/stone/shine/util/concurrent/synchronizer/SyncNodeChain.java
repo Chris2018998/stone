@@ -9,61 +9,125 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
+
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casTail;
 
 /**
- * A synchronization node chain
+ * A synchronization node chain(FIFO,applied in result wait pool)
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-final class SyncNodeChain {
-    private final SyncNode head = new SyncNode(null);
+public final class SyncNodeChain implements Queue<SyncNode> {
+    private SyncNode head = new SyncNode(null);
     volatile SyncNode tail = head;
 
-    SyncNodeChain() {
+    public SyncNodeChain() {
         head.thread = null;
     }
 
-    final void offer(SyncNode node) {
+    //****************************************************************************************************************//
+    //                                          1: queue methods(3)                                                   //
+    //****************************************************************************************************************//
+    public boolean add(SyncNode e) {
+        return offer(e);
+    }
+
+    public boolean offer(SyncNode node) {
         SyncNode t;
         do {
             t = tail;
             node.prev = t;
-            if (SyncNodeUpdater.casTail(this, t, node)) {//append to tail.next
+            if (casTail(this, t, node)) {//append to tail.next
                 t.next = node;
-                return;
+                return true;
             }
         } while (true);
     }
 
-    final boolean remove(SyncNode node) {
-        node.setState(SyncNodeStates.REMOVED);
+    public SyncNode peek() {
+        return head.next;
+    }
 
-        //1: find out not removed pre-node
-        SyncNode pred = node.prev;
-        while (pred.state == SyncNodeStates.REMOVED)
-            node.prev = pred = pred.prev;
-
-        //2:remove node from chain
-        SyncNode predNext = pred.next;
-        if (node == tail && SyncNodeUpdater.casTail(this, node, pred)) {
-            SyncNodeUpdater.casNext(pred, predNext, null);
-        } else {
-            SyncNode next = node.next;
-            SyncNodeUpdater.casNext(pred, predNext, next);
+    public SyncNode poll() {
+        SyncNode node = head.next;
+        if (node != null) {
+            node.prev = null;
+            node.thread = null;
+            head = node;
         }
+        return node;
+    }
+
+    public SyncNode remove() {
+        throw new UnsupportedOperationException();
+    }
+
+    public SyncNode element() {
+        throw new UnsupportedOperationException();
+    }
+
+    //****************************************************************************************************************//
+    //                                          2: collection methods(3)                                              //
+    //****************************************************************************************************************//
+    public boolean remove(Object n) {
+        SyncNode node = (SyncNode) n;
+
+
         return true;
     }
 
-    final Iterator<SyncNode> iterator() {
-        return new AscItr(head.next);
+    public int size() {
+        throw new UnsupportedOperationException();
     }
 
-    final Iterator<SyncNode> descendingIterator() {
+    public boolean isEmpty() {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean contains(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean containsAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean addAll(Collection<? extends SyncNode> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean removeAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean retainAll(Collection<?> c) {
+        throw new UnsupportedOperationException();
+    }
+
+    public void clear() {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean equals(Object o) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int hashCode() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Object[] toArray() {
+        throw new UnsupportedOperationException();
+    }
+
+    public <T> T[] toArray(T[] a) {
+        throw new UnsupportedOperationException();
+    }
+
+    public Iterator<SyncNode> iterator() {
         SyncNode t = tail;
         return new DescItr(t != head ? t : null);
     }
@@ -106,25 +170,6 @@ final class SyncNodeChain {
 
         //fill a valid node to the
         abstract void findNextNode(ChainPointer pointer);
-    }
-
-    private static class AscItr extends PointerItr {
-        AscItr(SyncNode currentNode) {
-            super(currentNode);
-        }
-
-        public void findNextNode(ChainPointer pointer) {
-            SyncNode curNode = pointer.curNode;
-            SyncNode nextNode = pointer.isAtFirst() ? curNode : curNode.next;
-
-            while (nextNode != null) {
-                if (nextNode.state != SyncNodeStates.REMOVED) {//find a valid node
-                    pointer.setNextNode(nextNode);
-                    break;
-                }
-                nextNode = curNode.next;
-            }
-        }
     }
 
     private static class DescItr extends PointerItr {
