@@ -11,6 +11,7 @@ package org.stone.shine.util.concurrent.synchronizer;
 
 import java.util.*;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casNext;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casTail;
 
 /**
@@ -24,15 +25,25 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     private SyncNode head = new SyncNode(null);
     volatile SyncNode tail = head;
 
-    public SyncNodeChain() {
-        head.thread = null;
+    //****************************************************************************************************************//
+    //                                          1: queue methods(4)                                                   //
+    //****************************************************************************************************************//
+    public SyncNode peek() {
+        return head.next;
     }
 
-    //****************************************************************************************************************//
-    //                                          1: queue methods(3)                                                   //
-    //****************************************************************************************************************//
     public boolean add(SyncNode e) {
         return offer(e);
+    }
+
+    public SyncNode poll() {
+        SyncNode node = head.next;
+        if (node != null) {
+            head = node;
+            node.thread = null;
+            node.prev = null;
+        }
+        return node;
     }
 
     public boolean offer(SyncNode node) {
@@ -45,20 +56,6 @@ public final class SyncNodeChain implements Queue<SyncNode> {
                 return true;
             }
         } while (true);
-    }
-
-    public SyncNode peek() {
-        return head.next;
-    }
-
-    public SyncNode poll() {
-        SyncNode node = head.next;
-        if (node != null) {
-            node.prev = null;
-            node.thread = null;
-            head = node;
-        }
-        return node;
     }
 
     public SyncNode remove() {
@@ -75,7 +72,15 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     public boolean remove(Object n) {
         SyncNode node = (SyncNode) n;
 
-
+        SyncNode pred = node.prev;
+        SyncNode predNext = pred.next;
+        if (node == tail && casTail(this, node, pred)) {
+            casNext(pred, predNext, null);
+            return true;
+        } else {
+            SyncNode next = node.next;
+            casNext(pred, predNext, next);
+        }
         return true;
     }
 

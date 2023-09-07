@@ -9,7 +9,10 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.*;
+import org.stone.shine.util.concurrent.synchronizer.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 /**
@@ -37,7 +40,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
-        super(new SyncNodeChain());
+        //super(new SyncNodeChain());
         this.fair = fair;
         this.validator = validator;
     }
@@ -75,7 +78,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:test before call,if passed,then execute call
-        if (config.getVisitTester().test(fair, waitQueue.peek(), config)) {
+        if (config.getVisitTester().test(fair, waitQueue.peek(), config.getNodeType())) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
@@ -95,8 +98,12 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 if (atFirst) {
                     do {
                         Object result = call.call(arg);
-                        if (success = validator.isExpected(result))
+                        if (validator.isExpected(result)) {
+                            waitQueue.poll();
+                            if (config.isPropagatedOnSuccess()) wakeupFirst(node.getType());
+                            success = true;
                             return result;
+                        }
                     } while (spins > 0 && --spins > 0);
                     //calculate spin count for next
                     spins = postSpins = (byte) (postSpins << 1);
@@ -115,14 +122,13 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 } while (!atFirst && !(atFirst = waitQueue.peek() == node));
             } while (true);
         } finally {
-            if (success) {
-                waitQueue.poll();
-                if (config.isPropagatedOnSuccess()) wakeupFirst(node.getType());
-            } else if (atFirst || waitQueue.peek() == node) {
-                waitQueue.poll();
-                wakeupFirst();
-            } else {
-                waitQueue.remove(node);
+            if (!success) {
+                if (atFirst || waitQueue.peek() == node) {
+                    waitQueue.poll();
+                    wakeupFirst();
+                } else {
+                    waitQueue.remove(node);
+                }
             }
         }//end finally
     }

@@ -90,7 +90,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.allowInterruption = allowIndicator;
     }
 
-    public SyncVisitTester getVisitTester() {
+    public final SyncVisitTester getVisitTester() {
         return visitTester;
     }
 
