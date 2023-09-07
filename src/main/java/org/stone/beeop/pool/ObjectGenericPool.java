@@ -307,19 +307,17 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
         do {
             Object s = b.state;
-            if (s != null) {
-                if (s instanceof PooledObject) {
-                    p = (PooledObject) s;
-                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        waitQueue.remove(b);
-                        semaphore.release();
-                        return handleFactory.createHandle(p, b);
-                    }
-                } else {//here: must be Throwable
+            if (s instanceof PooledObject) {
+                p = (PooledObject) s;
+                if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                     waitQueue.remove(b);
                     semaphore.release();
-                    throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
+                    return handleFactory.createHandle(p, b);
                 }
+            } else if (s instanceof Throwable) {
+                waitQueue.remove(b);
+                semaphore.release();
+                throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
             }
 
             if (cause != null) {
