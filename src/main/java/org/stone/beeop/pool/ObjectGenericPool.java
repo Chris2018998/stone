@@ -285,52 +285,62 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         } catch (InterruptedException e) {
             throw new ObjectGetInterruptedException("Object get request interrupted at semaphore");
         }
+
+        //2:try search one or create one
+        PooledObject p;
         try {//semaphore acquired
-            //2:try search one or create one
-            PooledObject p = this.searchOrCreate();
-            if (p != null) return handleFactory.createHandle(p, b);
+            p = this.searchOrCreate();
+            if (p != null) {
+                semaphore.release();
+                return handleFactory.createHandle(p, b);
+            }
+        } catch (Exception e) {
+            semaphore.release();
+            throw e;
+        }
 
-            //3:try to get one transferred one
-            b.state = null;
-            this.waitQueue.offer(b);
-            BeeObjectException cause = null;
-            deadline += this.maxWaitNs;
+        //3:try to get one transferred one
+        b.state = null;
+        this.waitQueue.offer(b);
+        BeeObjectException cause = null;
+        deadline += this.maxWaitNs;
 
-            do {
-                Object s = b.state;
+        do {
+            Object s = b.state;
+            if (s != null) {
                 if (s instanceof PooledObject) {
                     p = (PooledObject) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        this.waitQueue.remove(b);
+                        waitQueue.remove(b);
+                        semaphore.release();
                         return handleFactory.createHandle(p, b);
                     }
-                } else if (s instanceof Throwable) {
-                    this.waitQueue.remove(b);
+                } else {//here: must be Throwable
+                    waitQueue.remove(b);
+                    semaphore.release();
                     throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
                 }
+            }
 
-                if (cause != null) {
-                    BorrowStUpd.compareAndSet(b, s, cause);
-                } else if (s != null) {//here:s must be a PooledObject
-                    b.state = null;
-                } else {//here:(state == null)
-                    long t = deadline - System.nanoTime();
-                    if (t > spinForTimeoutThreshold) {
-                        if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-                            parentPool.submitServantTask(this);
-                        }
-
-                        LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
-                        if (Thread.interrupted())
-                            cause = new ObjectGetInterruptedException("Object get request interrupted in wait queue");
-                    } else if (t <= 0L) {//timeout
-                        cause = new ObjectGetTimeoutException("Object get timeout in wait queue");
+            if (cause != null) {
+                BorrowStUpd.compareAndSet(b, s, cause);
+            } else if (s != null) {//here:s must be a PooledObject
+                b.state = null;
+            } else {//here:(state == null)
+                long t = deadline - System.nanoTime();
+                if (t > spinForTimeoutThreshold) {
+                    if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+                        parentPool.submitServantTask(this);
                     }
-                }//end (state == BOWER_NORMAL)
-            } while (true);//while
-        } finally {
-            this.semaphore.release();
-        }
+
+                    LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
+                    if (Thread.interrupted())
+                        cause = new ObjectGetInterruptedException("Object get request interrupted in wait queue");
+                } else if (t <= 0L) {//timeout
+                    cause = new ObjectGetTimeoutException("Object get timeout in wait queue");
+                }
+            }//end (state == BOWER_NORMAL)
+        } while (true);//while
     }
 
     //Method-3.2: search one idle Object,if not found,then try to create one
