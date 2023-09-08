@@ -109,7 +109,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     public final ThreadParkSupport getParkSupport() {
         if (parkSupport != null) return parkSupport;
         if (deadlineDate != null)
-            return this.parkSupport = new ThreadParkSupport.MillisParkSupport(deadlineDate.getTime());
+            return this.parkSupport = new ThreadParkSupport.DateUtilParkSupport(deadlineDate.getTime());
         if (parkNanos == 0) return this.parkSupport = new ThreadParkSupport();
         return this.parkSupport = new ThreadParkSupport.NanosParkSupport(parkNanos);
     }

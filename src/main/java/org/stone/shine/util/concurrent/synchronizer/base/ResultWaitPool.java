@@ -15,6 +15,8 @@ import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.WAITING;
+
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
@@ -114,21 +116,15 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
 
                 //5.3: try to park
                 do {
-                    node.setStateToNull();
-                    if (parkSupport.park()) {//timeout or interrupted
-                        if (parkSupport.isTimeout()) return validator.resultOnTimeout();
-                        if (config.isAllowInterruption()) throw new InterruptedException();
-                    }
+                    if (parkSupport.compute()) return validator.resultOnTimeout();
+                    if (node.getState() != WAITING) node.setState(WAITING);
+                    if (parkSupport.park() && config.isAllowInterruption()) throw new InterruptedException();
                 } while (!atFirst && !(atFirst = waitQueue.peek() == node));
             } while (true);
         } finally {
             if (!success) {
-                if (atFirst || waitQueue.peek() == node) {
-                    waitQueue.poll();
-                    wakeupFirst();
-                } else {
-                    waitQueue.remove(node);
-                }
+                waitQueue.remove(node);
+                wakeupFirst();
             }
         }//end finally
     }
