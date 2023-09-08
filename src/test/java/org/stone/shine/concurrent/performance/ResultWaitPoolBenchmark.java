@@ -25,7 +25,7 @@ public class ResultWaitPoolBenchmark {
 
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
-                .include(ReentrantLockBenchmark.class.getSimpleName())
+                .include(ResultWaitPoolBenchmark.class.getSimpleName())
                 .build();
         new Runner(opt).run();
     }
@@ -33,7 +33,9 @@ public class ResultWaitPoolBenchmark {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static void testLock() throws Exception {
-        if (Boolean.TRUE.equals(pool.get(call, null, config))) {
+        config = new SyncVisitConfig();
+        config.allowInterruption(false);
+        if (Boolean.TRUE == pool.get(call, null, config)) {
             try {
                 //do nothing
             } finally {
@@ -47,8 +49,6 @@ public class ResultWaitPoolBenchmark {
     public void setup(BenchmarkParams params) {
         call = new AtomicResultCall();
         pool = new ResultWaitPool();
-        config = new SyncVisitConfig();
-        config.allowInterruption(false);
     }
 
     @TearDown(Level.Trial)
