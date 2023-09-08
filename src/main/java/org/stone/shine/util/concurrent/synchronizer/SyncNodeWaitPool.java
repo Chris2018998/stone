@@ -13,7 +13,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static java.util.concurrent.locks.LockSupport.unpark;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.*;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casState;
 import static org.stone.tools.CommonUtil.objectEquals;
 
@@ -59,14 +60,14 @@ public abstract class SyncNodeWaitPool {
     //****************************************************************************************************************//
     public final void wakeupFirst() {
         SyncNode first = waitQueue.peek();
-        if (first != null && casState(first, WAITING, WAKEUP))
+        if (first != null && casState(first, null, RUNNING))
             unpark(first.thread);
     }
 
     public final void wakeupFirst(Object wakeupType) {
         SyncNode first = waitQueue.peek();
         if (first != null && (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type)))
-            if (casState(first, WAITING, WAKEUP)) unpark(first.thread);
+            if (casState(first, null, RUNNING)) unpark(first.thread);
     }
 
     //****************************************************************************************************************//
@@ -149,8 +150,7 @@ public abstract class SyncNodeWaitPool {
 
     public final boolean hasQueuedThreads() {
         for (SyncNode node : waitQueue) {
-            Object state = node.state;
-            if ((state == null || state == WAITING) && node.thread != null) return true;
+            if (node.state == null && node.thread != null) return true;
         }
         return false;
     }
@@ -164,8 +164,7 @@ public abstract class SyncNodeWaitPool {
     public final int getQueueLength() {
         int count = 0;
         for (SyncNode node : waitQueue) {
-            Object state = node.state;
-            if (state == null || state == WAITING) count++;
+            if (node.state == null) count++;
         }
         return count;
     }
@@ -174,7 +173,7 @@ public abstract class SyncNodeWaitPool {
         LinkedList<Thread> threadList = new LinkedList<>();
         for (SyncNode node : waitQueue) {
             Object state = node.state;
-            if ((state == null || state == WAITING) && node.thread != null) threadList.add(node.thread);
+            if (node.state == null && node.thread != null) threadList.add(node.thread);
         }
         return threadList;
     }
@@ -184,8 +183,7 @@ public abstract class SyncNodeWaitPool {
 
         int count = 0;
         for (SyncNode node : waitQueue) {
-            Object state = node.state;
-            if ((state == null || state == WAITING) && objectEquals(nodeType, node.type)) count++;
+            if (node.state == null && objectEquals(nodeType, node.type)) count++;
         }
         return count;
     }
@@ -195,8 +193,7 @@ public abstract class SyncNodeWaitPool {
 
         LinkedList<Thread> threadList = new LinkedList<>();
         for (SyncNode node : waitQueue) {
-            Object state = node.state;
-            if ((state == null || state == WAITING) && objectEquals(nodeType, node.type) && node.thread != null)
+            if (node.state == null && objectEquals(nodeType, node.type) && node.thread != null)
                 threadList.add(node.thread);
         }
         return threadList;
