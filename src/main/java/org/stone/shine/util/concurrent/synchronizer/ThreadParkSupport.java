@@ -66,12 +66,12 @@ public class ThreadParkSupport {
     }
 
     public boolean park() {
-        LockSupport.park(this);
-        return interrupted = Thread.interrupted();
+        return computeAndPark();
     }
 
     public boolean computeAndPark() {
-        return park();
+        LockSupport.park(this);
+        return interrupted = Thread.interrupted();
     }
 
     public long getLastParkNanos() {
