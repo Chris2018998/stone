@@ -116,12 +116,14 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
 
                 //5.3: try to park
                 if (node.getState() == RUNNING) {
-                    if (!atFirst) atFirst = waitQueue.peek() == node;
                     node.setState(null);
                 } else if (parkSupport.computeAndPark()) {//timeout or interrupted
                     if (parkSupport.isTimeout()) return validator.resultOnTimeout();
                     if (config.isAllowInterruption()) throw new InterruptedException();
                 }
+
+                //5.4: check node pos
+                if (!atFirst) atFirst = waitQueue.peek() == node;
             } while (true);
         } finally {
             if (!success) {
