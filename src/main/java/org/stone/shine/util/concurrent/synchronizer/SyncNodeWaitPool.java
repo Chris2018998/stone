@@ -50,7 +50,7 @@ public abstract class SyncNodeWaitPool {
     }
 
     protected final boolean appendAsWaitNode(SyncNode node) {
-        node.setCurrentThread();
+        node.thread = Thread.currentThread();
         waitQueue.offer(node);
         return node == waitQueue.peek();
     }
