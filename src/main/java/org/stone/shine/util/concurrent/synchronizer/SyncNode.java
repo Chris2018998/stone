@@ -63,6 +63,14 @@ public final class SyncNode<E> {
         this.state = newState;
     }
 
+    public final boolean setStateToNullWhen(Object newState) {
+        if (this.state == newState) {
+            this.state = null;
+            return true;
+        }
+        return false;
+    }
+
     //****************************************************************************************************************//
     //                                          unusable fields                                                       //
     //****************************************************************************************************************//

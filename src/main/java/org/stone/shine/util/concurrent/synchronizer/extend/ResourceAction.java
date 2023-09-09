@@ -29,7 +29,7 @@ public abstract class ResourceAction implements ResultCall {
     public abstract boolean tryRelease(int size);
 
     //try to acquireWithType lock or permit
-    public boolean tryAcquire(int size) {
+    public final boolean tryAcquire(int size) {
         try {
             return objectEquals(this.call(size), Boolean.TRUE);
         } catch (Throwable e) {

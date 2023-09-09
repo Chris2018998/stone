@@ -9,7 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.extend;
 
-import org.stone.shine.util.concurrent.synchronizer.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
@@ -58,10 +57,6 @@ public final class ResourceWaitPool {
 
     public final boolean hasQueuedThread(Thread thread) {
         return callPool.hasQueuedThread(thread);
-    }
-
-    public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
-        return callPool.wakeupOne(fromHead, nodeType, toState);
     }
 
     //****************************************************************************************************************//

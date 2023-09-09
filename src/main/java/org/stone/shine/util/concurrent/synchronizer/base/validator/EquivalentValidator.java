@@ -17,7 +17,7 @@ package org.stone.shine.util.concurrent.synchronizer.base.validator;
  */
 abstract class EquivalentValidator extends BaseValidator {
 
-    protected final Object compareValue;
+    final Object compareValue;
 
     EquivalentValidator(Object compareValue) {
         this(compareValue, null);

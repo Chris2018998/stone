@@ -12,6 +12,7 @@ package org.stone.shine.util.concurrent.synchronizer;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static java.lang.Thread.currentThread;
 import static java.util.concurrent.locks.LockSupport.unpark;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
@@ -50,7 +51,7 @@ public abstract class SyncNodeWaitPool {
     }
 
     protected final boolean appendAsWaitNode(SyncNode node) {
-        node.thread = Thread.currentThread();
+        node.thread = currentThread();
         waitQueue.offer(node);
         return node == waitQueue.peek();
     }
@@ -65,7 +66,7 @@ public abstract class SyncNodeWaitPool {
 
     public final void wakeupFirst() {
         SyncNode first = waitQueue.peek();
-        if (first != null && casState(first, null, RUNNING))
+        if (first != null && first.state == null && casState(first, null, RUNNING))
             unpark(first.thread);
     }
 
@@ -139,11 +140,11 @@ public abstract class SyncNodeWaitPool {
         return waitQueue.iterator();
     }
 
-    protected final Iterator<SyncNode> descendingIterator() {
+    private Iterator<SyncNode> descendingIterator() {
         if (waitQueue instanceof Deque)
             return ((Deque<SyncNode>) waitQueue).descendingIterator();
         else
-            throw new UnsupportedOperationException("Current Queue is not a implementation of Deque");
+            throw new UnsupportedOperationException("Current queue is not a deque implementation");
     }
 
     protected final boolean existsTypeNode(Object nodeType) {
@@ -155,30 +156,48 @@ public abstract class SyncNodeWaitPool {
 
     public final boolean hasQueuedThreads() {
         for (SyncNode node : waitQueue) {
-            if (node.state == null && node.thread != null) return true;
+            Object state = node.state;
+            if ((state == null || state == RUNNING) && node.thread != null) return true;
         }
         return false;
     }
 
     public final boolean hasQueuedThread(Thread thread) {
-        for (SyncNode node : waitQueue)
-            if (node.thread == thread) return true;
+        for (SyncNode node : waitQueue) {
+            Object state = node.state;
+            if ((state == null || state == RUNNING) && node.thread == thread) return true;
+        }
         return false;
     }
 
     public final int getQueueLength() {
-        int count = 0;
-        for (SyncNode node : waitQueue) {
-            if (node.state == null) count++;
+        try {
+            int count = 0;
+            Iterator<SyncNode> itor = waitQueue.iterator();
+            System.out.print("getQueueLength");
+            while (itor.hasNext()) {
+                SyncNode node = itor.next();
+                Object state = node.state;
+                System.out.println("node  state:" + state);
+                if (state == null || state == RUNNING) count++;
+            }
+
+//            for (SyncNode node : waitQueue) {
+//                Object state = node.state;
+//                if (state == null || state == RUNNING) count++;
+//            }
+            return count;
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw e;
         }
-        return count;
     }
 
     public final Collection<Thread> getQueuedThreads() {
         LinkedList<Thread> threadList = new LinkedList<>();
         for (SyncNode node : waitQueue) {
             Object state = node.state;
-            if (node.state == null && node.thread != null) threadList.add(node.thread);
+            if ((state == null || state == RUNNING) && node.thread != null) threadList.add(node.thread);
         }
         return threadList;
     }
@@ -188,7 +207,8 @@ public abstract class SyncNodeWaitPool {
 
         int count = 0;
         for (SyncNode node : waitQueue) {
-            if (node.state == null && objectEquals(nodeType, node.type)) count++;
+            Object state = node.state;
+            if ((state == null || state == RUNNING) && objectEquals(nodeType, node.type)) count++;
         }
         return count;
     }
@@ -198,7 +218,8 @@ public abstract class SyncNodeWaitPool {
 
         LinkedList<Thread> threadList = new LinkedList<>();
         for (SyncNode node : waitQueue) {
-            if (node.state == null && objectEquals(nodeType, node.type) && node.thread != null)
+            Object state = node.state;
+            if ((state == null || state == RUNNING) && objectEquals(nodeType, node.type) && node.thread != null)
                 threadList.add(node.thread);
         }
         return threadList;

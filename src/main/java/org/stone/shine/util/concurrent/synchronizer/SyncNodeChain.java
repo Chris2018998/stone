@@ -28,7 +28,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     //****************************************************************************************************************//
     //                                          1: queue methods(4)                                                   //
     //****************************************************************************************************************//
-    public SyncNode peek() {
+    public final SyncNode peek() {
         return head.next;
     }
 
@@ -36,17 +36,17 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         return offer(e);
     }
 
-    public SyncNode poll() {
+    public final SyncNode poll() {
         SyncNode node = head.next;
         if (node != null) {
-            head = node;
             node.thread = null;
             node.prev = null;
+            head = node;
         }
         return node;
     }
 
-    public boolean offer(SyncNode node) {
+    public final boolean offer(SyncNode node) {
         SyncNode t;
         do {
             t = tail;
@@ -58,30 +58,19 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         } while (true);
     }
 
-    public SyncNode remove() {
-        throw new UnsupportedOperationException();
-    }
-
-    public SyncNode element() {
-        throw new UnsupportedOperationException();
-    }
-
     //****************************************************************************************************************//
     //                                          2: collection methods(3)                                              //
     //****************************************************************************************************************//
-    public boolean remove(Object n) {
+    public final boolean remove(Object n) {
         SyncNode node = (SyncNode) n;
-
         SyncNode pred = node.prev;
         SyncNode predNext = pred.next;
         if (node == tail && casTail(this, node, pred)) {
             casNext(pred, predNext, null);
             return true;
         } else {
-            SyncNode next = node.next;
-            casNext(pred, predNext, next);
+            return casNext(pred, predNext, node.next);
         }
-        return true;
     }
 
     public int size() {
@@ -129,6 +118,14 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     }
 
     public <T> T[] toArray(T[] a) {
+        throw new UnsupportedOperationException();
+    }
+
+    public SyncNode remove() {
+        throw new UnsupportedOperationException();
+    }
+
+    public SyncNode element() {
         throw new UnsupportedOperationException();
     }
 
