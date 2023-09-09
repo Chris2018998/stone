@@ -108,10 +108,10 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 }
             }
 
-            //5.2: prepare parkSupport
+            //4.2: prepare parkSupport
             if (parkSupport == null) parkSupport = config.getParkSupport();
 
-            //5.3: try to park
+            //4.3: try to park
             if (node.getState() == RUNNING) {
                 node.setState(null);
             } else if (parkSupport.computeAndPark()) {//timeout or interrupted
@@ -123,7 +123,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                     throw new InterruptedException();
                 }
             }
-            //5.4: check node pos
+            //4.4: check node pos
             if (!atFirst) atFirst = waitQueue.peek() == node;
         } while (true);
     }
