@@ -87,49 +87,44 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         }
 
         //3:offer to wait queue
-        boolean success = false;
         byte spins = 1, postSpins = 1;
-        ThreadParkSupport parkSupport = null;
         SyncNode node = config.getSyncNode();
+        ThreadParkSupport parkSupport = null;
         boolean atFirst = appendAsWaitNode(node);
 
-        //5: spin
-        try {
-            do {
-                //5.1: execute result call
-                if (atFirst) {
+        //4: spin
+        do {
+            if (atFirst) {//4.1: execute result call
+                try {
                     do {
                         Object result = call.call(arg);
                         if (validator.isExpected(result)) {
                             waitQueue.poll();
                             if (config.isPropagatedOnSuccess()) wakeupFirst(node.getType());
-                            success = true;
                             return result;
                         }
                     } while (spins > 0 && --spins > 0);
-                    //calculate spin count for next
                     spins = postSpins = (byte) (postSpins << 1);
+                } catch (Throwable e) {
+                    removeAndWakeupFirst(node);
+                    throw e;
                 }
-
-                //5.2: prepare parkSupport
-                if (parkSupport == null) parkSupport = config.getParkSupport();
-
-                //5.3: try to park
-                if (node.getState() == RUNNING) {
-                    node.setState(null);
-                } else if (parkSupport.computeAndPark()) {//timeout or interrupted
-                    if (parkSupport.isTimeout()) return validator.resultOnTimeout();
-                    if (config.isAllowInterruption()) throw new InterruptedException();
-                }
-
-                //5.4: check node pos
-                if (!atFirst) atFirst = waitQueue.peek() == node;
-            } while (true);
-        } finally {
-            if (!success) {
-                waitQueue.remove(node);
-                wakeupFirst();
             }
-        }//end finally
+
+            if (parkSupport == null) parkSupport = config.getParkSupport();
+            if (node.getState() == RUNNING) {
+                node.setState(null);
+            } else if (parkSupport.computeAndPark()) {//timeout or interrupted
+                if (parkSupport.isTimeout()) {
+                    removeAndWakeupFirst(node);
+                    return validator.resultOnTimeout();
+                } else if (config.isAllowInterruption()) {
+                    removeAndWakeupFirst(node);
+                    throw new InterruptedException();
+                }
+            }
+
+            if (!atFirst) atFirst = waitQueue.peek() == node;
+        } while (true);
     }
 }

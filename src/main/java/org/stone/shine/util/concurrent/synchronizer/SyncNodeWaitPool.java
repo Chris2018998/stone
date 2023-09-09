@@ -70,6 +70,11 @@ public abstract class SyncNodeWaitPool {
             if (casState(first, null, RUNNING)) unpark(first.thread);
     }
 
+    protected final void removeAndWakeupFirst(SyncNode node) {
+        waitQueue.remove(node);
+        wakeupFirst();
+    }
+
     //****************************************************************************************************************//
     //                                          4: wakeup(2)                                                          //
     //****************************************************************************************************************//
