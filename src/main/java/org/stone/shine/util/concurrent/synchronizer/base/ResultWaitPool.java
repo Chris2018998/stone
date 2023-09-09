@@ -105,6 +105,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 } catch (Throwable e) {
                     waitQueue.poll();
                     wakeupFirst();
+                    throw e;
                 }
             }
 
