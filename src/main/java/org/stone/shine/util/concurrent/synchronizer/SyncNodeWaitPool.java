@@ -58,6 +58,11 @@ public abstract class SyncNodeWaitPool {
     //****************************************************************************************************************//
     //                                          3: wakeup for result wait pool(3)                                     //
     //****************************************************************************************************************//
+    protected final void removeAndWakeupFirst(SyncNode node) {
+        waitQueue.remove(node);
+        wakeupFirst();
+    }
+
     public final void wakeupFirst() {
         SyncNode first = waitQueue.peek();
         if (first != null && casState(first, null, RUNNING))
@@ -68,11 +73,6 @@ public abstract class SyncNodeWaitPool {
         SyncNode first = waitQueue.peek();
         if (first != null && (wakeupType == null || wakeupType == first.type || wakeupType.equals(first.type)))
             if (casState(first, null, RUNNING)) unpark(first.thread);
-    }
-
-    protected final void removeAndWakeupFirst(SyncNode node) {
-        waitQueue.remove(node);
-        wakeupFirst();
     }
 
     //****************************************************************************************************************//

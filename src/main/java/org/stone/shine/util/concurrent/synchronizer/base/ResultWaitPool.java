@@ -9,10 +9,7 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.base;
 
-import org.stone.shine.util.concurrent.synchronizer.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.SyncNodeWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.ThreadParkSupport;
+import org.stone.shine.util.concurrent.synchronizer.*;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
@@ -42,7 +39,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
     }
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
-        //super(new SyncNodeChain());
+        super(new SyncNodeChain());
         this.fair = fair;
         this.validator = validator;
     }
@@ -88,8 +85,8 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
 
         //3:offer to wait queue
         byte spins = 1, postSpins = 1;
-        SyncNode node = config.getSyncNode();
         ThreadParkSupport parkSupport = null;
+        SyncNode node = config.getSyncNode();
         boolean atFirst = appendAsWaitNode(node);
 
         //4: spin
@@ -106,12 +103,15 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                     } while (spins > 0 && --spins > 0);
                     spins = postSpins = (byte) (postSpins << 1);
                 } catch (Throwable e) {
-                    removeAndWakeupFirst(node);
-                    throw e;
+                    waitQueue.poll();
+                    wakeupFirst();
                 }
             }
 
+            //5.2: prepare parkSupport
             if (parkSupport == null) parkSupport = config.getParkSupport();
+
+            //5.3: try to park
             if (node.getState() == RUNNING) {
                 node.setState(null);
             } else if (parkSupport.computeAndPark()) {//timeout or interrupted
@@ -123,7 +123,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                     throw new InterruptedException();
                 }
             }
-
+            //5.4: check node pos
             if (!atFirst) atFirst = waitQueue.peek() == node;
         } while (true);
     }
