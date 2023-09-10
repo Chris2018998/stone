@@ -13,8 +13,8 @@ import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultValidator;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
-import org.stone.tools.atomic.UnsafeAdaptor;
-import org.stone.tools.atomic.UnsafeAdaptorHolder;
+import org.stone.tools.unsafe.UnsafeAdaptor;
+import org.stone.tools.unsafe.UnsafeAdaptorHolder;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
