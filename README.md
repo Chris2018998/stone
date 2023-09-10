@@ -21,6 +21,6 @@ Java8 or higher
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.1.6</version>
+   <version>1.1.7</version>
 </dependency>
 ```
