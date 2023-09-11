@@ -9,6 +9,9 @@
  */
 package org.stone.tools.atomic;
 
+import org.stone.tools.unsafe.UnsafeAdaptor;
+import org.stone.tools.unsafe.UnsafeAdaptorHolder;
+
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
