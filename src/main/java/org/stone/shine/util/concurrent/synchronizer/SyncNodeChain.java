@@ -10,9 +10,9 @@
 package org.stone.shine.util.concurrent.synchronizer;
 
 import java.util.*;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casNext;
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.casTail;
+import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.*;
 
 /**
  * A synchronization node chain(FIFO,applied in result wait pool)
@@ -47,11 +47,10 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     }
 
     public final boolean offer(SyncNode node) {
-        SyncNode t;
         do {
-            t = tail;
+            SyncNode t = tail;
             node.prev = t;
-            if (casTail(this, t, node)) {//append to tail.next
+            if (casTail(this, t, node)) {
                 t.next = node;
                 return true;
             }
@@ -63,6 +62,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     //****************************************************************************************************************//
     public final boolean remove(Object n) {
         SyncNode node = (SyncNode) n;
+        node.thread = null;
         SyncNode pred = node.prev;
         SyncNode predNext = pred.next;
         if (node == tail && casTail(this, node, pred)) {
@@ -71,6 +71,10 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         } else {
             return casNext(pred, predNext, node.next);
         }
+    }
+
+    public Iterator<SyncNode> iterator() {
+        return new DescItr(tail);
     }
 
     public int size() {
@@ -129,91 +133,45 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         throw new UnsupportedOperationException();
     }
 
-    public Iterator<SyncNode> iterator() {
-        SyncNode t = tail;
-        return new DescItr(t != head ? t : null);
-    }
-
     //****************************************************************************************************************//
     //                                          Iterator implement                                                    //
     //****************************************************************************************************************//
-    private static abstract class PointerItr implements Iterator<SyncNode> {
-        private final ChainPointer pointer;
+    private static class DescItr implements Iterator<SyncNode> {
+        private SyncNode curNode;
+        private boolean hasPrev;
 
-        PointerItr(SyncNode currentNode) {
-            this.pointer = new ChainPointer(currentNode);
+        DescItr(SyncNode curNode) {
+            this.curNode = curNode;
         }
 
-        //valid node exists test method
         public boolean hasNext() {
-            if (pointer.curNode == null) return false;
-
-            //try to search a valid node after/prev current node(test)
-            findNextNode(pointer);
-            return pointer.nextNode != null;
+            SyncNode nextNode = findPevNode(curNode);
+            return this.hasPrev = nextNode != null;
         }
 
         public SyncNode next() {
-            //1:check current node and item
-            if (pointer.curNode == null) throw new NoSuchElementException();
+            SyncNode nextNode = findPevNode(curNode);
+            if (nextNode == null && this.hasPrev) throw new ConcurrentModificationException();
 
-            //2:retry to find a valid node start at current node
-            findNextNode(pointer);
-
-            SyncNode nextNode = pointer.nextNode;
-            if (nextNode == null) throw new ConcurrentModificationException();
-            pointer.movePointerToNext();
+            if (curNode == nextNode)
+                curNode = curNode.prev;
+            else
+                this.curNode = nextNode;
             return nextNode;
         }
 
-        public void remove() {
-            throw new UnsupportedOperationException("remove");
-        }
+        private SyncNode findPevNode(SyncNode startNode) {
+            SyncNode curNode = startNode;
 
-        //fill a valid node to the
-        abstract void findNextNode(ChainPointer pointer);
-    }
-
-    private static class DescItr extends PointerItr {
-        DescItr(SyncNode currentNode) {
-            super(currentNode);
-        }
-
-        public void findNextNode(ChainPointer pointer) {
-            SyncNode curNode = pointer.curNode;
-            SyncNode nextNode = pointer.isAtFirst() ? curNode : curNode.prev;
-
-            while (nextNode != null) {
-                if (nextNode.state != SyncNodeStates.REMOVED) {//find a valid node
-                    pointer.setNextNode(nextNode);
-                    break;
+            while (curNode != null) {
+                if (curNode.thread != null) {
+                    if (curNode != startNode)
+                        casPrev(startNode, startNode.prev, curNode);
+                    return curNode;
                 }
-                nextNode = nextNode.prev;
+                curNode = curNode.prev;
             }
-        }
-    }
-
-    private static class ChainPointer {
-        private final SyncNode firstNode;
-        private SyncNode curNode;
-        private SyncNode nextNode;
-
-        ChainPointer(SyncNode firstNode) {
-            this.firstNode = firstNode;
-            this.curNode = firstNode;
-        }
-
-        boolean isAtFirst() {
-            return curNode == firstNode;
-        }
-
-        void setNextNode(SyncNode nextNode) {
-            this.nextNode = nextNode;
-        }
-
-        void movePointerToNext() {
-            this.curNode = nextNode;
-            this.nextNode = null;
+            return null;
         }
     }
 }

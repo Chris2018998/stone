@@ -32,7 +32,6 @@ public abstract class SyncNodeWaitPool {
     //****************************************************************************************************************//
     //                                          1:constructors(2)                                                     //
     //****************************************************************************************************************//
-
     public SyncNodeWaitPool() {
         this.waitQueue = new ConcurrentLinkedQueue<>();
     }
@@ -173,19 +172,10 @@ public abstract class SyncNodeWaitPool {
     public final int getQueueLength() {
         try {
             int count = 0;
-            Iterator<SyncNode> itor = waitQueue.iterator();
-            System.out.print("getQueueLength");
-            while (itor.hasNext()) {
-                SyncNode node = itor.next();
+            for (SyncNode node : waitQueue) {
                 Object state = node.state;
-                System.out.println("node  state:" + state);
                 if (state == null || state == RUNNING) count++;
             }
-
-//            for (SyncNode node : waitQueue) {
-//                Object state = node.state;
-//                if (state == null || state == RUNNING) count++;
-//            }
             return count;
         } catch (Throwable e) {
             e.printStackTrace();
