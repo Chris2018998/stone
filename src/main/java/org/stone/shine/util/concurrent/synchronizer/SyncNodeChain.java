@@ -163,17 +163,19 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         }
 
         private SyncNode findPevNode(SyncNode startNode) {
+            SyncNode targetNode = null;
             SyncNode curNode = startNode;
 
             while (curNode != null) {
-                if (curNode.thread != null) {
-                    if (curNode != startNode)
-                        casPrev(startNode, startNode.prev, curNode);
-                    return curNode;
-                }
+                if (curNode.thread != null)
+                    targetNode = curNode;
+                if (curNode != startNode)
+                    casPrev(startNode, startNode.prev, curNode);
+                if (targetNode != null) break;
+
                 curNode = curNode.prev;
             }
-            return null;
+            return targetNode;
         }
     }
 }
