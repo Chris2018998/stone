@@ -9,8 +9,10 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import java.util.*;
-import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Queue;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeUpdater.*;
 
