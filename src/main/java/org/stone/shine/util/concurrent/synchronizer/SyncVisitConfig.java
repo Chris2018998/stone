@@ -30,7 +30,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //parkTime(@see LockSupport.parkNanos)
     private long parkNanos;
     //parkTime(@see LockSupport.parkUtil)
-    private Date deadlineDate;
+    private long deadlineDate;
     //Park tool implement with class{@code java.util.concurrent.locks.LockSupport}
     private ThreadParkSupport parkSupport;
 
@@ -49,7 +49,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public SyncVisitConfig(Date deadlineDate) {
         if (deadlineDate == null) throw new IllegalArgumentException("Deadline date can't be null");
-        this.deadlineDate = deadlineDate;
+        this.deadlineDate = deadlineDate.getTime();
     }
 
     public SyncVisitConfig(long time, TimeUnit timeUnit) {
@@ -108,8 +108,8 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
 
     public final ThreadParkSupport getParkSupport() {
         if (parkSupport != null) return parkSupport;
-        if (deadlineDate != null)
-            return this.parkSupport = new ThreadParkSupport.DateUtilParkSupport(deadlineDate.getTime());
+        if (deadlineDate != 0)
+            return this.parkSupport = new ThreadParkSupport.DateUtilParkSupport(deadlineDate);
         if (parkNanos == 0) return this.parkSupport = new ThreadParkSupport();
         return this.parkSupport = new ThreadParkSupport.NanosParkSupport(parkNanos);
     }
