@@ -10,6 +10,8 @@
 package org.stone.shine.util.concurrent.synchronizer.extend;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitTester;
+import org.stone.shine.util.concurrent.synchronizer.base.ResultValidator;
 import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
 
 import java.util.Collection;
@@ -70,6 +72,21 @@ public final class ResourceWaitPool {
     public final boolean acquire(ResourceAction action, int size, SyncVisitConfig config) throws InterruptedException {
         try {
             return (boolean) callPool.get(action, size, config);
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (Exception e) {
+            //this exception caught just fit super's method invocation
+            //in fact,only InterruptedException can be thrown out,so return false;
+            return false;
+        }
+    }
+
+    //acquire2
+    public final boolean acquire(ResourceAction action, int size, ResultValidator validator, SyncVisitTester visitTester,
+                                 Object nodeType, Object nodeValue, boolean isTime, long parkNanos, boolean allowInterruption,
+                                 boolean propagatedOnSuccess) throws Exception {
+        try {
+            return (boolean) callPool.get(action, size, validator, visitTester, nodeType, nodeValue, isTime, parkNanos, allowInterruption, propagatedOnSuccess);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {

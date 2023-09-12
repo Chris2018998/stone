@@ -96,6 +96,20 @@ class BaseLock implements Lock {
         } catch (Exception e) {
             //do nothing
         }
+
+//        try {
+//            boolean propagatedOnSuccess = false;
+//            SyncVisitTester visitTester = SyncVisitTester.BASE_VISIT_TESTER;
+//            if (acquireType == TYPE_SHARED) {
+//                propagatedOnSuccess = true;
+//                visitTester = SyncVisitTester.SHARE_VISIT_TESTER;
+//            }
+//
+//            waitPool.acquire(lockAction, 1, ResultEqualsValidator.BOOL_EQU_VALIDATOR, visitTester,
+//                    acquireType, null, false, 0L, false, propagatedOnSuccess);
+//        } catch (Exception e) {
+//            //do nothing
+//        }
     }
 
     /**
@@ -297,11 +311,11 @@ class BaseLock implements Lock {
     //                                          3: monitor1 methods(4)                                                 //
     //****************************************************************************************************************//
     public boolean isLocked() {
-        return lockState.getState() != 0;
+        return lockState.get() != 0;
     }
 
     public int getLockCount() {
-        return lockState.getState();
+        return lockState.get();
     }
 
     public int getHoldCount() {
@@ -317,7 +331,7 @@ class BaseLock implements Lock {
     }
 
     public int getLockAtomicState() {
-        return lockState.getState();
+        return lockState.get();
     }
 
     //****************************************************************************************************************//
@@ -357,7 +371,6 @@ class BaseLock implements Lock {
     protected Collection<Thread> getWaitingThreads(Condition condition) {
         return castConditionToLocal(condition).getWaitingThreads();
     }
-
 
     //****************************************************************************************************************//
     //                                       6: Lock Condition Impl                                                   //                                                                                  //

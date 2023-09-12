@@ -12,6 +12,8 @@ package org.stone.shine.util.concurrent.synchronizer.base;
 import org.stone.shine.util.concurrent.synchronizer.*;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import java.util.concurrent.locks.LockSupport;
+
 import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
 
 /**
@@ -48,28 +50,10 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         return this.fair;
     }
 
-    /**
-     * execute the call inside pool and match its result with a validator,if passed the return result value;
-     * false then wait util other's wakeup to execute call again.
-     *
-     * @param call   executed in pool to get result
-     * @param arg    call argument
-     * @param config thread wait config
-     * @return object, if call result check passed by validator
-     * @throws java.lang.Exception from call or InterruptedException after thread park
-     */
     public final Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return this.get(call, arg, validator, config);
     }
 
-    /**
-     * @param call      executed in pool to get result
-     * @param arg       call argument
-     * @param config    thread wait config
-     * @param validator result validator
-     * @return passed result
-     * @throws java.lang.Exception from call or InterruptedException after thread park
-     */
     public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitConfig config) throws Exception {
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
@@ -118,6 +102,73 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                     removeAndWakeupFirst(node);
                     return validator.resultOnTimeout();
                 } else if (config.isAllowInterruption()) {
+                    removeAndWakeupFirst(node);
+                    throw new InterruptedException();
+                }
+            }
+
+            //4.4: check node pos(reach here: node.state==RUNNING OR after parking)
+            if (!atFirst) atFirst = waitQueue.peek() == node;
+        } while (true);
+    }
+
+    //performance better
+    public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitTester visitTester,
+                            Object nodeType, Object nodeValue, boolean isTime, long parkNanos, boolean allowInterruption,
+                            boolean propagatedOnSuccess) throws Exception {
+
+        //1:check call parameter
+        if (Thread.interrupted()) throw new InterruptedException();
+        if (call == null || visitTester == null || validator == null)
+            throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
+
+        //2:test before call,if passed,then execute call
+        if (visitTester.test(fair, waitQueue.peek(), nodeType)) {
+            Object result = call.call(arg);
+            if (validator.isExpected(result))
+                return result;
+        }
+
+        //3:offer to wait queue
+        byte spins = 1, postSpins = 1;
+        SyncNode node = new SyncNode(nodeType, nodeValue);
+        boolean atFirst = appendAsWaitNode(node);
+        long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
+
+        //4: spin
+        do {
+            if (atFirst) {//4.1: execute result call
+                try {
+                    do {
+                        Object result = call.call(arg);
+                        if (validator.isExpected(result)) {
+                            waitQueue.poll();
+                            if (propagatedOnSuccess) wakeupFirst(node.getType());
+                            return result;
+                        }
+                    } while (spins > 0 && --spins > 0);
+                    spins = postSpins = (byte) (postSpins << 1);
+                } catch (Throwable e) {
+                    waitQueue.poll();
+                    wakeupFirst();
+                    throw e;
+                }
+            }
+
+            //4.2: try to park
+            if (!node.setStateToNullWhen(RUNNING)) {
+                if (!isTime) {
+                    LockSupport.park(this);
+                } else {
+                    parkNanos = deadlineNanos - System.nanoTime();
+                    if (parkNanos <= 0L) {
+                        removeAndWakeupFirst(node);
+                        return validator.resultOnTimeout();
+                    }
+                    LockSupport.parkNanos(this, parkNanos);
+                }
+
+                if (Thread.interrupted() && allowInterruption) {
                     removeAndWakeupFirst(node);
                     throw new InterruptedException();
                 }

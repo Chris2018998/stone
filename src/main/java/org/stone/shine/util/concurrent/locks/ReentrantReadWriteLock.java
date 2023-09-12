@@ -111,11 +111,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public int getReadLockCount() {
-        return sharedCount(lockState.getState());
+        return sharedCount(lockState.get());
     }
 
     public int getWriteLockCount() {
-        return exclusiveCount(lockState.getState());
+        return exclusiveCount(lockState.get());
     }
 
     public boolean isWriteLocked() {
@@ -171,7 +171,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     }
 
     public String toString() {
-        int c = lockState.getState();
+        int c = lockState.get();
         int w = exclusiveCount(c);
         int r = sharedCount(c);
         return super.toString() +
@@ -214,14 +214,14 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public int getHoldCount() {
-            return lockState.getExclusiveOwnerThread() == Thread.currentThread() ? exclusiveCount(lockState.getState()) : 0;
+            return lockState.getExclusiveOwnerThread() == Thread.currentThread() ? exclusiveCount(lockState.get()) : 0;
         }
 
         public Object call(Object size) {
-            int state = lockState.getState();
+            int state = lockState.get();
             if (state == 0) {
                 state = incrementExclusivePart(state, (int) size);
-                if (lockState.compareAndSetState(0, state)) {
+                if (lockState.compareAndSet(0, state)) {
                     lockState.setExclusiveOwnerThread(Thread.currentThread());
                     return true;
                 } else {
@@ -230,7 +230,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
                 state = incrementExclusivePart(state, (int) size);
                 if (exclusiveCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
-                lockState.setState(state);
+                lockState.set(state);
                 return true;
             } else {
                 return false;
@@ -239,11 +239,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
         public boolean tryRelease(int size) {
             if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
-                int curState = lockState.getState();
+                int curState = lockState.get();
                 int writeCount = exclusiveCount(curState);
                 writeCount = writeCount - size;//support full release for reentrant
 
-                lockState.setState(decrementExclusivePart(curState, size));
+                lockState.set(decrementExclusivePart(curState, size));
                 if (writeCount == 0) lockState.setExclusiveOwnerThread(null);
 
                 return writeCount == 0;
@@ -277,7 +277,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public Object call(Object size) {
-            int state = lockState.getState();
+            int state = lockState.get();
             int writeCount = exclusiveCount(state);
 
             //step1:test current is whether in exclusive mode
@@ -286,7 +286,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
                     state = incrementSharedPart(state, (int) size);//+1
                     if (sharedCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
 
-                    lockState.setState(state);
+                    lockState.set(state);
                     SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                     if (holdCounter == null) {
                         holdCounter = new SharedHoldCounter();
@@ -304,7 +304,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             int newState = incrementSharedPart(state, (int) size);
             int sharedCount = sharedCount(newState);
             if (sharedCount > MAX_COUNT) throw new Error("Maximum lock count exceeded");
-            if (lockState.compareAndSetState(state, newState)) {
+            if (lockState.compareAndSet(state, newState)) {
                 SharedHoldCounter holdCounter = sharedHoldThreadLocal.get();
                 if (holdCounter == null) {
                     holdCounter = new SharedHoldCounter();
@@ -325,11 +325,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
             int state, updState, readCount;
             do {
-                state = lockState.getState();
+                state = lockState.get();
                 readCount = sharedCount(state);
                 if (readCount == 0) return false;
                 updState = decrementSharedPart(state, size);
-                if (lockState.compareAndSetState(state, updState))
+                if (lockState.compareAndSet(state, updState))
                     return true;
             } while (true);
         }

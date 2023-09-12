@@ -10,12 +10,12 @@
 package org.stone.shine.util.concurrent;
 
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceAction;
 import org.stone.shine.util.concurrent.synchronizer.extend.ResourceWaitPool;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Semaphore implementation by wait Pool
@@ -29,7 +29,7 @@ public class Semaphore {
     //permit acquisition action driven by wait pool
     private final ResourceAction permitAction;
     //permit size
-    private final AtomicIntState permitSize;
+    private final AtomicInteger permitSize;
 
     /**
      * Creates a {@code Semaphore} with the given number of
@@ -58,7 +58,7 @@ public class Semaphore {
     public Semaphore(int permits, boolean fair) {
         if (permits <= 0) throw new IllegalArgumentException("permits <= 0");
         this.waitPool = new ResourceWaitPool(fair);
-        this.permitSize = new AtomicIntState(permits);
+        this.permitSize = new AtomicInteger(permits);
         this.permitAction = new PermitResourceAction(permitSize);
     }
 
@@ -406,7 +406,7 @@ public class Semaphore {
      * @return the number of permits available in this semaphore
      */
     public int availablePermits() {
-        return permitSize.getState();
+        return permitSize.get();
     }
 
     /**
@@ -417,8 +417,8 @@ public class Semaphore {
     public int drainPermits() {
         int drainPermits;
         do {
-            drainPermits = this.permitSize.getState();
-        } while (drainPermits != 0 && !this.permitSize.compareAndSetState(drainPermits, 0));
+            drainPermits = this.permitSize.get();
+        } while (drainPermits != 0 && !this.permitSize.compareAndSet(drainPermits, 0));
 
         return drainPermits;
     }
@@ -438,8 +438,8 @@ public class Semaphore {
 
         int availablePermits;
         do {
-            availablePermits = this.permitSize.getState();
-        } while (availablePermits >= reduction && !this.permitSize.compareAndSetState(availablePermits, availablePermits - reduction));
+            availablePermits = this.permitSize.get();
+        } while (availablePermits >= reduction && !this.permitSize.compareAndSet(availablePermits, availablePermits - reduction));
     }
 
     /**
@@ -500,14 +500,14 @@ public class Semaphore {
      * @return a string identifying this semaphore, as well as its state
      */
     public String toString() {
-        return super.toString() + "[Permits = " + permitSize.getState() + "]";
+        return super.toString() + "[Permits = " + permitSize.get() + "]";
     }
 
     //Permit Action driven by wait pool
     private static class PermitResourceAction extends ResourceAction {
-        private final AtomicIntState permitSize;
+        private final AtomicInteger permitSize;
 
-        PermitResourceAction(AtomicIntState permitSize) {
+        PermitResourceAction(AtomicInteger permitSize) {
             this.permitSize = permitSize;
         }
 
@@ -515,17 +515,17 @@ public class Semaphore {
             int acquireSize = (int) size;
             int currentPermits;
             do {
-                currentPermits = this.permitSize.getState();
+                currentPermits = this.permitSize.get();
                 if (currentPermits < acquireSize) return false;
-                if (this.permitSize.compareAndSetState(currentPermits, currentPermits - acquireSize)) return true;
+                if (this.permitSize.compareAndSet(currentPermits, currentPermits - acquireSize)) return true;
             } while (true);
         }
 
         public boolean tryRelease(int size) {
             int currentPermits;
             do {
-                currentPermits = this.permitSize.getState();
-                if (this.permitSize.compareAndSetState(currentPermits, currentPermits + size))
+                currentPermits = this.permitSize.get();
+                if (this.permitSize.compareAndSet(currentPermits, currentPermits + size))
                     return true;
             } while (true);
         }

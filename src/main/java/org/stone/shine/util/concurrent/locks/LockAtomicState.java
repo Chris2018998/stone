@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Lock Atomic state
@@ -17,7 +17,7 @@ import org.stone.shine.util.concurrent.synchronizer.extend.AtomicIntState;
  * @author Chris Liao
  * @version 1.0
  */
-final class LockAtomicState extends AtomicIntState {
+final class LockAtomicState extends AtomicInteger {
 
     private Thread exclusiveOwnerThread;
 
