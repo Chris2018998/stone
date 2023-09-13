@@ -12,9 +12,8 @@ package org.stone.shine.util.concurrent.synchronizer.base;
 import org.stone.shine.util.concurrent.synchronizer.*;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
-import java.util.concurrent.locks.LockSupport;
-
-import static org.stone.shine.util.concurrent.synchronizer.SyncNodeStates.RUNNING;
+import static java.util.concurrent.locks.LockSupport.park;
+import static java.util.concurrent.locks.LockSupport.parkNanos;
 
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
@@ -61,7 +60,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,syncConfig)");
 
         //2:test before call,if passed,then execute call
-        if (config.getVisitTester().test(fair, waitQueue.peek(), config.getNodeType())) {
+        if (config.getVisitTester().allow(fair, this, config.getNodeType())) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
@@ -97,7 +96,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             if (parkSupport == null) parkSupport = config.getParkSupport();
 
             //4.3: try to park
-            if (!node.setStateToNullWhen(RUNNING) && parkSupport.computeAndPark()) {//timeout or interrupted
+            if (node.isNullState() && parkSupport.computeAndPark()) {//timeout or interrupted
                 if (parkSupport.isTimeout()) {
                     removeAndWakeupFirst(node);
                     return validator.resultOnTimeout();
@@ -114,7 +113,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
 
     //performance better
     public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitTester visitTester,
-                            Object nodeType, Object nodeValue, boolean isTime, long parkNanos, boolean allowInterruption,
+                            Object nodeType, Object nodeValue, long parkNanos, boolean allowInterruption,
                             boolean propagatedOnSuccess) throws Exception {
 
         //1:check call parameter
@@ -123,7 +122,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
 
         //2:test before call,if passed,then execute call
-        if (visitTester.test(fair, waitQueue.peek(), nodeType)) {
+        if (visitTester.allow(fair, this, nodeType)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
@@ -133,6 +132,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         byte spins = 1, postSpins = 1;
         SyncNode node = new SyncNode(nodeType, nodeValue);
         boolean atFirst = appendAsWaitNode(node);
+        boolean isTime = parkNanos > 0L;
         long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
 
         //4: spin
@@ -156,16 +156,16 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             }
 
             //4.2: try to park
-            if (!node.setStateToNullWhen(RUNNING)) {
+            if (node.isNullState()) {
                 if (!isTime) {
-                    LockSupport.park(this);
+                    park(this);
                 } else {
                     parkNanos = deadlineNanos - System.nanoTime();
                     if (parkNanos <= 0L) {
                         removeAndWakeupFirst(node);
                         return validator.resultOnTimeout();
                     }
-                    LockSupport.parkNanos(this, parkNanos);
+                    parkNanos(this, parkNanos);
                 }
 
                 if (Thread.interrupted() && allowInterruption) {

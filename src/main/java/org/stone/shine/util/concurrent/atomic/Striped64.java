@@ -36,7 +36,7 @@ abstract class Striped64 extends Number {
 
     static {
         try {
-            UNSAFE = UnsafeAdaptorHolder.UA;
+            UNSAFE = UnsafeAdaptorHolder.U;
             cellValueOffset = UNSAFE.objectFieldOffset(Cell.class.getDeclaredField("value"));
             cellsBusyOffset = UNSAFE.objectFieldOffset(Striped64.class.getDeclaredField("cellsBusy"));
         } catch (Exception e) {

@@ -79,7 +79,7 @@ public class StampedLock implements java.io.Serializable {
 
     static {
         try {
-            U = UnsafeAdaptorHolder.UA;
+            U = UnsafeAdaptorHolder.U;
             stampOffset = U.objectFieldOffset(StampedLock.class.getDeclaredField("stamp"));
         } catch (Exception e) {
             throw new Error(e);

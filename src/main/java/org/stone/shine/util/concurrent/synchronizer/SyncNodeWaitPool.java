@@ -43,6 +43,10 @@ public abstract class SyncNodeWaitPool {
     //****************************************************************************************************************//
     //                                          2: append(2)                                                          //
     //****************************************************************************************************************//
+    final SyncNode peekFirst() {
+        return waitQueue.peek();
+    }
+
     protected final void appendAsDataNode(SyncNode node) {
         node.state = null;
         node.thread = null;
@@ -54,6 +58,7 @@ public abstract class SyncNodeWaitPool {
         waitQueue.offer(node);
         return node == waitQueue.peek();
     }
+
 
     //****************************************************************************************************************//
     //                                          3: wakeup for result wait pool(3)                                     //
