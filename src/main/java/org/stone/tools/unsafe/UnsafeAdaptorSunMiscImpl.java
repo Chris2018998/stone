@@ -20,7 +20,7 @@ import java.lang.reflect.Field;
  * @version 1.0
  */
 public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
-    private static final Unsafe U;
+    public static final Unsafe U;
 
     static {
         try {

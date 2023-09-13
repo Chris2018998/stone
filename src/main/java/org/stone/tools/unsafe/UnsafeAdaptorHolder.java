@@ -16,7 +16,7 @@ package org.stone.tools.unsafe;
  * @version 1.0
  */
 public final class UnsafeAdaptorHolder {
-    public static final UnsafeAdaptor UA;
+    public static final UnsafeAdaptor U;
     private static final String SunMiscUnsafeClassName = "sun.misc.Unsafe";
     private static final String JdkMiscUnsafeClassName = "jdk.internal.misc.Unsafe";
     private static final String SunMiscUnsafeAdaptorImplClass = "org.stone.tools.unsafe.UnsafeAdaptorSunMiscImpl";//low version
@@ -37,7 +37,7 @@ public final class UnsafeAdaptorHolder {
         }
 
         try {
-            UA = (UnsafeAdaptor) Class.forName(adaptorImplClassName).newInstance();
+            U = (UnsafeAdaptor) Class.forName(adaptorImplClassName).newInstance();
         } catch (InstantiationException e) {
             throw new Error("Failed to create unsafe adaptor by class:" + adaptorImplClassName, e);
         } catch (IllegalAccessException e) {
