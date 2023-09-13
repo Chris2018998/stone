@@ -31,7 +31,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     private static final int maxTimedSpins = (NCPUS < 2) ? 0 : 32;
     private static final int maxUntimedSpins = maxTimedSpins * 16;
     private static final long spinForTimeoutThreshold = 1023L;
-    private static final UnsafeAdaptor U = UnsafeAdaptorHolder.UA;
+    private static final UnsafeAdaptor U = UnsafeAdaptorHolder.U;
 
     private BufferMatcher<E> matcher;
 
