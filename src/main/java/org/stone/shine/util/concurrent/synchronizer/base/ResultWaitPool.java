@@ -59,14 +59,13 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
                 config.getParkNanos(), config.isAllowInterruption(), config.isPropagatedOnSuccess());
     }
 
-    //performance better
     public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitTester tester,
                             Object nodeType, Object nodeValue, long parkNanos, boolean allowInterruption,
                             boolean propagatedOnSuccess) throws Exception {
 
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();
-        if (call == null || tester == null || validator == null)
+        if (call == null || validator == null || tester == null)
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
 
         //2:test before call,if passed,then execute call

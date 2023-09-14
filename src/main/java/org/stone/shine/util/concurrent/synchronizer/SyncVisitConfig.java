@@ -86,7 +86,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
-    public long getParkNanos() {
+    public final long getParkNanos() {
         return parkNanos;
     }
 

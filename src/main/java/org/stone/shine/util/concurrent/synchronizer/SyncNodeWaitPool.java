@@ -70,7 +70,7 @@ public abstract class SyncNodeWaitPool {
 
     public final void wakeupFirst() {
         SyncNode first = waitQueue.peek();
-        if (first != null && first.state == null && casState(first, null, RUNNING))
+        if (first != null && casState(first, null, RUNNING))
             unpark(first.thread);
     }
 
