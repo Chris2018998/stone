@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
+import static org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
 /**
@@ -40,6 +41,9 @@ class BaseLock implements Lock {
     private final ResourceWaitPool waitPool;
     //Lock State
     private final LockAtomicState lockState;
+    //call parameters
+    private final SyncVisitTester visitTester;
+    private final boolean propagatedOnSuccess;
 
     //****************************************************************************************************************//
     //                                          1: constructors (2)                                                   //
@@ -55,6 +59,14 @@ class BaseLock implements Lock {
         this.lockAction = lockAction;
         this.acquireType = acquireType;
         this.lockState = lockAction.getLockState();
+
+        if (acquireType == TYPE_SHARED) {
+            propagatedOnSuccess = true;
+            visitTester = SyncVisitTester.SHARE_VISIT_TESTER;
+        } else {
+            propagatedOnSuccess = false;
+            visitTester = SyncVisitTester.BASE_VISIT_TESTER;
+        }
     }
 
     //****************************************************************************************************************//
@@ -83,16 +95,9 @@ class BaseLock implements Lock {
      * {@code Lock} implementation.
      */
     public void lock() {
-        SyncVisitConfig config = new SyncVisitConfig();
-        config.setNodeType(acquireType);
-        config.allowInterruption(false);
-        if (acquireType == TYPE_SHARED) {
-            config.setPropagatedOnSuccess(true);
-            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
-        }
-
         try {
-            waitPool.acquire(lockAction, 1, config);
+            waitPool.acquire(lockAction, 1, BOOL_EQU_VALIDATOR, visitTester,
+                    acquireType, null, 0L, false, propagatedOnSuccess);
         } catch (Exception e) {
             //do nothing
         }
@@ -145,14 +150,9 @@ class BaseLock implements Lock {
      *                              of lock acquisition is supported)
      */
     public void lockInterruptibly() throws InterruptedException {
-        SyncVisitConfig config = new SyncVisitConfig();
-        config.setNodeType(acquireType);
-        if (acquireType == TYPE_SHARED) {
-            config.setPropagatedOnSuccess(true);
-            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
-        }
-
-        waitPool.acquire(lockAction, 1, config);
+        waitPool.acquire(lockAction, 1, BOOL_EQU_VALIDATOR, visitTester,
+                acquireType, null, 0L, true,
+                propagatedOnSuccess);
     }
 
     /**
@@ -244,14 +244,9 @@ class BaseLock implements Lock {
      *                              acquisition is supported)
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        SyncVisitConfig config = new SyncVisitConfig(time, unit);
-        config.setNodeType(acquireType);
-        if (acquireType == TYPE_SHARED) {
-            config.setPropagatedOnSuccess(true);
-            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
-        }
-
-        return waitPool.acquire(lockAction, 1, config);
+        return waitPool.acquire(lockAction, 1, BOOL_EQU_VALIDATOR, visitTester,
+                acquireType, null, unit.toNanos(time), true,
+                propagatedOnSuccess);
     }
 
     /**

@@ -11,6 +11,7 @@ package org.stone.shine.util.concurrent.synchronizer.extend;
 
 import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
 
+import static java.lang.Boolean.TRUE;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -31,7 +32,7 @@ public abstract class ResourceAction implements ResultCall {
     //try to acquireWithType lock or permit
     public final boolean tryAcquire(int size) {
         try {
-            return objectEquals(this.call(size), Boolean.TRUE);
+            return objectEquals(call(size), TRUE);
         } catch (Throwable e) {
             return false;
         }

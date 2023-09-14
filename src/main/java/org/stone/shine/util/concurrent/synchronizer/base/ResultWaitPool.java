@@ -12,6 +12,7 @@ package org.stone.shine.util.concurrent.synchronizer.base;
 import org.stone.shine.util.concurrent.synchronizer.*;
 import org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator;
 
+import static java.lang.System.nanoTime;
 import static java.util.concurrent.locks.LockSupport.park;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 
@@ -45,6 +46,9 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
         this.validator = validator;
     }
 
+    //****************************************************************************************************************//
+    //                                          2: get (3)                                                            //
+    //****************************************************************************************************************//
     public final boolean isFair() {
         return this.fair;
     }
@@ -69,7 +73,7 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
 
         //2:test before call,if passed,then execute call
-        if (tester.allow(fair, this, nodeType)) {
+        if (tester.allow(fair, nodeType, this)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
@@ -77,10 +81,10 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
 
         //3:offer to wait queue
         byte spins = 1, postSpins = 1;
+        boolean isTime = parkNanos > 0L;
         SyncNode node = new SyncNode(nodeType, nodeValue);
         boolean atFirst = appendAsWaitNode(node);
-        boolean isTime = parkNanos > 0L;
-        long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
+        long deadlineNanos = isTime ? nanoTime() + parkNanos : 0L;
 
         //4: spin
         do {
@@ -105,13 +109,12 @@ public final class ResultWaitPool extends SyncNodeWaitPool {
             //4.2: try to park
             if (node.isNullState()) {
                 if (isTime) {
-                    parkNanos = deadlineNanos - System.nanoTime();
-                    if (parkNanos > 0L) {
-                        parkNanos(this, parkNanos);
-                    } else {
+                    parkNanos = deadlineNanos - nanoTime();
+                    if (parkNanos <= 0L) {
                         removeAndWakeupFirst(node);
                         return validator.resultOnTimeout();
                     }
+                    parkNanos(this, parkNanos);
                 } else {
                     park(this);
                 }

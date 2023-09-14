@@ -20,18 +20,18 @@ import org.stone.tools.CommonUtil;
 
 public interface SyncVisitTester {
     SyncVisitTester BASE_VISIT_TESTER = new SyncVisitTester() {
-        public final boolean allow(boolean fair, SyncNodeWaitPool pool, Object syncNodeType) {
+        public final boolean allow(boolean fair, Object curType, SyncNodeWaitPool pool) {
             return !fair || pool.peekFirst() == null;
         }
     };
     //avoid starvation
     SyncVisitTester SHARE_VISIT_TESTER = new SyncVisitTester() {
-        public final boolean allow(boolean fair, SyncNodeWaitPool pool, Object syncNodeType) {
+        public final boolean allow(boolean fair, Object curType, SyncNodeWaitPool pool) {
             SyncNode first = pool.peekFirst();
-            return first == null || !fair && CommonUtil.objectEquals(first.getType(), syncNodeType);
+            return first == null || !fair && CommonUtil.objectEquals(first.getType(), curType);
         }
     };
 
     //interface method
-    boolean allow(boolean fair, SyncNodeWaitPool pool, Object syncNodeType);
+    boolean allow(boolean fair, Object curType, SyncNodeWaitPool pool);
 }

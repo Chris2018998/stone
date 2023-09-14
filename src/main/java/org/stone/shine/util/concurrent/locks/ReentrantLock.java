@@ -68,7 +68,7 @@ public final class ReentrantLock extends BaseLock {
                 lockState.set(curState);
                 return curState == 0;
             } else {
-                return false;
+                return Boolean.FALSE;
             }
         }
     }
