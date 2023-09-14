@@ -214,7 +214,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public int getHoldCount() {
-            return lockState.getExclusiveOwnerThread() == Thread.currentThread() ? exclusiveCount(lockState.get()) : 0;
+            return lockState.exclusiveOwnerThread == Thread.currentThread() ? exclusiveCount(lockState.get()) : 0;
         }
 
         public Object call(Object size) {
@@ -222,12 +222,12 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
             if (state == 0) {
                 state = incrementExclusivePart(state, (int) size);
                 if (lockState.compareAndSet(0, state)) {
-                    lockState.setExclusiveOwnerThread(Thread.currentThread());
+                    lockState.exclusiveOwnerThread = Thread.currentThread();
                     return true;
                 } else {
                     return false;
                 }
-            } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
+            } else if (lockState.exclusiveOwnerThread == Thread.currentThread()) {//Reentrant
                 state = incrementExclusivePart(state, (int) size);
                 if (exclusiveCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
                 lockState.set(state);
@@ -238,13 +238,13 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         }
 
         public boolean tryRelease(int size) {
-            if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
+            if (lockState.exclusiveOwnerThread == Thread.currentThread()) {
                 int curState = lockState.get();
                 int writeCount = exclusiveCount(curState);
                 writeCount = writeCount - size;//support full release for reentrant
 
                 lockState.set(decrementExclusivePart(curState, size));
-                if (writeCount == 0) lockState.setExclusiveOwnerThread(null);
+                if (writeCount == 0) lockState.exclusiveOwnerThread = null;
 
                 return writeCount == 0;
             } else {
@@ -282,7 +282,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
             //step1:test current is whether in exclusive mode
             if (writeCount > 0) {
-                if (Thread.currentThread() == lockState.getExclusiveOwnerThread()) {
+                if (lockState.exclusiveOwnerThread == Thread.currentThread()) {
                     state = incrementSharedPart(state, (int) size);//+1
                     if (sharedCount(state) > MAX_COUNT) throw new Error("Maximum lock count exceeded");
 

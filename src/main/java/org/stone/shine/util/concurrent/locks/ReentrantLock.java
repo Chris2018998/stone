@@ -39,18 +39,18 @@ public final class ReentrantLock extends BaseLock {
         }
 
         public final int getHoldCount() {
-            return lockState.getExclusiveOwnerThread() == Thread.currentThread() ? lockState.get() : 0;
+            return lockState.exclusiveOwnerThread == Thread.currentThread() ? lockState.get() : 0;
         }
 
         public final Object call(Object size) {
             int state = lockState.get();
             if (state == 0) {
                 if (lockState.compareAndSet(0, (int) size)) {
-                    lockState.setExclusiveOwnerThread(Thread.currentThread());
+                    lockState.exclusiveOwnerThread = Thread.currentThread();
                     return Boolean.TRUE;
                 }
                 return Boolean.FALSE;
-            } else if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {//Reentrant
+            } else if (lockState.exclusiveOwnerThread == Thread.currentThread()) {//Reentrant
                 state += (int) size;
                 if (state <= 0) throw new Error("lock count increment exceeded");
                 lockState.set(state);
@@ -60,11 +60,11 @@ public final class ReentrantLock extends BaseLock {
         }
 
         public final boolean tryRelease(int size) {
-            if (lockState.getExclusiveOwnerThread() == Thread.currentThread()) {
+            if (lockState.exclusiveOwnerThread == Thread.currentThread()) {
                 int curState = lockState.get() - size;//full release(occur in condition wait)
 
                 if (curState < 0) throw new Error("lock count decrement exceeded");
-                if (curState == 0) lockState.setExclusiveOwnerThread(null);
+                if (curState == 0) lockState.exclusiveOwnerThread = null;
                 lockState.set(curState);
                 return curState == 0;
             } else {

@@ -32,7 +32,7 @@ public abstract class ResourceAction implements ResultCall {
     //try to acquireWithType lock or permit
     public final boolean tryAcquire(int size) {
         try {
-            return objectEquals(call(size), TRUE);
+            return objectEquals(TRUE, call(size));
         } catch (Throwable e) {
             return false;
         }

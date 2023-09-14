@@ -23,6 +23,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 import static org.stone.shine.util.concurrent.synchronizer.base.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
+import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_EXCLUSIVE;
 import static org.stone.shine.util.concurrent.synchronizer.extend.AcquireTypes.TYPE_SHARED;
 
 /**
@@ -50,7 +51,7 @@ class BaseLock implements Lock {
     //****************************************************************************************************************//
     //constructor1(extend by ReentrantLock)
     BaseLock(boolean fair, LockAction lockAction) {
-        this(new ResourceWaitPool(fair), lockAction, AcquireTypes.TYPE_EXCLUSIVE);
+        this(new ResourceWaitPool(fair), lockAction, TYPE_EXCLUSIVE);
     }
 
     //constructor2(extend by WriteLockImpl,ReadLockImpl)
@@ -58,7 +59,7 @@ class BaseLock implements Lock {
         this.waitPool = waitPool;
         this.lockAction = lockAction;
         this.acquireType = acquireType;
-        this.lockState = lockAction.getLockState();
+        this.lockState = lockAction.lockState;
 
         if (acquireType == TYPE_SHARED) {
             propagatedOnSuccess = true;
@@ -304,7 +305,7 @@ class BaseLock implements Lock {
     }
 
     protected Thread getOwner() {
-        return lockState.getExclusiveOwnerThread();
+        return lockState.exclusiveOwnerThread;
     }
 
     public boolean isHeldByCurrentThread() {

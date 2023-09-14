@@ -62,7 +62,7 @@ public final class ResourceWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          3: acquireWithType/release methods(3)                                 //
+    //                                          3: acquireWithType/release methods(4)                                 //
     //****************************************************************************************************************//
     public final boolean tryAcquire(ResourceAction action, int size) {
         return action.tryAcquire(size);

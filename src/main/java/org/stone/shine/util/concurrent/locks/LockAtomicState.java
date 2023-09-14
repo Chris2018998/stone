@@ -19,15 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class LockAtomicState extends AtomicInteger {
 
-    private Thread exclusiveOwnerThread;
-
-    final Thread getExclusiveOwnerThread() {
-        return exclusiveOwnerThread;
-    }
-
-    void setExclusiveOwnerThread(Thread exclusiveOwnerThread) {
-        this.exclusiveOwnerThread = exclusiveOwnerThread;
-    }
+    Thread exclusiveOwnerThread;
 
     boolean isHeldByCurrentThread() {
         return exclusiveOwnerThread == Thread.currentThread();
