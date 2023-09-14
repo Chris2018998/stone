@@ -11,8 +11,6 @@ package org.stone.shine.util.concurrent.synchronizer.base.validator;
 
 import org.stone.shine.util.concurrent.synchronizer.base.ResultValidator;
 
-import static org.stone.tools.CommonUtil.objectEquals;
-
 /**
  * equals compare
  *
@@ -32,6 +30,6 @@ public final class ResultEqualsValidator extends EquivalentValidator {
     }
 
     public final boolean isExpected(Object result) {
-        return objectEquals(compareValue, result);
+        return compareValue == result || compareValue != null && compareValue.equals(result);
     }
 }

@@ -69,6 +69,10 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.nodeType = nodeType;
     }
 
+    public final Object getNodeValue() {
+        return this.nodeValue;
+    }
+
     public final void setNodeInitInfo(Object type, E value) {
         this.nodeType = type;
         this.nodeValue = value;
@@ -82,6 +86,10 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
+    public long getParkNanos() {
+        return parkNanos;
+    }
+
     public final boolean isAllowInterruption() {
         return allowInterruption;
     }
