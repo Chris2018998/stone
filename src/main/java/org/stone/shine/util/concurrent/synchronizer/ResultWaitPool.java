@@ -24,7 +24,7 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  * @author Chris Liao
  * @version 1.0
  */
-public class ResultWaitPool extends BaseWaitPool {
+public class ResultWaitPool extends ObjectWaitPool {
     //true,use fair mode
     private final boolean fair;
     //result validator(bool validator is default)

@@ -16,12 +16,12 @@ import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Signal-BaseWaitPool
+ * Signal-ObjectWaitPool
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class SignalWaitPool extends BaseWaitPool {
+public final class SignalWaitPool extends ObjectWaitPool {
 
     /**
      * try to get a signal from pool,if not get,then wait until a wakeup signal or wait timeout.

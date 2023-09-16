@@ -19,12 +19,12 @@ import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * Transfer-BaseWaitPool
+ * Transfer-ObjectWaitPool
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class TransferWaitPool<E> extends BaseWaitPool {
+public final class TransferWaitPool<E> extends ObjectWaitPool {
     public static final Object Node_Type_Get = new Object();
     public static final Object Node_Type_Data = new Object();
 

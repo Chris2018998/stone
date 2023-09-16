@@ -17,13 +17,13 @@ import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater
 import static org.stone.tools.CommonUtil.maxTimedSpins;
 
 /**
- * State-BaseWaitPool
+ * State-ObjectWaitPool
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-public final class StateWaitPool extends BaseWaitPool {
+public final class StateWaitPool extends ObjectWaitPool {
     //state validator
     private final ResultValidator validator;
 
