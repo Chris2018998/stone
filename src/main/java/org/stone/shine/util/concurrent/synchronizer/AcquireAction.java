@@ -26,7 +26,6 @@ public abstract class AcquireAction implements ResultCall {
     //try release
     public abstract boolean tryRelease(int size);
 
-    //try to acquireWithType lock or permit
     public final boolean tryAcquire(int size) {
         try {
             return TRUE.equals(call(size));

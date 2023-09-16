@@ -25,8 +25,8 @@ import static java.util.concurrent.locks.LockSupport.parkNanos;
  * @version 1.0
  */
 public class ResultWaitPool extends ObjectWaitPool {
-    //true,use fair mode
-    private final boolean fair;
+    //true,use unfair mode
+    private final boolean unfair;
     //result validator(bool validator is default)
     private final ResultValidator validator;
 
@@ -43,7 +43,7 @@ public class ResultWaitPool extends ObjectWaitPool {
 
     public ResultWaitPool(boolean fair, ResultValidator validator) {
         super(new SyncNodeChain());
-        this.fair = fair;
+        this.unfair = !fair;
         this.validator = validator;
     }
 
@@ -51,7 +51,7 @@ public class ResultWaitPool extends ObjectWaitPool {
     //                                          2: get (3)                                                            //
     //****************************************************************************************************************//
     public final boolean isFair() {
-        return this.fair;
+        return !this.unfair;
     }
 
     public final Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
@@ -69,7 +69,7 @@ public class ResultWaitPool extends ObjectWaitPool {
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
 
         //2:test before call,if passed,then execute call
-        if (tester.allow(fair, nodeType, this)) {
+        if (tester.allow(unfair, nodeType, this)) {
             Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
