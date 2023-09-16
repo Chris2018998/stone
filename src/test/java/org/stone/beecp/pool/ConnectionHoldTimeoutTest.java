@@ -29,7 +29,7 @@ public class ConnectionHoldTimeoutTest extends TestCase {
         config.setInitialSize(0);
         config.setValidTestSql("SELECT 1 from dual");
 
-        config.setHoldTimeout(1000L);// hold and not using connection;
+        config.setHoldTimeout(500L);// hold and not using connection;
         config.setTimerCheckInterval(1000L);// two seconds interval
         ds = new BeeDataSource(config);
     }
