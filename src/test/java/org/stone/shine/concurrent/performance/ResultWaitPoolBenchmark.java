@@ -6,8 +6,8 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.base.ResultCall;
-import org.stone.shine.util.concurrent.synchronizer.base.ResultWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.ResultCall;
+import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
