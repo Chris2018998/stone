@@ -31,7 +31,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 
-public abstract class ObjectWaitPool {
+abstract class ObjectWaitPool {
     protected final Queue<SyncNode> waitQueue;//node wait queue
 
     //****************************************************************************************************************//

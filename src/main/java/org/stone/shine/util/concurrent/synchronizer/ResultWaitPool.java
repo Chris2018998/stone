@@ -64,9 +64,9 @@ public class ResultWaitPool extends ObjectWaitPool {
                       boolean propagatedOnSuccess) throws Exception {
 
         //1:check call parameter
-        if (Thread.interrupted()) throw new InterruptedException();
         if (call == null || validator == null || tester == null)
             throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
+        if (Thread.interrupted()) throw new InterruptedException();
 
         //2:test before call,if passed,then execute call
         if (tester.allow(unfair, nodeType, this)) {

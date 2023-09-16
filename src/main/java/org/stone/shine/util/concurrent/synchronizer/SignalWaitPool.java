@@ -32,8 +32,8 @@ public final class SignalWaitPool extends ObjectWaitPool {
      */
     public final Object get(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
-        if (Thread.interrupted()) throw new InterruptedException();
         if (config == null) throw new IllegalArgumentException("Sync config can't be null");
+        if (Thread.interrupted()) throw new InterruptedException();
 
         //2:offer to wait queue
         SyncNode node = config.getSyncNode();
