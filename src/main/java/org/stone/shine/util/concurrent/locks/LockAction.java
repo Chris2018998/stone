@@ -28,6 +28,10 @@ abstract class LockAction extends AcquireAction {
     abstract int getHoldCount();
 
     boolean isHeldByCurrentThread() {
-        return lockState.isHeldByCurrentThread();
+        return lockState.exclusiveOwnerThread == Thread.currentThread();
+    }
+
+    boolean isHeldByAnotherThread() {
+        return lockState.exclusiveOwnerThread != null && lockState.exclusiveOwnerThread != Thread.currentThread();
     }
 }

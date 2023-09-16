@@ -18,10 +18,5 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @version 1.0
  */
 final class LockAtomicState extends AtomicInteger {
-
     Thread exclusiveOwnerThread;
-
-    boolean isHeldByCurrentThread() {
-        return exclusiveOwnerThread == Thread.currentThread();
-    }
 }

@@ -94,7 +94,8 @@ class BaseLock implements Lock {
     public void lock() {
         try {
             waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
-                    acquireType, null, 0L, false, propagatedOnSuccess);
+                    acquireType, null, 0L, false,
+                    propagatedOnSuccess);
         } catch (Exception e) {
             //do noting
         }
@@ -317,7 +318,7 @@ class BaseLock implements Lock {
     }
 
     public boolean isHeldByCurrentThread() {
-        return lockState.isHeldByCurrentThread();
+        return lockAction.isHeldByCurrentThread();
     }
 
     public int getLockAtomicState() {
@@ -425,7 +426,7 @@ class BaseLock implements Lock {
         //do await
         private void doAwait(SyncVisitConfig config) throws InterruptedException {
             //1:condition wait under current thread must hold the lock
-            if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
+            if (lockAction.isHeldByAnotherThread()) throw new IllegalMonitorStateException();
 
             //2:full release(exclusive count should be zero):support full release for reentrant
             int holdCount = lockAction.getHoldCount();
@@ -454,12 +455,12 @@ class BaseLock implements Lock {
 
         /******************************************** signal begin ****************************************************/
         public void signal() {
-            if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
+            if (lockAction.isHeldByAnotherThread()) throw new IllegalMonitorStateException();
             signalPool.wakeupOne(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
 
         public void signalAll() {
-            if (!lockAction.isHeldByCurrentThread()) throw new IllegalMonitorStateException();
+            if (lockAction.isHeldByAnotherThread()) throw new IllegalMonitorStateException();
             signalPool.wakeupAll(true, null, SyncNodeStates.RUNNING);//node wait(step2) in the doAwait method
         }
     }
