@@ -77,9 +77,9 @@ public class ResultWaitPool extends ObjectWaitPool {
 
         //3:offer to wait queue
         byte spins = 1, postSpins = 1;
+        final boolean isTime = parkNanos > 0L;
         SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
         boolean atFirst = appendAsWaitNode(node);
-        final boolean isTime = parkNanos > 0L;
         final long deadlineNanos = isTime ? nanoTime() + parkNanos : 0L;
 
         //4: spin

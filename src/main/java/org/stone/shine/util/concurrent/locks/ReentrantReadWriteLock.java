@@ -9,8 +9,8 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.AcquireTypes;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncConstants;
 
 import java.util.Collection;
 import java.util.concurrent.locks.Condition;
@@ -183,7 +183,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //****************************************************************************************************************//
     public static class WriteLock extends BaseLock {
         WriteLock(ResultWaitPool waitPool, LockAction lockAction) {
-            super(waitPool, lockAction, AcquireTypes.TYPE_EXCLUSIVE);
+            super(waitPool, lockAction, SyncConstants.TYPE_EXCLUSIVE);
         }
 
         public int getHoldCount() {
@@ -193,7 +193,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
 
     public static class ReadLock extends BaseLock {
         ReadLock(ResultWaitPool waitPool, LockAction lockAction) {
-            super(waitPool, lockAction, AcquireTypes.TYPE_SHARED);
+            super(waitPool, lockAction, SyncConstants.TYPE_SHARED);
         }
 
         public int getHoldCount() {

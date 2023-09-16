@@ -18,8 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
-import static org.stone.shine.util.concurrent.synchronizer.AcquireTypes.TYPE_EXCLUSIVE;
-import static org.stone.shine.util.concurrent.synchronizer.AcquireTypes.TYPE_SHARED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.*;
 import static org.stone.shine.util.concurrent.synchronizer.SyncVisitTester.BASE_VISIT_TESTER;
 import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 
@@ -94,7 +93,7 @@ class BaseLock implements Lock {
      */
     public void lock() {
         try {
-            waitPool.get(lockAction, 1, BOOL_EQU_VALIDATOR, visitTester,
+            waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
                     acquireType, null, 0L, false, propagatedOnSuccess);
         } catch (Exception e) {
             //do noting
@@ -149,7 +148,7 @@ class BaseLock implements Lock {
      */
     public void lockInterruptibly() throws InterruptedException {
         try {
-            waitPool.get(lockAction, 1, BOOL_EQU_VALIDATOR, visitTester,
+            waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
                     acquireType, null, 0L, true,
                     propagatedOnSuccess);
         } catch (InterruptedException e) {
@@ -249,7 +248,7 @@ class BaseLock implements Lock {
      */
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         try {
-            return (Boolean) waitPool.get(lockAction, 1, BOOL_EQU_VALIDATOR, visitTester,
+            return (Boolean) waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
                     acquireType, null, unit.toNanos(time), true,
                     propagatedOnSuccess);
         } catch (InterruptedException e) {
@@ -443,7 +442,7 @@ class BaseLock implements Lock {
             //4:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             try {
                 lock.waitPool.get(lockAction, holdCount, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                        AcquireTypes.TYPE_EXCLUSIVE, null, 0, false,
+                        SyncConstants.TYPE_EXCLUSIVE, null, 0, false,
                         false);
             } catch (Exception e) {
                 //do nothing

@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.INT_ONE;
 import static org.stone.shine.util.concurrent.synchronizer.SyncVisitTester.BASE_VISIT_TESTER;
 import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 
@@ -249,7 +250,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
 
         try {
-            waitPool.get(permitAction, 1, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
+            waitPool.get(permitAction, INT_ONE, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
                     null, null, 0, true,
                     true);
         } catch (InterruptedException e) {
@@ -284,7 +285,7 @@ public class Semaphore {
     public void acquireUninterruptibly(int permits) {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
-            waitPool.get(permitAction, 1, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
+            waitPool.get(permitAction, INT_ONE, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
                     null, null, 0, false,
                     true);
         } catch (Exception e) {
