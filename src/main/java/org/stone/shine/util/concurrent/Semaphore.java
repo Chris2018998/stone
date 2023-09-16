@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.shine.util.concurrent.synchronizer.AcquireAction;
+import org.stone.shine.util.concurrent.synchronizer.ResourceAction;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
 
 import java.util.Collection;
@@ -30,7 +30,7 @@ public class Semaphore {
     //resource wait pool
     private final ResultWaitPool waitPool;
     //permit acquisition action driven by wait pool
-    private final AcquireAction permitAction;
+    private final ResourceAction permitAction;
     //permit size
     private final AtomicInteger permitSize;
 
@@ -523,7 +523,7 @@ public class Semaphore {
     }
 
     //Permit Action driven by wait pool
-    private static class PermitAcquireAction extends AcquireAction {
+    private static class PermitAcquireAction extends ResourceAction {
         private final AtomicInteger permitSize;
 
         PermitAcquireAction(AtomicInteger permitSize) {

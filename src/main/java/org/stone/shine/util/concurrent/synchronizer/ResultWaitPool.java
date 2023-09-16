@@ -54,14 +54,14 @@ public class ResultWaitPool extends ObjectWaitPool {
         return !this.unfair;
     }
 
-    public final Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
+    public Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return get(call, arg, validator, config.getVisitTester(), config.getNodeType(), config.getNodeValue(),
                 config.getParkNanos(), config.isAllowInterruption(), config.isPropagatedOnSuccess());
     }
 
-    public final Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitTester tester,
-                            Object nodeType, Object nodeValue, long parkNanos, boolean allowInterruption,
-                            boolean propagatedOnSuccess) throws Exception {
+    public Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitTester tester,
+                      Object nodeType, Object nodeValue, long parkNanos, boolean allowInterruption,
+                      boolean propagatedOnSuccess) throws Exception {
 
         //1:check call parameter
         if (Thread.interrupted()) throw new InterruptedException();

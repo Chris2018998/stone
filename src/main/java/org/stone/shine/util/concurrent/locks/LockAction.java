@@ -9,7 +9,7 @@
  */
 package org.stone.shine.util.concurrent.locks;
 
-import org.stone.shine.util.concurrent.synchronizer.AcquireAction;
+import org.stone.shine.util.concurrent.synchronizer.ResourceAction;
 
 /**
  * Lock Base Action
@@ -17,7 +17,7 @@ import org.stone.shine.util.concurrent.synchronizer.AcquireAction;
  * @author Chris Liao
  * @version 1.0
  */
-abstract class LockAction extends AcquireAction {
+abstract class LockAction extends ResourceAction {
 
     final LockAtomicState lockState;
 
