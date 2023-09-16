@@ -27,7 +27,7 @@ public class ObjectHoldTimeoutTest extends TestCase {
     public void setUp() throws Throwable {
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setInitialSize(0);
-        config.setHoldTimeout(1000L);// hold and not using objects;
+        config.setHoldTimeout(500L);// hold and not using objects;
         config.setTimerCheckInterval(1000L);//one second interval
         config.setDelayTimeForNextClear(0L);
         config.setObjectFactoryClassName(JavaBookFactory.class.getName());
