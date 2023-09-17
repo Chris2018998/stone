@@ -49,7 +49,6 @@ public final class ReentrantLock extends BaseLock {
                     lockState.exclusiveOwnerThread = Thread.currentThread();
                     return Boolean.TRUE;
                 }
-                return Boolean.FALSE;
             } else if (lockState.exclusiveOwnerThread == Thread.currentThread()) {//Reentrant
                 state += (int) size;
                 if (state <= 0) throw new Error("lock count increment exceeded");
