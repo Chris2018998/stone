@@ -94,8 +94,9 @@ public final class ResultWaitPool extends ObjectWaitPool {
                             return result;
                         }
 
-                        if (spins > 0 && --spins == 0) {
-                            spins = postSpins = (byte) (postSpins << 1);
+                        if (spins <= 0) break;
+                        if (--spins == 0) {
+                            spins = postSpins = (byte) (postSpins << 1);//postSpins can reach 0
                             break;
                         }
                     } while (true);
