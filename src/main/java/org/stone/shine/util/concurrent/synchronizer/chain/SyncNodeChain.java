@@ -146,6 +146,22 @@ public final class SyncNodeChain implements Queue<SyncNode> {
             this.curNode = curNode;
         }
 
+        private static SyncNode findPevNode(SyncNode startNode) {
+            SyncNode targetNode = null;
+            SyncNode curNode = startNode;
+
+            while (curNode != null) {
+                if (curNode.thread != null)
+                    targetNode = curNode;
+                if (curNode != startNode)
+                    casPrev(startNode, startNode.prev, curNode);
+                if (targetNode != null) break;
+
+                curNode = curNode.prev;
+            }
+            return targetNode;
+        }
+
         public boolean hasNext() {
             SyncNode nextNode = findPevNode(curNode);
             return this.hasPrev = nextNode != null;
@@ -160,22 +176,6 @@ public final class SyncNodeChain implements Queue<SyncNode> {
             else
                 this.curNode = nextNode;
             return nextNode;
-        }
-
-        private SyncNode findPevNode(SyncNode startNode) {
-            SyncNode targetNode = null;
-            SyncNode curNode = startNode;
-
-            while (curNode != null) {
-                if (curNode.thread != null)
-                    targetNode = curNode;
-                if (curNode != startNode)
-                    casPrev(startNode, startNode.prev, curNode);
-                if (targetNode != null) break;
-
-                curNode = curNode.prev;
-            }
-            return targetNode;
         }
     }
 }
