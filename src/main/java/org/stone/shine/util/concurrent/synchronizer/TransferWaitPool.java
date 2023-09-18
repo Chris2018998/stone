@@ -63,7 +63,7 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
 
     //try to transfer the node to a waiter during specified period
     public final SyncNode offer(SyncVisitConfig config) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("Config can't be null");
+        if (config == null) throw new NullPointerException("Sync config can't be null");
         SyncNode pairNode = transfer(config, Node_Type_Get);
         if (pairNode != null) return pairNode;//matched node
         this.appendAsDataNode(config.getSyncNode());
@@ -74,12 +74,12 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     //                                          2: transfer methods(2)                                                //
     //****************************************************************************************************************//
     public final SyncNode tryTransfer(SyncNode node, Object toNodeType) {
-        if (node == null) throw new IllegalArgumentException("Node can't be null");
+        if (node == null) throw new NullPointerException("Node can't be null");
         return this.wakeupOne(fair, toNodeType, node);
     }
 
     public final SyncNode transfer(SyncVisitConfig config, Object toNodeType) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("Config can't be null");
+        if (config == null) throw new NullPointerException("Config can't be null");
 
         //1: try to transfer to one waiter
         SyncNode pairNode = tryTransfer(config.getSyncNode(), toNodeType);
@@ -97,7 +97,7 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     }
 
     public final SyncNode poll(SyncVisitConfig config) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("Config can't be null");
+        if (config == null) throw new NullPointerException("Sync config can't be null");
 
         return transfer(config, Node_Type_Data);
     }
@@ -106,8 +106,8 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     //                                          4: core methods                                                       //
     //****************************************************************************************************************//
     private SyncNode doWait(SyncVisitConfig config) throws InterruptedException {
-        if (config == null) throw new IllegalArgumentException("Config can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
+        if (config == null) throw new NullPointerException("Sync config can't be null");
 
         //1:create wait node and offer to wait queue
         SyncNode node = config.getSyncNode();

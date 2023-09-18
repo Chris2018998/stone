@@ -65,7 +65,7 @@ public class ResultWaitPool extends ObjectWaitPool {
 
         //1:check call parameter
         if (call == null || validator == null || tester == null)
-            throw new IllegalArgumentException("Illegal argument,please check(call,validator,visitTester)");
+            throw new NullPointerException("Exists null argument,please check(call,validator,visitTester)");
         if (Thread.interrupted()) throw new InterruptedException();
 
         //2:test before call,if passed,then execute call
@@ -93,8 +93,12 @@ public class ResultWaitPool extends ObjectWaitPool {
                             if (propagatedOnSuccess) wakeupFirst(node.getType());
                             return result;
                         }
-                    } while (spins > 0 && --spins > 0);
-                    spins = postSpins = (byte) (postSpins << 1);
+
+                        if (spins > 0 && --spins == 0) {
+                            spins = postSpins = (byte) (postSpins << 1);
+                            break;
+                        }
+                    } while (true);
                 } catch (Throwable e) {
                     waitQueue.poll();
                     wakeupFirst();

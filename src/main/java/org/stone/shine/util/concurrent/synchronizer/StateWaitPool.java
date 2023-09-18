@@ -56,7 +56,7 @@ public final class StateWaitPool extends ObjectWaitPool {
         //1:config check
         if (Thread.interrupted()) throw new InterruptedException();
         if (config == null || validator == null)
-            throw new IllegalArgumentException("Illegal argument,please check(validator,syncConfig)");
+            throw new NullPointerException("Exists null argument,please check(syncConfig,validator)");
 
         //2:offer to wait queue
         SyncNode node = config.getSyncNode();
