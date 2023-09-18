@@ -16,8 +16,8 @@ import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.BASE_VISIT_TESTER;
 import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.INT_ONE;
-import static org.stone.shine.util.concurrent.synchronizer.SyncVisitTester.BASE_VISIT_TESTER;
 import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 
 /**

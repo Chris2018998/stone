@@ -9,9 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
-import org.stone.tools.CommonUtil;
-
 /**
  * synchronization tester on first Visit
  *
@@ -20,18 +17,7 @@ import org.stone.tools.CommonUtil;
  */
 
 public interface SyncVisitTester {
-    SyncVisitTester BASE_VISIT_TESTER = new SyncVisitTester() {
-        public final boolean allow(boolean unfair, Object curType, ObjectWaitPool pool) {
-            return unfair || pool.peekFirst() == null;
-        }
-    };
-    //avoid starvation
-    SyncVisitTester SHARE_VISIT_TESTER = new SyncVisitTester() {
-        public final boolean allow(boolean unfair, Object curType, ObjectWaitPool pool) {
-            SyncNode first = pool.peekFirst();
-            return first == null || unfair && CommonUtil.objectEquals(first.getType(), curType);
-        }
-    };
+
 
     //interface method
     boolean allow(boolean unfair, Object curType, ObjectWaitPool pool);

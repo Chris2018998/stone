@@ -11,8 +11,6 @@ package org.stone.shine.util.concurrent;
 
 import org.stone.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitTester;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates;
 
 import java.util.concurrent.BrokenBarrierException;
@@ -20,6 +18,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.SHARE_VISIT_TESTER;
+import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
@@ -99,24 +99,18 @@ public final class CyclicBarrier {
     //****************************************************************************************************************//
     public int await() throws InterruptedException, BrokenBarrierException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setPropagatedOnSuccess(true);
-            config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
-            return doAwait(config);
+            return doAwait(0);
         } catch (TimeoutException e) {
             throw new Error(e);
         }
     }
 
     public int await(long timeout, TimeUnit unit) throws InterruptedException, BrokenBarrierException, TimeoutException {
-        SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
-        config.setPropagatedOnSuccess(true);
-        config.setVisitTester(SyncVisitTester.SHARE_VISIT_TESTER);
-        return doAwait(config);
+        return doAwait(unit.toNanos(timeout));
     }
 
     //await implement,return board ticket no(seat no)
-    private int doAwait(SyncVisitConfig config) throws InterruptedException, BrokenBarrierException, TimeoutException {
+    private int doAwait(long nanosTime) throws InterruptedException, BrokenBarrierException, TimeoutException {
         if (Thread.interrupted()) throw new InterruptedException();
 
         while (true) {
@@ -124,11 +118,14 @@ public final class CyclicBarrier {
             if (currentFlight.isBroken()) throw new BrokenBarrierException();
             int seatNo = currentFlight.buyFlightTicket();//range[1 -- seatSize],0 means that not got a ticket
             long curFlightNo = seatNo > 0 ? currentFlight.flightNo : 0;
-            config.setNodeType(curFlightNo);//flightNo using in wakeup
+            // config.setNodeType(curFlightNo);//flightNo using in wakeup
 
             try {
                 //1: passenger gather in waiting pool(seatNo is zero,we can image that some passengers without ticket and waiting in hall for next flight)
-                Object result = waitPool.get(currentFlight, seatNo, config);
+                Object result = waitPool.get(currentFlight, null, BOOL_EQU_VALIDATOR, SHARE_VISIT_TESTER,
+                        curFlightNo, seatNo, nanosTime, true,
+                        true);
+
                 //2: call result is a false bool,exists one passenger wait timeout(the flight will be cancelled)
                 if (Boolean.FALSE.equals(result)) throw new TimeoutException();
 
@@ -273,7 +270,7 @@ public final class CyclicBarrier {
         //************************************************************************************************************//
         //                                           wait call method                                                 //
         //************************************************************************************************************//
-        public Object call(Object arg) {
+        public final Object call(Object arg) {
             if (flightState.get() > State_Flying) return true;
 
             return passengerCount.get() == seatSize;//full seated

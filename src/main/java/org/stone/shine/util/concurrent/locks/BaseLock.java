@@ -19,7 +19,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.*;
-import static org.stone.shine.util.concurrent.synchronizer.SyncVisitTester.BASE_VISIT_TESTER;
 import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 
 /**
@@ -59,10 +58,10 @@ class BaseLock implements Lock {
 
         if (acquireType == TYPE_SHARED) {
             propagatedOnSuccess = true;
-            visitTester = SyncVisitTester.SHARE_VISIT_TESTER;
+            visitTester = SHARE_VISIT_TESTER;
         } else {
             propagatedOnSuccess = false;
-            visitTester = SyncVisitTester.BASE_VISIT_TESTER;
+            visitTester = BASE_VISIT_TESTER;
         }
     }
 

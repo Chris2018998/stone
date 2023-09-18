@@ -14,6 +14,8 @@ import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.BASE_VISIT_TESTER;
+
 /**
  * synchronization Visit Config
  *
@@ -41,7 +43,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //indicator:true,throws InterruptedException when waiting interrupted
     private boolean allowInterruption = true;
     //visit tester
-    private SyncVisitTester visitTester = SyncVisitTester.BASE_VISIT_TESTER;
+    private SyncVisitTester visitTester = BASE_VISIT_TESTER;
 
     //****************************************************************************************************************//
     //                                              1:constructors(3)                                                 //

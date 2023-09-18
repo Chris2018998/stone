@@ -12,7 +12,6 @@ package org.stone.shine.util.concurrent.locks;
 import org.stone.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.ResultValidator;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.tools.unsafe.UnsafeAdaptor;
 import org.stone.tools.unsafe.UnsafeAdaptorHolder;
 
@@ -21,8 +20,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.TYPE_EXCLUSIVE;
-import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.TYPE_SHARED;
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.*;
 
 /**
  * StampedLock is a stamped digit Lock implementation by wait pool,which is
@@ -90,7 +88,7 @@ public class StampedLock implements java.io.Serializable {
     private final ResultCall stampedReadCall = new ReadLockCall(this);
     private final ResultCall stampedWriteCall = new WriteLockCall(this);
     private final ResultValidator resultValidator = new LongResultValidator();
-    private final ResultWaitPool callWaitPool = new ResultWaitPool(false, resultValidator);
+    private final ResultWaitPool waitPool = new ResultWaitPool(false, resultValidator);
     private volatile long stamp = 2147483648L;
 
     //lock views
@@ -165,11 +163,9 @@ public class StampedLock implements java.io.Serializable {
 
     public long readLock() {
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setNodeType(TYPE_SHARED);
-            config.setPropagatedOnSuccess(true);
-            config.allowInterruption(false);
-            return (long) callWaitPool.get(stampedReadCall, null, config);
+            return (long) waitPool.get(stampedReadCall, null, resultValidator, SHARE_VISIT_TESTER,
+                    TYPE_SHARED, null, 0L,
+                    false, true);
         } catch (Exception e) {
             return acquireFailedStamp;
         }
@@ -177,10 +173,9 @@ public class StampedLock implements java.io.Serializable {
 
     public long readLockInterruptibly() throws InterruptedException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setNodeType(TYPE_SHARED);
-            config.setPropagatedOnSuccess(true);
-            return (long) callWaitPool.get(stampedReadCall, null, config);
+            return (long) waitPool.get(stampedReadCall, null, resultValidator, SHARE_VISIT_TESTER,
+                    TYPE_SHARED, null, 0L,
+                    true, true);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -190,10 +185,9 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig(time, unit);
-            config.setNodeType(TYPE_SHARED);
-            config.setPropagatedOnSuccess(true);
-            return (long) callWaitPool.get(stampedReadCall, null, config);
+            return (long) waitPool.get(stampedReadCall, null, resultValidator, SHARE_VISIT_TESTER,
+                    TYPE_SHARED, null, unit.toNanos(time),
+                    true, true);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -210,7 +204,7 @@ public class StampedLock implements java.io.Serializable {
         if (inStampLow == curStampLow && (curStampLow & 1) == READ_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                if (highInt(newStamp) == 0) callWaitPool.wakeupFirst();
+                if (highInt(newStamp) == 0) waitPool.wakeupFirst();
                 return true;
             }
         }
@@ -233,10 +227,9 @@ public class StampedLock implements java.io.Serializable {
 
     public long writeLock() {
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setNodeType(TYPE_EXCLUSIVE);
-            config.allowInterruption(false);
-            return (long) callWaitPool.get(stampedWriteCall, null, config);
+            return (long) waitPool.get(stampedWriteCall, null, resultValidator, BASE_VISIT_TESTER,
+                    TYPE_EXCLUSIVE, null, 0L,
+                    false, false);
         } catch (Exception e) {
             return acquireFailedStamp;
         }
@@ -244,9 +237,12 @@ public class StampedLock implements java.io.Serializable {
 
     public long writeLockInterruptibly() throws InterruptedException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setNodeType(TYPE_EXCLUSIVE);
-            return (long) callWaitPool.get(stampedWriteCall, null, config);
+//            SyncVisitConfig config = new SyncVisitConfig();
+//            config.setNodeType(TYPE_EXCLUSIVE);
+//            return (long) waitPool.get(stampedWriteCall, null, config);
+            return (long) waitPool.get(stampedWriteCall, null, resultValidator, BASE_VISIT_TESTER,
+                    TYPE_EXCLUSIVE, null, 0L,
+                    true, false);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -256,9 +252,9 @@ public class StampedLock implements java.io.Serializable {
 
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig(time, unit);
-            config.setNodeType(TYPE_EXCLUSIVE);
-            return (long) callWaitPool.get(stampedWriteCall, null, config);
+            return (long) waitPool.get(stampedWriteCall, null, resultValidator, BASE_VISIT_TESTER,
+                    TYPE_EXCLUSIVE, null, unit.toNanos(time),
+                    true, false);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -275,7 +271,7 @@ public class StampedLock implements java.io.Serializable {
         if (inStampLow == curStampLow && (curStampLow & 1) == WRITE_LOCK_FLAG && curStampHigh > 0) {
             long newStamp = contact(curStampHigh - 1, curStampLow);
             if (compareAndSetLockStamp(this, currentStamp, newStamp)) {
-                callWaitPool.wakeupFirst();
+                waitPool.wakeupFirst();
                 return true;
             }
         }
@@ -310,7 +306,7 @@ public class StampedLock implements java.io.Serializable {
             if ((l & 1) == WRITE_LOCK_FLAG) { //read lock
                 long newStamp = contact(h, l + 1);
                 if (compareAndSetLockStamp(this, currentStamp, newStamp)) {//new read lock
-                    this.callWaitPool.wakeupFirst(TYPE_SHARED);//wakeup other share node
+                    this.waitPool.wakeupFirst(TYPE_SHARED);//wakeup other share node
                     return newStamp;
                 } else {
                     return acquireFailedStamp;
@@ -400,7 +396,7 @@ public class StampedLock implements java.io.Serializable {
         }
 
         public boolean isExpected(Object result) {
-            return ((long) result != acquireFailedStamp);
+            return (long) result != acquireFailedStamp;
         }
     }
 

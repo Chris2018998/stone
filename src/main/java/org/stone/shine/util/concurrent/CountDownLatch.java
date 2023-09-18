@@ -11,10 +11,12 @@ package org.stone.shine.util.concurrent;
 
 import org.stone.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.stone.shine.util.concurrent.synchronizer.SyncConstants.BASE_VISIT_TESTER;
+import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator.BOOL_EQU_VALIDATOR;
 
 /**
  * CountDownLatch,a synchronization impl by wait pool,which can be regarded as a theater
@@ -38,9 +40,9 @@ public final class CountDownLatch implements ResultCall {
     //****************************************************************************************************************//
     public void await() throws InterruptedException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig();
-            config.setPropagatedOnSuccess(true);
-            waitPool.get(this, null, config);
+            waitPool.get(this, null, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
+                    null, null, 0,
+                    true, true);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
@@ -50,9 +52,9 @@ public final class CountDownLatch implements ResultCall {
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
-            SyncVisitConfig config = new SyncVisitConfig(timeout, unit);
-            config.setPropagatedOnSuccess(true);
-            waitPool.get(this, null, config);
+            waitPool.get(this, null, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
+                    null, null, unit.toNanos(timeout),
+                    true, true);
         } catch (InterruptedException e) {
             throw e;
         } catch (Exception e) {
