@@ -66,7 +66,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
         //1:check call parameter
         if (call == null || validator == null || tester == null)
             throw new NullPointerException("Exists null argument,please check(call,validator,visitTester)");
-        if (Thread.interrupted()) throw new InterruptedException();
+        if (allowInterruption && Thread.interrupted()) throw new InterruptedException();
 
         //2:test before call,if passed,then execute call
         if (tester.allow(unfair, nodeType, this)) {
