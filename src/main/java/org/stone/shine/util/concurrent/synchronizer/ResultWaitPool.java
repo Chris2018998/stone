@@ -79,12 +79,12 @@ public final class ResultWaitPool extends ObjectWaitPool {
         byte spins = 1, postSpins = 1;
         final boolean isTime = parkNanos > 0L;
         SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
-        boolean atFirst = appendAsWaitNode(node);
+        boolean executeInd = appendAsWaitNode(node);
         final long deadlineNanos = isTime ? nanoTime() + parkNanos : 0L;
 
         //4: spin
         do {
-            if (atFirst) {//4.1: execute result call
+            if (executeInd) {//4.1: execute result call
                 try {
                     do {
                         Object result = call.call(arg);
@@ -108,7 +108,9 @@ public final class ResultWaitPool extends ObjectWaitPool {
             }
 
             //4.2: try to park
-            if (node.isNullState()) {
+            if (node.isRunningState()) {
+                executeInd = true;
+            } else {
                 if (isTime) {
                     parkNanos = deadlineNanos - nanoTime();
                     if (parkNanos <= 0L) {
@@ -124,10 +126,9 @@ public final class ResultWaitPool extends ObjectWaitPool {
                     removeAndWakeupFirst(node);
                     throw new InterruptedException();
                 }
-            }
 
-            //4.3: check node pos(reach here: node.state==RUNNING OR after parking)
-            if (!atFirst) atFirst = waitQueue.peek() == node;
+                executeInd = node.isRunningState();
+            }
         } while (true);
     }
 }
