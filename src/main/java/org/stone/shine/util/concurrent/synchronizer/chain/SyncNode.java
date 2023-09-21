@@ -9,6 +9,8 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.chain;
 
+import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.RUNNING;
+
 /**
  * Synchronized node
  *
@@ -70,10 +72,11 @@ public final class SyncNode<E> {
         this.thread = thread;
     }
 
-    public final boolean isNullState() {
-        if (this.state == null) return true;
-
-        this.state = null;
+    public final boolean isRunningState() {
+        if (this.state == RUNNING) {
+            this.state = null;
+            return true;
+        }
         return false;
     }
 
