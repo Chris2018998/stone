@@ -19,9 +19,9 @@ import sun.misc.Unsafe;
  * @version 1.0
  */
 public final class SyncNodeUpdater {
-    private final static Unsafe U;
     //chain field offset
-    private final static long stateOffSet;
+    public final static long stateOffSet;
+    private final static Unsafe U;
     private final static long tailOffSet;
     private final static long prevOffSet;
     private final static long nextOffSet;
@@ -57,5 +57,14 @@ public final class SyncNodeUpdater {
 
     public static boolean casState(SyncNode n, Object expect, Object update) {
         return n.state == expect && U.compareAndSwapObject(n, stateOffSet, expect, update);
+    }
+
+    public static boolean putState(SyncNode n, Object expect, Object update) {
+        if (n.state == expect) {
+            U.putOrderedObject(n, stateOffSet, update);
+            return true;
+        } else {
+            return false;
+        }
     }
 }

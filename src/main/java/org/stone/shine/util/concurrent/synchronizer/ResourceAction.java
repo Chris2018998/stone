@@ -9,8 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
-import static java.lang.Boolean.TRUE;
-
 /**
  * Work as a plugin of {@code ResultWaitPool},two abstract methods need be implemented in its sub classes
  * <p>
@@ -28,7 +26,7 @@ public abstract class ResourceAction implements ResultCall {
 
     public final boolean tryAcquire(int size) {
         try {
-            return TRUE.equals(call(size));
+            return Boolean.TRUE.equals(call(size));
         } catch (Throwable e) {
             return false;
         }

@@ -11,11 +11,11 @@ package org.stone.shine.util.concurrent.synchronizer;
 
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeChain;
+import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates;
+import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater;
 import org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator;
 
-import static java.lang.System.nanoTime;
-import static java.util.concurrent.locks.LockSupport.park;
-import static java.util.concurrent.locks.LockSupport.parkNanos;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
@@ -48,12 +48,32 @@ public final class ResultWaitPool extends ObjectWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                          2: get (3)                                                            //
+    //                                          3: wakeup for result wait pool(3)                                     //
     //****************************************************************************************************************//
     public final boolean isFair() {
         return !this.unfair;
     }
 
+    private void removeAndWakeupFirst(SyncNode node) {
+        waitQueue.remove(node);
+        wakeupFirst();
+    }
+
+    public final void wakeupFirst() {
+        SyncNode first = waitQueue.peek();
+        if (first != null && SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING))
+            LockSupport.unpark(first.getThread());
+    }
+
+    public final void wakeupFirst(Object wakeupType) {
+        SyncNode first = waitQueue.peek();
+        if (first != null && (wakeupType == null || wakeupType == first.getType() || wakeupType.equals(first.getType())))
+            if (SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING)) LockSupport.unpark(first.getThread());
+    }
+
+    //****************************************************************************************************************//
+    //                                          3: get (2)                                                            //
+    //****************************************************************************************************************//
     public Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
         return get(call, arg, validator, config.getVisitTester(), config.getNodeType(), config.getNodeValue(),
                 config.getParkNanos(), config.isAllowInterruption(), config.isPropagatedOnSuccess());
@@ -76,11 +96,11 @@ public final class ResultWaitPool extends ObjectWaitPool {
         }
 
         //3:offer to wait queue
-        byte spins = 1, postSpins = 1;
+        int spins = 1, postSpins = 1;
         final boolean isTime = parkNanos > 0L;
         SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
         boolean executeInd = appendAsWaitNode(node);
-        final long deadlineNanos = isTime ? nanoTime() + parkNanos : 0L;
+        final long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
 
         //4: spin
         do {
@@ -112,16 +132,15 @@ public final class ResultWaitPool extends ObjectWaitPool {
                 executeInd = true;
             } else {
                 if (isTime) {
-                    parkNanos = deadlineNanos - nanoTime();
+                    parkNanos = deadlineNanos - System.nanoTime();
                     if (parkNanos <= 0L) {
                         removeAndWakeupFirst(node);
                         return validator.resultOnTimeout();
                     }
-                    parkNanos(this, parkNanos);
+                    LockSupport.parkNanos(this, parkNanos);
                 } else {
-                    park(this);
+                    LockSupport.park(this);
                 }
-
                 if (Thread.interrupted() && allowInterruption) {
                     removeAndWakeupFirst(node);
                     throw new InterruptedException();

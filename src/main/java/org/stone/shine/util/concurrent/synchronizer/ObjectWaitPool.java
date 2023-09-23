@@ -14,7 +14,6 @@ import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static java.lang.Thread.currentThread;
 import static java.util.concurrent.locks.LockSupport.unpark;
 import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.RUNNING;
@@ -31,7 +30,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 
-abstract class ObjectWaitPool {
+class ObjectWaitPool {
     protected final Queue<SyncNode> waitQueue;//node wait queue
 
     //****************************************************************************************************************//
@@ -59,33 +58,13 @@ abstract class ObjectWaitPool {
     }
 
     final boolean appendAsWaitNode(SyncNode node) {
-        node.setThread(currentThread());
+        node.setThread(Thread.currentThread());
         waitQueue.offer(node);
         return node == waitQueue.peek();
     }
 
     //****************************************************************************************************************//
-    //                                          3: wakeup for result wait pool(3)                                     //
-    //****************************************************************************************************************//
-    final void removeAndWakeupFirst(SyncNode node) {
-        waitQueue.remove(node);
-        wakeupFirst();
-    }
-
-    public final void wakeupFirst() {
-        SyncNode first = waitQueue.peek();
-        if (first != null && casState(first, null, RUNNING))
-            unpark(first.getThread());
-    }
-
-    public final void wakeupFirst(Object wakeupType) {
-        SyncNode first = waitQueue.peek();
-        if (first != null && (wakeupType == null || wakeupType == first.getType() || wakeupType.equals(first.getType())))
-            if (casState(first, null, RUNNING)) unpark(first.getThread());
-    }
-
-    //****************************************************************************************************************//
-    //                                          4: wakeup(2)                                                          //
+    //                                          3: wakeup(2)                                                          //
     //****************************************************************************************************************//
     public final SyncNode wakeupOne(boolean fromHead, Object nodeType, Object toState) {
         Iterator<SyncNode> iterator = fromHead ? waitQueue.iterator() : descendingIterator();
@@ -142,7 +121,7 @@ abstract class ObjectWaitPool {
     }
 
     //****************************************************************************************************************//
-    //                                         5: Monitor Methods(6)                                                  //
+    //                                         4: Monitor Methods(6)                                                  //
     //****************************************************************************************************************//
     Iterator<SyncNode> ascendingIterator() {
         return waitQueue.iterator();

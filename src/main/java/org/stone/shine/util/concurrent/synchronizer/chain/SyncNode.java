@@ -9,8 +9,6 @@
  */
 package org.stone.shine.util.concurrent.synchronizer.chain;
 
-import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.RUNNING;
-
 /**
  * Synchronized node
  *
@@ -21,6 +19,7 @@ import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.
 public final class SyncNode<E> {
     Thread thread;//node thread
     volatile Object state;//node state
+
     //chain info(unusable fields at present)
     volatile SyncNode prev;
     volatile SyncNode next;
@@ -45,11 +44,11 @@ public final class SyncNode<E> {
     //                                           set/get of chain node                                                //
     //****************************************************************************************************************//
     public final E getValue() {
-        return value;
+        return this.value;
     }
 
     public final Object getType() {
-        return type;
+        return this.type;
     }
 
     public final void setType(Object type) {
@@ -57,7 +56,7 @@ public final class SyncNode<E> {
     }
 
     public final Object getState() {
-        return state;
+        return this.state;
     }
 
     public final void setState(Object newState) {
@@ -65,7 +64,7 @@ public final class SyncNode<E> {
     }
 
     public Thread getThread() {
-        return thread;
+        return this.thread;
     }
 
     public void setThread(Thread thread) {
@@ -73,7 +72,7 @@ public final class SyncNode<E> {
     }
 
     public final boolean isRunningState() {
-        if (this.state == RUNNING) {
+        if (this.state == SyncNodeStates.RUNNING) {
             this.state = null;
             return true;
         }
@@ -84,7 +83,7 @@ public final class SyncNode<E> {
     //                                          unusable fields                                                       //
     //****************************************************************************************************************//
     public SyncNode getPrev() {
-        return prev;
+        return this.prev;
     }
 
     public SyncNode setPrev(SyncNode prev) {
@@ -92,7 +91,7 @@ public final class SyncNode<E> {
     }
 
     public SyncNode getNext() {
-        return next;
+        return this.next;
     }
 
     public SyncNode setNext(SyncNode next) {
