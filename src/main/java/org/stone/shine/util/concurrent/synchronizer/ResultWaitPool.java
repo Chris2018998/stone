@@ -110,7 +110,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
                         Object result = call.call(arg);
                         if (validator.isExpected(result)) {
                             waitQueue.poll();
-                            if (propagatedOnSuccess) wakeupFirst(node.getType());
+                            if (propagatedOnSuccess) wakeupFirst(nodeType);
                             return result;
                         }
 
