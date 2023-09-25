@@ -10,7 +10,7 @@
 package org.stone.beetp;
 
 /**
- * Bee Task Executor Interface,exists three implementation classes for it
+ * Bee Task Executor Interface,there are three implementation sub classes,every task can match one of them
  * <p>
  * OnceTaskExecutor
  * ScheduledTaskExecutor
@@ -21,12 +21,17 @@ package org.stone.beetp;
  */
 public interface BeeTaskExecutor {
 
+    //maybe put check logic here,for example: pool full check
     void beforeOffer(BeeTask task) throws Exception;
 
+    //1:add or decr some atomic numbers
     void beforeExecuteTask(BeeTask task) throws Exception;
 
-    void executeTask(BeeTask task) throws Exception;
+    //important method(***)
+    Object executeTask(BeeTask task) throws Exception;
 
+    //1: set result back to handle(OnceTaskExecutor)
+    //2: calculate next running time(ScheduledTaskExecutor)
+    //3: set result to parent (JoinTaskExecutor)
     void afterExecuteTask(BeeTask task, Object result) throws Exception;
-
 }
