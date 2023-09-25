@@ -23,6 +23,8 @@ public interface BeeTaskExecutor {
 
     void beforeOffer(BeeTask task) throws Exception;
 
+    void beforeExecuteTask(BeeTask task) throws Exception;
+
     void executeTask(BeeTask task) throws Exception;
 
     void afterExecuteTask(BeeTask task, Object result) throws Exception;
