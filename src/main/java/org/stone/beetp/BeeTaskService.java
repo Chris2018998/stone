@@ -109,6 +109,14 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
     }
 
+    //***************************************************************************************************************//
+    //                4: join task                                                                                   //
+    //***************************************************************************************************************//
+    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.submit(task, operator);
+        return createPoolByLock().submit(task, operator);
+    }
+
     private BeeTaskPool createPoolByLock() throws BeeTaskPoolException {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {

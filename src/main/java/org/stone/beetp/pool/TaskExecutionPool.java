@@ -115,7 +115,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                2: task submit(2)                                                                              //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
-        return this.submit(task, null);
+        return this.submit(task, (BeeTaskCallback) null);
     }
 
     public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
@@ -181,6 +181,11 @@ public final class TaskExecutionPool implements BeeTaskPool {
         //if the new handle is first of array,then wakeup peek thread to spy on it
         if (index == 0) wakeupSchedulePeekThread();
         return handle;
+    }
+
+
+    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException {
+        throw new BeeTaskException("Not Support");
     }
 
     //***************************************************************************************************************//

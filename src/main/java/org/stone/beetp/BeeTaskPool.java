@@ -33,7 +33,12 @@ public interface BeeTaskPool {
     BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException;
 
     //***************************************************************************************************************//
-    //                3: task schedule(6)                                                                            //
+    //                3: join task                                                                                   //
+    //***************************************************************************************************************//
+    BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException;
+
+    //***************************************************************************************************************//
+    //                4: task schedule(6)                                                                            //
     //***************************************************************************************************************//
     BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException;
 
@@ -46,12 +51,6 @@ public interface BeeTaskPool {
     BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit) throws BeeTaskException;
 
     BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException;
-
-    //***************************************************************************************************************//
-    //                4: join task                                                                                   //
-    //***************************************************************************************************************//
-    //BeeTaskHandle submitJoinTask(BeeTask task) throws BeeTaskException;
-
 
     //***************************************************************************************************************//
     //                5: Pool clear(2)                                                                               //
