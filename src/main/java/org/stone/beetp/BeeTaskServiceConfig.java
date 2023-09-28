@@ -9,7 +9,7 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.TaskExecutionPool;
+import org.stone.beetp.pool.TaskPoolImplement;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -40,7 +40,7 @@ public class BeeTaskServiceConfig {
     //idle timeout of worker thread(zero value means not timeout)
     private long workerKeepAliveTime;
     //pool implementation class name
-    private String poolImplementClassName = TaskExecutionPool.class.getName();
+    private String poolImplementClassName = TaskPoolImplement.class.getName();
 
     public String getPoolName() {
         return poolName;

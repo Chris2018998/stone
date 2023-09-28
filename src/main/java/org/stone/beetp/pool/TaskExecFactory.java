@@ -1,0 +1,38 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
+ */
+package org.stone.beetp.pool;
+
+import org.stone.beetp.BeeTask;
+import org.stone.beetp.BeeTaskException;
+import org.stone.beetp.BeeTaskHandle;
+
+/**
+ * Task Execute Factory
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+public abstract class TaskExecFactory {
+    protected final TaskPoolImplement pool;
+
+    public TaskExecFactory(TaskPoolImplement pool) {
+        this.pool = pool;
+    }
+
+    abstract BaseHandle createHandle(TaskConfig config) throws BeeTaskException;
+
+    abstract void beforeOffer(BeeTask task) throws BeeTaskException;
+
+    abstract void beforeExecute(BeeTaskHandle handle) throws BeeTaskException;
+
+    abstract Object executeTask(BeeTaskHandle handle) throws BeeTaskException;
+
+    abstract void afterExecute(BeeTaskHandle handle, Object result) throws BeeTaskException;
+}
