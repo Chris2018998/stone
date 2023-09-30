@@ -137,7 +137,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException {
         //1: create task config
         TaskConfig config = new TaskConfig(task);
-        config.setOperator(operator);
+        config.setJoinOperator(operator);
 
         //2: create task handle
         BaseHandle handle = joinExecFactory.createHandle(config);
@@ -547,7 +547,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
                     //2: if polled object is expired schedule task
                     if (polledObject instanceof ScheduledTaskHandle) {
                         ScheduledTaskHandle taskHandle = (ScheduledTaskHandle) polledObject;
-                        if (taskHandle.curState.get() == TASK_WAITING)
+                        if (taskHandle.state.get() == TASK_WAITING)
                             pushToExecutionQueue(taskHandle);//push it to execution queue
                         else
                             taskHoldingCount.decrementAndGet();//task has cancelled,so remove it

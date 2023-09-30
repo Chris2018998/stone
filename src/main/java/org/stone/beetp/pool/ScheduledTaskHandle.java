@@ -22,7 +22,7 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class ScheduledTaskHandle extends OnceTaskHandle implements BeeTaskScheduledHandle {
+public final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHandle {
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
     private long nextRunTime;//time sortable
@@ -35,9 +35,9 @@ public final class ScheduledTaskHandle extends OnceTaskHandle implements BeeTask
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
-    ScheduledTaskHandle(BeeTask task, BeeTaskCallback callback, TaskPoolImplement pool,
+    ScheduledTaskHandle(BeeTask task, BeeTaskCallback callback,
                         long firstRunTime, long intervalTime, boolean fixedDelay, TaskExecFactory factory) {
-        super(task, callback, pool, factory);
+        super(task, callback, factory);
         this.nextRunTime = firstRunTime;//first run time
         this.intervalTime = intervalTime;
         this.fixedDelay = fixedDelay;//true:calculate next run time from task prev call end t
@@ -78,11 +78,11 @@ public final class ScheduledTaskHandle extends OnceTaskHandle implements BeeTask
     //true:re-offer to array after this method call
     void prepareForNextCall() {
         if (isPeriodic()) {
-            this.prevState = this.curState.get();
-            this.prevResult = this.curResult;
+            this.prevState = this.state.get();
+            this.prevResult = this.result;
             this.prevTime = this.nextRunTime;
             this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
-            this.curState.set(TASK_WAITING);//reset to waiting state for next call
+            this.state.set(TASK_WAITING);//reset to waiting state for next call
         }
     }
 }

@@ -19,13 +19,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Chris Liao
  * @version 1.0
  */
-public class JoinTaskHandle extends OnceTaskHandle {
+public class JoinTaskHandle extends BaseHandle {
     private BeeTask task;
     private JoinTaskHandle parent;
     private AtomicInteger unCompleteSize;
 
-    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int childrenSize, TaskPoolImplement pool, TaskExecFactory factory) {
-        super(task, null, pool, factory);
+    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int childrenSize, TaskExecFactory factory) {
+        super(task, null, factory);
 
         this.task = task;
         this.parent = parent;

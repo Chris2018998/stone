@@ -18,8 +18,8 @@ import org.stone.beetp.BeeTaskHandle;
  * @author Chris Liao
  * @version 1.0
  */
-public abstract class TaskExecFactory {
-    protected final TaskPoolImplement pool;
+abstract class TaskExecFactory {
+    final TaskPoolImplement pool;
 
     TaskExecFactory(TaskPoolImplement pool) {
         this.pool = pool;

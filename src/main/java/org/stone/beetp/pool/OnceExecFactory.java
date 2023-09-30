@@ -29,7 +29,7 @@ public final class OnceExecFactory extends TaskExecFactory {
     public BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
         BeeTask task = config.getTask();
         if (task == null) throw new BeeTaskException("Task can't be null");
-        return new OnceTaskHandle(task, config.getCallback(), this.pool, this);
+        return new OnceTaskHandle(task, config.getCallback(), this);
     }
 
     public void beforeExecute(BeeTaskHandle handle) throws BeeTaskException {

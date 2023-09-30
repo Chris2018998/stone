@@ -29,8 +29,8 @@ public class JoinExecFactory extends TaskExecFactory {
     BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
         BeeTask task = config.getTask();
         if (task == null) throw new BeeTaskException("Task can't be null");
-        if (config.getOperator() == null) throw new BeeTaskException("Join Splitter can't be null");
-        return new JoinTaskHandle(task, null, 0, this.pool, this);
+        if (config.getJoinOperator() == null) throw new BeeTaskException("Join Splitter can't be null");
+        return new JoinTaskHandle(task, null, 0, this);
     }
 
     public void beforeOffer(BeeTask task) throws BeeTaskException {

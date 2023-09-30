@@ -26,7 +26,8 @@ final class TaskConfig {
     private BeeTaskCallback callback;
     private BeeTaskJoinOperator operator;
 
-    private int scheduleType;
+    //methods block of scheduled task
+    private int scheduledType;
     private TimeUnit timeUnit;
     private long initialDelay;
     private long intervalDelay;
@@ -36,63 +37,72 @@ final class TaskConfig {
         this.task = task;
     }
 
-    public BeeTask getTask() {
+    //***************************************************************************************************************//
+    //                 1: methods block of once task                                                                 //                                                                                  //
+    //***************************************************************************************************************//
+    BeeTask getTask() {
         return task;
     }
 
-    public BeeTaskCallback getCallback() {
+    BeeTaskCallback getCallback() {
         return callback;
     }
 
-    public void setCallback(BeeTaskCallback callback) {
+    void setCallback(BeeTaskCallback callback) {
         this.callback = callback;
     }
 
-    public BeeTaskJoinOperator getOperator() {
+    //***************************************************************************************************************//
+    //                 2: methods block of join task                                                                 //                                                                                  //
+    //***************************************************************************************************************//
+    BeeTaskJoinOperator getJoinOperator() {
         return operator;
     }
 
-    public void setOperator(BeeTaskJoinOperator operator) {
+    void setJoinOperator(BeeTaskJoinOperator operator) {
         this.operator = operator;
     }
 
-    public long getInitialDelay() {
-        return initialDelay;
+    //***************************************************************************************************************//
+    //                3: methods block of Scheduled task                                                             //                                                                                  //
+    //***************************************************************************************************************//
+    int getScheduledType() {
+        return scheduledType;
     }
 
-    public void setInitialDelay(long initialDelay) {
-        this.initialDelay = initialDelay;
+    void setScheduledType(int scheduledType) {
+        this.scheduledType = scheduledType;
     }
 
-    public TimeUnit getTimeUnit() {
+    TimeUnit getTimeUnit() {
         return timeUnit;
     }
 
-    public void setTimeUnit(TimeUnit timeUnit) {
+    void setTimeUnit(TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
     }
 
-    public long getIntervalDelay() {
+    long getInitialDelay() {
+        return initialDelay;
+    }
+
+    void setInitialDelay(long initialDelay) {
+        this.initialDelay = initialDelay;
+    }
+
+    long getIntervalDelay() {
         return intervalDelay;
     }
 
-    public void setIntervalDelay(long intervalDelay) {
+    void setIntervalDelay(long intervalDelay) {
         this.intervalDelay = intervalDelay;
     }
 
-    public boolean isFixedDelay() {
+    boolean isFixedDelay() {
         return fixedDelay;
     }
 
-    public void setFixedDelay(boolean fixedDelay) {
+    void setFixedDelay(boolean fixedDelay) {
         this.fixedDelay = fixedDelay;
-    }
-
-    public int getScheduleType() {
-        return scheduleType;
-    }
-
-    public void setScheduleType(int scheduleType) {
-        this.scheduleType = scheduleType;
     }
 }
