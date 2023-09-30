@@ -17,15 +17,7 @@ package org.stone.beetp;
  */
 public interface BeeTaskCallback {
 
-    /**
-     * @param handle execute call on handle
-     */
     void beforeCall(BeeTaskHandle handle);
 
-    /**
-     * @param resultCode
-     * @param resultObject
-     * @param handle
-     */
     void afterCall(int resultCode, Object resultObject, BeeTaskHandle handle);
 }
