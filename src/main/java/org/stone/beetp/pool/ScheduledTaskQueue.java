@@ -21,9 +21,8 @@ import java.util.Comparator;
  * @version 1.0
  */
 
-public final class ScheduledTaskQueue extends SortedArray<BeeTaskScheduledHandle> {
-
-    public ScheduledTaskQueue(int initSize) {
+final class ScheduledTaskQueue extends SortedArray<BeeTaskScheduledHandle> {
+    ScheduledTaskQueue(int initSize) {
         super(BeeTaskScheduledHandle.class, initSize, new Comparator<BeeTaskScheduledHandle>() {
             public int compare(BeeTaskScheduledHandle handle1, BeeTaskScheduledHandle handle2) {
                 long compareV = handle1.getNextTime() - handle2.getNextTime();

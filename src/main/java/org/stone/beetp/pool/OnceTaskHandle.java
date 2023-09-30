@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
+import static org.stone.beetp.pool.TaskPoolConstants.*;
 
 /**
  * generic task handle impl
@@ -35,7 +35,7 @@ public class OnceTaskHandle extends BaseHandle {
     private final BeeTaskCallback callback;
     private final ConcurrentLinkedQueue<Thread> waitQueue;//queue of waiting for task result(maybe exception)
 
-    protected Object curResult;//it is an exception when task sate code equals<em>TASK_EXCEPTION</em>;
+    protected Object curResult;//it is an exception when task sate code equals<em>TASK_CALL_EXCEPTION</em>;
     private volatile Thread workerThread;//set before execution by pool worker and reset to null after execution
 
     //***************************************************************************************************************//
@@ -70,11 +70,11 @@ public class OnceTaskHandle extends BaseHandle {
     }
 
     public boolean isCallResult() {
-        return curState.get() == TASK_RESULT;
+        return curState.get() == TASK_CALL_RESULT;
     }
 
     public boolean isCallException() {
-        return curState.get() == TASK_EXCEPTION;
+        return curState.get() == TASK_CALL_EXCEPTION;
     }
 
     //***************************************************************************************************************//
@@ -113,8 +113,8 @@ public class OnceTaskHandle extends BaseHandle {
 
     private Object get(long nanoseconds) throws BeeTaskException, InterruptedException {
         int taskStateCode = curState.get();
-        if (taskStateCode == TASK_RESULT) return curResult;
-        if (taskStateCode == TASK_EXCEPTION) throw (BeeTaskException) curResult;
+        if (taskStateCode == TASK_CALL_RESULT) return curResult;
+        if (taskStateCode == TASK_CALL_EXCEPTION) throw (BeeTaskException) curResult;
         if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
 
         Thread currentThread = Thread.currentThread();
@@ -126,8 +126,8 @@ public class OnceTaskHandle extends BaseHandle {
             do {
                 //read task result,if done,then return
                 taskStateCode = curState.get();
-                if (taskStateCode == TASK_RESULT) return curResult;
-                if (taskStateCode == TASK_EXCEPTION) throw (BeeTaskException) curResult;
+                if (taskStateCode == TASK_CALL_RESULT) return curResult;
+                if (taskStateCode == TASK_CALL_EXCEPTION) throw (BeeTaskException) curResult;
                 if (taskStateCode == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
 
                 //if not done,then waiting until done, timeout,or interrupted
@@ -187,7 +187,7 @@ public class OnceTaskHandle extends BaseHandle {
 
         if (this.callback != null) {
             try {
-                callback.onCallDone(state, response, this);
+                callback.afterCall(state, response, this);
             } catch (Throwable e) {
                 //do nothing
             }

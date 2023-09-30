@@ -21,28 +21,23 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  * @version 1.0
  */
-public final class TaskConfig {
+final class TaskConfig {
     private final BeeTask task;
-    private final int createType;
     private BeeTaskCallback callback;
     private BeeTaskJoinOperator operator;
 
+    private int scheduleType;
     private TimeUnit timeUnit;
     private long initialDelay;
     private long intervalDelay;
-    private boolean fixedRate;
+    private boolean fixedDelay;
 
-    TaskConfig(BeeTask task, int createType) {
+    TaskConfig(BeeTask task) {
         this.task = task;
-        this.createType = createType;
     }
 
     public BeeTask getTask() {
         return task;
-    }
-
-    public int getCreateType() {
-        return createType;
     }
 
     public BeeTaskCallback getCallback() {
@@ -85,11 +80,19 @@ public final class TaskConfig {
         this.intervalDelay = intervalDelay;
     }
 
-    public boolean isFixedRate() {
-        return fixedRate;
+    public boolean isFixedDelay() {
+        return fixedDelay;
     }
 
-    public void setFixedRate(boolean fixedRate) {
-        this.fixedRate = fixedRate;
+    public void setFixedDelay(boolean fixedDelay) {
+        this.fixedDelay = fixedDelay;
+    }
+
+    public int getScheduleType() {
+        return scheduleType;
+    }
+
+    public void setScheduleType(int scheduleType) {
+        this.scheduleType = scheduleType;
     }
 }

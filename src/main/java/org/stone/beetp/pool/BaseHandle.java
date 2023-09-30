@@ -17,10 +17,10 @@ import org.stone.beetp.BeeTaskHandle;
  * @author Chris Liao
  * @version 1.0
  */
-public abstract class BaseHandle implements BeeTaskHandle {
+abstract class BaseHandle implements BeeTaskHandle {
     private TaskExecFactory factory;
 
-    public BaseHandle(TaskExecFactory factory) {
+    BaseHandle(TaskExecFactory factory) {
         this.factory = factory;
     }
 

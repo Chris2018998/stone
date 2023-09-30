@@ -9,7 +9,7 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.TaskPoolStaticUtil;
+import org.stone.beetp.pool.TaskPoolConstants;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
@@ -332,12 +332,12 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         }
 
         //1:task completed 2:execute exception 3:task cancelled by pool
-        public void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle) {
+        public void afterCall(int resultCode, Object resultObject, BeeTaskHandle handle) {
             boolean hasWakeup = false;
             try {
-                if (TaskPoolStaticUtil.TASK_EXCEPTION == doneCode && doneResp instanceof TaskExecutionException)
-                    this.failCause = (TaskExecutionException) doneResp;
-                else if (TaskPoolStaticUtil.TASK_RESULT == doneCode) {
+                if (TaskPoolConstants.TASK_CALL_EXCEPTION == resultCode && resultObject instanceof TaskExecutionException)
+                    this.failCause = (TaskExecutionException) resultObject;
+                else if (TaskPoolConstants.TASK_CALL_RESULT == resultCode) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);
                     hasWakeup = true;
@@ -362,7 +362,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         public void beforeCall(BeeTaskHandle handle) {
         }
 
-        public void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle) {
+        public void afterCall(int resultCode, Object resultObject, BeeTaskHandle handle) {
             if (this.doneCount.incrementAndGet() == taskSize)
                 LockSupport.unpark(callThread);
         }

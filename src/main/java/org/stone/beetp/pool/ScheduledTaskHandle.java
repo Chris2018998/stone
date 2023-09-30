@@ -14,7 +14,7 @@ import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskScheduledHandle;
 
-import static org.stone.beetp.pool.TaskPoolStaticUtil.*;
+import static org.stone.beetp.pool.TaskPoolConstants.*;
 
 /**
  * Scheduled task handle Impl
@@ -67,8 +67,8 @@ public final class ScheduledTaskHandle extends OnceTaskHandle implements BeeTask
     //retrieve result of prev call
     public Object getPrevResult() throws BeeTaskException {
         if (!isPeriodic()) throw new BeeTaskException("Only support periodic schedule");
-        if (prevState == TASK_RESULT) return prevResult;
-        if (prevState == TASK_EXCEPTION) throw (BeeTaskException) prevResult;
+        if (prevState == TASK_CALL_RESULT) return prevResult;
+        if (prevState == TASK_CALL_EXCEPTION) throw (BeeTaskException) prevResult;
         throw new BeeTaskException("Task not be called or not done until current");
     }
 

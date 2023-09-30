@@ -22,16 +22,14 @@ import org.stone.beetp.BeeTaskHandle;
  */
 public final class OnceExecFactory extends TaskExecFactory {
 
-    public OnceExecFactory(TaskPoolImplement pool) {
+    OnceExecFactory(TaskPoolImplement pool) {
         super(null);
     }
 
     public BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
-        return new OnceTaskHandle(config.getTask(), config.getCallback(), this.pool);
-    }
-
-    public void beforeOffer(BeeTask task) throws BeeTaskException {
-
+        BeeTask task = config.getTask();
+        if (task == null) throw new BeeTaskException("Task can't be null");
+        return new OnceTaskHandle(task, config.getCallback(), this.pool, this);
     }
 
     public void beforeExecute(BeeTaskHandle handle) throws BeeTaskException {

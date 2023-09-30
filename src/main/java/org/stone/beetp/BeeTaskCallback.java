@@ -17,8 +17,15 @@ package org.stone.beetp;
  */
 public interface BeeTaskCallback {
 
+    /**
+     * @param handle execute call on handle
+     */
     void beforeCall(BeeTaskHandle handle);
 
-    //done situation(1:task cancelled 2:call completed 3:call exception)
-    void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle);
+    /**
+     * @param resultCode
+     * @param resultObject
+     * @param handle
+     */
+    void afterCall(int resultCode, Object resultObject, BeeTaskHandle handle);
 }

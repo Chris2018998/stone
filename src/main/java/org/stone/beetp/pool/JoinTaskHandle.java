@@ -9,7 +9,7 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTaskHandle;
+import org.stone.beetp.BeeTask;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,12 +19,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Chris Liao
  * @version 1.0
  */
-public abstract class JoinTaskHandle implements BeeTaskHandle {
+public class JoinTaskHandle extends OnceTaskHandle {
+    private BeeTask task;
     private JoinTaskHandle parent;
-
     private AtomicInteger unCompleteSize;
 
-    public JoinTaskHandle(JoinTaskHandle parent, int childrenSize) {
+    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int childrenSize, TaskPoolImplement pool, TaskExecFactory factory) {
+        super(task, null, pool, factory);
+
+        this.task = task;
         this.parent = parent;
         this.unCompleteSize = new AtomicInteger(childrenSize);
     }

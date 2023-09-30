@@ -22,12 +22,15 @@ import org.stone.beetp.BeeTaskHandle;
  */
 public class JoinExecFactory extends TaskExecFactory {
 
-    public JoinExecFactory(TaskPoolImplement pool) {
+    JoinExecFactory(TaskPoolImplement pool) {
         super(pool);
     }
 
-    public BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
-        return new OnceTaskHandle(config.getTask(), config.getCallback(), this.pool);
+    BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
+        BeeTask task = config.getTask();
+        if (task == null) throw new BeeTaskException("Task can't be null");
+        if (config.getOperator() == null) throw new BeeTaskException("Join Splitter can't be null");
+        return new JoinTaskHandle(task, null, 0, this.pool, this);
     }
 
     public void beforeOffer(BeeTask task) throws BeeTaskException {
