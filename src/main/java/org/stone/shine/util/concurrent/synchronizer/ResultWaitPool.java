@@ -96,10 +96,10 @@ public final class ResultWaitPool extends ObjectWaitPool {
         }
 
         //3:offer to wait queue
-        final boolean isTime = parkNanos > 0L;
+        final boolean isTimed = parkNanos > 0L;
         final SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
         boolean executeInd = this.appendAsWaitNode(node);
-        final long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
+        final long deadlineNanos = isTimed ? System.nanoTime() + parkNanos : 0L;
 
         //4: spin
         do {
@@ -121,7 +121,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
             if (node.isRunningState()) {
                 executeInd = true;
             } else {
-                if (isTime) {
+                if (isTimed) {
                     final long time = deadlineNanos - System.nanoTime();
                     if (time <= 0L) {
                         this.removeAndWakeupFirst(node);
