@@ -60,14 +60,16 @@ public final class ReentrantLock extends BaseLock {
 
         public final boolean tryRelease(int size) {
             if (lockState.exclusiveOwnerThread == Thread.currentThread()) {
-                int curState = lockState.get() - size;//full release(occur in condition wait)
+                int curState = lockState.get() - size;
+                boolean free;
+                if (free = (curState == 0))
+                    lockState.exclusiveOwnerThread = null;
 
-                if (curState < 0) throw new Error("lock count decrement exceeded");
-                if (curState == 0) lockState.exclusiveOwnerThread = null;
                 lockState.set(curState);
-                return curState == 0;
+                return free;
+            } else {
+                throw new IllegalMonitorStateException();
             }
-            return false;
         }
     }
 }
