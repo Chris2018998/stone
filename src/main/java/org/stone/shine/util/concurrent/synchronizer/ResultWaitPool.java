@@ -98,7 +98,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
         //3:offer to wait queue
         int spins = 1, postSpins = 1;
         final boolean isTime = parkNanos > 0L;
-        SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
+        final SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
         boolean executeInd = appendAsWaitNode(node);
         final long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
 
@@ -116,10 +116,12 @@ public final class ResultWaitPool extends ObjectWaitPool {
 
                         if (spins <= 0) break;
                         if (--spins == 0) {
-                            spins = postSpins = (byte) ((postSpins << 1) | 1);
+                            spins = postSpins = (byte) (postSpins << 1 | 1);
                             break;
                         }
                     } while (true);
+
+                    executeInd=false;
                 } catch (Throwable e) {
                     waitQueue.poll();
                     wakeupFirst();
@@ -128,7 +130,8 @@ public final class ResultWaitPool extends ObjectWaitPool {
             }
 
             //4.2: try to park
-            if (node.isRunningState()) {
+            if (node.getState()==SyncNodeStates.RUNNING) {
+                node.setState(null);
                 executeInd = true;
             } else {
                 if (isTime) {
@@ -146,7 +149,10 @@ public final class ResultWaitPool extends ObjectWaitPool {
                     throw new InterruptedException();
                 }
 
-                executeInd = node.isRunningState();
+                if (node.getState()==SyncNodeStates.RUNNING) {
+                    node.setState(null);
+                    executeInd = true;
+                }
             }
         } while (true);
     }
