@@ -23,8 +23,6 @@ import static org.stone.tools.CommonUtil.objectEquals;
 /**
  * Wait-Wakeup is a import mechanism for threads, wait for what,maybe a signal,a command,a permit and so on.
  * Every thing is object in Java world, so we name the pool: Object Wait Pool.
- * <p>
- * A Joke from a thread: I am waiting for a Object from the world,but blocking time too long.
  *
  * @author Chris Liao
  * @version 1.0
