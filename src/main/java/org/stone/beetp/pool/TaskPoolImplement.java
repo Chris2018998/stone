@@ -119,15 +119,14 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
-        //1: create task config
+        //1: create task handle
         TaskConfig config = new TaskConfig(task);
         config.setCallback(callback);
-        //2: create task handle
         BaseHandle handle = onceExecFactory.createHandle(config);
 
-        //3: push task handle to queue
+        //2: push task handle to queue
         this.pushToExecutionQueue(handle);
-        //4:return handle to caller
+        //3: return handle to caller
         return handle;
     }
 
@@ -135,16 +134,14 @@ public final class TaskPoolImplement implements BeeTaskPool {
     //                                  3: Join task submit(1)                                                       //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException {
-        //1: create task config
+        //1: create task handle
         TaskConfig config = new TaskConfig(task);
         config.setJoinOperator(operator);
-
-        //2: create task handle
         BaseHandle handle = joinExecFactory.createHandle(config);
 
-        //3: push task handle to queue
+        //2: push task handle to queue
         this.pushToExecutionQueue(handle);
-        //4:return handle to caller
+        //3: return handle to caller
         return handle;
     }
 

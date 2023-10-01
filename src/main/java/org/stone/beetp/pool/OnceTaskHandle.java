@@ -11,6 +11,7 @@ package org.stone.beetp.pool;
 
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
+import org.stone.beetp.BeeTaskException;
 
 /**
  * generic task handle impl
@@ -19,7 +20,8 @@ import org.stone.beetp.BeeTaskCallback;
  * @version 1.0
  */
 final class OnceTaskHandle extends BaseHandle {
-    OnceTaskHandle(BeeTask task, BeeTaskCallback callback, TaskExecFactory factory) {
+
+    OnceTaskHandle(BeeTask task, BeeTaskCallback callback, TaskExecFactory factory) throws BeeTaskException {
         super(task, callback, factory);
     }
 }

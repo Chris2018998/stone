@@ -51,15 +51,11 @@ abstract class BaseHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                               2: task/callback/factory(3)                                                     //
+    //                               2: task/factory(2)                                                              //
     //***************************************************************************************************************//
     BeeTask getTask() {
         return task;
     }
-
-    //BeeTaskCallback getCallback() {
-    //   return callback;
-    // }
 
     TaskExecFactory getExecFactory() {
         return factory;
@@ -111,7 +107,6 @@ abstract class BaseHandle implements BeeTaskHandle {
     //                                  5: task cancel(1)                                                            //
     //***************************************************************************************************************//
     public boolean cancel(boolean mayInterruptIfRunning) {
-        int taskStateCode = state.get();
         //1: update task state to be cancelled via cas
         if (setAsCancelled()) {
             this.setDone(TASK_CANCELLED, null);//if exists result waiters,wakeup them
@@ -185,7 +180,7 @@ abstract class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                              7: task done methods(2)                                                          //
     //***************************************************************************************************************//
-    private void setDone(int state, Object result) {
+    void setDone(int state, Object result) {
         this.result = result;
         this.state.set(state);
         this.wakeupWaitersInGetting();

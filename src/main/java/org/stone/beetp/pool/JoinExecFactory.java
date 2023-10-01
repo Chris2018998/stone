@@ -13,6 +13,7 @@ package org.stone.beetp.pool;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
+import org.stone.beetp.BeeTaskJoinOperator;
 
 /**
  * Once Task Executor
@@ -29,8 +30,9 @@ public class JoinExecFactory extends TaskExecFactory {
     BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
         BeeTask task = config.getTask();
         if (task == null) throw new BeeTaskException("Task can't be null");
-        if (config.getJoinOperator() == null) throw new BeeTaskException("Join Splitter can't be null");
-        return new JoinTaskHandle(task, null, 0, this);
+        BeeTaskJoinOperator operator = config.getJoinOperator();
+        if (operator == null) throw new BeeTaskException("Task join operator can't be null");
+        return new JoinTaskHandle(task, operator, this);
     }
 
     public void beforeOffer(BeeTask task) throws BeeTaskException {

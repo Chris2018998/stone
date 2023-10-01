@@ -10,8 +10,12 @@
 package org.stone.beetp.pool;
 
 import org.stone.beetp.BeeTask;
+import org.stone.beetp.BeeTaskJoinOperator;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_RESULT;
 
 /**
  * generic task handle impl
@@ -19,29 +23,59 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Chris Liao
  * @version 1.0
  */
-public class JoinTaskHandle extends BaseHandle {
-    private BeeTask task;
+final class JoinTaskHandle extends BaseHandle {
+    //1: fields of a parent task
+    private int childrenSize;
+    private List<JoinTaskHandle> childrenList;
+    private BeeTaskJoinOperator operator;
+
+    //fields for child task
     private JoinTaskHandle parent;
-    private AtomicInteger unCompleteSize;
+    private AtomicInteger completedCount;//the complete count of sub tasks.
 
-    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int childrenSize, TaskExecFactory factory) {
+    //***************************************************************************************************************//
+    //                                          1: Constructor(2)                                                    //                                                                                  //
+    //***************************************************************************************************************//
+    //constructor for root task
+    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskExecFactory factory) {
         super(task, null, factory);
-
-        this.task = task;
-        this.parent = parent;
-        this.unCompleteSize = new AtomicInteger(childrenSize);
+        this.operator = operator;
     }
 
-    //call by children task
-    public void decrementUnCompleteSize() {
+    //constructor for child task
+    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskExecFactory factory) {
+        super(task, null, factory);
+        this.parent = parent;
+        this.operator = operator;
+        this.completedCount = completedCount;
+    }
+
+    //***************************************************************************************************************//
+    //                              2: other(3)                                                                      //                                                                                  //
+    //***************************************************************************************************************//
+    public JoinTaskHandle getParent() {
+        return parent;
+    }
+
+    public BeeTaskJoinOperator getOperator() {
+        return operator;
+    }
+
+    public void setChildrenList(List<JoinTaskHandle> childrenList) {
+        this.childrenList = childrenList;
+        this.childrenSize = childrenList != null ? childrenList.size() : 0;
+    }
+
+    //***************************************************************************************************************//
+    //                              3: add completed count of children task                                                          //                                                                                  //
+    //***************************************************************************************************************//
+    public void incrementSubCompleted() {
         do {
-            int currentSize = unCompleteSize.get();
-            if (currentSize == 0) return;
-            if (unCompleteSize.compareAndSet(currentSize, currentSize - 1)) {
-                if (currentSize == 1) {
-                    //@todo to join all result from children//
-                }
-                return;
+            int currentSize = completedCount.incrementAndGet();
+            if (currentSize == childrenSize) return;
+            if (completedCount.compareAndSet(childrenSize, childrenSize + 1)) {
+                if (currentSize == childrenSize)
+                    this.setDone(TASK_CALL_RESULT, operator.join(childrenList));
             }
         } while (true);
     }
