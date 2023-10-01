@@ -49,7 +49,7 @@ public class OnceTimedTaskCallbackTest extends TestCase {
             beforeInd = true;
         }
 
-        public void onCallDone(int doneCode, Object doneResp, BeeTaskHandle handle) {
+        public void afterCall(int doneCode, Object doneResp, BeeTaskHandle handle) {
             onCallDoneInd = true;
             result = doneResp;
         }
