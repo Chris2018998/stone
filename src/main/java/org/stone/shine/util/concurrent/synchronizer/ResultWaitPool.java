@@ -37,11 +37,11 @@ public final class ResultWaitPool extends ObjectWaitPool {
         this(false, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
     }
 
-    public ResultWaitPool(boolean fair) {
+    public ResultWaitPool(final boolean fair) {
         this(fair, ResultEqualsValidator.BOOL_EQU_VALIDATOR);
     }
 
-    public ResultWaitPool(boolean fair, ResultValidator validator) {
+    public ResultWaitPool(final boolean fair, final ResultValidator validator) {
         super(new SyncNodeChain());
         this.unfair = !fair;
         this.validator = validator;
@@ -54,19 +54,19 @@ public final class ResultWaitPool extends ObjectWaitPool {
         return !this.unfair;
     }
 
-    private void removeAndWakeupFirst(SyncNode node) {
-        waitQueue.remove(node);
-        wakeupFirst();
+    private void removeAndWakeupFirst(final SyncNode node) {
+        this.waitQueue.remove(node);
+        this.wakeupFirst();
     }
 
     public final void wakeupFirst() {
-        SyncNode first = waitQueue.peek();
+        final SyncNode first = this.waitQueue.peek();
         if (first != null && SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING))
             LockSupport.unpark(first.getThread());
     }
 
-    public final void wakeupFirst(Object wakeupType) {
-        SyncNode first = waitQueue.peek();
+    public final void wakeupFirst(final Object wakeupType) {
+        final SyncNode first = this.waitQueue.peek();
         if (first != null && (wakeupType == null || wakeupType == first.getType() || wakeupType.equals(first.getType())))
             if (SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING)) LockSupport.unpark(first.getThread());
     }
@@ -74,14 +74,14 @@ public final class ResultWaitPool extends ObjectWaitPool {
     //****************************************************************************************************************//
     //                                          3: get (2)                                                            //
     //****************************************************************************************************************//
-    public Object get(ResultCall call, Object arg, SyncVisitConfig config) throws Exception {
-        return get(call, arg, validator, config.getVisitTester(), config.getNodeType(), config.getNodeValue(),
+    public Object get(final ResultCall call, final Object arg, final SyncVisitConfig config) throws Exception {
+        return this.get(call, arg, this.validator, config.getVisitTester(), config.getNodeType(), config.getNodeValue(),
                 config.getParkNanos(), config.isAllowInterruption(), config.isPropagatedOnSuccess());
     }
 
-    public Object get(ResultCall call, Object arg, ResultValidator validator, SyncVisitTester tester,
-                      Object nodeType, Object nodeValue, long parkNanos, boolean allowInterruption,
-                      boolean propagatedOnSuccess) throws Exception {
+    public Object get(final ResultCall call, final Object arg, final ResultValidator validator, final SyncVisitTester tester,
+                      final Object nodeType, final Object nodeValue, final long parkNanos, final boolean allowInterruption,
+                      final boolean propagatedOnSuccess) throws Exception {
 
         //1:check call parameter
         if (call == null || validator == null || tester == null)
@@ -89,70 +89,54 @@ public final class ResultWaitPool extends ObjectWaitPool {
         if (allowInterruption && Thread.interrupted()) throw new InterruptedException();
 
         //2:test before call,if passed,then execute call
-        if (tester.allow(unfair, nodeType, this)) {
-            Object result = call.call(arg);
+        if (tester.allow(this.unfair, nodeType, this)) {
+            final Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
         }
 
         //3:offer to wait queue
-        int spins = 1, postSpins = 1;
         final boolean isTime = parkNanos > 0L;
         final SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
-        boolean executeInd = appendAsWaitNode(node);
+        boolean executeInd = this.appendAsWaitNode(node);
         final long deadlineNanos = isTime ? System.nanoTime() + parkNanos : 0L;
 
         //4: spin
         do {
             if (executeInd) {//4.1: execute result call
                 try {
-                    do {
-                        Object result = call.call(arg);
-                        if (validator.isExpected(result)) {
-                            waitQueue.poll();
-                            if (propagatedOnSuccess) wakeupFirst(nodeType);
-                            return result;
-                        }
-
-                        if (spins <= 0) break;
-                        if (--spins == 0) {
-                            spins = postSpins = (byte) (postSpins << 1 | 1);
-                            break;
-                        }
-                    } while (true);
-
-                    executeInd=false;
+                    final Object result = call.call(arg);
+                    if (validator.isExpected(result)) {
+                        this.waitQueue.poll();
+                        if (propagatedOnSuccess) wakeupFirst(nodeType);
+                        return result;
+                    }
                 } catch (Throwable e) {
-                    waitQueue.poll();
-                    wakeupFirst();
+                    this.waitQueue.poll();
+                    this.wakeupFirst();
                     throw e;
                 }
             }
 
-            //4.2: try to park
-            if (node.getState()==SyncNodeStates.RUNNING) {
-                node.setState(null);
+            if (node.isRunningState()) {
                 executeInd = true;
             } else {
                 if (isTime) {
-                    parkNanos = deadlineNanos - System.nanoTime();
-                    if (parkNanos <= 0L) {
-                        removeAndWakeupFirst(node);
+                    final long time = deadlineNanos - System.nanoTime();
+                    if (time <= 0L) {
+                        this.removeAndWakeupFirst(node);
                         return validator.resultOnTimeout();
                     }
-                    LockSupport.parkNanos(this, parkNanos);
+                    LockSupport.parkNanos(this, time);
                 } else {
                     LockSupport.park(this);
                 }
+
                 if (Thread.interrupted() && allowInterruption) {
-                    removeAndWakeupFirst(node);
+                    this.removeAndWakeupFirst(node);
                     throw new InterruptedException();
                 }
-
-                if (node.getState()==SyncNodeStates.RUNNING) {
-                    node.setState(null);
-                    executeInd = true;
-                }
+                executeInd = node.isRunningState();
             }
         } while (true);
     }
