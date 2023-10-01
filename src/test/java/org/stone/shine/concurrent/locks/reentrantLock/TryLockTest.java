@@ -17,7 +17,6 @@ import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.base.TestUtil.Wait_Time;
 import static org.stone.base.TestUtil.Wait_TimeUnit;
-import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * ReentrantLock test case
@@ -36,16 +35,11 @@ public class TryLockTest extends TestCase {
         LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock");
         mockThread.start();
 
-        try {
-            //3: park main thread 1 second
-            LockSupport.parkNanos(Wait_TimeUnit.toNanos(Wait_Time));
+        //3: park main thread 1 second
+        LockSupport.parkNanos(Wait_TimeUnit.toNanos(Wait_Time));
 
-            //4: check lock state
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
-            TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, lock.isLocked());
-        } finally {
-            //5: unlock
-            if (objectEquals(mockThread.getResult(), true)) lock.unlock();
-        }
+        //4: check lock state
+        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, mockThread.getResult());
+        TestUtil.assertError("test failed,expect value:%s,actual value:%s", true, lock.isLocked());
     }
 }
