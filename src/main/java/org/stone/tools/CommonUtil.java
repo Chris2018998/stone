@@ -22,9 +22,6 @@ public class CommonUtil {
     public static final int maxTimedSpins = (NCPU < 2) ? 0 : 32;
     public static final int maxUntimedSpins = maxTimedSpins * 16;
 
-    public static void emptyMethod() {
-    }
-
     public static String trimString(String value) {
         return value == null ? null : value.trim();
     }
