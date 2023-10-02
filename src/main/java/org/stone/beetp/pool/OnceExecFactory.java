@@ -10,7 +10,6 @@
 
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
 
 /**
@@ -19,21 +18,13 @@ import org.stone.beetp.BeeTaskHandle;
  * @author Chris Liao
  * @version 1.0
  */
-public final class OnceExecFactory extends TaskExecFactory {
+final class OnceExecFactory extends TaskExecFactory {
 
     OnceExecFactory(TaskPoolImplement pool) {
-        super(null);
+        super(pool);
     }
 
-    public void beforeExecute(BeeTaskHandle handle) throws BeeTaskException {
-
-    }
-
-    public Object executeTask(BeeTaskHandle handle) throws BeeTaskException {
-        return null;
-    }
-
-    public void afterExecute(BeeTaskHandle handle, Object result) throws BeeTaskException {
+    public void executeTask(BeeTaskHandle handle) {
 
     }
 }

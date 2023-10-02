@@ -9,7 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
 
 /**
@@ -25,9 +24,5 @@ abstract class TaskExecFactory {
         this.pool = pool;
     }
 
-    abstract void beforeExecute(BeeTaskHandle handle) throws BeeTaskException;
-
-    abstract Object executeTask(BeeTaskHandle handle) throws BeeTaskException;
-
-    abstract void afterExecute(BeeTaskHandle handle, Object result) throws BeeTaskException;
+    abstract void executeTask(BeeTaskHandle handle);
 }

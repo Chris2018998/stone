@@ -256,60 +256,8 @@ public final class TaskPoolImplement implements BeeTaskPool {
         return handle;
     }
 
-
-    //works inside worker thread
-    private void executeTask(BaseHandle handle) {
-//        try {
-//            //1: increment running count
-//            taskRunningCount.incrementAndGet();//need think of count exceeded?
-//
-//            //2: execute callback
-//            BeeTask task = handle.getTask();
-//            BeeTaskCallback callback = handle.getCallback();
-//            if (callback != null) {
-//                try {
-//                    callback.beforeCall(handle);
-//                } catch (Throwable e) {
-//                    //do nothing
-//                }
-//            }
-//
-//            //3: execute task
-//            try {
-//                handle.setDone(TASK_CALL_RESULT, task.call());
-//            } catch (Throwable e) {
-//                handle.setDone(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
-//            }
-//        } finally {
-//            taskRunningCount.decrementAndGet();
-//            if (handle instanceof ScheduledTaskHandle) {
-//                ScheduledTaskHandle scheduledHandle = (ScheduledTaskHandle) handle;
-//                if (scheduledHandle.isPeriodic()) {
-//                    scheduledHandle.prepareForNextCall();//reset to waiting state for next execution
-//                    if (scheduledQueue.add(scheduledHandle) == 0)
-//                        wakeupSchedulePeekThread();
-//                } else {//one scheduled task,so end
-//                    taskCompletedCount.incrementAndGet();
-//                }
-//            } else {
-//                taskCompletedCount.incrementAndGet();
-//            }
-//        }
-    }
-
-    //remove from array or queue(method called inside handle)
-    public void removeCancelledTask(BeeTaskHandle handle) {
-        if (handle instanceof ScheduledTaskHandle) {
-            int taskIndex = scheduledQueue.remove((ScheduledTaskHandle) handle);
-            if (taskIndex >= 0) taskHoldingCount.decrementAndGet();//task removed successfully by call thread
-            if (taskIndex == 0) wakeupSchedulePeekThread();
-        } else if (executionQueue.remove(handle)) {
-            taskHoldingCount.decrementAndGet();
-        }
-    }
-
     //***************************************************************************************************************//
-    //                6: Pool clear (3)                                                                              //
+    //                                      5: Pool clear/remove(3)                                                        //
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
         try {
@@ -391,8 +339,19 @@ public final class TaskPoolImplement implements BeeTaskPool {
         return null;
     }
 
+    //remove from array or queue(method called inside handle)
+    void removeCancelledTask(BaseHandle handle) {
+        if (handle instanceof ScheduledTaskHandle) {
+            int taskIndex = scheduledQueue.remove((ScheduledTaskHandle) handle);
+            if (taskIndex >= 0) taskHoldingCount.decrementAndGet();//task removed successfully by call thread
+            if (taskIndex == 0) wakeupSchedulePeekThread();
+        } else if (executionQueue.remove(handle)) {
+            taskHoldingCount.decrementAndGet();
+        }
+    }
+
     //***************************************************************************************************************//
-    //                7: Pool shutdown (4)                                                                           //
+    //                                      6: Pool shutdown (4)                                                     //
     //***************************************************************************************************************//
     public boolean isTerminated() {
         return poolState == POOL_TERMINATED;
@@ -448,7 +407,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                8: Pool monitor(1)                                                                             //
+    //                                     7: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
     public BeeTaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolState(this.poolState);
@@ -460,7 +419,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                9: Pool worker class and scheduled class (2)                                                   //
+    //                                  8: Pool worker class and scheduled class (2)                                 //
     //***************************************************************************************************************//
     //tasks execution thread
     private class PoolWorkerThread extends Thread {
@@ -496,18 +455,15 @@ public final class TaskPoolImplement implements BeeTaskPool {
                 }
                 if (handle == null) handle = executionQueue.poll();
 
-                //3: task count
+                //3: execute task
                 if (handle != null) {
-                    if (handle instanceof ScheduledTaskHandle) {
-                        ScheduledTaskHandle scheduledHandle = (ScheduledTaskHandle) handle;
-                        if (!scheduledHandle.isPeriodic())
-                            taskHoldingCount.decrementAndGet();//time once task,so decrement
+                    if (handle instanceof OnceTaskHandle) {
+                        onceExecFactory.executeTask(handle);
+                    } else if (handle instanceof JoinTaskHandle) {
+                        joinExecFactory.executeTask(handle);
                     } else {
-                        taskHoldingCount.decrementAndGet();
+                        scheduledExecFactory.executeTask(handle);
                     }
-                    //4: execute task
-                    //if (handle.setAsRunning()) executeTask(handle);
-
                 } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
                     if (workerKeepaliveTimed)
                         LockSupport.parkNanos(workerKeepAliveTime);
