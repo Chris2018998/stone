@@ -32,7 +32,7 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
 abstract class BaseHandle implements BeeTaskHandle {
     final AtomicInteger state;//reset to waiting state after execution when current task is periodic
     private final BeeTask task;
-    private final TaskExecFactory factory;
+    private final TaskPoolImplement pool;
     private final BeeTaskCallback callback;
     private final ConcurrentLinkedQueue<Thread> waitQueue;//queue of waiting for task result(maybe exception)
 
@@ -42,9 +42,9 @@ abstract class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
     //***************************************************************************************************************//
-    BaseHandle(BeeTask task, BeeTaskCallback callback, TaskExecFactory factory) {
+    BaseHandle(BeeTask task, BeeTaskCallback callback, TaskPoolImplement pool) {
         this.task = task;
-        this.factory = factory;
+        this.pool = pool;
         this.callback = callback;
         this.state = new AtomicInteger(TASK_WAITING);
         this.waitQueue = new ConcurrentLinkedQueue<>();
@@ -55,10 +55,6 @@ abstract class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     BeeTask getTask() {
         return task;
-    }
-
-    TaskExecFactory getExecFactory() {
-        return factory;
     }
 
     //***************************************************************************************************************//
@@ -110,7 +106,7 @@ abstract class BaseHandle implements BeeTaskHandle {
         //1: update task state to be cancelled via cas
         if (setAsCancelled()) {
             this.setDone(TASK_CANCELLED, null);//if exists result waiters,wakeup them
-            factory.pool.removeCancelledTask(this);//remove the cancelled task from pool
+            pool.removeCancelledTask(this);//remove the cancelled task from pool
             return true;
         }
 

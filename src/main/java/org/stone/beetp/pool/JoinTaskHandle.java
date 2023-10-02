@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_RESULT;
 
 /**
- * generic task handle impl
+ * join task handle impl
  *
  * @author Chris Liao
  * @version 1.0
@@ -37,14 +37,14 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
     //constructor for root task
-    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskExecFactory factory) {
-        super(task, null, factory);
+    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
+        super(task, null, pool);
         this.operator = operator;
     }
 
     //constructor for child task
-    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskExecFactory factory) {
-        super(task, null, factory);
+    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
+        super(task, null, pool);
         this.parent = parent;
         this.operator = operator;
         this.completedCount = completedCount;

@@ -10,7 +10,6 @@
 
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
 
@@ -24,12 +23,6 @@ public final class OnceExecFactory extends TaskExecFactory {
 
     OnceExecFactory(TaskPoolImplement pool) {
         super(null);
-    }
-
-    public BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
-        BeeTask task = config.getTask();
-        if (task == null) throw new BeeTaskException("Task can't be null");
-        return new OnceTaskHandle(task, config.getCallback(), this);
     }
 
     public void beforeExecute(BeeTaskHandle handle) throws BeeTaskException {

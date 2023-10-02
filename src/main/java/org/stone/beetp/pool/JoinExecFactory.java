@@ -10,10 +10,8 @@
 
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskHandle;
-import org.stone.beetp.BeeTaskJoinOperator;
 
 /**
  * Once Task Executor
@@ -25,18 +23,6 @@ public class JoinExecFactory extends TaskExecFactory {
 
     JoinExecFactory(TaskPoolImplement pool) {
         super(pool);
-    }
-
-    BaseHandle createHandle(TaskConfig config) throws BeeTaskException {
-        BeeTask task = config.getTask();
-        if (task == null) throw new BeeTaskException("Task can't be null");
-        BeeTaskJoinOperator operator = config.getJoinOperator();
-        if (operator == null) throw new BeeTaskException("Task join operator can't be null");
-        return new JoinTaskHandle(task, operator, this);
-    }
-
-    public void beforeOffer(BeeTask task) throws BeeTaskException {
-
     }
 
     public void beforeExecute(BeeTaskHandle handle) throws BeeTaskException {

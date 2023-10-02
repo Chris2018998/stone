@@ -26,19 +26,16 @@ public interface BeeTaskPool {
     void init(BeeTaskServiceConfig config) throws BeeTaskPoolException, BeeTaskServiceConfigException;
 
     //***************************************************************************************************************//
-    //                2: task submit(2)                                                                              //
+    //                2: task submit(3)                                                                              //
     //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws BeeTaskException;
 
     BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException;
 
-    //***************************************************************************************************************//
-    //                3: join task(1)                                                                                   //
-    //***************************************************************************************************************//
-    BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException;
+    BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator) throws BeeTaskException;
 
     //***************************************************************************************************************//
-    //                4: scheduled task(6)                                                                            //
+    //                3: scheduled task(6)                                                                           //
     //***************************************************************************************************************//
     BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException;
 
@@ -53,7 +50,7 @@ public interface BeeTaskPool {
     BeeTaskScheduledHandle scheduleWithFixedDelay(BeeTask task, long initialDelay, long delay, TimeUnit unit, BeeTaskCallback callback) throws BeeTaskException;
 
     //***************************************************************************************************************//
-    //                5: Pool clear(2)                                                                               //
+    //                4: Pool clear(2)                                                                               //
     //***************************************************************************************************************//
     //clear all tasks in pool
     boolean clear(boolean mayInterruptIfRunning);
@@ -62,7 +59,7 @@ public interface BeeTaskPool {
     boolean clear(boolean mayInterruptIfRunning, BeeTaskServiceConfig config) throws BeeTaskServiceConfigException;
 
     //***************************************************************************************************************//
-    //                6: Pool termination(4)                                                                         //
+    //                5: Pool termination(4)                                                                         //
     //***************************************************************************************************************//
     boolean isTerminated();
 
@@ -75,7 +72,7 @@ public interface BeeTaskPool {
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
     //***************************************************************************************************************//
-    //                7: Pool monitor(1)                                                                             //
+    //                6: Pool monitor(1)                                                                             //
     //***************************************************************************************************************//
     BeeTaskPoolMonitorVo getPoolMonitorVo();
 

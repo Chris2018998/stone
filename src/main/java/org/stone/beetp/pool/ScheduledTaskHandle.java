@@ -22,7 +22,7 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
  * @author Chris Liao
  * @version 1.0
  */
-public final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHandle {
+final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHandle {
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
     private long nextRunTime;//time sortable
@@ -36,8 +36,8 @@ public final class ScheduledTaskHandle extends BaseHandle implements BeeTaskSche
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     ScheduledTaskHandle(BeeTask task, BeeTaskCallback callback,
-                        long firstRunTime, long intervalTime, boolean fixedDelay, TaskExecFactory factory) {
-        super(task, callback, factory);
+                        long firstRunTime, long intervalTime, boolean fixedDelay, TaskPoolImplement pool) {
+        super(task, callback, pool);
         this.nextRunTime = firstRunTime;//first run time
         this.intervalTime = intervalTime;
         this.fixedDelay = fixedDelay;//true:calculate next run time from task prev call end t

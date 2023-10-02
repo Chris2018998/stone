@@ -25,8 +25,6 @@ abstract class TaskExecFactory {
         this.pool = pool;
     }
 
-    abstract BaseHandle createHandle(TaskConfig config) throws BeeTaskException;
-
     abstract void beforeExecute(BeeTaskHandle handle) throws BeeTaskException;
 
     abstract Object executeTask(BeeTaskHandle handle) throws BeeTaskException;
