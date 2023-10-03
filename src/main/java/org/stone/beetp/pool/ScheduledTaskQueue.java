@@ -21,10 +21,10 @@ import java.util.Comparator;
  * @version 1.0
  */
 
-final class ScheduledTaskQueue extends SortedArray<BeeTaskScheduledHandle> {
+final class ScheduledTaskQueue extends SortedArray<ScheduledTaskHandle> {
     ScheduledTaskQueue(int initSize) {
-        super(BeeTaskScheduledHandle.class, initSize, new Comparator<BeeTaskScheduledHandle>() {
-            public int compare(BeeTaskScheduledHandle handle1, BeeTaskScheduledHandle handle2) {
+        super(ScheduledTaskHandle.class, initSize, new Comparator<ScheduledTaskHandle>() {
+            public int compare(ScheduledTaskHandle handle1, ScheduledTaskHandle handle2) {
                 long compareV = handle1.getNextTime() - handle2.getNextTime();
                 if (compareV < 0) return -1;
                 if (compareV == 0) return 0;
@@ -38,7 +38,7 @@ final class ScheduledTaskQueue extends SortedArray<BeeTaskScheduledHandle> {
         try {
             //1: empty queue,return -1
             if (count == 0) return -1L;
-            BeeTaskScheduledHandle handle = objects[0];
+            ScheduledTaskHandle handle = objects[0];
 
             //2:if first task not be expired,return remain time
             long remainTime = handle.getNextTime() - System.nanoTime();
@@ -52,11 +52,11 @@ final class ScheduledTaskQueue extends SortedArray<BeeTaskScheduledHandle> {
         }
     }
 
-    BeeTaskScheduledHandle[] clearAll() {
+    ScheduledTaskHandle[] clearAll() {
         arrayLock.lock();
         try {
-            BeeTaskScheduledHandle[] tasks = objects;
-            this.objects = new BeeTaskScheduledHandle[0];
+            ScheduledTaskHandle[] tasks = objects;
+            this.objects = new ScheduledTaskHandle[0];
             this.count = 0;
             return tasks;
         } finally {

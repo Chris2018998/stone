@@ -14,6 +14,7 @@ import org.stone.beetp.pool.exception.PoolInitializedException;
 import org.stone.beetp.pool.exception.TaskRejectedException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -308,23 +309,23 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     private List<BeeTask> removeAll(boolean mayInterruptIfRunning) {
-//        List<BeeTask> unRunningTaskList = new LinkedList<>();
-//        //1: remove scheduled tasks
-//        for (ScheduledTaskHandle handle : scheduledQueue.clearAll()) {
-//            if (handle.setAsCancelled()) {//collect cancelled tasks by pool
-//                unRunningTaskList.add(handle.getTask());
-//                handle.setDone(TASK_CANCELLED, null);
-//            }
-//        }
-//
-//        //2: remove generic tasks
-//        BaseHandle handle;
-//        while ((handle = executionQueue.poll()) != null) {
-//            if (handle.setAsCancelled()) {//collect cancelled tasks by pool
-//                unRunningTaskList.add(handle.getTask());
-//                handle.setDone(TASK_CANCELLED, null);
-//            }
-//        }
+        List<BeeTask> unRunningTaskList = new LinkedList<>();
+        //1: remove scheduled tasks
+        for (ScheduledTaskHandle handle : scheduledQueue.clearAll()) {
+            if (handle.setAsCancelled()) {//collect cancelled tasks by pool
+                unRunningTaskList.add(handle.getTask());
+                handle.setDone(TASK_CANCELLED, null);
+            }
+        }
+
+        //2: remove generic tasks
+        BaseHandle handle;
+        while ((handle = executionQueue.poll()) != null) {
+            if (handle.setAsCancelled()) {//collect cancelled tasks by pool
+                unRunningTaskList.add(handle.getTask());
+                handle.setDone(TASK_CANCELLED, null);
+            }
+        }
 
         //3: remove generic tasks
         for (PoolWorkerThread workerThread : workerQueue) {
@@ -346,7 +347,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
         this.taskRunningCount.set(0);
         this.taskCompletedCount.set(0);
         this.workerNameIndex.set(0);
-        return null;
+        return unRunningTaskList;
     }
 
     //remove from array or queue(method called inside handle)
