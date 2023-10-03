@@ -73,10 +73,11 @@ final class JoinTaskHandle extends BaseHandle {
         //2: incr completed count
         do {
             int currentSize = completedCount.incrementAndGet();
-            if (currentSize == childrenSize) break;
+            if (currentSize == childrenSize) return;
             if (completedCount.compareAndSet(childrenSize, childrenSize + 1)) {
                 if (currentSize == childrenSize)
                     parent.setDone(TASK_CALL_RESULT, operator.join(childrenList));
+                break;
             }
         } while (true);
 
