@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Once Task Executor
+ * Join Execute Factory
  *
  * @author Chris Liao
  * @version 1.0

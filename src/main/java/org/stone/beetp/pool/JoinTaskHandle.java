@@ -53,30 +53,34 @@ final class JoinTaskHandle extends BaseHandle {
     //***************************************************************************************************************//
     //                              2: other(3)                                                                      //                                                                                  //
     //***************************************************************************************************************//
-    public JoinTaskHandle getParent() {
-        return parent;
-    }
-
     BeeTaskJoinOperator getJoinOperator() {
         return operator;
     }
 
-    public void setChildrenList(List<JoinTaskHandle> childrenList) {
+    void setChildrenList(List<JoinTaskHandle> childrenList) {
         this.childrenList = childrenList;
         this.childrenSize = childrenList != null ? childrenList.size() : 0;
     }
 
     //***************************************************************************************************************//
-    //                              3: add completed count of children task                                                          //                                                                                  //
+    //                              3: join task result                                                              //                                                                                  //
     //***************************************************************************************************************//
-    public void incrementSubCompleted() {
+    void setDone(int state, Object result) {
+        //1: set result and state
+        this.result = result;
+        this.state.set(state);
+
+        //2: incr completed count
         do {
             int currentSize = completedCount.incrementAndGet();
-            if (currentSize == childrenSize) return;
+            if (currentSize == childrenSize) break;
             if (completedCount.compareAndSet(childrenSize, childrenSize + 1)) {
                 if (currentSize == childrenSize)
-                    this.setDone(TASK_CALL_RESULT, operator.join(childrenList));
+                    parent.setDone(TASK_CALL_RESULT, operator.join(childrenList));
             }
         } while (true);
+
+        //3: wakeup waiters on root task
+        if (waitQueue != null) this.wakeupWaitersInGetting();
     }
 }
