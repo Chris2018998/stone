@@ -10,8 +10,6 @@
 
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTaskHandle;
-
 /**
  * Once Task Executor
  *
@@ -24,7 +22,7 @@ final class JoinExecFactory extends TaskExecFactory {
         super(pool);
     }
 
-    public void executeTask(BeeTaskHandle handle) {
+    public void executeTask(BaseHandle handle) {
 
     }
 }

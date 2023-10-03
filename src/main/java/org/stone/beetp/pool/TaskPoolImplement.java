@@ -47,6 +47,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     private AtomicInteger taskHoldingCount;//(once count + scheduled count)
     private AtomicLong taskRunningCount;
     private AtomicLong taskCompletedCount;
+
     private TaskPoolMonitorVo monitorVo;
     private AtomicInteger workerNameIndex;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
@@ -174,9 +175,18 @@ public final class TaskPoolImplement implements BeeTaskPool {
         return addScheduleTask(task, unit, initialDelay, delay, true, callback, 3);
     }
 
+
     //***************************************************************************************************************//
     //                                  4: task check and task offer(4)                                               //
     //***************************************************************************************************************//
+    AtomicLong getTaskRunningCount() {
+        return taskRunningCount;
+    }
+
+    AtomicLong getTaskCompletedCount() {
+        return taskCompletedCount;
+    }
+
     private void checkPool() throws BeeTaskException {
         //1: pool state check
         if (this.poolState != POOL_RUNNING)

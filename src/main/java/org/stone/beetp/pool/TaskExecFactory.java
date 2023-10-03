@@ -9,7 +9,7 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTaskHandle;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Task Execute Factory
@@ -19,10 +19,14 @@ import org.stone.beetp.BeeTaskHandle;
  */
 abstract class TaskExecFactory {
     final TaskPoolImplement pool;
+    final AtomicLong taskRunningCount;
+    final AtomicLong taskCompletedCount;
 
     TaskExecFactory(TaskPoolImplement pool) {
         this.pool = pool;
+        this.taskRunningCount = pool.getTaskRunningCount();
+        this.taskCompletedCount = pool.getTaskCompletedCount();
     }
 
-    abstract void executeTask(BeeTaskHandle handle);
+    abstract void executeTask(BaseHandle handle);
 }
