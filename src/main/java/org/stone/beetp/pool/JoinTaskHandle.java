@@ -26,8 +26,8 @@ import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_RESULT;
 final class JoinTaskHandle extends BaseHandle {
     //1: fields of a parent task
     private int childrenSize;
-    private List<JoinTaskHandle> childrenList;
     private BeeTaskJoinOperator operator;
+    private List<JoinTaskHandle> childrenList;
 
     //fields for child task
     private JoinTaskHandle parent;
@@ -38,13 +38,13 @@ final class JoinTaskHandle extends BaseHandle {
     //***************************************************************************************************************//
     //constructor for root task
     JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
-        super(task, null, pool);
+        super(task, null, pool, true);
         this.operator = operator;
     }
 
-    //constructor for child task
+    //constructor for children task
     JoinTaskHandle(BeeTask task, JoinTaskHandle parent, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
-        super(task, null, pool);
+        super(task, null, pool, false);
         this.parent = parent;
         this.operator = operator;
         this.completedCount = completedCount;
@@ -57,7 +57,7 @@ final class JoinTaskHandle extends BaseHandle {
         return parent;
     }
 
-    public BeeTaskJoinOperator getOperator() {
+    BeeTaskJoinOperator getJoinOperator() {
         return operator;
     }
 

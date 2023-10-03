@@ -210,7 +210,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    private void pushToExecutionQueue(BaseHandle taskHandle) {
+    void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle worker to handle the task
         for (PoolWorkerThread workerThread : workerQueue) {
             if (workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
@@ -472,12 +472,14 @@ public final class TaskPoolImplement implements BeeTaskPool {
 
                 //3: execute task
                 if (handle != null) {
-                    if (handle instanceof OnceTaskHandle) {
-                        onceExecFactory.execute(handle);
-                    } else if (handle instanceof JoinTaskHandle) {
-                        joinExecFactory.execute(handle);
-                    } else {
-                        scheduledExecFactory.execute(handle);
+                    if (handle.setAsRunning()) {
+                        if (handle instanceof OnceTaskHandle) {
+                            onceExecFactory.execute(handle);
+                        } else if (handle instanceof JoinTaskHandle) {
+                            joinExecFactory.execute(handle);
+                        } else {
+                            scheduledExecFactory.execute(handle);
+                        }
                     }
                 } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
                     if (workerKeepaliveTimed)

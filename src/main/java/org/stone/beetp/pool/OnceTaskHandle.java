@@ -22,6 +22,6 @@ import org.stone.beetp.BeeTaskException;
 final class OnceTaskHandle extends BaseHandle {
 
     OnceTaskHandle(BeeTask task, BeeTaskCallback callback, TaskPoolImplement pool) throws BeeTaskException {
-        super(task, callback, pool);
+        super(task, callback, pool, true);
     }
 }

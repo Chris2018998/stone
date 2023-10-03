@@ -32,6 +32,7 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
 abstract class BaseHandle implements BeeTaskHandle {
     final AtomicInteger state;//reset to waiting state after execution when current task is periodic
     private final BeeTask task;
+    private final boolean isRoot;
     private final TaskPoolImplement pool;
     private final BeeTaskCallback callback;
     private final ConcurrentLinkedQueue<Thread> waitQueue;//queue of waiting for task result(maybe exception)
@@ -42,12 +43,13 @@ abstract class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
     //***************************************************************************************************************//
-    BaseHandle(BeeTask task, BeeTaskCallback callback, TaskPoolImplement pool) {
+    BaseHandle(BeeTask task, BeeTaskCallback callback, TaskPoolImplement pool, boolean isRoot) {
         this.task = task;
         this.pool = pool;
         this.callback = callback;
         this.state = new AtomicInteger(TASK_WAITING);
-        this.waitQueue = new ConcurrentLinkedQueue<>();
+        this.isRoot = isRoot;
+        this.waitQueue = isRoot ? new ConcurrentLinkedQueue<>() : null;
     }
 
     //***************************************************************************************************************//
@@ -55,6 +57,10 @@ abstract class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     BeeTask getTask() {
         return task;
+    }
+
+    boolean isRoot() {
+        return isRoot;
     }
 
     BeeTaskCallback getCallback() {
@@ -183,7 +189,7 @@ abstract class BaseHandle implements BeeTaskHandle {
     void setDone(int state, Object result) {
         this.result = result;
         this.state.set(state);
-        this.wakeupWaitersInGetting();
+        if (waitQueue != null) this.wakeupWaitersInGetting();
 
         if (this.callback != null) {
             try {

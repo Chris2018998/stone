@@ -10,6 +10,13 @@
 
 package org.stone.beetp.pool;
 
+import org.stone.beetp.BeeTask;
+import org.stone.beetp.BeeTaskJoinOperator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * Once Task Executor
  *
@@ -22,7 +29,27 @@ final class JoinExecFactory extends TaskExecFactory {
         super(pool);
     }
 
-    public void executeTask(BaseHandle handle) {
+    void execute(BaseHandle handle) {
+        JoinTaskHandle joinHandle = (JoinTaskHandle) handle;
+        if (joinHandle.isRoot()) beforeExecute(handle);
 
+        //2: try to split task to children tasks
+        BeeTaskJoinOperator joinOperator = ((JoinTaskHandle) handle).getJoinOperator();
+        List<BeeTask> childTasks = joinOperator.split(handle.getTask());
+
+        //3: create sub children and push them to queue
+        if (childTasks != null && !childTasks.isEmpty()) {
+            AtomicInteger completedCount = new AtomicInteger(childTasks.size());
+            ArrayList<JoinTaskHandle> childList = new ArrayList<>(childTasks.size());
+            for (BeeTask childTask : childTasks) {
+                JoinTaskHandle childHandle = new JoinTaskHandle(childTask, joinHandle, completedCount, joinOperator, pool);
+                pool.pushToExecutionQueue(childHandle);
+                childList.add(childHandle);
+            }
+            joinHandle.setChildrenList(childList);
+        } else if (joinHandle.isRoot()) {//execute the root task
+            executeTask(handle);
+            afterExecute(handle);
+        }
     }
 }
