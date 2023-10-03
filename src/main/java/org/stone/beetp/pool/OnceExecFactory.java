@@ -16,13 +16,10 @@ package org.stone.beetp.pool;
  * @author Chris Liao
  * @version 1.0
  */
-class OnceExecFactory extends TaskExecFactory {
+final class OnceExecFactory extends TaskExecFactory {
 
     OnceExecFactory(TaskPoolImplement pool) {
         super(pool);
     }
 
-    public void executeTask(BaseHandle handle) {
-
-    }
 }

@@ -10,49 +10,29 @@
 
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTask;
-import org.stone.beetp.BeeTaskCallback;
-import org.stone.beetp.pool.exception.TaskExecutionException;
-
-import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_EXCEPTION;
-import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_RESULT;
-
 /**
  * Once Task Executor
  *
  * @author Chris Liao
  * @version 1.0
  */
-final class ScheduledExecFactory extends OnceExecFactory {
+final class ScheduledExecFactory extends TaskExecFactory {
+    private final ScheduledTaskQueue scheduledQueue;
 
     ScheduledExecFactory(TaskPoolImplement pool) {
         super(pool);
+        scheduledQueue = pool.getScheduledQueue();
     }
 
-    public void executeTask(BaseHandle handle) {
-        try {
-            //1: increment running count
-            taskRunningCount.incrementAndGet();//need think of count exceeded?
+    void afterExecute(BaseHandle handle) {
+        taskRunningCount.decrementAndGet();
 
-            //2: execute callback
-            BeeTask task = handle.getTask();
-            BeeTaskCallback callback = handle.getCallback();
-            if (callback != null) {
-                try {
-                    callback.beforeCall(handle);
-                } catch (Throwable e) {
-                    //do nothing
-                }
-            }
-
-            //3: execute task
-            try {
-                handle.setDone(TASK_CALL_RESULT, task.call());
-            } catch (Throwable e) {
-                handle.setDone(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
-            }
-        } finally {
-            taskRunningCount.decrementAndGet();
+        ScheduledTaskHandle scheduledHandle = (ScheduledTaskHandle) handle;
+        if (scheduledHandle.isPeriodic()) {
+            scheduledHandle.prepareForNextCall();//reset to waiting state for next execution
+            if (scheduledQueue.add(scheduledHandle) == 0)
+                pool.wakeupSchedulePeekThread();
+        } else {//one timed task,so end
             taskCompletedCount.incrementAndGet();
         }
     }

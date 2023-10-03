@@ -188,6 +188,14 @@ public final class TaskPoolImplement implements BeeTaskPool {
         return taskCompletedCount;
     }
 
+    ScheduledTaskQueue getScheduledQueue() {
+        return scheduledQueue;
+    }
+
+    void wakeupSchedulePeekThread() {
+        LockSupport.unpark(scheduledTaskPeekThread);
+    }
+
     private void checkPool() throws BeeTaskException {
         //1: pool state check
         if (this.poolState != POOL_RUNNING)
@@ -230,10 +238,6 @@ public final class TaskPoolImplement implements BeeTaskPool {
         } while (true);
     }
 
-    private void wakeupSchedulePeekThread() {
-        LockSupport.unpark(scheduledTaskPeekThread);
-    }
-
     private BeeTaskScheduledHandle addScheduleTask(BeeTask task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, BeeTaskCallback callback, int scheduledType) throws BeeTaskException {
         //1: check task
         if (task == null) throw new BeeTaskException("Task can't be null");
@@ -268,7 +272,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                      5: Pool clear/remove(3)                                                        //
+    //                                      5: Pool clear/remove(3)                                                  //
     //***************************************************************************************************************//
     public boolean clear(boolean mayInterruptIfRunning) {
         try {
@@ -469,11 +473,11 @@ public final class TaskPoolImplement implements BeeTaskPool {
                 //3: execute task
                 if (handle != null) {
                     if (handle instanceof OnceTaskHandle) {
-                        onceExecFactory.executeTask(handle);
+                        onceExecFactory.execute(handle);
                     } else if (handle instanceof JoinTaskHandle) {
-                        joinExecFactory.executeTask(handle);
+                        joinExecFactory.execute(handle);
                     } else {
-                        scheduledExecFactory.executeTask(handle);
+                        scheduledExecFactory.execute(handle);
                     }
                 } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
                     if (workerKeepaliveTimed)

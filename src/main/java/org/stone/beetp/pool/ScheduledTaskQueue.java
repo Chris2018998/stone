@@ -9,7 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTaskScheduledHandle;
 import org.stone.tools.SortedArray;
 
 import java.util.Comparator;
