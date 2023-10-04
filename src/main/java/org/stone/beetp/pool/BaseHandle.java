@@ -32,9 +32,9 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
 abstract class BaseHandle implements BeeTaskHandle {
     final AtomicInteger state;//reset to waiting state after execution when current task is periodic
     final ConcurrentLinkedQueue<Thread> waitQueue;//queue of waiting for task result(maybe exception)
+    final TaskPoolImplement pool;
     private final BeeTask task;
     private final boolean isRoot;
-    private final TaskPoolImplement pool;
     private final BeeTaskCallback callback;
     Object result;//it is an exception when task sate code equals<em>TASK_CALL_EXCEPTION</em>;
     private volatile Thread workThread;//set before execution by pool worker and reset to null after execution

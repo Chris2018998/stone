@@ -40,6 +40,7 @@ final class JoinTaskHandle extends BaseHandle {
     JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
         super(task, null, pool, true);
         this.operator = operator;
+
     }
 
     //constructor for children task
@@ -71,15 +72,20 @@ final class JoinTaskHandle extends BaseHandle {
         this.state.set(state);
 
         //2: incr completed count
-        do {
-            int currentSize = completedCount.incrementAndGet();
-            if (currentSize == childrenSize) return;
-            if (completedCount.compareAndSet(childrenSize, childrenSize + 1)) {
-                if (currentSize == childrenSize)
-                    parent.setDone(TASK_CALL_RESULT, operator.join(childrenList));
-                break;
-            }
-        } while (true);
+        if (completedCount != null) {
+            do {
+                int currentSize = completedCount.get();
+                if (currentSize == childrenSize) break;
+                if (completedCount.compareAndSet(childrenSize, childrenSize + 1)) {
+                    if (currentSize == childrenSize) {
+                        parent.setDone(TASK_CALL_RESULT, operator.join(childrenList));//join children
+                        pool.getTaskRunningCount().decrementAndGet();
+                        pool.getTaskCompletedCount().incrementAndGet();
+                    }
+                    break;
+                }
+            } while (true);
+        }
 
         //3: wakeup waiters on root task
         if (waitQueue != null) this.wakeupWaitersInGetting();

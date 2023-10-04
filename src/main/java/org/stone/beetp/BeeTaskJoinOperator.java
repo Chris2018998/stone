@@ -20,7 +20,7 @@ import java.util.List;
 public interface BeeTaskJoinOperator<E> {
 
     //when a join task take out from queue,need try to split,if exists children then push them to queue,if no,execute the task
-    List<BeeTask> split(BeeTask task);
+    List<BeeTask<E>> split(BeeTask task);
 
     //join children to a result
     E join(List<BeeTaskHandle> children);

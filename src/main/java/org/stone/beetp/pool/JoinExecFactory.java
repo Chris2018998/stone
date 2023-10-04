@@ -34,7 +34,7 @@ final class JoinExecFactory extends TaskExecFactory {
         if (joinHandle.isRoot()) beforeExecute(handle);
 
         //2: try to split task to children tasks
-        BeeTaskJoinOperator joinOperator = ((JoinTaskHandle) handle).getJoinOperator();
+        BeeTaskJoinOperator joinOperator = joinHandle.getJoinOperator();
         List<BeeTask> childTasks = joinOperator.split(handle.getTask());
 
         //3: create sub children and push them to queue
@@ -47,9 +47,8 @@ final class JoinExecFactory extends TaskExecFactory {
                 childList.add(childHandle);
             }
             joinHandle.setChildrenList(childList);
-        } else if (joinHandle.isRoot()) {//execute the root task
+        } else if (joinHandle.isRoot()) {
             executeTask(handle);
-            afterExecute(handle);
         }
     }
 }
