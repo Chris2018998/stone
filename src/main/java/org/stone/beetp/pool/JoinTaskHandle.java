@@ -30,6 +30,7 @@ final class JoinTaskHandle extends BaseHandle {
     private List<JoinTaskHandle> childrenList;
 
     //fields for child task
+    private JoinTaskHandle root;
     private JoinTaskHandle parent;
     private AtomicInteger completedCount;//the complete count of sub tasks.
 
@@ -44,16 +45,21 @@ final class JoinTaskHandle extends BaseHandle {
     }
 
     //constructor for children task
-    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
+    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, AtomicInteger completedCount, BeeTaskJoinOperator operator, JoinTaskHandle root, TaskPoolImplement pool) {
         super(task, null, pool, false);
+        this.root = root;
         this.parent = parent;
         this.operator = operator;
         this.completedCount = completedCount;
     }
 
     //***************************************************************************************************************//
-    //                              2: other(3)                                                                      //                                                                                  //
+    //                                  2: other(3)                                                                      //                                                                                  //
     //***************************************************************************************************************//
+    JoinTaskHandle getRoot() {
+        return root;
+    }
+
     BeeTaskJoinOperator getJoinOperator() {
         return operator;
     }
@@ -64,7 +70,29 @@ final class JoinTaskHandle extends BaseHandle {
     }
 
     //***************************************************************************************************************//
-    //                              3: join task result                                                              //                                                                                  //
+    //                                  3: task cancel(1)                                                            //
+    //***************************************************************************************************************//
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        //@TODO
+        return false;
+//        //1: update task state to be cancelled via cas
+//        if (setAsCancelled()) {
+//            this.setDone(TASK_CANCELLED, null);//if exists result waiters,wakeup them
+//            pool.removeCancelledTask(this);//remove the cancelled task from pool
+//            return true;
+//        }
+//
+//        //2: interrupt task execution thread when it is in blocking state
+//        if (mayInterruptIfRunning && state.get() == TASK_EXECUTING && workThread != null) {
+//            Thread.State threadState = workThread.getState();
+//            if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
+//                workThread.interrupt();
+//        }
+//        return false;
+    }
+
+    //***************************************************************************************************************//
+    //                              4: join task result                                                              //                                                                                  //
     //***************************************************************************************************************//
     void setDone(int state, Object result) {
         //1: set result and state

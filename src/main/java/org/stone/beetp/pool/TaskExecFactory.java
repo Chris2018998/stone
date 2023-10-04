@@ -9,7 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 
@@ -47,12 +46,12 @@ class TaskExecFactory {
     //***************************************************************************************************************//
     //                                      2: interceptor methods(3)                                                //
     //***************************************************************************************************************//
+
     void beforeExecute(BaseHandle handle) {
         taskRunningCount.incrementAndGet();//need think of count exceeded?
     }
 
     void executeTask(BaseHandle handle) {
-        BeeTask task = handle.getTask();
         BeeTaskCallback callback = handle.getCallback();
         if (callback != null) {
             try {
@@ -63,7 +62,7 @@ class TaskExecFactory {
         }
 
         try {
-            handle.setDone(TASK_CALL_RESULT, task.call());
+            handle.setDone(TASK_CALL_RESULT, handle.getTask().call());
         } catch (Throwable e) {
             handle.setDone(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
         }
