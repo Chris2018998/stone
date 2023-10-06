@@ -53,5 +53,7 @@ public class ArraySumComputeTest extends TestCase {
         //7: check result
         if (sum != onceSum) TestUtil.assertError("Once expect:%s,actual value:%s", sum, onceSum);
         if (sum != joinSum) TestUtil.assertError("Join expect:%s,actual value:%s", sum, joinSum);
+
+        System.out.println("Success,Join Result[" + joinSum + "]is right!");
     }
 }
