@@ -28,11 +28,11 @@ public class MyTaskTest {
         config.setWorkerKeepAliveTime(TimeUnit.SECONDS.toMillis(10));
         BeeTaskService service = new BeeTaskService(config);
 
-        //submit a generic task(only once execution)
+        //submit a once task(only once execution)
         BeeTaskHandle handle = service.submit(new HelloTask());
         //submit a periodic task
         service.scheduleAtFixedRate(new TimeTask(), 0, 2, TimeUnit.SECONDS);
-        //print generic call result
+        //print once call result
         System.out.println("Result:" + handle.get());
     }
 }
