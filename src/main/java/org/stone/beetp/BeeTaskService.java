@@ -9,7 +9,6 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.TaskPoolConstants;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
@@ -335,9 +334,9 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         public void afterCall(int resultCode, Object resultObject, BeeTaskHandle handle) {
             boolean hasWakeup = false;
             try {
-                if (TaskPoolConstants.TASK_CALL_EXCEPTION == resultCode && resultObject instanceof TaskExecutionException)
+                if (BeeTaskStates.TASK_CALL_EXCEPTION == resultCode && resultObject instanceof TaskExecutionException)
                     this.failCause = (TaskExecutionException) resultObject;
-                else if (TaskPoolConstants.TASK_CALL_RESULT == resultCode) {
+                else if (BeeTaskStates.TASK_CALL_RESULT == resultCode) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);
                     hasWakeup = true;

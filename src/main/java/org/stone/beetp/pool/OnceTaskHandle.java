@@ -14,7 +14,7 @@ import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskException;
 
 /**
- * generic task handle impl
+ * once task handle impl
  *
  * @author Chris Liao
  * @version 1.0

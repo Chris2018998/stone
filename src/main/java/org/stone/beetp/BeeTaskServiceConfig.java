@@ -29,7 +29,7 @@ public class BeeTaskServiceConfig {
 
     //if not set,then generate with<code>BeeTaskServiceConfig.PoolNameIndex</code>
     private String poolName;
-    //max size of tasks in pool(generic count + scheduled count)
+    //max size of tasks in pool(once count + scheduled count)
     private int taskMaxSize = 100;
     //worker creation size on pool initialization
     private int initWorkerSize;

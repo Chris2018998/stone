@@ -18,10 +18,10 @@ import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.pool.TaskPoolConstants.*;
+import static org.stone.beetp.BeeTaskStates.*;
 
 /**
  * Task Handle
@@ -30,79 +30,82 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
  * @version 1.0
  */
 class BaseHandle implements BeeTaskHandle {
-    final AtomicInteger state;
+    private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = AtomicIntegerFieldUpdater.newUpdater(BaseHandle.class, "state");
+
     final TaskPoolImplement pool;
     final ConcurrentLinkedQueue<Thread> waitQueue;
 
     private final BeeTask task;
     private final boolean isRoot;
     private final BeeTaskCallback callback;
-    Object result;
+    protected Object result;
+
+    volatile int state;
     volatile Thread workThread;//set before execution by pool worker and reset to null after execution
 
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
     //***************************************************************************************************************//
-    BaseHandle(BeeTask task, BeeTaskCallback callback, TaskPoolImplement pool, boolean isRoot) {
+    BaseHandle(final BeeTask task, final BeeTaskCallback callback, final TaskPoolImplement pool, final boolean isRoot) {
         this.task = task;
         this.pool = pool;
         this.callback = callback;
-        this.state = new AtomicInteger(TASK_WAITING);
+        this.state = TASK_WAITING;
         this.isRoot = isRoot;//for join task
-        this.waitQueue = isRoot ? new ConcurrentLinkedQueue<>() : null;
+        this.waitQueue = isRoot ? new ConcurrentLinkedQueue<Thread>() : null;
     }
 
     //***************************************************************************************************************//
-    //                               2: task/factory(2)                                                              //
+    //                               2: task/factory(3)                                                              //
     //***************************************************************************************************************//
     BeeTask getTask() {
-        return task;
+        return this.task;
     }
 
     boolean isRoot() {
-        return isRoot;
+        return this.isRoot;
     }
 
     BeeTaskCallback getCallback() {
-        return callback;
+        return this.callback;
     }
 
     //***************************************************************************************************************//
     //                              3: state get methods(6)                                                          //
     //***************************************************************************************************************//
     public boolean isWaiting() {
-        return state.get() == TASK_WAITING;
+        return this.state == TASK_WAITING;
     }
 
     public boolean isExecuting() {
-        return state.get() == TASK_EXECUTING;
+        return this.state == TASK_EXECUTING;
     }
 
     public boolean isDone() {
-        return state.get() > TASK_EXECUTING;
+        return this.state > TASK_EXECUTING;
     }
 
     public boolean isCancelled() {
-        return state.get() == TASK_CANCELLED;
+        return this.state == TASK_CANCELLED;
     }
 
     public boolean isCallResult() {
-        return state.get() == TASK_CALL_RESULT;
+        return this.state == TASK_CALL_RESULT;
     }
 
     public boolean isCallException() {
-        return state.get() == TASK_CALL_EXCEPTION;
+        return this.state == TASK_CALL_EXCEPTION;
     }
 
     //***************************************************************************************************************//
     //                                  4: task state CAS(2)                                                         //
     //**************************************************e************************************************************//
     boolean setAsCancelled() {
-        return state.compareAndSet(TASK_WAITING, TASK_CANCELLED);
+        return StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED);
     }
 
     boolean setAsRunning() {//called by work thread
-        if (state.compareAndSet(TASK_WAITING, TASK_EXECUTING)) {
+        if (StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING)) {
             this.workThread = Thread.currentThread();
             return true;
         }
@@ -112,19 +115,19 @@ class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                                  5: task cancel(1)                                                            //
     //***************************************************************************************************************//
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public boolean cancel(final boolean mayInterruptIfRunning) {
         //1: update task state to be cancelled via cas
-        if (setAsCancelled()) {
-            this.setDone(TASK_CANCELLED, null);//if exists result waiters,wakeup them
-            pool.removeCancelledTask(this);//remove the cancelled task from pool
+        if (this.setAsCancelled()) {
+            this.setResult(TASK_CANCELLED, null);//if exists result waiters,wakeup them
+            this.pool.removeCancelledTask(this);//remove the cancelled task from pool
             return true;
         }
 
         //2: interrupt task execution thread when it is in blocking state
-        if (mayInterruptIfRunning && state.get() == TASK_EXECUTING && workThread != null) {
-            Thread.State threadState = workThread.getState();
+        if (mayInterruptIfRunning && this.state == TASK_EXECUTING && this.workThread != null) {
+            final Thread.State threadState = this.workThread.getState();
             if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
-                workThread.interrupt();
+                this.workThread.interrupt();
         }
         return false;
     }
@@ -133,35 +136,35 @@ class BaseHandle implements BeeTaskHandle {
     //                                 6: result getting methods(3)                                                  //
     //***************************************************************************************************************//
     public Object get() throws BeeTaskException, InterruptedException {
-        return get(0);
+        return this.get(0);
     }
 
-    public Object get(long timeout, TimeUnit unit) throws BeeTaskException, InterruptedException {
+    public Object get(final long timeout, final TimeUnit unit) throws BeeTaskException, InterruptedException {
         if (timeout < 0) throw new IllegalArgumentException("Time out value must be greater than zero");
         if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
-        return get(unit.toNanos(timeout));
+        return this.get(unit.toNanos(timeout));
     }
 
-    private Object get(long nanoseconds) throws BeeTaskException, InterruptedException {
-        int stateCode = state.get();
-        if (stateCode == TASK_CALL_RESULT) return result;
+    private Object get(final long nanoseconds) throws BeeTaskException, InterruptedException {
+        int stateCode = this.state;
+        if (stateCode == TASK_CALL_RESULT) return this.result;
         this.checkFailureState(stateCode);
 
-        Thread currentThread = Thread.currentThread();
-        waitQueue.offer(currentThread);
-        boolean timed = nanoseconds > 0;
-        long deadline = timed ? System.nanoTime() + nanoseconds : 0;
+        final Thread currentThread = Thread.currentThread();
+        this.waitQueue.offer(currentThread);
+        final boolean timed = nanoseconds > 0;
+        final long deadline = timed ? System.nanoTime() + nanoseconds : 0;
 
         try {
             do {
                 //read task result,if done,then return
-                stateCode = state.get();
-                if (stateCode == TASK_CALL_RESULT) return result;
+                stateCode = this.state;
+                if (stateCode == TASK_CALL_RESULT) return this.result;
                 this.checkFailureState(stateCode);
 
                 //if not done,then waiting until done, timeout,or interrupted
                 if (timed) {
-                    long parkTime = deadline - System.nanoTime();
+                    final long parkTime = deadline - System.nanoTime();
                     if (parkTime > 0)
                         LockSupport.parkNanos(parkTime);
                     else
@@ -174,36 +177,35 @@ class BaseHandle implements BeeTaskHandle {
                 if (Thread.interrupted()) throw new InterruptedException();
             } while (true);
         } finally {
-            waitQueue.remove(currentThread);
+            this.waitQueue.remove(currentThread);
         }
     }
 
-    private void checkFailureState(int state) throws BeeTaskException {
-        if (state == TASK_CALL_EXCEPTION) throw (BeeTaskException) result;
+    private void checkFailureState(final int state) throws BeeTaskException {
+        if (state == TASK_CALL_EXCEPTION) throw (BeeTaskException) this.result;
         if (state == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
     }
 
     //***************************************************************************************************************//
     //                              7: task done methods(2)                                                          //
     //***************************************************************************************************************//
-    void setDone(int state, Object result) {
+    void setResult(final int state, final Object result) {
         this.result = result;
-        this.state.set(state);
-        if (waitQueue != null) this.wakeupWaitersInGetting();
+        this.state = state;
+        this.workThread = null;
+        if (this.waitQueue != null) this.wakeupWaitersInGetting();
 
         if (this.callback != null) {
             try {
-                callback.afterCall(state, result, this);
-            } catch (Throwable e) {
+                this.callback.afterCall(state, result, this);
+            } catch (final Throwable e) {
                 //do nothing
             }
         }
     }
 
     void wakeupWaitersInGetting() {
-        for (Thread thread : waitQueue)
+        for (final Thread thread : this.waitQueue)
             LockSupport.unpark(thread);
-
-        this.workThread = null;
     }
 }

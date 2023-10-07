@@ -14,7 +14,7 @@ import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskException;
 import org.stone.beetp.BeeTaskScheduledHandle;
 
-import static org.stone.beetp.pool.TaskPoolConstants.*;
+import static org.stone.beetp.BeeTaskStates.*;
 
 /**
  * Scheduled task handle Impl
@@ -78,11 +78,11 @@ final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHa
     //true:re-offer to array after this method call
     void prepareForNextCall() {
         if (isPeriodic()) {
-            this.prevState = this.state.get();
+            this.prevState = this.state;
             this.prevResult = this.result;
             this.prevTime = this.nextRunTime;
             this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
-            this.state.set(TASK_WAITING);//reset to waiting state for next call
+            this.state = TASK_WAITING;//reset to waiting state for next call
         }
     }
 }

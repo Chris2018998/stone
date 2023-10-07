@@ -21,7 +21,7 @@ final class ScheduledExecFactory extends TaskExecFactory {
 
     ScheduledExecFactory(TaskPoolImplement pool) {
         super(pool);
-        scheduledQueue = pool.getScheduledQueue();
+        scheduledQueue = pool.getScheduledDelayedQueue();
     }
 
     void afterExecute(BaseHandle handle) {

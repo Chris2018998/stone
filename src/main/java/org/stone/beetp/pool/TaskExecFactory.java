@@ -14,8 +14,8 @@ import org.stone.beetp.pool.exception.TaskExecutionException;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_EXCEPTION;
-import static org.stone.beetp.pool.TaskPoolConstants.TASK_CALL_RESULT;
+import static org.stone.beetp.BeeTaskStates.TASK_CALL_EXCEPTION;
+import static org.stone.beetp.BeeTaskStates.TASK_CALL_RESULT;
 
 /**
  * Task Execute Factory
@@ -62,9 +62,9 @@ class TaskExecFactory {
         }
 
         try {
-            handle.setDone(TASK_CALL_RESULT, handle.getTask().call());
+            handle.setResult(TASK_CALL_RESULT, handle.getTask().call());
         } catch (Throwable e) {
-            handle.setDone(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
+            handle.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
         }
     }
 

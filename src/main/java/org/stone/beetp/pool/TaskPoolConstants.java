@@ -15,19 +15,14 @@ package org.stone.beetp.pool;
  * @author Chris Liao
  * @version 1.0
  */
-public class TaskPoolConstants {
-    public static final int TASK_CALL_RESULT = 3;
-    public static final int TASK_CALL_EXCEPTION = 4;
-    //task state
-    static final int TASK_WAITING = 0;//wait to be executing
-    static final int TASK_EXECUTING = 1;//executing by a work thread
-    static final int TASK_CANCELLED = 2;
-
+class TaskPoolConstants {
     //pool state
-    static final int POOL_RUNNING = 0;
-    static final int POOL_CLEARING = 1;
-    static final int POOL_TERMINATING = 2;
-    static final int POOL_TERMINATED = 3;
+    static final int POOL_NEW = 0;
+    static final int POOL_RUNNING = 1;
+    static final int POOL_CLEARING = 2;
+    static final int POOL_TERMINATING = 3;
+    static final int POOL_TERMINATED = 4;
+
     //worker state
     static final Object WORKER_IDLE = new Object();
     static final Object WORKER_WORKING = new Object();

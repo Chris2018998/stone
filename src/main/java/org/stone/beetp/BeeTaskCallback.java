@@ -19,5 +19,5 @@ public interface BeeTaskCallback {
 
     void beforeCall(BeeTaskHandle handle);
 
-    void afterCall(int resultCode, Object resultObject, BeeTaskHandle handle);
+    void afterCall(int code, Object result, BeeTaskHandle handle);
 }
