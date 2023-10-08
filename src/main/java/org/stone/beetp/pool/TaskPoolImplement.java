@@ -134,10 +134,14 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                       2:  task submission(3)                                                  //
+    //                                       2:  task submission(4)                                                  //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
         return submit(task, (BeeTaskCallback) null);
+    }
+
+    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException {
+        return submit(task, operator, null);
     }
 
     public BeeTaskHandle submit(BeeTask task, BeeTaskCallback callback) throws BeeTaskException {
@@ -154,7 +158,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
         return handle;
     }
 
-    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException {
+    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator, BeeTaskCallback callback) throws BeeTaskException {
         //1: check task
         if (task == null) throw new BeeTaskException("Task can't be null");
         if (operator == null) throw new BeeTaskException("Task join operator can't be null");
@@ -162,7 +166,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
         this.checkPool();
 
         //3: crete join task handle(root)
-        BaseHandle handle = new JoinTaskHandle(task, operator, this);
+        BaseHandle handle = new JoinTaskHandle(task, operator, callback, this);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle);
         //5: return handle

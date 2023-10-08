@@ -10,6 +10,7 @@
 package org.stone.beetp.pool;
 
 import org.stone.beetp.BeeTask;
+import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskJoinOperator;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 
@@ -43,8 +44,8 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
     //constructor for root task
-    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
-        super(task, null, pool, true);
+    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, final BeeTaskCallback callback, TaskPoolImplement pool) {
+        super(task, callback, pool, true);
         this.operator = operator;
         this.exceptionInd = new AtomicBoolean();
     }
@@ -142,5 +143,14 @@ final class JoinTaskHandle extends BaseHandle {
 
         //3: wakeup waiters on root task
         if (waitQueue != null) this.wakeupWaitersInGetting();
+
+        //4: execute callback for root task
+        if (this.isRoot() && this.callback != null) {
+            try {
+                this.callback.afterCall(state, result, this);
+            } catch (final Throwable e) {
+                //do nothing
+            }
+        }
     }
 }

@@ -31,13 +31,11 @@ import static org.stone.beetp.BeeTaskStates.*;
  */
 class BaseHandle implements BeeTaskHandle {
     private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = AtomicIntegerFieldUpdater.newUpdater(BaseHandle.class, "state");
-
+    protected final BeeTaskCallback callback;
     final TaskPoolImplement pool;
     final ConcurrentLinkedQueue<Thread> waitQueue;
-
     private final BeeTask task;
     private final boolean isRoot;
-    private final BeeTaskCallback callback;
     protected Object result;
 
     volatile int state;

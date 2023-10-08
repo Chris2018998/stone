@@ -34,6 +34,8 @@ public interface BeeTaskPool {
 
     BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator) throws BeeTaskException;
 
+    BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator, BeeTaskCallback callback) throws BeeTaskException;
+
     //***************************************************************************************************************//
     //                3: scheduled task(6)                                                                           //
     //***************************************************************************************************************//

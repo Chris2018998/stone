@@ -63,7 +63,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        2: task submit methods(2)                                              //
+    //                                        2: task submit methods(4)                                              //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.submit(task);
@@ -75,16 +75,18 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         return createPoolByLock().submit(task, callback);
     }
 
-    //***************************************************************************************************************//
-    //                                  3: join task                                                                  //
-    //***************************************************************************************************************//
-    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator operator) throws BeeTaskException, BeeTaskPoolException {
-        if (this.ready) return pool.submit(task, operator);
-        return createPoolByLock().submit(task, operator);
+    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.submit(task, joinOperator);
+        return createPoolByLock().submit(task, joinOperator);
+    }
+
+    public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.submit(task, joinOperator, callback);
+        return createPoolByLock().submit(task, joinOperator, callback);
     }
 
     //***************************************************************************************************************//
-    //                                   4: task schedule(6)                                                          //
+    //                                   3: task schedule(6)                                                          //
     //***************************************************************************************************************//
     public BeeTaskScheduledHandle schedule(BeeTask task, long delay, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit);
