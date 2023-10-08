@@ -11,10 +11,13 @@ package org.stone.beetp.pool;
 
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskJoinOperator;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.stone.beetp.BeeTaskStates.TASK_CALL_EXCEPTION;
 import static org.stone.beetp.BeeTaskStates.TASK_CALL_RESULT;
 
 /**
@@ -24,16 +27,18 @@ import static org.stone.beetp.BeeTaskStates.TASK_CALL_RESULT;
  * @version 1.0
  */
 final class JoinTaskHandle extends BaseHandle {
-    //1: fields of a parent task
+    //1: field of root
+    private AtomicBoolean exceptionInd;
+    //2: field of parent
     private List<JoinTaskHandle> childrenList;
 
-    //fields for child task
+    //3: fields of child task
+    private int brotherSize;
+    private JoinTaskHandle root;
     private JoinTaskHandle parent;
-    private int splitSizeByParent;
     private AtomicInteger completedCount;//the complete count of sub tasks.
     private BeeTaskJoinOperator operator;
 
-    // split
     //***************************************************************************************************************//
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
@@ -41,20 +46,26 @@ final class JoinTaskHandle extends BaseHandle {
     JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
         super(task, null, pool, true);
         this.operator = operator;
+        this.exceptionInd = new AtomicBoolean();
     }
 
     //constructor for children task
-    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int splitSizeFromParent, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskPoolImplement pool) {
+    JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int brotherSize, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskPoolImplement pool, JoinTaskHandle root) {
         super(task, null, pool, false);
+        this.root = root;
         this.parent = parent;
         this.operator = operator;
-        this.splitSizeByParent = splitSizeFromParent;
+        this.brotherSize = brotherSize;
         this.completedCount = completedCount;
     }
 
     //***************************************************************************************************************//
     //                                  2: other(3)                                                                  //                                                                                  //
     //***************************************************************************************************************//
+    JoinTaskHandle getRoot() {
+        return root;
+    }
+
     BeeTaskJoinOperator getJoinOperator() {
         return operator;
     }
@@ -98,21 +109,35 @@ final class JoinTaskHandle extends BaseHandle {
         this.workThread = null;
 
         //2: incr completed count
-        if (splitSizeByParent > 0) {
-            do {
-                int currentSize = completedCount.get();
-                if (currentSize == splitSizeByParent) break;
-                if (completedCount.compareAndSet(currentSize, currentSize + 1)) {
-                    if (currentSize + 1 == splitSizeByParent) {
-                        parent.setResult(TASK_CALL_RESULT, operator.join(parent.childrenList));//join children
-                        if (parent.isRoot()) {
-                            pool.getTaskRunningCount().decrementAndGet();
-                            pool.getTaskCompletedCount().incrementAndGet();
+        if (brotherSize > 0) {
+            if (state == TASK_CALL_EXCEPTION) {
+                if (root.exceptionInd.compareAndSet(false, true)) {
+                    root.setResult(state, result);
+                    root.cancel(true);
+                }
+            } else {
+                do {
+                    int currentSize = completedCount.get();
+                    if (currentSize == brotherSize) break;
+                    if (completedCount.compareAndSet(currentSize, currentSize + 1)) {
+                        if (currentSize + 1 == brotherSize) {
+                            try {
+                                parent.setResult(TASK_CALL_RESULT, operator.join(parent.childrenList));//join children
+                            } catch (Throwable e) {
+                                if (root.exceptionInd.compareAndSet(false, true)) {
+                                    root.setResult(state, new TaskExecutionException(e));
+                                    root.cancel(true);
+                                }
+                            }
+                            if (parent.isRoot()) {
+                                pool.getTaskRunningCount().decrementAndGet();
+                                pool.getTaskCompletedCount().incrementAndGet();
+                            }
+                            break;
                         }
                     }
-                    break;
-                }
-            } while (true);
+                } while (true);
+            }
         }
 
         //3: wakeup waiters on root task

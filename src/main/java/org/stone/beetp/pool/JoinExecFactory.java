@@ -39,11 +39,13 @@ final class JoinExecFactory extends TaskExecFactory {
 
         //3: create sub children and push them to queue
         if (childTasks != null && !childTasks.isEmpty()) {
-            int targetSize = childTasks.size();
+            int childrenSize = childTasks.size();
+            JoinTaskHandle root = joinHandle.getRoot();
+            if (root == null) root = joinHandle;
             AtomicInteger completedCount = new AtomicInteger();
-            ArrayList<JoinTaskHandle> childList = new ArrayList<>(targetSize);
+            ArrayList<JoinTaskHandle> childList = new ArrayList<>(childrenSize);
             for (BeeTask childTask : childTasks) {
-                JoinTaskHandle childHandle = new JoinTaskHandle(childTask, joinHandle, targetSize, completedCount, joinOperator, pool);
+                JoinTaskHandle childHandle = new JoinTaskHandle(childTask, joinHandle, childrenSize, completedCount, joinOperator, pool, root);
                 pool.pushToExecutionQueue(childHandle);
                 childList.add(childHandle);
             }
