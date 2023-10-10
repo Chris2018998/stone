@@ -134,7 +134,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                       2:  task submission(4)                                                  //
+    //                                       2:  task submission(6)                                                  //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException {
         return submit(task, (BeeTaskCallback) null);
@@ -171,6 +171,16 @@ public final class TaskPoolImplement implements BeeTaskPool {
         this.pushToExecutionQueue(handle);
         //5: return handle
         return handle;
+    }
+
+    public BeeTaskHandle submit(BeeTreeTask task) throws BeeTaskException {
+        //@todo
+        return null;
+    }
+
+    public BeeTaskHandle submit(BeeTreeTask task, BeeTaskCallback callback) throws BeeTaskException {
+        //@todo
+        return null;
     }
 
     //***************************************************************************************************************//

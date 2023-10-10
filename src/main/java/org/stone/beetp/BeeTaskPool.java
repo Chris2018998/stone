@@ -26,7 +26,7 @@ public interface BeeTaskPool {
     void init(BeeTaskServiceConfig config) throws BeeTaskPoolException, BeeTaskServiceConfigException;
 
     //***************************************************************************************************************//
-    //                2: task submit(3)                                                                              //
+    //                2: task submit(6)                                                                              //
     //***************************************************************************************************************//
     BeeTaskHandle submit(BeeTask task) throws BeeTaskException;
 
@@ -35,6 +35,10 @@ public interface BeeTaskPool {
     BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator) throws BeeTaskException;
 
     BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator, BeeTaskCallback callback) throws BeeTaskException;
+
+    BeeTaskHandle submit(BeeTreeTask task) throws BeeTaskException;
+
+    BeeTaskHandle submit(BeeTreeTask task, BeeTaskCallback callback) throws BeeTaskException;
 
     //***************************************************************************************************************//
     //                3: scheduled task(6)                                                                           //

@@ -63,7 +63,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        2: task submit methods(4)                                              //
+    //                                        2: task submit methods(6)                                              //
     //***************************************************************************************************************//
     public BeeTaskHandle submit(BeeTask task) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.submit(task);
@@ -83,6 +83,16 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     public BeeTaskHandle submit(BeeTask task, BeeTaskJoinOperator joinOperator, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
         if (this.ready) return pool.submit(task, joinOperator, callback);
         return createPoolByLock().submit(task, joinOperator, callback);
+    }
+
+    public BeeTaskHandle submit(BeeTreeTask task) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.submit(task);
+        return createPoolByLock().submit(task);
+    }
+
+    public BeeTaskHandle submit(BeeTreeTask task, BeeTaskCallback callback) throws BeeTaskException, BeeTaskPoolException {
+        if (this.ready) return pool.submit(task, callback);
+        return createPoolByLock().submit(task, callback);
     }
 
     //***************************************************************************************************************//
