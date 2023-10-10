@@ -10,6 +10,8 @@
  */
 package org.stone.beetp;
 
+important java.util.List;
+
 /**
  *Tree Task interface
  *
@@ -19,4 +21,6 @@ package org.stone.beetp;
 public interface BeeTreeTask<T> {
 
     T call(Object p) throws Exception;
+
+    List<BeeTreeTask<T>> childrenTask();
 }
