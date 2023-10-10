@@ -20,6 +20,13 @@ import java.util.List;
  */
 public interface BeeTreeTask<T> {
 
+    /**
+     * execute call
+     *
+     * @param p joined value by children task by pool
+     * @return call result
+     * @throws Exception when failed at call
+     */
     T call(Object p) throws Exception;
 
     List<BeeTreeTask<T>> childrenTask();
