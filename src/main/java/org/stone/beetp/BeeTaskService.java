@@ -62,6 +62,14 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
         service.ready = true;
     }
 
+    private static int checkParameters(Collection<? extends BeeTask> tasks, long timeout, TimeUnit unit) {
+        if (tasks == null) throw new NullPointerException();
+        if (unit == null) throw new NullPointerException();
+        int totalSize = tasks.size();
+        if (totalSize == 0) throw new IllegalArgumentException();
+        return totalSize;
+    }
+
     //***************************************************************************************************************//
     //                                        2: task submit methods(6)                                              //
     //***************************************************************************************************************//
@@ -206,14 +214,11 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     public BeeTaskHandle invokeAny(Collection<? extends BeeTask> tasks, long timeout, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException, InterruptedException {
-        //1:parameters check
-        if (tasks == null) throw new NullPointerException();
-        int taskSize = tasks.size();
-        if (taskSize == 0) throw new IllegalArgumentException();
-        if (unit == null) throw new NullPointerException();
-
-        //2:try to create pool if not ready
+        ///1: check parameters
+        int taskSize = checkParameters(tasks, timeout, unit);
+        //2: try to create pool if not ready
         if (!this.ready) pool = createPoolByLock();
+
 
         //3:task submission preparation
         BeeTaskHandle completedHandle;//contains a result
@@ -270,18 +275,14 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
     }
 
     public List<BeeTaskHandle> invokeAll(Collection<? extends BeeTask> tasks, long timeout, TimeUnit unit) throws BeeTaskException, BeeTaskPoolException, InterruptedException {
-        //1: parameters check
-        if (tasks == null) throw new NullPointerException();
-        int totalSize = tasks.size();
-        if (totalSize == 0) throw new IllegalArgumentException();
-        if (unit == null) throw new NullPointerException();
-
+        ///1: check parameters
+        int taskSize = checkParameters(tasks, timeout, unit);
         //2: try to create pool if not ready
         if (!this.ready) pool = createPoolByLock();
 
         //3:task submission preparation
-        AllCallback callback = new AllCallback(totalSize);
-        List<BeeTaskHandle> handleList = new ArrayList<>(totalSize);//submitted list
+        AllCallback callback = new AllCallback(taskSize);
+        List<BeeTaskHandle> handleList = new ArrayList<>(taskSize);//submitted list
         boolean timed = timeout > 0;
         long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0;
         boolean allDone = false;
@@ -296,7 +297,7 @@ public final class BeeTaskService extends BeeTaskServiceConfig {
             //5: spin for all tasks done
             do {
                 //5.1:if completed count equals task size,then exit spin
-                if (callback.doneCount.get() == totalSize) {
+                if (callback.doneCount.get() == taskSize) {
                     allDone = true;
                     break;
                 }

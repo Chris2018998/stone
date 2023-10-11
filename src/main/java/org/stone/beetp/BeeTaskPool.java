@@ -9,7 +9,6 @@
  */
 package org.stone.beetp;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -72,7 +71,7 @@ public interface BeeTaskPool {
     boolean isTerminating();
 
     //return uncompleted tasks in queue
-    List<BeeTask> terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
+    PoolCancelledTasks terminate(boolean mayInterruptIfRunning) throws BeeTaskPoolException;
 
     //true:pool has been terminated
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
