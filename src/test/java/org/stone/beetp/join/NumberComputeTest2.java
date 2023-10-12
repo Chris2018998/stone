@@ -13,8 +13,6 @@ import org.stone.beetp.BeeTaskHandle;
 import org.stone.beetp.BeeTaskService;
 import org.stone.beetp.BeeTaskServiceConfig;
 
-import java.util.List;
-
 /**
  * number not join test
  *
@@ -43,11 +41,11 @@ public class NumberComputeTest2 extends TestCase {
         BeeTaskService service = new BeeTaskService(config);
 
         BeeTaskHandle<Integer> handle = service.submit(task, new ArraySumJoinOperator() {
-            public List<BeeTask<Integer>> split(BeeTask task) {
+            public BeeTask<Integer>[] split(BeeTask task) {
                 return null;
             }
 
-            public Integer join(List<BeeTaskHandle<Integer>> children) {
+            public Integer join(BeeTaskHandle<Integer>[] subTaskHandles) {
                 return 0;
             }
         });

@@ -10,9 +10,6 @@ import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskHandle;
 import org.stone.beetp.BeeTaskJoinOperator;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Join Operator Implement
  *
@@ -22,7 +19,7 @@ import java.util.List;
 public class ArraySumJoinOperator implements BeeTaskJoinOperator<Integer> {
 
     //if the length of array is greater than 10,split it to two parts and create two sub tasks based on them
-    public List<BeeTask<Integer>> split(BeeTask task) {
+    public BeeTask<Integer>[] split(BeeTask task) {
         int[] array = ((ArraySumComputeTask) task).getArray();
         int arrayLen = array.length;
 
@@ -39,20 +36,19 @@ public class ArraySumJoinOperator implements BeeTaskJoinOperator<Integer> {
             for (int i = 0; i < len2; i++)
                 array2[i] = array[i + len1];
 
-            //3: create two sub tasks and add them to a list
-            List<BeeTask<Integer>> subTaskList = new ArrayList<>(2);
-            subTaskList.add(new ArraySumComputeTask(array1));
-            subTaskList.add(new ArraySumComputeTask(array2));
-
             //4: return sub task list(bound to parent task)
-            return subTaskList;
+            BeeTask<Integer>[] subTaskArray = new BeeTask[2];
+            subTaskArray[0] = new ArraySumComputeTask(array1);
+            subTaskArray[1] = new ArraySumComputeTask(array2);
+            return subTaskArray;
         }
 
         return null;//return null,the parameter task will be executed in pool
     }
 
     //sum the computed value from children tasks
-    public Integer join(List<BeeTaskHandle<Integer>> children) {
+    //sum the computed value from children tasks
+    public Integer join(BeeTaskHandle<Integer>[] children) {
         int sum = 0;
         for (BeeTaskHandle<Integer> handle : children) {
             try {
