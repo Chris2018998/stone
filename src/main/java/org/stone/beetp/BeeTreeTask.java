@@ -10,17 +10,25 @@
  */
 package org.stone.beetp;
 
-import java.util.List;
-
 /**
  * Tree Task interface
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTreeTask<T> {
+public interface BeeTreeTask<E> {
 
-    List<BeeTreeTask<T>> childrenList();
+    /**
+     * @return sub tasks of current task
+     */
+    BeeTreeTask<E>[] getSubTasks();
 
-    T call(List<T> resultList) throws Exception;
+    /**
+     * execute call with handle array of sub tasks
+     *
+     * @param subTaskHandles handle array of sub tasks
+     * @return execution value of method call
+     * @throws Exception occurred in execution
+     */
+    E call(BeeTaskHandle<E>[] subTaskHandles) throws Exception;
 }

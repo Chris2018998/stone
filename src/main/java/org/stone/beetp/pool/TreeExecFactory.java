@@ -14,8 +14,6 @@ import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTreeTask;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.stone.beetp.BeeTaskStates.TASK_CALL_EXCEPTION;
@@ -38,21 +36,20 @@ final class TreeExecFactory extends BaseExecFactory {
 
         //1: try to split task to children tasks
         BeeTreeTask treeTask = handle.getTask();
-        List<BeeTreeTask> childTasks = treeTask.childrenList();
+        BeeTreeTask[] subTasks = treeTask.getSubTasks();
 
         //3: create sub children and push them to queue
-        if (childTasks != null && !childTasks.isEmpty()) {
-            int childrenSize = childTasks.size();
-            TreeTaskHandle root = handle.getRoot();
-            if (root == null) root = handle;
+        if (subTasks != null && subTasks.length > 0) {
+            int subSize = subTasks.length;
             AtomicInteger completedCount = new AtomicInteger();
-            ArrayList<TreeTaskHandle> childList = new ArrayList<>(childrenSize);
-            for (BeeTreeTask childTask : childTasks) {
-                TreeTaskHandle childHandle = new TreeTaskHandle(childTask, handle, childrenSize, completedCount, pool, root);
-                pool.pushToExecutionQueue(childHandle);
-                childList.add(childHandle);
+            TreeTaskHandle[] subTaskHandles = new TreeTaskHandle[subSize];
+            TreeTaskHandle root = handle.isRoot() ? handle : handle.getRoot();
+            handle.setSubTaskHandles(subTaskHandles);
+
+            for (int i = 0; i < subSize; i++) {
+                subTaskHandles[i] = new TreeTaskHandle(subTasks[i], handle, subSize, completedCount, pool, root);
+                pool.pushToExecutionQueue(subTaskHandles[i]);
             }
-            handle.setChildrenList(childList);
         } else {//execute leafed task
             BeeTaskCallback callback = handle.getCallback();
             if (callback != null) {

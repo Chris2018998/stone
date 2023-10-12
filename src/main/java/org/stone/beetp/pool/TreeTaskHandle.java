@@ -13,8 +13,6 @@ import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTreeTask;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +29,7 @@ final class TreeTaskHandle extends BaseTaskHandle {
     //1: field of root
     private AtomicBoolean exceptionInd;
     //2: field of parent
-    private List<TreeTaskHandle> childrenList;
+    private TreeTaskHandle[] subTaskHandles;
 
     //3: fields of child task
     private int brotherSize;
@@ -71,8 +69,8 @@ final class TreeTaskHandle extends BaseTaskHandle {
         return root;
     }
 
-    void setChildrenList(List<TreeTaskHandle> childrenList) {
-        this.childrenList = childrenList;
+    void setSubTaskHandles(TreeTaskHandle[] subTaskHandles) {
+        this.subTaskHandles = subTaskHandles;
     }
 
     //***************************************************************************************************************//
@@ -81,22 +79,22 @@ final class TreeTaskHandle extends BaseTaskHandle {
     public boolean cancel(final boolean mayInterruptIfRunning) {
         boolean cancelled = super.cancel(mayInterruptIfRunning);
 
-        if (childrenList != null) {
+        if (subTaskHandles != null) {
             if (this.isRoot()) {
                 new Thread() {//async to cancel children
                     public void run() {
-                        cancelChildrenTasks(childrenList, mayInterruptIfRunning);
+                        cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
                     }
                 }.start();
             } else {
-                cancelChildrenTasks(childrenList, mayInterruptIfRunning);
+                cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
             }
         }
         return cancelled;
     }
 
-    private void cancelChildrenTasks(List<TreeTaskHandle> childrenList, boolean mayInterruptIfRunning) {
-        for (TreeTaskHandle childHandle : childrenList)
+    private void cancelChildrenTasks(TreeTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
+        for (TreeTaskHandle childHandle : subTaskHandles)
             childHandle.cancel(mayInterruptIfRunning);
     }
 
@@ -117,22 +115,21 @@ final class TreeTaskHandle extends BaseTaskHandle {
                     if (completedCount.compareAndSet(currentSize, currentSize + 1)) {
                         if (currentSize + 1 == brotherSize) {
                             try {
-                                List<Object> childResultList = new ArrayList<>(brotherSize);
-                                for (TreeTaskHandle handle : parent.childrenList)
-                                    childResultList.add(handle.getResult());
-                                parent.setResult(TASK_CALL_RESULT, parent.getTask().call(childResultList));//join children
+                                parent.setResult(TASK_CALL_RESULT, parent.getTask().call(parent.subTaskHandles));//join children
                             } catch (Throwable e) {
                                 if (root.exceptionInd.compareAndSet(false, true)) {
                                     root.setResult(state, new TaskExecutionException(e));
                                     root.cancel(true);
                                 }
                             }
+
                             if (parent.isRoot()) {
                                 getPool().getTaskRunningCount().decrementAndGet();
                                 getPool().getTaskCompletedCount().incrementAndGet();
                             }
-                            break;
                         }
+
+                        break;
                     }
                 } while (true);
             }

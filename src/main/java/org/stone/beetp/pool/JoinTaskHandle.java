@@ -14,7 +14,6 @@ import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskJoinOperator;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -31,7 +30,7 @@ final class JoinTaskHandle extends PlainTaskHandle {
     //1: field of root
     private AtomicBoolean exceptionInd;
     //2: field of parent
-    private List<JoinTaskHandle> childrenList;
+    private JoinTaskHandle[] subTaskHandles;
 
     //3: fields of child task
     private int brotherSize;
@@ -71,8 +70,8 @@ final class JoinTaskHandle extends PlainTaskHandle {
         return operator;
     }
 
-    void setChildrenList(List<JoinTaskHandle> childrenList) {
-        this.childrenList = childrenList;
+    void setSubTaskHandles(JoinTaskHandle[] subTaskHandles) {
+        this.subTaskHandles = subTaskHandles;
     }
 
     //***************************************************************************************************************//
@@ -80,22 +79,23 @@ final class JoinTaskHandle extends PlainTaskHandle {
     //***************************************************************************************************************//
     public boolean cancel(final boolean mayInterruptIfRunning) {
         boolean cancelled = super.cancel(mayInterruptIfRunning);
-        if (childrenList != null) {
+
+        if (subTaskHandles != null) {
             if (this.isRoot()) {
                 new Thread() {//async to cancel children
                     public void run() {
-                        cancelChildrenTasks(childrenList, mayInterruptIfRunning);
+                        cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
                     }
                 }.start();
             } else {
-                cancelChildrenTasks(childrenList, mayInterruptIfRunning);
+                cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
             }
         }
         return cancelled;
     }
 
-    private void cancelChildrenTasks(List<JoinTaskHandle> childrenList, boolean mayInterruptIfRunning) {
-        for (JoinTaskHandle childHandle : childrenList)
+    private void cancelChildrenTasks(JoinTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
+        for (JoinTaskHandle childHandle : subTaskHandles)
             childHandle.cancel(mayInterruptIfRunning);
     }
 
@@ -115,7 +115,7 @@ final class JoinTaskHandle extends PlainTaskHandle {
                     if (completedCount.compareAndSet(currentSize, currentSize + 1)) {
                         if (currentSize + 1 == brotherSize) {
                             try {
-                                parent.setResult(TASK_CALL_RESULT, operator.join(parent.childrenList));//join children
+                                parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles));//join children
                             } catch (Throwable e) {
                                 if (root.exceptionInd.compareAndSet(false, true)) {
                                     root.setResult(state, new TaskExecutionException(e));
@@ -126,8 +126,9 @@ final class JoinTaskHandle extends PlainTaskHandle {
                                 getPool().getTaskRunningCount().decrementAndGet();
                                 getPool().getTaskCompletedCount().incrementAndGet();
                             }
-                            break;
                         }
+
+                        break;
                     }
                 } while (true);
             }

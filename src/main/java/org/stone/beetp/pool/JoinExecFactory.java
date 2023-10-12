@@ -13,8 +13,6 @@ package org.stone.beetp.pool;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskJoinOperator;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -35,21 +33,20 @@ final class JoinExecFactory extends PlainExecFactory {
 
         //2: try to split task to children tasks
         BeeTaskJoinOperator joinOperator = joinHandle.getJoinOperator();
-        List<BeeTask> childTasks = joinOperator.split(joinHandle.getTask());
+        BeeTask[] subTasks = joinOperator.split(joinHandle.getTask());
 
         //3: create sub children and push them to queue
-        if (childTasks != null && !childTasks.isEmpty()) {
-            int childrenSize = childTasks.size();
-            JoinTaskHandle root = joinHandle.getRoot();
-            if (root == null) root = joinHandle;
+        if (subTasks != null && subTasks.length > 0) {
+            int subSize = subTasks.length;
             AtomicInteger completedCount = new AtomicInteger();
-            ArrayList<JoinTaskHandle> childList = new ArrayList<>(childrenSize);
-            for (BeeTask childTask : childTasks) {
-                JoinTaskHandle childHandle = new JoinTaskHandle(childTask, joinHandle, childrenSize, completedCount, joinOperator, pool, root);
-                pool.pushToExecutionQueue(childHandle);
-                childList.add(childHandle);
+            JoinTaskHandle[] subJoinHandles = new JoinTaskHandle[subSize];
+            JoinTaskHandle root = joinHandle.isRoot() ? joinHandle : joinHandle.getRoot();
+            joinHandle.setSubTaskHandles(subJoinHandles);
+
+            for (int i = 0; i < subSize; i++) {
+                subJoinHandles[i] = new JoinTaskHandle(subTasks[i], joinHandle, subSize, completedCount, joinOperator, pool, root);
+                pool.pushToExecutionQueue(subJoinHandles[i]);
             }
-            joinHandle.setChildrenList(childList);
         } else {//execute leafed task
             executeTask(handle);
         }

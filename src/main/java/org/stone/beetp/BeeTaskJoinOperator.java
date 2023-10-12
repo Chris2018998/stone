@@ -9,8 +9,6 @@
  */
 package org.stone.beetp;
 
-import java.util.List;
-
 /**
  * Join Task operator
  *
@@ -19,7 +17,19 @@ import java.util.List;
  */
 public interface BeeTaskJoinOperator<E> {
 
-    List<BeeTask<E>> split(BeeTask<E> task);
+    /**
+     * try to split task into sub tasks
+     *
+     * @param task target task
+     * @return array of sub tasks,return null when target task is at leaf
+     */
+    BeeTask<E>[] split(BeeTask<E> task);
 
-    E join(List<BeeTaskHandle<E>> children);
+    /**
+     * joins result array of sub tasks to a valued object
+     *
+     * @param subTaskHandles result array of sub tasks
+     * @return joined result
+     */
+    E join(BeeTaskHandle<E>[] subTaskHandles);
 }
