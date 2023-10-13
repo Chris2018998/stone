@@ -128,8 +128,10 @@ class BaseTaskHandle implements BeeTaskHandle {
             if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
                 this.workThread.interrupt();
         }
+
         return false;
     }
+
 
     //***************************************************************************************************************//
     //                                 6: result getting methods(3)                                                  //
@@ -214,6 +216,5 @@ class BaseTaskHandle implements BeeTaskHandle {
     }
 
     void afterSetResult(final int state, final Object result) {
-
     }
 }

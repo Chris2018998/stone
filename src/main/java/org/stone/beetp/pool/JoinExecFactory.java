@@ -47,7 +47,7 @@ final class JoinExecFactory extends PlainExecFactory {
                 subJoinHandles[i] = new JoinTaskHandle(subTasks[i], joinHandle, subSize, completedCount, joinOperator, pool, root);
                 pool.pushToExecutionQueue(subJoinHandles[i]);
             }
-        } else {//execute leafed task
+        } else {//execute leaf task
             executeTask(handle);
         }
     }

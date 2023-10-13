@@ -84,24 +84,20 @@ final class JoinTaskHandle extends PlainTaskHandle {
             if (this.isRoot()) {
                 new Thread() {//async to cancel children
                     public void run() {
-                        cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
+                        for (JoinTaskHandle childHandle : subTaskHandles)
+                            childHandle.cancel(mayInterruptIfRunning);
                     }
                 }.start();
             } else {
-                cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
+                for (JoinTaskHandle childHandle : subTaskHandles)
+                    childHandle.cancel(mayInterruptIfRunning);
             }
         }
         return cancelled;
     }
 
-    private void cancelChildrenTasks(JoinTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
-        for (JoinTaskHandle childHandle : subTaskHandles)
-            childHandle.cancel(mayInterruptIfRunning);
-    }
-
     //plugin method
     void afterSetResult(final int state, final Object result) {
-        //2: incr completed count
         if (brotherSize > 0) {
             if (state == TASK_CALL_EXCEPTION) {
                 if (root.exceptionInd.compareAndSet(false, true)) {

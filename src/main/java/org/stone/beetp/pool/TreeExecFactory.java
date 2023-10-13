@@ -20,7 +20,7 @@ import static org.stone.beetp.BeeTaskStates.TASK_CALL_EXCEPTION;
 import static org.stone.beetp.BeeTaskStates.TASK_CALL_RESULT;
 
 /**
- * tree Execute Factory
+ * tree task Execute Factory
  *
  * @author Chris Liao
  * @version 1.0
@@ -50,7 +50,7 @@ final class TreeExecFactory extends BaseExecFactory {
                 subTaskHandles[i] = new TreeTaskHandle(subTasks[i], handle, subSize, completedCount, pool, root);
                 pool.pushToExecutionQueue(subTaskHandles[i]);
             }
-        } else {//execute leafed task
+        } else {//execute leaf task
             BeeTaskCallback callback = handle.getCallback();
             if (callback != null) {
                 try {

@@ -83,19 +83,16 @@ final class TreeTaskHandle extends BaseTaskHandle {
             if (this.isRoot()) {
                 new Thread() {//async to cancel children
                     public void run() {
-                        cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
+                        for (TreeTaskHandle childHandle : subTaskHandles)
+                            childHandle.cancel(mayInterruptIfRunning);
                     }
                 }.start();
             } else {
-                cancelChildrenTasks(subTaskHandles, mayInterruptIfRunning);
+                for (TreeTaskHandle childHandle : subTaskHandles)
+                    childHandle.cancel(mayInterruptIfRunning);
             }
         }
         return cancelled;
-    }
-
-    private void cancelChildrenTasks(TreeTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
-        for (TreeTaskHandle childHandle : subTaskHandles)
-            childHandle.cancel(mayInterruptIfRunning);
     }
 
     //***************************************************************************************************************//
