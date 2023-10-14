@@ -123,10 +123,11 @@ class BaseTaskHandle implements BeeTaskHandle {
         }
 
         //2: interrupt task execution thread when it is in blocking state
-        if (mayInterruptIfRunning && this.state == TASK_EXECUTING && this.workThread != null) {
-            final Thread.State threadState = this.workThread.getState();
-            if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING)
-                this.workThread.interrupt();
+        final Thread executeThread = this.workThread;
+        if (mayInterruptIfRunning && this.state == TASK_EXECUTING && executeThread != null) {
+            final Thread.State threadState = executeThread.getState();
+            if ((threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING) && this.state == TASK_EXECUTING)
+                executeThread.interrupt();//cas maybe better? 
         }
 
         return false;
