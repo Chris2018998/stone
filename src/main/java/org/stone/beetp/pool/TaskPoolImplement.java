@@ -471,8 +471,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     //***************************************************************************************************************//
     //                                  8: Pool worker class and scheduled class (2)                                 //
     //***************************************************************************************************************//
-    //tasks execution thread
-    private class PoolWorkerThread extends Thread {
+    private class PoolWorkerThread extends TaskWorkThread {
         private final AtomicReference<Object> workState;
 
         PoolWorkerThread(Object state) {
@@ -507,20 +506,25 @@ public final class TaskPoolImplement implements BeeTaskPool {
 
                 //3: execute task
                 if (handle != null) {
-                    if (handle.setAsRunning()) {
-                        if (handle instanceof JoinTaskHandle) {
-                            if (handle.isRoot()) taskHoldingCount.decrementAndGet();
-                            joinExecFactory.execute((JoinTaskHandle) handle);
-                        } else if (handle instanceof ScheduledTaskHandle) {
-                            ScheduledTaskHandle schHandle = (ScheduledTaskHandle) handle;
-                            if (!schHandle.isPeriodic()) taskHoldingCount.decrementAndGet();//once timed
-                            scheduledExecFactory.execute(schHandle);
-                        } else if (handle instanceof PlainTaskHandle) {
-                            taskHoldingCount.decrementAndGet();
-                            onceExecFactory.execute((PlainTaskHandle) handle);
-                        } else if (handle instanceof TreeTaskHandle) {
-                            if (handle.isRoot()) taskHoldingCount.decrementAndGet();
-                            treeExecFactory.execute((TreeTaskHandle) handle);
+                    if (handle.setAsRunning(this)) {
+                        this.currentTaskHandle = handle;//fix interrupt issue on concurrent
+                        try {
+                            if (handle instanceof JoinTaskHandle) {
+                                if (handle.isRoot()) taskHoldingCount.decrementAndGet();
+                                joinExecFactory.execute((JoinTaskHandle) handle);
+                            } else if (handle instanceof ScheduledTaskHandle) {
+                                ScheduledTaskHandle schHandle = (ScheduledTaskHandle) handle;
+                                if (!schHandle.isPeriodic()) taskHoldingCount.decrementAndGet();//once timed
+                                scheduledExecFactory.execute(schHandle);
+                            } else if (handle instanceof PlainTaskHandle) {
+                                taskHoldingCount.decrementAndGet();
+                                onceExecFactory.execute((PlainTaskHandle) handle);
+                            } else if (handle instanceof TreeTaskHandle) {
+                                if (handle.isRoot()) taskHoldingCount.decrementAndGet();
+                                treeExecFactory.execute((TreeTaskHandle) handle);
+                            }
+                        } finally {
+                            this.currentTaskHandle = null;
                         }
                     }
                 } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread

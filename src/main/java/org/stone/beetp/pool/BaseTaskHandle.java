@@ -37,7 +37,7 @@ class BaseTaskHandle implements BeeTaskHandle {
 
     protected Object result;
     volatile int state;
-    private volatile Thread workThread;//set before execution by pool worker and reset to null after execution
+    private volatile TaskWorkThread workThread;//set before execution by pool worker and reset to null after execution
 
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
@@ -103,9 +103,9 @@ class BaseTaskHandle implements BeeTaskHandle {
         return StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED);
     }
 
-    boolean setAsRunning() {//called by work thread
+    boolean setAsRunning(TaskWorkThread workThread) {//called by work thread
         if (StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING)) {
-            this.workThread = Thread.currentThread();
+            this.workThread = workThread;
             return true;
         }
         return false;
@@ -123,11 +123,11 @@ class BaseTaskHandle implements BeeTaskHandle {
         }
 
         //2: interrupt task execution thread when it is in blocking state
-        final Thread executeThread = this.workThread;
+        final TaskWorkThread executeThread = this.workThread;
         if (mayInterruptIfRunning && this.state == TASK_EXECUTING && executeThread != null) {
             final Thread.State threadState = executeThread.getState();
             if ((threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING) && this.state == TASK_EXECUTING)
-                executeThread.interrupt();//cas maybe better? 
+                executeThread.interrupt(this);//cas maybe better?
         }
 
         return false;
