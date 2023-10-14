@@ -12,7 +12,7 @@ package org.stone.beetp;
 import java.util.List;
 
 /**
- * Termination info
+ * Cancelled tasks when pool terminated
  *
  * @author Chris Liao
  * @version 1.0

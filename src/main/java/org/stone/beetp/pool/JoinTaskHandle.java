@@ -102,6 +102,9 @@ final class JoinTaskHandle extends PlainTaskHandle {
             if (state == TASK_CALL_EXCEPTION) {
                 if (root.exceptionInd.compareAndSet(false, true)) {
                     root.setResult(state, result);
+
+                    getPool().getTaskRunningCount().decrementAndGet();
+                    getPool().getTaskCompletedCount().incrementAndGet();
                     root.cancel(true);
                 }
             } else {

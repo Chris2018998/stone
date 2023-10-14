@@ -19,6 +19,8 @@ package org.stone.beetp;
 public interface BeeTreeTask<E> {
 
     /**
+     * return split sub tasks by manual
+     *
      * @return sub tasks of current task
      */
     BeeTreeTask<E>[] getSubTasks();

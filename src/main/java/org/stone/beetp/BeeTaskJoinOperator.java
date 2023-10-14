@@ -18,7 +18,7 @@ package org.stone.beetp;
 public interface BeeTaskJoinOperator<E> {
 
     /**
-     * split task to sub tasks
+     * split task into some sub tasks
      *
      * @param task target task
      * @return array of sub tasks,return null when target task is at leaf
