@@ -4,7 +4,7 @@
  
 ## :coffee: 简 介
 
-Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它们彼此独立，互不依赖。
+🍑Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它们彼此独立，互不依赖。
 
 ![图片](https://github.com/Chris2018998/stone/assets/32663325/25f3cf51-c479-4218-9e02-bbe96ea1ab4f)
 
