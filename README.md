@@ -42,6 +42,9 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 
 ![图片](https://user-images.githubusercontent.com/32663325/154832193-62b71ade-84cc-41db-894f-9b012995d619.png)
 
+#### 源码质量
+![图片](https://user-images.githubusercontent.com/32663325/163173015-2ce906f3-1b83-419d-82aa-a42b5c8d92b8.png)
+
 #### 使用例子
 ###### :point_right: 例子1(独立应用)
 ```java
