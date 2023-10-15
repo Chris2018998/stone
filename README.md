@@ -1,22 +1,15 @@
-<a><img src="https://img.shields.io/badge/JDK-1.7+-green.svg"></a>
+<a><img src="https://img.shields.io/badge/JDK-1.8+-green.svg"></a>
 <a><img src="https://img.shields.io/badge/License-LGPL%202.1-blue.svg"></a>
 <a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
  
-## :coffee: Introduction 
+## :coffee: 简 介
 
-Stone,A Java Tools Suite
+Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它们彼此独立，互不依赖。
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md">beecp:</a> a small JDBC connection pool
+![图片](https://github.com/Chris2018998/stone/assets/32663325/25f3cf51-c479-4218-9e02-bbe96ea1ab4f)
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md">beeop:</a> a small Java object pool
+## :arrow_down: Maven坐标 
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md">beetp:</a> a small Java task pool
-
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md">shine:</a> a Java concurrent package(similar to JDK concurrent)
-
-## :arrow_down: Download 
-
-Java8 or higher
 ```xml
 <dependency>
    <groupId>io.github.chris2018998</groupId>
