@@ -18,7 +18,7 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 </dependency>
 ```
 
-## 🐝 beecp
+## 池一：🐝 beecp
 
 一款简单易用的JDBC连接池，具有性能高，代码轻，稳定好的特点；它支持多种参数灵活设置，适置多种主流据库驱动；健壮性好以及良好接口扩展性; 产品亮点：无锁应用，单点缓存，非移动等待，Transfer队列复用
 
@@ -43,7 +43,7 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 ![图片](https://user-images.githubusercontent.com/32663325/154832193-62b71ade-84cc-41db-894f-9b012995d619.png)
 
 #### 使用例子
-#### :point_right: 例子1(独立应用)
+###### :point_right: 例子1(独立应用)
 ```java
 BeeDataSourceConfig config = new BeeDataSourceConfig();
 config.setDriverClassName("com.mysql.jdbc.Driver");
@@ -55,7 +55,7 @@ Connection con=ds.getConnection();
 ....
 
 ```
-#### :point_right: 例子2(Springbooot)
+###### :point_right: 例子2(Springbooot)
 *application.properties*
 ```java
 spring.datasource.username=root
@@ -91,5 +91,32 @@ public class DataSourceConfig {
 }
 ```
 
+#### 配置项列表
+|项名                              |描述                                   |默认值                               |
+| ---------------------------------| -------------------------------------| -----------------------------------|
+|username                          |JDBC用户名                             |空                                  |
+|password                          |JDBC密码                               |空                                  |
+|jdbcUrl                           |JDBC连接URL                            |空                                  |
+|driverClassName                   |JDBC驱动类名                            |空                                  |
+|poolName	                   |池名，如果未赋值则会自动产生一个                 |空                                  |
+|fairMode                          |是否使用公平模式                         |false（竞争模式）                     | 
+|initialSize                       |连接池初始大小                           |0                                   |
+|maxActive                         |连接池最大个数                           |10                                  | 
+|borrowSemaphoreSize               |信号量许可大小                           |min(最大连接数/2,CPU核心数）           |
+|defaultAutoCommit                 |AutoComit默认值,未配置则从第一个连接上读取默认值|空                               |
+|defaultTransactionIsolationCode   |事物隔离代码，未设置时则从第一个连接上读取默认值|空                                |
+|defaultCatalog                    |Catalog默认值 ,未配置则从第一个连接上读取默认值|空                                |
+|defaultSchema                     |Schema默认值,未配置则从第一个连接上读取默认值|空                                  |
+|defaultReadOnly                   |ReadOnly默认值 ,未配置则从第一个连接上读取默认值|空                               |
+|maxWait                           |连接借用等待最大时间(毫秒)                |8000                                |
+|idleTimeout                       |连接闲置最大时间(毫秒)                    |18000                               |  
+|holdTimeout                       |连接被持有不用最大允许时间(毫秒)           |18000                               |  
+|validTestSql                      |连接有效性测试SQL语句                     |SELECT 1                            |  
+|validTestTimeout                  |连接有效性测试超时时间(秒)                 |3                                   |  
+|validAssumeTime                   |连接测试的间隔时间(毫秒)                   |500                                 |  
+|forceCloseUsingOnClear            |是否直接关闭使用中连接                     |false                               |
+|delayTimeForNextClear             |延迟清理的时候时间（毫秒）                 |3000                                |  
 
+
+## 池一：🐝 beeop
 
