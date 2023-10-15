@@ -2,9 +2,9 @@
 <a><img src="https://img.shields.io/badge/License-LGPL%202.1-blue.svg"></a>
 <a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
  
-## :coffee: 简 介
+## 🍑 简 介
 
-🍑Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它们彼此独立，互不依赖。
+Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它们彼此独立，互不依赖。
 
 ![图片](https://github.com/Chris2018998/stone/assets/32663325/25f3cf51-c479-4218-9e02-bbe96ea1ab4f)
 
@@ -18,7 +18,7 @@
 </dependency>
 ```
 
-## 池一：🐝 beecp 🌹
+## 池一：🐝beecp🌺
 
 一款简单易用的JDBC连接池，具有性能高，代码轻，稳定好的特点；它支持多种参数灵活设置，适置多种主流据库驱动；健壮性好以及良好接口扩展性; 产品亮点：无锁应用，单点缓存，非移动等待，Transfer队列复用
 
@@ -118,8 +118,12 @@ public class DataSourceConfig {
 |delayTimeForNextClear             |延迟清理的时候时间（毫秒）                 |3000                                |  
 
 
-## 池二：🐝 beeop🌷
+## 池二：🐝beeop🌷
 
-## 池三：🐝 beetp🌻
 
-## 池四：☀️shine
+## 池三：🐝beetp🪷
+
+
+
+
+## 池四：☀️shine🌻
