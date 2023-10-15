@@ -18,7 +18,7 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 </dependency>
 ```
 
-## 池一：🐝 beecp
+## 池一：🐝 beecp🌷
 
 一款简单易用的JDBC连接池，具有性能高，代码轻，稳定好的特点；它支持多种参数灵活设置，适置多种主流据库驱动；健壮性好以及良好接口扩展性; 产品亮点：无锁应用，单点缓存，非移动等待，Transfer队列复用
 
@@ -118,5 +118,8 @@ public class DataSourceConfig {
 |delayTimeForNextClear             |延迟清理的时候时间（毫秒）                 |3000                                |  
 
 
-## 池一：🐝 beeop
+## 池二：🐝 beeop🌷
 
+## 池三：🐝 beetp🌷
+
+## 池四：☀️shine
