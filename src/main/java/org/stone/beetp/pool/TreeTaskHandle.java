@@ -25,7 +25,7 @@ import static org.stone.beetp.BeeTaskStates.TASK_CALL_RESULT;
  * @author Chris Liao
  * @version 1.0
  */
-final class TreeTaskHandle extends BaseTaskHandle {
+final class TreeTaskHandle extends BaseHandle {
     //1: field of root
     private AtomicBoolean exceptionInd;
     //2: field of parent

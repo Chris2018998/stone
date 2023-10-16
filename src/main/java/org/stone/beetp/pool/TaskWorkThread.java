@@ -16,9 +16,9 @@ package org.stone.beetp.pool;
  * @version 1.0
  */
 class TaskWorkThread extends Thread {
-    volatile BaseTaskHandle currentTaskHandle;
+    volatile BaseHandle currentTaskHandle;
 
-    void interrupt(BaseTaskHandle taskHandle) {
+    void interrupt(BaseHandle taskHandle) {
         if (taskHandle == this.currentTaskHandle)
             this.interrupt();
     }

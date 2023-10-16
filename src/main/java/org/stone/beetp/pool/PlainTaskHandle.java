@@ -13,12 +13,12 @@ import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
 
 /**
- * Generic Handle
+ * Plain Handle
  *
  * @author Chris Liao
  * @version 1.0
  */
-class PlainTaskHandle extends BaseTaskHandle {
+class PlainTaskHandle extends BaseHandle {
     private final BeeTask task;
 
     PlainTaskHandle(BeeTask task, final BeeTaskCallback callback, final boolean isRoot, final TaskPoolImplement pool) {

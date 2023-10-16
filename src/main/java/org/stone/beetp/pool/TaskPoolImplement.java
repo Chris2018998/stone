@@ -54,14 +54,14 @@ public final class TaskPoolImplement implements BeeTaskPool {
     private TaskPoolMonitorVo monitorVo;
     private AtomicInteger workerNameIndex;
     private ConcurrentLinkedQueue<PoolWorkerThread> workerQueue;
-    private ConcurrentLinkedQueue<BaseTaskHandle> executionQueue;
+    private ConcurrentLinkedQueue<BaseHandle> executionQueue;
     private ScheduledTaskQueue scheduledDelayedQueue;
     private PoolScheduledTaskPeekThread scheduledPeekThread;//wait at first task of scheduled queue util first task timeout,then poll it from queue
 
-    private PlainExecFactory onceExecFactory;
-    private JoinExecFactory joinExecFactory;
-    private TreeExecFactory treeExecFactory;
-    private ScheduledExecFactory scheduledExecFactory;
+    private PlainTaskExecutor onceExecFactory;
+    private JoinTaskExecutor joinExecFactory;
+    private TreeTaskExecutor treeExecFactory;
+    private ScheduledTaskExecutor scheduledExecFactory;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -128,10 +128,10 @@ public final class TaskPoolImplement implements BeeTaskPool {
 
         //step6: create exec factories
         if (joinExecFactory == null) {
-            this.joinExecFactory = new JoinExecFactory(this);
-            this.onceExecFactory = new PlainExecFactory(this);
-            this.treeExecFactory = new TreeExecFactory(this);
-            this.scheduledExecFactory = new ScheduledExecFactory(this);
+            this.joinExecFactory = new JoinTaskExecutor(this);
+            this.onceExecFactory = new PlainTaskExecutor(this);
+            this.treeExecFactory = new TreeTaskExecutor(this);
+            this.scheduledExecFactory = new ScheduledTaskExecutor(this);
         }
     }
 
@@ -153,7 +153,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
         this.checkPool();
 
         //3: crete task handle
-        BaseTaskHandle handle = new PlainTaskHandle(task, callback, true, this);
+        BaseHandle handle = new PlainTaskHandle(task, callback, true, this);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle);
         //5: return handle
@@ -168,7 +168,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
         this.checkPool();
 
         //3: crete join task handle(root)
-        BaseTaskHandle handle = new JoinTaskHandle(task, operator, callback, this);
+        BaseHandle handle = new JoinTaskHandle(task, operator, callback, this);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle);
         //5: return handle
@@ -237,7 +237,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    void pushToExecutionQueue(BaseTaskHandle taskHandle) {
+    void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
         for (PoolWorkerThread workerThread : workerQueue) {
             if (workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
@@ -341,7 +341,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
         }
 
         //2: remove tasks in execution queue(once tasks + join tasks)
-        BaseTaskHandle handle;
+        BaseHandle handle;
         while ((handle = executionQueue.poll()) != null) {
             if (handle.setAsCancelled()) {//collect cancelled tasks by pool
                 if (handle instanceof PlainTaskHandle) {
@@ -378,7 +378,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     }
 
     //remove from array or queue(method called inside handle)
-    void removeCancelledTask(BaseTaskHandle handle) {
+    void removeCancelledTask(BaseHandle handle) {
         if (handle instanceof ScheduledTaskHandle) {
             int taskIndex = scheduledDelayedQueue.remove((ScheduledTaskHandle) handle);
             if (taskIndex >= 0) taskHoldingCount.decrementAndGet();//task removed successfully by call thread
@@ -496,9 +496,9 @@ public final class TaskPoolImplement implements BeeTaskPool {
                     break;
 
                 //2: get task from state or poll from queue
-                BaseTaskHandle handle = null;
-                if (state instanceof BaseTaskHandle) {
-                    handle = (BaseTaskHandle) state;
+                BaseHandle handle = null;
+                if (state instanceof BaseHandle) {
+                    handle = (BaseHandle) state;
                     state = WORKER_WORKING;
                     this.workState.set(WORKER_WORKING);
                 }
