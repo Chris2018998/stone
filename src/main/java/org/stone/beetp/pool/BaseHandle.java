@@ -236,7 +236,7 @@ class BaseHandle implements BeeTaskHandle {
         this.state = state;
         this.workThread = null;
 
-        if (this.waitQueue != null) {
+        if (isRoot) {
             Thread waitThread;
             while ((waitThread = waitQueue.poll()) != null)
                 LockSupport.unpark(waitThread);
