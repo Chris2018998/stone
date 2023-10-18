@@ -7,24 +7,22 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.beetp;
+package org.stone.beetp.pool.exception;
+
+import org.stone.beetp.BeeTaskException;
 
 /**
- * Task Pool Monitor Vo
+ * Task Exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTaskPoolMonitorVo {
+public final class TaskExecutionException extends BeeTaskException {
+    public TaskExecutionException() {
+    }
 
-    int getPoolState();
-
-    int getWorkerCount();
-
-    int getTaskHoldingCount();
-
-    int getTaskRunningCount();
-
-    int getTaskCompletedCount();
+    public TaskExecutionException(Throwable cause) {
+        super(cause);
+    }
 
 }

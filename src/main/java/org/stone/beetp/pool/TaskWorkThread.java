@@ -7,24 +7,19 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.beetp;
+package org.stone.beetp.pool;
 
 /**
- * Task Pool Monitor Vo
+ * Task work thread
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeTaskPoolMonitorVo {
+class TaskWorkThread extends Thread {
+    volatile BaseHandle currentTaskHandle;
 
-    int getPoolState();
-
-    int getWorkerCount();
-
-    int getTaskHoldingCount();
-
-    int getTaskRunningCount();
-
-    int getTaskCompletedCount();
-
+    void interrupt(BaseHandle taskHandle) {
+        if (taskHandle == this.currentTaskHandle)
+            this.interrupt();
+    }
 }
