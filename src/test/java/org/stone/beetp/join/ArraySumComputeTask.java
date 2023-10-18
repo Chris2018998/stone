@@ -17,7 +17,7 @@ import org.stone.beetp.BeeTask;
 public class ArraySumComputeTask implements BeeTask<Integer> {
     private final int[] numbers;
 
-    ArraySumComputeTask(int[] numbers) {
+    public ArraySumComputeTask(int[] numbers) {
         this.numbers = numbers;
     }
 
