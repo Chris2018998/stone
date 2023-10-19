@@ -28,7 +28,7 @@ public class OnceTaskBenchmark {
         config.setInitWorkerSize(4);
         config.setMaxWorkerSize(4);
         taskService = new BeeTaskService(config);
-        executor = new ThreadPoolExecutor(4,4,15,TimeUnit.SECONDS,new LinkedBlockingQueue<>());
+        executor = new ThreadPoolExecutor(4,4,15,TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>());
     }
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
