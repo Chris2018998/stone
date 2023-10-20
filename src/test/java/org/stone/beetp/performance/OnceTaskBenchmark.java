@@ -8,7 +8,10 @@ import org.stone.beetp.BeeTaskHandle;
 import org.stone.beetp.BeeTaskService;
 import org.stone.beetp.BeeTaskServiceConfig;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Threads(4)
 @State(Scope.Benchmark)
@@ -19,8 +22,8 @@ import java.util.concurrent.*;
 public class OnceTaskBenchmark {
     private static BeeTaskService taskService;
     private static ThreadPoolExecutor executor;
-    private  static CallTask callTask = new CallTask();
-    private  static HelloTask helloTask = new HelloTask();
+    private static CallTask callTask = new CallTask();
+    private static HelloTask helloTask = new HelloTask();
 
     static {
         BeeTaskServiceConfig config = new BeeTaskServiceConfig();
@@ -28,11 +31,12 @@ public class OnceTaskBenchmark {
         config.setInitWorkerSize(4);
         config.setMaxWorkerSize(4);
         taskService = new BeeTaskService(config);
-        executor = new ThreadPoolExecutor(4,4,15,TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>());
+        executor = new ThreadPoolExecutor(4, 4, 15, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
     }
+
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
-                .include(ForkJoinBenchmark.class.getSimpleName())
+                .include(OnceTaskBenchmark.class.getSimpleName())
                 .build();
         new Runner(opt).run();
     }
@@ -47,7 +51,7 @@ public class OnceTaskBenchmark {
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
     public static void testJDKExecutor() throws Exception {
-        Future future= executor.submit(callTask);
+        Future future = executor.submit(callTask);
         future.get();
     }
 }

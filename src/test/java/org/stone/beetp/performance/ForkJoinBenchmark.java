@@ -53,10 +53,10 @@ public class ForkJoinBenchmark {
         int joinSum = joinHandle.get();
     }
 
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    public static void testJDKForkJoin() throws Exception {
-        ForkJoinTask task = forkJoinPool.submit(new SumTask(numbers));
-        task.get();
-    }
+//    @Benchmark
+//    @CompilerControl(CompilerControl.Mode.INLINE)
+//    public static void testJDKForkJoin() throws Exception {
+//        ForkJoinTask task = forkJoinPool.submit(new SumTask(numbers));
+//        task.get();
+//    }
 }
