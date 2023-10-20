@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -48,7 +49,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
     private AtomicInteger workerCount;
     private AtomicInteger taskHoldingCount;//(once count + scheduled count + join count(root))
     private AtomicInteger taskRunningCount;
-    private AtomicInteger taskCompletedCount;
+    private AtomicLong taskCompletedCount;
 
     private TaskPoolMonitorVo monitorVo;
     private AtomicInteger workerNameIndex;
@@ -101,7 +102,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
             this.workerCount = new AtomicInteger();
             this.taskHoldingCount = new AtomicInteger();
             this.taskRunningCount = new AtomicInteger();
-            this.taskCompletedCount = new AtomicInteger();
+            this.taskCompletedCount = new AtomicLong();
         }
 
         //step4: create task execution threads
@@ -267,8 +268,8 @@ public final class TaskPoolImplement implements BeeTaskPool {
         this.checkPool();
 
         //3: create task handle
-        long firstRunNanos = unit.toNanos(initialDelay);
         long intervalNanos = unit.toNanos(intervalTime);
+        long firstRunNanos = unit.toNanos(initialDelay) + System.nanoTime();
         ScheduledTaskHandle handle = new ScheduledTaskHandle(task, callback, firstRunNanos, intervalNanos, fixedDelay, this);
 
         //4: add task handle to time sortable array,and gets its index in array
@@ -433,15 +434,15 @@ public final class TaskPoolImplement implements BeeTaskPool {
     //***************************************************************************************************************//
     //                                     7: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
-    AtomicInteger getTaskRunningCount() {
-        return taskRunningCount;
-    }
-
     AtomicInteger getTaskHoldingCount() {
         return this.taskHoldingCount;
     }
 
-    AtomicInteger getTaskCompletedCount() {
+    AtomicInteger getTaskRunningCount() {
+        return taskRunningCount;
+    }
+
+    AtomicLong getTaskCompletedCount() {
         return taskCompletedCount;
     }
 

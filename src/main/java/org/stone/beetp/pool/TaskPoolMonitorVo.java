@@ -23,7 +23,7 @@ public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
     private int workerCount;
     private int taskHoldingCount;
     private int taskRunningCount;
-    private int taskCompletedCount;
+    private long taskCompletedCount;
 
     public int getPoolState() {
         return poolState;
@@ -57,11 +57,11 @@ public final class TaskPoolMonitorVo implements BeeTaskPoolMonitorVo {
         this.taskRunningCount = taskRunningCount;
     }
 
-    public int getTaskCompletedCount() {
+    public long getTaskCompletedCount() {
         return taskCompletedCount;
     }
 
-    void setTaskCompletedCount(int taskCompletedCount) {
+    void setTaskCompletedCount(long taskCompletedCount) {
         this.taskCompletedCount = taskCompletedCount;
     }
 }

@@ -33,8 +33,8 @@ import static org.stone.beetp.BeeTaskStates.*;
 class BaseHandle implements BeeTaskHandle {
     private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = AtomicIntegerFieldUpdater.newUpdater(BaseHandle.class, "state");
     protected final BeeTask task;
-    protected final boolean isRoot;
     protected final TaskPoolImplement pool;
+    final boolean isRoot;
     private final BeeTaskCallback callback;
     private final ConcurrentLinkedQueue<Thread> waitQueue;
 
@@ -242,10 +242,7 @@ class BaseHandle implements BeeTaskHandle {
                 LockSupport.unpark(waitThread);
         }
 
-        //2: plugin method call
-        this.afterSetResult(state, result);
-
-        //3: execute callback
+        //2: execute callback
         if (this.callback != null) {
             try {
                 this.callback.afterCall(state, result, this);
@@ -253,6 +250,9 @@ class BaseHandle implements BeeTaskHandle {
                 //do nothing
             }
         }
+
+        //3: plugin method call
+        this.afterSetResult(state, result);
     }
 
     //fill incr complete count by join task and tree task

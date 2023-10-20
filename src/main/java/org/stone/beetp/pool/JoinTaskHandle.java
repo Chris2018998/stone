@@ -84,10 +84,7 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
     void beforeExecuteTask() {
-        if (this.isRoot) {
-            pool.getTaskHoldingCount().decrementAndGet();
-            pool.getTaskRunningCount().incrementAndGet();
-        }
+        if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
     }
 
     void execute() {
@@ -137,12 +134,13 @@ final class JoinTaskHandle extends BaseHandle {
                                 parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles));//join children
                             } catch (Throwable e) {
                                 if (root.exceptionInd.compareAndSet(false, true)) {
-                                    root.setResult(state, new TaskExecutionException(e));
+                                    root.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
                                     root.cancel(true);
                                 }
                             }
 
                             if (parent.isRoot) {
+                                pool.getTaskHoldingCount().decrementAndGet();
                                 pool.getTaskRunningCount().decrementAndGet();
                                 pool.getTaskCompletedCount().incrementAndGet();
                             }

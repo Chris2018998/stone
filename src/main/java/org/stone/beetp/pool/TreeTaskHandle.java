@@ -49,7 +49,7 @@ final class TreeTaskHandle extends BaseHandle {
     }
 
     //constructor for children task
-    TreeTaskHandle(BeeTreeTask task, TreeTaskHandle parent, int brotherSize, AtomicInteger completedCount, TaskPoolImplement pool, TreeTaskHandle root) {
+    private TreeTaskHandle(BeeTreeTask task, TreeTaskHandle parent, int brotherSize, AtomicInteger completedCount, TaskPoolImplement pool, TreeTaskHandle root) {
         super(null, null, false, pool);
         this.task = task;
         this.root = root;
@@ -92,10 +92,7 @@ final class TreeTaskHandle extends BaseHandle {
     }
 
     void beforeExecuteTask() {
-        if (this.isRoot) {
-            pool.getTaskHoldingCount().decrementAndGet();
-            pool.getTaskRunningCount().incrementAndGet();
-        }
+        if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
     }
 
     void execute() {
@@ -129,11 +126,11 @@ final class TreeTaskHandle extends BaseHandle {
         if (brotherSize > 0) {
             if (state == TASK_CALL_EXCEPTION) {
                 if (root.exceptionInd.compareAndSet(false, true)) {
-                    pool.getTaskRunningCount().decrementAndGet();
-                    pool.getTaskCompletedCount().incrementAndGet();
-
                     root.setResult(state, result);
                     root.cancel(true);
+
+                    pool.getTaskRunningCount().decrementAndGet();
+                    pool.getTaskCompletedCount().incrementAndGet();
                 }
             } else {
                 do {
@@ -145,12 +142,13 @@ final class TreeTaskHandle extends BaseHandle {
                                 parent.setResult(TASK_CALL_RESULT, parent.task.call(parent.subTaskHandles));//join children
                             } catch (Throwable e) {
                                 if (root.exceptionInd.compareAndSet(false, true)) {
-                                    root.setResult(state, new TaskExecutionException(e));
+                                    root.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
                                     root.cancel(true);
                                 }
                             }
 
                             if (parent.isRoot) {
+                                pool.getTaskHoldingCount().decrementAndGet();
                                 pool.getTaskRunningCount().decrementAndGet();
                                 pool.getTaskCompletedCount().incrementAndGet();
                             }
