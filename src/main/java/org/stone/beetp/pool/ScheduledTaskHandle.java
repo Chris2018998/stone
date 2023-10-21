@@ -75,14 +75,11 @@ final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHa
     //***************************************************************************************************************//
     //                              3: execute task                                                                  //
     //***************************************************************************************************************//
-    void beforeExecuteTask() {
+    void beforeExecute(TaskWorkThread thread) {
         if (!isPeriodic()) pool.getTaskHoldingCount().decrementAndGet();
-        pool.getTaskRunningCount().incrementAndGet();
     }
 
-    void afterExecuteTask() {
-        pool.getTaskRunningCount().decrementAndGet();
-
+    void afterExecute(TaskWorkThread thread) {
         if (this.isPeriodic()) {
             this.prevState = this.state;
             this.prevResult = this.result;
@@ -93,7 +90,7 @@ final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHa
             if (pool.getScheduledDelayedQueue().add(this) == 0)
                 pool.wakeupSchedulePeekThread();
         } else {//one timed task,so end
-            pool.getTaskCompletedCount().incrementAndGet();
+            thread.incrCompletedCount();
         }
     }
 }

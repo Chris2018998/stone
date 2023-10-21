@@ -40,7 +40,7 @@ class BaseHandle implements BeeTaskHandle {
 
     protected Object result;
     protected volatile int state;
-    private volatile TaskWorkThread workThread;//set before execution by pool worker and reset to null after execution
+    volatile TaskWorkThread workThread;//set before execution by pool worker and reset to null after execution
 
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
@@ -99,12 +99,8 @@ class BaseHandle implements BeeTaskHandle {
         return StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED);
     }
 
-    boolean setAsRunning(TaskWorkThread workThread) {//called by work thread
-        if (StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING)) {
-            this.workThread = workThread;
-            return true;
-        }
-        return false;
+    boolean setAsRunning() {
+        return StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING);
     }
 
     //***************************************************************************************************************//
@@ -184,29 +180,17 @@ class BaseHandle implements BeeTaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                              7: execute task(5)                                                               //
+    //                              7: execute task(4)                                                               //
     //***************************************************************************************************************//
-    void beforeExecuteTask() {//default implement for once task
+    void beforeExecute() {
         pool.getTaskHoldingCount().decrementAndGet();
-        pool.getTaskRunningCount().incrementAndGet();
     }
 
-    void execute() { //an import method called by pool to execute task
-        //1: before execute
-        this.beforeExecuteTask();
-        //2: execute task
-        this.executeInternalTask();
-        //3: after execute
-        this.afterExecuteTask();
+    void afterExecute() {
+        workThread.incrCompletedCount();
     }
 
-    void afterExecuteTask() {//default implement for once task
-        pool.getTaskRunningCount().decrementAndGet();
-        pool.getTaskCompletedCount().incrementAndGet();
-    }
-
-    //*********************************************** execute call ***************************************************//
-    void executeInternalTask() {
+    void executeTask() {
         if (callback != null) {
             try {
                 callback.beforeCall(this);
@@ -234,7 +218,6 @@ class BaseHandle implements BeeTaskHandle {
         //1: set result and try to wakeup waiters if exists
         this.result = result;
         this.state = state;
-        this.workThread = null;
 
         if (isRoot) {
             Thread waitThread;
@@ -257,5 +240,6 @@ class BaseHandle implements BeeTaskHandle {
 
     //fill incr complete count by join task and tree task
     void afterSetResult(final int state, final Object result) {
+
     }
 }

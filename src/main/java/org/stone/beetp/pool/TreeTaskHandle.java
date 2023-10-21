@@ -91,14 +91,13 @@ final class TreeTaskHandle extends BaseHandle {
         return task.call(null);
     }
 
-    void beforeExecuteTask() {
-        if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
+    void beforeExecute(TaskWorkThread thread) {
     }
 
-    void execute() {
-        //1: before execute
-        beforeExecuteTask();
+    void afterExecute(TaskWorkThread thread) {
+    }
 
+    void executeTask(TaskWorkThread thread) {
         //2: try to split current task into sub tasks
         BeeTreeTask[] subTasks = this.task.getSubTasks();
 
@@ -115,7 +114,7 @@ final class TreeTaskHandle extends BaseHandle {
                 pool.pushToExecutionQueue(subJoinHandles[i]);
             }
         } else {//4: execute leaf task
-            this.executeInternalTask();
+            super.executeTask();
         }
     }
 
@@ -128,9 +127,7 @@ final class TreeTaskHandle extends BaseHandle {
                 if (root.exceptionInd.compareAndSet(false, true)) {
                     root.setResult(state, result);
                     root.cancel(true);
-
-                    pool.getTaskRunningCount().decrementAndGet();
-                    pool.getTaskCompletedCount().incrementAndGet();
+                    workThread.incrCompletedCount();
                 }
             } else {
                 do {
@@ -149,8 +146,7 @@ final class TreeTaskHandle extends BaseHandle {
 
                             if (parent.isRoot) {
                                 pool.getTaskHoldingCount().decrementAndGet();
-                                pool.getTaskRunningCount().decrementAndGet();
-                                pool.getTaskCompletedCount().incrementAndGet();
+                                workThread.incrCompletedCount();
                             }
                         }
 

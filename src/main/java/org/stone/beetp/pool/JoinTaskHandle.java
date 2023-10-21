@@ -83,18 +83,17 @@ final class JoinTaskHandle extends BaseHandle {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    void beforeExecuteTask() {
-        if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
+    void beforeExecute(TaskWorkThread thread) {
     }
 
-    void execute() {
-        //1: before execute
-        beforeExecuteTask();
+    void afterExecute(TaskWorkThread thread) {
+    }
 
-        //2: try to split current task into sub tasks
+    void executeTask(TaskWorkThread thread) {
+        //1: try to split current task into sub tasks
         BeeTask[] subTasks = operator.split(this.task);
 
-        //3: push sub tasks to execute queue
+        //2: push sub tasks to execute queue
         if (subTasks != null && subTasks.length > 0) {
             int subSize = subTasks.length;
             AtomicInteger completedCount = new AtomicInteger();
@@ -107,7 +106,7 @@ final class JoinTaskHandle extends BaseHandle {
                 pool.pushToExecutionQueue(subJoinHandles[i]);
             }
         } else {//4: execute leaf task
-            this.executeInternalTask();
+            super.executeTask();
         }
     }
 
@@ -118,11 +117,9 @@ final class JoinTaskHandle extends BaseHandle {
         if (brotherSize > 0) {
             if (state == TASK_CALL_EXCEPTION) {
                 if (root.exceptionInd.compareAndSet(false, true)) {
-                    pool.getTaskRunningCount().decrementAndGet();
-                    pool.getTaskCompletedCount().incrementAndGet();
-
                     root.setResult(state, result);
                     root.cancel(true);
+                    workThread.incrCompletedCount();
                 }
             } else {
                 do {
@@ -141,8 +138,7 @@ final class JoinTaskHandle extends BaseHandle {
 
                             if (parent.isRoot) {
                                 pool.getTaskHoldingCount().decrementAndGet();
-                                pool.getTaskRunningCount().decrementAndGet();
-                                pool.getTaskCompletedCount().incrementAndGet();
+                                workThread.incrCompletedCount();
                             }
                         }
                         break;
