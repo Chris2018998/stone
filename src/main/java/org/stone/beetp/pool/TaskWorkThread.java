@@ -16,7 +16,16 @@ package org.stone.beetp.pool;
  * @version 1.0
  */
 class TaskWorkThread extends Thread {
+    long completedCount;
     volatile BaseHandle currentTaskHandle;
+
+    void incrCompletedCount() {
+        this.completedCount++;
+    }
+
+    long getCompletedCount() {
+        return this.completedCount;
+    }
 
     void interrupt(BaseHandle taskHandle) {
         if (taskHandle == this.currentTaskHandle)

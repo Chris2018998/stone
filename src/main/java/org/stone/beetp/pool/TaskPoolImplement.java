@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
@@ -48,8 +47,7 @@ public final class TaskPoolImplement implements BeeTaskPool {
 
     private AtomicInteger workerCount;
     private AtomicInteger taskHoldingCount;//(once count + scheduled count + join count(root))
-    private AtomicInteger taskRunningCount;
-    private AtomicLong taskCompletedCount;
+    private long taskCompletedCount;//update at termination of work thread,which add its completed count to this nunber
 
     private TaskPoolMonitorVo monitorVo;
     private AtomicInteger workerNameIndex;
@@ -101,8 +99,6 @@ public final class TaskPoolImplement implements BeeTaskPool {
             this.monitorVo = new TaskPoolMonitorVo();
             this.workerCount = new AtomicInteger();
             this.taskHoldingCount = new AtomicInteger();
-            this.taskRunningCount = new AtomicInteger();
-            this.taskCompletedCount = new AtomicLong();
         }
 
         //step4: create task execution threads
@@ -358,8 +354,8 @@ public final class TaskPoolImplement implements BeeTaskPool {
         //4:reset atomic numbers to zero
         this.workerCount.set(0);
         this.taskHoldingCount.set(0);
-        this.taskRunningCount.set(0);
-        this.taskCompletedCount.set(0);
+        //this.taskRunningCount.set(0);
+        this.taskCompletedCount = 0;
         this.workerNameIndex.set(0);
         return new PoolCancelledTasks(unRunningTaskList, unRunningTreeTaskList);
     }
@@ -438,14 +434,6 @@ public final class TaskPoolImplement implements BeeTaskPool {
         return this.taskHoldingCount;
     }
 
-    AtomicInteger getTaskRunningCount() {
-        return taskRunningCount;
-    }
-
-    AtomicLong getTaskCompletedCount() {
-        return taskCompletedCount;
-    }
-
     ScheduledTaskQueue getScheduledDelayedQueue() {
         return scheduledDelayedQueue;
     }
@@ -454,8 +442,15 @@ public final class TaskPoolImplement implements BeeTaskPool {
         monitorVo.setPoolState(this.poolState);
         monitorVo.setWorkerCount(workerCount.get());
         monitorVo.setTaskHoldingCount(taskHoldingCount.get());
-        monitorVo.setTaskRunningCount(taskRunningCount.get());
-        monitorVo.setTaskCompletedCount(taskCompletedCount.get());
+
+        int runningCount = 0;
+        long completedCount = this.taskCompletedCount;
+        for (TaskWorkThread th : this.workerQueue) {
+            completedCount += th.completedCount;
+            if (th.currentTaskHandle != null) runningCount++;
+        }
+        monitorVo.setTaskRunningCount(runningCount);
+        monitorVo.setTaskCompletedCount(completedCount);
         return monitorVo;
     }
 
@@ -518,7 +513,12 @@ public final class TaskPoolImplement implements BeeTaskPool {
                 Thread.interrupted();//clean interruption state
             } while (true);
 
-            //remove worker from pool by self
+            /*
+             * two action before termination
+             * 1: add its completed count of task to total count in pool
+             * 2: remove from worker thread collection of pool
+             */
+            taskCompletedCount += this.completedCount;
             workerCount.decrementAndGet();
             workerQueue.remove(this);
         }
