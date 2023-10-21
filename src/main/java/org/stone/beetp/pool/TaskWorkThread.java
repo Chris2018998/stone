@@ -19,12 +19,8 @@ class TaskWorkThread extends Thread {
     long completedCount;
     volatile BaseHandle currentTaskHandle;
 
-    void incrCompletedCount() {
+    void addCompletedCount() {
         this.completedCount++;
-    }
-
-    long getCompletedCount() {
-        return this.completedCount;
     }
 
     void interrupt(BaseHandle taskHandle) {

@@ -321,7 +321,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         for (ScheduledTaskHandle handle : scheduledDelayedQueue.clearAll()) {
             if (handle.setAsCancelled()) {//collect cancelled tasks by pool
                 unRunningTaskList.add(handle.getTask());
-                handle.setResult(TASK_CANCELLED, null);
+                handle.setResult(TASK_CANCELLED, null, null);
             }
         }
 
@@ -335,7 +335,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     unRunningTaskList.add(handle.getTask());
                 }
 
-                handle.setResult(TASK_CANCELLED, null);
+                handle.setResult(TASK_CANCELLED, null, null);
             }
         }
 
@@ -448,7 +448,8 @@ public final class TaskExecutionPool implements BeeTaskPool {
         long completedCount = this.taskCompletedCount.get();
         for (TaskWorkThread th : this.workerQueue) {
             completedCount += th.completedCount;
-            if (th.currentTaskHandle != null) runningCount++;
+            BaseHandle handle = th.currentTaskHandle;
+            if (handle != null && handle.isRoot) runningCount++;
         }
         monitorVo.setTaskRunningCount(runningCount);
         monitorVo.setTaskCompletedCount(completedCount);
@@ -499,10 +500,10 @@ public final class TaskExecutionPool implements BeeTaskPool {
                             this.currentTaskHandle = handle;
                             handle.workThread = this;
 
-                            handle.beforeExecute();
-                            handle.executeTask();
+                            handle.beforeExecute(this);
+                            handle.executeTask(this);
                         } finally {
-                            handle.afterExecute();
+                            handle.afterExecute(this);
                             handle.workThread = null;
                             this.currentTaskHandle = null;
                         }

@@ -109,7 +109,7 @@ class BaseHandle implements BeeTaskHandle {
     public boolean cancel(final boolean mayInterruptIfRunning) {
         //1: update task state to be cancelled via cas
         if (this.setAsCancelled()) {
-            this.setResult(TASK_CANCELLED, null);//if exists result waiters,wakeup them
+            this.setResult(TASK_CANCELLED, null, null);//if exists result waiters,wakeup them
             this.pool.removeCancelledTask(this);//remove the cancelled task from pool
             return true;
         }
@@ -182,15 +182,15 @@ class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                              7: execute task(4)                                                               //
     //***************************************************************************************************************//
-    void beforeExecute() {
+    void beforeExecute(TaskWorkThread workThread) {
         pool.getTaskHoldingCount().decrementAndGet();
     }
 
-    void afterExecute() {
-        workThread.incrCompletedCount();
+    void afterExecute(TaskWorkThread workThread) {
+        workThread.addCompletedCount();
     }
 
-    void executeTask() {
+    void executeTask(TaskWorkThread workThread) {
         if (callback != null) {
             try {
                 callback.beforeCall(this);
@@ -200,9 +200,9 @@ class BaseHandle implements BeeTaskHandle {
         }
 
         try {
-            this.setResult(TASK_CALL_RESULT, this.invokeTaskCall());
+            this.setResult(TASK_CALL_RESULT, this.invokeTaskCall(), workThread);
         } catch (Throwable e) {
-            this.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
+            this.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e), workThread);
         }
     }
 
@@ -214,7 +214,7 @@ class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                              8: result setting(3)                                                             //
     //***************************************************************************************************************//
-    void setResult(final int state, final Object result) {
+    void setResult(final int state, final Object result, TaskWorkThread workThread) {
         //1: set result and try to wakeup waiters if exists
         this.result = result;
         this.state = state;
@@ -235,11 +235,11 @@ class BaseHandle implements BeeTaskHandle {
         }
 
         //3: plugin method call
-        this.afterSetResult(state, result);
+        this.afterSetResult(state, result, workThread);
     }
 
     //fill incr complete count by join task and tree task
-    void afterSetResult(final int state, final Object result) {
+    void afterSetResult(final int state, final Object result, TaskWorkThread workThread) {
 
     }
 }
