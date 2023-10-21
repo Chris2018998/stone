@@ -33,7 +33,7 @@ import static org.stone.beetp.BeeTaskStates.*;
 class BaseHandle implements BeeTaskHandle {
     private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = AtomicIntegerFieldUpdater.newUpdater(BaseHandle.class, "state");
     protected final BeeTask task;
-    protected final TaskPoolImplement pool;
+    protected final TaskExecutionPool pool;
     final boolean isRoot;
     private final BeeTaskCallback callback;
     private final ConcurrentLinkedQueue<Thread> waitQueue;
@@ -45,7 +45,7 @@ class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
     //***************************************************************************************************************//
-    BaseHandle(BeeTask task, BeeTaskCallback callback, boolean isRoot, TaskPoolImplement pool) {
+    BaseHandle(BeeTask task, BeeTaskCallback callback, boolean isRoot, TaskExecutionPool pool) {
         this.task = task;
         this.isRoot = isRoot;//for join task
         this.pool = pool;

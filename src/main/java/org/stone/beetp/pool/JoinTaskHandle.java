@@ -42,14 +42,14 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
     //constructor for root task
-    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, final BeeTaskCallback callback, TaskPoolImplement pool) {
+    JoinTaskHandle(BeeTask task, BeeTaskJoinOperator operator, final BeeTaskCallback callback, TaskExecutionPool pool) {
         super(task, callback, true, pool);
         this.operator = operator;
         this.exceptionInd = new AtomicBoolean();
     }
 
     //constructor for children task
-    private JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int brotherSize, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskPoolImplement pool, JoinTaskHandle root) {
+    private JoinTaskHandle(BeeTask task, JoinTaskHandle parent, int brotherSize, AtomicInteger completedCount, BeeTaskJoinOperator operator, TaskExecutionPool pool, JoinTaskHandle root) {
         super(task, null, false, pool);
         this.root = root;
         this.parent = parent;

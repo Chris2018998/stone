@@ -36,7 +36,7 @@ final class ScheduledTaskHandle extends BaseHandle implements BeeTaskScheduledHa
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     ScheduledTaskHandle(BeeTask task, BeeTaskCallback callback,
-                        long firstRunTime, long intervalTime, boolean fixedDelay, TaskPoolImplement pool) {
+                        long firstRunTime, long intervalTime, boolean fixedDelay, TaskExecutionPool pool) {
         super(task, callback, true, pool);
         this.nextRunTime = firstRunTime;//first run time
         this.intervalTime = intervalTime;

@@ -42,14 +42,14 @@ final class TreeTaskHandle extends BaseHandle {
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
     //constructor for root task
-    TreeTaskHandle(BeeTreeTask task, final BeeTaskCallback callback, TaskPoolImplement pool) {
+    TreeTaskHandle(BeeTreeTask task, final BeeTaskCallback callback, TaskExecutionPool pool) {
         super(null, callback, true, pool);
         this.task = task;
         this.exceptionInd = new AtomicBoolean();
     }
 
     //constructor for children task
-    private TreeTaskHandle(BeeTreeTask task, TreeTaskHandle parent, int brotherSize, AtomicInteger completedCount, TaskPoolImplement pool, TreeTaskHandle root) {
+    private TreeTaskHandle(BeeTreeTask task, TreeTaskHandle parent, int brotherSize, AtomicInteger completedCount, TaskExecutionPool pool, TreeTaskHandle root) {
         super(null, null, false, pool);
         this.task = task;
         this.root = root;
