@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskException;
@@ -31,6 +33,7 @@ import static org.stone.beetp.BeeTaskStates.*;
  * @version 1.0
  */
 class BaseHandle implements BeeTaskHandle {
+    private static final Logger Log = LoggerFactory.getLogger(BaseHandle.class);
     private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = AtomicIntegerFieldUpdater.newUpdater(BaseHandle.class, "state");
     protected final BeeTask task;
     protected final TaskExecutionPool pool;
@@ -99,8 +102,13 @@ class BaseHandle implements BeeTaskHandle {
         return StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED);
     }
 
-    boolean setAsRunning() {
-        return StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING);
+    boolean setAsRunning(TaskWorkThread thread) {
+        if (StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING)) {
+            thread.currentTaskHandle = this;
+            this.workThread = thread;
+            return true;
+        }
+        return false;
     }
 
     //***************************************************************************************************************//
@@ -109,7 +117,7 @@ class BaseHandle implements BeeTaskHandle {
     public boolean cancel(final boolean mayInterruptIfRunning) {
         //1: update task state to be cancelled via cas
         if (this.setAsCancelled()) {
-            this.setResult(TASK_CANCELLED, null, null);//if exists result waiters,wakeup them
+            this.setResult(TASK_CANCELLED, null);//if exists result waiters,wakeup them
             this.pool.removeCancelledTask(this);//remove the cancelled task from pool
             return true;
         }
@@ -182,41 +190,43 @@ class BaseHandle implements BeeTaskHandle {
     //***************************************************************************************************************//
     //                              7: execute task(4)                                                               //
     //***************************************************************************************************************//
-    void beforeExecute(TaskWorkThread workThread) {
+    void beforeExecute() {
         pool.getTaskHoldingCount().decrementAndGet();
+        pool.getTaskRunningCount().incrementAndGet();
     }
 
-    void afterExecute(TaskWorkThread workThread) {
-        workThread.addCompletedCount();
+    void afterExecute() {
+        pool.getTaskRunningCount().decrementAndGet();
+        pool.getTaskCompletedCount().incrementAndGet();
     }
 
-    void executeTask(TaskWorkThread workThread) {
+    Object invokeTaskCall() throws Exception {
+        return task.call();
+    }
+
+    void executeTask() {
         if (callback != null) {
             try {
                 callback.beforeCall(this);
             } catch (Throwable e) {
-                //do nothing
+                Log.warn("Failed to execute callback(beforeCall)");
             }
         }
 
         try {
-            this.setResult(TASK_CALL_RESULT, this.invokeTaskCall(), workThread);
+            this.setResult(TASK_CALL_RESULT, this.invokeTaskCall());
         } catch (Throwable e) {
-            this.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e), workThread);
+            this.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e));
         }
-    }
-
-    //this method will override in tree handle
-    Object invokeTaskCall() throws Exception {
-        return task.call();
     }
 
     //***************************************************************************************************************//
     //                              8: result setting(3)                                                             //
     //***************************************************************************************************************//
-    void setResult(final int state, final Object result, TaskWorkThread workThread) {
+    void setResult(int state, Object result) {
         //1: set result and try to wakeup waiters if exists
         this.result = result;
+        this.workThread = null;
         this.state = state;
 
         if (isRoot) {
@@ -230,16 +240,16 @@ class BaseHandle implements BeeTaskHandle {
             try {
                 this.callback.afterCall(state, result, this);
             } catch (final Throwable e) {
-                //do nothing
+                Log.warn("Failed to execute callback(afterCall)");
             }
         }
 
         //3: plugin method call
-        this.afterSetResult(state, result, workThread);
+        this.afterSetResult(state, result);
     }
 
     //fill incr complete count by join task and tree task
-    void afterSetResult(final int state, final Object result, TaskWorkThread workThread) {
+    void afterSetResult(int state, Object result) {
 
     }
 }

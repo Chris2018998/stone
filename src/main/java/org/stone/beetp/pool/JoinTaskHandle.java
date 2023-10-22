@@ -58,6 +58,15 @@ final class JoinTaskHandle extends BaseHandle {
         this.completedCount = completedCount;
     }
 
+    private static void cancelSubTasks(JoinTaskHandle[] subTaskHandles) {
+        new Thread() {
+            public void run() {
+                for (JoinTaskHandle childHandle : subTaskHandles)
+                    childHandle.cancel(true);
+            }
+        }.start();
+    }
+
     //***************************************************************************************************************//
     //                                  3: task cancel(1)                                                            //
     //***************************************************************************************************************//
@@ -66,12 +75,7 @@ final class JoinTaskHandle extends BaseHandle {
 
         if (subTaskHandles != null) {
             if (this.isRoot) {
-                new Thread() {//async to cancel children
-                    public void run() {
-                        for (JoinTaskHandle childHandle : subTaskHandles)
-                            childHandle.cancel(mayInterruptIfRunning);
-                    }
-                }.start();
+                cancelSubTasks(subTaskHandles);
             } else {
                 for (JoinTaskHandle childHandle : subTaskHandles)
                     childHandle.cancel(mayInterruptIfRunning);
@@ -84,6 +88,7 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
     void beforeExecute() {
+        if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
     }
 
     void afterExecute() {
@@ -106,22 +111,18 @@ final class JoinTaskHandle extends BaseHandle {
                 pool.pushToExecutionQueue(subJoinHandles[i]);
             }
         } else {//4: execute leaf task
-            super.executeTask(workThread);
+            super.executeTask();
         }
     }
 
     //***************************************************************************************************************//
     //                                  5: result method                                                             //
     //***************************************************************************************************************//
-    void afterSetResult(final int state, final Object result, TaskWorkThread workThread) {
+    void afterSetResult(final int state, final Object result) {
         if (brotherSize == 0) return;
 
         if (state == TASK_CALL_EXCEPTION) {
-            if (root.exceptionInd.compareAndSet(false, true)) {
-                root.setResult(state, result, workThread);
-                root.cancel(true);
-                if (workThread != null) workThread.addCompletedCount();
-            }
+            this.handleSubTaskException(result);
         } else {
             do {
                 int currentSize = completedCount.get();
@@ -129,23 +130,30 @@ final class JoinTaskHandle extends BaseHandle {
                 if (completedCount.compareAndSet(currentSize, currentSize + 1)) {
                     if (currentSize + 1 == brotherSize) {
                         try {
-                            parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles), workThread);//join children
-                        } catch (Throwable e) {
-                            //e.printStackTrace();
-                            if (root.exceptionInd.compareAndSet(false, true)) {
-                                root.setResult(TASK_CALL_EXCEPTION, new TaskExecutionException(e), workThread);
-                                root.cancel(true);
+                            parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles));//join children
+                            if (parent.isRoot) {
+                                pool.getTaskHoldingCount().decrementAndGet();
+                                pool.getTaskRunningCount().decrementAndGet();
+                                pool.getTaskCompletedCount().incrementAndGet();
                             }
-                        }
-
-                        if (parent.isRoot) {
-                            pool.getTaskHoldingCount().decrementAndGet();
-                            if (workThread != null) workThread.addCompletedCount();
+                        } catch (Throwable e) {
+                            this.handleSubTaskException(new TaskExecutionException(e));
                         }
                     }
                     break;
                 }
             } while (true);
+        }
+    }
+
+    private void handleSubTaskException(Object result) {
+        if (root.exceptionInd.compareAndSet(false, true)) {
+            root.setResult(TASK_CALL_EXCEPTION, result);
+            pool.getTaskHoldingCount().decrementAndGet();
+            pool.getTaskRunningCount().decrementAndGet();
+            pool.getTaskCompletedCount().incrementAndGet();
+
+            cancelSubTasks(root.subTaskHandles);
         }
     }
 }
