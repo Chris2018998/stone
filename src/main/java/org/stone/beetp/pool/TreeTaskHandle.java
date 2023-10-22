@@ -58,15 +58,6 @@ final class TreeTaskHandle extends BaseHandle {
         this.completedCount = completedCount;
     }
 
-    private static void cancelTreeSubTasks(TreeTaskHandle[] subTaskHandles) {
-        new Thread() {
-            public void run() {
-                for (TreeTaskHandle childHandle : subTaskHandles)
-                    childHandle.cancel(true);
-            }
-        }.start();
-    }
-
     BeeTreeTask getTreeTask() {
         return task;
     }
@@ -79,12 +70,7 @@ final class TreeTaskHandle extends BaseHandle {
 
         if (subTaskHandles != null) {
             if (this.isRoot) {
-                new Thread() {//async to cancel children
-                    public void run() {
-                        for (TreeTaskHandle childHandle : subTaskHandles)
-                            childHandle.cancel(mayInterruptIfRunning);
-                    }
-                }.start();
+                new AsynTreeCancelThread(subTaskHandles, mayInterruptIfRunning).start();
             } else {
                 for (TreeTaskHandle childHandle : subTaskHandles)
                     childHandle.cancel(mayInterruptIfRunning);
@@ -153,7 +139,6 @@ final class TreeTaskHandle extends BaseHandle {
                             this.handleTreeSubTaskException(new TaskExecutionException(e));
                         }
                     }
-
                     break;
                 }
             } while (true);
@@ -166,7 +151,23 @@ final class TreeTaskHandle extends BaseHandle {
             pool.getTaskHoldingCount().decrementAndGet();
             pool.getTaskRunningCount().decrementAndGet();
             pool.getTaskCompletedCount().incrementAndGet();
-            cancelTreeSubTasks(root.subTaskHandles);
+
+            new AsynTreeCancelThread(root.subTaskHandles, true).start();
+        }
+    }
+
+    private static class AsynTreeCancelThread extends Thread {
+        private boolean mayInterruptIfRunning;
+        private TreeTaskHandle[] subTaskHandles;
+
+        AsynTreeCancelThread(TreeTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
+            this.subTaskHandles = subTaskHandles;
+            this.mayInterruptIfRunning = mayInterruptIfRunning;
+        }
+
+        public void run() {
+            for (TreeTaskHandle childHandle : subTaskHandles)
+                childHandle.cancel(mayInterruptIfRunning);
         }
     }
 }

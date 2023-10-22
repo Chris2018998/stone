@@ -58,15 +58,6 @@ final class JoinTaskHandle extends BaseHandle {
         this.completedCount = completedCount;
     }
 
-    private static void cancelSubTasks(JoinTaskHandle[] subTaskHandles) {
-        new Thread() {
-            public void run() {
-                for (JoinTaskHandle childHandle : subTaskHandles)
-                    childHandle.cancel(true);
-            }
-        }.start();
-    }
-
     //***************************************************************************************************************//
     //                                  3: task cancel(1)                                                            //
     //***************************************************************************************************************//
@@ -75,7 +66,7 @@ final class JoinTaskHandle extends BaseHandle {
 
         if (subTaskHandles != null) {
             if (this.isRoot) {
-                cancelSubTasks(subTaskHandles);
+                new AsynJoinCancelThread(root.subTaskHandles, mayInterruptIfRunning).start();
             } else {
                 for (JoinTaskHandle childHandle : subTaskHandles)
                     childHandle.cancel(mayInterruptIfRunning);
@@ -153,7 +144,22 @@ final class JoinTaskHandle extends BaseHandle {
             pool.getTaskRunningCount().decrementAndGet();
             pool.getTaskCompletedCount().incrementAndGet();
 
-            cancelSubTasks(root.subTaskHandles);
+            new AsynJoinCancelThread(root.subTaskHandles, true).start();
+        }
+    }
+
+    private static class AsynJoinCancelThread extends Thread {
+        private boolean mayInterruptIfRunning;
+        private JoinTaskHandle[] subTaskHandles;
+
+        AsynJoinCancelThread(JoinTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
+            this.subTaskHandles = subTaskHandles;
+            this.mayInterruptIfRunning = mayInterruptIfRunning;
+        }
+
+        public void run() {
+            for (JoinTaskHandle childHandle : subTaskHandles)
+                childHandle.cancel(mayInterruptIfRunning);
         }
     }
 }
