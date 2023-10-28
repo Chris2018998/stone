@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -37,6 +37,8 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
  */
 public final class TaskExecutionPool implements BeeTaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
+    private static final AtomicReferenceFieldUpdater<PoolWorkerThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(PoolWorkerThread.class, Object.class, "workState");
+
     private String poolName;
     private volatile int poolState;
 
@@ -464,62 +466,59 @@ public final class TaskExecutionPool implements BeeTaskPool {
     //                                  8: Pool worker class and scheduled class (2)                                 //
     //***************************************************************************************************************//
     private class PoolWorkerThread extends TaskWorkThread {
-        private final AtomicReference<Object> workState;
+        volatile Object workState;
 
         PoolWorkerThread(Object state) {
             this.setDaemon(workerInDaemon);
             this.setName(poolName + "-worker thread-" + workerNameIndex.getAndIncrement());
-            this.workState = new AtomicReference<>(state);
+            this.workState = state;
         }
 
         void setState(Object update) {
-            workState.set(update);
+            this.workState = update;
         }
 
         boolean compareAndSetState(Object expect, Object update) {
-            return workState.compareAndSet(expect, update);
+            return expect == workState && workerStateUpd.compareAndSet(this, expect, update);
         }
 
         public void run() {
             do {
                 //1: read state from work
-                Object state = workState.get();//exits repeat read same
-                if (state == WORKER_TERMINATED || poolState >= POOL_TERMINATING)
-                    break;
+                if (poolState >= POOL_TERMINATING) break;
+                Object state = this.workState;//exits repeat read same
+                if (state == WORKER_TERMINATED) break;
 
                 //2: get task from state or poll from queue
                 BaseHandle handle;
-                if (state instanceof BaseHandle) {
+                if (state instanceof BaseHandle) {//handle must be not null
                     handle = (BaseHandle) state;
-                    state = WORKER_WORKING;
-                    this.workState.set(WORKER_WORKING);
+                    this.workState = WORKER_WORKING;
                 } else {
-                    handle = executionQueue.poll();
+                    handle = executionQueue.poll();//may be poll null from queue
                 }
 
                 //3: execute task
                 if (handle != null) {
-                    if (handle.setAsRunning(this)) {
+                    if (handle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
                         try {
                             handle.beforeExecute();
                             handle.executeTask();
                         } finally {
                             handle.afterExecute();
-
-                            handle.workThread = null;
                             this.currentTaskHandle = null;
                         }
                     }
-                } else if (compareAndSetState(state, WORKER_IDLE)) {//4: park work thread
+                } else {//4: park work thread
+                    this.workState = WORKER_IDLE;//set to be idle from WORKER_WORKING
                     if (workerKeepaliveTimed)
                         LockSupport.parkNanos(workerKeepAliveTime);
                     else
                         LockSupport.park();
 
-                    compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);
+                    Thread.interrupted();//clean possible interruption state
+                    compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);//self terminate
                 }
-
-                Thread.interrupted();//clean interruption state
             } while (true);
 
             workerCount.decrementAndGet();

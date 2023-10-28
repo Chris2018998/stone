@@ -9,8 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stone.beetp.BeeTask;
 import org.stone.beetp.BeeTaskCallback;
 import org.stone.beetp.BeeTaskException;
@@ -33,7 +31,6 @@ import static org.stone.beetp.BeeTaskStates.*;
  * @version 1.0
  */
 class BaseHandle implements BeeTaskHandle {
-    private static final Logger Log = LoggerFactory.getLogger(BaseHandle.class);
     private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = AtomicIntegerFieldUpdater.newUpdater(BaseHandle.class, "state");
     protected final BeeTask task;
     protected final TaskExecutionPool pool;
@@ -43,7 +40,7 @@ class BaseHandle implements BeeTaskHandle {
 
     protected Object result;
     protected volatile int state;
-    volatile TaskWorkThread workThread;//set before execution by pool worker and reset to null after execution
+    private TaskWorkThread workThread;//set before execution by pool worker and reset to null after execution
 
     //***************************************************************************************************************//
     //                                 1: constructor(1)                                                             //
@@ -141,7 +138,7 @@ class BaseHandle implements BeeTaskHandle {
     }
 
     public Object get(final long timeout, final TimeUnit unit) throws BeeTaskException, InterruptedException {
-        if (timeout < 0) throw new IllegalArgumentException("Time out value must be greater than zero");
+        if (timeout < 0) throw new IllegalArgumentException("Time out must be greater than zero");
         if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
         return this.get(unit.toNanos(timeout));
     }
@@ -209,7 +206,7 @@ class BaseHandle implements BeeTaskHandle {
             try {
                 callback.beforeCall(this);
             } catch (Throwable e) {
-                Log.warn("Failed to execute callback(beforeCall)");
+                System.err.println("Failed to execute callback.beforeCall");
             }
         }
 
@@ -229,7 +226,7 @@ class BaseHandle implements BeeTaskHandle {
         this.workThread = null;
         this.state = state;
 
-        if (isRoot) {
+        if (waitQueue != null) {
             Thread waitThread;
             while ((waitThread = waitQueue.poll()) != null)
                 LockSupport.unpark(waitThread);
@@ -240,7 +237,7 @@ class BaseHandle implements BeeTaskHandle {
             try {
                 this.callback.afterCall(state, result, this);
             } catch (final Throwable e) {
-                Log.warn("Failed to execute callback(afterCall)");
+                System.err.println("Failed to execute callback.afterCall");
             }
         }
 
