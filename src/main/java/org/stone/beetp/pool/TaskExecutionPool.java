@@ -485,7 +485,7 @@ public final class TaskExecutionPool implements BeeTaskPool {
         public void run() {
             do {
                 //1: read state from work
-                if (poolState >= POOL_TERMINATING) break;
+                //if (poolState >= POOL_TERMINATING) break;
                 Object state = this.workState;//exits repeat read same
                 if (state == WORKER_TERMINATED) break;
 
@@ -511,14 +511,15 @@ public final class TaskExecutionPool implements BeeTaskPool {
                     }
                 } else {//4: park work thread
                     this.workState = WORKER_IDLE;//set to be idle from WORKER_WORKING
-                    if (workerKeepaliveTimed)
+                    if (workerKeepaliveTimed) {
                         LockSupport.parkNanos(workerKeepAliveTime);
-                    else
+                        if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;//set to be terminated if timeout
+                    } else {
                         LockSupport.park();
-
-                    Thread.interrupted();//clean possible interruption state
-                    compareAndSetState(WORKER_IDLE, WORKER_TERMINATED);//self terminate
+                    }
                 }
+
+                Thread.interrupted();//clean possible interruption state
             } while (true);
 
             workerCount.decrementAndGet();
