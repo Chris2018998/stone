@@ -235,11 +235,8 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //2: try to create a new worker
-        if (this.workerArray.length < this.maxWorkerSize && this.createTaskWorker(taskHandle) != null)
-            return;
-
-        //3: push task to queue directly
-        this.executionQueue.offer(taskHandle);
+        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
+            this.executionQueue.offer(taskHandle);
     }
 
     void wakeupSchedulePeekThread() {
@@ -307,7 +304,7 @@ public final class TaskExecutionPool implements TaskPool {
         }
     }
 
-    private TaskPoolCancelledTasks removeAll(boolean mayInterruptIfRunning) {
+    private TaskPoolCancelledList removeAll(boolean mayInterruptIfRunning) {
         List<Task> unRunningTaskList = new LinkedList<>();
         List<TreeTask> unRunningTreeTaskList = new LinkedList<>();
 
@@ -352,7 +349,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.taskRunningCount.set(0);
         this.taskCompletedCount.set(0);
         this.workerArray = new PoolWorkerThread[0];
-        return new TaskPoolCancelledTasks(unRunningTaskList, unRunningTreeTaskList);
+        return new TaskPoolCancelledList(unRunningTaskList, unRunningTreeTaskList);
     }
 
     //remove from array or queue(method called inside handle)
@@ -377,9 +374,9 @@ public final class TaskExecutionPool implements TaskPool {
         return poolState == POOL_TERMINATING;
     }
 
-    public TaskPoolCancelledTasks terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
+    public TaskPoolCancelledList terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
-            TaskPoolCancelledTasks info = this.removeAll(mayInterruptIfRunning);
+            TaskPoolCancelledList info = this.removeAll(mayInterruptIfRunning);
 
             this.poolState = POOL_TERMINATED;
             for (Thread thread : poolTerminateWaitQueue)
