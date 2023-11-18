@@ -1,0 +1,35 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
+ */
+package org.stone.beetp;
+
+/**
+ * A callback interface around task execution,which may be submitted to task pool with a task
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+public interface TaskCallback {
+
+    /**
+     * method invoked before task execution
+     *
+     * @param handle of a task
+     */
+    void beforeCall(TaskHandle handle);
+
+    /**
+     * method invoked after task execution
+     *
+     * @param code   result code of execution
+     * @param result of task execution
+     * @param handle of task
+     */
+    void afterCall(int code, Object result, TaskHandle handle);
+}
