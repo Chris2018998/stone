@@ -75,7 +75,7 @@ public interface TaskPool {
     boolean isTerminating();
 
     //return uncompleted tasks in queue
-    CancelledTasks terminate(boolean mayInterruptIfRunning) throws TaskPoolException;
+    TaskPoolCancelledTasks terminate(boolean mayInterruptIfRunning) throws TaskPoolException;
 
     //true:execution has been terminated
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;

@@ -307,7 +307,7 @@ public final class TaskExecutionPool implements TaskPool {
         }
     }
 
-    private CancelledTasks removeAll(boolean mayInterruptIfRunning) {
+    private TaskPoolCancelledTasks removeAll(boolean mayInterruptIfRunning) {
         List<Task> unRunningTaskList = new LinkedList<>();
         List<TreeTask> unRunningTreeTaskList = new LinkedList<>();
 
@@ -352,7 +352,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.taskRunningCount.set(0);
         this.taskCompletedCount.set(0);
         this.workerArray = new PoolWorkerThread[0];
-        return new CancelledTasks(unRunningTaskList, unRunningTreeTaskList);
+        return new TaskPoolCancelledTasks(unRunningTaskList, unRunningTreeTaskList);
     }
 
     //remove from array or queue(method called inside handle)
@@ -377,9 +377,9 @@ public final class TaskExecutionPool implements TaskPool {
         return poolState == POOL_TERMINATING;
     }
 
-    public CancelledTasks terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
+    public TaskPoolCancelledTasks terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
-            CancelledTasks info = this.removeAll(mayInterruptIfRunning);
+            TaskPoolCancelledTasks info = this.removeAll(mayInterruptIfRunning);
 
             this.poolState = POOL_TERMINATED;
             for (Thread thread : poolTerminateWaitQueue)
