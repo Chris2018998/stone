@@ -37,7 +37,7 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 public final class TaskExecutionPool implements TaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
-    private static final AtomicReferenceFieldUpdater<PoolWorkerThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(PoolWorkerThread.class, Object.class, "workState");
+    private static final AtomicReferenceFieldUpdater<PoolWorkerThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(PoolWorkerThread.class, Object.class, "state");
 
     //1:fields about pool
     private String poolName;
@@ -53,6 +53,8 @@ public final class TaskExecutionPool implements TaskPool {
     //3: fields about submitted tasks
     private int maxTaskSize;
     private AtomicInteger taskHoldingCount;//(once count + scheduled count + join count(root))
+
+    //@todo these two fields will be moved to work thread(performance should be better)
     private AtomicInteger taskRunningCount;
     private AtomicLong taskCompletedCount;//update at termination of work thread,which add its completed count to this number
 
@@ -64,7 +66,7 @@ public final class TaskExecutionPool implements TaskPool {
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
-    //                                          1: execution initialization(1)                                       //
+    //                                          1: execution initialization(2)                                       //
     //***************************************************************************************************************//
     public void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException {
         //step1: execution config check
@@ -95,6 +97,7 @@ public final class TaskExecutionPool implements TaskPool {
 
         //step2: create some queues(worker queue,task queue,termination wait queue)
         if (workerArray == null) {
+            this.workerArrayLock = new ReentrantLock();
             this.executionQueue = new ConcurrentLinkedQueue<>();
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
@@ -103,16 +106,14 @@ public final class TaskExecutionPool implements TaskPool {
             this.taskHoldingCount = new AtomicInteger();
             this.taskRunningCount = new AtomicInteger();
             this.taskCompletedCount = new AtomicLong();
+        }
 
-            //step4: create initial work threads
-            this.workerArrayLock = new ReentrantLock();
-            int workerInitSize = config.getInitWorkerSize();
-            PoolWorkerThread[] initWorkers = new PoolWorkerThread[workerInitSize];
-            for (int i = 0; i < workerInitSize; i++) {
-                initWorkers[i] = new PoolWorkerThread(WORKER_WORKING);
-                initWorkers[i].start();
-            }
-            this.workerArray = initWorkers;
+        //step4: create initial work threads
+        int workerInitSize = config.getInitWorkerSize();
+        this.workerArray = new PoolWorkerThread[workerInitSize];
+        for (int i = 0; i < workerInitSize; i++) {
+            workerArray[i] = new PoolWorkerThread(WORKER_WORKING);
+            workerArray[i].start();
         }
 
         //step5: create delayed queue and peek thread working on queue
@@ -124,7 +125,7 @@ public final class TaskExecutionPool implements TaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                       2:  task submission(6)                                                  //
+    //                                       2: task submission(6)                                                   //
     //***************************************************************************************************************//
     public TaskHandle submit(Task task) throws TaskException {
         return submit(task, (TaskCallback) null);
@@ -219,7 +220,7 @@ public final class TaskExecutionPool implements TaskPool {
         //2: task capacity full check
         do {
             int currentCount = taskHoldingCount.get();
-            if (currentCount >= maxTaskSize) throw new TaskRejectedException("Capacity of tasks reached max size");
+            if (currentCount >= maxTaskSize) throw new TaskRejectedException("Capacity of tasks has reached max size");
             if (taskHoldingCount.compareAndSet(currentCount, currentCount + 1)) return;
         } while (true);
     }
@@ -228,7 +229,7 @@ public final class TaskExecutionPool implements TaskPool {
     void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
         for (PoolWorkerThread workerThread : workerArray) {
-            if (workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
+            if (workerThread.state == WORKER_IDLE && workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
                 LockSupport.unpark(workerThread);
                 return;
             }
@@ -491,34 +492,34 @@ public final class TaskExecutionPool implements TaskPool {
     //                                 9: Pool worker class and scheduled class (2)                                  //
     //***************************************************************************************************************//
     private class PoolWorkerThread extends TaskWorkThread {
-        volatile Object workState;
+        volatile Object state;
 
         PoolWorkerThread(Object state) {
             this.setDaemon(workInDaemon);
             this.setName(poolName + "-worker thread");
-            this.workState = state;
+            this.state = state;
         }
 
         void setState(Object update) {
-            this.workState = update;
+            this.state = update;
         }
 
         boolean compareAndSetState(Object expect, Object update) {
-            return expect == workState && workerStateUpd.compareAndSet(this, expect, update);
+            return expect == state && workerStateUpd.compareAndSet(this, expect, update);
         }
 
         public void run() {
             do {
                 //1: read state from work
                 //if (poolState >= POOL_TERMINATING) break;
-                Object state = this.workState;//exits repeat read same
+                Object state = this.state;//exits repeat read same
                 if (state == WORKER_TERMINATED) break;
 
                 //2: get task from state or poll from queue
                 BaseHandle handle;
                 if (state instanceof BaseHandle) {//handle must be not null
                     handle = (BaseHandle) state;
-                    this.workState = WORKER_WORKING;
+                    this.state = WORKER_WORKING;
                 } else {
                     handle = executionQueue.poll();//may be poll null from queue
                 }
@@ -535,7 +536,7 @@ public final class TaskExecutionPool implements TaskPool {
                         }
                     }
                 } else {//4: park work thread
-                    this.workState = WORKER_IDLE;//set to be idle from WORKER_WORKING
+                    this.state = WORKER_IDLE;//set to be idle from WORKER_WORKING
                     if (idleTimeoutNanos > 0L) {
                         LockSupport.parkNanos(idleTimeoutNanos);
                         if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;//set to be terminated if timeout
