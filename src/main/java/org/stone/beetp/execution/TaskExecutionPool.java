@@ -20,7 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -37,7 +36,6 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 public final class TaskExecutionPool implements TaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
-    private static final AtomicReferenceFieldUpdater<PoolWorkerThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(PoolWorkerThread.class, Object.class, "state");
 
     //1:fields about pool
     private String poolName;
@@ -48,7 +46,7 @@ public final class TaskExecutionPool implements TaskPool {
     private boolean workInDaemon;
     private long idleTimeoutNanos;
     private ReentrantLock workerArrayLock;
-    private volatile PoolWorkerThread[] workerArray;
+    private volatile TaskWorkThread[] workerArray;
 
     //3: fields about submitted tasks
     private int maxTaskSize;
@@ -110,9 +108,9 @@ public final class TaskExecutionPool implements TaskPool {
 
         //step4: create initial work threads
         int workerInitSize = config.getInitWorkerSize();
-        this.workerArray = new PoolWorkerThread[workerInitSize];
+        this.workerArray = new TaskWorkThread[workerInitSize];
         for (int i = 0; i < workerInitSize; i++) {
-            workerArray[i] = new PoolWorkerThread(WORKER_WORKING);
+            workerArray[i] = new TaskWorkThread(WORKER_WORKING, this, workInDaemon, poolName);
             workerArray[i].start();
         }
 
@@ -228,7 +226,7 @@ public final class TaskExecutionPool implements TaskPool {
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
     void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
-        for (PoolWorkerThread workerThread : workerArray) {
+        for (TaskWorkThread workerThread : workerArray) {
             if (workerThread.state == WORKER_IDLE && workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
                 LockSupport.unpark(workerThread);
                 return;
@@ -332,7 +330,7 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //3: remove work threads
-        for (PoolWorkerThread workerThread : workerArray) {
+        for (TaskWorkThread workerThread : workerArray) {
             if (mayInterruptIfRunning) {
                 workerThread.setState(WORKER_TERMINATED);
                 workerThread.interrupt();
@@ -349,7 +347,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.taskHoldingCount.set(0);
         this.taskRunningCount.set(0);
         this.taskCompletedCount.set(0);
-        this.workerArray = new PoolWorkerThread[0];
+        this.workerArray = new TaskWorkThread[0];
         return new TaskPoolCancelledList(unRunningTaskList, unRunningTreeTaskList);
     }
 
@@ -435,8 +433,16 @@ public final class TaskExecutionPool implements TaskPool {
         return this.taskCompletedCount;
     }
 
+    long getIdleTimeoutNanos() {
+        return this.idleTimeoutNanos;
+    }
+
     ScheduledTaskQueue getScheduledDelayedQueue() {
         return scheduledDelayedQueue;
+    }
+
+    ConcurrentLinkedQueue<BaseHandle> getTaskExecutionQueue() {
+        return this.executionQueue;
     }
 
     public org.stone.beetp.TaskPoolMonitorVo getPoolMonitorVo() {
@@ -452,14 +458,14 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                  8: worker thread creation or remove                                          //
     //***************************************************************************************************************//
-    private PoolWorkerThread createTaskWorker(BaseHandle taskHandle) {
+    private TaskWorkThread createTaskWorker(BaseHandle taskHandle) {
         this.workerArrayLock.lock();
         try {
             int l = this.workerArray.length;
             if (l < this.maxWorkerSize) {
-                PoolWorkerThread[] arrayNew = new PoolWorkerThread[l + 1];
+                TaskWorkThread[] arrayNew = new TaskWorkThread[l + 1];
                 System.arraycopy(this.workerArray, 0, arrayNew, 0, l);
-                arrayNew[l] = new PoolWorkerThread(taskHandle);
+                arrayNew[l] = new TaskWorkThread(taskHandle, this, workInDaemon, poolName);
                 this.workerArray = arrayNew;
                 return arrayNew[l];
             } else {
@@ -470,12 +476,12 @@ public final class TaskExecutionPool implements TaskPool {
         }
     }
 
-    private void removeTaskWorker(PoolWorkerThread worker) {
+    void removeTaskWorker(TaskWorkThread worker) {
         this.workerArrayLock.lock();
         try {
             for (int l = this.workerArray.length, i = l - 1; i >= 0; i--) {
                 if (this.workerArray[i] == worker) {
-                    PoolWorkerThread[] arrayNew = new PoolWorkerThread[l - 1];
+                    TaskWorkThread[] arrayNew = new TaskWorkThread[l - 1];
                     System.arraycopy(this.workerArray, 0, arrayNew, 0, i);//copy pre
                     int m = l - i - 1;
                     if (m > 0) System.arraycopy(this.workerArray, i + 1, arrayNew, i, m);//copy after
@@ -491,68 +497,6 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                 9: Pool worker class and scheduled class (2)                                  //
     //***************************************************************************************************************//
-    private class PoolWorkerThread extends TaskWorkThread {
-        volatile Object state;
-
-        PoolWorkerThread(Object state) {
-            this.setDaemon(workInDaemon);
-            this.setName(poolName + "-worker thread");
-            this.state = state;
-        }
-
-        void setState(Object update) {
-            this.state = update;
-        }
-
-        boolean compareAndSetState(Object expect, Object update) {
-            return expect == state && workerStateUpd.compareAndSet(this, expect, update);
-        }
-
-        public void run() {
-            do {
-                //1: read state from work
-                //if (poolState >= POOL_TERMINATING) break;
-                Object state = this.state;//exits repeat read same
-                if (state == WORKER_TERMINATED) break;
-
-                //2: get task from state or poll from queue
-                BaseHandle handle;
-                if (state instanceof BaseHandle) {//handle must be not null
-                    handle = (BaseHandle) state;
-                    this.state = WORKER_WORKING;
-                } else {
-                    handle = executionQueue.poll();//may be poll null from queue
-                }
-
-                //3: execute task
-                if (handle != null) {
-                    if (handle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
-                        try {
-                            handle.beforeExecute();
-                            handle.executeTask();
-                        } finally {
-                            handle.afterExecute();
-                            this.currentTaskHandle = null;
-                        }
-                    }
-                } else {//4: park work thread
-                    this.state = WORKER_IDLE;//set to be idle from WORKER_WORKING
-                    if (idleTimeoutNanos > 0L) {
-                        LockSupport.parkNanos(idleTimeoutNanos);
-                        if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;//set to be terminated if timeout
-                    } else {
-                        LockSupport.park();
-                    }
-                }
-
-                Thread.interrupted();//clean possible interruption state
-            } while (true);
-
-            //remove self from worker array
-            removeTaskWorker(this);
-        }
-    }
-
     private class PoolScheduledTaskPeekThread extends Thread {
         PoolScheduledTaskPeekThread() {
             this.setName(poolName + "-ScheduledPeek");

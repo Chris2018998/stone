@@ -84,7 +84,7 @@ class BaseHandle implements TaskHandle {
 
     final boolean setAsRunning(TaskWorkThread thread) {
         if (U.compareAndSwapInt(this, stateOffset, TASK_WAITING, TASK_EXECUTING)) {
-            thread.currentTaskHandle = this;
+            thread.curTaskHandle = this;
             this.workThread = thread;
             return true;
         }
