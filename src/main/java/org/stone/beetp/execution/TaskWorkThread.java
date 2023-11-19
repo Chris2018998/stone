@@ -28,11 +28,13 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
 final class TaskWorkThread extends Thread {
     private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
     private final TaskExecutionPool pool;
-    protected ConcurrentLinkedDeque<Task> joinSubTaskQueue;
-    protected ConcurrentLinkedDeque<TreeTask> treeSubTaskQueue;
-
-    volatile Object state;
+    volatile Object state;//state of work thread
+    volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//in processing task handle
+
+    //dequeue for joining tasks
+    private ConcurrentLinkedDeque<Task> joinSubTaskQueue;
+    private ConcurrentLinkedDeque<TreeTask> treeSubTaskQueue;
 
     TaskWorkThread(Object state, TaskExecutionPool pool, boolean workInDaemon, String poolName) {
         this.pool = pool;
