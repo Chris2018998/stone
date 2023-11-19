@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -50,11 +49,8 @@ public final class TaskExecutionPool implements TaskPool {
 
     //3: fields about submitted tasks
     private int maxTaskSize;
+    private volatile long completedCount;//update in <method>removeTaskWorker</method>
     private AtomicInteger taskHoldingCount;//(once count + scheduled count + join count(root))
-
-    //@todo these two fields will be moved to work thread(performance should be better)
-    private AtomicInteger taskRunningCount;
-    private AtomicLong taskCompletedCount;//update at termination of work thread,which add its completed count to this number
 
     //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
@@ -100,10 +96,9 @@ public final class TaskExecutionPool implements TaskPool {
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
             //step3: atomic fields of execution monitor
+            this.completedCount = 0;//set to zero
             this.monitorVo = new TaskPoolMonitorVo();
             this.taskHoldingCount = new AtomicInteger();
-            this.taskRunningCount = new AtomicInteger();
-            this.taskCompletedCount = new AtomicLong();
         }
 
         //step4: create initial work threads
@@ -344,9 +339,8 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //4:reset atomic numbers to zero
+        this.completedCount = 0;
         this.taskHoldingCount.set(0);
-        this.taskRunningCount.set(0);
-        this.taskCompletedCount.set(0);
         this.workerArray = new TaskWorkThread[0];
         return new TaskPoolCancelledList(unRunningTaskList, unRunningTreeTaskList);
     }
@@ -425,14 +419,6 @@ public final class TaskExecutionPool implements TaskPool {
         return this.taskHoldingCount;
     }
 
-    AtomicInteger getTaskRunningCount() {
-        return this.taskRunningCount;
-    }
-
-    AtomicLong getTaskCompletedCount() {
-        return this.taskCompletedCount;
-    }
-
     long getIdleTimeoutNanos() {
         return this.idleTimeoutNanos;
     }
@@ -449,8 +435,10 @@ public final class TaskExecutionPool implements TaskPool {
         monitorVo.setPoolState(this.poolState);
         monitorVo.setWorkerCount(workerArray.length);
         monitorVo.setTaskHoldingCount(taskHoldingCount.get());
-        monitorVo.setTaskRunningCount(taskRunningCount.get());
-        monitorVo.setTaskCompletedCount(taskCompletedCount.get());
+
+        //@todo update soon,waiting waiting.....
+        //monitorVo.setTaskRunningCount(taskRunningCount.get());
+        monitorVo.setTaskCompletedCount(this.completedCount);
 
         return monitorVo;
     }
@@ -479,6 +467,9 @@ public final class TaskExecutionPool implements TaskPool {
     void removeTaskWorker(TaskWorkThread worker) {
         this.workerArrayLock.lock();
         try {
+            //add completed count of worker to pool
+            this.completedCount += worker.completedCount;
+
             for (int l = this.workerArray.length, i = l - 1; i >= 0; i--) {
                 if (this.workerArray[i] == worker) {
                     TaskWorkThread[] arrayNew = new TaskWorkThread[l - 1];

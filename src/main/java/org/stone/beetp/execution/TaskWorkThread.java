@@ -30,7 +30,7 @@ final class TaskWorkThread extends Thread {
     private final TaskExecutionPool pool;
     volatile Object state;//state of work thread
     volatile long completedCount;//completed count of tasks by thread
-    volatile BaseHandle curTaskHandle;//in processing task handle
+    volatile BaseHandle curTaskHandle;//task handle in processing
 
     //dequeue for joining tasks
     private ConcurrentLinkedDeque<Task> joinSubTaskQueue;
