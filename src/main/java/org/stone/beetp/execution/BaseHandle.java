@@ -172,19 +172,17 @@ class BaseHandle implements TaskHandle {
     //***************************************************************************************************************//
     void beforeExecute() {
         pool.getTaskHoldingCount().decrementAndGet();
-        pool.getTaskRunningCount().incrementAndGet();
     }
 
-    void afterExecute() {
-        pool.getTaskRunningCount().decrementAndGet();
-        pool.getTaskCompletedCount().incrementAndGet();
+    void afterExecute(TaskWorkThread worker) {
+        worker.completedCount++;
     }
 
     Object invokeTaskCall() throws Exception {
         return task.call();
     }
 
-    void executeTask() {
+    void executeTask(TaskWorkThread worker) {
         if (callback != null) {
             try {
                 callback.beforeCall(this);

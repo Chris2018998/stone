@@ -77,13 +77,13 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
     void beforeExecute() {
-        if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
+        //if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
     }
 
     void afterExecute() {
     }
 
-    void executeTask() {
+    void executeTask(TaskWorkThread worker) {
         //1: try to split current task into sub tasks
         Task[] subTasks = operator.split(this.task);
 
@@ -96,11 +96,12 @@ final class JoinTaskHandle extends BaseHandle {
             this.subTaskHandles = subJoinHandles;
 
             for (int i = 0; i < subSize; i++) {
-                subJoinHandles[i] = new JoinTaskHandle(subTasks[i], this, countDownLatch, operator, pool, root);
-                pool.pushToExecutionQueue(subJoinHandles[i]);
+                // subJoinHandles[i] = ;
+                //pool.pushToExecutionQueue(subJoinHandles[i]);
+                worker.pushSubTaskHandle(new JoinTaskHandle(subTasks[i], this, countDownLatch, operator, pool, root));
             }
         } else {//4: execute leaf task
-            super.executeTask();
+            super.executeTask(worker);
         }
     }
 
@@ -122,8 +123,11 @@ final class JoinTaskHandle extends BaseHandle {
                             parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles));//join children
                             if (parent.isRoot) {
                                 pool.getTaskHoldingCount().decrementAndGet();
-                                pool.getTaskRunningCount().decrementAndGet();
-                                pool.getTaskCompletedCount().incrementAndGet();
+                                TaskWorkThread workThread = (TaskWorkThread) Thread.currentThread();
+                                workThread.completedCount++;
+
+                                //pool.getTaskRunningCount().decrementAndGet();
+                                //pool.getTaskCompletedCount().incrementAndGet();
                             }
                         } catch (Throwable e) {
                             this.handleSubTaskException(new TaskExecutionException(e));
@@ -139,8 +143,11 @@ final class JoinTaskHandle extends BaseHandle {
         if (root.exceptionInd.compareAndSet(false, true)) {
             root.setResult(TASK_CALL_EXCEPTION, result);
             pool.getTaskHoldingCount().decrementAndGet();
-            pool.getTaskRunningCount().decrementAndGet();
-            pool.getTaskCompletedCount().incrementAndGet();
+            TaskWorkThread workThread = (TaskWorkThread) Thread.currentThread();
+            workThread.completedCount++;
+
+            //pool.getTaskRunningCount().decrementAndGet();
+            //pool.getTaskCompletedCount().incrementAndGet();
 
             new AsynJoinCancelThread(root.subTaskHandles, true).start();
         }

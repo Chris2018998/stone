@@ -79,9 +79,7 @@ final class ScheduledTaskHandle extends BaseHandle implements TaskScheduledHandl
         if (!isPeriodic()) pool.getTaskHoldingCount().decrementAndGet();
     }
 
-    void afterExecute() {
-        pool.getTaskRunningCount().decrementAndGet();
-
+    void afterExecute(TaskWorkThread worker) {
         if (this.isPeriodic()) {
             this.prevState = this.state;
             this.prevResult = this.result;
@@ -92,7 +90,7 @@ final class ScheduledTaskHandle extends BaseHandle implements TaskScheduledHandl
             if (pool.getScheduledDelayedQueue().add(this) == 0)
                 pool.wakeupSchedulePeekThread();
         } else {//one timed task,so end
-            pool.getTaskCompletedCount().incrementAndGet();
+            worker.completedCount++;
         }
     }
 }

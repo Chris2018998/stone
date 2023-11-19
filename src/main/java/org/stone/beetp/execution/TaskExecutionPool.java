@@ -49,7 +49,7 @@ public final class TaskExecutionPool implements TaskPool {
 
     //3: fields about submitted tasks
     private int maxTaskSize;
-    private volatile long completedCount;//update in <method>removeTaskWorker</method>
+    private long completedCount;//update in <method>removeTaskWorker</method>
     private AtomicInteger taskHoldingCount;//(once count + scheduled count + join count(root))
 
     //4: fields about task execution
@@ -221,9 +221,9 @@ public final class TaskExecutionPool implements TaskPool {
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
     void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
-        for (TaskWorkThread workerThread : workerArray) {
-            if (workerThread.state == WORKER_IDLE && workerThread.compareAndSetState(WORKER_IDLE, taskHandle)) {
-                LockSupport.unpark(workerThread);
+        for (TaskWorkThread thread : workerArray) {
+            if (thread.state == WORKER_IDLE && thread.compareAndSetState(WORKER_IDLE, taskHandle)) {
+                LockSupport.unpark(thread);
                 return;
             }
         }
@@ -447,6 +447,8 @@ public final class TaskExecutionPool implements TaskPool {
     //                                  8: worker thread creation or remove                                          //
     //***************************************************************************************************************//
     private TaskWorkThread createTaskWorker(BaseHandle taskHandle) {
+        System.out.println(".............createTaskWorker..........");
+
         this.workerArrayLock.lock();
         try {
             int l = this.workerArray.length;

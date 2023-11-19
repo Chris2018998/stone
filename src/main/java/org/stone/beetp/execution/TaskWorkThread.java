@@ -9,10 +9,6 @@
  */
 package org.stone.beetp.execution;
 
-import org.stone.beetp.Task;
-import org.stone.beetp.TreeTask;
-
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
@@ -27,14 +23,14 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 final class TaskWorkThread extends Thread {
     private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
+
     private final TaskExecutionPool pool;
     volatile Object state;//state of work thread
     volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//task handle in processing
 
-    //dequeue for joining tasks
-    private ConcurrentLinkedDeque<Task> joinSubTaskQueue;
-    private ConcurrentLinkedDeque<TreeTask> treeSubTaskQueue;
+    private ConcurrentLinkedQueue<JoinTaskHandle> joinSubTaskQueue = new ConcurrentLinkedQueue<>();
+    private ConcurrentLinkedQueue<TreeTaskHandle> treeSubTaskQueue = new ConcurrentLinkedQueue<>();
 
     TaskWorkThread(Object state, TaskExecutionPool pool, boolean workInDaemon, String poolName) {
         this.pool = pool;
@@ -56,6 +52,11 @@ final class TaskWorkThread extends Thread {
             this.interrupt();
     }
 
+
+    void pushSubTaskHandle(JoinTaskHandle handle) {
+        joinSubTaskQueue.offer(handle);
+    }
+
     public void run() {
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
         final ConcurrentLinkedQueue<BaseHandle> executionQueue = pool.getTaskExecutionQueue();
@@ -67,22 +68,24 @@ final class TaskWorkThread extends Thread {
             if (state == WORKER_TERMINATED) break;
 
             //2: get task from state or poll from queue
-            BaseHandle handle;
+            BaseHandle handle = null;
             if (state instanceof BaseHandle) {//handle must be not null
                 handle = (BaseHandle) state;
                 this.state = WORKER_WORKING;
-            } else {
-                handle = executionQueue.poll();//may be poll null from queue
             }
+            if (handle == null) handle = joinSubTaskQueue.poll();
+            if (handle == null) handle = treeSubTaskQueue.poll();
+            if (handle == null) handle = executionQueue.poll();
+            if (handle == null) handle = stealTaskFromOther();
 
             //3: execute task
             if (handle != null) {
                 if (handle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
                     try {
                         handle.beforeExecute();
-                        handle.executeTask();
+                        handle.executeTask(this);
                     } finally {
-                        handle.afterExecute();
+                        handle.afterExecute(this);
                         this.curTaskHandle = null;
                     }
                 }
@@ -101,5 +104,9 @@ final class TaskWorkThread extends Thread {
 
         //remove self from worker array
         pool.removeTaskWorker(this);
+    }
+
+    private BaseHandle stealTaskFromOther() {
+        return null;
     }
 }
