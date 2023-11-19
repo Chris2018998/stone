@@ -35,18 +35,15 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 public final class TaskExecutionPool implements TaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
-
+    volatile TaskWorkThread[] workerArray;
     //1:fields about pool
     private String poolName;
     private volatile int poolState;
-
     //2: fields about worker threads
     private int maxWorkerSize;
     private boolean workInDaemon;
     private long idleTimeoutNanos;
     private ReentrantLock workerArrayLock;
-    private volatile TaskWorkThread[] workerArray;
-
     //3: fields about submitted tasks
     private int maxTaskSize;
     private long completedCount;//update in <method>removeTaskWorker</method>

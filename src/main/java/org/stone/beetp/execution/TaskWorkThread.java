@@ -25,18 +25,20 @@ final class TaskWorkThread extends Thread {
     private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
 
     private final TaskExecutionPool pool;
+    private final ConcurrentLinkedQueue<JoinTaskHandle> joinSubTaskQueue;
+    private final ConcurrentLinkedQueue<TreeTaskHandle> treeSubTaskQueue;
     volatile Object state;//state of work thread
     volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//task handle in processing
-
-    private ConcurrentLinkedQueue<JoinTaskHandle> joinSubTaskQueue = new ConcurrentLinkedQueue<>();
-    private ConcurrentLinkedQueue<TreeTaskHandle> treeSubTaskQueue = new ConcurrentLinkedQueue<>();
 
     TaskWorkThread(Object state, TaskExecutionPool pool, boolean workInDaemon, String poolName) {
         this.pool = pool;
         this.state = state;
         this.setDaemon(workInDaemon);
         this.setName(poolName + "-task worker");
+
+        this.joinSubTaskQueue = new ConcurrentLinkedQueue<>();
+        this.treeSubTaskQueue = new ConcurrentLinkedQueue<>();
     }
 
     void setState(Object update) {
@@ -107,6 +109,15 @@ final class TaskWorkThread extends Thread {
     }
 
     private BaseHandle stealTaskFromOther() {
+        TaskWorkThread[] threads = pool.workerArray;
+        for (TaskWorkThread thread : threads) {
+            if (thread!=null && thread != this) {
+                BaseHandle handle = thread.joinSubTaskQueue.poll();
+                if (handle != null) return handle;
+                handle = thread.treeSubTaskQueue.poll();
+                if (handle != null) return handle;
+            }
+        }
         return null;
     }
 }
