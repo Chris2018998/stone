@@ -13,6 +13,7 @@ import org.stone.beetp.TaskCallback;
 import org.stone.beetp.TreeTask;
 import org.stone.beetp.exception.TaskExecutionException;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -81,11 +82,9 @@ final class TreeTaskHandle extends BaseHandle {
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
     void beforeExecute() {
-        //if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
     }
 
     void afterExecute(TaskWorkThread worker) {
-
     }
 
     Object invokeTaskCall() throws Exception {
@@ -103,10 +102,11 @@ final class TreeTaskHandle extends BaseHandle {
             TreeTaskHandle[] subJoinHandles = new TreeTaskHandle[subSize];
             TreeTaskHandle root = isRoot ? this : this.root;
             this.subTaskHandles = subJoinHandles;
+            ConcurrentLinkedQueue<BaseHandle> workQueue = worker.workQueue;
 
             for (int i = 0; i < subSize; i++) {
                 subJoinHandles[i] = new TreeTaskHandle(subTasks[i], this, countDownLatch, pool, root);
-                worker.pushSubTreeTaskHandle(subJoinHandles[i]);
+                workQueue.offer(subJoinHandles[i]);
             }
         } else {//4: execute leaf task
             super.executeTask(worker);

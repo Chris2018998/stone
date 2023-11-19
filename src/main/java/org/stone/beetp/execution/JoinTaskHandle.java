@@ -14,6 +14,7 @@ import org.stone.beetp.TaskCallback;
 import org.stone.beetp.TaskJoinOperator;
 import org.stone.beetp.exception.TaskExecutionException;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -77,10 +78,9 @@ final class JoinTaskHandle extends BaseHandle {
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
     void beforeExecute() {
-        //if (this.isRoot) pool.getTaskRunningCount().incrementAndGet();
     }
 
-    void afterExecute() {
+    void afterExecute(TaskWorkThread worker) {
     }
 
     void executeTask(TaskWorkThread worker) {
@@ -90,14 +90,14 @@ final class JoinTaskHandle extends BaseHandle {
         //2: push sub tasks to execute queue
         if (subTasks != null && subTasks.length > 0) {
             int subSize = subTasks.length;
-            AtomicInteger countDownLatch = new AtomicInteger(subSize);
-            JoinTaskHandle[] subJoinHandles = new JoinTaskHandle[subSize];
             JoinTaskHandle root = isRoot ? this : this.root;
-            this.subTaskHandles = subJoinHandles;
+            this.subTaskHandles = new JoinTaskHandle[subSize];
+            AtomicInteger countDown = new AtomicInteger(subSize);
+            ConcurrentLinkedQueue<BaseHandle> workQueue = worker.workQueue;
 
             for (int i = 0; i < subSize; i++) {
-                subJoinHandles[i] = new JoinTaskHandle(subTasks[i], this, countDownLatch, operator, pool, root);
-                worker.pushSubJoinTaskHandle(subJoinHandles[i]);
+                subTaskHandles[i] = new JoinTaskHandle(subTasks[i], this, countDown, operator, pool, root);
+                workQueue.offer(subTaskHandles[i]);
             }
         } else {//4: execute leaf task
             super.executeTask(worker);

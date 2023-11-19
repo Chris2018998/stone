@@ -23,10 +23,8 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 final class TaskWorkThread extends Thread {
     private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
+    final ConcurrentLinkedQueue<BaseHandle> workQueue;//support stealing
     private final TaskExecutionPool pool;
-    private final ConcurrentLinkedQueue<JoinTaskHandle> joinSubTaskQueue;
-    private final ConcurrentLinkedQueue<TreeTaskHandle> treeSubTaskQueue;
-
     volatile Object state;//state of work thread
     volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//task handle in processing
@@ -37,10 +35,12 @@ final class TaskWorkThread extends Thread {
         this.setDaemon(workInDaemon);
         this.setName(poolName + "-task worker");
 
-        this.joinSubTaskQueue = new ConcurrentLinkedQueue<>();
-        this.treeSubTaskQueue = new ConcurrentLinkedQueue<>();
+        this.workQueue = new ConcurrentLinkedQueue<>();
     }
 
+    //***************************************************************************************************************//
+    //                                      1: state(2)                                                              //
+    //**************************************************e************************************************************//
     void setState(Object update) {
         this.state = update;
     }
@@ -49,39 +49,43 @@ final class TaskWorkThread extends Thread {
         return expect == state && workerStateUpd.compareAndSet(this, expect, update);
     }
 
-    void interrupt(BaseHandle taskHandle) {
-        if (taskHandle == this.curTaskHandle)
-            this.interrupt();
+    //***************************************************************************************************************//
+    //                                      3: thread interruptBlocking(1)                                           //
+    //**************************************************e************************************************************//
+    void interruptBlocking(BaseHandle taskHandle) {
+        if (taskHandle == this.curTaskHandle) this.interrupt();
     }
 
-    void pushSubJoinTaskHandle(JoinTaskHandle handle) {
-        this.joinSubTaskQueue.offer(handle);
-    }
-
-    void pushSubTreeTaskHandle(TreeTaskHandle handle) {
-        this.treeSubTaskQueue.offer(handle);
-    }
-
+    //***************************************************************************************************************//
+    //                                      4: thead work methods(2)                                                 //
+    //**************************************************e************************************************************//
     public void run() {
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
+        final boolean useTimePark = idleTimeoutNanos > 0L;
         final ConcurrentLinkedQueue<BaseHandle> executionQueue = pool.getTaskExecutionQueue();
 
         do {
             //1: read state from work
-            //if (poolState >= POOL_TERMINATING) break;
             Object state = this.state;//exits repeat read same
             if (state == WORKER_TERMINATED) break;
 
             //2: get task from state or poll from queue
-            BaseHandle handle = null;
+            BaseHandle handle;
             if (state instanceof BaseHandle) {//handle must be not null
                 handle = (BaseHandle) state;
                 this.state = WORKER_WORKING;
+            } else {
+                handle = workQueue.poll();
+                if (handle == null) handle = executionQueue.poll();
+                if (handle == null) {//steal a task from other work thread
+                    for (TaskWorkThread thread : pool.getWorkerArray()) {
+                        if (thread != null && thread != this) {
+                            handle = thread.workQueue.poll();
+                            if (handle != null) break;
+                        }
+                    }
+                }
             }
-            if (handle == null) handle = joinSubTaskQueue.poll();
-            if (handle == null) handle = treeSubTaskQueue.poll();
-            if (handle == null) handle = executionQueue.poll();
-            if (handle == null) handle = stealTaskFromOther();
 
             //3: execute task
             if (handle != null) {
@@ -96,7 +100,7 @@ final class TaskWorkThread extends Thread {
                 }
             } else {//4: park work thread
                 this.state = WORKER_IDLE;//set to be idle from WORKER_WORKING
-                if (idleTimeoutNanos > 0L) {
+                if (useTimePark) {
                     LockSupport.parkNanos(idleTimeoutNanos);
                     if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;//set to be terminated if timeout
                 } else {
@@ -109,18 +113,5 @@ final class TaskWorkThread extends Thread {
 
         //remove self from worker array
         pool.removeTaskWorker(this);
-    }
-
-    private BaseHandle stealTaskFromOther() {
-        TaskWorkThread[] threads = pool.getWorkerArray();
-        for (TaskWorkThread thread : threads) {
-            if (thread != null && thread != this) {
-                BaseHandle handle = thread.joinSubTaskQueue.poll();
-                if (handle != null) return handle;
-                handle = thread.treeSubTaskQueue.poll();
-                if (handle != null) return handle;
-            }
-        }
-        return null;
     }
 }

@@ -55,6 +55,9 @@ class BaseHandle implements TaskHandle {
     private TaskWorkThread workThread;//set before execution,clear after execution
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
+    //***************************************************************************************************************//
+    //                                  1: constructor(2)                                                            //
+    //**************************************************e************************************************************//
     //1:constructor for sub join task
     BaseHandle(Task task, TaskExecutionPool pool) {
         this.task = task;
@@ -72,7 +75,7 @@ class BaseHandle implements TaskHandle {
     }
 
     //***************************************************************************************************************//
-    //                                  1: task state                                                                //
+    //                                  2: task state                                                                //
     //**************************************************e************************************************************//
     public int getState() {
         return state;
@@ -102,12 +105,12 @@ class BaseHandle implements TaskHandle {
             return true;
         }
 
-        //2: interrupt task execution thread when it is in blocking state
+        //2: interruptBlocking task execution thread when it is in blocking state
         final TaskWorkThread executeThread = this.workThread;
         if (mayInterruptIfRunning && this.state == TASK_EXECUTING && executeThread != null) {
             final Thread.State threadState = executeThread.getState();
             if ((threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING) && this.state == TASK_EXECUTING)
-                executeThread.interrupt(this);//cas maybe better?
+                executeThread.interruptBlocking(this);//cas maybe better?
         }
 
         return false;

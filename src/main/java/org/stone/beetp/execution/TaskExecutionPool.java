@@ -39,6 +39,7 @@ public final class TaskExecutionPool implements TaskPool {
     //1:fields about pool
     private String poolName;
     private volatile int poolState;
+
     //2: fields about worker threads
     private int maxWorkerSize;
     private boolean workInDaemon;
@@ -95,7 +96,6 @@ public final class TaskExecutionPool implements TaskPool {
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
             //step3: atomic fields of execution monitor
-            this.completedCount = 0;//set to zero
             this.monitorVo = new TaskPoolMonitorVo();
             this.taskHoldingCount = new AtomicInteger();
         }
@@ -123,10 +123,6 @@ public final class TaskExecutionPool implements TaskPool {
         return submit(task, (TaskCallback) null);
     }
 
-    public TaskHandle submit(Task task, TaskJoinOperator operator) throws TaskException {
-        return submit(task, operator, null);
-    }
-
     public TaskHandle submit(Task task, TaskCallback callback) throws TaskException {
         //1: check task
         if (task == null) throw new TaskException("Task can't be null");
@@ -139,6 +135,10 @@ public final class TaskExecutionPool implements TaskPool {
         this.pushToExecutionQueue(handle);
         //5: return handle
         return handle;
+    }
+
+    public TaskHandle submit(Task task, TaskJoinOperator operator) throws TaskException {
+        return submit(task, operator, null);
     }
 
     public TaskHandle submit(Task task, TaskJoinOperator operator, TaskCallback callback) throws TaskException {
@@ -218,7 +218,7 @@ public final class TaskExecutionPool implements TaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    void pushToExecutionQueue(BaseHandle taskHandle) {
+    private void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
         for (TaskWorkThread thread : workerArray) {
             if (thread.state == WORKER_IDLE && thread.compareAndSetState(WORKER_IDLE, taskHandle)) {
@@ -450,8 +450,6 @@ public final class TaskExecutionPool implements TaskPool {
     //                                  8: worker thread creation or remove                                          //
     //***************************************************************************************************************//
     private TaskWorkThread createTaskWorker(BaseHandle taskHandle) {
-        System.out.println(".............createTaskWorker..........");
-
         this.workerArrayLock.lock();
         try {
             int l = this.workerArray.length;
