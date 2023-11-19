@@ -23,10 +23,10 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 final class TaskWorkThread extends Thread {
     private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
-
     private final TaskExecutionPool pool;
     private final ConcurrentLinkedQueue<JoinTaskHandle> joinSubTaskQueue;
     private final ConcurrentLinkedQueue<TreeTaskHandle> treeSubTaskQueue;
+
     volatile Object state;//state of work thread
     volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//task handle in processing
@@ -54,9 +54,12 @@ final class TaskWorkThread extends Thread {
             this.interrupt();
     }
 
+    void pushSubJoinTaskHandle(JoinTaskHandle handle) {
+        this.joinSubTaskQueue.offer(handle);
+    }
 
-    void pushSubTaskHandle(JoinTaskHandle handle) {
-        joinSubTaskQueue.offer(handle);
+    void pushSubTreeTaskHandle(TreeTaskHandle handle) {
+        this.treeSubTaskQueue.offer(handle);
     }
 
     public void run() {
@@ -109,9 +112,9 @@ final class TaskWorkThread extends Thread {
     }
 
     private BaseHandle stealTaskFromOther() {
-        TaskWorkThread[] threads = pool.workerArray;
+        TaskWorkThread[] threads = pool.getWorkerArray();
         for (TaskWorkThread thread : threads) {
-            if (thread!=null && thread != this) {
+            if (thread != null && thread != this) {
                 BaseHandle handle = thread.joinSubTaskQueue.poll();
                 if (handle != null) return handle;
                 handle = thread.treeSubTaskQueue.poll();

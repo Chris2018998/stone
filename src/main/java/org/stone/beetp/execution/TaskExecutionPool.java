@@ -35,7 +35,7 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  */
 public final class TaskExecutionPool implements TaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
-    volatile TaskWorkThread[] workerArray;
+
     //1:fields about pool
     private String poolName;
     private volatile int poolState;
@@ -44,6 +44,8 @@ public final class TaskExecutionPool implements TaskPool {
     private boolean workInDaemon;
     private long idleTimeoutNanos;
     private ReentrantLock workerArrayLock;
+    private volatile TaskWorkThread[] workerArray;
+
     //3: fields about submitted tasks
     private int maxTaskSize;
     private long completedCount;//update in <method>removeTaskWorker</method>
@@ -412,12 +414,16 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                     7: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
-    AtomicInteger getTaskHoldingCount() {
-        return this.taskHoldingCount;
+    TaskWorkThread[] getWorkerArray() {
+        return workerArray;
     }
 
     long getIdleTimeoutNanos() {
         return this.idleTimeoutNanos;
+    }
+
+    AtomicInteger getTaskHoldingCount() {
+        return this.taskHoldingCount;
     }
 
     ScheduledTaskQueue getScheduledDelayedQueue() {

@@ -96,9 +96,8 @@ final class JoinTaskHandle extends BaseHandle {
             this.subTaskHandles = subJoinHandles;
 
             for (int i = 0; i < subSize; i++) {
-                // subJoinHandles[i] = ;
-                //pool.pushToExecutionQueue(subJoinHandles[i]);
-                worker.pushSubTaskHandle(new JoinTaskHandle(subTasks[i], this, countDownLatch, operator, pool, root));
+                subJoinHandles[i] = new JoinTaskHandle(subTasks[i], this, countDownLatch, operator, pool, root);
+                worker.pushSubJoinTaskHandle(subJoinHandles[i]);
             }
         } else {//4: execute leaf task
             super.executeTask(worker);
