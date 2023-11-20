@@ -31,6 +31,6 @@ public class TaskCancelTest extends TestCase {
         service.submit(new BlockTask());//park worker thread
         TaskHandle commonHandle = service.submit(new HelloTask());
         commonHandle.cancel(false);
-        if (!(commonHandle.getState() != TASK_CANCELLED)) TestUtil.assertError("Task not be cancelled");
+        if (commonHandle.getState() != TASK_CANCELLED) TestUtil.assertError("Task not be cancelled");
     }
 }

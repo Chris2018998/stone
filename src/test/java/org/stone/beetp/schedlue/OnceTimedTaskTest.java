@@ -11,10 +11,10 @@ package org.stone.beetp.schedlue;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.beetp.HelloTask;
 import org.stone.beetp.TaskScheduledHandle;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.HelloTask;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;

@@ -11,10 +11,10 @@ package org.stone.beetp.once;
 
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
+import org.stone.beetp.BlockTask;
 import org.stone.beetp.TaskHandle;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.BlockTask;
 import org.stone.beetp.exception.TaskExecutionException;
 
 /**
@@ -24,6 +24,10 @@ import org.stone.beetp.exception.TaskExecutionException;
  * @version 1.0
  */
 public class TaskInterruptTest extends TestCase {
+    public static void main(String[] args) throws Exception {
+        TaskInterruptTest test = new TaskInterruptTest();
+        test.test();
+    }
 
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();

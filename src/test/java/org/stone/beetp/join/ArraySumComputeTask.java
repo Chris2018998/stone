@@ -29,8 +29,6 @@ public class ArraySumComputeTask implements Task<Integer> {
     public Integer call() {
         int sum = 0;
         for (int i : numbers) sum += i;
-
-        //System.out.println("sum:"+sum);
         return sum;
     }
 }
