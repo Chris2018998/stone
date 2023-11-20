@@ -121,7 +121,7 @@ final class JoinTaskHandle extends BaseHandle {
                         try {
                             parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles));//join children
                             if (parent.isRoot) {
-                                pool.getTaskHoldingCount().decrementAndGet();
+                                pool.getTaskCount().decrementAndGet();
                                 ((TaskWorkThread) Thread.currentThread()).completedCount++;
                             }
                         } catch (Throwable e) {
@@ -137,7 +137,7 @@ final class JoinTaskHandle extends BaseHandle {
     private void handleSubTaskException(Object result) {
         if (root.exceptionInd.compareAndSet(false, true)) {
             root.setResult(TASK_CALL_EXCEPTION, result);
-            pool.getTaskHoldingCount().decrementAndGet();
+            pool.getTaskCount().decrementAndGet();
             ((TaskWorkThread) Thread.currentThread()).completedCount++;
 
             new AsynJoinCancelThread(root.subTaskHandles, true).start();

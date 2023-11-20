@@ -51,7 +51,7 @@ public final class TaskExecutionPool implements TaskPool {
     //3: fields about submitted tasks
     private int maxTaskSize;
     private long completedCount;//update in <method>removeTaskWorker</method>
-    private AtomicInteger taskHoldingCount;//(once count + scheduled count + join count(root))
+    private AtomicInteger taskCount;//(once count + scheduled count + join count(root))
 
     //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
@@ -69,7 +69,7 @@ public final class TaskExecutionPool implements TaskPool {
         TaskServiceConfig checkedConfig = config.check();
 
         //step2: update execution state to running via cas
-        if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_RUNNING))
+        if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
             throw new PoolInitializedException("Pool has been initialized");
 
         //step3: startup execution with a configuration object
@@ -97,17 +97,17 @@ public final class TaskExecutionPool implements TaskPool {
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
             //step3: atomic fields of execution monitor
+            this.taskCount = new AtomicInteger();
             this.monitorVo = new TaskPoolMonitorVo();
-            this.taskHoldingCount = new AtomicInteger();
         }
 
         //step4: create initial work threads
         int workerInitSize = config.getInitWorkerSize();
         this.workerArray = new TaskWorkThread[workerInitSize];
-        for (int i = 0; i < workerInitSize; i++) {
-            workerArray[i] = new TaskWorkThread(WORKER_WORKING, this, workInDaemon, poolName);
+        for (int i = 0; i < workerInitSize; i++)
+            workerArray[i] = new TaskWorkThread(WORKER_WORKING, workInDaemon, poolName, this);
+        for (int i = 0; i < workerInitSize; i++)//fix nullPointException on stealing
             workerArray[i].start();
-        }
 
         //step5: create delayed queue and peek thread working on queue
         if (scheduledPeekThread == null) {
@@ -212,25 +212,25 @@ public final class TaskExecutionPool implements TaskPool {
 
         //2: task capacity full check
         do {
-            int currentCount = taskHoldingCount.get();
+            int currentCount = taskCount.get();
             if (currentCount >= maxTaskSize) throw new TaskRejectedException("Capacity of tasks has reached max size");
-            if (taskHoldingCount.compareAndSet(currentCount, currentCount + 1)) return;
+            if (taskCount.compareAndSet(currentCount, currentCount + 1)) return;
         } while (true);
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
     private void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
-        for (TaskWorkThread thread : workerArray) {
-            if (thread.compareAndSetState(WORKER_IDLE, taskHandle)) {
-                LockSupport.unpark(thread);
+        for (TaskWorkThread worker : workerArray) {
+            if (worker.compareAndSetState(WORKER_IDLE, taskHandle)) {
+                LockSupport.unpark(worker);
                 return;
             }
         }
 
         //2: try to create a new worker
-        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
-            this.executionQueue.offer(taskHandle);
+        //if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
+        this.executionQueue.offer(taskHandle);
     }
 
     void wakeupSchedulePeekThread() {
@@ -260,7 +260,7 @@ public final class TaskExecutionPool implements TaskPool {
         //re-check execution state,if not in running,then try to cancel task
         if (this.poolState != POOL_RUNNING) {
             if (handle.setAsCancelled()) {
-                if (scheduledDelayedQueue.remove(handle) >= 0) taskHoldingCount.decrementAndGet();
+                if (scheduledDelayedQueue.remove(handle) >= 0) taskCount.decrementAndGet();
                 throw new TaskRejectedException("Pool has been closed or in clearing");
             }
         }
@@ -340,7 +340,7 @@ public final class TaskExecutionPool implements TaskPool {
 
         //4:reset atomic numbers to zero
         this.completedCount = 0;
-        this.taskHoldingCount.set(0);
+        this.taskCount.set(0);
         this.workerArray = new TaskWorkThread[0];
         return new TaskPoolCancelledList(unRunningTaskList, unRunningTreeTaskList);
     }
@@ -349,10 +349,10 @@ public final class TaskExecutionPool implements TaskPool {
     void removeCancelledTask(BaseHandle handle) {
         if (handle instanceof ScheduledTaskHandle) {
             int taskIndex = scheduledDelayedQueue.remove((ScheduledTaskHandle) handle);
-            if (taskIndex >= 0) taskHoldingCount.decrementAndGet();//task removed successfully by call thread
+            if (taskIndex >= 0) taskCount.decrementAndGet();//task removed successfully by call thread
             if (taskIndex == 0) wakeupSchedulePeekThread();
         } else if (executionQueue.remove(handle) && handle.isRoot) {
-            taskHoldingCount.decrementAndGet();
+            taskCount.decrementAndGet();
         }
     }
 
@@ -423,8 +423,8 @@ public final class TaskExecutionPool implements TaskPool {
         return this.idleTimeoutNanos;
     }
 
-    AtomicInteger getTaskHoldingCount() {
-        return this.taskHoldingCount;
+    AtomicInteger getTaskCount() {
+        return this.taskCount;
     }
 
     ScheduledTaskQueue getScheduledDelayedQueue() {
@@ -438,7 +438,7 @@ public final class TaskExecutionPool implements TaskPool {
     public TaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolState(this.poolState);
         monitorVo.setWorkerCount(workerArray.length);
-        monitorVo.setTaskHoldingCount(taskHoldingCount.get());
+        monitorVo.setTaskHoldingCount(taskCount.get());
         int runningCount = 0;
         List<BaseHandle> runningTasks = new ArrayList<>(10);
         for (TaskWorkThread worker : workerArray) {
@@ -474,7 +474,7 @@ public final class TaskExecutionPool implements TaskPool {
         try {
             int l = this.workerArray.length;
             if (l < this.maxWorkerSize) {
-                TaskWorkThread worker = new TaskWorkThread(taskHandle, this, workInDaemon, poolName);
+                TaskWorkThread worker = new TaskWorkThread(taskHandle, workInDaemon, poolName, this);
                 worker.start();
 
                 TaskWorkThread[] arrayNew = new TaskWorkThread[l + 1];
@@ -532,7 +532,7 @@ public final class TaskExecutionPool implements TaskPool {
                         if (taskHandle.state == TASK_WAITING)
                             pushToExecutionQueue(taskHandle);//push it to execution queue
                         else
-                            taskHoldingCount.decrementAndGet();//task has cancelled,so remove it
+                            taskCount.decrementAndGet();//task has cancelled,so remove it
                     } else {//3: the polled object is time,then park
                         Long time = (Long) polledObject;
                         if (time > 0) {

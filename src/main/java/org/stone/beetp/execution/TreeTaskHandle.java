@@ -129,7 +129,7 @@ final class TreeTaskHandle extends BaseHandle {
                         try {
                             parent.setResult(TASK_CALL_RESULT, parent.task.call(parent.subTaskHandles));//join children
                             if (parent.isRoot) {
-                                pool.getTaskHoldingCount().decrementAndGet();
+                                pool.getTaskCount().decrementAndGet();
                                 ((TaskWorkThread) Thread.currentThread()).completedCount++;
                             }
                         } catch (Throwable e) {
@@ -145,7 +145,7 @@ final class TreeTaskHandle extends BaseHandle {
     private void handleTreeSubTaskException(Object result) {
         if (root.exceptionInd.compareAndSet(false, true)) {
             root.setResult(TASK_CALL_EXCEPTION, result);
-            pool.getTaskHoldingCount().decrementAndGet();
+            pool.getTaskCount().decrementAndGet();
             ((TaskWorkThread) Thread.currentThread()).completedCount++;
             new AsynTreeCancelThread(root.subTaskHandles, true).start();
         }

@@ -18,10 +18,11 @@ package org.stone.beetp.execution;
 class TaskPoolConstants {
     //execution state
     static final int POOL_NEW = 0;
-    static final int POOL_RUNNING = 1;
-    static final int POOL_CLEARING = 2;
-    static final int POOL_TERMINATING = 3;
-    static final int POOL_TERMINATED = 4;
+    static final int POOL_STARTING = 1;
+    static final int POOL_RUNNING = 2;
+    static final int POOL_CLEARING = 3;
+    static final int POOL_TERMINATING = 4;
+    static final int POOL_TERMINATED = 5;
 
     //worker state
     static final Object WORKER_IDLE = new Object();

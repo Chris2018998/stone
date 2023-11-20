@@ -174,7 +174,7 @@ class BaseHandle implements TaskHandle {
     //                              4: execute task(4)                                                               //
     //***************************************************************************************************************//
     void beforeExecute() {
-        pool.getTaskHoldingCount().decrementAndGet();
+        pool.getTaskCount().decrementAndGet();
     }
 
     void afterExecute(TaskWorkThread worker) {

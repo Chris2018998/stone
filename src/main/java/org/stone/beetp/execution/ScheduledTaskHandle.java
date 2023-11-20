@@ -76,7 +76,7 @@ final class ScheduledTaskHandle extends BaseHandle implements TaskScheduledHandl
     //                              3: execute task                                                                  //
     //***************************************************************************************************************//
     void beforeExecute() {
-        if (!isPeriodic()) pool.getTaskHoldingCount().decrementAndGet();
+        if (!isPeriodic()) pool.getTaskCount().decrementAndGet();
     }
 
     void afterExecute(TaskWorkThread worker) {

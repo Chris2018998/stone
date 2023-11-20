@@ -30,7 +30,7 @@ final class TaskWorkThread extends Thread {
     volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//task handle in processing
 
-    TaskWorkThread(Object state, TaskExecutionPool pool, boolean workInDaemon, String poolName) {
+    TaskWorkThread(Object state, boolean workInDaemon, String poolName, TaskExecutionPool pool) {
         this.pool = pool;
         this.state = state;
         this.setDaemon(workInDaemon);
@@ -79,9 +79,9 @@ final class TaskWorkThread extends Thread {
                 handle = workQueue.poll();
                 if (handle == null) handle = executionQueue.poll();
                 if (handle == null) {//steal a task from other work thread
-                    for (TaskWorkThread thread : pool.getWorkerArray()) {
-                        if (thread != null && thread != this) {
-                            handle = thread.workQueue.poll();
+                    for (TaskWorkThread worker : pool.getWorkerArray()) {
+                        if (worker != this) {
+                            handle = worker.workQueue.poll();
                             if (handle != null) break;
                         }
                     }
