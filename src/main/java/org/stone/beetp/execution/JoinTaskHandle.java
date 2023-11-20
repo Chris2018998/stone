@@ -28,12 +28,11 @@ import static org.stone.beetp.TaskStates.TASK_CALL_RESULT;
  * @version 1.0
  */
 final class JoinTaskHandle extends BaseHandle {
+    //3: fields of child task
+    JoinTaskHandle root;
     //1: field of root
     private AtomicBoolean exceptionInd;
     private JoinTaskHandle[] subTaskHandles;
-
-    //3: fields of child task
-    private JoinTaskHandle root;
     private JoinTaskHandle parent;
     private AtomicInteger countDown;//the complete count of sub tasks.
     private TaskJoinOperator operator;
@@ -81,6 +80,7 @@ final class JoinTaskHandle extends BaseHandle {
     }
 
     void afterExecute(TaskWorkThread worker) {
+
     }
 
     void executeTask(TaskWorkThread worker) {
@@ -91,7 +91,7 @@ final class JoinTaskHandle extends BaseHandle {
         if (subTasks != null && subTasks.length > 0) {
             int subSize = subTasks.length;
             JoinTaskHandle root = isRoot ? this : this.root;
-            this.subTaskHandles = new JoinTaskHandle[subSize];
+            this.subTaskHandles = new JoinTaskHandle[subSize];//current task is parent
             AtomicInteger countDown = new AtomicInteger(subSize);
             ConcurrentLinkedQueue<BaseHandle> workQueue = worker.workQueue;
 

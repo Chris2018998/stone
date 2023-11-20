@@ -208,7 +208,7 @@ class BaseHandle implements TaskHandle {
         //1: set result and try to wakeup waiters if exists
         this.result = result;
         this.workThread = null;
-        if (isRoot) this.state = state;
+        this.state = state;
 
         if (waitQueue != null) {
             Thread waitThread;

@@ -13,6 +13,7 @@ import org.stone.beetp.*;
 import org.stone.beetp.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -434,15 +435,34 @@ public final class TaskExecutionPool implements TaskPool {
         return this.executionQueue;
     }
 
-    public org.stone.beetp.TaskPoolMonitorVo getPoolMonitorVo() {
+    public TaskPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolState(this.poolState);
         monitorVo.setWorkerCount(workerArray.length);
         monitorVo.setTaskHoldingCount(taskHoldingCount.get());
+        int runningCount = 0;
+        List<BaseHandle> runningTasks = new ArrayList<>(10);
+        for (TaskWorkThread worker : workerArray) {
+            completedCount += worker.completedCount;
+            BaseHandle curTaskHandle = worker.curTaskHandle;
+            if (curTaskHandle != null) {
+                BaseHandle rootHandle = null;
+                if (curTaskHandle.isRoot) {
+                    rootHandle = curTaskHandle;
+                } else if (curTaskHandle instanceof JoinTaskHandle) {
+                    rootHandle = ((JoinTaskHandle) curTaskHandle).root;
+                } else if (curTaskHandle instanceof TreeTaskHandle) {
+                    rootHandle = ((TreeTaskHandle) curTaskHandle).root;
+                }
 
-        //@todo update soon,waiting waiting.....
-        //monitorVo.setTaskRunningCount(taskRunningCount.get());
-        monitorVo.setTaskCompletedCount(this.completedCount);
+                if (!runningTasks.contains(rootHandle)) {
+                    runningTasks.add(rootHandle);
+                    runningCount++;
+                }
+            }
+        }
 
+        monitorVo.setTaskRunningCount(runningCount);
+        monitorVo.setTaskCompletedCount(completedCount);
         return monitorVo;
     }
 
@@ -454,11 +474,14 @@ public final class TaskExecutionPool implements TaskPool {
         try {
             int l = this.workerArray.length;
             if (l < this.maxWorkerSize) {
+                TaskWorkThread worker = new TaskWorkThread(taskHandle, this, workInDaemon, poolName);
+                worker.start();
+
                 TaskWorkThread[] arrayNew = new TaskWorkThread[l + 1];
                 System.arraycopy(this.workerArray, 0, arrayNew, 0, l);
-                arrayNew[l] = new TaskWorkThread(taskHandle, this, workInDaemon, poolName);
+                arrayNew[l] = worker;
                 this.workerArray = arrayNew;
-                return arrayNew[l];
+                return worker;
             } else {
                 return null;
             }

@@ -95,8 +95,8 @@ final class TaskWorkThread extends Thread {
                         handle.beforeExecute();
                         handle.executeTask(this);
                     } finally {
-                        handle.afterExecute(this);
                         this.curTaskHandle = null;
+                        handle.afterExecute(this);
                     }
                 }
             } else {//4: park work thread

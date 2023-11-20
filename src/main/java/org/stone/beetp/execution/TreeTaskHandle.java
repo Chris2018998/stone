@@ -27,14 +27,13 @@ import static org.stone.beetp.TaskStates.TASK_CALL_RESULT;
  * @version 1.0
  */
 final class TreeTaskHandle extends BaseHandle {
+    TreeTaskHandle root;
     //1: field of root
     private AtomicBoolean exceptionInd;
     //2: field of parent
     private TreeTaskHandle[] subTaskHandles;
-
     //3: fields of child task
     private TreeTask task;
-    private TreeTaskHandle root;
     private TreeTaskHandle parent;
     private AtomicInteger countDown;//the complete count of sub tasks.
 
@@ -146,8 +145,6 @@ final class TreeTaskHandle extends BaseHandle {
     private void handleTreeSubTaskException(Object result) {
         if (root.exceptionInd.compareAndSet(false, true)) {
             root.setResult(TASK_CALL_EXCEPTION, result);
-            pool.getTaskHoldingCount().decrementAndGet();
-
             pool.getTaskHoldingCount().decrementAndGet();
             ((TaskWorkThread) Thread.currentThread()).completedCount++;
             new AsynTreeCancelThread(root.subTaskHandles, true).start();
