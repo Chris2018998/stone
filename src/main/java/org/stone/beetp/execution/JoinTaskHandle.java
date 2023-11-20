@@ -117,16 +117,12 @@ final class JoinTaskHandle extends BaseHandle {
                 int currentSize = countDown.get();
                 if (currentSize == 0) break;
                 if (countDown.compareAndSet(currentSize, currentSize - 1)) {
-                    if (currentSize - 1 == 0) {
+                    if (currentSize == 1) {
                         try {
                             parent.setResult(TASK_CALL_RESULT, operator.join(parent.subTaskHandles));//join children
                             if (parent.isRoot) {
                                 pool.getTaskHoldingCount().decrementAndGet();
-                                TaskWorkThread workThread = (TaskWorkThread) Thread.currentThread();
-                                workThread.completedCount++;
-
-                                //pool.getTaskRunningCount().decrementAndGet();
-                                //pool.getTaskCompletedCount().incrementAndGet();
+                                ((TaskWorkThread) Thread.currentThread()).completedCount++;
                             }
                         } catch (Throwable e) {
                             this.handleSubTaskException(new TaskExecutionException(e));
@@ -142,11 +138,7 @@ final class JoinTaskHandle extends BaseHandle {
         if (root.exceptionInd.compareAndSet(false, true)) {
             root.setResult(TASK_CALL_EXCEPTION, result);
             pool.getTaskHoldingCount().decrementAndGet();
-            TaskWorkThread workThread = (TaskWorkThread) Thread.currentThread();
-            workThread.completedCount++;
-
-            //pool.getTaskRunningCount().decrementAndGet();
-            //pool.getTaskCompletedCount().incrementAndGet();
+            ((TaskWorkThread) Thread.currentThread()).completedCount++;
 
             new AsynJoinCancelThread(root.subTaskHandles, true).start();
         }

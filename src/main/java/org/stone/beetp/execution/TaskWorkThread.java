@@ -25,6 +25,7 @@ final class TaskWorkThread extends Thread {
     private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
     final ConcurrentLinkedQueue<BaseHandle> workQueue;//support stealing
     private final TaskExecutionPool pool;
+
     volatile Object state;//state of work thread
     volatile long completedCount;//completed count of tasks by thread
     volatile BaseHandle curTaskHandle;//task handle in processing
@@ -50,14 +51,14 @@ final class TaskWorkThread extends Thread {
     }
 
     //***************************************************************************************************************//
-    //                                      3: thread interruptBlocking(1)                                           //
+    //                                      2: thread interruptBlocking(1)                                           //
     //**************************************************e************************************************************//
     void interruptBlocking(BaseHandle taskHandle) {
         if (taskHandle == this.curTaskHandle) this.interrupt();
     }
 
     //***************************************************************************************************************//
-    //                                      4: thead work methods(2)                                                 //
+    //                                      3: thead work methods(2)                                                 //
     //**************************************************e************************************************************//
     public void run() {
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();

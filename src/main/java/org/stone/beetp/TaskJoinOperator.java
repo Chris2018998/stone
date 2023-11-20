@@ -27,7 +27,7 @@ public interface TaskJoinOperator<E> {
     Task<E>[] split(Task<E> task);
 
     /**
-     * Join a sub task handles
+     * Join sub task handles to result
      *
      * @param subTaskHandles result array of sub tasks
      * @return joined result

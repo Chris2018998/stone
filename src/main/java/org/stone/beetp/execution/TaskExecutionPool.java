@@ -221,7 +221,7 @@ public final class TaskExecutionPool implements TaskPool {
     private void pushToExecutionQueue(BaseHandle taskHandle) {
         //1:try to wakeup a idle work thread with task
         for (TaskWorkThread thread : workerArray) {
-            if (thread.state == WORKER_IDLE && thread.compareAndSetState(WORKER_IDLE, taskHandle)) {
+            if (thread.compareAndSetState(WORKER_IDLE, taskHandle)) {
                 LockSupport.unpark(thread);
                 return;
             }
