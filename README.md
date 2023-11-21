@@ -26,13 +26,13 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
  
 ## 🐝beeop对象池🌷
 
-一款小型Java对象池组件
+一款小型Java对象池组件，具有连接池同等优势和技术特点
 
 <a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_cn.md">点击了解更多详情</a>
 
 ## 🐝beetp任务池🪷
 
-一款小型任务处理池组件，支持单次任务，定时任务（单次定时，循环
+一款小型任务调度组件，同时支持三种任务类型：单次任务，定时任务，聚合任务，整体功能类似：ThreadPoolExecutor + ScheduledThreadPoolExecutor + ForkJoinPool
 
 <a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beetp_readme_cn.md">点击了解更多详情</a>
 
