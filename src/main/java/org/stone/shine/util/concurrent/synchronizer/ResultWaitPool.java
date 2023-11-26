@@ -98,7 +98,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
         //3:offer to wait queue
         final boolean isTimed = parkNanos > 0L;
         final SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
-        boolean executeInd = this.appendAsWaitNode(node);
+        boolean executeInd = this.appendAsWaitNode(node);//get executing permit automatically when node is at first of queue
         final long deadlineNanos = isTimed ? System.nanoTime() + parkNanos : 0L;
 
         //4: spin
@@ -118,7 +118,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
                 }
             }
 
-            if (node.isRunningState()) {
+            if (node.receivedSignal()) {//has received a signal(permit) of executing call
                 executeInd = true;
             } else {
                 if (isTimed) {
@@ -136,7 +136,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
                     this.removeAndWakeupFirst(node);
                     throw new InterruptedException();
                 }
-                executeInd = node.isRunningState();
+                executeInd = node.receivedSignal();
             }
         } while (true);
     }
