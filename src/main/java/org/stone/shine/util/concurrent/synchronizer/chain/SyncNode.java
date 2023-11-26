@@ -71,7 +71,7 @@ public final class SyncNode<E> {
         this.thread = thread;
     }
 
-    public final boolean isRunningState() {
+    public final boolean receivedSignal() {
         if (this.state == SyncNodeStates.RUNNING) {
             this.state = null;
             return true;
