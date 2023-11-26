@@ -229,8 +229,8 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //2: try to create a new worker
-        //if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
-        this.executionQueue.offer(taskHandle);
+        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
+            this.executionQueue.offer(taskHandle);
     }
 
     void wakeupSchedulePeekThread() {
