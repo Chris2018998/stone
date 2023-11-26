@@ -10,7 +10,6 @@
 package org.stone.shine.util.concurrent.synchronizer;
 
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeChain;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater;
 import org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator;
@@ -42,7 +41,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
     }
 
     public ResultWaitPool(final boolean fair, final ResultValidator validator) {
-        super(new SyncNodeChain());
+        //super(new SyncNodeChain());
         this.unfair = !fair;
         this.validator = validator;
     }
@@ -52,11 +51,6 @@ public final class ResultWaitPool extends ObjectWaitPool {
     //****************************************************************************************************************//
     public final boolean isFair() {
         return !this.unfair;
-    }
-
-    private void removeAndWakeupFirst(final SyncNode node) {
-        this.waitQueue.remove(node);
-        this.wakeupFirst();
     }
 
     public final void wakeupFirst() {
@@ -89,13 +83,15 @@ public final class ResultWaitPool extends ObjectWaitPool {
         if (allowInterruption && Thread.interrupted()) throw new InterruptedException();
 
         //2:test before call,if passed,then execute call
+        Object result = null;
         if (tester.allow(this.unfair, nodeType, this)) {
-            final Object result = call.call(arg);
+            result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
         }
 
         //3:offer to wait queue
+        int resultType = 1;
         final boolean isTimed = parkNanos > 0L;
         final SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
         boolean executeInd = this.appendAsWaitNode(node);//get executing permit automatically when node is at first of queue
@@ -105,12 +101,8 @@ public final class ResultWaitPool extends ObjectWaitPool {
         do {
             if (executeInd) {//4.1: execute result call
                 try {
-                    final Object result = call.call(arg);
-                    if (validator.isExpected(result)) {
-                        this.waitQueue.poll();
-                        if (propagatedOnSuccess) wakeupFirst(nodeType);
-                        return result;
-                    }
+                    result = call.call(arg);
+                    if (validator.isExpected(result)) break;
                 } catch (Throwable e) {
                     this.waitQueue.poll();
                     this.wakeupFirst();
@@ -123,21 +115,36 @@ public final class ResultWaitPool extends ObjectWaitPool {
             } else {
                 if (isTimed) {
                     final long time = deadlineNanos - System.nanoTime();
-                    if (time <= 0L) {
-                        this.removeAndWakeupFirst(node);
-                        return validator.resultOnTimeout();
+                    if (time <= 0L) {//timeout
+                        resultType = 2;
+                        break;
                     }
                     LockSupport.parkNanos(this, time);
                 } else {
                     LockSupport.park(this);
                 }
-
-                if (Thread.interrupted() && allowInterruption) {
-                    this.removeAndWakeupFirst(node);
-                    throw new InterruptedException();
+                if (Thread.interrupted() && allowInterruption) {//interrupted and need throw exception
+                    resultType = 3;
+                    break;
                 }
                 executeInd = node.receivedSignal();
             }
         } while (true);
+
+        //step5:update state and remove node from queue
+        SyncNodeUpdater.casState(node, null, SyncNodeStates.REMOVED);
+        this.waitQueue.remove(node);
+
+        //step6: wakeup first node
+        if (resultType == 1) {
+            if (propagatedOnSuccess) wakeupFirst(nodeType);
+            return result;
+        }
+
+        //step7: timeout or interruption
+        if (node.getState() == SyncNodeStates.RUNNING || waitQueue.peek() == node) wakeupFirst();
+        if (resultType == 2) return validator.resultOnTimeout();
+
+        throw new InterruptedException();
     }
 }
