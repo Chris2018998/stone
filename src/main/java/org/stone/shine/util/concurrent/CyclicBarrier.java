@@ -123,7 +123,7 @@ public final class CyclicBarrier {
             try {
                 //1: passenger gather in waiting pool(seatNo is zero,we can image that some passengers without ticket and waiting in hall for next flight)
                 Object result = waitPool.get(currentFlight, null, BOOL_EQU_VALIDATOR, SHARE_VISIT_TESTER,
-                        curFlightNo, seatNo, nanosTime, true,
+                        curFlightNo, seatNo, nanosTime > 0L, nanosTime, true,
                         true);
 
                 //2: call result is a false bool,exists one passenger wait timeout(the flight will be cancelled)

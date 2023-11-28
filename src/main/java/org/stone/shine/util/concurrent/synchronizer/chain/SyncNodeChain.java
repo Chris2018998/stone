@@ -14,6 +14,7 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.Queue;
 
+import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.REMOVED;
 import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater.*;
 
 /**
@@ -24,8 +25,35 @@ import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater
  */
 
 public final class SyncNodeChain implements Queue<SyncNode> {
-    private SyncNode head = new SyncNode(null);
+    private SyncNode head = new SyncNode(null);//dummy node at first()
     volatile SyncNode tail = head;
+
+    public static void main(String[] ags) {
+        SyncNode node1 = new SyncNode<>(11, 111);
+        SyncNode node2 = new SyncNode<>(22, 222);
+        SyncNode node3 = new SyncNode<>(33, 333);
+        SyncNodeChain chain = new SyncNodeChain();
+        chain.offer(node1);
+        chain.offer(node2);
+        chain.offer(node3);
+
+        //remove
+        node2.setState(REMOVED);
+        chain.remove(node2);
+        node3.setState(REMOVED);
+        chain.remove(node3);
+
+        SyncNode node = chain.head;
+        while (true) {
+            SyncNode next = node.getNext();
+            if (next != null) {
+                System.out.println("Node:" + next);
+                node = next;
+            } else {
+                break;
+            }
+        }
+    }
 
     //****************************************************************************************************************//
     //                                          1: queue methods(4)                                                   //
@@ -65,7 +93,13 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     public final boolean remove(Object n) {
         SyncNode node = (SyncNode) n;
         node.thread = null;
+
+        //1: find not removed node
         SyncNode pred = node.prev;
+        while (pred.state == REMOVED)
+            node.prev = pred = pred.prev;
+
+        //2: remove from chain
         SyncNode predNext = pred.next;
         if (node == tail && casTail(this, node, pred)) {
             casNext(pred, predNext, null);

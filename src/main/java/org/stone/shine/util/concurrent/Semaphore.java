@@ -251,7 +251,7 @@ public class Semaphore {
 
         try {
             waitPool.get(permitAction, INT_ONE, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                    null, null, 0, true,
+                    null, null, false, 0L, true,
                     true);
         } catch (InterruptedException e) {
             throw e;
@@ -286,7 +286,7 @@ public class Semaphore {
         if (permits <= 0) throw new IllegalArgumentException();
         try {
             waitPool.get(permitAction, INT_ONE, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                    null, null, 0, false,
+                    null, null, false, 0L, false,
                     true);
         } catch (Exception e) {
             //do nothing
@@ -380,7 +380,7 @@ public class Semaphore {
 
         try {
             return (Boolean) waitPool.get(permitAction, permits, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                    null, null, unit.toNanos(timeout), true,
+                    null, null, true, unit.toNanos(timeout), true,
                     true);
         } catch (InterruptedException e) {
             throw e;

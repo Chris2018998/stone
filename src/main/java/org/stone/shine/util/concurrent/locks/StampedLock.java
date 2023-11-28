@@ -164,7 +164,7 @@ public class StampedLock implements java.io.Serializable {
     public long readLock() {
         try {
             return (long) waitPool.get(stampedReadCall, null, resultValidator, SHARE_VISIT_TESTER,
-                    TYPE_SHARED, null, 0L,
+                    TYPE_SHARED, null, false, 0L,
                     false, true);
         } catch (Exception e) {
             return acquireFailedStamp;
@@ -174,7 +174,7 @@ public class StampedLock implements java.io.Serializable {
     public long readLockInterruptibly() throws InterruptedException {
         try {
             return (long) waitPool.get(stampedReadCall, null, resultValidator, SHARE_VISIT_TESTER,
-                    TYPE_SHARED, null, 0L,
+                    TYPE_SHARED, null, false, 0L,
                     true, true);
         } catch (InterruptedException e) {
             throw e;
@@ -186,7 +186,7 @@ public class StampedLock implements java.io.Serializable {
     public long tryReadLock(long time, TimeUnit unit) throws InterruptedException {
         try {
             return (long) waitPool.get(stampedReadCall, null, resultValidator, SHARE_VISIT_TESTER,
-                    TYPE_SHARED, null, unit.toNanos(time),
+                    TYPE_SHARED, null, true, unit.toNanos(time),
                     true, true);
         } catch (InterruptedException e) {
             throw e;
@@ -228,7 +228,7 @@ public class StampedLock implements java.io.Serializable {
     public long writeLock() {
         try {
             return (long) waitPool.get(stampedWriteCall, null, resultValidator, BASE_VISIT_TESTER,
-                    TYPE_EXCLUSIVE, null, 0L,
+                    TYPE_EXCLUSIVE, null, false, 0L,
                     false, false);
         } catch (Exception e) {
             return acquireFailedStamp;
@@ -241,7 +241,7 @@ public class StampedLock implements java.io.Serializable {
 //            config.setNodeType(TYPE_EXCLUSIVE);
 //            return (long) waitPool.get(stampedWriteCall, null, config);
             return (long) waitPool.get(stampedWriteCall, null, resultValidator, BASE_VISIT_TESTER,
-                    TYPE_EXCLUSIVE, null, 0L,
+                    TYPE_EXCLUSIVE, null, false, 0L,
                     true, false);
         } catch (InterruptedException e) {
             throw e;
@@ -253,7 +253,7 @@ public class StampedLock implements java.io.Serializable {
     public long tryWriteLock(long time, TimeUnit unit) throws InterruptedException {
         try {
             return (long) waitPool.get(stampedWriteCall, null, resultValidator, BASE_VISIT_TESTER,
-                    TYPE_EXCLUSIVE, null, unit.toNanos(time),
+                    TYPE_EXCLUSIVE, null, true, unit.toNanos(time),
                     true, false);
         } catch (InterruptedException e) {
             throw e;

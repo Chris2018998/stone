@@ -41,7 +41,7 @@ public final class CountDownLatch implements ResultCall {
     public void await() throws InterruptedException {
         try {
             waitPool.get(this, null, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                    null, null, 0,
+                    null, null, false, 0L,
                     true, true);
         } catch (InterruptedException e) {
             throw e;
@@ -53,7 +53,7 @@ public final class CountDownLatch implements ResultCall {
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         try {
             waitPool.get(this, null, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                    null, null, unit.toNanos(timeout),
+                    null, null, true, unit.toNanos(timeout),
                     true, true);
         } catch (InterruptedException e) {
             throw e;

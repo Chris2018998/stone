@@ -73,7 +73,7 @@ public final class SyncNode<E> {
 
     public final boolean receivedSignal() {
         if (this.state == SyncNodeStates.RUNNING) {
-            this.state = null;
+            this.state = null;//rest to null for next
             return true;
         }
         return false;
@@ -99,6 +99,6 @@ public final class SyncNode<E> {
     }
 
     public String toString() {
-        return thread + ":" + type + ":" + state;
+        return thread + ":" + type + ":" + state + ":" + value;
     }
 }

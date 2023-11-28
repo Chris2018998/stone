@@ -53,16 +53,23 @@ public final class ResultWaitPool extends ObjectWaitPool {
         return !this.unfair;
     }
 
+    private void removeAndWakeupFirst(final SyncNode node) {
+        this.waitQueue.remove(node);
+        this.wakeupFirst();
+    }
+
     public final void wakeupFirst() {
         final SyncNode first = this.waitQueue.peek();
-        if (first != null && SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING))
+        if (first != null && SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING)) {
             LockSupport.unpark(first.getThread());
+        }
     }
 
     public final void wakeupFirst(final Object wakeupType) {
         final SyncNode first = this.waitQueue.peek();
-        if (first != null && (wakeupType == null || wakeupType == first.getType() || wakeupType.equals(first.getType())))
+        if (first != null && (wakeupType == null || wakeupType == first.getType() || wakeupType.equals(first.getType()))) {
             if (SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING)) LockSupport.unpark(first.getThread());
+        }
     }
 
     //****************************************************************************************************************//
@@ -70,11 +77,11 @@ public final class ResultWaitPool extends ObjectWaitPool {
     //****************************************************************************************************************//
     public Object get(final ResultCall call, final Object arg, final SyncVisitConfig config) throws Exception {
         return this.get(call, arg, this.validator, config.getVisitTester(), config.getNodeType(), config.getNodeValue(),
-                config.getParkNanos(), config.isAllowInterruption(), config.isPropagatedOnSuccess());
+                config.isTimed(), config.getParkNanos(), config.isAllowInterruption(), config.isPropagatedOnSuccess());
     }
 
     public Object get(final ResultCall call, final Object arg, final ResultValidator validator, final SyncVisitTester tester,
-                      final Object nodeType, final Object nodeValue, final long parkNanos, final boolean allowInterruption,
+                      final Object nodeType, final Object nodeValue, final boolean isTimed, final long parkNanos, final boolean allowInterruption,
                       final boolean propagatedOnSuccess) throws Exception {
 
         //1:check call parameter
@@ -83,68 +90,53 @@ public final class ResultWaitPool extends ObjectWaitPool {
         if (allowInterruption && Thread.interrupted()) throw new InterruptedException();
 
         //2:test before call,if passed,then execute call
-        Object result = null;
         if (tester.allow(this.unfair, nodeType, this)) {
-            result = call.call(arg);
+            final Object result = call.call(arg);
             if (validator.isExpected(result))
                 return result;
         }
 
         //3:offer to wait queue
-        int resultType = 1;
-        final boolean isTimed = parkNanos > 0L;
         final SyncNode<Object> node = new SyncNode<>(nodeType, nodeValue);
-        boolean executeInd = this.appendAsWaitNode(node);//get executing permit automatically when node is at first of queue
+        boolean executeInd = this.appendAsWaitNode(node);
         final long deadlineNanos = isTimed ? System.nanoTime() + parkNanos : 0L;
 
         //4: spin
         do {
             if (executeInd) {//4.1: execute result call
                 try {
-                    result = call.call(arg);
-                    if (validator.isExpected(result)) break;
+                    final Object result = call.call(arg);
+                    if (validator.isExpected(result)) {
+                        this.waitQueue.remove(node);
+                        if (propagatedOnSuccess) wakeupFirst(nodeType);
+                        return result;
+                    }
                 } catch (Throwable e) {
-                    this.waitQueue.poll();
+                    this.waitQueue.remove(node);
                     this.wakeupFirst();
                     throw e;
                 }
             }
 
-            if (node.receivedSignal()) {//has received a signal(permit) of executing call
-                executeInd = true;
-            } else {
+            //4.2: try to blocking caller util wake up by other
+            if (!(executeInd = node.receivedSignal())) {
                 if (isTimed) {
                     final long time = deadlineNanos - System.nanoTime();
-                    if (time <= 0L) {//timeout
-                        resultType = 2;
-                        break;
+                    if (time <= 0L) {
+                        this.removeAndWakeupFirst(node);
+                        return validator.resultOnTimeout();
                     }
                     LockSupport.parkNanos(this, time);
                 } else {
                     LockSupport.park(this);
                 }
-                if (Thread.interrupted() && allowInterruption) {//interrupted and need throw exception
-                    resultType = 3;
-                    break;
+
+                if (Thread.interrupted() && allowInterruption) {
+                    this.removeAndWakeupFirst(node);
+                    throw new InterruptedException();
                 }
                 executeInd = node.receivedSignal();
             }
         } while (true);
-
-        //step5:update state and remove node from queue
-        SyncNodeUpdater.casState(node, null, SyncNodeStates.REMOVED);
-        this.waitQueue.remove(node);
-
-        //step6: wakeup first node
-        if (resultType == 1) {
-            if (propagatedOnSuccess) wakeupFirst(nodeType);
-            return result;
-        }
-
-        //step7: timeout or interruption
-        if (node.getState() == SyncNodeStates.RUNNING || waitQueue.peek() == node) wakeupFirst();
-        if (resultType == 2) return validator.resultOnTimeout();
-
-        throw new InterruptedException();
     }
 }

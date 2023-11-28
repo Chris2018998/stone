@@ -31,6 +31,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //chain node
     private SyncNode<E> node;
 
+    private boolean isTimed = true;
     //parkTime(@see LockSupport.parkNanos)
     private long parkNanos;
     //parkTime(@see LockSupport.parkUtil)
@@ -49,6 +50,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //                                              1:constructors(3)                                                 //
     //****************************************************************************************************************//
     public SyncVisitConfig() {
+        this.isTimed = false;
     }
 
     public SyncVisitConfig(Date deadlineDate) {
@@ -90,6 +92,10 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
+    public final boolean isTimed() {
+        return this.isTimed;
+    }
+
     public final long getParkNanos() {
         return parkNanos;
     }

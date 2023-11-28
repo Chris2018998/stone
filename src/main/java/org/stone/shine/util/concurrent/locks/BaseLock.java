@@ -93,7 +93,7 @@ class BaseLock implements Lock {
     public void lock() {
         try {
             waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
-                    acquireType, null, 0L, false,
+                    acquireType, null, false, 0L, false,
                     propagatedOnSuccess);
         } catch (Exception e) {
             //do noting
@@ -149,7 +149,7 @@ class BaseLock implements Lock {
     public void lockInterruptibly() throws InterruptedException {
         try {
             waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
-                    acquireType, null, 0L, true,
+                    acquireType, null, false, 0L, true,
                     propagatedOnSuccess);
         } catch (InterruptedException e) {
             throw e;
@@ -249,7 +249,7 @@ class BaseLock implements Lock {
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
         try {
             return (Boolean) waitPool.get(lockAction, INT_ONE, BOOL_EQU_VALIDATOR, visitTester,
-                    acquireType, null, unit.toNanos(time), true,
+                    acquireType, null, true, unit.toNanos(time), true,
                     propagatedOnSuccess);
         } catch (InterruptedException e) {
             throw e;
@@ -442,7 +442,7 @@ class BaseLock implements Lock {
             //4:reacquire the single PermitPool with exclusive mode and ignore interruption(must get success)
             try {
                 lock.waitPool.get(lockAction, holdCount, BOOL_EQU_VALIDATOR, BASE_VISIT_TESTER,
-                        SyncConstants.TYPE_EXCLUSIVE, null, 0, false,
+                        SyncConstants.TYPE_EXCLUSIVE, null, false, 0L, false,
                         false);
             } catch (Exception e) {
                 //do nothing
