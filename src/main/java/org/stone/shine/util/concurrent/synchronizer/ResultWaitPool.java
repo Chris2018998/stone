@@ -103,7 +103,8 @@ public final class ResultWaitPool extends ObjectWaitPool {
 
         //4: spin
         do {
-            if (executeInd) {//4.1: execute result call
+            //4.1：try to execute result call
+            if (executeInd) {
                 try {
                     final Object result = call.call(arg);
                     if (validator.isExpected(result)) {
@@ -118,14 +119,15 @@ public final class ResultWaitPool extends ObjectWaitPool {
                 }
             }
 
-            //4.2: try to blocking caller util wake up by other
+            //4.2：try to blocking
             if (!(executeInd = node.receivedSignal())) {
                 if (isTimed) {
-                    final long time = deadlineNanos - System.nanoTime();
+                    long time = deadlineNanos - System.nanoTime();
                     if (time <= 0L) {
                         this.removeAndWakeupFirst(node);
                         return validator.resultOnTimeout();
                     }
+
                     LockSupport.parkNanos(this, time);
                 } else {
                     LockSupport.park(this);
@@ -135,6 +137,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
                     this.removeAndWakeupFirst(node);
                     throw new InterruptedException();
                 }
+
                 executeInd = node.receivedSignal();
             }
         } while (true);
