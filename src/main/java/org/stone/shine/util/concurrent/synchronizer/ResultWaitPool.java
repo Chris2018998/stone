@@ -10,6 +10,7 @@
 package org.stone.shine.util.concurrent.synchronizer;
 
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
+import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeChain;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater;
 import org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator;
@@ -127,7 +128,6 @@ public final class ResultWaitPool extends ObjectWaitPool {
                         this.removeAndWakeupFirst(node);
                         return validator.resultOnTimeout();
                     }
-
                     LockSupport.parkNanos(this, time);
                 } else {
                     LockSupport.park(this);
