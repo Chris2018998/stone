@@ -63,13 +63,9 @@ public final class SyncNode<E> {
         this.state = newState;
     }
 
-    public Thread getThread() {
-        return this.thread;
-    }
+    public final Thread getThread() { return this.thread; }
 
-    public void setThread(Thread thread) {
-        this.thread = thread;
-    }
+    public final void setThread(Thread thread) { this.thread = thread; }
 
     public final boolean receivedSignal() {
         if (this.state == SyncNodeStates.RUNNING) {

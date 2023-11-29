@@ -20,7 +20,7 @@ import sun.misc.Unsafe;
  */
 public final class SyncNodeUpdater {
     //chain field offset
-    public final static long stateOffSet;
+    private final static long stateOffSet;
     private final static Unsafe U;
     private final static long tailOffSet;
     private final static long prevOffSet;

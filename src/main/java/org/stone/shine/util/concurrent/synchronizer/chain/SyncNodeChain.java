@@ -93,6 +93,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     public final boolean remove(Object n) {
         SyncNode node = (SyncNode) n;
         node.thread = null;
+        node.state = REMOVED;
 
         //1: find not removed node
         SyncNode pred = node.prev;
