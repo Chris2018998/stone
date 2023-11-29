@@ -32,7 +32,7 @@ import static org.stone.beetp.TaskStates.*;
  * @version 1.0
  */
 class BaseHandle implements TaskHandle {
-    //cas unsafe for state field
+    //unsafe to update state field
     private static final Unsafe U;
     private static final long stateOffset;
 
@@ -53,7 +53,7 @@ class BaseHandle implements TaskHandle {
 
     private TaskCallback callback;
     private TaskWorkThread workThread;//set before execution,clear after execution
-    private ConcurrentLinkedQueue<Thread> waitQueue;
+    private ConcurrentLinkedQueue<Thread> waitQueue;//queue store result getting waiters
 
     //***************************************************************************************************************//
     //                                  1: constructor(2)                                                            //
@@ -181,7 +181,7 @@ class BaseHandle implements TaskHandle {
         worker.completedCount++;
     }
 
-    Object invokeTaskCall() throws Exception {
+     private Object invokeTaskCall() throws Exception {
         return task.call();
     }
 

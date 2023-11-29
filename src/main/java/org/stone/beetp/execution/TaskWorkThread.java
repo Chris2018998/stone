@@ -9,8 +9,10 @@
  */
 package org.stone.beetp.execution;
 
+import org.stone.tools.unsafe.UnsafeAdaptorSunMiscImpl;
+import sun.misc.Unsafe;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.execution.TaskPoolConstants.*;
@@ -22,20 +24,29 @@ import static org.stone.beetp.execution.TaskPoolConstants.*;
  * @version 1.0
  */
 final class TaskWorkThread extends Thread {
-    private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> workerStateUpd = AtomicReferenceFieldUpdater.newUpdater(TaskWorkThread.class, Object.class, "state");
-    final ConcurrentLinkedQueue<BaseHandle> workQueue;//support stealing
-    private final TaskExecutionPool pool;
+    //unsafe to update state field
+    private static final Unsafe U;
+    private static final long stateOffset;
 
-    volatile Object state;//state of work thread
-    volatile long completedCount;//completed count of tasks by thread
+    static {
+        try {
+            U = UnsafeAdaptorSunMiscImpl.U;
+            stateOffset = U.objectFieldOffset(TaskWorkThread.class.getDeclaredField("state"));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+
+    final ConcurrentLinkedQueue<BaseHandle> workQueue;//individual queue to store joining sub tasks and tree sub tasks, can be stealing by other worker threads
+    private final TaskExecutionPool pool;//owner
+
+    volatile long completedCount;//task completed count by this current worker
     volatile BaseHandle curTaskHandle;//task handle in processing
+    private volatile Object state;//state definition,@see{@link TaskPoolConstants}
 
-    TaskWorkThread(Object state, boolean workInDaemon, String poolName, TaskExecutionPool pool) {
+    TaskWorkThread(Object state, TaskExecutionPool pool) {
         this.pool = pool;
         this.state = state;
-        this.setDaemon(workInDaemon);
-        this.setName(poolName + "-task worker");
-
         this.workQueue = new ConcurrentLinkedQueue<>();
     }
 
@@ -47,7 +58,7 @@ final class TaskWorkThread extends Thread {
     }
 
     boolean compareAndSetState(Object expect, Object update) {
-        return expect == state && workerStateUpd.compareAndSet(this, expect, update);
+        return expect == state && U.compareAndSwapObject(this, stateOffset, expect, update);
     }
 
     //***************************************************************************************************************//
@@ -61,34 +72,32 @@ final class TaskWorkThread extends Thread {
     //                                      3: thead work methods(2)                                                 //
     //**************************************************e************************************************************//
     public void run() {
+        final boolean useTimePark = pool.isIdleTimeoutValid();
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
-        final boolean useTimePark = idleTimeoutNanos > 0L;
         final ConcurrentLinkedQueue<BaseHandle> executionQueue = pool.getTaskExecutionQueue();
 
         do {
-            //1: read state from work
-            Object state = this.state;//exits repeat read same
+            //1: read state of worker,if value equals terminated state,then exit
+            Object state = this.state;
             if (state == WORKER_TERMINATED) break;
 
-            //2: get task from state or poll from queue
+            //2: get a task(from state,individual queue,common queue)
             BaseHandle handle;
-            if (state instanceof BaseHandle) {//handle must be not null
+            if (state instanceof BaseHandle) {
                 handle = (BaseHandle) state;
                 this.state = WORKER_WORKING;
             } else {
-                handle = workQueue.poll();
-                if (handle == null) handle = executionQueue.poll();
-                if (handle == null) {//steal a task from other work thread
+                handle = workQueue.poll();//individual queue
+                if (handle == null) handle = executionQueue.poll();//common queue
+                if (handle == null) {//steal a task from other workers
                     for (TaskWorkThread worker : pool.getWorkerArray()) {
-                        if (worker != this) {
-                            handle = worker.workQueue.poll();
-                            if (handle != null) break;
-                        }
+                        handle = worker.workQueue.poll();
+                        if (handle != null) break;
                     }
                 }
             }
 
-            //3: execute task
+            //3: execute task if not be null
             if (handle != null) {
                 if (handle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
                     try {
@@ -100,19 +109,18 @@ final class TaskWorkThread extends Thread {
                     }
                 }
             } else {//4: park work thread
-                this.state = WORKER_IDLE;//set to be idle from WORKER_WORKING
+                this.state = WORKER_IDLE;
                 if (useTimePark) {
                     LockSupport.parkNanos(idleTimeoutNanos);
-                    if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;//set to be terminated if timeout
+                    if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;
                 } else {
                     LockSupport.park();
                 }
+                //Thread.interrupted();//clear interrupted flag and repeat to get dynamic parameters from pool
             }
-
-            Thread.interrupted();//clean possible interruption state
         } while (true);
 
-        //remove self from worker array
+        //remove worker from pool
         pool.removeTaskWorker(this);
     }
 }

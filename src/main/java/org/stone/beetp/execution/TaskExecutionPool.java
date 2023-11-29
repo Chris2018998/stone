@@ -45,6 +45,7 @@ public final class TaskExecutionPool implements TaskPool {
     private int maxWorkerSize;
     private boolean workInDaemon;
     private long idleTimeoutNanos;
+    private boolean idleTimeoutValid;
     private ReentrantLock workerArrayLock;
     private volatile TaskWorkThread[] workerArray;
 
@@ -89,6 +90,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.maxWorkerSize = config.getMaxWorkerSize();
         this.workInDaemon = config.isWorkInDaemon();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
+        if (this.idleTimeoutNanos > 0L) this.idleTimeoutValid = true;
 
         //step2: create some queues(worker queue,task queue,termination wait queue)
         if (workerArray == null) {
@@ -104,8 +106,12 @@ public final class TaskExecutionPool implements TaskPool {
         //step4: create initial work threads
         int workerInitSize = config.getInitWorkerSize();
         this.workerArray = new TaskWorkThread[workerInitSize];
-        for (int i = 0; i < workerInitSize; i++)
-            workerArray[i] = new TaskWorkThread(WORKER_WORKING, workInDaemon, poolName, this);
+        for (int i = 0; i < workerInitSize; i++) {
+            TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this);
+            worker.setDaemon(workInDaemon);
+            worker.setName(poolName + "-task worker");
+            workerArray[i] = worker;
+        }
         for (int i = 0; i < workerInitSize; i++)//fix nullPointException on stealing
             workerArray[i].start();
 
@@ -419,6 +425,10 @@ public final class TaskExecutionPool implements TaskPool {
         return workerArray;
     }
 
+    boolean isIdleTimeoutValid() {
+        return this.idleTimeoutValid;
+    }
+
     long getIdleTimeoutNanos() {
         return this.idleTimeoutNanos;
     }
@@ -474,7 +484,9 @@ public final class TaskExecutionPool implements TaskPool {
         try {
             int l = this.workerArray.length;
             if (l < this.maxWorkerSize) {
-                TaskWorkThread worker = new TaskWorkThread(taskHandle, workInDaemon, poolName, this);
+                TaskWorkThread worker = new TaskWorkThread(taskHandle, this);
+                worker.setDaemon(workInDaemon);
+                worker.setName(poolName + "-task worker");
                 worker.start();
 
                 TaskWorkThread[] arrayNew = new TaskWorkThread[l + 1];
