@@ -194,7 +194,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setMaxWait(long maxWait) {
-        if (maxWait > 0) this.maxWait = maxWait;
+        if (maxWait > 0L) this.maxWait = maxWait;
     }
 
     public long getIdleTimeout() {
@@ -202,7 +202,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setIdleTimeout(long idleTimeout) {
-        if (idleTimeout > 0) this.idleTimeout = idleTimeout;
+        if (idleTimeout > 0L) this.idleTimeout = idleTimeout;
     }
 
     public long getHoldTimeout() {
