@@ -88,7 +88,7 @@ public class TaskServiceConfig {
     }
 
     public void setWorkerKeepAliveTime(long workerKeepAliveTime) {
-        if (workerKeepAliveTime > 0) this.workerKeepAliveTime = workerKeepAliveTime;
+        if (workerKeepAliveTime > 0L) this.workerKeepAliveTime = workerKeepAliveTime;
     }
 
     public String getPoolImplementClassName() {
@@ -109,7 +109,7 @@ public class TaskServiceConfig {
             throw new TaskServiceConfigException("maxWorkerSize must be greater than zero");
         if (maxWorkerSize < initWorkerSize)
             throw new TaskServiceConfigException("maxWorkerSize must be not less than initWorkerSize");
-        if (workerKeepAliveTime < 0)
+        if (workerKeepAliveTime < 0L)
             throw new TaskServiceConfigException("workerKeepAliveTime must be greater than zero");
 
         //2:create new config and copy field value from current
