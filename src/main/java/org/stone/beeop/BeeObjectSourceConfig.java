@@ -59,7 +59,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //milliseconds:max idle parkTime of objects in pool,when reach,then close them and remove from pool
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds:max no-use parkTime of borrowed object,when reach,then return them to pool by forced close
-    private long holdTimeout = MINUTES.toMillis(3);
+    private long holdTimeout;
     //seconds:max parkTime to get valid test result
     private int validTestTimeout = 3;
     //milliseconds:objects valid assume parkTime after last activity,if borrowed,not need test during the duration
@@ -226,7 +226,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setValidAssumeTime(long validAssumeTime) {
-        if (validAssumeTime >= 0) this.validAssumeTime = validAssumeTime;
+        if (validAssumeTime >= 0L) this.validAssumeTime = validAssumeTime;
     }
 
     public long getTimerCheckInterval() {
@@ -234,7 +234,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setTimerCheckInterval(long timerCheckInterval) {
-        if (timerCheckInterval > 0) this.timerCheckInterval = timerCheckInterval;
+        if (timerCheckInterval > 0L) this.timerCheckInterval = timerCheckInterval;
     }
 
     public boolean isForceCloseUsingOnClear() {
@@ -250,7 +250,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setDelayTimeForNextClear(long delayTimeForNextClear) {
-        if (delayTimeForNextClear >= 0) this.delayTimeForNextClear = delayTimeForNextClear;
+        if (delayTimeForNextClear >= 0L) this.delayTimeForNextClear = delayTimeForNextClear;
     }
 
     public String getPoolImplementClassName() {
@@ -479,11 +479,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             throw new BeeObjectSourceConfigException("maxObjectKeySize must be greater than zero");
         if (borrowSemaphoreSize <= 0)
             throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");
-        if (idleTimeout <= 0)
+        if (idleTimeout <= 0L)
             throw new BeeObjectSourceConfigException("idleTimeout must be greater than zero");
-//        if (holdTimeout <= 0)
-//            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
-        if (maxWait <= 0)
+        if (holdTimeout < 0L)
+            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
+        if (maxWait <= 0L)
             throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
 
         //1:try to create method filter
