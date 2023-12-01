@@ -273,7 +273,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setMaxWait(long maxWait) {
-        if (maxWait > 0) this.maxWait = maxWait;
+        if (maxWait > 0L) this.maxWait = maxWait;
     }
 
     public long getIdleTimeout() {
