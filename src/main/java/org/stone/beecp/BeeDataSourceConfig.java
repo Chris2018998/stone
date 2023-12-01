@@ -72,7 +72,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //milliseconds:max idle parkTime of connections in pool,when reach,then close them and remove from pool
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds:max no-use parkTime hold by borrowers,when reach,then return them to pool by forced close
-    private long holdTimeout = MINUTES.toMillis(3);
+    private long holdTimeout;
     //connection valid test sql on borrowed
     private String validTestSql = "SELECT 1";
     //seconds:max parkTime to get valid test result
@@ -281,7 +281,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setIdleTimeout(long idleTimeout) {
-        if (idleTimeout > 0) this.idleTimeout = idleTimeout;
+        if (idleTimeout > 0L) this.idleTimeout = idleTimeout;
     }
 
     public long getHoldTimeout() {
@@ -313,7 +313,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setValidAssumeTime(long validAssumeTime) {
-        if (validAssumeTime >= 0) this.validAssumeTime = validAssumeTime;
+        if (validAssumeTime >= 0L) this.validAssumeTime = validAssumeTime;
     }
 
     public long getTimerCheckInterval() {
@@ -321,7 +321,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setTimerCheckInterval(long timerCheckInterval) {
-        if (timerCheckInterval > 0) this.timerCheckInterval = timerCheckInterval;
+        if (timerCheckInterval > 0L) this.timerCheckInterval = timerCheckInterval;
     }
 
     public boolean isForceCloseUsingOnClear() {
@@ -337,7 +337,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setDelayTimeForNextClear(long delayTimeForNextClear) {
-        if (delayTimeForNextClear >= 0) this.delayTimeForNextClear = delayTimeForNextClear;
+        if (delayTimeForNextClear >= 0L) this.delayTimeForNextClear = delayTimeForNextClear;
     }
 
     public List<Integer> getSqlExceptionCodeList() {
@@ -645,11 +645,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         //if (this.borrowConcurrentSize > maxActive)
         //throw new BeeDataSourceConfigException("Pool 'borrowConcurrentSize' must not be greater than pool max size");
         //fix issue:#19 Chris-2020-08-16 end
-        if (idleTimeout <= 0)
+        if (idleTimeout <= 0L)
             throw new BeeDataSourceConfigException("idleTimeout must be greater than zero");
-//        if (holdTimeout <= 0)
-//            throw new BeeDataSourceConfigException("holdTimeout must be greater than zero");
-        if (maxWait <= 0)
+        if (holdTimeout < 0L)
+            throw new BeeDataSourceConfigException("holdTimeout must be greater than zero");
+        if (maxWait <= 0L)
             throw new BeeDataSourceConfigException("maxWait must be greater than zero");
         //fix issue:#1 The check of validationQuerySQL has logic problem. Chris-2019-05-01 begin
         //if (this.validationQuerySQL != null && validationQuerySQL.trim().length() == 0) {
