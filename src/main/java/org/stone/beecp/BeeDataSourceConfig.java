@@ -9,10 +9,7 @@
  */
 package org.stone.beecp;
 
-import org.stone.beecp.pool.ConnectionFactoryByDriver;
-import org.stone.beecp.pool.ConnectionFactoryByDriverDs;
-import org.stone.beecp.pool.FastConnectionPool;
-import org.stone.beecp.pool.XaConnectionFactoryByDriverDs;
+import org.stone.beecp.pool.*;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
@@ -117,7 +114,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //class of thread factory(priority-2)
     private Class threadFactoryClass;
     //class name of thread factory(priority-3),if not set,default factory will be applied in pool
-    private String threadFactoryClassName;
+    private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
     //work thread factory(priority-1)
     private BeeConnectionPoolThreadFactory threadFactory;
 
