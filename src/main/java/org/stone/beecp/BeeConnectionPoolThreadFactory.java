@@ -10,7 +10,9 @@
 package org.stone.beecp;
 
 /**
- * A Thread factory,which is used to create some work threads in connection pool
+ * A Thread factory interface,its sub class is used to create some work threads in connection pool,
+ * there are three fields exists in {@link BeeDataSourceConfig}to support injecting a factory,if not set,
+ * a default Implementation applied in pool,@see{@link ConnectionPoolThreadFactory}
  *
  * @author Chris Liao
  * @version 1.0
@@ -18,7 +20,7 @@ package org.stone.beecp;
 public interface BeeConnectionPoolThreadFactory {
 
     /**
-     * create thread to scan idle-timeout connections and remove them from pool
+     * create a thread to scan idle-timeout connections and remove them from pool
      *
      * @param runnable a runnable to be executed by new thread instance
      * @return a created thread
