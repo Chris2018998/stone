@@ -59,6 +59,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     private final long maxWaitNs;//nanoseconds
     private final long idleTimeoutMs;//milliseconds
     private final long holdTimeoutMs;//milliseconds
+    private final boolean supportHoldTimeout;
     private final int stateCodeOnRelease;
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
@@ -99,6 +100,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(config.getMaxWait());//nanoseconds
         this.idleTimeoutMs = config.getIdleTimeout();//milliseconds
         this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
+        this.supportHoldTimeout = holdTimeoutMs > 0L;
         this.delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
         this.validAssumeTime = config.getValidAssumeTime();
         this.validTestTimeout = config.getValidTestTimeout();
@@ -465,7 +467,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     this.tryWakeupServantThread();
                 }
             } else if (state == OBJECT_USING) {
-                if (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
+                if (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
                         tryCloseObjectHandle(handleInUsing);
@@ -520,7 +522,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                 } else if (state == OBJECT_USING) {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
-                        if (forceCloseUsing || (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L)) {
+                        if (forceCloseUsing || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L)) {
                             tryCloseObjectHandle(handleInUsing);
                             if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED))
                                 this.removePooledEntry(p, removeReason);
