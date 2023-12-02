@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.stone.beeop.pool.ObjectPoolStatics.createClassInstance;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
@@ -527,16 +528,17 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
 
         //3:try to create object factory
-        RawObjectFactory tempObjectFactory = null;
-        if (this.objectFactory == null) tempObjectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
+        RawObjectFactory objectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
+        BeeObjectPoolThreadFactory threadFactory = this.createThreadFactory();
 
         //4:copy field value to new config from current config
         BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
         copyTo(checkedConfig);
 
         //5:set temp to config
+        checkedConfig.objectFactory = objectFactory;
+        checkedConfig.threadFactory = threadFactory;
         if (tempMethodFilter != null) checkedConfig.objectMethodFilter = tempMethodFilter;
-        if (tempObjectFactory != null) checkedConfig.objectFactory = tempObjectFactory;
         if (tempObjectInterfaces != null) checkedConfig.objectInterfaces = tempObjectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
         return checkedConfig;
@@ -677,6 +679,26 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             return rawObjectFactory;
         } else {
             throw new BeeObjectSourceConfigException("Must set one of properties['objectFactoryClassName','objectClassName']");
+        }
+    }
+
+    //create Thread factory
+    private BeeObjectPoolThreadFactory createThreadFactory() throws BeeObjectSourceConfigException {
+        //step1:if exists thread factory,then return it
+        if (this.threadFactory != null) return this.threadFactory;
+
+        //step2: configuration of thread factory
+        if (this.threadFactoryClass == null && isBlank(this.threadFactoryClassName))
+            throw new BeeObjectSourceConfigException("Configuration item(threadFactoryClass and threadFactoryClassName) can't be null at same time");
+
+        //step3: create thread factory by class or class name
+        try {
+            Class<?> threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
+            return (BeeObjectPoolThreadFactory) createClassInstance(threadFactClass, ObjectPoolThreadFactory.class, "pool thread factory");
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BeeObjectSourceConfigException("Failed to create pool thread factory by class:" + this.threadFactoryClassName, e);
         }
     }
 }
