@@ -181,7 +181,8 @@ class BaseHandle implements TaskHandle {
         worker.completedCount++;
     }
 
-     private Object invokeTaskCall() throws Exception {
+    //override in TreeTaskHandle
+    Object invokeTaskCall() throws Exception {
         return task.call();
     }
 

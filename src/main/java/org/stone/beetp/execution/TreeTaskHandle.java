@@ -49,7 +49,7 @@ final class TreeTaskHandle extends BaseHandle {
 
     //constructor for children task
     private TreeTaskHandle(TreeTask task, TreeTaskHandle parent, AtomicInteger countDown, TaskExecutionPool pool, TreeTaskHandle root) {
-        super(null, null, pool);
+        super(null, pool);
         this.task = task;
         this.root = root;
         this.parent = parent;
