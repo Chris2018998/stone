@@ -72,6 +72,7 @@ public class ConfigCheckCopyTest extends TestCase {
         excludeNames.add("poolName");
         excludeNames.add("connectProperties");
         excludeNames.add("connectionFactory");
+        excludeNames.add("threadFactory");
 
         //1:primitive type copy
         Field[] fields = BeeDataSourceConfig.class.getDeclaredFields();
