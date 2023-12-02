@@ -11,6 +11,7 @@ package org.stone.beeop;
 
 import org.stone.beeop.pool.KeyedObjectPool;
 import org.stone.beeop.pool.ObjectPoolStatics;
+import org.stone.beeop.pool.ObjectPoolThreadFactory;
 
 import java.io.File;
 import java.io.InputStream;
@@ -86,7 +87,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //class of thread factory(priority-2)
     private Class threadFactoryClass;
     //class name of thread factory(priority-3),if not set,default factory will be applied in pool
-    private String threadFactoryClassName;
+    private String threadFactoryClassName = ObjectPoolThreadFactory.class.getName();
     //work thread factory(priority-1)
     private BeeObjectPoolThreadFactory threadFactory;
 
