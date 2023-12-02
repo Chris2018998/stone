@@ -18,7 +18,7 @@ package org.stone.beeop;
 public interface BeeObjectPoolThreadFactory {
 
     /**
-     * create thread to scan idle-timeout objects and remove them from pool
+     * create a thread to scan idle-timeout objects and remove them from pool
      *
      * @param runnable a runnable to be executed by new thread instance
      * @return a created thread
@@ -27,7 +27,7 @@ public interface BeeObjectPoolThreadFactory {
 
     /**
      * create a servant thread to search idle objects or create new objects,
-     * and transfer hold connections to waiters in pool
+     * and transfer hold objects to waiters in pool
      *
      * @param runnable a runnable to be executed by new thread instance
      * @return a created thread
