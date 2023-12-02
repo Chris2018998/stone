@@ -36,4 +36,12 @@ public interface BeeConnectionPoolThreadFactory {
      */
     Thread createServantThread(Runnable runnable);
 
+    /**
+     * create a Network Timeout thread for ThreadPoolExecutor
+     *
+     * @param runnable a runnable to be executed by new thread instance
+     * @return a created thread
+     */
+    Thread createNetworkTimeoutThread(Runnable runnable);
+
 }
