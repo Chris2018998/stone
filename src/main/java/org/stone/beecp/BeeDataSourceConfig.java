@@ -36,7 +36,7 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
 /**
- * Connection pool configuration under dataSource
+ * Connection pool configuration inside dataSource
  *
  * @author Chris Liao
  * @version 1.0
@@ -61,7 +61,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean fairMode;
     //connections create size on pool starting
     private int initialSize;
-    //create connection on init by asynchronization
+    //create connection on init by synchronization
     private boolean asyncCreateInitConnection;
     //connections max reachable size in pool
     private int maxActive = Math.min(Math.max(10, NCPUS), 50);
@@ -114,6 +114,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //default value set indicator on transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
+    //class of thread factory(priority-2)
+    private Class threadFactoryClass;
+    //class name of thread factory(priority-3),if not set,default factory will be applied in pool
+    private String threadFactoryClassName;
+    //work thread factory(priority-1)
+    private BeeConnectionPoolThreadFactory threadFactory;
+
     /**
      * connection factory class,which is one implementation class of
      * 1:<class>RawConnectionFactory</class>
@@ -126,6 +133,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String connectionFactoryClassName;
     //connection factory
     private Object connectionFactory;
+
     //password decoder
     private Class passwordDecoderClass;
     //password decoder class name
@@ -512,6 +520,30 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void setRawXaConnectionFactory(RawXaConnectionFactory factory) {
         this.connectionFactory = factory;
+    }
+
+    public Class getThreadFactoryClass() {
+        return threadFactoryClass;
+    }
+
+    public void setThreadFactoryClass(Class threadFactoryClass) {
+        this.threadFactoryClass = threadFactoryClass;
+    }
+
+    public String getThreadFactoryClassName() {
+        return threadFactoryClassName;
+    }
+
+    public void setThreadFactoryClassName(String threadFactoryClassName) {
+        this.threadFactoryClassName = trimString(threadFactoryClassName);
+    }
+
+    public BeeConnectionPoolThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    public void setThreadFactory(BeeConnectionPoolThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
     }
 
     public Class getConnectionFactoryClass() {
