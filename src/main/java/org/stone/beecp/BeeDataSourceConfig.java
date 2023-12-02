@@ -689,15 +689,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             throw new BeeDataSourceConfigException("validTestSql must be start with 'select '");
         }
 
-        Object tempConnectionFactory = null;
-        if (this.connectionFactory == null) tempConnectionFactory = createConnectionFactory();
+        Object connectionFactory = createConnectionFactory();
+        BeeConnectionPoolThreadFactory threadFactory = this.createThreadFactory();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
 
         //set temp to config
-        if (tempConnectionFactory != null) checkedConfig.connectionFactory = tempConnectionFactory;
+        checkedConfig.threadFactory = threadFactory;
+        checkedConfig.connectionFactory = connectionFactory;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
+
         return checkedConfig;
     }
 
@@ -841,6 +843,27 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             } catch (Exception e) {
                 throw new BeeDataSourceConfigException("Failed to create connection factory by class:" + this.connectionFactoryClassName, e);
             }
+        }
+    }
+
+    //create Thread factory
+    private BeeConnectionPoolThreadFactory createThreadFactory() throws BeeDataSourceConfigException {
+        //step1:if exists thread factory,then return it
+        if (this.threadFactory != null) return this.threadFactory;
+
+        //step2: configuration of thread factory
+        if (this.threadFactoryClass == null && isBlank(this.threadFactoryClassName))
+            throw new BeeDataSourceConfigException("Configuration item(threadFactoryClass and threadFactoryClassName) can't be null at same time");
+
+        //step3: create thread factory by class or class name
+        try {
+            Class<?> threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
+            Class[] parentClasses = {BeeConnectionPoolThreadFactory.class};
+            return (BeeConnectionPoolThreadFactory) createClassInstance(threadFactClass, parentClasses, "pool thread factory");
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BeeDataSourceConfigException("Failed to create pool thread factory by class:" + this.threadFactoryClassName, e);
         }
     }
 }
