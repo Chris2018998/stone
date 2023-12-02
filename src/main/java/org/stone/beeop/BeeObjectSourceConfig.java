@@ -82,6 +82,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private Class[] objectInterfaces;
     //object implements interface names
     private String[] objectInterfaceNames;
+
+    //class of thread factory(priority-2)
+    private Class threadFactoryClass;
+    //class name of thread factory(priority-3),if not set,default factory will be applied in pool
+    private String threadFactoryClassName;
+    //work thread factory(priority-1)
+    private BeeObjectPoolThreadFactory threadFactory;
+
     //object factory class(RawObjectFactory or RawKeyedObjectFactory)
     private Class objectFactoryClass;
     //object factory class name(RawObjectFactory or RawKeyedObjectFactory)
@@ -307,6 +315,30 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         } else {
             objectInterfaceNames = interfaceNames.clone();
         }
+    }
+
+    public Class getThreadFactoryClass() {
+        return threadFactoryClass;
+    }
+
+    public void setThreadFactoryClass(Class threadFactoryClass) {
+        this.threadFactoryClass = threadFactoryClass;
+    }
+
+    public String getThreadFactoryClassName() {
+        return threadFactoryClassName;
+    }
+
+    public void setThreadFactoryClassName(String threadFactoryClassName) {
+        this.threadFactoryClassName = threadFactoryClassName;
+    }
+
+    public BeeObjectPoolThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    public void setThreadFactory(BeeObjectPoolThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
     }
 
     public Class getObjectFactoryClass() {
