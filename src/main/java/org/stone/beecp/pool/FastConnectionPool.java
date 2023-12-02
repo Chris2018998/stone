@@ -66,6 +66,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private long maxWaitNs;//nanoseconds
     private long idleTimeoutMs;//milliseconds
     private long holdTimeoutMs;//milliseconds
+    private boolean supportHoldTimeout;
     private long validAssumeTimeMs;//milliseconds
     private int validTestTimeout;//seconds
     private long delayTimeForNextClearNs;//nanoseconds
@@ -165,6 +166,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step5: copy some properties as pool local variable
         this.idleTimeoutMs = config.getIdleTimeout();
         this.holdTimeoutMs = config.getHoldTimeout();
+        this.supportHoldTimeout = holdTimeoutMs > 0L;
         this.validAssumeTimeMs = config.getValidAssumeTime();
         this.validTestTimeout = config.getValidTestTimeout();
         this.delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
@@ -687,8 +689,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     this.removePooledConn(p, DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
-            } else if (state == CON_USING) {
-                if (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs) {//hold timeout
+            } else if (state == CON_USING && supportHoldTimeout) {
+                if (System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs) {//hold timeout
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) {
                         oclose(proxyInUsing);
@@ -752,7 +754,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 } else if (state == CON_USING) {
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) {
-                        if (force || (holdTimeoutMs > 0L && System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs)) {//force close or hold timeout
+                        if (force || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs)) {//force close or hold timeout
                             oclose(proxyInUsing);
                             if (ConStUpd.compareAndSet(p, CON_IDLE, CON_CLOSED))
                                 this.removePooledConn(p, source);
