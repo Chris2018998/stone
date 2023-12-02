@@ -43,10 +43,10 @@ public class TreeExceptionTest extends TestCase {
             TaskPoolMonitorVo vo = service.getPoolMonitorVo();
             if (vo.getTaskCompletedCount() != 1)
                 TestUtil.assertError("tree expect:%s,actual value:%s", 1, vo.getTaskCompletedCount());
-            if (vo.getTaskRunningCount() != 0)
-                TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getTaskRunningCount());
             if (vo.getTaskHoldingCount() != 0)
                 TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getTaskHoldingCount());
+            if (vo.getTaskRunningCount() != 0)
+                TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getTaskRunningCount());
         }
     }
 }

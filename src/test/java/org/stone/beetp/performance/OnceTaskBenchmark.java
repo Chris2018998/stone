@@ -47,12 +47,13 @@ public class OnceTaskBenchmark {
 
     @Setup(Level.Trial)
     public void setup(BenchmarkParams params) {
-        executor = new ThreadPoolExecutor(4, 4, 15, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        executor = new ThreadPoolExecutor(4, 4, 15, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(100));
         executor.prestartAllCoreThreads();
 
         TaskServiceConfig config = new TaskServiceConfig();
         config.setInitWorkerSize(4);
         config.setMaxWorkerSize(4);
+        config.setMaxTaskSize(100);
         config.setWorkerKeepAliveTime(TimeUnit.SECONDS.toMillis(15));
         taskService = new TaskService(config);
     }
