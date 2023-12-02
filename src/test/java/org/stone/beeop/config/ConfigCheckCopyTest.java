@@ -31,6 +31,7 @@ public class ConfigCheckCopyTest extends TestCase {
         List<String> excludeNames = new LinkedList<String>();
         excludeNames.add("poolName");
         excludeNames.add("objectFactory");
+        excludeNames.add("threadFactory");
         excludeNames.add("objectInterfaces");
         excludeNames.add("objectInterfaceNames");
 
