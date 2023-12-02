@@ -17,7 +17,7 @@ import org.stone.beecp.BeeConnectionPoolThreadFactory;
  * @author Chris Liao
  * @version 1.0
  */
-public class ConnectionPoolThreadFactory implements BeeConnectionPoolThreadFactory {
+public final class ConnectionPoolThreadFactory implements BeeConnectionPoolThreadFactory {
 
     /**
      * create a thread to scan idle-timeout connections and remove them from pool
@@ -41,6 +41,18 @@ public class ConnectionPoolThreadFactory implements BeeConnectionPoolThreadFacto
     public Thread createServantThread(Runnable runnable) {
         Thread thead = new Thread(runnable);
         thead.setName("ServantThread");
+        return thead;
+    }
+
+    /**
+     * create a Network Timeout thread for ThreadPoolExecutor
+     *
+     * @param runnable a runnable to be executed by new thread instance
+     * @return a created thread
+     */
+    public Thread createNetworkTimeoutThread(Runnable runnable) {
+        Thread thead = new Thread(runnable);
+        thead.setName("NetworkTimeoutThread");
         return thead;
     }
 }
