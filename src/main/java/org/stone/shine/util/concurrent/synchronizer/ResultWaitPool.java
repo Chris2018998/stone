@@ -10,7 +10,6 @@
 package org.stone.shine.util.concurrent.synchronizer;
 
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNode;
-import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeChain;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates;
 import org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater;
 import org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValidator;
@@ -55,8 +54,9 @@ public final class ResultWaitPool extends ObjectWaitPool {
     }
 
     private void removeAndWakeupFirst(final SyncNode node) {
+        boolean wakeupNext = waitQueue.peek() == node;
         this.waitQueue.remove(node);
-        this.wakeupFirst();
+        if (wakeupNext) this.wakeupFirst();
     }
 
     public final void wakeupFirst() {
@@ -120,26 +120,26 @@ public final class ResultWaitPool extends ObjectWaitPool {
                 }
             }
 
-            //4.2：try to blocking
-            if (!(executeInd = node.receivedSignal())) {
-                if (isTimed) {
-                    long time = deadlineNanos - System.nanoTime();
-                    if (time <= 0L) {
-                        this.removeAndWakeupFirst(node);
-                        return validator.resultOnTimeout();
-                    }
-                    LockSupport.parkNanos(this, time);
-                } else {
-                    LockSupport.park(this);
-                }
-
-                if (Thread.interrupted() && allowInterruption) {
+            //4.2：try to block node thread
+            if (isTimed) {
+                long time = deadlineNanos - System.nanoTime();
+                if (time <= 0L) {
                     this.removeAndWakeupFirst(node);
-                    throw new InterruptedException();
+                    return validator.resultOnTimeout();
                 }
-
-                executeInd = node.receivedSignal();
+                LockSupport.parkNanos(this, time);
+            } else {
+                LockSupport.park(this);
             }
+
+            //4.3：check whether interrupted
+            if (Thread.interrupted() && allowInterruption) {
+                this.removeAndWakeupFirst(node);
+                throw new InterruptedException();
+            }
+
+            //4.4：read node state
+            executeInd = node.receivedSignal();
         } while (true);
     }
 }
