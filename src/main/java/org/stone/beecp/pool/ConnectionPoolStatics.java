@@ -28,7 +28,6 @@ import java.util.*;
  * @version 1.0
  */
 public class ConnectionPoolStatics {
-    public static final int NCPUS = Runtime.getRuntime().availableProcessors();
     public static final Logger CommonLog = LoggerFactory.getLogger(ConnectionPoolStatics.class);
     //properties configuration separator
     public static final String Separator_MiddleLine = "-";
