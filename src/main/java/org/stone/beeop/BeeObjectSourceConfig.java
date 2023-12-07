@@ -12,6 +12,7 @@ package org.stone.beeop;
 import org.stone.beeop.pool.KeyedObjectPool;
 import org.stone.beeop.pool.ObjectPoolStatics;
 import org.stone.beeop.pool.ObjectPoolThreadFactory;
+import org.stone.tools.CommonUtil;
 
 import java.io.File;
 import java.io.InputStream;
@@ -51,11 +52,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //indicator: true,creating initialized objects by async mode
     private boolean asyncCreateInitObject;
     //max reachable size of object instance in pool
-    private int maxActive = Math.min(Math.max(10, ObjectPoolStatics.NCPUS), 50);
+    private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
     //max key size of sub pools(pool capacity size = maxObjectKeySize * maxActive)
     private int maxObjectKeySize = 50;
     //max permit size of pool semaphore
-    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, ObjectPoolStatics.NCPUS);
+    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
     //milliseconds:max wait parkTime to get one object from pool<code>ObjectPool.getObjectHandle()</code>
     private long maxWait = SECONDS.toMillis(8);
     //milliseconds:max idle parkTime of objects in pool,when reach,then close them and remove from pool
@@ -179,7 +180,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     public void setMaxActive(int maxActive) {
         if (maxActive > 0) {
             this.maxActive = maxActive;
-            borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, ObjectPoolStatics.NCPUS) : 1;
+            borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
         }
     }
 
