@@ -168,6 +168,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //Method-2.1: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
+        pooledArrayLock.lock();
         try {
             for (int i = 0; i < initSize; i++)
                 this.createPooledEntry(OBJECT_IDLE);
@@ -183,6 +184,8 @@ final class ObjectGenericPool implements Runnable, Cloneable {
             } else {
                 Log.warn("Failed to create objects on pool initialization,cause:" + e);
             }
+        } finally {
+            pooledArrayLock.unlock();
         }
     }
 
