@@ -10,6 +10,7 @@
 package org.stone.beecp;
 
 import org.stone.beecp.pool.*;
+import org.stone.tools.CommonUtil;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
@@ -61,9 +62,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //create connection on init by synchronization
     private boolean asyncCreateInitConnection;
     //connections max reachable size in pool
-    private int maxActive = Math.min(Math.max(10, NCPUS), 50);
+    private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
     //max permit size of pool semaphore
-    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPUS);
+    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
     //milliseconds:max wait parkTime to get one connection from pool<code>ConnectionPool.getConnection()</code>
     private long maxWait = SECONDS.toMillis(8);
     //milliseconds:max idle parkTime of connections in pool,when reach,then close them and remove from pool
@@ -260,7 +261,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         if (maxActive > 0) {
             this.maxActive = maxActive;
             //fix issue:#19 Chris-2020-08-16 begin
-            this.borrowSemaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, NCPUS) : 1;
+            this.borrowSemaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
             //fix issue:#19 Chris-2020-08-16 end
         }
     }
