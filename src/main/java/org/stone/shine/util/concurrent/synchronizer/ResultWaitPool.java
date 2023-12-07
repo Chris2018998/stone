@@ -16,6 +16,8 @@ import org.stone.shine.util.concurrent.synchronizer.validator.ResultEqualsValida
 
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeStates.CANCELLED;
+
 /**
  * Result Wait Pool,Outside caller to call pool's get method to take an object(execute ResultCall),
  * if not expected,then wait in pool util being wake-up by other or timeout/interrupted, and leave from pool.
@@ -54,9 +56,10 @@ public final class ResultWaitPool extends ObjectWaitPool {
     }
 
     private void removeAndWakeupFirst(final SyncNode node) {
-        boolean atHead = waitQueue.peek() == node;
+        boolean casFail = !SyncNodeUpdater.casState(node, null, CANCELLED);//failure that state must be filled to RUNNING
+        boolean atHead = casFail ? true : waitQueue.peek() == node;
         this.waitQueue.remove(node);
-        if (atHead || node.getState() == SyncNodeStates.RUNNING) this.wakeupFirst();
+        if (casFail || atHead) this.wakeupFirst();
     }
 
     public final void wakeupFirst() {
