@@ -217,13 +217,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-1.3: create specified size connections at pool initialization,
     private void createInitConnections(int initSize, boolean syn) throws SQLException {
+        pooledArrayLock.lock();
         try {
             for (int i = 0; i < initSize; i++)
                 this.createPooledConn(CON_IDLE);
         } catch (Throwable e) {
             for (PooledConnection p : this.pooledArray)
                 this.removePooledConn(p, DESC_RM_INIT);
-
             if (syn) {//throw exception on syn mode
                 if (e instanceof SQLException)
                     throw (SQLException) e;
@@ -232,6 +232,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } else {
                 Log.warn("Failed to create connections on pool initialization,cause:" + e);
             }
+        } finally {
+            pooledArrayLock.unlock();
         }
     }
 
