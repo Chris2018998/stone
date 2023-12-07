@@ -446,12 +446,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //                          5: Idle-timeout and hold-timeout clear                                               //                                                                                  //
     //***************************************************************************************************************//
-    //Method-5.1: check whether exists borrows under semaphore
-    private boolean existBorrowers() {
-        return this.semaphoreSize > this.semaphore.availablePermits();
-    }
-
-    //Method-5.2: clear idle-timeout pooled objects and hold-time objects,this method will be called by ScheduledThreadPoolExecutor in key pool
+    //Method-5.1: clear idle-timeout pooled objects and hold-time objects,this method will be called by ScheduledThreadPoolExecutor in key pool
     void closeIdleTimeout() {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
@@ -463,7 +458,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array) {
             int state = p.state;
-            if (state == OBJECT_IDLE && !this.existBorrowers()) {
+            if (state == OBJECT_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
                 if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
                     this.removePooledEntry(p, DESC_RM_IDLE);
