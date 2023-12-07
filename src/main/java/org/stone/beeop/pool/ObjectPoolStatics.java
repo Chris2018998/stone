@@ -29,7 +29,6 @@ import java.util.*;
  * @version 1.0
  */
 public class ObjectPoolStatics {
-    public static final int NCPUS = Runtime.getRuntime().availableProcessors();
     public static final Logger CommonLog = LoggerFactory.getLogger(ObjectPoolStatics.class);
     public static final Class[] EMPTY_CLASSES = new Class[0];
     public static final String[] EMPTY_CLASS_NAMES = new String[0];
