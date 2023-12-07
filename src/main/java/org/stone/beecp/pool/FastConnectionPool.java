@@ -629,14 +629,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //***************************************************************************************************************//
-    //                       3: Pooled connection idle-timeout/hold-timeout scan methods(4)                          //                                                                                  //
+    //                       3: Pooled connection idle-timeout/hold-timeout scan methods(3)                          //                                                                                  //
     //***************************************************************************************************************//
-    //Method-3.1: check whether exists borrows under semaphore
-    private boolean existBorrower() {
-        return this.semaphoreSize > this.semaphore.availablePermits();
-    }
-
-    //Method-3.2 shutdown two work threads in pool
+    //Method-3.1 shutdown two work threads in pool
     private void shutdownPoolThread() {
         int curState = this.servantState.get();
         this.servantState.set(THREAD_EXIT);
@@ -647,7 +642,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (curState == THREAD_WAITING) LockSupport.unpark(this.idleScanThread);
     }
 
-    //Method-3.3: pool servant thread run method
+    //Method-3.2: pool servant thread run method
     public void run() {
         while (poolState != POOL_CLOSED) {
             while (servantState.get() == THREAD_WORKING) {
@@ -671,7 +666,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-3.4: inner timer will call the method to clear some idle timeout connections
+     * Method-3.3: inner timer will call the method to clear some idle timeout connections
      * or dead connections,or long parkTime not active connections in using state
      */
     private void closeIdleTimeoutConnection() {
@@ -685,7 +680,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         PooledConnection[] array = this.pooledArray;
         for (PooledConnection p : array) {
             final int state = p.state;
-            if (state == CON_IDLE && !this.existBorrower()) {
+            if (state == CON_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime >= this.idleTimeoutMs;
                 if (isTimeoutInIdle && ConStUpd.compareAndSet(p, state, CON_CLOSED)) {//need close idle
                     this.removePooledConn(p, DESC_RM_IDLE);
@@ -845,7 +840,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-5.6: using size of semaphore permit
     public int getSemaphoreAcquiredSize() {
-        return this.poolConfig.getBorrowSemaphoreSize() - this.semaphore.availablePermits();
+        return semaphoreSize - this.semaphore.availablePermits();
     }
 
     //Method-5.7: waiting size in transfer queue
