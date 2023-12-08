@@ -226,16 +226,6 @@ public final class TaskExecutionPool implements TaskPool {
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
     private void pushToExecutionQueue(BaseHandle taskHandle) {
-
-        /**
-         * @todo
-         * 1: get worker by hash code(Xor)
-         * 2: push task to worker's private queue
-         * 3: wakeup worker thread via cas
-         * 4: how to guard worker to process task before exiting 
-         *  maybe faster than JDK?
-         */
-
         //1:try to wakeup a idle work thread with task
         for (TaskWorkThread worker : workerArray) {
             if (worker.compareAndSetState(WORKER_IDLE, taskHandle)) {
