@@ -82,16 +82,16 @@ final class TaskWorkThread extends Thread {
             if (state == WORKER_TERMINATED) break;
 
             //2: get a task(from state,individual queue,common queue)
-            BaseHandle handle;
+            BaseHandle handle = null;
             if (state instanceof BaseHandle) {
                 handle = (BaseHandle) state;
                 this.state = WORKER_WORKING;
             } else {
                 handle = workQueue.poll();//individual queue
-                if (handle == null) handle = executionQueue.poll();//common queue
+                //if (handle == null) handle = executionQueue.poll();//common queue
                 if (handle == null) {//steal a task from other workers
-                    for (TaskWorkThread worker : pool.getWorkerArray()) {
-                        handle = worker.workQueue.poll();
+                    for (ConcurrentLinkedQueue<BaseHandle> queue : pool.getTaskQueues()) {
+                        handle = queue.poll();
                         if (handle != null) break;
                     }
                 }

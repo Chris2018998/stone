@@ -11,6 +11,7 @@ package org.stone.beetp.execution;
 
 import org.stone.beetp.*;
 import org.stone.beetp.exception.*;
+import org.stone.tools.CommonUtil;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.ArrayList;
@@ -41,31 +42,33 @@ public final class TaskExecutionPool implements TaskPool {
     private String poolName;
     private volatile int poolState;
 
+    //2: fields about tasks
+    private int maxTaskSize;
+    private long completedCount;//update in <method>removeTaskWorker</method>
+    private AtomicInteger taskCount;//(once count + scheduled count + join count(root))
+
     //2: fields about worker threads
     private int maxWorkerSize;
+    private int maxWorkerSizeLess;
     private boolean workInDaemon;
     private long idleTimeoutNanos;
     private boolean idleTimeoutValid;
     private ReentrantLock workerArrayLock;
     private volatile TaskWorkThread[] workerArray;
-
-    //3: fields about submitted tasks
-    private int maxTaskSize;
-    private long completedCount;//update in <method>removeTaskWorker</method>
-    private AtomicInteger taskCount;//(once count + scheduled count + join count(root))
+    private ConcurrentLinkedQueue<BaseHandle>[] taskQueues;//common queues
+    private ConcurrentLinkedQueue<BaseHandle> executionQueue;//@todo to be removed
 
     //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
     private ScheduledTaskQueue scheduledDelayedQueue;
     private PoolScheduledTaskPeekThread scheduledPeekThread;//wait at first task of scheduled queue util first task timeout,then poll it from queue
-    private ConcurrentLinkedQueue<BaseHandle> executionQueue;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
     //                                          1: execution initialization(2)                                       //
     //***************************************************************************************************************//
     public void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException {
-        //step1: execution config check
+        //step1: execution config check+
         if (config == null) throw new PoolInitializedException("Pool configuration can't be null");
         TaskServiceConfig checkedConfig = config.check();
 
@@ -88,6 +91,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
         this.maxWorkerSize = config.getMaxWorkerSize();
+        maxWorkerSizeLess = maxWorkerSize - 1;
         this.workInDaemon = config.isWorkInDaemon();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
@@ -95,8 +99,11 @@ public final class TaskExecutionPool implements TaskPool {
         //step2: create some queues(worker queue,task queue,termination wait queue)
         if (workerArray == null) {
             this.workerArrayLock = new ReentrantLock();
-            this.executionQueue = new ConcurrentLinkedQueue<>();
+            this.executionQueue = new ConcurrentLinkedQueue<>();//@todo to be removed
+            this.taskQueues = new ConcurrentLinkedQueue[maxWorkerSize];
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
+            for (int i = 0; i < maxWorkerSize; i++)
+                taskQueues[i] = new ConcurrentLinkedQueue<BaseHandle>();
 
             //step3: atomic fields of execution monitor
             this.taskCount = new AtomicInteger();
@@ -110,10 +117,9 @@ public final class TaskExecutionPool implements TaskPool {
             TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this);
             worker.setDaemon(workInDaemon);
             worker.setName(poolName + "-task worker");
+            worker.start();
             workerArray[i] = worker;
         }
-        for (int i = 0; i < workerInitSize; i++)//fix nullPointException on stealing
-            workerArray[i].start();
 
         //step5: create delayed queue and peek thread working on queue
         if (scheduledPeekThread == null) {
@@ -235,8 +241,12 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //2: try to create a new worker
-        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
-            this.executionQueue.offer(taskHandle);
+        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null) {
+            int h = (int) Thread.currentThread().getId();
+            int hash = CommonUtil.advanceProbe(h);
+            int index = maxWorkerSizeLess & hash;
+            taskQueues[index].offer(taskHandle);
+        }
     }
 
     void wakeupSchedulePeekThread() {
@@ -421,8 +431,8 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                     7: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
-    TaskWorkThread[] getWorkerArray() {
-        return workerArray;
+    ConcurrentLinkedQueue<BaseHandle>[] getTaskQueues() {
+        return taskQueues;
     }
 
     boolean isIdleTimeoutValid() {
