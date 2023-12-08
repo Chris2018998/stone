@@ -56,7 +56,7 @@ public final class TaskExecutionPool implements TaskPool {
     private ReentrantLock workerArrayLock;
     private volatile TaskWorkThread[] workerArray;
     private ConcurrentLinkedQueue<BaseHandle>[] taskQueues;//common queues
-    private ConcurrentLinkedQueue<BaseHandle> executionQueue;//@todo to be removed
+    //private ConcurrentLinkedQueue<BaseHandle> executionQueue;//@todo to be removed
 
     //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
@@ -99,7 +99,6 @@ public final class TaskExecutionPool implements TaskPool {
         //step2: create some queues(worker queue,task queue,termination wait queue)
         if (workerArray == null) {
             this.workerArrayLock = new ReentrantLock();
-            this.executionQueue = new ConcurrentLinkedQueue<>();//@todo to be removed
             this.taskQueues = new ConcurrentLinkedQueue[maxWorkerSize];
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
             for (int i = 0; i < maxWorkerSize; i++)
@@ -328,15 +327,17 @@ public final class TaskExecutionPool implements TaskPool {
 
         //2: remove tasks in execution queue(once tasks + join tasks)
         BaseHandle handle;
-        while ((handle = executionQueue.poll()) != null) {
-            if (handle.setAsCancelled()) {//collect cancelled tasks by execution
-                if (handle instanceof TreeTaskHandle) {
-                    unRunningTreeTaskList.add(((TreeTaskHandle) handle).getTreeTask());
-                } else {
-                    unRunningTaskList.add(handle.task);
-                }
+        for (ConcurrentLinkedQueue<BaseHandle> queue : taskQueues) {
+            while ((handle = queue.poll()) != null) {
+                if (handle.setAsCancelled()) {//collect cancelled tasks by execution
+                    if (handle instanceof TreeTaskHandle) {
+                        unRunningTreeTaskList.add(((TreeTaskHandle) handle).getTreeTask());
+                    } else {
+                        unRunningTaskList.add(handle.task);
+                    }
 
-                handle.setResult(TASK_CANCELLED, null);
+                    handle.setResult(TASK_CANCELLED, null);
+                }
             }
         }
 
@@ -367,8 +368,13 @@ public final class TaskExecutionPool implements TaskPool {
             int taskIndex = scheduledDelayedQueue.remove((ScheduledTaskHandle) handle);
             if (taskIndex >= 0) taskCount.decrementAndGet();//task removed successfully by call thread
             if (taskIndex == 0) wakeupSchedulePeekThread();
-        } else if (executionQueue.remove(handle) && handle.isRoot) {
-            taskCount.decrementAndGet();
+        } else {
+            for (ConcurrentLinkedQueue<BaseHandle> queue : taskQueues) {
+                if (queue.remove(handle) && handle.isRoot) {
+                    taskCount.decrementAndGet();
+                    break;
+                }
+            }
         }
     }
 
@@ -449,10 +455,6 @@ public final class TaskExecutionPool implements TaskPool {
 
     ScheduledTaskQueue getScheduledDelayedQueue() {
         return scheduledDelayedQueue;
-    }
-
-    ConcurrentLinkedQueue<BaseHandle> getTaskExecutionQueue() {
-        return this.executionQueue;
     }
 
     public TaskPoolMonitorVo getPoolMonitorVo() {

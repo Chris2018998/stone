@@ -74,7 +74,6 @@ final class TaskWorkThread extends Thread {
     public void run() {
         final boolean useTimePark = pool.isIdleTimeoutValid();
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
-        final ConcurrentLinkedQueue<BaseHandle> executionQueue = pool.getTaskExecutionQueue();
 
         do {
             //1: read state of worker,if value equals terminated state,then exit
@@ -88,7 +87,6 @@ final class TaskWorkThread extends Thread {
                 this.state = WORKER_WORKING;
             } else {
                 handle = workQueue.poll();//individual queue
-                //if (handle == null) handle = executionQueue.poll();//common queue
                 if (handle == null) {//steal a task from other workers
                     for (ConcurrentLinkedQueue<BaseHandle> queue : pool.getTaskQueues()) {
                         handle = queue.poll();
