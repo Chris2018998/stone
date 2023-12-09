@@ -38,4 +38,13 @@ public class CommonUtil {
         }
         return true;
     }
+
+    //xor
+    public static int advanceProbe(int probe) {
+        probe ^= probe << 13;
+        probe ^= probe >>> 17;
+        probe ^= probe << 5;
+        return probe;
+    }
+
 }
