@@ -11,7 +11,6 @@ package org.stone.beetp.execution;
 
 import org.stone.beetp.*;
 import org.stone.beetp.exception.*;
-import org.stone.tools.CommonUtil;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.ArrayList;
@@ -49,14 +48,12 @@ public final class TaskExecutionPool implements TaskPool {
 
     //2: fields about worker threads
     private int maxWorkerSize;
-    private int maxWorkerSizeLess;
     private boolean workInDaemon;
     private long idleTimeoutNanos;
     private boolean idleTimeoutValid;
     private ReentrantLock workerArrayLock;
     private volatile TaskWorkThread[] workerArray;
-    private ConcurrentLinkedQueue<BaseHandle>[] taskQueues;//common queues
-    //private ConcurrentLinkedQueue<BaseHandle> executionQueue;//@todo to be removed
+    private ConcurrentLinkedQueue<BaseHandle> taskQueue;
 
     //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
@@ -91,7 +88,6 @@ public final class TaskExecutionPool implements TaskPool {
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
         this.maxWorkerSize = config.getMaxWorkerSize();
-        maxWorkerSizeLess = maxWorkerSize - 1;
         this.workInDaemon = config.isWorkInDaemon();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
@@ -99,10 +95,8 @@ public final class TaskExecutionPool implements TaskPool {
         //step2: create some queues(worker queue,task queue,termination wait queue)
         if (workerArray == null) {
             this.workerArrayLock = new ReentrantLock();
-            this.taskQueues = new ConcurrentLinkedQueue[maxWorkerSize];
+            this.taskQueue = new ConcurrentLinkedQueue();
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
-            for (int i = 0; i < maxWorkerSize; i++)
-                taskQueues[i] = new ConcurrentLinkedQueue<BaseHandle>();
 
             //step3: atomic fields of execution monitor
             this.taskCount = new AtomicInteger();
@@ -113,11 +107,13 @@ public final class TaskExecutionPool implements TaskPool {
         int workerInitSize = config.getInitWorkerSize();
         this.workerArray = new TaskWorkThread[workerInitSize];
         for (int i = 0; i < workerInitSize; i++) {
-            TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this);
+            TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this, maxTaskSize);
             worker.setDaemon(workInDaemon);
             worker.setName(poolName + "-task worker");
-            worker.start();
             workerArray[i] = worker;
+        }
+        for (int i = 0; i < workerInitSize; i++) {
+            workerArray[i].start();
         }
 
         //step5: create delayed queue and peek thread working on queue
@@ -240,12 +236,8 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //2: try to create a new worker
-        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null) {
-            int h = (int) Thread.currentThread().getId();
-            int hash = CommonUtil.advanceProbe(h);
-            int index = maxWorkerSizeLess & hash;
-            taskQueues[index].offer(taskHandle);
-        }
+        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
+            this.taskQueue.offer(taskHandle);
     }
 
     void wakeupSchedulePeekThread() {
@@ -327,17 +319,15 @@ public final class TaskExecutionPool implements TaskPool {
 
         //2: remove tasks in execution queue(once tasks + join tasks)
         BaseHandle handle;
-        for (ConcurrentLinkedQueue<BaseHandle> queue : taskQueues) {
-            while ((handle = queue.poll()) != null) {
-                if (handle.setAsCancelled()) {//collect cancelled tasks by execution
-                    if (handle instanceof TreeTaskHandle) {
-                        unRunningTreeTaskList.add(((TreeTaskHandle) handle).getTreeTask());
-                    } else {
-                        unRunningTaskList.add(handle.task);
-                    }
-
-                    handle.setResult(TASK_CANCELLED, null);
+        while ((handle = taskQueue.poll()) != null) {
+            if (handle.setAsCancelled()) {//collect cancelled tasks by execution
+                if (handle instanceof TreeTaskHandle) {
+                    unRunningTreeTaskList.add(((TreeTaskHandle) handle).getTreeTask());
+                } else {
+                    unRunningTaskList.add(handle.task);
                 }
+
+                handle.setResult(TASK_CANCELLED, null);
             }
         }
 
@@ -368,13 +358,8 @@ public final class TaskExecutionPool implements TaskPool {
             int taskIndex = scheduledDelayedQueue.remove((ScheduledTaskHandle) handle);
             if (taskIndex >= 0) taskCount.decrementAndGet();//task removed successfully by call thread
             if (taskIndex == 0) wakeupSchedulePeekThread();
-        } else {
-            for (ConcurrentLinkedQueue<BaseHandle> queue : taskQueues) {
-                if (queue.remove(handle) && handle.isRoot) {
-                    taskCount.decrementAndGet();
-                    break;
-                }
-            }
+        } else if (taskQueue.remove(handle) && handle.isRoot) {
+            taskCount.decrementAndGet();
         }
     }
 
@@ -437,8 +422,12 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                     7: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
-    ConcurrentLinkedQueue<BaseHandle>[] getTaskQueues() {
-        return taskQueues;
+    ConcurrentLinkedQueue<BaseHandle> getTaskQueue() {
+        return taskQueue;
+    }
+
+    TaskWorkThread[] getWorkerArray() {
+        return this.workerArray;
     }
 
     boolean isIdleTimeoutValid() {
@@ -496,7 +485,7 @@ public final class TaskExecutionPool implements TaskPool {
         try {
             int l = this.workerArray.length;
             if (l < this.maxWorkerSize) {
-                TaskWorkThread worker = new TaskWorkThread(taskHandle, this);
+                TaskWorkThread worker = new TaskWorkThread(taskHandle, this, this.maxTaskSize);
                 worker.setDaemon(workInDaemon);
                 worker.setName(poolName + "-task worker");
                 worker.start();
@@ -506,9 +495,8 @@ public final class TaskExecutionPool implements TaskPool {
                 arrayNew[l] = worker;
                 this.workerArray = arrayNew;
                 return worker;
-            } else {
-                return null;
             }
+            return null;
         } finally {
             workerArrayLock.unlock();
         }
@@ -519,7 +507,6 @@ public final class TaskExecutionPool implements TaskPool {
         try {
             //add completed count of worker to pool
             this.completedCount += worker.completedCount;
-
             for (int l = this.workerArray.length, i = l - 1; i >= 0; i--) {
                 if (this.workerArray[i] == worker) {
                     TaskWorkThread[] arrayNew = new TaskWorkThread[l - 1];

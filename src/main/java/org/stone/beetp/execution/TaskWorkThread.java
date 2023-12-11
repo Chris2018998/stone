@@ -12,6 +12,7 @@ package org.stone.beetp.execution;
 import org.stone.tools.unsafe.UnsafeAdaptorSunMiscImpl;
 import sun.misc.Unsafe;
 
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
@@ -37,17 +38,17 @@ final class TaskWorkThread extends Thread {
         }
     }
 
-    final ConcurrentLinkedQueue<BaseHandle> workQueue;//individual queue to store joining sub tasks and tree sub tasks, can be stealing by other worker threads
+    final Queue<BaseHandle> workQueue;
     private final TaskExecutionPool pool;//owner
 
     volatile long completedCount;//task completed count by this current worker
     volatile BaseHandle curTaskHandle;//task handle in processing
     private volatile Object state;//state definition,@see{@link TaskPoolConstants}
 
-    TaskWorkThread(Object state, TaskExecutionPool pool) {
+    TaskWorkThread(Object state, TaskExecutionPool pool, int size) {
         this.pool = pool;
         this.state = state;
-        this.workQueue = new ConcurrentLinkedQueue<>();
+        this.workQueue = new ConcurrentLinkedQueue();
     }
 
     //***************************************************************************************************************//
@@ -72,6 +73,7 @@ final class TaskWorkThread extends Thread {
     //                                      3: thead work methods(2)                                                 //
     //**************************************************e************************************************************//
     public void run() {
+        final Queue<BaseHandle> queue = pool.getTaskQueue();
         final boolean useTimePark = pool.isIdleTimeoutValid();
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
 
@@ -87,9 +89,11 @@ final class TaskWorkThread extends Thread {
                 this.state = WORKER_WORKING;
             } else {
                 handle = workQueue.poll();//individual queue
+                if (handle == null) handle = queue.poll();//poll from common queue
                 if (handle == null) {//steal a task from other workers
-                    for (ConcurrentLinkedQueue<BaseHandle> queue : pool.getTaskQueues()) {
-                        handle = queue.poll();
+                    for (TaskWorkThread worker : pool.getWorkerArray()) {
+                        if (worker == this) continue;
+                        handle = worker.workQueue.poll();
                         if (handle != null) break;
                     }
                 }
