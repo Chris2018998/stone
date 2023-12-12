@@ -113,8 +113,10 @@ final class TaskWorkThread extends Thread {
             } else {//4: park work thread
                 this.state = WORKER_IDLE;
                 if (useTimePark) {
-                    LockSupport.parkNanos(idleTimeoutNanos);
-                    if (compareAndSetState(WORKER_IDLE, WORKER_TERMINATED)) break;
+                    final long deadline = System.nanoTime() + idleTimeoutNanos;
+                    LockSupport.parkNanos(idleTimeoutNanos);//may bei park failed ?
+                    if (deadline - System.nanoTime() <= 0L && compareAndSetState(WORKER_IDLE, WORKER_TERMINATED))
+                        break;
                 } else {
                     LockSupport.park();
                 }
