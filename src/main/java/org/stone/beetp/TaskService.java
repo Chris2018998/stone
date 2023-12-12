@@ -209,7 +209,7 @@ public final class TaskService extends TaskServiceConfig {
     //                                        7: tasks invoke(4)                                                     //
     //***************************************************************************************************************//
     public TaskHandle invokeAny(Collection<? extends Task> tasks) throws TaskException, TaskPoolException, InterruptedException {
-        return invokeAny(tasks, 0, TimeUnit.NANOSECONDS);
+        return invokeAny(tasks, 0L, TimeUnit.NANOSECONDS);
     }
 
     public TaskHandle invokeAny(Collection<? extends Task> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
@@ -223,8 +223,8 @@ public final class TaskService extends TaskServiceConfig {
         TaskHandle completedHandle;//contains a result
         AnyCallback callback = new AnyCallback(taskSize);
         List<TaskHandle> handleList = new ArrayList<>(taskSize);
-        final boolean timed = timeout > 0;
-        final long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0;
+        final boolean timed = timeout > 0L;
+        final long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0L;
 
         try {
             //4:task submission
@@ -235,7 +235,7 @@ public final class TaskService extends TaskServiceConfig {
                 //4.2:submit a task to execution
                 handleList.add(pool.submit(task, callback));
                 //4.3:timeout check
-                if (timed && deadline - System.nanoTime() <= 0) throw new TaskResultGetTimeoutException();
+                if (timed && deadline - System.nanoTime() <= 0L) throw new TaskResultGetTimeoutException();
             }
 
             //5:spin to get a completed handle
@@ -249,7 +249,7 @@ public final class TaskService extends TaskServiceConfig {
                 //5.3:parking(ThreadSpinParker is a better choice?)
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
-                    if (parkTime <= 0) throw new TaskResultGetTimeoutException();
+                    if (parkTime <= 0L) throw new TaskResultGetTimeoutException();
                     LockSupport.parkNanos(parkTime);
                 } else {
                     LockSupport.park();
@@ -270,7 +270,7 @@ public final class TaskService extends TaskServiceConfig {
     }
 
     public List<TaskHandle> invokeAll(Collection<? extends Task> tasks) throws TaskException, TaskPoolException, InterruptedException {
-        return invokeAll(tasks, 0, TimeUnit.NANOSECONDS);
+        return invokeAll(tasks, 0L, TimeUnit.NANOSECONDS);
     }
 
     public List<TaskHandle> invokeAll(Collection<? extends Task> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
@@ -282,15 +282,15 @@ public final class TaskService extends TaskServiceConfig {
         //3:task submission preparation
         AllCallback callback = new AllCallback(taskSize);
         List<TaskHandle> handleList = new ArrayList<>(taskSize);//submitted list
-        boolean timed = timeout > 0;
-        long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0;
+        boolean timed = timeout > 0L;
+        long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0L;
         boolean allDone = false;
 
         try {
             //4:task submission
             for (Task task : tasks) {
                 handleList.add(pool.submit(task, callback));
-                if (timed && deadline - System.nanoTime() <= 0) return handleList;
+                if (timed && deadline - System.nanoTime() <= 0L) return handleList;
             }
 
             //5: spin for all tasks done
@@ -304,7 +304,7 @@ public final class TaskService extends TaskServiceConfig {
                 //5.2:parking call thread
                 if (timed) {
                     long parkTime = deadline - System.nanoTime();
-                    if (parkTime <= 0) break;//timeout,then break
+                    if (parkTime <= 0L) break;//timeout,then break
                     LockSupport.parkNanos(parkTime);
                 } else {
                     LockSupport.park();

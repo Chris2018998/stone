@@ -10,13 +10,13 @@
 package org.stone.beetp.execution;
 
 /**
- * execution util
+ * Static constant variables definition
  *
  * @author Chris Liao
  * @version 1.0
  */
 class TaskPoolConstants {
-    //execution state
+    //pool state
     static final int POOL_NEW = 0;
     static final int POOL_STARTING = 1;
     static final int POOL_RUNNING = 2;

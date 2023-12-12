@@ -45,7 +45,7 @@ final class TaskWorkThread extends Thread {
     volatile BaseHandle curTaskHandle;//task handle in processing
     private volatile Object state;//state definition,@see{@link TaskPoolConstants}
 
-    TaskWorkThread(Object state, TaskExecutionPool pool, int size) {
+    TaskWorkThread(Object state, TaskExecutionPool pool) {
         this.pool = pool;
         this.state = state;
         this.workQueue = new ConcurrentLinkedQueue();

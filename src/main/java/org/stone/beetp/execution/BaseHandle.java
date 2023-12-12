@@ -136,8 +136,8 @@ class BaseHandle implements TaskHandle {
 
         final Thread currentThread = Thread.currentThread();
         this.waitQueue.offer(currentThread);
-        final boolean timed = nanoseconds > 0;
-        final long deadline = timed ? System.nanoTime() + nanoseconds : 0;
+        final boolean timed = nanoseconds > 0L;
+        final long deadline = timed ? System.nanoTime() + nanoseconds : 0L;
 
         try {
             do {
