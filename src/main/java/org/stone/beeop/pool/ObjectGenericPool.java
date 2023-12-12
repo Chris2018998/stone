@@ -221,9 +221,8 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     if (rawObj != null) this.objectFactory.destroy(key, rawObj);
                     throw e instanceof Exception ? (Exception) e : new ObjectCreateException(e);
                 }
-            } else {
-                return null;
             }
+            return null;
         } finally {
             pooledArrayLock.unlock();
         }
