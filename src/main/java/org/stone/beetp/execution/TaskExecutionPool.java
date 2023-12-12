@@ -104,12 +104,13 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //step4: create initial work threads
+        String workerName = poolName + "-task worker";
         int workerInitSize = config.getInitWorkerSize();
         this.workerArray = new TaskWorkThread[workerInitSize];
         for (int i = 0; i < workerInitSize; i++) {
-            TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this, maxTaskSize);
+            TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this);
             worker.setDaemon(workInDaemon);
-            worker.setName(poolName + "-task worker");
+            worker.setName(workerName);
             workerArray[i] = worker;
         }
         for (int i = 0; i < workerInitSize; i++) {
@@ -485,7 +486,7 @@ public final class TaskExecutionPool implements TaskPool {
         try {
             int l = this.workerArray.length;
             if (l < this.maxWorkerSize) {
-                TaskWorkThread worker = new TaskWorkThread(taskHandle, this, this.maxTaskSize);
+                TaskWorkThread worker = new TaskWorkThread(taskHandle, this);
                 worker.setDaemon(workInDaemon);
                 worker.setName(poolName + "-task worker");
                 worker.start();
