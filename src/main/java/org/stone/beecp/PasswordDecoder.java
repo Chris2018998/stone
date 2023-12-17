@@ -10,14 +10,21 @@
 package org.stone.beecp;
 
 /**
- * decode password cipher text to plaintext
+ * A cipher text decoder on jdbc username and jdbc password
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class PasswordDecoder {
 
-    public String decode(String password) {
+    public String decodeUsername(String username) {
+        return username;
+    }
+
+    public String decodePassword(String password) {
         return password;
     }
 }
+
+
+
