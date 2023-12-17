@@ -34,16 +34,16 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
 /**
- * Connection pool configuration inside dataSource
+ * configuration of BeeDataSource
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //index on pool name generation
+    //pool name index generation
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //extra properties for jdbc driver to connect db
+    //properties contains jdbc link info
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
     //jdbc user name
     private String username;
@@ -53,35 +53,35 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //pool name. if not set,then generate with<code>BeeDataSourceConfig.PoolNameIndex</code>
+    //pool name. if null, a default value generated from<code>BeeDataSourceConfig.PoolNameIndex</code>
     private String poolName;
-    //boolean indicator,false:pool use unfair semaphore and compete transfer policy,default value:false
+    //indicator of work mode for pool semaphore
     private boolean fairMode;
-    //connections create size on pool starting
+    //creation size of connection in pool initialization
     private int initialSize;
-    //create connection on init by synchronization
+    //async thread to create initial connections when equals to true
     private boolean asyncCreateInitConnection;
-    //connections max reachable size in pool
+    //max permit active size of pooled connections
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //max permit size of pool semaphore
+    //permit size of pool semaphore to control concurrent
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds:max wait parkTime to get one connection from pool<code>ConnectionPool.getConnection()</code>
+    //milliseconds:max request timeout for borrowers when no idle connections
     private long maxWait = SECONDS.toMillis(8);
-    //milliseconds:max idle parkTime of connections in pool,when reach,then close them and remove from pool
+    //milliseconds:max idle timeout for connections,if reach,pool clear them
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds:max no-use parkTime hold by borrowers,when reach,then return them to pool by forced close
+    //milliseconds: max not used time when hold in borrowers
     private long holdTimeout;
-    //connection valid test sql on borrowed
+    //a activation test sql applied on borrowed connection
     private String validTestSql = "SELECT 1";
-    //seconds:max parkTime to get valid test result
+    //seconds: max time on waiting a validation result
     private int validTestTimeout = 3;
-    //milliseconds:max gap parkTime between last activity and borrowed,if less this value,assume connection valid,otherwise test them
+    //milliseconds: assume connection is active when gap time to last accessed time less than it
     private long validAssumeTime = 500L;
-    //milliseconds:interval parkTime of pool idle-scan timer task
+    //milliseconds:interval time to scan idle pooled connections
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //close indicator of connections in using on pool clean
+    //indicator on directly closing using connection when pool clearing
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay parkTime for next clear using connections util them return to pool,when<config>forceCloseUsingOnClear</config> is false
+    //milliseconds:delay time for next clearing in a loop
     private long delayTimeForNextClear = 3000L;
     //store some fatal sql exception code(@see SQLException vendorCode)
     private List<Integer> sqlExceptionCodeList;
