@@ -783,16 +783,25 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 throw new BeeDataSourceConfigException("jdbcUrl(" + this.jdbcUrl + ")can not match driver:" + connectDriver.getClass().getName());
 
             Properties configProperties = new Properties();
-            configProperties.putAll(connectProperties);//copy
-            if (!isBlank(this.username) && !configProperties.containsKey("user"))//set username
-                configProperties.setProperty("user", this.username);
+            configProperties.putAll(connectProperties);//copy local properties
 
-            String tempPassword = configProperties.getProperty("password");
-            if (isBlank(tempPassword)) tempPassword = this.password;
-            if (!isBlank(tempPassword)) {//set password
-                if (passwordDecoder != null) tempPassword = passwordDecoder.decode(tempPassword);
-                configProperties.setProperty("password", tempPassword);
+            //jdbc user name and password should be injected to properties of connection factory
+            String userName = configProperties.getProperty("user");//read from connectProperties firstly
+            String password = configProperties.getProperty("password");//read from connectProperties firstly
+            if (isBlank(userName)) {
+                userName = this.username;
+                configProperties.setProperty("user", userName);
+            }//set value from local member field
+            if (isBlank(password)) {
+                password = this.password;
+                configProperties.setProperty("password", password);
+            }//set value from local member field
+            if (passwordDecoder != null) {//then execute the decoder
+                if (!isBlank(userName)) configProperties.setProperty("user", passwordDecoder.decodeUsername(userName));
+                if (!isBlank(password))
+                    configProperties.setProperty("password", passwordDecoder.decodePassword(password));
             }
+
             return new ConnectionFactoryByDriver(this.jdbcUrl, connectDriver, configProperties);
         } else {//step3:create connection factory by connection factory class
             try {
@@ -808,17 +817,23 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 //4:copy properties to value map(inject to dataSource or factory)
                 Map<String, Object> propertyValueMap = new HashMap<String, Object>(this.connectProperties);//copy
 
-                //5:set set username,password,jdbc-url to value map
-                if (!isBlank(this.username) && !propertyValueMap.containsKey("user"))//set username
-                    propertyValueMap.put("user", this.username);
-
-                Object passwordPropVal = propertyValueMap.get("password");
-                String tempPassword = passwordPropVal instanceof String ? (String) passwordPropVal : null;
-                if (isBlank(tempPassword)) tempPassword = this.password;
-                if (!isBlank(tempPassword)) {//set password
-                    if (passwordDecoder != null) tempPassword = passwordDecoder.decode(tempPassword);
-                    propertyValueMap.put("password", tempPassword);
+                //5:set set username,password to value map
+                String userName = (String) propertyValueMap.get("user");//read from connectProperties firstly
+                String password = (String) propertyValueMap.get("password");//read from connectProperties firstly
+                if (isBlank(userName)) {
+                    userName = this.username;
+                    propertyValueMap.put("user", userName);
+                }//set value from local member field
+                if (isBlank(password)) {
+                    password = this.password;
+                    propertyValueMap.put("password", password);
+                }//set value from local member field
+                if (passwordDecoder != null) {//then execute the decoder
+                    if (!isBlank(userName)) propertyValueMap.put("user", passwordDecoder.decodeUsername(userName));
+                    if (!isBlank(password))
+                        propertyValueMap.put("password", passwordDecoder.decodePassword(password));
                 }
+
 
                 if (!isBlank(this.jdbcUrl)) {//set jdbc url
                     if (!propertyValueMap.containsKey("url")) propertyValueMap.put("url", this.jdbcUrl);
