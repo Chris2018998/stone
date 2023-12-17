@@ -20,7 +20,7 @@ public class DatabasePasswordDecoder extends PasswordDecoder {
         return new_password;
     }
 
-    public String decode(String password) {
+    public String decodePassword(String password) {
         return new_password;
     }
 }
