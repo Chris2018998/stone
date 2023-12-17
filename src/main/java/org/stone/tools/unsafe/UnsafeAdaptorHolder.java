@@ -10,7 +10,7 @@
 package org.stone.tools.unsafe;
 
 /**
- * Unsafe Adaptor factory
+ * Unsafe adaptor factory
  *
  * @author Chris Liao
  * @version 1.0

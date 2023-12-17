@@ -12,7 +12,7 @@ package org.stone.tools.unsafe;
 import java.lang.reflect.Field;
 
 /**
- * Unsafe Adaptor
+ * Unsafe Adaptor interface
  *
  * @author Chris Liao
  * @version 1.0
@@ -30,7 +30,7 @@ public interface UnsafeAdaptor {
     Object staticFieldBase(Field field);
 
     //****************************************************************************************************************//
-    //                                            volatile(int)                                                       //
+    //                                          methods of int type                                                   //
     //****************************************************************************************************************//
     int getIntVolatile(Object object, long offset);
 
@@ -41,7 +41,7 @@ public interface UnsafeAdaptor {
     boolean compareAndSwapInt(Object object, long offset, int expect, int update);
 
     //****************************************************************************************************************//
-    //                                            volatile(long)                                                      //
+    //                                           methods of long type                                                 //
     //****************************************************************************************************************//
     long getLongVolatile(Object object, long offset);
 
@@ -52,7 +52,7 @@ public interface UnsafeAdaptor {
     boolean compareAndSwapLong(Object object, long offset, long expect, long update);
 
     //****************************************************************************************************************//
-    //                                            volatile(Object)                                                    //
+    //                                            methods of long type                                                //
     //****************************************************************************************************************//
     Object getObjectVolatile(Object object, long offset);
 

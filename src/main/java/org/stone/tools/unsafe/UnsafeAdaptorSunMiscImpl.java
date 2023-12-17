@@ -14,7 +14,7 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
- * Atomic Unsafe Util
+ * Unsafe adaptor
  *
  * @author Chris Liao
  * @version 1.0
@@ -30,6 +30,10 @@ public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
         } catch (Exception e) {
             throw new Error(e);
         }
+    }
+
+    public static Unsafe getUnsafe() {
+        return U;
     }
 
     //****************************************************************************************************************//
@@ -51,7 +55,7 @@ public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            volatile(int)                                                       //
+    //                                            methods of int type                                                 //
     //****************************************************************************************************************//
     public final int getIntVolatile(Object object, long offset) {
         return U.getIntVolatile(object, offset);
@@ -70,7 +74,7 @@ public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            volatile(long)                                                      //
+    //                                           methods of long type                                                 //
     //****************************************************************************************************************//
     public final long getLongVolatile(Object object, long offset) {
         return U.getLongVolatile(object, offset);
@@ -89,7 +93,7 @@ public final class UnsafeAdaptorSunMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            volatile(Object)                                                    //
+    //                                           methods of object type                                               //
     //****************************************************************************************************************//
     public final Object getObjectVolatile(Object object, long offset) {
         return U.getObjectVolatile(object, offset);

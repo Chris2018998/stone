@@ -14,13 +14,14 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
- * Atomic Unsafe Util
+ * A Unsafe adaptor,whose inside unsafe field type should be declared to
+ * {@code <class>jdk.internal.misc.Unsafe</class>} at jdk higher version(>Java8)
  *
  * @author Chris Liao
  * @version 1.0
  */
 public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
-    private static final Unsafe U;
+    private static final Unsafe U;//
 
     static {
         try {
@@ -33,7 +34,7 @@ public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            field offset                                                        //
+    //                                          methods of int type                                                   //
     //****************************************************************************************************************//
     public final long objectFieldOffset(Field field) {
         if (!field.isAccessible()) field.setAccessible(true);
@@ -51,7 +52,7 @@ public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            volatile(int)                                                       //
+    //                                          methods of int type                                                   //
     //****************************************************************************************************************//
     public final int getIntVolatile(Object object, long offset) {
         return U.getIntVolatile(object, offset);
@@ -70,7 +71,7 @@ public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            volatile(long)                                                      //
+    //                                         methods of long type                                                 //
     //****************************************************************************************************************//
     public final long getLongVolatile(Object object, long offset) {
         return U.getLongVolatile(object, offset);
@@ -89,7 +90,7 @@ public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
     }
 
     //****************************************************************************************************************//
-    //                                            volatile(Object)                                                    //
+    //                                            methods of object type                                              //
     //****************************************************************************************************************//
     public final Object getObjectVolatile(Object object, long offset) {
         return U.getObjectVolatile(object, offset);
