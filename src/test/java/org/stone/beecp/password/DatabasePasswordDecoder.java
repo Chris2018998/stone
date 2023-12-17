@@ -6,14 +6,14 @@
  */
 package org.stone.beecp.password;
 
-import org.stone.beecp.PasswordDecoder;
+import org.stone.beecp.BeeJdbcLinkInfoDecoder;
 
 /**
  * Password Decoder
  *
  * @author chris liao
  */
-public class DatabasePasswordDecoder extends PasswordDecoder {
+public class DatabasePasswordDecoder extends BeeJdbcLinkInfoDecoder {
     private static final String new_password = "abc";
 
     public static final String password() {

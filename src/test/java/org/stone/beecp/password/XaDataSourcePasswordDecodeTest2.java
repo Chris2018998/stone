@@ -23,7 +23,7 @@ public class XaDataSourcePasswordDecodeTest2 extends TestCase {
     public void setUp() throws Throwable {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setConnectionFactoryClassName("org.stone.beecp.mock.MockXaDataSource");
-        config.setPasswordDecoderClassName("org.stone.beecp.password.DatabasePasswordDecoder");
+        config.setJdbcLinkInfDecoderClassName("org.stone.beecp.password.DatabasePasswordDecoder");
         config.addConnectProperty("URL", url);
         config.addConnectProperty("user", user);
         config.addConnectProperty("password", password);
