@@ -34,16 +34,16 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
 /**
- * configuration of BeeDataSource
+ * Configuration of bee dataSource
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //pool name index generation
+    //index on generating default pool name,atomic value starting from 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //properties contains jdbc link info
+    //extra properties for jdbc driver to connect db
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
     //jdbc user name
     private String username;
@@ -53,35 +53,35 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //pool name. if null, a default value generated from<code>BeeDataSourceConfig.PoolNameIndex</code>
+    //if its value is null or empty, a default pool name will be set
     private String poolName;
-    //indicator of work mode for pool semaphore
+    //fair boolean indicator applied at pool semaphore
     private boolean fairMode;
-    //creation size of connection in pool initialization
+    //creation size of connections on pool starting up
     private int initialSize;
-    //async thread to create initial connections when equals to true
+    //indicator to create initial connections by synchronization mode
     private boolean asyncCreateInitConnection;
-    //max permit active size of pooled connections
+    //max reachable size of pooled connections
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //permit size of pool semaphore to control concurrent
+    //max permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds:max request timeout for borrowers when no idle connections
+    //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
-    //milliseconds:max idle timeout for connections,if reach,pool clear them
+    //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds: max not used time when hold in borrowers
+    //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool
     private long holdTimeout;
-    //a activation test sql applied on borrowed connection
+    //a test sql to validate a borrowed connection whether be active
     private String validTestSql = "SELECT 1";
-    //seconds: max time on waiting a validation result
+    //seconds:max wait time to get a validation result on testing connections
     private int validTestTimeout = 3;
-    //milliseconds: assume connection is active when gap time to last accessed time less than it
+    //milliseconds:max gap parkTime between last activity and borrowed,if less this value,assume connection valid,otherwise test them
     private long validAssumeTime = 500L;
-    //milliseconds:interval time to scan idle pooled connections
+    //milliseconds:interval time to scan idle-timeout connections and hold-timeout connections
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator on directly closing using connection when pool clearing
+    //indicator to whether force close using connections when pool clearing
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay time for next clearing in a loop
+    //milliseconds:delay time for next loop clearing in pool when exits using connections when<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
     //store some fatal sql exception code(@see SQLException vendorCode)
     private List<Integer> sqlExceptionCodeList;
@@ -877,7 +877,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 //10: inject properties to connection factory or dataSource
                 setPropertiesValue(factory, propertyValueMap);
 
-                //10: return RawConnectionFactory or RawXaConnectionFactory
+                //11: return RawConnectionFactory or RawXaConnectionFactory
                 if (factory instanceof RawConnectionFactory || factory instanceof RawXaConnectionFactory) {
                     return factory;
                 } else if (factory instanceof XADataSource) {
