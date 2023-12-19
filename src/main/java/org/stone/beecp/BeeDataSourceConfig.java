@@ -75,7 +75,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get a validation result on testing connections
     private int validTestTimeout = 3;
-    //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume connection in active state,otherwise test them
+    //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume connections in active state,otherwise test them
     private long validAssumeTime = 500L;
     //milliseconds:interval time to scan idle-timeout connections and hold-timeout connections
     private long timerCheckInterval = MINUTES.toMillis(3);
@@ -112,11 +112,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //default value set indicator on transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //class of thread factory(priority-2)
+    //class of thread factory(creation priority-2)
     private Class threadFactoryClass;
-    //class name of thread factory(priority-3),if not set,default factory will be applied in pool
+    //class name of thread factory(creation priority-3),if not set,default factory will be applied in pool
     private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
-    //work thread factory(priority-1)
+    //work thread factory(creation priority-1)
     private BeeConnectionPoolThreadFactory threadFactory;
 
     /**
@@ -772,8 +772,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         if (this.connectionFactoryClass == null && isBlank(this.connectionFactoryClassName)) {
             //step2.1: prepare jdbc url
             String url = this.jdbcUrl;//url must not be null
-            if (isBlank(url)) url = System.getProperty("jdbc.url", null);
-            if (isBlank(url)) url = System.getProperty("jdbc.jdbcUrl", null);
+            if (isBlank(url)) url = System.getProperty("beecp.url", null);
+            if (isBlank(url)) url = System.getProperty("beecp.jdbcUrl", null);
             if (isBlank(url)) throw new BeeDataSourceConfigException("jdbcUrl can't be null");
             if (jdbcLinkInfoDecoder != null) url = jdbcLinkInfoDecoder.decodeUrl(url);//decode url
 
@@ -798,13 +798,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             if (isBlank(userName)) {
                 userName = this.username;//read value from local member field
                 if (isBlank(userName))
-                    userName = System.getProperty("jdbc.user", null);//support reading from system.properties
+                    userName = System.getProperty("beecp.user", null);//support reading from system.properties
                 if (!isBlank(userName)) configProperties.setProperty("user", userName);
             }
             if (isBlank(password)) {
                 password = this.password;//read value from local member field
                 if (isBlank(password))
-                    userName = System.getProperty("jdbc.password", null);//support reading from system.properties
+                    userName = System.getProperty("beecp.password", null);//support reading from system.properties
                 configProperties.setProperty("password", password);
             }
 
@@ -837,15 +837,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 if (isBlank(url)) url = (String) propertyValueMap.get("URL");
                 if (isBlank(url)) url = (String) propertyValueMap.get("jdbcUrl");
                 if (isBlank(url)) url = this.jdbcUrl;
-                if (isBlank(url)) url = System.getProperty("jdbc.url", null);
-                if (isBlank(url)) url = System.getProperty("jdbc.URL", null);
-                if (isBlank(url)) url = System.getProperty("jdbc.jdbcUrl", null);
+                if (isBlank(url)) url = System.getProperty("beecp.url", null);
+                if (isBlank(url)) url = System.getProperty("beecp.URL", null);
+                if (isBlank(url)) url = System.getProperty("beecp.jdbcUrl", null);
 
                 //6: try to resolve jdbc user
                 String userName = (String) propertyValueMap.get("user");//read from connectProperties firstly
                 if (isBlank(userName)) {
                     userName = this.username;
-                    if (isBlank(userName)) userName = System.getProperty("jdbc.user", null);
+                    if (isBlank(userName)) userName = System.getProperty("beecp.user", null);
                     propertyValueMap.put("user", userName);
                 }
 
@@ -853,7 +853,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 String password = (String) propertyValueMap.get("password");//read from connectProperties firstly
                 if (isBlank(password)) {
                     password = this.password;
-                    if (isBlank(password)) password = System.getProperty("jdbc.password", null);
+                    if (isBlank(password)) password = System.getProperty("beecp.password", null);
                     propertyValueMap.put("password", password);
                 }
 
