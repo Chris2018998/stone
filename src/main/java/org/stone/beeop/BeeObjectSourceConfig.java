@@ -30,48 +30,48 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
 /**
- * configuration of Bee Object source
+ * Configuration of bee object pool
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
-    //pool name index generation
+    //index on generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //map store properties,which will be injected to factory
+    //properties map and entry value injected to object factory after
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
 
-    //pool name. if null, a default value generated from<code>BeeObjectSourceConfig.PoolNameIndex</code>
+    //if this value is null or empty, a default pool name will be set
     private String poolName;
-    //indicator of work mode for pool semaphore
+    //fair boolean indicator applied at pool semaphore
     private boolean fairMode;
-    //creation size of connection in pool initialization
+    //creation size of objects on pool starting up
     private int initialSize;
-    //object key for initialized objects
+    //type key of sub pool
     private Object initialObjectKey;
-    //async thread to create initial objects when value equals to true
+    //indicator to create initial objects by synchronization mode
     private boolean asyncCreateInitObject;
-    //max permit active size of pooled objects
-    private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //max key size of sub pools(pool capacity size = maxObjectKeySize * maxActive)
+    //max size of sub pools(pool capacity size = maxObjectKeySize * maxActive)
     private int maxObjectKeySize = 50;
+    //max reachable size of pooled objects in sub pools
+    private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
     //max permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds:max request timeout for borrowers when no idle objects
+    //milliseconds:max wait time of a borrower to get a idle object from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
-    //milliseconds:max idle timeout for connections,if reach,pool clear them
+    //milliseconds:max idle time of pooled objects,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds: max not used time when hold in borrowers
+    //milliseconds:max hold time and not be active on borrowed objects,which may be force released to pool
     private long holdTimeout;
-    //seconds: max time on waiting a validation result
+    //seconds:max wait time to get a validation result on testing objects
     private int validTestTimeout = 3;
-    //milliseconds: assume pooled object is active when gap time to last accessed time less than it
+    //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume pooled objects in active state,otherwise test them
     private long validAssumeTime = 500L;
-    //milliseconds:interval time to scan idle pooled objects
+    //milliseconds:interval time to scan idle-timeout objects and hold-timeout objects
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator on directly closing using objects when pool clearing
+    //indicator to whether force close using objects when pool clearing
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay time for next clearing in a loop,when<code>forceCloseUsingOnClear</code> is false
+    //milliseconds:delay time for next loop clearing in pool when exits using objects when<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
 
     //indicator,whether register pool to jmx
