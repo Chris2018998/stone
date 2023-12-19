@@ -75,7 +75,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get a validation result on testing connections
     private int validTestTimeout = 3;
-    //milliseconds:max gap parkTime between last activity and borrowed,if less this value,assume connection valid,otherwise test them
+    //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume connection in active state,otherwise test them
     private long validAssumeTime = 500L;
     //milliseconds:interval time to scan idle-timeout connections and hold-timeout connections
     private long timerCheckInterval = MINUTES.toMillis(3);
