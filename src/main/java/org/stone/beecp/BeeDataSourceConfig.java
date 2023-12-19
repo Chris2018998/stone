@@ -53,7 +53,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //if its value is null or empty, a default pool name will be set
+    //if this value is null or empty, a default pool name will be set
     private String poolName;
     //fair boolean indicator applied at pool semaphore
     private boolean fairMode;
