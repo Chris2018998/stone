@@ -40,7 +40,7 @@ import static org.stone.tools.CommonUtil.trimString;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //index on generating default pool name,atomic value starting from 1
+    //index on generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
     //extra properties for jdbc driver to connect db
