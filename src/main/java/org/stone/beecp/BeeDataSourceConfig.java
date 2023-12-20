@@ -43,7 +43,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //index on generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //extra properties for jdbc driver to connect db
+    //properties map applied in jdbc driver to connect db
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
     //jdbc user name
     private String username;
@@ -53,9 +53,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //if this value is null or empty, a default pool name will be set
+    //a default name generated when this value is null or empty on pool starting up
     private String poolName;
-    //fair boolean indicator applied at pool semaphore
+    //fair boolean indicator applied to pool semaphore
     private boolean fairMode;
     //creation size of connections on pool starting up
     private int initialSize;
@@ -71,17 +71,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool
     private long holdTimeout;
-    //a test sql to validate a borrowed connection whether be active
+    //test sql to validate borrowed connections whether be active
     private String validTestSql = "SELECT 1";
-    //seconds:max wait time to get a validation result on testing connections
+    //seconds:max wait time to get validation result on testing connections
     private int validTestTimeout = 3;
-    //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume connections in active state,otherwise test them
+    //milliseconds:max gap time between last activity time and borrowed time point,if less this gap value,assume connections in active state,otherwise test them
     private long validAssumeTime = 500L;
-    //milliseconds:interval time to scan idle-timeout connections and hold-timeout connections
+    //milliseconds:working interval time of a timer thread to scan idle-timeout connections and hold-timeout connections
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator to whether force close using connections when pool clearing
+    //indicator to whether force close using connections when pool clears connections
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay time for next loop clearing in pool when exits using connections when<config>forceCloseUsingOnClear</config> is false
+    //milliseconds:delay time for next loop clearance in pool when exits using connections and configured item<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
     //store some fatal sql exception code(@see SQLException vendorCode)
     private List<Integer> sqlExceptionCodeList;
@@ -625,12 +625,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         } catch (BeeDataSourceConfigException e) {
             throw e;
         } catch (Throwable e) {
-            throw new BeeDataSourceConfigException("Failed to load properties file", e);
+            throw new BeeDataSourceConfigException("Failed to load configuration properties file", e);
         } finally {
             if (stream != null) try {
                 stream.close();
             } catch (Throwable e) {
-                CommonLog.warn("Failed to close properties file inputStream,cause:", e);
+                CommonLog.warn("Failed to close inputStream of configuration properties file", e);
             }
         }
     }
@@ -640,23 +640,26 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             throw new BeeDataSourceConfigException("Properties can't be null or empty");
 
         //1:load configuration item values from outside properties
-        Map<String, Object> setValueMap = new HashMap<String, Object>(configProperties.size());
-        for (String propertyName : configProperties.stringPropertyNames()) {
-            setValueMap.put(propertyName, configProperties.getProperty(propertyName));
-        }
+        synchronized (configProperties) {//synchronization mode
+            Map<String, Object> setValueMap = new HashMap<String, Object>(configProperties.size());
+            for (String propertyName : configProperties.stringPropertyNames()) {
+                setValueMap.put(propertyName, configProperties.getProperty(propertyName));
+            }
 
-        //2:inject item value from map to this dataSource config object
-        setPropertiesValue(this, setValueMap);
+            //2:inject item value from map to this dataSource config object
+            setPropertiesValue(this, setValueMap);
 
-        //3:try to find 'connectProperties' config value and put to ds config object
-        this.addConnectProperty(getPropertyValue(configProperties, CONFIG_CONNECT_PROP));
-        String connectPropertiesSize = getPropertyValue(configProperties, CONFIG_CONNECT_PROP_SIZE);
-        if (!isBlank(connectPropertiesSize)) {
-            int size = Integer.parseInt(connectPropertiesSize.trim());
-            for (int i = 1; i <= size; i++)//properties index begin with 1
-                this.addConnectProperty(getPropertyValue(configProperties, CONFIG_CONNECT_PROP_KEY_PREFIX + i));
+            //3:try to find 'connectProperties' config value and put to ds config object
+            this.addConnectProperty(getPropertyValue(configProperties, CONFIG_CONNECT_PROP));
+            String connectPropertiesSize = getPropertyValue(configProperties, CONFIG_CONNECT_PROP_SIZE);
+            if (!isBlank(connectPropertiesSize)) {
+                int size = Integer.parseInt(connectPropertiesSize.trim());
+                for (int i = 1; i <= size; i++)//properties index begin with 1
+                    this.addConnectProperty(getPropertyValue(configProperties, CONFIG_CONNECT_PROP_KEY_PREFIX + i));
+            }
         }
     }
+
 
     //****************************************************************************************************************//
     //                                    8: configuration check and connection factory create methods(4)             //
@@ -704,7 +707,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         return checkedConfig;
     }
 
-    //copy configuration to other object
+    //copy configuration info to other from local
     void copyTo(BeeDataSourceConfig config) {
         //1:primitive type copy
         String fieldName = "";
