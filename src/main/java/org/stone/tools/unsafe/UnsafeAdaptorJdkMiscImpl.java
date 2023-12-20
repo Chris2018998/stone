@@ -15,7 +15,7 @@ import java.lang.reflect.Field;
 
 /**
  * A Unsafe adaptor,whose inside unsafe field type should be declared to
- * {@code <class>jdk.internal.misc.Unsafe</class>} at jdk higher version(>Java8)
+ * {@code jdk.internal.misc.Unsafe} at jdk higher version(Java8)
  *
  * @author Chris Liao
  * @version 1.0
