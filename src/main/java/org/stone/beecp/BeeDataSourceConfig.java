@@ -604,13 +604,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //                                     7: properties configuration(3)                                             //
     //****************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
-        if (isBlank(filename)) throw new IllegalArgumentException("Properties file can't be null");
+        if (isBlank(filename)) throw new IllegalArgumentException("Configuration properties file can't be null");
         this.loadFromPropertiesFile(new File(filename));
     }
 
     public void loadFromPropertiesFile(File file) {
-        if (file == null) throw new IllegalArgumentException("Properties file can't be null");
-        if (!file.exists()) throw new IllegalArgumentException("File not found:" + file.getAbsolutePath());
+        if (file == null) throw new IllegalArgumentException("Configuration properties file can't be null");
+        if (!file.exists())
+            throw new IllegalArgumentException("Configuration properties file not found:" + file.getAbsolutePath());
         if (!file.isFile()) throw new IllegalArgumentException("Target object is not a valid file");
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
             throw new IllegalArgumentException("Target file is not a properties file");
@@ -637,7 +638,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void loadFromProperties(Properties configProperties) {
         if (configProperties == null || configProperties.isEmpty())
-            throw new BeeDataSourceConfigException("Properties can't be null or empty");
+            throw new BeeDataSourceConfigException("Configuration properties can't be null or empty");
 
         //1:load configuration item values from outside properties
         synchronized (configProperties) {//synchronization mode
