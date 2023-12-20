@@ -793,7 +793,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
             //step2.3: create a new jdbc connecting properties object and set default value from local properties
             Properties configProperties = new Properties();
-            configProperties.putAll(connectProperties);//copy local properties
+            configProperties.putAll(this.connectProperties);//copy local properties
 
             //step2.4: set user name and password
             String userName = configProperties.getProperty("user");//read from connectProperties firstly
@@ -807,8 +807,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             if (isBlank(password)) {
                 password = this.password;//read value from local member field
                 if (isBlank(password))
-                    userName = System.getProperty("beecp.password", null);//support reading from system.properties
-                configProperties.setProperty("password", password);
+                    password = System.getProperty("beecp.password", null);//support reading from system.properties
+                if (!isBlank(password)) configProperties.setProperty("password", password);
             }
 
             //step2.5: decode user name and password
