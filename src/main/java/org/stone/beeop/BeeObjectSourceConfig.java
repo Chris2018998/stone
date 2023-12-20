@@ -421,12 +421,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //                                     4: configuration load from properties load (3)                            //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
-        if (isBlank(filename)) throw new IllegalArgumentException("Properties file can't be null");
+        if (isBlank(filename)) throw new IllegalArgumentException("Configuration properties file can't be null");
         this.loadFromPropertiesFile(new File(filename));
     }
 
     public void loadFromPropertiesFile(File file) {
-        if (file == null) throw new IllegalArgumentException("Properties file can't be null");
+        if (file == null) throw new IllegalArgumentException("Configuration properties file can't be null");
         if (!file.exists()) throw new IllegalArgumentException(file.getAbsolutePath());
         if (!file.isFile()) throw new IllegalArgumentException("Target object is not a valid file");
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
@@ -441,7 +441,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         } catch (BeeObjectSourceConfigException e) {
             throw e;
         } catch (Throwable e) {
-            throw new BeeObjectSourceConfigException("Failed to load properties file:", e);
+            throw new BeeObjectSourceConfigException("Failed to load configuration properties file:", e);
         } finally {
             if (stream != null) try {
                 stream.close();
@@ -453,7 +453,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
     public void loadFromProperties(Properties configProperties) {
         if (configProperties == null || configProperties.isEmpty())
-            throw new IllegalArgumentException("Properties can't be null or empty");
+            throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1:load configuration item values from outside properties
         synchronized (configProperties) {//synchronization mode
@@ -531,7 +531,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
 
         //3:try to create object factory
-        RawObjectFactory objectFactory = this.tryCreateObjectFactory(tempObjectInterfaces);
+        RawObjectFactory objectFactory = this.tryCreateObjectFactory();
         BeeObjectPoolThreadFactory threadFactory = this.createThreadFactory();
 
         //4:copy field value to new config from current config
@@ -648,7 +648,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         return null;
     }
 
-    private RawObjectFactory tryCreateObjectFactory(Class[] objectInterfaces) {
+    private RawObjectFactory tryCreateObjectFactory() {
         //1:if exists object factory,then return it
         if (this.objectFactory != null) return this.objectFactory;
 
