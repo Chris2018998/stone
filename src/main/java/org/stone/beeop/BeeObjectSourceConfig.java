@@ -456,46 +456,48 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             throw new IllegalArgumentException("Properties can't be null or empty");
 
         //1:load configuration item values from outside properties
-        Map<String, Object> setValueMap = new HashMap<String, Object>(configProperties.size());
-        for (String propertyName : configProperties.stringPropertyNames()) {
-            setValueMap.put(propertyName, configProperties.getProperty(propertyName));
-        }
-
-        //2:inject item value from map to this dataSource config object
-        ObjectPoolStatics.setPropertiesValue(this, setValueMap);
-
-        //3:try to find 'factoryProperties' config value
-        this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties"));
-        String factoryPropertiesSize = ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties.size");
-        if (!isBlank(factoryPropertiesSize)) {
-            int size = 0;
-            try {
-                size = Integer.parseInt(factoryPropertiesSize.trim());
-            } catch (Throwable e) {
-                //do nothing
+        synchronized (configProperties) {//synchronization mode
+            Map<String, Object> setValueMap = new HashMap<String, Object>(configProperties.size());
+            for (String propertyName : configProperties.stringPropertyNames()) {
+                setValueMap.put(propertyName, configProperties.getProperty(propertyName));
             }
-            for (int i = 1; i <= size; i++)
-                this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties." + i));
-        }
 
-        //5:try to find 'objectInterfaceNames' config value
-        String objectInterfaceNames = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaceNames");
-        if (!isBlank(objectInterfaceNames))
-            setObjectInterfaceNames(objectInterfaceNames.split(","));
+            //2:inject item value from map to this dataSource config object
+            ObjectPoolStatics.setPropertiesValue(this, setValueMap);
 
-        //6:try to find 'objectInterfaces' config value
-        String objectInterfaceNames2 = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaces");
-        if (!isBlank(objectInterfaceNames2)) {
-            String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
-            Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
-            for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
+            //3:try to find 'factoryProperties' config value
+            this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties"));
+            String factoryPropertiesSize = ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties.size");
+            if (!isBlank(factoryPropertiesSize)) {
+                int size = 0;
                 try {
-                    objectInterfaces[i] = Class.forName(objectInterfaceNameArray[i]);
-                } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
+                    size = Integer.parseInt(factoryPropertiesSize.trim());
+                } catch (Throwable e) {
+                    //do nothing
                 }
+                for (int i = 1; i <= size; i++)
+                    this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties." + i));
             }
-            setObjectInterfaces(objectInterfaces);
+
+            //5:try to find 'objectInterfaceNames' config value
+            String objectInterfaceNames = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaceNames");
+            if (!isBlank(objectInterfaceNames))
+                setObjectInterfaceNames(objectInterfaceNames.split(","));
+
+            //6:try to find 'objectInterfaces' config value
+            String objectInterfaceNames2 = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaces");
+            if (!isBlank(objectInterfaceNames2)) {
+                String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
+                Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
+                for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
+                    try {
+                        objectInterfaces[i] = Class.forName(objectInterfaceNameArray[i]);
+                    } catch (ClassNotFoundException e) {
+                        throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
+                    }
+                }
+                setObjectInterfaces(objectInterfaces);
+            }
         }
     }
 
