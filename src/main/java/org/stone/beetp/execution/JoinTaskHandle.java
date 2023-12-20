@@ -97,8 +97,10 @@ final class JoinTaskHandle extends BaseHandle {
 
             for (int i = 0; i < subSize; i++) {
                 subTaskHandles[i] = new JoinTaskHandle(subTasks[i], this, countDown, operator, pool, root);
-                workQueue.offer(subTaskHandles[i]);
+                pool.pushToExecutionQueue(subTaskHandles[i], workQueue);
             }
+
+            //pool.wakeupStealWorkers(subSize);
         } else {//4: execute leaf task
             super.executeTask(worker);
         }

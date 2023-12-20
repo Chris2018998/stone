@@ -105,7 +105,7 @@ final class TreeTaskHandle extends BaseHandle {
 
             for (int i = 0; i < subSize; i++) {
                 subJoinHandles[i] = new TreeTaskHandle(subTasks[i], this, countDownLatch, pool, root);
-                workQueue.offer(subJoinHandles[i]);
+                pool.pushToExecutionQueue(subTaskHandles[i], workQueue);
             }
         } else {//4: execute leaf task
             super.executeTask(worker);

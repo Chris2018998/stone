@@ -16,6 +16,7 @@ import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -141,7 +142,7 @@ public final class TaskExecutionPool implements TaskPool {
         //3: crete task handle
         BaseHandle handle = new BaseHandle(task, callback, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle);
+        this.pushToExecutionQueue(handle, this.taskQueue);
         //5: return handle
         return handle;
     }
@@ -160,7 +161,7 @@ public final class TaskExecutionPool implements TaskPool {
         //3: crete join task handle(root)
         BaseHandle handle = new JoinTaskHandle(task, operator, callback, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle);
+        this.pushToExecutionQueue(handle, this.taskQueue);
         //5: return handle
         return handle;
     }
@@ -178,7 +179,7 @@ public final class TaskExecutionPool implements TaskPool {
         //3: crete tree task handle(root)
         TreeTaskHandle handle = new TreeTaskHandle(task, callback, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle);
+        this.pushToExecutionQueue(handle, this.taskQueue);
         //5: return handle
         return handle;
     }
@@ -227,7 +228,7 @@ public final class TaskExecutionPool implements TaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    private void pushToExecutionQueue(BaseHandle taskHandle) {
+    void pushToExecutionQueue(BaseHandle taskHandle, Queue<BaseHandle> taskQueue) {
         //1:try to wakeup a idle work thread with task
         for (TaskWorkThread worker : workerArray) {
             if (worker.compareAndSetState(WORKER_IDLE, taskHandle)) {
@@ -238,7 +239,7 @@ public final class TaskExecutionPool implements TaskPool {
 
         //2: try to create a new worker
         if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
-            this.taskQueue.offer(taskHandle);
+            taskQueue.offer(taskHandle);
     }
 
     void wakeupSchedulePeekThread() {
@@ -481,7 +482,7 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                  8: worker thread creation or remove                                          //
     //***************************************************************************************************************//
-    private TaskWorkThread createTaskWorker(BaseHandle taskHandle) {
+    private TaskWorkThread createTaskWorker(Object taskHandle) {
         this.workerArrayLock.lock();
         try {
             int l = this.workerArray.length;
@@ -542,7 +543,7 @@ public final class TaskExecutionPool implements TaskPool {
                     if (polledObject instanceof ScheduledTaskHandle) {
                         ScheduledTaskHandle taskHandle = (ScheduledTaskHandle) polledObject;
                         if (taskHandle.state == TASK_WAITING)
-                            pushToExecutionQueue(taskHandle);//push it to execution queue
+                            pushToExecutionQueue(taskHandle, taskQueue);//push it to execution queue
                         else
                             taskCount.decrementAndGet();//task has cancelled,so remove it
                     } else {//3: the polled object is time,then park
