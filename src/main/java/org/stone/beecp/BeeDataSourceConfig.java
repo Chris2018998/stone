@@ -43,7 +43,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //index on generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //properties map applied in jdbc driver to connect db
+    //properties map apply in jdbc driver to connect db
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
     //jdbc user name
     private String username;
@@ -53,11 +53,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //a default name generated when this value is null or empty on pool starting up
+    //a default name generated on pool starting up when this value is null or empty
     private String poolName;
     //fair boolean indicator applied to pool semaphore
     private boolean fairMode;
-    //creation size of connections on pool starting up
+    //creation size of connections on starting up
     private int initialSize;
     //indicator to create initial connections by synchronization mode
     private boolean asyncCreateInitConnection;
@@ -69,7 +69,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private long maxWait = SECONDS.toMillis(8);
     //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool
+    //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool if this value greater than zero
     private long holdTimeout;
     //test sql to validate borrowed connections whether be active
     private String validTestSql = "SELECT 1";
@@ -88,7 +88,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //store some fatal sql exception state(@see SQLException SQLState)
     private List<String> sqlExceptionStateList;
 
-    //connection default value:catalog <code>Connection.setAutoCommit(String)</code>
+    //connection default value:catalog <code>Connection.setCatalog(String)</code>
     private String defaultCatalog;
     //connection default value:schema <code>Connection.setSchema(String)</code>
     private String defaultSchema;
@@ -107,17 +107,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean enableDefaultOnSchema = true;
     //default value set indicator on readOnly(connection property)
     private boolean enableDefaultOnReadOnly = true;
-    //default value set indicator on readOnly(connection property)
+    //default value set indicator on autoCommit(connection property)
     private boolean enableDefaultOnAutoCommit = true;
     //default value set indicator on transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
     //class of thread factory(creation priority-2)
     private Class threadFactoryClass;
-    //class name of thread factory(creation priority-3),if not set,default factory will be applied in pool
-    private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
     //work thread factory(creation priority-1)
     private BeeConnectionPoolThreadFactory threadFactory;
+    //class name of thread factory(creation priority-3),if not set,default factory will be applied in pool
+    private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
 
     /**
      * connection factory class,which is one implementation class of
@@ -132,18 +132,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //connection factory
     private Object connectionFactory;
 
-    //jdbc link info decoder class
+    //encryption decoder class on jdbc link info
     private Class jdbcLinkInfoDecoderClass;
-    //jdbc link info decoder class name
+    //encryption decoder classname on jdbc link info
     private String jdbcLinkInfDecoderClassName;
-    //pool implementation class name
+    //pool implementation class name,if not be set,a default implementation applied in bee datasource
     private String poolImplementClassName = FastConnectionPool.class.getName();
 
-    //jmx register indicator
+    //indicator on whether registering jmx
     private boolean enableJmx;
-    //config print indicator on pool starting
+    //indicator on whether printing configuration items when pool starting up
     private boolean printConfigInfo;
-    //runtime log print indicator on pool activity
+    //indicator on printing runtime log of pool activity,this value can change
     private boolean printRuntimeLog;
 
     //****************************************************************************************************************//
