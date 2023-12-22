@@ -143,7 +143,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean enableJmx;
     //indicator on whether printing configuration items when pool starting up
     private boolean printConfigInfo;
-    //indicator on printing runtime log of pool activity,this value can change
+    //indicator on printing pool runtime log,this value can be changed by calling pool<method>setPrintRuntimeLog</method>
     private boolean printRuntimeLog;
 
     //****************************************************************************************************************//
