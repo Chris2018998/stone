@@ -83,9 +83,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean forceCloseUsingOnClear;
     //milliseconds:delay time for next loop clearance in pool when exits using connections and configured item<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
-    //store some fatal sql exception code(@see vendorCode of SQLException),if these codes contain in SQLException thrown from borrowed out connections,then remove them from pool
+    //store some fatal sql exception code(@see field vendorCode in SQLException class),if one of these codes contains in SQLException thrown from borrowed out connections,then remove them from pool
     private List<Integer> sqlExceptionCodeList;
-    //store some fatal sql exception state(@see SQLState of SQLException),if these state contain in SQLException thrown from borrowed out connections,then remove them from pool
+    //store some fatal sql exception state(@see field SQLState in SQLException class),if one of these state contains in SQLException thrown from borrowed out connections,then remove them from pool
     private List<String> sqlExceptionStateList;
 
     //connection default value:catalog <code>Connection.setCatalog(String)</code>
