@@ -120,7 +120,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
 
     /**
-     * connection factory class,which is one implementation class of
+     * connection factory class,which must be implement one of the below four interfaces
      * 1:<class>RawConnectionFactory</class>
      * 2:<class>RawXaConnectionFactory</class>
      * 3:<class>DataSource</class>
@@ -129,7 +129,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private Class connectionFactoryClass;
     //connection factory class name
     private String connectionFactoryClassName;
-    //connection factory
+    //connection factory instance
     private Object connectionFactory;
 
     //encryption decoder class on jdbc link info
