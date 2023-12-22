@@ -112,11 +112,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //default value set indicator on transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //class of thread factory(creation priority-2)
+    //class of thread factory(creation order-2 )
     private Class threadFactoryClass;
-    //work thread factory(creation priority-1)
+    //work thread factory(creation order-1)
     private BeeConnectionPoolThreadFactory threadFactory;
-    //class name of thread factory(creation priority-3),if not set,default factory will be applied in pool
+    //class name of thread factory(creation order-3),if not set,default factory will be applied in pool
     private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
 
     /**
