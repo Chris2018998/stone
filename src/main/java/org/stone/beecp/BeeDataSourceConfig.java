@@ -604,7 +604,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //                                     7: properties configuration(3)                                             //
     //****************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
-        if (isBlank(filename)) throw new IllegalArgumentException("Configuration properties file can't be null");
+        if (isBlank(filename))
+            throw new IllegalArgumentException("Configuration properties file name can't be null or empty");
         this.loadFromPropertiesFile(new File(filename));
     }
 
