@@ -101,15 +101,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //connection default value:description of transactionIsolation <code>defaultTransactionIsolationCode</code>
     private String defaultTransactionIsolationName;
 
-    //default value set indicator on catalog(connection property)
+    //enable indicator on using default catalog(connection property)
     private boolean enableDefaultOnCatalog = true;
-    //default value set indicator on schema(connection property)
+    //enable indicator on using default schema(connection property)
     private boolean enableDefaultOnSchema = true;
-    //default value set indicator on readOnly(connection property)
+    //enable indicator on using default readOnly(connection property)
     private boolean enableDefaultOnReadOnly = true;
-    //default value set indicator on autoCommit(connection property)
+    //enable indicator on using default autoCommit(connection property)
     private boolean enableDefaultOnAutoCommit = true;
-    //default value set indicator on transactionIsolation(connection property)
+    //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
     //class of thread factory(creation order-2 )
