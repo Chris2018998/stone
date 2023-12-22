@@ -71,7 +71,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool if this value greater than zero
     private long holdTimeout;
-    //test sql to validate borrowed connections whether be active
+    //a test sql to validate borrowed connections whether be active
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get validation result on testing connections
     private int validTestTimeout = 3;
@@ -88,17 +88,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //store some fatal sql exception state(@see field SQLState in SQLException class),if one of these state contains in SQLException thrown from borrowed out connections,then remove them from pool
     private List<String> sqlExceptionStateList;
 
-    //connection default value:catalog <code>Connection.setCatalog(String)</code>
+    //default value to catalog<code>Connection.setCatalog(String)</code>
     private String defaultCatalog;
-    //connection default value:schema <code>Connection.setSchema(String)</code>
+    //default value to schema<code>Connection.setSchema(String)</code>
     private String defaultSchema;
-    //connection default value:readOnly <code>Connection.setReadOnly(boolean)</code>
+    //default value to readOnly<code>Connection.setReadOnly(boolean)</code>
     private Boolean defaultReadOnly;
-    //connection default value:autoCommit <code>Connection.setAutoCommit(boolean)</code>
+    //default value to autoCommit<code>Connection.setAutoCommit(boolean)</code>
     private Boolean defaultAutoCommit;
-    //connection default value:transactionIsolation <code>Connection.setTransactionIsolation(int)</code>
+    //default value to transactionIsolation<code>Connection.setTransactionIsolation(int)</code>
     private Integer defaultTransactionIsolationCode;
-    //connection default value:description of transactionIsolation <code>defaultTransactionIsolationCode</code>
+    //description of default transactionIsolation level code
     private String defaultTransactionIsolationName;
 
     //enable indicator on using default catalog(connection property)
@@ -112,11 +112,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //class of thread factory(creation order-2 )
+    //thread factory class(creation order-2 )
     private Class threadFactoryClass;
-    //work thread factory(creation order-1)
+    //thread factory instance(creation order-1)
     private BeeConnectionPoolThreadFactory threadFactory;
-    //class name of thread factory(creation order-3),if not set,default factory will be applied in pool
+    //thread factory class name(creation order-3),if not set,default factory will be applied in pool
     private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
 
     /**
