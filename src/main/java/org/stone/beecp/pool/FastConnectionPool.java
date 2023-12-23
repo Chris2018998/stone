@@ -191,7 +191,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             this.registerJmx();
 
             setDaemon(true);
-            setPriority(3);
+            //setPriority(3);
             setName("BeeCP(" + poolName + ")" + "-asyncAdd");
             start();
 
