@@ -95,7 +95,7 @@ public interface BeeConnectionPool {
      * Clears all pooled connections and apply a new configuration to pool when parameter config is not null
      *
      * @param forceCloseUsing a indicator to close using connections
-     * @param config which apply to pool as new configuration
+     * @param config          which apply to pool as new configuration when not be null
      * @throws SQLException when apply configuration failed
      */
     void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
