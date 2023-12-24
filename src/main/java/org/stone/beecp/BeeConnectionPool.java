@@ -45,7 +45,7 @@ public interface BeeConnectionPool {
     Connection getConnection() throws SQLException;
 
     /**
-     * Borrows a xa type connection which supports distributed transaction.The method feature depends XA standard
+     * Borrows a XA type connection which supports distributed transaction.The method feature depends XA standard
      * interfaces whether implemented in JDBC Driver.The working process logic under this method is similar to method
      * {@code getConnection},a resulted XA wrapper built on it by JDBC driver when a pooled connection borrowed.
      *
@@ -83,8 +83,8 @@ public interface BeeConnectionPool {
     /**
      * Clears all pooled connections,a thread-safe control should be added around this method call.Coming requests rejected
      * when pool in closed state,after clearing,pool state will reset to be ready for requests.Logic of clearing is below
-     * 1: Close idle connections directly and remove them
-     * 2: Close using connections directly and remove them when the parameter {@code forceCloseUsing}is true
+     * 1: Closes idle connections directly and remove them
+     * 2: Closes using connections directly and remove them when the parameter {@code forceCloseUsing}is true
      * 2.1: Delay specified {@code delayTimeForNextClear} for next loop to check using connections whether already return to pool,if true close them
      *
      * @param forceCloseUsing a indicator to close using connections
@@ -95,7 +95,7 @@ public interface BeeConnectionPool {
      * Clears all pooled connections and apply a new configuration to pool when parameter config is not null
      *
      * @param forceCloseUsing a indicator to close using connections
-     * @param config          which apply to pool as new configuration when not be null
+     * @param config          which be applied to pool as new configuration when it is not null
      * @throws SQLException when apply configuration failed
      */
     void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
