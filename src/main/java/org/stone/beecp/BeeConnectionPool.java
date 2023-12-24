@@ -83,9 +83,9 @@ public interface BeeConnectionPool {
     /**
      * Clears all pooled connections,a thread-safe control should be added around this method call.Coming requests rejected
      * when pool in closed state,after clearing,pool state will reset to be ready for requests.Logic of clearing is below
-     * 1: Idle connections close directly and remove
-     * 2: Using connections close directly and remove if the parameter {@code forceCloseUsing}is true
-     * 2.1: Delay specified {@code delayTimeForNextClear} to check using connections already return to pool,if true close them
+     * 1: Close idle connections directly and remove them
+     * 2: Close using connections directly and remove them when the parameter {@code forceCloseUsing}is true
+     * 2.1: Delay specified {@code delayTimeForNextClear} for next loop to check using connections whether already return to pool,if true close them
      *
      * @param forceCloseUsing a indicator to close using connections
      */
