@@ -713,8 +713,12 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //                                  4: Pool clear/close methods(5)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-4.1: remove all connections from pool
-    public void clear(boolean forceCloseUsing) throws SQLException {
-        clear(forceCloseUsing, null);
+    public void clear(boolean forceCloseUsing) {
+        try {
+            clear(forceCloseUsing, null);
+        } catch (SQLException e) {
+            //do nothing
+        }
     }
 
     //Method-4.2: clear all connections from pool,forceCloseUsingOnClear is true,then close using connection directly
@@ -739,7 +743,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-4.3: remove all connections from pool
     private void removeAllConnections(boolean force, String source) {
         this.semaphore.interruptWaitingThreads();
-        PoolInClearingException exception = new PoolInClearingException("Access rejected,pool was in clearing");
+        PoolInClearingException exception = new PoolInClearingException("Access rejected,pool in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(exception);
 
         while (this.pooledArray.length > 0) {
