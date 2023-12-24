@@ -23,7 +23,7 @@ public interface BeeConnectionPool {
 
     /**
      * Pool initialize with a configuration object contains some sub items,but before apply them into pool and
-     * check firstly,if failed then throws cause exception. After initialization,connections borrow request can
+     * check firstly,if failed then throws cause exception.After initialization,connections borrow request can
      * allow pass to pool
      *
      * @param config pool configuration object
@@ -55,9 +55,9 @@ public interface BeeConnectionPool {
     XAConnection getXAConnection() throws SQLException;
 
     /**
-     * Method invocation to shut down pool and need supply thead-safe control on this call,just only one thread to
-     * success do it when concurrent,others exit from method immediately and coming borrow requests rejected when
-     * pool in closing state or in closed state.
+     * Method invocation to shut down pool,there is a thead-safe control,only one thread success call
+     * it at concurrent,the pool state mark to be closed and rejects coming requests with a exception.
+     * This method support duplicated call when in closed state,do nothing,just return.
      */
     void close();
 
@@ -81,15 +81,22 @@ public interface BeeConnectionPool {
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * @param forceCloseUsing
-     * @throws SQLException
+     * Clears all pooled connections,a thread-safe control should be added around this method call.Coming requests rejected
+     * when pool in closed state,after clearing,pool state will reset to be ready for requests.Logic of clearing is below
+     * 1: Idle connections close directly and remove
+     * 2: Using connections close directly and remove if the parameter {@code forceCloseUsing}is true
+     * 2.1: Delay specified {@code delayTimeForNextClear} to check using connections already return to pool,if true close them
+     *
+     * @param forceCloseUsing a indicator to close using connections
      */
-    void clear(boolean forceCloseUsing) throws SQLException;
+    void clear(boolean forceCloseUsing);
 
     /**
-     * @param forceCloseUsing
-     * @param config
-     * @throws SQLException
+     * Clears all pooled connections and apply a new configuration to pool when parameter config is not null
+     *
+     * @param forceCloseUsing a indicator to close using connections
+     * @param config which apply to pool as new configuration
+     * @throws SQLException when apply configuration failed
      */
     void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
 
