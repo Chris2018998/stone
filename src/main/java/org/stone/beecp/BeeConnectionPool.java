@@ -37,7 +37,7 @@ public interface BeeConnectionPool {
      * to pool,then wake up a waiter thread to get or transfer directly the released connection to a waiter via cas mode,
      * and the target waiter hold success,then end waiting and leave from pool.if not get one util elapsed time reach
      * {@code maxWait}value,waiters leave from pool with a timeout exception.Borrowed out connections can't be borrowed
-     * again,means that one connection just only hold by a thread at any time.
+     * again,means that a connection just only hold by a thread at any time.
      *
      * @return a idle connection
      * @throws SQLException when wait timeout or interrupted while wait in pool
@@ -45,8 +45,9 @@ public interface BeeConnectionPool {
     Connection getConnection() throws SQLException;
 
     /**
-     * borrows a XAConnection which apply on distributed transaction,if driver not support this feature,a local impl
-     * provided
+     * Borrow a xa type connection which support distributed transaction.The method feature depends XA standard
+     * interfaces whether implemented in JDBC Driver.The working process logic under this method is similar to method
+     * {@code getConnection},a resulted XA wrapper built on it by JDBC driver when a pooled connection borrowed.
      *
      * @return a borrowed XAConnection
      * @throws SQLException when wait timeout or interrupted while wait in pool
