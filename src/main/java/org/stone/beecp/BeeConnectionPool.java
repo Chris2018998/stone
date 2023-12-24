@@ -32,7 +32,7 @@ public interface BeeConnectionPool {
     void init(BeeDataSourceConfig config) throws SQLException;
 
     /**
-     * method call to borrow an idle connection from pool,but if not exists idle,borrower thread blocking in pool with
+     * Method call to borrow an idle connection from pool,but if not exists idle,borrower thread blocking in pool with
      * specified {@code maxWait} time in datasource configuration.When other borrowers release their used connections
      * to pool,then wake up a waiter thread to get or transfer directly the released connection to a waiter via cas mode,
      * and the target waiter hold success,then end waiting and leave from pool.if not get one util elapsed time reach
@@ -45,7 +45,7 @@ public interface BeeConnectionPool {
     Connection getConnection() throws SQLException;
 
     /**
-     * Borrow a xa type connection which support distributed transaction.The method feature depends XA standard
+     * Borrow a xa type connection which supports distributed transaction.The method feature depends XA standard
      * interfaces whether implemented in JDBC Driver.The working process logic under this method is similar to method
      * {@code getConnection},a resulted XA wrapper built on it by JDBC driver when a pooled connection borrowed.
      *
@@ -54,12 +54,8 @@ public interface BeeConnectionPool {
      */
     XAConnection getXAConnection() throws SQLException;
 
-    //***************************************************************************************************************//
-    //                3: Pool runtime maintain methods(6)                                                            //                                                                                  //
-    //***************************************************************************************************************//
-
     /**
-     * Method invocation to shut down pool and need supply thead-safe control on its call,just only one thread to
+     * Method invocation to shut down pool and need supply thead-safe control on this call,just only one thread to
      * success do it when concurrent,others exit from method immediately and coming borrow requests rejected when
      * pool in closing state or in closed state.
      */
