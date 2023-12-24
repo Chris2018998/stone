@@ -21,28 +21,23 @@ import java.sql.SQLException;
  */
 public interface BeeConnectionPool {
 
-    //***************************************************************************************************************//
-    //                1: pool initialize method(1)                                                                   //                                                                                  //
-    //***************************************************************************************************************//
-
     /**
      * Pool initialize with a configuration object contains some sub items,but before apply them into pool and
-     * check them firstly,if failed then throws cause exception. After initialization,connections borrowed request
-     * can allow pass to pool
+     * check firstly,if failed then throws cause exception. After initialization,connections borrow request can
+     * allow pass to pool
      *
      * @param config pool configuration object
-     * @throws SQLException when configuration check failed or failure in initialization
+     * @throws SQLException when configuration check failed or pool initialize failed
      */
     void init(BeeDataSourceConfig config) throws SQLException;
 
-    //***************************************************************************************************************//
-    //                2: objects methods(2)                                                                          //                                                                                  //
-    //***************************************************************************************************************//
-
     /**
-     * borrows out an idle connection from pool,but if not get a idle connection,request thread waits in pool inner
-     * queue util a transferred one from other thread release or timeout.There exist using flags marked in borrowed
-     * connections,means that one connection only borrowed out by one thread at any time.
+     * method call to borrow an idle connection from pool,but if not exists idle,borrower thread blocking in pool with
+     * specified {@code maxWait} time in datasource configuration.When other borrowers release their used connections
+     * to pool,then wake up a waiter thread to get or transfer directly the released connection to a waiter via cas mode,
+     * and the target waiter hold success,then end waiting and leave from pool.if not get one util elapsed time reach
+     * {@code maxWait}value,waiters leave from pool with a timeout exception.Borrowed out connections can't be borrowed
+     * again,means that one connection just only hold by a thread at any time.
      *
      * @return a idle connection
      * @throws SQLException when wait timeout or interrupted while wait in pool
