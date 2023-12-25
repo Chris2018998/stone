@@ -203,7 +203,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //step8: create connections to pool by async
         if (config.getInitialSize() > 0 && config.isAsyncCreateInitConnection())
-            new PoolInitAsynCreateThread(this).start();
+            new PoolInitAsyncCreateThread(this).start();
 
         //step9: print pool info
         Log.info("BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,driver:{}}",
@@ -532,7 +532,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         } while (true);//while
     }
 
-    //Method-2.4: search one idle connection,if not found,then try to create one
+    //Method-2.4: search an idle connection,if not get,then try to create new one when capacity not reach max
     private PooledConnection searchOrCreate() throws SQLException {
         PooledConnection[] array = this.pooledArray;
         for (PooledConnection p : array) {
@@ -544,7 +544,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         return null;
     }
 
-    //Method-2.5: try to wakeup servant thread to work if it waiting
+    //Method-2.5: try to wake up the servant thread when it in waiting state
     private void tryWakeupServantThread() {
         int c;
         do {
@@ -556,10 +556,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-2.6: Connection return to pool after it end use,if exist waiter in pool,
-     * then try to transfer the connection to one waiting borrower
+     * Method-2.6: method call to return a connection to pool,if exists a waiter,then transfer the connection
      *
-     * @param p target connection need release
+     * @param p released connection
      */
     public final void recycle(PooledConnection p) {
         if (isCompeteMode) p.state = CON_IDLE;
@@ -579,10 +578,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-2.7: Connection create failed by creator,then transfer the failed cause exception to one waiting borrower,
-     * which will end wait and throw the exception.
+     * Method-2.7: transfer an exception to a queued waiter via cas
      *
-     * @param e: transfer Exception to waiter
+     * @param e transferred exception
      */
     private void transferException(Throwable e) {
         Iterator<Borrower> iterator = waitQueue.iterator();
@@ -596,9 +594,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-2.8: when exception occur on return,then remove it from pool
+     * Method-2.8: method called to remove a bad connection with reason when recycle
      *
-     * @param p target connection need release
+     * @param p bad connection
      */
     final void abandonOnReturn(PooledConnection p, String reason) {
         this.removePooledConn(p, reason);
@@ -606,7 +604,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-2.9: check one borrowed connection alive state,if not alive,then remove it from pool
+     * Method-2.9: method on active checking,if dead,then remove it and wake up servant thread to add new one
      *
      * @return boolean, true:alive
      */
@@ -631,7 +629,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //***************************************************************************************************************//
     //                       3: Pooled connection idle-timeout/hold-timeout scan methods(3)                          //                                                                                  //
     //***************************************************************************************************************//
-    //Method-3.1 shutdown two work threads in pool
+    //Method-3.1 shut down all working threads of pool
     private void shutdownPoolThread() {
         int curState = this.servantState.get();
         this.servantState.set(THREAD_EXIT);
@@ -666,8 +664,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     /**
-     * Method-3.3: inner timer will call the method to clear some idle timeout connections
-     * or dead connections,or long parkTime not active connections in using state
+     * Method-3.3: close idle-timeout connections via cas when full permits in semaphore
      */
     private void closeIdleTimeoutConnection() {
         //step1:print pool info before clean
@@ -963,7 +960,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.2:Semaphore extend
+    //class-6.2: sub class of Semaphore
     private static final class PoolSemaphore extends Semaphore {
         PoolSemaphore(int permits, boolean fair) {
             super(permits, fair);
@@ -979,11 +976,11 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.3: add new objects on pool initialized by asynchronization
-    private static final class PoolInitAsynCreateThread extends Thread {
+    //class-6.3: an thread to add initial connections to pool
+    private static final class PoolInitAsyncCreateThread extends Thread {
         private final FastConnectionPool pool;
 
-        PoolInitAsynCreateThread(FastConnectionPool pool) {
+        PoolInitAsyncCreateThread(FastConnectionPool pool) {
             this.pool = pool;
         }
 
@@ -1002,16 +999,15 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //class-6.4:Idle scan thread
     private static final class IdleTimeoutScanThread extends Thread {
         private final FastConnectionPool pool;
-        private final AtomicInteger idleScanState;
 
         IdleTimeoutScanThread(FastConnectionPool pool) {
             this.pool = pool;
-            idleScanState = pool.idleScanState;
         }
 
         public void run() {
+            final AtomicInteger idleScanState = pool.idleScanState;
             long checkTimeIntervalNanos = TimeUnit.MILLISECONDS.toNanos(this.pool.poolConfig.getTimerCheckInterval());
-            while (this.idleScanState.get() == THREAD_WORKING) {
+            while (idleScanState.get() == THREAD_WORKING) {
                 LockSupport.parkNanos(checkTimeIntervalNanos);
                 try {
                     if (pool.poolState == POOL_READY)
