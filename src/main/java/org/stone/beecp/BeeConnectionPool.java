@@ -26,7 +26,7 @@ public interface BeeConnectionPool {
      * check firstly,if failed then throws cause exception.After initialization,connections borrow request can
      * allow pass to pool
      *
-     * @param config pool configuration object
+     * @param config object contains sub items works as control parameters in pool
      * @throws SQLException when configuration check failed or pool initialize failed
      */
     void init(BeeDataSourceConfig config) throws SQLException;
