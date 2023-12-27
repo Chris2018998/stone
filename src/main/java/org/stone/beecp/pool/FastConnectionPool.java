@@ -111,8 +111,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     throw new PoolCreateFailedException("Configuration of pool initialization can't be null");
 
                 /**
-                 * poolConfig is local variable and used in multiple methods,in order to avoid old configuration confusion,
-                 * so read the local variable in pool method uniformly
+                 * poolConfig is local variable and used in multiple methods,in order to avoid old configuration confusion
+                 * when pool restarts up with a new config object,so read the local variable in pool method uniformly
                  */
                 this.poolConfig = poolConfig.check();
 
