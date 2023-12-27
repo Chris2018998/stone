@@ -14,7 +14,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Connection pool interface,whose implementation works inside BeeDataSource
+ * Connection pool interface,whose implementation works inside{@link BeeDataSource}
  *
  * @author Chris Liao
  * @version 1.0
@@ -22,9 +22,9 @@ import java.sql.SQLException;
 public interface BeeConnectionPool {
 
     /**
-     * Pool initialize with a configuration object contains some sub items,but before apply them into pool and
-     * check firstly,if failed then throws cause exception.After initialization,connections borrow request can
-     * allow pass to pool
+     * Method called in class {@link BeeDataSource}to initialize a inner pool instance with a configuration object,
+     * which contains some field-level configured items applied into this pool.After initialization,connections borrow
+     * request can be allowed pass to pool.
      *
      * @param config object contains sub items works as control parameters in pool
      * @throws SQLException when configuration check failed or pool initialize failed
