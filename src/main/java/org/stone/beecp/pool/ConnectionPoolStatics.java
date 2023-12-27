@@ -121,7 +121,7 @@ public class ConnectionPoolStatics {
         try {
             r.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing resultSet:", e);
+            CommonLog.debug("Warning:Error at closing resultSet", e);
         }
     }
 
@@ -129,7 +129,7 @@ public class ConnectionPoolStatics {
         try {
             s.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing statement:", e);
+            CommonLog.debug("Warning:Error at closing statement", e);
         }
     }
 
@@ -137,7 +137,7 @@ public class ConnectionPoolStatics {
         try {
             c.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing connection:", e);
+            CommonLog.debug("Warning:Error at closing connection", e);
         }
     }
 
@@ -145,7 +145,7 @@ public class ConnectionPoolStatics {
         try {
             c.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing connection:", e);
+            CommonLog.debug("Warning:Error at closing connection", e);
         }
     }
 
@@ -210,7 +210,7 @@ public class ConnectionPoolStatics {
                 st.setQueryTimeout(validTestTimeout);
             } catch (Throwable e) {
                 supportQueryTimeout = false;
-                CommonLog.warn("BeeCP({})driver not support 'queryTimeout',cause:", poolName, e);
+                CommonLog.warn("BeeCP({})driver not support 'queryTimeout'", poolName, e);
             }
 
             //step3: execute test sql
