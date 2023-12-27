@@ -71,11 +71,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool if this value greater than zero
     private long holdTimeout;
-    //a test sql to validate borrowed connections whether be active
+    //a test sql to validate borrowed connections whether be alive
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get validation result on testing connections
     private int validTestTimeout = 3;
-    //milliseconds:max gap time between last activity time and borrowed time point,if less this gap value,assume connections in active state,otherwise test them
+    //milliseconds:max gap time between last activity time and borrowed time point,if less this gap value,assume connections in alive state,otherwise test them
     private long validAssumeTime = 500L;
     //milliseconds:working interval time of a timer thread to scan idle-timeout connections and hold-timeout connections
     private long timerCheckInterval = MINUTES.toMillis(3);

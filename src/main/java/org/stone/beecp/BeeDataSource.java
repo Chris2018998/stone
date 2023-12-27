@@ -172,7 +172,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             try {
                 this.pool.close();
             } catch (Throwable e) {
-                CommonLog.error("Error at closing connection pool,cause:", e);
+                CommonLog.error("Error at closing connection pool", e);
             }
         }
     }
