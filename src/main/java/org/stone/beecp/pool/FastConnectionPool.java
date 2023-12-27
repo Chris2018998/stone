@@ -112,9 +112,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
                 /*
                  * poolConfig is an import local variable and used in multiple methods,in order to avoid old configuration confusion
-                 * when pool restarts up with a new config object,so read the local variable in pool method uniformly
+                 * when pool restarts up with a new config object,so read the local variable in pool methods uniformly
                  */
-                this.poolConfig = poolConfig.check();
+                this.poolConfig = config.check();
 
                 startup();//Go,go! launch the pool
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
@@ -733,15 +733,21 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
             try {
                 if (config != null) {
+                    Log.info("BeeCP({})begin to restart with new configuration", this.poolName);
                     this.poolConfig = config.check();
-                    startup();//need restore old when startup failed ? @todo let me think over
+
+                    /*
+                     * maybe pool re-initialized failed with error config,in order to let pool stable,
+                     * so still reset pool state to ready,but just do clear again with right configuration to fix it
+                     */
+                    startup();
                 }
             } catch (Throwable e) {
-                Log.info("BeeCP({})Failed to initialize", e);
+                Log.error("BeeCP({})Restarted failed", e);
                 throw e;
             } finally {
                 this.poolState = POOL_READY;//reset pool state to be ready once pool restart failed with the new config
-                Log.info("BeeCP({})reset to be ready state after clearing", this.poolName);
+                Log.info("BeeCP({})reset pool state to ready after clearing", this.poolName);
             }
         }
     }
