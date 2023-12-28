@@ -81,22 +81,22 @@ public interface BeeConnectionPool {
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Clears all pooled connections,a thread-safe control should be added around this method call.Coming requests rejected
+     * removes all pooled connections,a thread-safe control should be added around this method call.Coming requests rejected
      * when pool in closed state,after clearing,pool state will reset to be ready for requests.Logic of clearing is below
      * 1: Closes idle connections directly and remove them
      * 2: Closes using connections directly and remove them when the parameter {@code forceCloseUsing}is true
      * 2.1: Delay specified {@code delayTimeForNextClear} for next loop to check using connections whether already return to pool,if true close them
      *
-     * @param forceCloseUsing a indicator to close using connections
+     * @param forceCloseUsing is a indicator that direct close or delay close on using connections
      */
     void clear(boolean forceCloseUsing);
 
     /**
-     * Clears all pooled connections and apply a new configuration to pool when parameter config is not null
+     * removes all pooled connections and restarts pool with new configuration when the config parameter is not null
      *
-     * @param forceCloseUsing a indicator to close using connections
-     * @param config          which be applied to pool as new configuration when it is not null
-     * @throws SQLException when apply configuration failed
+     * @param forceCloseUsing is a indicator that direct close or delay close on using connections
+     * @param config          is new configuration for pool restarting
+     * @throws SQLException when checks failed on new configuration or re-initializes failed
      */
     void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
 
