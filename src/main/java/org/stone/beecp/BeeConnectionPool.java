@@ -85,7 +85,7 @@ public interface BeeConnectionPool {
     /**
      * Removes all pooled connections,this method should work under synchronization control,success caller update
      * pool state from {@code ConnectionPoolStatics.POOL_READY} to {@code ConnectionPoolStatics.POOL_CLEARING} and
-     * interrupts all blocked waiters to leave from pool.Before completion of clearing,the pool rejects borrowing
+     * interrupts all blocking waiters to leave from pool.Before completion of clearing,the pool rejects borrowing
      * requests.All idle connections closed immediately and removed,if parameter<h1>forceCloseUsing</h1>is true,
      * do same operation on all using connections like idle,but false,the caller thead waits using return to pool,
      * then close them.Finally,pool state reset to {@code ConnectionPoolStatics.POOL_READY} when done.
