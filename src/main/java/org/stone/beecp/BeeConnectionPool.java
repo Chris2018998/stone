@@ -69,34 +69,38 @@ public interface BeeConnectionPool {
     boolean isClosed();
 
     /**
-     * enable runtime log to be printed or not
+     * Changes on indicator of pool runtime log print
      *
-     * @param indicator true print,false not print
+     * @param indicator true,print;false,not print
      */
     void setPrintRuntimeLog(boolean indicator);
 
     /**
+     * Returns a view object contains pool monitor info,such as state,idle,using and so on.
+     *
      * @return monitor vo
      */
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * removes all pooled connections,a thread-safe control should be added around this method call.Coming requests rejected
-     * when pool in closed state,after clearing,pool state will reset to be ready for requests.Logic of clearing is below
-     * 1: Closes idle connections directly and remove them
-     * 2: Closes using connections directly and remove them when the parameter {@code forceCloseUsing}is true
-     * 2.1: Delay specified {@code delayTimeForNextClear} for next loop to check using connections whether already return to pool,if true close them
+     * Removes all pooled connections,this method should work under synchronization control,success caller update
+     * pool state from {@code ConnectionPoolStatics.POOL_READY} to {@code ConnectionPoolStatics.POOL_CLEARING} and
+     * interrupts all blocked waiters to leave from pool.Before completion of clearing,the pool rejects borrowing
+     * requests with exceptions.All idle connections closed immediately and removed,if parameter<h1>forceCloseUsing</h1>
+     * is true,do same operation on all using connections like idle,but false,the caller thead waits using return to pool,
+     * then close them.Finally,pool state reset to {@code ConnectionPoolStatics.POOL_READY} when done.
      *
      * @param forceCloseUsing is a indicator that direct close or delay close on using connections
      */
     void clear(boolean forceCloseUsing);
 
     /**
-     * removes all pooled connections and restarts pool with new configuration when the config parameter is not null
+     * Removes all pooled connections and restarts pool with new configuration when the config parameter is not null,
+     * the method is similar to the previous{@link #clear}.
      *
      * @param forceCloseUsing is a indicator that direct close or delay close on using connections
      * @param config          is new configuration for pool restarting
-     * @throws SQLException when checks failed on new configuration or re-initializes failed
+     * @throws SQLException when configuration checks failed or pool re-initializes failed
      */
     void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
 
