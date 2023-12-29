@@ -39,18 +39,17 @@ public interface BeeConnectionPool {
      * {@code maxWait}value,waiters leave from pool with a timeout sql-typed exception.Borrowed out connections can't be
      * borrowed again,means that a connection just only hold by a thread at any time.
      *
-     * @return a idle connection
-     * @throws SQLException when wait timeout or interrupted while wait in pool
+     * @return a borrowed connection
+     * @throws SQLException when get failed
      */
     Connection getConnection() throws SQLException;
 
     /**
      * Borrows a XA type connection which supports distributed transaction.The method feature depends XA standard
-     * interfaces whether implemented in JDBC Driver.The working process logic under this method is similar to method
-     * {@code getConnection},a resulted XA wrapper built on it by JDBC driver when a pooled connection borrowed.
+     * interfaces whether implemented in JDBC Driver.
      *
      * @return a borrowed XAConnection
-     * @throws SQLException when wait timeout or interrupted while wait in pool
+     * @throws SQLException when get failed 
      */
     XAConnection getXAConnection() throws SQLException;
 
