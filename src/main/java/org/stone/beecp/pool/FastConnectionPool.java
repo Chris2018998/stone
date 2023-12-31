@@ -154,7 +154,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //step3: creates initial connections by syn mode or async mode
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getMaxWait());//lock time or acquire time
+        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getMaxWait());//time out on acquiring for a semaphore or a lock
         if (poolConfig.getInitialSize() > 0 && !poolConfig.isAsyncCreateInitConnection())
             createInitConnections(poolConfig.getInitialSize(), true);
 
