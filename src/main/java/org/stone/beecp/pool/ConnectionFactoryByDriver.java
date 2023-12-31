@@ -27,7 +27,7 @@ public final class ConnectionFactoryByDriver implements RawConnectionFactory {
     private final String url;
     //creator of raw connections
     private final Driver driver;
-    //extra properties for creation of connections
+    //extra properties to link db
     private final Properties properties;
 
     //Constructor
@@ -37,7 +37,7 @@ public final class ConnectionFactoryByDriver implements RawConnectionFactory {
         this.properties = properties;
     }
 
-    //return a connection when link successful to db,otherwise,throws a failure exception
+    //return a connection if link successful to db,otherwise,throws a failure exception
     public final Connection create() throws SQLException {
         return this.driver.connect(this.url, this.properties);
     }
