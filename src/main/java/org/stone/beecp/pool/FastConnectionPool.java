@@ -211,7 +211,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (poolConfig.getInitialSize() > 0 && poolConfig.isAsyncCreateInitConnection())
             new PoolInitAsyncCreateThread(this).start();
 
-        //step9: print info after pool initialization completion
+        //step9: print info of pool initialization after completion
         Log.info("BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,driver:{}}",
                 poolName,
                 poolMode,
@@ -222,7 +222,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 poolConfig.getDriverClassName());
     }
 
-    //Method-1.3: create specified size connections at pool initialization,
+    //Method-1.3: creates initial connections with specified size
     private void createInitConnections(int initSize, boolean syn) throws SQLException {
         pooledArrayLock.lock();
         try {
@@ -231,7 +231,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         } catch (Throwable e) {
             for (PooledConnection p : this.pooledArray)
                 this.removePooledConn(p, DESC_RM_INIT);
-            if (syn) {//throw exception on syn mode
+            if (syn) {//throws failed exception on syn mode
                 if (e instanceof SQLException)
                     throw (SQLException) e;
                 else
@@ -244,9 +244,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-1.4: create one pooled connection under lock
+    //Method-1.4: creates one pooled connection under lock
     private PooledConnection createPooledConn(int state) throws SQLException {
-        //1:try to acquire lock
+        //1:try to acquire lock for creating one pooled connection
         try {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new ConnectionCreateException("Timeout at acquiring lock to create a pooled connection");
@@ -254,7 +254,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             throw new ConnectionCreateException("Interrupted at acquiring lock to create a pooled connection");
         }
 
-        //2:try to create a pooled connection
+        //2:creates one pooled connection if not reach max capacity,otherwise return null
         try {
             int l = this.pooledArray.length;
             if (l < this.poolMaxSize) {
