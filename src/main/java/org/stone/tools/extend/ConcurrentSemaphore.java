@@ -26,38 +26,43 @@ import static java.lang.Thread.yield;
 import static java.util.concurrent.locks.LockSupport.parkNanos;
 
 /**
- * Semaphore Implementation
- * <p>
- * The logic of queue is from BeeCP(https://github.com/Chris2018998/BeeCP)
+ * Semaphore Implementation by ConcurrentLinkedQueue,its key logic is from my jdbc pool,you can visit the website:
+ * https://github.com/Chris2018998/stone/beecp
  *
- * @author Chris.Liao
+ * @author Chris Liao
  */
 public class ConcurrentSemaphore {
-    //normal
+    //initial state after being offered to wait queue
     private static final int STS_NORMAL = 0;
-    //waiting
+    //blocking state when not get a permit
     private static final int STS_WAITING = 1;
-    //Acquired
+    //success state to get a permit
     private static final int STS_ACQUIRED = 2;
-    //allow to try acquire
+    //a chance to try getting a permit under unfair mode
     private static final int STS_TRY_ACQUIRE = 3;
-    //timeout or interrupted
+    //failed state while timeout or interrupted on waiting
     private static final int STS_FAILED = 4;
-    //park min nanoSecond,spin min time value
+    //minimum nano time in blocking,if less than it,then abandon blocking
     private static final long parkForTimeoutThreshold = 1000L;
-    //the number of times to spin before blocking in timed waits.
+    //max count for spin loop
     private static final int maxTimedSpins = Runtime.getRuntime().availableProcessors() < 2 ? 0 : 32;
-    //Thread Interrupted Exception
+    //a pre-prepared exception when interrupted from waiting
     private static final InterruptedException RequestInterruptException = new InterruptedException();
-    //state updater
+    //cas updater on an atomic integer
     private static final AtomicIntegerFieldUpdater<Borrower> updater = AtomicIntegerFieldUpdater
             .newUpdater(Borrower.class, "state");
 
     /**
-     * Synchronization implementation for semaphore.
+     * self-defined synchronization object,detailed info about it,see{@link Sync} class.
      */
     private Sync sync;
 
+    /**
+     * constructor
+     *
+     * @param size is max number of permits
+     * @param fair is a mode parameter on permit acquisition
+     */
     public ConcurrentSemaphore(int size, boolean fair) {
         sync = fair ? new FairSync(size) : new NonfairSync(size);
     }
@@ -114,15 +119,29 @@ public class ConcurrentSemaphore {
 
     //base Sync
     private static abstract class Sync {
-        protected int size;
-        protected AtomicInteger usingSize = new AtomicInteger(0);
-        protected ConcurrentLinkedQueue<Borrower> borrowerQueue = new ConcurrentLinkedQueue<Borrower>();
+        final ConcurrentLinkedQueue<Borrower> waitQueue;
+        private final AtomicInteger permitCount;
 
-        public Sync(int size) {
-            this.size = size;
+        private Sync(int size) {
+            this.permitCount = new AtomicInteger(size);
+            this.waitQueue = new ConcurrentLinkedQueue<Borrower>();
         }
 
-        protected static final boolean transferToWaiter(int newCode, Borrower borrower) {
+        public int availablePermits() {
+            return permitCount.get();
+        }
+
+        //the returned value is a estimation number
+        public int getQueueLength() {
+            return waitQueue.size();
+        }
+
+        public boolean hasQueuedThreads() {
+            return !waitQueue.isEmpty();
+        }
+
+        //try to wakeup a waiter by cas with a transferred int number
+        private boolean transferToWaiter(int newCode, Borrower borrower) {
             int state;
             do {
                 state = borrower.state;
@@ -132,38 +151,24 @@ public class ConcurrentSemaphore {
             return true;
         }
 
-        public boolean hasQueuedThreads() {
-            return !borrowerQueue.isEmpty();
-        }
-
-        public int getQueueLength() {
-            return borrowerQueue.size();
-        }
-
-        public int availablePermits() {
-            int availableSize = size - usingSize.get();
-            return (availableSize > 0) ? availableSize : 0;
-        }
-
-        protected boolean acquirePermit() {
+        protected boolean acquireOnePermit() {
             do {
-                int expect = usingSize.get();
-                int update = expect + 1;
-                if (update > size) return false;
-                if (usingSize.compareAndSet(expect, update)) return true;
+                int expect = permitCount.get();
+                if (expect == 0) return false;//no available permits
+                if (permitCount.compareAndSet(expect, expect - 1)) return true;
             } while (true);
         }
 
         public boolean tryAcquire(long timeout, TimeUnit unit) throws InterruptedException {
-            if (acquirePermit()) return true;
+            if (acquireOnePermit()) return true;
 
             boolean isFailed = false;
             boolean isInterrupted = false;
             final long deadline = nanoTime() + unit.toNanos(timeout);
             Borrower borrower = new Borrower();
             Thread thread = borrower.thread;
-            borrowerQueue.offer(borrower);
-            int spinSize = (borrowerQueue.peek() == borrower) ? maxTimedSpins : 0;
+            waitQueue.offer(borrower);
+            int spinSize = (waitQueue.peek() == borrower) ? maxTimedSpins : 0;
 
             do {
                 int state = borrower.state;
@@ -173,12 +178,12 @@ public class ConcurrentSemaphore {
                     }
                     case STS_TRY_ACQUIRE: {
                         if (acquirePermit()) {
-                            borrowerQueue.remove(borrower);
+                            waitQueue.remove(borrower);
                             return true;
                         }
                     }
                     case STS_FAILED: {
-                        borrowerQueue.remove(borrower);
+                        waitQueue.remove(borrower);
                         if (isInterrupted) throw RequestInterruptException;
                         return false;//timeout
                     }
@@ -186,7 +191,7 @@ public class ConcurrentSemaphore {
 
                 if (isFailed) {//failed
                     if (borrower.state == state && updater.compareAndSet(borrower, state, STS_FAILED)) {
-                        borrowerQueue.remove(borrower);
+                        waitQueue.remove(borrower);
                         if (isInterrupted) throw RequestInterruptException;
                         return false;//timeout
                     }
@@ -225,7 +230,7 @@ public class ConcurrentSemaphore {
 
         protected final boolean acquirePermit() {
             do {
-                if (!borrowerQueue.isEmpty()) return false;
+                if (!waitQueue.isEmpty()) return false;
 
                 int expect = usingSize.get();
                 int update = expect + 1;
@@ -236,7 +241,7 @@ public class ConcurrentSemaphore {
 
         public final void release() { //transfer permit
             Borrower borrower;
-            while ((borrower = borrowerQueue.poll()) != null)
+            while ((borrower = waitQueue.poll()) != null)
                 if (transferToWaiter(STS_ACQUIRED, borrower)) return;
             usingSize.decrementAndGet();//release permit
         }
@@ -249,7 +254,7 @@ public class ConcurrentSemaphore {
 
         public final void release() {//transfer permit
             usingSize.decrementAndGet();
-            for (Borrower borrower : borrowerQueue)
+            for (Borrower borrower : waitQueue)
                 if (transferToWaiter(STS_TRY_ACQUIRE, borrower)) return;
         }
     }

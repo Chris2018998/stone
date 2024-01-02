@@ -95,7 +95,7 @@ public final class ConcurrentTransferQueue<E> extends ConcurrentLinkedQueue<E> {
      * @return boolean ,true:successful to transfer or add into queue
      */
     public boolean offer(E e) {
-        return tryTransfer(e) ? true : elementQueue.offer(e);
+        return tryTransfer(e) || elementQueue.offer(e);
     }
 
     /**
