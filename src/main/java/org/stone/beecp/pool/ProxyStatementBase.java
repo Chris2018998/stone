@@ -15,6 +15,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+
 /**
  * ProxyStatementBase
  *
@@ -50,7 +52,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     void setOpenResultSet(ProxyResultSetBase r) {//call by ProxyResultSetBase.constructor
         switch (this.resultOpenCode) {
             case Statement.CLOSE_CURRENT_RESULT: {
-                if (this.curRe != null && !this.curRe.isClosed) ConnectionPoolStatics.oclose(this.curRe);
+                if (this.curRe != null && !this.curRe.isClosed) oclose(this.curRe);
                 break;
             }
             case Statement.KEEP_CURRENT_RESULT: {
@@ -62,10 +64,10 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
             }
             case Statement.CLOSE_ALL_RESULTS: {
                 if (this.curRe != null && !this.curRe.isClosed)
-                    ConnectionPoolStatics.oclose(this.curRe);
+                    oclose(this.curRe);
                 if (this.results != null) {
                     for (ProxyResultSetBase openRe : this.results)
-                        if (!openRe.isClosed) ConnectionPoolStatics.oclose(openRe);
+                        if (!openRe.isClosed) oclose(openRe);
                     this.results.clear();
                 }
                 break;
@@ -91,16 +93,16 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     public final void close() throws SQLException {
         if (this.isClosed) return;
         this.isClosed = true;
-        if (this.curRe != null) ConnectionPoolStatics.oclose(this.curRe);
+        if (this.curRe != null) oclose(this.curRe);
         if (this.results != null) {
             for (ProxyResultSetBase resultSetBase : this.results)
-                ConnectionPoolStatics.oclose(resultSetBase);
+                oclose(resultSetBase);
             this.results.clear();
         }
         try {
             this.raw.close();
         } finally {
-            this.raw = ConnectionPoolStatics.CLOSED_CSTM;//why? because Mysql's PreparedStatement just only remark as closed with useServerCache mode
+            this.raw = CLOSED_CSTM;//why? because Mysql's PreparedStatement just only remark as closed with useServerCache mode
             if (this.registered) this.owner.unregisterStatement(this);
         }
     }
@@ -123,7 +125,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
                 if (resultSetBase.containsRaw(re)) return resultSetBase;
             }
         }
-        return ConnectionPoolStatics.createProxyResultSet(re, this, this.p);
+        return createProxyResultSet(re, this, this.p);
     }
 
     public void setPoolable(boolean var1) {
