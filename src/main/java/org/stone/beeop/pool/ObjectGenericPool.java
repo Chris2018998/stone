@@ -149,7 +149,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         p.servantState = new AtomicInteger(THREAD_WAITING);
         p.servantTryCount = new AtomicInteger(0);
-        if (initSize > 0 && async) new PoolInitAsynCreateThread(initSize, p).start();
+        if (initSize > 0 && async) new PoolInitAsyncCreateThread(initSize, p).start();
         p.monitorVo = new ObjectPoolMonitorVo(poolHostIP, poolThreadId, poolThreadName, poolName, poolMode, poolMaxSize);
 
         p.poolState = POOL_READY;
@@ -679,11 +679,11 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         }
     }
 
-    private static final class PoolInitAsynCreateThread extends Thread {
+    private static final class PoolInitAsyncCreateThread extends Thread {
         private final int initialSize;
         private final ObjectGenericPool pool;
 
-        PoolInitAsynCreateThread(int initialSize, ObjectGenericPool pool) {
+        PoolInitAsyncCreateThread(int initialSize, ObjectGenericPool pool) {
             this.initialSize = initialSize;
             this.pool = pool;
         }
