@@ -77,7 +77,7 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
         }
 
         registerJMX();
-        CommonLog.info("BeeCP({})has been afterStartup{init size:{},max size:{},stone size:{},mode:{},max wait:{}ms},driver:{}}",
+        CommonLog.info("BeeCP({})has been startup{init size:{},max size:{}, size:{},mode:{},max wait:{}ms},driver:{}}",
                 poolName,
                 0,
                 0,
@@ -207,7 +207,7 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
         //do nothing
     }
 
-    public FastConnectionPoolMonitorVo getPoolMonitorVo() {
+    public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         int totSize = getTotalSize();
         int idleSize = getIdleSize();
         monitorVo.setPoolName(poolName);
