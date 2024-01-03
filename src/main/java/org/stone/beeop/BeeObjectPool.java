@@ -23,16 +23,16 @@ public interface BeeObjectPool {
     void init(BeeObjectSourceConfig config) throws Exception;
 
     //***************************************************************************************************************//
-    //                2: objects methods(2)                                                                          //                                                                                  //
+    //                2: Object borrows(2)                                                                           //                                                                                  //
     //***************************************************************************************************************//
-    //borrow a object from pool
+    //borrows a object from pool
     BeeObjectHandle getObjectHandle() throws Exception;
 
-    //borrow a object from pool
+    //borrows a object from pool with a category key
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     //***************************************************************************************************************//
-    //                3: key methods(7)                                                                              //                                                                                  //
+    //                3: Category key methods(7)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     Object[] keys();
 

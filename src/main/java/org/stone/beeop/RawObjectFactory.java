@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * Object factory interface
+ * Factory to create keyed object instance to pool
  *
  * @author Chris
  * @version 1.0
@@ -20,15 +20,15 @@ public interface RawObjectFactory {
     //create object instance
     Object create(Object key) throws Exception;
 
-    //set default values to raw object on initialization
+    //set default value to keyed object after object creation
     void setDefault(Object key, Object obj) throws Exception;
 
-    //reset some changed properties in raw object on returning
+    //reset some default value to dirty properties
     void reset(Object key, Object obj) throws Exception;
 
-    //test raw object valid
+    //alive test on a borrowed object
     boolean isValid(Object key, Object obj, int timeout);
 
-    //destroy raw object on removed from pool
+    //destroy a keyed object when object is bad or pool clearing
     void destroy(Object key, Object obj);
 }

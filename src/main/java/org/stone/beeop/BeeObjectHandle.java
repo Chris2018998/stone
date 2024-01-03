@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * object handle interface
+ * a interface represents handle of pooled object
  *
  * @author Chris Liao
  * @version 1.0
