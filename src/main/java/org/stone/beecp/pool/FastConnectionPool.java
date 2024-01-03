@@ -116,7 +116,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } catch (Throwable e) {
                 Log.info("BeeCP({})Initialized failed", e);
                 this.poolState = POOL_NEW;//reset state to new when failed
-                throw e;
+                throw e instanceof SQLException ? (SQLException) e : new PoolInitializedException(e);
             }
         } else {
             throw new PoolCreateFailedException("Pool has already been initialized or in initializing");
@@ -739,7 +739,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 }
             } catch (Throwable e) {
                 Log.error("BeeCP({})Restarted failed", e);
-                throw e;
+                throw e instanceof SQLException ? (SQLException) e : new PoolInitializedException(e);
             } finally {
                 this.poolState = POOL_READY;//reset pool state to be ready once pool restart failed with the new config
                 Log.info("BeeCP({})reset pool state to ready after clearing", this.poolName);
