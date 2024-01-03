@@ -10,7 +10,8 @@
 package org.stone.beecp;
 
 /**
- * A cipher text decoder on jdbc link info[jdbc url,jdbc username and jdbc password]
+ * A cipher text decoder on jdbc link info[jdbc url,jdbc username and jdbc password],
+ * and provides some methods to may be override in sub class
  *
  * @author Chris Liao
  * @version 1.0
