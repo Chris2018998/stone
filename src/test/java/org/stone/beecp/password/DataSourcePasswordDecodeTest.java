@@ -38,6 +38,7 @@ public class DataSourcePasswordDecodeTest extends TestCase {
         ConnectionFactoryByDriver rawConnFactory = (ConnectionFactoryByDriver) TestUtil.getFieldValue(pool, "rawConnFactory");
         Properties properties = (Properties) TestUtil.getFieldValue(rawConnFactory, "properties");
 
-        TestUtil.assertError("property expect value:%s,actual value:%s", DatabasePasswordDecoder.password(), properties.getProperty("password"));
+        if (!DatabasePasswordDecoder.password().equals(properties.getProperty("password")))
+            TestUtil.assertError("property expect value:%s,actual value:%s", DatabasePasswordDecoder.password(), properties.getProperty("password"));
     }
 }

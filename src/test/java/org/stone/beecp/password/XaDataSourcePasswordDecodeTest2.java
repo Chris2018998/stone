@@ -14,6 +14,7 @@ import org.stone.beecp.RawXaConnectionFactory;
 import org.stone.beecp.mock.MockXaDataSource;
 import org.stone.beecp.pool.FastConnectionPool;
 
+
 public class XaDataSourcePasswordDecodeTest2 extends TestCase {
     private final String url = "jdbc:mock:test";
     private final String user = "mock";
@@ -39,8 +40,11 @@ public class XaDataSourcePasswordDecodeTest2 extends TestCase {
         RawXaConnectionFactory rawXaConnFactory = (RawXaConnectionFactory) TestUtil.getFieldValue(pool, "rawXaConnFactory");
         MockXaDataSource xaDs = (MockXaDataSource) TestUtil.getFieldValue(rawXaConnFactory, "dataSource");
 
-        TestUtil.assertError("user expect value:%s,actual value:%s", user, xaDs.getUser());
-        TestUtil.assertError("url expect value:%s,actual value:%s", url, xaDs.getURL());
-        TestUtil.assertError("password expect value:%s,actual value:%s", DatabasePasswordDecoder.password(), xaDs.getPassword());
+        if (!user.equals(xaDs.getUser()))
+            TestUtil.assertError("user expect value:%s,actual value:%s", user, xaDs.getUser());
+        if (!url.equals(xaDs.getURL()))
+            TestUtil.assertError("url expect value:%s,actual value:%s", url, xaDs.getURL());
+        if (!DatabasePasswordDecoder.password().equals(xaDs.getPassword()))
+            TestUtil.assertError("password expect value:%s,actual value:%s", DatabasePasswordDecoder.password(), xaDs.getPassword());
     }
 }

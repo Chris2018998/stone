@@ -40,8 +40,11 @@ public class XaDataSourcePasswordDecodeTest1 extends TestCase {
         RawXaConnectionFactory rawXaConnFactory = (RawXaConnectionFactory) TestUtil.getFieldValue(pool, "rawXaConnFactory");
         MockXaDataSource xaDs = (MockXaDataSource) TestUtil.getFieldValue(rawXaConnFactory, "dataSource");
 
-        TestUtil.assertError("user expect value:%s,actual value:%s", user, xaDs.getUser());
-        TestUtil.assertError("url expect value:%s,actual value:%s", url, xaDs.getURL());
-        TestUtil.assertError("password expect value:%s,actual value:%s", DatabasePasswordDecoder.password(), xaDs.getPassword());
+        if (!user.equals(xaDs.getUser()))
+            TestUtil.assertError("user expect value:%s,actual value:%s", user, xaDs.getUser());
+        if (!url.equals(xaDs.getURL()))
+            TestUtil.assertError("url expect value:%s,actual value:%s", url, xaDs.getURL());
+        if (!DatabasePasswordDecoder.password().equals(xaDs.getPassword()))
+            TestUtil.assertError("password expect value:%s,actual value:%s", DatabasePasswordDecoder.password(), xaDs.getPassword());
     }
 }
