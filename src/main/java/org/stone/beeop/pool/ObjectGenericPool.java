@@ -509,7 +509,7 @@ final class ObjectGenericPool implements Runnable, Cloneable {
         PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(clearException);
 
-        while (this.pooledArray.length > 0) {
+        while (true) {
             PooledObject[] array = this.pooledArray;
             for (PooledObject p : array) {
                 final int state = p.state;
@@ -531,7 +531,9 @@ final class ObjectGenericPool implements Runnable, Cloneable {
                     this.removePooledEntry(p, removeReason);
                 }
             } // for
-            if (this.pooledArray.length > 0) LockSupport.parkNanos(this.delayTimeForNextClearNs);
+
+            if (this.pooledArray.length == 0) break;
+            LockSupport.parkNanos(this.delayTimeForNextClearNs);
         } // while
 
         if (this.printRuntimeLog) {
@@ -669,10 +671,10 @@ final class ObjectGenericPool implements Runnable, Cloneable {
 
         void interruptWaitingThreads() {
             for (Thread thread : getQueuedThreads()) {
-                Thread.State state = thread.getState();
-                if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
-                    thread.interrupt();
-                }
+                //Thread.State state = thread.getState();
+                //if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
+                thread.interrupt();//maybe this operation before parking in semaphore
+                //}
             }
         }
     }
