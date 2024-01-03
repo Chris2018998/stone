@@ -753,7 +753,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             try {
                 jdbcLinkInfoDecoderClass = Class.forName(this.jdbcLinkInfDecoderClassName);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create password decoder by class:" + this.jdbcLinkInfDecoderClassName, e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc link info decoder by class:" + this.jdbcLinkInfDecoderClassName, e);
             }
         }
 
