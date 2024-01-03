@@ -10,7 +10,6 @@
 package org.stone.beecp;
 
 import org.stone.beecp.pool.*;
-import org.stone.tools.CommonUtil;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
@@ -30,8 +29,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.tools.CommonUtil.isBlank;
-import static org.stone.tools.CommonUtil.trimString;
+import static org.stone.tools.CommonUtil.*;
 
 /**
  * Configuration of bee dataSource
@@ -62,9 +60,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //indicator to create initial connections by synchronization mode
     private boolean asyncCreateInitConnection;
     //max reachable size of pooled connections
-    private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
+    private int maxActive = Math.min(Math.max(10, NCPU), 50);
     //max permit size of pool semaphore
-    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
+    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
     //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
@@ -261,7 +259,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         if (maxActive > 0) {
             this.maxActive = maxActive;
             //fix issue:#19 Chris-2020-08-16 begin
-            this.borrowSemaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
+            this.borrowSemaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, NCPU) : 1;
             //fix issue:#19 Chris-2020-08-16 end
         }
     }
