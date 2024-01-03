@@ -10,7 +10,7 @@
 package org.stone.beecp;
 
 /**
- * configuration exception
+ * A runtime exception thrown when configuration check failed
  *
  * @author Chris Liao
  * @version 1.0

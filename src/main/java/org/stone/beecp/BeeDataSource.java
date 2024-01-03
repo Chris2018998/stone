@@ -31,6 +31,8 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.CommonLog;
 import static org.stone.beecp.pool.ConnectionPoolStatics.createClassInstance;
 
 /**
+ * A entrance object to operation on connection pool
+ * <p>
  * Email: Chris2018998@tom.com
  * Project: https://github.com/Chris2018998/stone
  *
