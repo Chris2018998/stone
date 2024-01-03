@@ -10,7 +10,6 @@
 package org.stone.beecp;
 
 import org.stone.beecp.jta.BeeJtaDataSource;
-import org.stone.beecp.pool.ConnectionPoolStatics;
 
 import javax.naming.Context;
 import javax.naming.Name;
@@ -25,6 +24,7 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Map;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.CommonUtil.isBlank;
 
 /**
@@ -43,10 +43,10 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         value = readConfig(ref, newPropertyName);
         if (value != null) return value;
 
-        value = readConfig(ref, ConnectionPoolStatics.propertyNameToFieldId(newPropertyName, ConnectionPoolStatics.Separator_MiddleLine));
+        value = readConfig(ref, propertyNameToFieldId(newPropertyName, Separator_MiddleLine));
         if (value != null) return value;
 
-        return readConfig(ref, ConnectionPoolStatics.propertyNameToFieldId(newPropertyName, ConnectionPoolStatics.Separator_UnderLine));
+        return readConfig(ref, propertyNameToFieldId(newPropertyName, Separator_UnderLine));
     }
 
     private static String readConfig(Reference ref, String propertyName) {
@@ -56,7 +56,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
             if (refObject == null) return null;
             String value = refObject.toString().trim();
             if (!isBlank(value)) {
-                ConnectionPoolStatics.CommonLog.info("beecp.{}={}", propertyName, value);
+                CommonLog.info("beecp.{}={}", propertyName, value);
                 return value;
             }
         }
@@ -81,7 +81,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         Reference ref = (Reference) obj;
         //1:try to lookup transactionManager if configured
         TransactionManager tm = null;
-        String tmJndiName = getConfigValue(ref, ConnectionPoolStatics.CONFIG_TM_JNDI);
+        String tmJndiName = getConfigValue(ref, CONFIG_TM_JNDI);
         if (!isBlank(tmJndiName) && nameCtx != null) {
             tm = (TransactionManager) nameCtx.lookup(tmJndiName);
         }
@@ -89,7 +89,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         //2:create config instance
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         //3:get all properties set methods
-        Map<String, Method> setMethodMap = ConnectionPoolStatics.getClassSetMethodMap(config.getClass());
+        Map<String, Method> setMethodMap = getClassSetMethodMap(config.getClass());
         //4:create properties to collect config value
         Map<String, Object> setValueMap = new HashMap<String, Object>(setMethodMap.size());
         //5:loop to find out properties config value by set methods
@@ -99,15 +99,15 @@ public final class BeeDataSourceFactory implements ObjectFactory {
             setValueMap.put(propertyName, configVal);
         }
         //6:inject found config value to ds config object
-        ConnectionPoolStatics.setPropertiesValue(config, setMethodMap, setValueMap);
+        setPropertiesValue(config, setMethodMap, setValueMap);
 
         //7:try to find 'connectProperties' config value and put to ds config object
-        config.addConnectProperty(getConfigValue(ref, ConnectionPoolStatics.CONFIG_CONNECT_PROP));
-        String connectPropertiesCount = getConfigValue(ref, ConnectionPoolStatics.CONFIG_CONNECT_PROP_SIZE);
+        config.addConnectProperty(getConfigValue(ref, CONFIG_CONNECT_PROP));
+        String connectPropertiesCount = getConfigValue(ref, CONFIG_CONNECT_PROP_SIZE);
         if (!isBlank(connectPropertiesCount)) {
             int count = Integer.parseInt(connectPropertiesCount.trim());
             for (int i = 1; i <= count; i++)
-                config.addConnectProperty(getConfigValue(ref, ConnectionPoolStatics.CONFIG_CONNECT_PROP_KEY_PREFIX + i));
+                config.addConnectProperty(getConfigValue(ref, CONFIG_CONNECT_PROP_KEY_PREFIX + i));
         }
 
         //8:create dataSource by config
