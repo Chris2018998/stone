@@ -66,21 +66,17 @@ public final class TaskExecutionPool implements TaskPool {
     //                                          1: execution initialization(2)                                       //
     //***************************************************************************************************************//
     public void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException {
-        //step1: execution config check+
         if (config == null) throw new PoolInitializedException("Pool configuration can't be null");
-        TaskServiceConfig checkedConfig = config.check();
-
-        //step2: update execution state to running via cas
-        if (!PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING))
+        if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
+            try {
+                startup(config.check());
+                this.poolState = POOL_RUNNING;//ready to accept coming task submission
+            } catch (Throwable e) {
+                this.poolState = POOL_NEW;//reset to initial state when failed to startup
+                throw e;
+            }
+        } else {
             throw new PoolInitializedException("Pool has been initialized");
-
-        //step3: startup execution with a configuration object
-        try {
-            startup(checkedConfig);
-            this.poolState = POOL_RUNNING;//ready to accept coming task submission
-        } catch (Throwable e) {
-            this.poolState = POOL_NEW;//reset to initial state when failed to startup
-            throw e;
         }
     }
 
@@ -96,7 +92,7 @@ public final class TaskExecutionPool implements TaskPool {
         //step2: create some queues(worker queue,task queue,termination wait queue)
         if (workerArray == null) {
             this.workerArrayLock = new ReentrantLock();
-            this.taskQueue = new ConcurrentLinkedQueue();
+            this.taskQueue = new ConcurrentLinkedQueue<>();
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
             //step3: atomic fields of execution monitor
