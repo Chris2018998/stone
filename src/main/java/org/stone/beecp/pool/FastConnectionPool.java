@@ -100,16 +100,15 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     /**
      * Method-1.1: pool initializes.
      *
-     * @param config is a pool initialization object contains some field-level items as parameters.
-     * @throws SQLException when configuration check failed or some initializes failed.
+     * @param config is a pool initialization object contains some field level items.
+     * @throws SQLException when check failed on configuration or a error occurs during initialization
      */
     public void init(BeeDataSourceConfig config) throws SQLException {
+        if (config == null) throw new PoolCreateFailedException("Configuration of pool initialization can't be null");
+        checkJdbcProxyClass();
+
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {//initializes after pool state cas success from new to starting
             try {
-                checkJdbcProxyClass();
-                if (config == null)
-                    throw new PoolCreateFailedException("Configuration of pool initialization can't be null");
-
                 this.poolConfig = config.check();
                 startup();//Go,go! launch the pool
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
@@ -148,8 +147,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             this.pooledArray = new PooledConnection[0];
         }
 
-        //step3: creates initial connections by syn mode or async mode
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getMaxWait());//time out on acquiring for a semaphore or a lock
+        //step3: creates initial connections by syn mode
+        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getMaxWait());//timeout for acquiring on a semaphore or a lock
         if (poolConfig.getInitialSize() > 0 && !poolConfig.isAsyncCreateInitConnection())
             createInitConnections(poolConfig.getInitialSize(), true);
 
@@ -226,13 +225,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         } catch (Throwable e) {
             for (PooledConnection p : this.pooledArray)
                 this.removePooledConn(p, DESC_RM_INIT);
-            if (syn) {//throws failed exception on syn mode
+            if (syn) {//throws failure exception on syn mode
                 if (e instanceof SQLException)
                     throw (SQLException) e;
                 else
                     throw new PoolInitializedException(e);
             } else {
-                Log.warn("Failed to create initial connections" + e);
+                Log.warn("Failed to create initial connections", e);
             }
         } finally {
             pooledArrayLock.unlock();
@@ -270,7 +269,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
                     if (this.templatePooledConnNotCreated) {
                         templatePooledConn = this.createTemplatePooledConn(rawConn);
-                        templatePooledConnNotCreated = false;//template pooled connection remark as created
+                        templatePooledConnNotCreated = false;//template pooled connection is ready
                     }
 
                     PooledConnection p = this.templatePooledConn.setDefaultAndCopy(rawConn, state, rawXaRes);
@@ -278,7 +277,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                         Log.info("BeeCP({}))Created a new pooled connection:{} with state:{}", this.poolName, p, state);
                     PooledConnection[] arrayNew = new PooledConnection[l + 1];
                     System.arraycopy(this.pooledArray, 0, arrayNew, 0, l);
-                    arrayNew[l] = p;// tail
+                    arrayNew[l] = p;//tail
                     this.pooledArray = arrayNew;
                     return p;
                 } catch (Throwable e) {
@@ -293,10 +292,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-1.5: remove one pooled connection under lock
+    //Method-1.5: remove a pooled connection under lock
     private void removePooledConn(PooledConnection p, String removeType) {
         if (this.printRuntimeLog)
-            Log.info("BeeCP({}))Begin to remove a pooled connection:{} for reason:{}", this.poolName, p, removeType);
+            Log.info("BeeCP({}))Begin to remove a pooled connection:{} by reason:{}", this.poolName, p, removeType);
         p.onBeforeRemove();
 
         this.pooledArrayLock.lock();
