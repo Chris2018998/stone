@@ -105,10 +105,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
      */
     public void init(BeeDataSourceConfig config) throws SQLException {
         if (config == null) throw new PoolCreateFailedException("Configuration of pool initialization can't be null");
-        checkJdbcProxyClass();
-
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {//initializes after pool state cas success from new to starting
             try {
+                checkJdbcProxyClass();
                 this.poolConfig = config.check();
                 startup();//Go,go! launch the pool
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)

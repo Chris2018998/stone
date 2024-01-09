@@ -63,7 +63,7 @@ public class ConnectionPoolStatics {
     static final int PS_CATALOG = 3;
     static final int PS_SCHEMA = 4;
     static final int PS_NETWORK = 5;
-    //remove reason
+    //
     static final String DESC_RM_INIT = "init";
     static final String DESC_RM_BAD = "bad";
     static final String DESC_RM_ABORT = "abort";
@@ -182,8 +182,9 @@ public class ConnectionPoolStatics {
                 "org.stone.beecp.pool.ProxyDatabaseMetaData",
                 "org.stone.beecp.pool.ProxyResultSet"};
         try {
+            ClassLoader loader = ConnectionPoolStatics.class.getClassLoader();
             for (String className : classNames)
-                Class.forName(className);
+                Class.forName(className, true, loader);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Jdbc proxy classes missed", e);
         }
