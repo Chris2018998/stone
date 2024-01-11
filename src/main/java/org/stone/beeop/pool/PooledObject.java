@@ -36,7 +36,7 @@ final class PooledObject implements Cloneable {
     volatile int state;
     ObjectBaseHandle handleInUsing;
     volatile long lastAccessTime;
-    private ObjectGenericPool ownerPool;
+    private ObjectInstancePool ownerPool;
 
     //***************************************************************************************************************//
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
@@ -49,7 +49,7 @@ final class PooledObject implements Cloneable {
         this.methodCache = methodCache;
     }
 
-    PooledObject setDefaultAndCopy(Object k, Object raw, int state, ObjectGenericPool pool) throws Exception {
+    PooledObject setDefaultAndCopy(Object k, Object raw, int state, ObjectInstancePool pool) throws Exception {
         this.factory.setDefault(k, raw);
         PooledObject p = (PooledObject) this.clone();
 

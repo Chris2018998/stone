@@ -17,7 +17,6 @@ package org.stone.beeop;
  */
 public interface BeeKeyedObjectPool {
 
-
     //***************************************************************************************************************//
     //                                             1:Pool initialization                                             //
     //***************************************************************************************************************//
@@ -87,13 +86,13 @@ public interface BeeKeyedObjectPool {
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
 
     //***************************************************************************************************************//
-    //                                             3: others of pool                                                 //
+    //                                             3: other methods of pool                                          //
     //***************************************************************************************************************//
     void close();
 
     boolean isClosed();
 
-    void setPrintRuntimeLog(boolean indicator);
+    void setPrintRuntimeLog(boolean enable);
 
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
