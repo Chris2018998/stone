@@ -136,10 +136,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //method-1.2: creation from clone and init(this method called by clone object in keyed pool)
-    ObjectInstancePool createByClone(Object key, String parentName, int initSize, boolean async) throws Exception {
+    ObjectInstancePool createByClone(Object key, String ownerName, int initSize, boolean async) throws Exception {
         final ObjectInstancePool p = (ObjectInstancePool) clone();
         p.key = key;
-        p.poolName = parentName + "-[" + key + "]";
+        p.poolName = ownerName + "-[" + key + "]";
         p.pooledArray = new PooledObject[0];
         p.pooledArrayLock = new ReentrantLock();
         if (initSize > 0 && !async) p.createInitObjects(poolInitSize, true);
@@ -194,9 +194,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //1:try to acquire lock
         try {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectCreateException("Pooled object create timeout at lock");
+                throw new ObjectCreateException("Timeout at acquiring lock to create a pooled object");
         } catch (InterruptedException e) {
-            throw new ObjectCreateException("Pooled object create interrupted at lock");
+            throw new ObjectCreateException("Interrupted at acquiring lock to create a pooled object");
         }
 
         //2:try to create a pooled object
@@ -204,17 +204,17 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             int l = this.pooledArray.length;
             if (l < this.poolMaxSize) {
                 if (this.printRuntimeLog)
-                    Log.info("BeeOP({}))begin to create a new pooled object,state:{}", this.poolName, state);
+                    Log.info("BeeOP({}))begin to create a new pooled object with state:{}", this.poolName, state);
 
                 Object rawObj = null;
                 try {
                     rawObj = this.objectFactory.create(this.key);
                     PooledObject p = this.templatePooledObject.setDefaultAndCopy(key, rawObj, state, this);
                     if (this.printRuntimeLog)
-                        Log.info("BeeOP({}))has created a new pooled object:{},state:{}", this.poolName, p, state);
+                        Log.info("BeeOP({}))has created a new pooled object:{} with state:{}", this.poolName, p, state);
                     PooledObject[] arrayNew = new PooledObject[l + 1];
                     System.arraycopy(this.pooledArray, 0, arrayNew, 0, l);
-                    arrayNew[l] = p;// tail
+                    arrayNew[l] = p;//tail
                     this.pooledArray = arrayNew;
                     return p;
                 } catch (Throwable e) {
@@ -266,7 +266,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
      */
     public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Access forbidden,generic object pool was closed or in clearing");
+            throw new ObjectGetForbiddenException("Access rejected,cause:pool was closed or in clearing");
 
         //0:try to get from threadLocal cache
         ObjectBorrower b = this.threadLocal.get().get();
@@ -285,9 +285,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         try {
             //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectGetTimeoutException("Object get timeout at semaphore");
+                throw new ObjectGetTimeoutException("Timeout at acquiring semaphore to get a idle object");
         } catch (InterruptedException e) {
-            throw new ObjectGetInterruptedException("Object get request interrupted at semaphore");
+            throw new ObjectGetInterruptedException("Interrupted at acquiring semaphore to get a idle object");
         }
 
         //2:try search one or create one
@@ -337,9 +337,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
                     LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
                     if (Thread.interrupted())
-                        cause = new ObjectGetInterruptedException("Object get request interrupted in wait queue");
+                        cause = new ObjectGetInterruptedException("Interrupted while waiting in queue");
                 } else if (t <= 0L) {//timeout
-                    cause = new ObjectGetTimeoutException("Object get timeout in wait queue");
+                    cause = new ObjectGetTimeoutException("Timeout in wait queue");
                 }
             }//end (state == BOWER_NORMAL)
         } while (true);//while

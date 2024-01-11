@@ -137,8 +137,9 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         synchronized (objectInstancePoolMap) {
             pool = objectInstancePoolMap.get(key);
             if (pool == null) {
-                if (objectInstancePoolMap.size() >= maxObjectKeySize)
+                if (key != defaultObjectKey && objectInstancePoolMap.size() >= maxObjectKeySize)
                     throw new ObjectGetException("Key pool size reach max size:" + maxObjectKeySize);
+
                 pool = templateGenericPool.createByClone(key, poolName, 0, true);
                 objectInstancePoolMap.put(key, pool);
             }
