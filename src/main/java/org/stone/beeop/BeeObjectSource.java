@@ -33,7 +33,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8);//default vale equals same item in config
-    private BeeObjectPool pool;
+    private BeeKeyedObjectPool pool;
     private boolean ready;
     private Exception cause;
 
@@ -57,7 +57,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
 
     private static void createPool(BeeObjectSource os) throws Exception {
         Class<?> poolClass = Class.forName(os.getPoolImplementClassName());
-        BeeObjectPool pool = (BeeObjectPool) ObjectPoolStatics.createClassInstance(poolClass, BeeObjectPool.class, "pool");
+        BeeKeyedObjectPool pool = (BeeKeyedObjectPool) ObjectPoolStatics.createClassInstance(poolClass, BeeKeyedObjectPool.class, "pool");
 
         pool.init(os);
         os.pool = pool;
@@ -77,7 +77,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
         return createPoolByLock().getObjectHandle(key);
     }
 
-    private BeeObjectPool createPoolByLock() throws Exception {
+    private BeeKeyedObjectPool createPoolByLock() throws Exception {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
