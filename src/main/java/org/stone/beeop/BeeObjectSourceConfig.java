@@ -113,17 +113,17 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     public BeeObjectSourceConfig() {
     }
 
-    //read configuration from properties file
+    //load configuration from properties file
     public BeeObjectSourceConfig(File propertiesFile) {
         loadFromPropertiesFile(propertiesFile);
     }
 
-    //read configuration from properties file
+    //load configuration from properties file
     public BeeObjectSourceConfig(String propertiesFileName) {
         loadFromPropertiesFile(propertiesFileName);
     }
 
-    //read configuration from properties
+    //load configuration from properties
     public BeeObjectSourceConfig(Properties configProperties) {
         loadFromProperties(configProperties);
     }
@@ -522,6 +522,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
         //3:try to create object factory
         RawObjectFactory objectFactory = this.tryCreateObjectFactory();
+        if (objectFactory.getDefaultKey() == null)
+            throw new BeeObjectSourceConfigException("Default key can't be null");
+        if (this.initialSize > 0 && objectFactory.getInitialKey() == null)
+            throw new BeeObjectSourceConfigException("Initial key can't be null");
         BeeObjectPoolThreadFactory threadFactory = this.createThreadFactory();
 
         //4:copy field value to new config from current config
