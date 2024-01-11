@@ -36,22 +36,20 @@ import static org.stone.tools.CommonUtil.trimString;
  * @version 1.0
  */
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
-    //index on generating default pool name,atomic value starts with 1
+    //index for generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //properties map and entry value injected to object factory after
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
 
-    //if this value is null or empty, a default pool name will be set
+    //if this value is null or empty,a generated pool name set to this field
     private String poolName;
-    //fair boolean indicator applied at pool semaphore
+    //fair boolean indicator applied in pool semaphore
     private boolean fairMode;
-    //creation size of objects on pool starting up
+    //creation size of initial objects
     private int initialSize;
-    //type key of sub pool
-    private Object initialObjectKey;
     //indicator to create initial objects by synchronization mode
     private boolean asyncCreateInitObject;
-    //max size of sub pools(pool capacity size = maxObjectKeySize * maxActive)
+    //max size of sub pools(pool capacity size = maxObjectKeySize * maxActive +1)
     private int maxObjectKeySize = 50;
     //max reachable size of pooled objects in sub pools
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
@@ -155,14 +153,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize >= 0) this.initialSize = initialSize;
-    }
-
-    public Object getInitialObjectKey() {
-        return initialObjectKey;
-    }
-
-    public void setInitialObjectKey(Object initialObjectKey) {
-        this.initialObjectKey = initialObjectKey;
     }
 
     public boolean isAsyncCreateInitObject() {
