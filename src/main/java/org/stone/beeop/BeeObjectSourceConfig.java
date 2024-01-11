@@ -30,7 +30,7 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
 /**
- * Configuration of bee object pool
+ * Configuration of bee object source
  *
  * @author Chris Liao
  * @version 1.0
@@ -38,7 +38,7 @@ import static org.stone.tools.CommonUtil.trimString;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //index for generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //properties map and entry value injected to object factory after
+    //properties map store entry value injected to object factory
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
 
     //if this value is null or empty,a generated pool name set to this field
@@ -47,9 +47,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private boolean fairMode;
     //creation size of initial objects
     private int initialSize;
-    //indicator to create initial objects by synchronization mode
+    //async indicator to create initial objects
     private boolean asyncCreateInitObject;
-    //max size of sub pools(pool capacity size = maxObjectKeySize * maxActive +1)
+    //max size of sub pools(pool capacity size = (maxObjectKeySize+1) * maxActive)
     private int maxObjectKeySize = 50;
     //max reachable size of pooled objects in sub pools
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
