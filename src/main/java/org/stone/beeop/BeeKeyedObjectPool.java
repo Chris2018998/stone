@@ -43,7 +43,14 @@ public interface BeeKeyedObjectPool {
     Object[] keys();
 
     /**
-     * borrows a keyed object and returns a resulted handle
+     * returns default category keys
+     *
+     * @return pooled keys exists in pool
+     */
+    Object getDefaultKey();
+
+    /**
+     * borrows a default keyed object and returns a resulted handle
      *
      * @return handle of a pooled object
      * @throws Exception when get failed
@@ -74,11 +81,6 @@ public interface BeeKeyedObjectPool {
      * @throws Exception when delete failed
      */
     void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
-
-//
-//    void clear(Object key) throws Exception;
-//
-//    void clear(Object key, boolean forceCloseUsing) throws Exception;
 
     BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception;
 

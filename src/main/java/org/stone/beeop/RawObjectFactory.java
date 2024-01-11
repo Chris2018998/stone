@@ -17,6 +17,12 @@ package org.stone.beeop;
  */
 public interface RawObjectFactory {
 
+    //get initial key(not be null when initialSize is greater than zero)
+    Object getInitialKey();
+
+    //get default key(Must not be null)
+    Object getDefaultKey();
+
     //create object instance
     Object create(Object key) throws Exception;
 
