@@ -9,7 +9,7 @@ package org.stone.beeop.pool;
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectPool;
+import org.stone.beeop.BeeKeyedObjectPool;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.object.JavaBookFactory;
@@ -40,11 +40,10 @@ public class ObjectPoolKeyedTest extends TestCase {
         handle2 = obs.getObjectHandle(testKey);
         if (!testKey.equals(handle2.getObjectKey())) TestUtil.assertError("Object key test failed");
 
-        BeeObjectPool pool = (BeeObjectPool) TestUtil.getFieldValue(obs, "pool");
+        BeeKeyedObjectPool pool = (BeeKeyedObjectPool) TestUtil.getFieldValue(obs, "pool");
         Object[] keys = pool.keys();
         System.out.println("size: " + keys.length);
         if (keys.length != 2) TestUtil.assertError("Object key test failed");
-        if (keys[0] != null) TestUtil.assertError("Object key test failed");
         if (!keys[1].equals(testKey)) TestUtil.assertError("Object key test failed");
 
         if (handle1 != null) handle1.close();

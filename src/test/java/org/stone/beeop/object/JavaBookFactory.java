@@ -14,6 +14,16 @@ import org.stone.beeop.RawObjectFactory;
  * @author chris.liao
  */
 public class JavaBookFactory implements RawObjectFactory {
+
+    public Object getInitialKey(){
+        return new Object();
+    }
+
+
+    public Object getDefaultKey(){
+        return new Object();
+    }
+
     public Object create(Object key) throws Exception {
         return new JavaBook("Java核心技术·卷1", System.currentTimeMillis());
     }

@@ -35,7 +35,7 @@ public class ObjectHandleTest extends TestCase {
         try {
             handle = obs.getObjectHandle();
             if (handle == null) TestUtil.assertError("Failed to get object");
-            if (handle.getObjectKey() != null) TestUtil.assertError("object key is not null");
+            if (handle.getObjectKey() == null) TestUtil.assertError("object key is not null");
         } finally {
             if (handle != null)
                 handle.close();

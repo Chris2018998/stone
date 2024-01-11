@@ -56,12 +56,19 @@ public class PoolRestartWithConfigTest extends TestCase {
     }
 
     class StringFactory implements RawObjectFactory {
+        public Object getInitialKey(){
+            return new Object();
+        }
+        public Object getDefaultKey(){
+            return new Object();
+        }
+
         public Object create(Object key) throws Exception {
             return "Java核心技术·卷1";
         }
 
         public void setDefault(Object key, Object obj) throws Exception {
-            //do nothingr
+            //do nothing
         }
 
         public void reset(Object key, Object obj) throws Exception {
