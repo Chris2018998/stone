@@ -36,8 +36,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.tools.CommonUtil.isBlank;
-import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
+import static org.stone.tools.CommonUtil.*;
 
 /**
  * JDBC Connection Pool Implementation
@@ -747,10 +746,19 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-4.3: remove all connections from pool
     private void removeAllConnections(boolean force, String source) {
+        //1:interrupt waiters on semaphore
         this.semaphore.interruptWaitingThreads();
         PoolInClearingException exception = new PoolInClearingException("Access rejected,pool in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(exception);
 
+        //2:interrupt waiters on lock(maybe stuck on socket)
+        try {
+            interruptWaitersOnLock(this.pooledArrayLock);
+        } catch (Throwable e) {
+            Log.info("BeeCP({})Failed to interrupt threads on lock", e);
+        }
+
+        //3:clear all connections
         while (true) {
             PooledConnection[] array = this.pooledArray;
             for (PooledConnection p : array) {
@@ -783,12 +791,12 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-4.4: closed check
+    //Method-4.5: closed check
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
     }
 
-    //Method-4.5: shut down the pool and set its state to closed
+    //Method-4.6: shut down the pool and set its state to closed
     public void close() {
         do {
             int poolStateCode = this.poolState;
