@@ -9,6 +9,12 @@
  */
 package org.stone.tools;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.concurrent.locks.AbstractQueuedSynchronizer;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * common util
  *
@@ -47,4 +53,28 @@ public class CommonUtil {
         return probe;
     }
 
+    public static void interruptWaitersOnLock(ReentrantLock lock) throws Exception {
+        //1: get syn field value from lock
+        Field syncField = lock.getClass().getDeclaredField("sync");
+        syncField.setAccessible(true);
+        Object sync = syncField.get(lock);
+
+        //2: get reflection methods about lock threads
+        Class synClass = AbstractQueuedSynchronizer.class;
+        Method ownerThreadsMethod = synClass.getDeclaredMethod("getExclusiveOwnerThread");
+        Method waitingThreadsMethod = synClass.getDeclaredMethod("getExclusiveQueuedThreads");
+        ownerThreadsMethod.setAccessible(true);
+        waitingThreadsMethod.setAccessible(true);
+
+        //3:interrupt threads on pool lock
+        Object[] parameters = new Object[0];
+        Thread ownerThread = (Thread) ownerThreadsMethod.invoke(sync, parameters);
+        if (ownerThread != null) ownerThread.interrupt();//owner thread maybe stuck on socket
+        Collection<Thread> waitingThreads = (Collection<Thread>) waitingThreadsMethod.invoke(sync, parameters);//waiting for lock
+        if (waitingThreads != null) {
+            for (Thread thread : waitingThreads) {
+                thread.interrupt();
+            }
+        }
+    }
 }
