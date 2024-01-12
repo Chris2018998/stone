@@ -48,15 +48,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private static final Logger Log = LoggerFactory.getLogger(ObjectInstancePool.class);
 
     //clone begin
-    private final String poolHostIP;
-    private final long poolThreadId;
-    private final String poolThreadName;
+    private final int maxActiveSize;
     private final String poolMode;
-    private final int poolInitSize;
-    private final int poolMaxSize;
     private final boolean isFairMode;
     private final boolean isCompeteMode;
     private final int semaphoreSize;
+    private final long maxWaitMs;//milliseconds
     private final long maxWaitNs;//nanoseconds
     private final long idleTimeoutMs;//milliseconds
     private final long holdTimeoutMs;//milliseconds
@@ -69,13 +66,16 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final PooledObject templatePooledObject;
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;
-    private final KeyedObjectPool parentPool;
+    private final KeyedObjectPool ownerPool;
+    private final String poolHostIP;
+    private final long poolThreadId;
+    private final String poolThreadName;
     private boolean printRuntimeLog;
     //clone end
 
-    //set in clone method
+    //set by clone method
     private Object key;
-    private String poolName;//parent's poolName + [key.toString()]
+    private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
     private PoolSemaphore semaphore;
     private AtomicInteger servantState;
@@ -90,15 +90,16 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //                1: Pool Creation/clone(2)                                                                      //
     //***************************************************************************************************************//
     //method-1.1: constructor for clone
-    ObjectInstancePool(BeeObjectSourceConfig config, KeyedObjectPool owner) {
-        //step1: primitive type field setting
-        this.poolInitSize = config.getInitialSize();
-        this.poolMaxSize = config.getMaxActive();
+    ObjectInstancePool(BeeObjectSourceConfig config, KeyedObjectPool ownerPool) {
+        //step1: copy  primitive type field
+        this.ownerPool = ownerPool;
+        this.maxActiveSize = config.getMaxActive();
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
         this.poolMode = isFairMode ? "fair" : "compete";
         this.semaphoreSize = config.getBorrowSemaphoreSize();
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(config.getMaxWait());//nanoseconds
+        this.maxWaitMs = config.getMaxWait();
+        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
         this.idleTimeoutMs = config.getIdleTimeout();//milliseconds
         this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
         this.supportHoldTimeout = holdTimeoutMs > 0L;
@@ -109,7 +110,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.poolState = POOL_NEW;
 
         //step2:object type field setting
-        this.parentPool = owner;
         this.objectFactory = config.getObjectFactory();
         Class[] objectInterfaces = config.getObjectInterfaces();
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
@@ -137,30 +137,30 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //method-1.2: creation from clone and init(this method called by clone object in keyed pool)
-    ObjectInstancePool createByClone(Object key, String ownerName, int initSize, boolean async) throws Exception {
+    ObjectInstancePool createByClone(String ownerName, Object key, int initSize, boolean async) throws Exception {
         final ObjectInstancePool p = (ObjectInstancePool) clone();
         p.key = key;
         p.poolName = ownerName + "-[" + key + "]";
         p.pooledArray = new PooledObject[0];
         p.pooledArrayLock = new ReentrantLock();
-        if (initSize > 0 && !async) p.createInitObjects(poolInitSize, true);
+        if (initSize > 0 && !async) p.createInitObjects(initSize, true);
 
         p.threadLocal = new BorrowerThreadLocal();
-        p.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
+        p.semaphore = new PoolSemaphore(semaphoreSize, isFairMode);
         p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         p.servantState = new AtomicInteger(THREAD_WAITING);
         p.servantTryCount = new AtomicInteger(0);
         if (initSize > 0 && async) new PoolInitAsyncCreateThread(initSize, p).start();
-        p.monitorVo = new ObjectPoolMonitorVo(poolHostIP, poolThreadId, poolThreadName, poolName, poolMode, poolMaxSize);
+        p.monitorVo = new ObjectPoolMonitorVo(p.poolName, poolHostIP, poolThreadId, poolThreadName, poolMode, maxActiveSize);
 
         p.poolState = POOL_READY;
-        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ns",
+        Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
                 p.poolName,
-                poolMode,
+                p.poolMode,
                 p.pooledArray.length,
-                p.poolMaxSize,
+                p.maxActiveSize,
                 p.semaphoreSize,
-                p.maxWaitNs);
+                p.maxWaitMs);
         return p;
     }
 
@@ -183,7 +183,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 else
                     throw new PoolInitializedException(e);
             } else {
-                Log.warn("Failed to create objects on pool initialization,cause:" + e);
+                Log.warn("BeeOP({})failed to create initialization objects", poolName, e);
             }
         } finally {
             pooledArrayLock.unlock();
@@ -203,7 +203,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //2:try to create a pooled object
         try {
             int l = this.pooledArray.length;
-            if (l < this.poolMaxSize) {
+            if (l < this.maxActiveSize) {
                 if (this.printRuntimeLog)
                     Log.info("BeeOP({}))begin to create a new pooled object with state:{}", this.poolName, state);
 
@@ -333,7 +333,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 long t = deadline - System.nanoTime();
                 if (t > spinForTimeoutThreshold) {
                     if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-                        parentPool.submitServantTask(this);
+                        ownerPool.submitServantTask(this);
                     }
 
                     LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
@@ -353,7 +353,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             if (p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING) && this.testOnBorrow(p))
                 return p;
         }
-        if (this.pooledArray.length < this.poolMaxSize)
+        if (this.pooledArray.length < this.maxActiveSize)
             return this.createPooledEntry(OBJECT_USING);
         return null;
     }
@@ -419,10 +419,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         int c;
         do {
             c = this.servantTryCount.get();
-            if (c >= this.poolMaxSize) return;
+            if (c >= this.maxActiveSize) return;
         } while (!this.servantTryCount.compareAndSet(c, c + 1));
         if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-            parentPool.submitServantTask(this);
+            ownerPool.submitServantTask(this);
         }
     }
 
@@ -440,7 +440,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 this.transferException(e);
             }
         }
-        servantState.compareAndSet(THREAD_WORKING, THREAD_WAITING);
+        servantState.set(THREAD_WAITING);
     }
 
     //***************************************************************************************************************//
@@ -515,7 +515,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         try {
             interruptWaitersOnLock(this.pooledArrayLock);
         } catch (Throwable e) {
-            Log.info("BeeOP({})Failed to interrupt threads on lock", e);
+            Log.info("BeeOP({})failed to interrupt threads on lock", e);
         }
 
         //3:clear all connections
@@ -572,7 +572,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             } else if (poolStateCode == POOL_CLOSED) {
                 break;
             } else {
-                LockSupport.parkNanos(this.delayTimeForNextClearNs);// default wait 3 seconds
+                LockSupport.parkNanos(this.delayTimeForNextClearNs);
             }
         } while (true);
     }
@@ -703,7 +703,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 pool.createInitObjects(initialSize, false);
                 pool.servantTryCount.set(pool.pooledArray.length);
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
-                    pool.parentPool.submitServantTask(pool);
+                    pool.ownerPool.submitServantTask(pool);
                 }
             } catch (Throwable e) {
                 //do nothing

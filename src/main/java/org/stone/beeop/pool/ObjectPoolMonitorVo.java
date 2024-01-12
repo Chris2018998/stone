@@ -24,9 +24,9 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private final String threadName;
     private final String poolName;
     private final String poolMode;
+    private final int maxSize;
     private int poolState;
 
-    private int maxSize;
     private int idleSize;
     private int usingSize;
     private int semaphoreWaitingSize;
@@ -34,11 +34,13 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private String osId;
     private String osUUID;
 
-    ObjectPoolMonitorVo(String hostIP, long threadId, String threadName, String poolName, String poolMode, int poolMaxSize) {
+    ObjectPoolMonitorVo(
+            String poolName, String hostIP, long threadId,
+            String threadName, String poolMode, int poolMaxSize) {
+        this.poolName = poolName;
         this.hostIP = hostIP;
         this.threadId = threadId;
         this.threadName = threadName;
-        this.poolName = poolName;
         this.poolMode = poolMode;
         this.maxSize = poolMaxSize;
     }
@@ -47,7 +49,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return poolState;
     }
 
-    public void setPoolState(int poolState) {
+    void setPoolState(int poolState) {
         this.poolState = poolState;
     }
 
@@ -55,15 +57,11 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return maxSize;
     }
 
-    public void setMaxSize(int maxSize) {
-        this.maxSize = maxSize;
-    }
-
     public int getIdleSize() {
         return idleSize;
     }
 
-    public void setIdleSize(int idleSize) {
+    void setIdleSize(int idleSize) {
         this.idleSize = idleSize;
     }
 
@@ -71,7 +69,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return usingSize;
     }
 
-    public void setUsingSize(int usingSize) {
+    void setUsingSize(int usingSize) {
         this.usingSize = usingSize;
     }
 
@@ -79,7 +77,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return semaphoreWaitingSize;
     }
 
-    public void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
+    void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
     }
 
@@ -87,7 +85,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return transferWaitingSize;
     }
 
-    public void setTransferWaitingSize(int transferWaitingSize) {
+    void setTransferWaitingSize(int transferWaitingSize) {
         this.transferWaitingSize = transferWaitingSize;
     }
 
@@ -95,7 +93,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return osId;
     }
 
-    public void setOsId(String osId) {
+    void setOsId(String osId) {
         this.osId = osId;
     }
 
@@ -103,7 +101,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return osUUID;
     }
 
-    public void setOsUUID(String osUUID) {
+    void setOsUUID(String osUUID) {
         this.osUUID = osUUID;
     }
 
