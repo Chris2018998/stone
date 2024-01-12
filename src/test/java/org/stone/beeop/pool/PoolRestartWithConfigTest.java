@@ -37,13 +37,14 @@ public class PoolRestartWithConfigTest extends TestCase {
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.setInitialSize(1);
         config2.setMaxActive(5);
+        config2.setMaxObjectKeySize(2);
         config2.setRawObjectFactory(new StringFactory());
         config2.setObjectInterfaces(new Class[]{CharSequence.class});
         config2.setDelayTimeForNextClear(delayTimeForNextClear);//Ms
         obs.clear(true, config2);
         BeeObjectPoolMonitorVo vo = obs.getPoolMonitorVo();
         TestUtil.assertError("pool idle size expect value:%s,actual value:%s", 1, vo.getIdleSize());
-        TestUtil.assertError("pool max size expect value:%s,actual value:%s", 5, vo.getPoolMaxSize());
+        TestUtil.assertError("pool max size expect value:%s,actual value:%s", 15, vo.getPoolMaxSize());
 
         BeeObjectHandle handle2 = obs.getObjectHandle();
         Object object2 = handle2.getObjectProxy();
