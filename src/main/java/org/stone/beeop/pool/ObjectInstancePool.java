@@ -32,6 +32,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
+import static org.stone.tools.CommonUtil.interruptWaitersOnLock;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
@@ -505,10 +506,19 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-6.2: remove all connections from pool
     private void clear(boolean forceCloseUsing, String removeReason) {
+        //1:interrupt waiters on semaphore
         this.semaphore.interruptWaitingThreads();
         PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(clearException);
 
+        //2:interrupt waiters on lock(maybe stuck on socket)
+        try {
+            interruptWaitersOnLock(this.pooledArrayLock);
+        } catch (Throwable e) {
+            Log.info("BeeOP({})Failed to interrupt threads on lock", e);
+        }
+
+        //3:clear all connections
         while (true) {
             PooledObject[] array = this.pooledArray;
             for (PooledObject p : array) {
