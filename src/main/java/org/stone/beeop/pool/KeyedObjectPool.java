@@ -42,7 +42,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private long delayTimeForNextClearNs;//nanoseconds
     private boolean forceCloseUsingOnClear;//close using directly when true
     private ObjectPoolMonitorVo poolMonitorVo;
-    private ObjectInstancePool templateGenericPool;//used to create instance pools by clone
+    private ObjectInstancePool cloneTemplatePool;//used to create instance pools by clone
 
     private ThreadPoolExecutor servantService;
     private ScheduledThreadPoolExecutor scheduledService;
@@ -66,30 +66,27 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     private void startup(BeeObjectSourceConfig config) throws Exception {
-        //step1: create
+        //step1: creates clone template instance pool(move import steps here)
         this.poolName = config.getPoolName();
-        this.maxObjectKeySize = config.getMaxObjectKeySize();
-        this.templateGenericPool = new ObjectInstancePool(config, this);
-        int tempMaxKeySize = maxObjectKeySize + 1;
-        this.poolMonitorVo = new ObjectPoolMonitorVo(
-                poolName,
-                templateGenericPool.getPoolHostIP(),
-                templateGenericPool.getPoolThreadId(),
-                templateGenericPool.getPoolThreadName(),
-                templateGenericPool.getPoolMode(),
-                tempMaxKeySize * config.getMaxActive());
+        RawObjectFactory objectFactory = config.getObjectFactory();
+        this.cloneTemplatePool = new ObjectInstancePool(config, this);
+        if (config.getInitialSize() > 0) {//creates initial objects
+            Object initialKey = objectFactory.getInitialKey();
+            //throw a failure exception when error occurs in creating initial objects
+            ObjectInstancePool instancePool = cloneTemplatePool.createByClone(poolName,
+                    initialKey, config.getInitialSize(), config.isAsyncCreateInitObject());
 
-        //step2: register JVM hook
-        if (this.exitHook == null) {
-            this.exitHook = new ObjectPoolHook(this);
-            Runtime.getRuntime().addShutdownHook(this.exitHook);
+            instancePoolMap.put(initialKey, instancePool);
         }
 
-        //step3: calculate pool thread size and prepare thread factory
+        //step2: copy some configured items to pool local variables
+        this.maxObjectKeySize = config.getMaxObjectKeySize();
+        int tempMaxKeySize = maxObjectKeySize + 1;//1 means default key
+        this.defaultObjectKey = objectFactory.getDefaultKey();
         this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
         this.delayTimeForNextClearNs = MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
 
-        //step4: create servant executor
+        //step3: create servant executor
         int coreThreadSize = Math.min(NCPU, tempMaxKeySize);
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
         if (this.servantService == null || servantService.getCorePoolSize() != coreThreadSize) {
@@ -98,24 +95,27 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                     TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(tempMaxKeySize), poolThreadFactory);
         }
 
-        //step5: create idle scheduled executor(core thread keep alive)
+        //step4: create idle-scan scheduled executor
         if (this.scheduledService == null) {
             scheduledService = new ScheduledThreadPoolExecutor(1, poolThreadFactory);
             scheduledService.scheduleWithFixedDelay(new IdleClearTask(this), 0,
                     config.getTimerCheckInterval(), MILLISECONDS);
         }
 
-        //step6: create generic pool by init size
-        RawObjectFactory objectFactory = config.getObjectFactory();
-        this.defaultObjectKey = objectFactory.getDefaultKey();
-
-        if (config.getInitialSize() > 0) {
-            Object initialKey = objectFactory.getInitialKey();
-            ObjectInstancePool instancePool = templateGenericPool.createByClone(poolName,
-                    initialKey, config.getInitialSize(), config.isAsyncCreateInitObject());
-
-            instancePoolMap.put(initialKey, instancePool);
+        //step5: register JVM hook
+        if (this.exitHook == null) {
+            this.exitHook = new ObjectPoolHook(this);
+            Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
+
+        //step6: create a monitor object
+        this.poolMonitorVo = new ObjectPoolMonitorVo(
+                poolName,
+                cloneTemplatePool.getPoolHostIP(),
+                cloneTemplatePool.getPoolThreadId(),
+                cloneTemplatePool.getPoolThreadName(),
+                cloneTemplatePool.getPoolMode(),
+                tempMaxKeySize * config.getMaxActive());
     }
 
     //***************************************************************************************************************//
@@ -136,13 +136,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (pool != null) return pool.getObjectHandle();
 
         //2: create pool by clone
-        synchronized (instancePoolMap) {
+        synchronized (key.toString().intern()) {
             pool = instancePoolMap.get(key);
             if (pool == null) {
                 if (key != defaultObjectKey && instancePoolMap.size() >= maxObjectKeySize)
                     throw new ObjectGetException("Key pool size reach max size:" + maxObjectKeySize);
 
-                pool = templateGenericPool.createByClone(poolName, key, 0, true);
+                pool = cloneTemplatePool.createByClone(poolName, key, 0, true);
                 instancePoolMap.put(key, pool);
             }
         }
