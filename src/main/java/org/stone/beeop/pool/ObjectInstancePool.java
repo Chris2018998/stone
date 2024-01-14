@@ -136,32 +136,35 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
     }
 
-    //method-1.2: creation from clone and init(this method called by clone object in keyed pool)
-    ObjectInstancePool createByClone(String ownerName, Object key, int initSize, boolean async) throws Exception {
-        final ObjectInstancePool p = (ObjectInstancePool) clone();
-        p.key = key;
-        p.poolName = ownerName + "-[" + key + "]";
-        p.pooledArray = new PooledObject[0];
-        p.pooledArrayLock = new ReentrantLock();
-        if (initSize > 0 && !async) p.createInitObjects(initSize, true);
+    //method-1.2: create a clone object
+    ObjectInstancePool createByClone() throws Exception {
+        return (ObjectInstancePool) clone();
+    }
 
-        p.threadLocal = new BorrowerThreadLocal();
-        p.semaphore = new PoolSemaphore(semaphoreSize, isFairMode);
-        p.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
-        p.servantState = new AtomicInteger(THREAD_WAITING);
-        p.servantTryCount = new AtomicInteger(0);
-        if (initSize > 0 && async) new PoolInitAsyncCreateThread(initSize, p).start();
-        p.monitorVo = new ObjectPoolMonitorVo(p.poolName, poolHostIP, poolThreadId, poolThreadName, poolMode, maxActiveSize);
+    //method-1.3: startup pool
+    void startup(String ownerName, Object key, int initSize, boolean async) throws Exception {
+        this.key = key;
+        this.poolName = ownerName + "-[" + key + "]";
+        this.pooledArray = new PooledObject[0];
+        this.pooledArrayLock = new ReentrantLock();
+        if (initSize > 0 && !async) this.createInitObjects(initSize, true);
 
-        p.poolState = POOL_READY;
+        this.threadLocal = new BorrowerThreadLocal();
+        this.semaphore = new PoolSemaphore(semaphoreSize, isFairMode);
+        this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
+        this.servantState = new AtomicInteger(THREAD_WAITING);
+        this.servantTryCount = new AtomicInteger(0);
+        if (initSize > 0 && async) new PoolInitAsyncCreateThread(initSize, this).start();
+        this.monitorVo = new ObjectPoolMonitorVo(this.poolName, poolHostIP, poolThreadId, poolThreadName, poolMode, maxActiveSize);
+
+        this.poolState = POOL_READY;
         Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
-                p.poolName,
-                p.poolMode,
-                p.pooledArray.length,
-                p.maxActiveSize,
-                p.semaphoreSize,
-                p.maxWaitMs);
-        return p;
+                this.poolName,
+                this.poolMode,
+                this.pooledArray.length,
+                this.maxActiveSize,
+                this.semaphoreSize,
+                this.maxWaitMs);
     }
 
     //***************************************************************************************************************//

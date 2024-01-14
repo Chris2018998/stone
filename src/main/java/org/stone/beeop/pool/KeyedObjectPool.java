@@ -37,13 +37,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private String poolName;
     private int maxObjectKeySize;
     private volatile int poolState;
-    private Object defaultObjectKey;
     private ObjectPoolHook exitHook;
     private long delayTimeForNextClearNs;//nanoseconds
-    private boolean forceCloseUsingOnClear;//close using directly when true
-    private ObjectPoolMonitorVo poolMonitorVo;
-    private ObjectInstancePool cloneTemplatePool;//used to create instance pools by clone
+    private boolean forceCloseUsingOnClear;
 
+    private Object defaultObjectKey;
+    private ObjectInstancePool defaultObjectPool;
+    private ObjectPoolMonitorVo poolMonitorVo;
     private ThreadPoolExecutor servantService;
     private ScheduledThreadPoolExecutor scheduledService;
 
@@ -51,6 +51,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //                1: pool initialize method(2)                                                                   //                                                                                  //
     //***************************************************************************************************************//
     public void init(BeeObjectSourceConfig config) throws Exception {
+        //step1: config check
         if (config == null) throw new PoolInitializedException("Object pool configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
@@ -66,23 +67,18 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     private void startup(BeeObjectSourceConfig config) throws Exception {
-        //step1: creates clone template instance pool(move import steps here)
+        //step1:create default pool
+        this.defaultObjectPool = new ObjectInstancePool(config, this);
         this.poolName = config.getPoolName();
         RawObjectFactory objectFactory = config.getObjectFactory();
-        this.cloneTemplatePool = new ObjectInstancePool(config, this);
-        if (config.getInitialSize() > 0) {//creates initial objects
-            Object initialKey = objectFactory.getInitialKey();
-            //throw a failure exception when error occurs in creating initial objects
-            ObjectInstancePool instancePool = cloneTemplatePool.createByClone(poolName,
-                    initialKey, config.getInitialSize(), config.isAsyncCreateInitObject());
-
-            instancePoolMap.put(initialKey, instancePool);
-        }
+        this.defaultObjectKey = objectFactory.getDefaultKey();
+        this.defaultObjectPool.startup(poolName, defaultObjectKey,
+                config.getInitialSize(), config.isAsyncCreateInitObject());
+        this.instancePoolMap.put(defaultObjectKey, defaultObjectPool);
 
         //step2: copy some configured items to pool local variables
         this.maxObjectKeySize = config.getMaxObjectKeySize();
         int tempMaxKeySize = maxObjectKeySize + 1;//1 means default key
-        this.defaultObjectKey = objectFactory.getDefaultKey();
         this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
         this.delayTimeForNextClearNs = MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
 
@@ -111,10 +107,10 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         //step6: create a monitor object
         this.poolMonitorVo = new ObjectPoolMonitorVo(
                 poolName,
-                cloneTemplatePool.getPoolHostIP(),
-                cloneTemplatePool.getPoolThreadId(),
-                cloneTemplatePool.getPoolThreadName(),
-                cloneTemplatePool.getPoolMode(),
+                defaultObjectPool.getPoolHostIP(),
+                defaultObjectPool.getPoolThreadId(),
+                defaultObjectPool.getPoolThreadName(),
+                defaultObjectPool.getPoolMode(),
                 tempMaxKeySize * config.getMaxActive());
     }
 
@@ -122,27 +118,31 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //                2: object borrow methods(2)                                                                    //                                                                                  //
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
-        return getObjectHandle(defaultObjectKey);
+        if (this.poolState != POOL_READY)
+            throw new ObjectGetForbiddenException("Access forbidden,key pool was closed or in clearing");
+
+        return defaultObjectPool.getObjectHandle();
     }
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
-        if (key == null)
-            throw new ObjectGetForbiddenException("Access forbidden,parameter key can't be null");
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Access forbidden,key pool was closed or in clearing");
 
         //1: get pool from generic map
+        if (isDefaultKey(key)) return defaultObjectPool.getObjectHandle();
+
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) return pool.getObjectHandle();
 
         //2: create pool by clone
-        synchronized (key.toString().intern()) {
+        synchronized (instancePoolMap) {
             pool = instancePoolMap.get(key);
             if (pool == null) {
-                if (key != defaultObjectKey && instancePoolMap.size() >= maxObjectKeySize)
+                if (instancePoolMap.size() >= maxObjectKeySize)
                     throw new ObjectGetException("Key pool size reach max size:" + maxObjectKeySize);
 
-                pool = cloneTemplatePool.createByClone(poolName, key, 0, true);
+                pool = defaultObjectPool.createByClone();
+                pool.startup(poolName, key, 0, true);
                 instancePoolMap.put(key, pool);
             }
         }
@@ -166,11 +166,16 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         deleteKey(key, false);
     }
 
+    private boolean isDefaultKey(Object key) {
+        return defaultObjectKey == key || defaultObjectKey.equals(key);
+    }
+
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
         ObjectInstancePool pool = instancePoolMap.remove(key);
         if (pool != null) {
             if (!pool.clear(forceCloseUsing))
                 throw new PoolInClearingException("Generic object pool was closed or in clearing");
+            if (isDefaultKey(key)) defaultObjectPool = null;
         } else {
             throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
         }
