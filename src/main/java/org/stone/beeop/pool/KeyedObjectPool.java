@@ -226,14 +226,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
         int semaphoreWaitingSize = 0;
         int transferWaitingSize = 0;
-        int idleSize = 0, usingSize = 0, maxSize = 0;
+        int idleSize = 0, usingSize = 0;
         for (ObjectInstancePool pool : instancePoolMap.values()) {
-            BeeObjectPoolMonitorVo genericMonitorVo = pool.getPoolMonitorVo();
-            idleSize = +genericMonitorVo.getIdleSize();
-            usingSize = +genericMonitorVo.getUsingSize();
-            maxSize = +genericMonitorVo.getPoolMaxSize();
-            semaphoreWaitingSize = +genericMonitorVo.getSemaphoreWaitingSize();
-            transferWaitingSize = +genericMonitorVo.getTransferWaitingSize();
+            BeeObjectPoolMonitorVo monitorVo = pool.getPoolMonitorVo();
+            idleSize = +monitorVo.getIdleSize();
+            usingSize = +monitorVo.getUsingSize();
+            semaphoreWaitingSize = +monitorVo.getSemaphoreWaitingSize();
+            transferWaitingSize = +monitorVo.getTransferWaitingSize();
         }
         poolMonitorVo.setIdleSize(idleSize);
         poolMonitorVo.setUsingSize(usingSize);
