@@ -523,9 +523,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         //3:try to create object factory
         RawObjectFactory objectFactory = this.tryCreateObjectFactory();
         if (objectFactory.getDefaultKey() == null)
-            throw new BeeObjectSourceConfigException("Default key can't be null");
-        if (this.initialSize > 0 && objectFactory.getInitialKey() == null)
-            throw new BeeObjectSourceConfigException("Initial key can't be null");
+            throw new BeeObjectSourceConfigException("Default key from factory can't be null");
         BeeObjectPoolThreadFactory threadFactory = this.createThreadFactory();
 
         //4:copy field value to new config from current config
