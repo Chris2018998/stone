@@ -346,9 +346,9 @@ public final class TaskService extends TaskServiceConfig {
         public void afterCall(int resultCode, Object resultObject, TaskHandle handle) {
             boolean hasWakeup = false;
             try {
-                if (TaskStates.TASK_CALL_EXCEPTION == resultCode && resultObject instanceof TaskExecutionException)
+                if (TaskStates.TASK_EXEC_EXCEPTION == resultCode && resultObject instanceof TaskExecutionException)
                     this.failCause = (TaskExecutionException) resultObject;
-                else if (TaskStates.TASK_CALL_RESULT == resultCode) {
+                else if (TaskStates.TASK_EXEC_RESULT == resultCode) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);
                     hasWakeup = true;

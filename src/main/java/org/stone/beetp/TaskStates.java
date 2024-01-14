@@ -17,21 +17,20 @@ package org.stone.beetp;
  */
 public final class TaskStates {
 
-    //wait to be executed(initial state of tasks)
+    //task waiting state(wait to be executed)
     public static final int TASK_WAITING = 0;
 
-    //in executing state within a work thread
+    //task executing state(processing in pool)
     public static final int TASK_EXECUTING = 1;
 
-    //task done state,cancelled by users or by execution when it shutdown
+    //task cancelled state(abandon execution)
     public static final int TASK_CANCELLED = 2;
 
-    //task done state,a execution completed result can be taken out by <method>get<method> from a task
-    public static final int TASK_CALL_RESULT = 3;
+    //completion state of task execution,a result can be get when call get method of task handle
+    public static final int TASK_EXEC_RESULT = 3;
 
-    //task done state,an exception occurred during task execution,can be thrown out when task <method>get<method> is called
-    public static final int TASK_CALL_EXCEPTION = 4;
-
+    //failure state of task execution,a cause exception thrown when call get method of task handle
+    public static final int TASK_EXEC_EXCEPTION = 4;
 
     public static boolean isWaiting(int state) {
         return state == TASK_WAITING;
@@ -50,10 +49,10 @@ public final class TaskStates {
     }
 
     public static boolean isCallResult(int state) {
-        return state == TASK_CALL_RESULT;
+        return state == TASK_EXEC_RESULT;
     }
 
     public static boolean isCallException(int state) {
-        return state == TASK_CALL_EXCEPTION;
+        return state == TASK_EXEC_EXCEPTION;
     }
 }
