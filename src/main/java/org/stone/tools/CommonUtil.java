@@ -12,6 +12,7 @@ package org.stone.tools;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.concurrent.locks.AbstractOwnableSynchronizer;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,7 +27,6 @@ public class CommonUtil {
     public static final int NCPU = Runtime.getRuntime().availableProcessors();
     public static final long spinForTimeoutThreshold = 1023L;
     public static final int maxTimedSpins = (NCPU < 2) ? 0 : 32;
-    public static final int maxUntimedSpins = maxTimedSpins * 16;
 
     public static String trimString(String value) {
         return value == null ? null : value.trim();
@@ -60,9 +60,8 @@ public class CommonUtil {
         Object sync = syncField.get(lock);
 
         //2: get reflection methods about lock threads
-        Class synClass = AbstractQueuedSynchronizer.class;
-        Method ownerThreadsMethod = synClass.getDeclaredMethod("getExclusiveOwnerThread");
-        Method waitingThreadsMethod = synClass.getDeclaredMethod("getExclusiveQueuedThreads");
+        Method ownerThreadsMethod = AbstractOwnableSynchronizer.class.getDeclaredMethod("getExclusiveOwnerThread");
+        Method waitingThreadsMethod = AbstractQueuedSynchronizer.class.getDeclaredMethod("getExclusiveQueuedThreads");
         ownerThreadsMethod.setAccessible(true);
         waitingThreadsMethod.setAccessible(true);
 
