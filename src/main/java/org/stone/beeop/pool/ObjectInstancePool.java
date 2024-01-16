@@ -270,7 +270,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
      */
     public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Access rejected,cause:pool was closed or in clearing");
+            throw new ObjectGetForbiddenException("Access rejected,cause:pool closed or in clearing");
 
         //0:try to get from threadLocal cache
         ObjectBorrower b = this.threadLocal.get().get();
