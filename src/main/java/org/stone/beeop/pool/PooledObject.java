@@ -58,7 +58,7 @@ final class PooledObject implements Cloneable {
         p.rawClass = raw.getClass();
         p.state = state;
         p.ownerPool = pool;
-        p.lastAccessTime = currentTimeMillis();//first parkTime
+        p.lastAccessTime = currentTimeMillis();
         return p;
     }
 
