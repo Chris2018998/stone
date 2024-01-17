@@ -44,7 +44,7 @@ public class PoolRestartWithConfigTest extends TestCase {
         obs.clear(true, config2);
         BeeObjectPoolMonitorVo vo = obs.getPoolMonitorVo();
         TestUtil.assertError("pool idle size expect value:%s,actual value:%s", 1, vo.getIdleSize());
-        TestUtil.assertError("pool max size expect value:%s,actual value:%s", 15, vo.getPoolMaxSize());
+        TestUtil.assertError("pool max size expect value:%s,actual value:%s", 10, vo.getPoolMaxSize());
 
         BeeObjectHandle handle2 = obs.getObjectHandle();
         Object object2 = handle2.getObjectProxy();
