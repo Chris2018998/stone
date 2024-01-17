@@ -115,10 +115,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
         this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces, config.getObjectMethodFilter(),
-                new ConcurrentHashMap<ObjectMethodCacheKey, Method>(16));
+                new ConcurrentHashMap<MethodCacheKey, Method>(16));
 
         if (objectInterfaces != null && objectInterfaces.length > 0)
-            this.handleFactory = new ObjectReflectHandleFactory();
+            this.handleFactory = new ObjectProxyHandleFactory();
         else
             this.handleFactory = new ObjectHandleFactory();
 
@@ -640,14 +640,14 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private static class ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             b.lastUsed = p;
-            return new ObjectBaseHandle(p);
+            return new ObjectSimpleHandle(p);
         }
     }
 
-    private static class ObjectReflectHandleFactory extends ObjectHandleFactory {
+    private static class ObjectProxyHandleFactory extends ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             b.lastUsed = p;
-            return new ObjectReflectHandle(p);
+            return new ObjectProxyHandle(p);
         }
     }
 
