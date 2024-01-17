@@ -9,18 +9,18 @@
  */
 package org.stone.beeop.pool.exception;
 
+import org.stone.beeop.BeeObjectException;
+
 /**
- * pool keyed exception
+ * object key exception
  *
  * @author Chris Liao
  * @version 1.0
  */
+public class ObjectKeyException extends BeeObjectException {
 
-public class ObjectKeyNotExistsException extends ObjectKeyException {
-
-    public ObjectKeyNotExistsException(String s) {
+    public ObjectKeyException(String s) {
         super(s);
     }
 
 }
-
