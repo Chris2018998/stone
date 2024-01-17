@@ -38,7 +38,7 @@ import static org.stone.tools.CommonUtil.trimString;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //index for generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //properties map store entry value injected to object factory
+    //store properties which injected to object factory on pool initialization
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
 
     //if this value is null or empty,a generated pool name set to this field
@@ -49,11 +49,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private int initialSize;
     //async indicator to create initial objects
     private boolean asyncCreateInitObject;
-    //max size of sub pools(pool capacity size = (maxObjectKeySize+1) * maxActive)
+    //max object key size(pool capacity size = (maxObjectKeySize+1) * maxActive)
     private int maxObjectKeySize = 50;
-    //max reachable size of pooled objects in sub pools
+    //max reachable size of object instance by per key
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //max permit size of pool semaphore
+    //max permit size of semaphore by per key
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
     //milliseconds:max wait time of a borrower to get a idle object from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
@@ -72,16 +72,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //milliseconds:delay time for next loop clearing in pool when exits using objects when<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
 
-    //indicator,whether register pool to jmx
+    //jmx register indicator
     private boolean enableJmx;
-    //indicator,whether print pool config info
+    //config info print indicator on pool initialization
     private boolean printConfigInfo;
-    //indicator,whether print pool runtime info
+    //pool runtime info print indicator,which can be changed by calling setPrintRuntimeLog method at runtime
     private boolean printRuntimeLog;
 
-    //object implements interfaces
+    //interfaces implemented by pooled object
     private Class[] objectInterfaces;
-    //object implements interface names
+    //names of interfaces implemented by pooled object
     private String[] objectInterfaceNames;
 
     //class of thread factory(priority-2)
@@ -91,19 +91,20 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //work thread factory(priority-1)
     private BeeObjectPoolThreadFactory threadFactory;
 
-    //object factory class(RawObjectFactory or RawKeyedObjectFactory)
+    //object factory class(priority-2)
     private Class objectFactoryClass;
-    //object factory class name(RawObjectFactory or RawKeyedObjectFactory)
+    //object factory class name(priority-3)
     private String objectFactoryClassName;
-    //object factory(implement class of RawObjectFactory or RawKeyedObjectFactory)
+    //object factory(priority-1)
     private RawObjectFactory objectFactory;
 
-    //object method call filter class
+    //object method call filter class(priority-2)
     private Class objectMethodFilterClass;
-    //object method call filter class name
+    //object method call filter class name(priority-3)
     private String objectMethodFilterClassName;
-    //method call filter instance
+    //method call filter(priority-1)
     private RawObjectMethodFilter objectMethodFilter;
+
     //pool implementation class name
     private String poolImplementClassName = KeyedObjectPool.class.getName();
 
@@ -129,7 +130,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     //***************************************************************************************************************//
-    //                                     2:configuration about pool inner control(37)                              //
+    //                                     2: base configuration(37)                                                 //
     //***************************************************************************************************************//
     public String getPoolName() {
         return this.poolName;
@@ -513,20 +514,23 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (maxWait <= 0L)
             throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
 
-        //1:try to create method filter
-        RawObjectMethodFilter tempMethodFilter = null;
-        if (this.objectMethodFilter == null) tempMethodFilter = this.tryCreateMethodFilter();
 
-        //2:load object implemented interfaces,if config
-        Class[] tempObjectInterfaces = this.loadObjectInterfaces();
-
-        //3:try to create object factory
+        //1:try to create object factory
         RawObjectFactory objectFactory = this.tryCreateObjectFactory();
         if (objectFactory.getDefaultKey() == null)
             throw new BeeObjectSourceConfigException("Default key from factory can't be null");
+
+        //2:try to create method filter
+        RawObjectMethodFilter tempMethodFilter = null;
+        if (this.objectMethodFilter == null) tempMethodFilter = this.tryCreateMethodFilter();
+
+        //3:load object implemented interfaces
+        Class[] tempObjectInterfaces = this.loadObjectInterfaces();
+
+        //create pool thread factory
         BeeObjectPoolThreadFactory threadFactory = this.createThreadFactory();
 
-        //4:copy field value to new config from current config
+        //4:create a checked configuration and copy local fields to it
         BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
         copyTo(checkedConfig);
 
@@ -545,7 +549,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         excludeFieldList.add("objectInterfaces");
         excludeFieldList.add("objectInterfaceNames");
 
-        //1:primitive type copy
+        //1:copy primitive type fields
         String fieldName = "";
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
@@ -641,12 +645,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     private RawObjectFactory tryCreateObjectFactory() {
-        //1:if exists object factory,then return it
-        if (this.objectFactory != null) return this.objectFactory;
+        //1: set factory from local
+        RawObjectFactory rawObjectFactory = this.objectFactory;
 
-        RawObjectFactory rawObjectFactory = null;
-        //2:if factory class exists,then try to create by it
-        if (objectFactoryClass != null) {
+        //2: try to create factory by class
+        if (rawObjectFactory == null && objectFactoryClass != null) {
             try {
                 rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
             } catch (Throwable e) {
@@ -654,7 +657,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             }
         }
 
-        //3:if factory class name exists,then try to create by class name
+        //3: try to create factory by class name
         if (rawObjectFactory == null && !isBlank(this.objectFactoryClassName)) {
             try {
                 Class objectFactoryClass = Class.forName(this.objectFactoryClassName);
@@ -666,9 +669,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             }
         }
 
-        //4:return factory instance
+        //4:injects properties to factory
         if (rawObjectFactory != null) {
-            //set properties to factory
             if (!factoryProperties.isEmpty())
                 ObjectPoolStatics.setPropertiesValue(rawObjectFactory, this.factoryProperties);
             return rawObjectFactory;
