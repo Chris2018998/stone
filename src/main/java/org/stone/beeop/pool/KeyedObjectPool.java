@@ -24,7 +24,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 
 /**
- * keyed object pool
+ * keyed Keyed object pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -52,7 +52,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //***************************************************************************************************************//
     public void init(BeeObjectSourceConfig config) throws Exception {
         //step1: config check
-        if (config == null) throw new PoolInitializedException("Object pool configuration can't be null");
+        if (config == null) throw new PoolInitializedException("Keyed object pool configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
                 startup(config.check());
@@ -62,7 +62,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 throw e;
             }
         } else {
-            throw new PoolInitializedException("Object pool has been initialized or in starting");
+            throw new PoolInitializedException("Keyed object pool has been initialized or in starting");
         }
     }
 
@@ -78,17 +78,16 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
 
         //step2: copy some configured items to pool local variables
         this.maxObjectKeySize = config.getMaxObjectKeySize();
-        int tempMaxKeySize = maxObjectKeySize + 1;//1 means default key
         this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
         this.delayTimeForNextClearNs = MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
 
         //step3: create servant executor
-        int coreThreadSize = Math.min(NCPU, tempMaxKeySize);
+        int coreThreadSize = Math.min(NCPU, maxObjectKeySize);
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
         if (this.servantService == null || servantService.getCorePoolSize() != coreThreadSize) {
             if (servantService != null) servantService.shutdown();
             this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15,
-                    TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(tempMaxKeySize), poolThreadFactory);
+                    TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(maxObjectKeySize), poolThreadFactory);
         }
 
         //step4: create idle-scan scheduled executor
@@ -111,7 +110,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 defaultPool.getPoolThreadId(),
                 defaultPool.getPoolThreadName(),
                 defaultPool.getPoolMode(),
-                tempMaxKeySize * config.getMaxActive());
+                maxObjectKeySize * config.getMaxActive());
     }
 
     //***************************************************************************************************************//
@@ -119,18 +118,19 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //***************************************************************************************************************//
     public final BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Access forbidden,key pool was closed or in clearing");
+            throw new ObjectGetForbiddenException("Access forbidden,Keyed object pool was closed or in clearing");
 
         return defaultPool.getObjectHandle();
     }
 
     public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Access forbidden,key pool was closed or in clearing");
+            throw new ObjectGetForbiddenException("Access forbidden,Keyed object pool was closed or in clearing");
 
         //1: get pool from generic map
         if (isDefaultKey(key)) return defaultPool.getObjectHandle();
 
+        if (key == null) throw new ObjectKeyException("Object key can't be null");
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) return pool.getObjectHandle();
 
@@ -139,7 +139,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             pool = instancePoolMap.get(key);
             if (pool == null) {
                 if (instancePoolMap.size() >= maxObjectKeySize)
-                    throw new ObjectGetException("Key pool size reach max size:" + maxObjectKeySize);
+                    throw new ObjectGetException("Object key count reached max:" + maxObjectKeySize);
 
                 pool = defaultPool.createByClone();
                 pool.startup(poolName, key, 0, true);
@@ -171,26 +171,27 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        if (key == null) throw new ObjectKeyException("Access forbidden,keyed object pool was closed or in clearing");
+
         ObjectInstancePool pool = instancePoolMap.remove(key);
         if (pool != null) {
             if (!pool.clear(forceCloseUsing))
-                throw new PoolInClearingException("Generic object pool was closed or in clearing");
+                throw new PoolInClearingException("Keyed object sub pool was closed or in clearing");
             if (isDefaultKey(key)) defaultPool = null;
-        } else {
-            throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
         }
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {
+        if (key == null) throw new ObjectKeyException("Object key can't be null");
+
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) pool.getPoolMonitorVo();
-        throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
+        throw new ObjectKeyNotExistsException("Not found object key:" + key);
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
-        throw new ObjectKeyNotExistsException("Not found object generic pool with key:" + key);
     }
 
     //***************************************************************************************************************//
@@ -275,7 +276,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 this.poolState = POOL_READY;// reset state to POOL_READY
             }
         } else {
-            throw new PoolInClearingException("Key pool was closed or in clearing");
+            throw new PoolInClearingException("Keyed object pool was closed or in clearing");
         }
     }
 
@@ -337,7 +338,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 Log.info("BeeOP({})JVM exit hook running", this.pool.poolName);
                 this.pool.close();
             } catch (Throwable e) {
-                Log.error("BeeOP({})Error occurred at closing pool,cause:", this.pool.poolName, e);
+                Log.error("BeeOP({})Error occurred at closing key pool,cause:", this.pool.poolName, e);
             }
         }
     }

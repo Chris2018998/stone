@@ -36,7 +36,7 @@ import static org.stone.tools.CommonUtil.interruptWaitersOnLock;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
- * Object Generic Pool Implementation
+ * Object instance Pool Implementation
  *
  * @author Chris Liao
  * @version 1.0
