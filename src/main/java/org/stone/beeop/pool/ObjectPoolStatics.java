@@ -46,7 +46,8 @@ public class ObjectPoolStatics {
     //pool thread state
     static final int THREAD_WORKING = 0;
     static final int THREAD_WAITING = 1;
-    static final int THREAD_EXIT = 2;
+    //static final int THREAD_EXIT = 2;
+
     //remove reason
     static final String DESC_RM_INIT = "init";
     static final String DESC_RM_BAD = "bad";

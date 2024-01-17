@@ -272,7 +272,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             try {
                 if (tempConfig != null) this.startup(tempConfig);
             } finally {
-                this.poolState = POOL_READY;// restore state;
+                this.poolState = POOL_READY;// reset state to POOL_READY
             }
         } else {
             throw new PoolInClearingException("Key pool was closed or in clearing");
