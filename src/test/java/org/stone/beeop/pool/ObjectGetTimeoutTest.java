@@ -54,9 +54,9 @@ public class ObjectGetTimeoutTest extends TestCase {
         Exception e = null;
 
         public void run() {
-            ObjectBaseHandle proxy = null;
+            ObjectSimpleHandle proxy = null;
             try {
-                proxy = (ObjectBaseHandle) obs.getObjectHandle();
+                proxy = (ObjectSimpleHandle) obs.getObjectHandle();
             } catch (Exception e) {
                 this.e = e;
             } finally {
