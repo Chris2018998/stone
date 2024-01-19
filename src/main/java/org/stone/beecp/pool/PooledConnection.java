@@ -141,11 +141,6 @@ final class PooledConnection implements Cloneable {
         return this.supportNetworkTimeoutInd;
     }
 
-    final void updateAccessTime() {//for update,insert.select,delete and so on DML
-        this.commitDirtyInd = !this.curAutoCommit;
-        this.lastAccessTime = System.currentTimeMillis();
-    }
-
     final void setResetInd(int i, boolean changed) {
         if (this.resetFlags[i] != changed) {
             this.resetFlags[i] = changed;
@@ -248,7 +243,15 @@ final class PooledConnection implements Cloneable {
         this.openStmSize = 0;
     }
 
-    //****************Fatal error code check*******************************************************************************/
+    //***************************************************************************************************************//
+    //               Methods invoked in ProxyConnection class                                                        //                                                                                  //
+    //***************************************************************************************************************//
+    final void updateAccessTime() {//for update,insert.select,delete and so on DML
+        this.commitDirtyInd = !this.curAutoCommit;
+        this.lastAccessTime = System.currentTimeMillis();
+    }
+
+    //****************Fatal error code check***************************************************************************/
     void checkSQLException(SQLException e) {
         int code = e.getErrorCode();
         if (code != 0 && proxyInUsing != null && sqlExceptionCodeList != null && sqlExceptionCodeList.contains(code)) {
