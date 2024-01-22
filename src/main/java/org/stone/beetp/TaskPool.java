@@ -9,9 +9,9 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.exception.TaskException;
-import org.stone.beetp.exception.TaskPoolException;
-import org.stone.beetp.exception.TaskServiceConfigException;
+import org.stone.beetp.pool.exception.TaskException;
+import org.stone.beetp.pool.exception.TaskPoolException;
+import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.util.concurrent.TimeUnit;
 

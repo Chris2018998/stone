@@ -9,7 +9,7 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.exception.*;
+import org.stone.beetp.pool.exception.*;
 
 import java.util.ArrayList;
 import java.util.Collection;

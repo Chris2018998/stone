@@ -9,10 +9,10 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.exception.TaskCancelledException;
-import org.stone.beetp.exception.TaskException;
-import org.stone.beetp.exception.TaskExecutionException;
-import org.stone.beetp.exception.TaskResultGetTimeoutException;
+import org.stone.beetp.pool.exception.TaskCancelledException;
+import org.stone.beetp.pool.exception.TaskException;
+import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +41,7 @@ public interface TaskHandle<T> {
      * try to cancel this task from pool
      *
      * @param mayInterruptIfRunning true,if task has been in blocking,then interrupt it
-     * @return boolean, true, cancel success,otherwise,task has been completed
+     * @return true means cancel success,otherwise,task has been completed
      */
     boolean cancel(boolean mayInterruptIfRunning);
 

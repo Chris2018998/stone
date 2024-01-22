@@ -9,8 +9,8 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.exception.TaskServiceConfigException;
-import org.stone.beetp.execution.TaskExecutionPool;
+import org.stone.beetp.pool.exception.TaskServiceConfigException;
+import org.stone.beetp.pool.TaskExecutionPool;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
