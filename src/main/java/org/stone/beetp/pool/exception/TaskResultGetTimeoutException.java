@@ -10,18 +10,16 @@
 package org.stone.beetp.pool.exception;
 
 /**
- * execution initialize exception
+ * Timeout Exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolInitializedException extends TaskPoolException {
-
-    public PoolInitializedException(String s) {
-        super(s);
+public class TaskResultGetTimeoutException extends TaskException {
+    public TaskResultGetTimeoutException() {
     }
 
-    public PoolInitializedException(Throwable cause) {
-        super(cause);
+    public TaskResultGetTimeoutException(String message) {
+        super(message);
     }
 }

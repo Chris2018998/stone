@@ -10,18 +10,14 @@
 package org.stone.beetp.pool.exception;
 
 /**
- * execution initialize exception
+ * Task submit failed,when execution full
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolInitializedException extends TaskPoolException {
+public final class TaskRejectedException extends TaskException {
 
-    public PoolInitializedException(String s) {
-        super(s);
-    }
-
-    public PoolInitializedException(Throwable cause) {
-        super(cause);
+    public TaskRejectedException(String message) {
+        super(message);
     }
 }

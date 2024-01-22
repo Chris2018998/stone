@@ -10,18 +10,19 @@
 package org.stone.beetp.pool.exception;
 
 /**
- * execution initialize exception
+ * Pool Exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolInitializedException extends TaskPoolException {
+public class TaskPoolException extends Exception {
 
-    public PoolInitializedException(String s) {
-        super(s);
+    public TaskPoolException(String message) {
+        super(message);
     }
 
-    public PoolInitializedException(Throwable cause) {
+    public TaskPoolException(Throwable cause) {
         super(cause);
     }
+
 }
