@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * filter of methods call
+ * filter on methods call
  *
  * @author Chris
  * @version 1.0

@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * Factory to create keyed object instance to pool
+ * Object factory interface
  *
  * @author Chris
  * @version 1.0
