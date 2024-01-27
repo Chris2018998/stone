@@ -187,7 +187,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             throw new PoolInClearingException("Keyed object sub pool was closed or in clearing");
     }
 
-    public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {
+    public BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception {
         if (key == null) throw new ObjectKeyException("Object key can't be null");
 
         ObjectInstancePool pool = instancePoolMap.get(key);
