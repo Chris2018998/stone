@@ -31,25 +31,25 @@ public interface BeeKeyedObjectPool {
 
 
     //***************************************************************************************************************//
-    //                                             2:Maintenance by object key                                       //
+    //                                             2:Maintenance by keys                                             //
     //***************************************************************************************************************//
 
     /**
-     * returns category keys in pool,if no keys,then return a empty array
+     * returns pooled keys,if not exists keys,then return an empty array
      *
      * @return pooled keys exists in pool
      */
     Object[] keys();
 
     /**
-     * returns default category keys
+     * returns default pooled key
      *
      * @return pooled keys exists in pool
      */
     Object getDefaultKey();
 
     /**
-     * borrows a default keyed object and returns a resulted handle
+     * Borrows a pooed object by default keyed
      *
      * @return handle of a pooled object
      * @throws Exception when get failed
@@ -57,7 +57,7 @@ public interface BeeKeyedObjectPool {
     BeeObjectHandle getObjectHandle() throws Exception;
 
     /**
-     * borrows a keyed object and returns a resulted handle
+     * Borrows a pooled object with parameter key
      *
      * @return handle of a pooled object
      * @throws Exception when gets failed
@@ -65,26 +65,47 @@ public interface BeeKeyedObjectPool {
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     /**
-     * deletes keyed objects from pool
+     * deletes key and key related pooled objects from pool
      *
-     * @param key a deleted object key
+     * @param key may be mapping to a set of pooled objects
      * @throws Exception when delete failed
      */
     void deleteKey(Object key) throws Exception;
 
     /**
-     * deletes keyed objects from pool
+     * deletes key and key related pooled objects from pool
      *
-     * @param key             object key
+     * @param key             may be mapping to a set of pooled objects
      * @param forceCloseUsing is true,then remove directly using objects,otherwise delay to remove using until they returned
      * @throws Exception when delete failed
      */
     void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 
+    /**
+     * only deletes key related pooled objects from pool
+     *
+     * @param key             may be mapping to a set of pooled objects
+     * @param forceCloseUsing is true,then remove directly using objects,otherwise delay to remove using until they returned
+     * @throws Exception when delete failed
+     */
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
-    BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception;
+    /**
+     * get monitor info by key
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return a monitor object by key
+     * @throws Exception when key is null or not exist key in pool
+     */
+    BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception;
 
+    /**
+     * enable indicator on runtime print log
+     *
+     * @param key       pooled key
+     * @param indicator is a boolean value,true on,false off
+     * @throws Exception when key is null or not exist key in pool
+     */
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
 
     //***************************************************************************************************************//
