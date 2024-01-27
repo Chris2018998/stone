@@ -162,23 +162,29 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return this.defaultKey;
     }
 
-    public void deleteKey(Object key) throws Exception {
-        deleteKey(key, false);
-    }
-
     private boolean isDefaultKey(Object key) {
         return defaultKey == key || defaultKey.equals(key);
     }
 
+    public void deleteKey(Object key) throws Exception {
+        deleteKey(key, false);
+    }
+
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
         if (key == null) throw new ObjectKeyException("Access forbidden,keyed object pool was closed or in clearing");
+        if (isDefaultKey(key)) throw new ObjectKeyException("Default key forbid deletion");
 
         ObjectInstancePool pool = instancePoolMap.remove(key);
-        if (pool != null) {
-            if (!pool.clear(forceCloseUsing))
-                throw new PoolInClearingException("Keyed object sub pool was closed or in clearing");
-            if (isDefaultKey(key)) defaultPool = null;
-        }
+        if (pool != null && !pool.clear(forceCloseUsing))
+            throw new PoolInClearingException("Keyed object sub pool was closed or in clearing");
+    }
+
+    public void deleteObjects(Object key, boolean forceCloseUsing) throws Exception {
+        if (key == null) throw new ObjectKeyException("Access forbidden,keyed object pool was closed or in clearing");
+
+        ObjectInstancePool pool = instancePoolMap.get(key);
+        if (pool != null && !pool.clear(forceCloseUsing))
+            throw new PoolInClearingException("Keyed object sub pool was closed or in clearing");
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception {

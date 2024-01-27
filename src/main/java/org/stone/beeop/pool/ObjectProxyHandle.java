@@ -36,6 +36,7 @@ public final class ObjectProxyHandle extends ObjectSimpleHandle {
     public final Object getObjectProxy() throws Exception {
         if (isClosed) throw new BeeObjectException("No operations allowed after object handle closed");
         if (objectProxy != null) return objectProxy;
+
         synchronized (this) {
             if (objectProxy != null) return objectProxy;
             try {
