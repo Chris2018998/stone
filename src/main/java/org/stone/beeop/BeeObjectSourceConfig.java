@@ -49,7 +49,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private int initialSize;
     //async indicator to create initial objects
     private boolean asyncCreateInitObject;
-    //max object key size(pool capacity size = (maxObjectKeySize+1) * maxActive)
+    //max object key size(pool capacity size = (maxObjectKeySize * maxActive)
     private int maxObjectKeySize = 50;
     //max reachable size of object instance by per key
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
@@ -180,7 +180,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setMaxObjectKeySize(int maxObjectKeySize) {
-        if (maxObjectKeySize >= 2) this.maxObjectKeySize = maxObjectKeySize;
+        if (maxObjectKeySize >= 1) this.maxObjectKeySize = maxObjectKeySize;
     }
 
     public int getBorrowSemaphoreSize() {
@@ -503,7 +503,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             throw new BeeObjectSourceConfigException("initialSize must be greater than zero");
         if (initialSize > this.maxActive)
             throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
-        if (this.maxObjectKeySize <= 0)
+        if (this.maxObjectKeySize < 1)
             throw new BeeObjectSourceConfigException("maxObjectKeySize must be greater than zero");
         if (borrowSemaphoreSize <= 0)
             throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");

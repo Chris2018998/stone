@@ -81,6 +81,8 @@ public interface BeeKeyedObjectPool {
      */
     void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 
+    void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
+
     BeeObjectPoolMonitorVo getPoolMonitorVo(Object key) throws Exception;
 
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
