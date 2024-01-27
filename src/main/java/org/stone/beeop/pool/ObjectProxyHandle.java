@@ -28,6 +28,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.PoolClassLoader;
  */
 public final class ObjectProxyHandle extends ObjectSimpleHandle {
     private Object objectProxy;
+    private Exception failCause;
 
     ObjectProxyHandle(PooledObject p) {
         super(p);
@@ -36,18 +37,21 @@ public final class ObjectProxyHandle extends ObjectSimpleHandle {
     public final Object getObjectProxy() throws Exception {
         if (isClosed) throw new BeeObjectException("No operations allowed after object handle closed");
         if (objectProxy != null) return objectProxy;
+        if (failCause != null) throw failCause;
 
         synchronized (this) {
             if (objectProxy != null) return objectProxy;
+            if (failCause != null) throw failCause;
+
             try {
                 return this.objectProxy = Proxy.newProxyInstance(
                         PoolClassLoader,
                         p.objectInterfaces,
                         new ObjectReflectHandler(p, this));
             } catch (Exception e) {
-                throw e;
+                throw failCause = e;
             } catch (Throwable e) {
-                throw new Exception(e);
+                throw failCause = new Exception(e);
             }
         }
     }
