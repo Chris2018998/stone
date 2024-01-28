@@ -9,6 +9,8 @@
  */
 package org.stone.beeop;
 
+import java.sql.SQLException;
+
 /**
  * keyed object pool interface
  *
@@ -35,7 +37,7 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * returns pooled keys,if not exists keys,then return an empty array
+     * returns pooled keys include default key
      *
      * @return pooled keys exists in pool
      */
@@ -49,7 +51,7 @@ public interface BeeKeyedObjectPool {
     Object getDefaultKey();
 
     /**
-     * Borrows a pooed object by default keyed
+     * Borrows a pooed object by default key
      *
      * @return handle of a pooled object
      * @throws Exception when get failed
@@ -111,16 +113,55 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
     //                                             3: other methods of pool                                          //
     //***************************************************************************************************************//
+
+    /**
+     * Method invocation to shut down pool,there is a thead-safe control,only one thread success call
+     * it at concurrent,the pool state mark to be closed and rejects coming requests with a exception.
+     * This method support duplicated call when in closed state,do nothing,just return.
+     */
     void close();
 
+    /**
+     * test pool whether in closed state
+     *
+     * @return a boolean,true closed
+     */
     boolean isClosed();
 
-    void setPrintRuntimeLog(boolean enable);
+    /**
+     * Changes on indicator of pool runtime log print
+     *
+     * @param indicator true,print;false,not print
+     */
+    void setPrintRuntimeLog(boolean indicator);
 
+    /**
+     * Returns a view object contains pool monitor info,such as state,idle,using and so on.
+     *
+     * @return monitor vo
+     */
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
+    /**
+     * Removes all pooled objects,this method should work under synchronization control,success caller update
+     * pool state from {@code ObjectPoolStatics.POOL_READY} to {@code ObjectPoolStatics.POOL_CLEARING} and
+     * interrupts all blocking waiters to leave from pool.Before completion of clearing,the pool rejects borrowing
+     * requests.All idle objects closed immediately and removed,if parameter<h1>forceCloseUsing</h1>is true,
+     * do same operation on all using objects like idle,but false,the caller thead waits using return to pool,
+     * then close them.Finally,pool state reset to {@code ObjectPoolStatics.POOL_READY} when done.
+     *
+     * @param forceCloseUsing is a indicator that direct close or delay close on using objects
+     */
     void clear(boolean forceCloseUsing) throws Exception;
 
+    /**
+     * Removes all pooled objects and restarts pool with new configuration when the config parameter is not null,
+     * the method is similar to the previous{@link #clear}.
+     *
+     * @param forceCloseUsing is a indicator that direct close or delay close on using objects
+     * @param config          is new configuration for pool restarting
+     * @throws SQLException when configuration checks failed or pool re-initializes failed
+     */
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 
 }
