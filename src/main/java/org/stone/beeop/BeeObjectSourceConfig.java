@@ -38,8 +38,8 @@ import static org.stone.tools.CommonUtil.trimString;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //index for generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //store properties which injected to object factory on pool initialization
-    private final Map<String, Object> factoryProperties = new HashMap<String, Object>(1);
+    //store properties which are injected to object factory while pool initialization
+    private final Map<String, Object> factoryProperties = new HashMap<String, Object>();
 
     //if this value is null or empty,a generated pool name set to this field
     private String poolName;
@@ -74,7 +74,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
     //jmx register indicator
     private boolean enableJmx;
-    //config info print indicator on pool initialization
+    //config info print indicator while pool initialization
     private boolean printConfigInfo;
     //pool runtime info print indicator,which can be changed by calling setPrintRuntimeLog method at runtime
     private boolean printRuntimeLog;
