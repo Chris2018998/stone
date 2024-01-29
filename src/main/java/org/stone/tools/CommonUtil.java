@@ -65,7 +65,12 @@ public class CommonUtil {
         ownerThreadsMethod.setAccessible(true);
         waitingThreadsMethod.setAccessible(true);
 
-        //3:interrupt threads on pool lock
+        /*
+         * 3:interrupt threads on lock
+         * if interruption flag updated after lock acquiring success, and interrupted exception thrown from AQS method at next acquiring
+         * should add a cas <method>cancelAcquire()</method>to do interruption in AQS?
+         */
+        //
         Object[] parameters = new Object[0];
         Thread ownerThread = (Thread) ownerThreadsMethod.invoke(sync, parameters);
         if (ownerThread != null) ownerThread.interrupt();//owner thread maybe stuck on socket
