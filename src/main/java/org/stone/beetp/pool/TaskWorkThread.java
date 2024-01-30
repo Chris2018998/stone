@@ -48,7 +48,7 @@ final class TaskWorkThread extends Thread {
     TaskWorkThread(Object state, TaskExecutionPool pool) {
         this.pool = pool;
         this.state = state;
-        this.workQueue = new ConcurrentLinkedQueue();
+        this.workQueue = new ConcurrentLinkedQueue<>();
     }
 
     //***************************************************************************************************************//
@@ -87,6 +87,7 @@ final class TaskWorkThread extends Thread {
             if (state instanceof BaseHandle) {
                 handle = (BaseHandle) state;
                 this.state = WORKER_WORKING;
+
             } else {
                 handle = workQueue.poll();//individual queue
                 if (handle == null) handle = queue.poll();//poll from common queue
@@ -127,4 +128,67 @@ final class TaskWorkThread extends Thread {
         //remove worker from pool
         pool.removeTaskWorker(this);
     }
+
+//    public void run() {
+//        final Queue<BaseHandle> queue = pool.getTaskQueue();
+//        final boolean useTimePark = pool.isIdleTimeoutValid();
+//        final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
+//
+//        do {
+//            //1: read worker state
+//            BaseHandle taskHandle;
+//            Object state = this.state;
+//
+//            //2: poll task from queue(worker task queue,or from common task queue)
+//            if (state == WORKER_WORKING) {
+//                //2.1: poll from individual queue
+//                while ((taskHandle = workQueue.poll()) != null) {
+//                    this.processTask(taskHandle);
+//                }
+//                //2.2: poll from common queue
+//                while ((taskHandle = queue.poll()) != null) {
+//                    this.processTask(taskHandle);
+//                }
+//                //2.3: poll from common queue
+//                for (TaskWorkThread worker : pool.getWorkerArray()) {
+//                    if (worker == this) continue;
+//                    taskHandle = worker.workQueue.poll();
+//                    if (taskHandle == null) break;
+//                    this.processTask(taskHandle);
+//                }
+//            } else if (state instanceof BaseHandle) {
+//                taskHandle = (BaseHandle) state;
+//                this.state = WORKER_WORKING;
+//                processTask(taskHandle);
+//            } else if (state == WORKER_TERMINATED) {//thread exiting
+//                break;
+//            }
+//
+//            //set worker sate to idle and park thread
+//            this.state = WORKER_IDLE;
+//            if (useTimePark) {
+//                final long deadline = System.nanoTime() + idleTimeoutNanos;
+//                LockSupport.parkNanos(idleTimeoutNanos);//maybe park failed
+//                if (deadline - System.nanoTime() <= 0L && compareAndSetState(WORKER_IDLE, WORKER_TERMINATED))
+//                    break;
+//            } else {
+//                LockSupport.park();
+//            }
+//        } while (true);
+//
+//        //remove worker from pool
+//        pool.removeTaskWorker(this);
+//    }
+//
+//    private void processTask(BaseHandle taskHandle) {
+//        if (taskHandle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
+//            try {
+//                taskHandle.beforeExecute();
+//                taskHandle.executeTask(this);
+//            } finally {
+//                this.curTaskHandle = null;
+//                taskHandle.afterExecute(this);
+//            }
+//        }
+//    }
 }

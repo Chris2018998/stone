@@ -63,7 +63,7 @@ public final class TaskExecutionPool implements TaskPool {
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
-    //                                          1: execution initialization(2)                                       //
+    //                                          1: pool initialization(2)                                            //
     //***************************************************************************************************************//
     public void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException {
         if (config == null) throw new PoolInitializedException("Pool configuration can't be null");
@@ -81,7 +81,7 @@ public final class TaskExecutionPool implements TaskPool {
     }
 
     private void startup(TaskServiceConfig config) {
-        //step1: copy config item to execution
+        //step1: copy config item to pool
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
         this.maxWorkerSize = config.getMaxWorkerSize();
@@ -89,13 +89,13 @@ public final class TaskExecutionPool implements TaskPool {
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
 
-        //step2: create some queues(worker queue,task queue,termination wait queue)
+        //step2: create some queues(worker queue,task queue, wait queue on termination)
         if (workerArray == null) {
             this.workerArrayLock = new ReentrantLock();
             this.taskQueue = new ConcurrentLinkedQueue<>();
             this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-            //step3: atomic fields of execution monitor
+            //step3: atomic fields of pool monitor
             this.taskCount = new AtomicInteger();
             this.monitorVo = new TaskPoolMonitorVo();
         }
@@ -132,10 +132,10 @@ public final class TaskExecutionPool implements TaskPool {
     public TaskHandle submit(Task task, TaskCallback callback) throws TaskException {
         //1: check task
         if (task == null) throw new TaskException("Task can't be null");
-        //2: check execution state and execution space
+        //2: check pool state and task capacity
         this.checkPool();
 
-        //3: crete task handle
+        //3: create task handle
         BaseHandle handle = new BaseHandle(task, callback, this);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle, this.taskQueue);
@@ -151,10 +151,10 @@ public final class TaskExecutionPool implements TaskPool {
         //1: check task
         if (task == null) throw new TaskException("Task can't be null");
         if (operator == null) throw new TaskException("Task join operator can't be null");
-        //2: check execution state and execution space
+        //2: check pool state and task capacity
         this.checkPool();
 
-        //3: crete join task handle(root)
+        //3: create join task handle(root)
         BaseHandle handle = new JoinTaskHandle(task, operator, callback, this);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle, this.taskQueue);
@@ -169,10 +169,10 @@ public final class TaskExecutionPool implements TaskPool {
     public TaskHandle submit(TreeTask task, TaskCallback callback) throws TaskException {
         //1: check task
         if (task == null) throw new TaskException("Task can't be null");
-        //2: check execution state and execution space
+        //2: check pool state and task capacity
         this.checkPool();
 
-        //3: crete tree task handle(root)
+        //3: create tree task handle(root)
         TreeTaskHandle handle = new TreeTaskHandle(task, callback, this);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle, this.taskQueue);
@@ -211,7 +211,7 @@ public final class TaskExecutionPool implements TaskPool {
     //                                  4: task check and task offer(4)                                              //
     //***************************************************************************************************************//
     private void checkPool() throws TaskException {
-        //1: execution state check
+        //1: pool state check
         if (this.poolState != POOL_RUNNING)
             throw new TaskRejectedException("Pool has been closed or in clearing");
 
@@ -225,8 +225,9 @@ public final class TaskExecutionPool implements TaskPool {
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
     void pushToExecutionQueue(BaseHandle taskHandle, Queue<BaseHandle> taskQueue) {
-        //1:try to wakeup a idle work thread with task
-        for (TaskWorkThread worker : workerArray) {
+        //1:try to wakeup a idle work thread to process this task
+        TaskWorkThread[] workers = this.workerArray;
+        for (TaskWorkThread worker : workers) {
             if (worker.compareAndSetState(WORKER_IDLE, taskHandle)) {
                 LockSupport.unpark(worker);
                 return;
@@ -251,7 +252,7 @@ public final class TaskExecutionPool implements TaskPool {
         if (intervalTime <= 0 && scheduledType != 1)
             throw new TaskException(scheduledType == 2 ? "Period" : "Delay" + " time must be greater than zero");
 
-        //2: check execution state and execution space
+        //2: check pool state and task capacity
         this.checkPool();
 
         //3: create task handle
@@ -262,7 +263,7 @@ public final class TaskExecutionPool implements TaskPool {
         //4: add task handle to time sortable array,and gets its index in array
         int index = scheduledDelayedQueue.add(handle);
 
-        //re-check execution state,if not in running,then try to cancel task
+        //re-check pool state,if not in running,then try to cancel task
         if (this.poolState != POOL_RUNNING) {
             if (handle.setAsCancelled()) {
                 if (scheduledDelayedQueue.remove(handle) >= 0) taskCount.decrementAndGet();
@@ -381,7 +382,7 @@ public final class TaskExecutionPool implements TaskPool {
                 LockSupport.unpark(thread);
             return info;
         } else {
-            throw new TaskPoolException("Termination forbidden,execution has been in terminating or afterTerminated");
+            throw new TaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
         }
     }
 
@@ -552,7 +553,7 @@ public final class TaskExecutionPool implements TaskPool {
                     }
                 }
 
-                //4: execution state check,if in clearing,then park peek thread
+                //4: pool state check,if in clearing,then park peek thread
                 if (poolCurState == POOL_CLEARING) LockSupport.park();
                 if (poolCurState > POOL_CLEARING) break;
             }
