@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 public interface TaskPool {
 
     //***************************************************************************************************************//
-    //                1: execution initialize method(1)                                                              //
+    //                1: pool initialization(1)                                                                      //
     //***************************************************************************************************************//
     void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException;
 

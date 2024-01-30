@@ -9,8 +9,8 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.exception.TaskServiceConfigException;
 import org.stone.beetp.pool.TaskExecutionPool;
+import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -25,22 +25,22 @@ import static org.stone.tools.CommonUtil.isBlank;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    //index on execution name generation
+    //index for generating default pool name,atomic value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //if not set,then generate with<code>TaskServiceConfig.PoolNameIndex</code>
+    //if this value is null or empty,a generated pool name set to this field
     private String poolName;
-    //max size of tasks in execution(once count + scheduled count)
+    ///max reachable size of task instance by per key(once tasks + scheduled tasks)
     private int maxTaskSize = 100;
-    //worker creation size on execution initialization
+    //worker creation size while pool initialization
     private int initWorkerSize;
-    //max worker siz in execution
+    //max worker siz in pool
     private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
     //daemon ind of worker thread
     private boolean workInDaemon;
     //idle timeout of worker thread(zero value means not timeout)
     private long workerKeepAliveTime;
-    //execution implementation class name
+    //pool implementation class name
     private String poolImplementClassName = TaskExecutionPool.class.getName();
 
     public String getPoolName() {
@@ -116,7 +116,7 @@ public class TaskServiceConfig {
         TaskServiceConfig checkedConfig = new TaskServiceConfig();
         copyTo(checkedConfig);
 
-        //3:set execution name
+        //3:set pool name
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "TaskPool-" + PoolNameIndex.getAndIncrement();
         return checkedConfig;
     }
@@ -127,8 +127,7 @@ public class TaskServiceConfig {
             for (Field field : TaskServiceConfig.class.getDeclaredFields()) {
                 fieldName = field.getName();
                 if (!Modifier.isFinal(field.getModifiers()) && !Modifier.isStatic(field.getModifiers())) {
-                    Object fieldValue = field.get(this);
-                    field.set(config, fieldValue);
+                    field.set(config, field.get(this));
                 }
             }
         } catch (Throwable e) {
