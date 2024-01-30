@@ -83,11 +83,10 @@ final class TaskWorkThread extends Thread {
             if (state == WORKER_TERMINATED) break;
 
             //2: get a task(from state,individual queue,common queue)
-            BaseHandle handle = null;
+            BaseHandle handle;
             if (state instanceof BaseHandle) {
                 handle = (BaseHandle) state;
                 this.state = WORKER_WORKING;
-
             } else {
                 handle = workQueue.poll();//individual queue
                 if (handle == null) handle = queue.poll();//poll from common queue
@@ -129,6 +128,7 @@ final class TaskWorkThread extends Thread {
         pool.removeTaskWorker(this);
     }
 
+
 //    public void run() {
 //        final Queue<BaseHandle> queue = pool.getTaskQueue();
 //        final boolean useTimePark = pool.isIdleTimeoutValid();
@@ -137,34 +137,29 @@ final class TaskWorkThread extends Thread {
 //        do {
 //            //1: read worker state
 //            BaseHandle taskHandle;
-//            Object state = this.state;
 //
-//            //2: poll task from queue(worker task queue,or from common task queue)
-//            if (state == WORKER_WORKING) {
-//                //2.1: poll from individual queue
-//                while ((taskHandle = workQueue.poll()) != null) {
+//            //1: read state of worker,if value equals terminated state,then exit
+//            Object state = this.state;
+//            if (state == WORKER_TERMINATED) break;
+//
+//            //2: convert state object to handle and process it
+//            if (state instanceof BaseHandle)e
+//                this.processTask((BaseHandle) state);
+//            //3: poll from individual queue
+//            while ((taskHandle = workQueue.poll()) != null)
+//                this.processTask(taskHandle);
+//            //4: poll from common queue
+//            while ((taskHandle = queue.poll()) != null)
+//                this.processTask(taskHandle);
+//            //5: steal task from other workers queue
+//            for (TaskWorkThread worker : pool.getWorkerArray()) {
+//                if (worker == this) continue;
+//                Queue<BaseHandle> stealQ = worker.workQueue;
+//                while ((taskHandle = stealQ.poll()) != null)
 //                    this.processTask(taskHandle);
-//                }
-//                //2.2: poll from common queue
-//                while ((taskHandle = queue.poll()) != null) {
-//                    this.processTask(taskHandle);
-//                }
-//                //2.3: poll from common queue
-//                for (TaskWorkThread worker : pool.getWorkerArray()) {
-//                    if (worker == this) continue;
-//                    taskHandle = worker.workQueue.poll();
-//                    if (taskHandle == null) break;
-//                    this.processTask(taskHandle);
-//                }
-//            } else if (state instanceof BaseHandle) {
-//                taskHandle = (BaseHandle) state;
-//                this.state = WORKER_WORKING;
-//                processTask(taskHandle);
-//            } else if (state == WORKER_TERMINATED) {//thread exiting
-//                break;
 //            }
 //
-//            //set worker sate to idle and park thread
+//            //6: set worker sate to idle and park thread
 //            this.state = WORKER_IDLE;
 //            if (useTimePark) {
 //                final long deadline = System.nanoTime() + idleTimeoutNanos;
