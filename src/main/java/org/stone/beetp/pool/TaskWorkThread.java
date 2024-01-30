@@ -135,9 +135,6 @@ final class TaskWorkThread extends Thread {
 //        final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
 //
 //        do {
-//            //1: read worker state
-//            BaseHandle taskHandle;
-//
 //            //1: read state of worker,if value equals terminated state,then exit
 //            Object state = this.state;
 //            if (state == WORKER_TERMINATED) break;
@@ -146,6 +143,7 @@ final class TaskWorkThread extends Thread {
 //            if (state instanceof BaseHandle)e
 //                this.processTask((BaseHandle) state);
 //            //3: poll from individual queue
+//            BaseHandle taskHandle;
 //            while ((taskHandle = workQueue.poll()) != null)
 //                this.processTask(taskHandle);
 //            //4: poll from common queue
