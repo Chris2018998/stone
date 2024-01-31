@@ -234,7 +234,7 @@ public final class TaskExecutionPool implements TaskPool {
             }
         }
 
-        //2: try to create a new worker
+        //2:try to create a new worker
         if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
             taskQueue.offer(taskHandle);
     }
@@ -304,14 +304,16 @@ public final class TaskExecutionPool implements TaskPool {
         }
     }
 
-    private TaskPoolCancelledList removeAll(boolean mayInterruptIfRunning) {
-        List<Task> unRunningTaskList = new LinkedList<>();
-        List<TreeTask> unRunningTreeTaskList = new LinkedList<>();
+    private TaskPoolTerminatedVo removeAll(boolean mayInterruptIfRunning) {
+        List<Task> onceTaskList = new LinkedList<>();
+        List<Task> scheduledTaskList = new LinkedList<>();
+        List<Task> joinTaskList = new LinkedList<>();
+        List<TreeTask> treeTaskList = new LinkedList<>();
 
         //1: remove scheduled tasks
         for (ScheduledTaskHandle handle : scheduledDelayedQueue.clearAll()) {
             if (handle.setAsCancelled()) {//collect cancelled tasks by execution
-                unRunningTaskList.add(handle.task);
+                scheduledTaskList.add(handle.task);
                 handle.setResult(TASK_CANCELLED, null);
             }
         }
@@ -320,13 +322,14 @@ public final class TaskExecutionPool implements TaskPool {
         BaseHandle handle;
         while ((handle = taskQueue.poll()) != null) {
             if (handle.setAsCancelled()) {//collect cancelled tasks by execution
-                if (handle instanceof TreeTaskHandle) {
-                    unRunningTreeTaskList.add(((TreeTaskHandle) handle).getTreeTask());
-                } else {
-                    unRunningTaskList.add(handle.task);
-                }
-
                 handle.setResult(TASK_CANCELLED, null);
+                if (handle instanceof TreeTaskHandle) {
+                    treeTaskList.add(((TreeTaskHandle) handle).getTreeTask());
+                } else if (handle instanceof JoinTaskHandle) {
+                    joinTaskList.add(handle.task);
+                } else if (!(handle instanceof ScheduledTaskHandle)) {
+                    onceTaskList.add(handle.task);
+                }
             }
         }
 
@@ -348,7 +351,11 @@ public final class TaskExecutionPool implements TaskPool {
         this.completedCount = 0;
         this.taskCount.set(0);
         this.workerArray = new TaskWorkThread[0];
-        return new TaskPoolCancelledList(unRunningTaskList, unRunningTreeTaskList);
+        return new TaskPoolTerminatedVo(
+                onceTaskList,
+                scheduledTaskList,
+                joinTaskList,
+                treeTaskList);
     }
 
     //remove from array or queue(method called inside handle)
@@ -373,9 +380,9 @@ public final class TaskExecutionPool implements TaskPool {
         return poolState == POOL_TERMINATING;
     }
 
-    public TaskPoolCancelledList terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
+    public TaskPoolTerminatedVo terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
-            TaskPoolCancelledList info = this.removeAll(mayInterruptIfRunning);
+            TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
 
             this.poolState = POOL_TERMINATED;
             for (Thread thread : poolTerminateWaitQueue)
