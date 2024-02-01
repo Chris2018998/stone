@@ -229,7 +229,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             } else if (poolStateCode == POOL_CLOSED) {
                 break;
             } else {
-                LockSupport.parkNanos(delayTimeForNextClearNs);// default wait 3 seconds
+                LockSupport.parkNanos(delayTimeForNextClearNs);//block thread for next cas
             }
         } while (true);
     }
@@ -294,8 +294,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     private void closeIdleTimeout() {
-        for (ObjectInstancePool pool : instancePoolMap.values()) {
-            pool.closeIdleTimeout();
+        for (ObjectInstancePool instancePool : instancePoolMap.values()) {
+            instancePool.closeIdleTimeout();
         }
     }
 
