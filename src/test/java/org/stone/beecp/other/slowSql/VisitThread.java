@@ -37,7 +37,7 @@ public class VisitThread extends Thread {
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(9));//delay 9seconds to execute sql
             ps = con.prepareStatement("select * from dummyTable");
             ps.execute();
-            latch.countDown();
+
         } catch (Exception e) {
         } finally {
             if (ps != null) try {
@@ -49,5 +49,6 @@ public class VisitThread extends Thread {
             } catch (Exception e) {
             }
         }
+        latch.countDown();
     }
 }
