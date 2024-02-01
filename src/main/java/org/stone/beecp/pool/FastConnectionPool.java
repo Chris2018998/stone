@@ -682,7 +682,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     this.tryWakeupServantThread();
                 }
             } else if (state == CON_USING && supportHoldTimeout) {
-                if (System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs) {//hold timeout
+                if (System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) {
                         oclose(proxyInUsing);
