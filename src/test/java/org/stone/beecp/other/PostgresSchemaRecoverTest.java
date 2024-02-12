@@ -14,7 +14,7 @@ import java.sql.Connection;
  * jdbc driver: postgresql-42.7.1.jar
  * SQL Execution before test: CREATE SCHEMA schema1;
  *
- * 3 Test Result: failed
+ * 3 Test Result: true
  * Cause: Schema works as a part of transaction and support rollback
  *
  * 4 Solution: May be add connection reset interface and provide a new impl to support Postgres?
@@ -69,6 +69,10 @@ public class PostgresSchemaRecoverTest {
         dataSource.setJdbcUrl("jdbc:postgresql://localhost:5432/postgres");
         dataSource.setUsername("postgres");
         dataSource.setPassword("root");
+
+        //two new indicator to support Postgres
+        dataSource.setEnableDirtyOnSchema(true);
+        dataSource.setEnableDirtyOnCatalog(true);
 
         //step2: change Schema
         Connection connection = null;
