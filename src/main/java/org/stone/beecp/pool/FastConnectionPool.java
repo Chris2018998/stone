@@ -422,9 +422,11 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 //4:defaultCatalog
                 poolConfig.isEnableDefaultOnCatalog(),
                 defaultCatalog,
+                poolConfig.isEnableDirtyOnCatalog(),
                 //5:defaultCatalog
                 poolConfig.isEnableDefaultOnSchema(),
                 defaultSchema,
+                poolConfig.isEnableDirtyOnSchema(),
                 //6:defaultNetworkTimeout
                 supportNetworkTimeoutInd,
                 defaultNetworkTimeout,

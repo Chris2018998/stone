@@ -34,6 +34,8 @@ final class PooledConnection implements Cloneable {
     final String defaultCatalog;
     final String defaultSchema;
     final int defaultNetworkTimeout;
+    final boolean enableDirtyOnSchema;
+    final boolean enableDirtyOnCatalog;
     private final boolean defaultCatalogIsNotBlank;
     private final boolean defaultSchemaIsNotBlank;
     private final boolean supportNetworkTimeoutInd;
@@ -75,9 +77,11 @@ final class PooledConnection implements Cloneable {
             //4:defaultCatalog
             boolean enableDefaultOnCatalog,
             String defaultCatalog,
+            boolean enableDirtyOnCatalog,
             //5:defaultSchema
             boolean enableDefaultOnSchema,
             String defaultSchema,
+            boolean enableDirtyOnSchema,
             //6:defaultNetworkTimeout
             boolean supportNetworkTimeoutInd,
             int defaultNetworkTimeout,
@@ -99,10 +103,12 @@ final class PooledConnection implements Cloneable {
         this.enableDefaultOnCatalog = enableDefaultOnCatalog;
         this.defaultCatalog = defaultCatalog;
         this.defaultCatalogIsNotBlank = !isBlank(defaultCatalog);
+        this.enableDirtyOnCatalog = enableDirtyOnCatalog;
         //5:defaultSchema
         this.enableDefaultOnSchema = enableDefaultOnSchema;
         this.defaultSchema = defaultSchema;
         this.defaultSchemaIsNotBlank = !isBlank(defaultSchema);
+        this.enableDirtyOnSchema = enableDirtyOnSchema;
         //6:defaultNetworkTimeout
         this.supportNetworkTimeoutInd = supportNetworkTimeoutInd;
         this.defaultNetworkTimeout = defaultNetworkTimeout;
@@ -242,7 +248,7 @@ final class PooledConnection implements Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                     5:dirty record or reset(** @todo adjustment segment)                      //                                                                                  //
+    //                                     5:dirty record or reset                                                   //                                                                                  //
     //***************************************************************************************************************//
     final boolean supportNetworkTimeoutSet() {
         return this.supportNetworkTimeoutInd;
