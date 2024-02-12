@@ -110,6 +110,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
+    //invocation on <method>Connection.setSchema</method) regards as dirty
+    private boolean enableDirtyOnSchema;
+    //invocation on <method>Connection.setCatalog</method) regards as dirty
+    private boolean enableDirtyOnCatalog;
+
     //thread factory class(creation order-2 )
     private Class threadFactoryClass;
     //thread factory instance(creation order-1)
@@ -500,6 +505,22 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void setEnableDefaultOnTransactionIsolation(boolean enableDefaultOnTransactionIsolation) {
         this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
+    }
+
+    public boolean isEnableDirtyOnSchema() {
+        return enableDirtyOnSchema;
+    }
+
+    public void setEnableDirtyOnSchema(boolean enableDirtyOnSchema) {
+        this.enableDirtyOnSchema = enableDirtyOnSchema;
+    }
+
+    public boolean isEnableDirtyOnCatalog() {
+        return enableDirtyOnCatalog;
+    }
+
+    public void setEnableDirtyOnCatalog(boolean enableDirtyOnCatalog) {
+        this.enableDirtyOnCatalog = enableDirtyOnCatalog;
     }
 
     //****************************************************************************************************************//
