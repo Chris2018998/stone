@@ -34,8 +34,8 @@ final class PooledConnection implements Cloneable {
     final String defaultCatalog;
     final String defaultSchema;
     final int defaultNetworkTimeout;
-    final boolean enableDirtyOnSchema;
-    final boolean enableDirtyOnCatalog;
+    final boolean enableFastDirtyOnSchema;
+    final boolean enableFastDirtyOnCatalog;
     private final boolean defaultCatalogIsNotBlank;
     private final boolean defaultSchemaIsNotBlank;
     private final boolean supportNetworkTimeoutInd;
@@ -77,11 +77,11 @@ final class PooledConnection implements Cloneable {
             //4:defaultCatalog
             boolean enableDefaultOnCatalog,
             String defaultCatalog,
-            boolean enableDirtyOnCatalog,
+            boolean enableFastDirtyOnCatalog,
             //5:defaultSchema
             boolean enableDefaultOnSchema,
             String defaultSchema,
-            boolean enableDirtyOnSchema,
+            boolean enableFastDirtyOnSchema,
             //6:defaultNetworkTimeout
             boolean supportNetworkTimeoutInd,
             int defaultNetworkTimeout,
@@ -103,12 +103,12 @@ final class PooledConnection implements Cloneable {
         this.enableDefaultOnCatalog = enableDefaultOnCatalog;
         this.defaultCatalog = defaultCatalog;
         this.defaultCatalogIsNotBlank = !isBlank(defaultCatalog);
-        this.enableDirtyOnCatalog = enableDirtyOnCatalog;
+        this.enableFastDirtyOnCatalog = enableFastDirtyOnCatalog;
         //5:defaultSchema
         this.enableDefaultOnSchema = enableDefaultOnSchema;
         this.defaultSchema = defaultSchema;
         this.defaultSchemaIsNotBlank = !isBlank(defaultSchema);
-        this.enableDirtyOnSchema = enableDirtyOnSchema;
+        this.enableFastDirtyOnSchema = enableFastDirtyOnSchema;
         //6:defaultNetworkTimeout
         this.supportNetworkTimeoutInd = supportNetworkTimeoutInd;
         this.defaultNetworkTimeout = defaultNetworkTimeout;
