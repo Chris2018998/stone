@@ -67,8 +67,8 @@ public class PostgresSchemaRecoverTest {
         dataSource.setPassword("root");
 
         //two new indicator to support Postgres
-        dataSource.setEnableDirtyOnSchema(true);
-        dataSource.setEnableDirtyOnCatalog(true);
+        dataSource.setEnableFastDirtyOnSchema(true);
+        dataSource.setEnableFastDirtyOnCatalog(true);
 
         //step2: change Schema
         Connection connection = null;
