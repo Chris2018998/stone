@@ -110,10 +110,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //invocation on <method>Connection.setSchema</method) regards as dirty
-    private boolean enableDirtyOnSchema;
-    //invocation on <method>Connection.setCatalog</method) regards as dirty
-    private boolean enableDirtyOnCatalog;
+    //invocation on <method>Connection.setSchema</method) regards as schema dirty
+    private boolean enableFastDirtyOnSchema;
+    //invocation on <method>Connection.setCatalog</method) regards as catalog dirty
+    private boolean enableFastDirtyOnCatalog;
 
     //thread factory class(creation order-2 )
     private Class threadFactoryClass;
@@ -507,20 +507,20 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
     }
 
-    public boolean isEnableDirtyOnSchema() {
-        return enableDirtyOnSchema;
+    public boolean isEnableFastDirtyOnSchema() {
+        return enableFastDirtyOnSchema;
     }
 
-    public void setEnableDirtyOnSchema(boolean enableDirtyOnSchema) {
-        this.enableDirtyOnSchema = enableDirtyOnSchema;
+    public void setEnableFastDirtyOnSchema(boolean enableFastDirtyOnSchema) {
+        this.enableFastDirtyOnSchema = enableFastDirtyOnSchema;
     }
 
-    public boolean isEnableDirtyOnCatalog() {
-        return enableDirtyOnCatalog;
+    public boolean isEnableFastDirtyOnCatalog() {
+        return enableFastDirtyOnCatalog;
     }
 
-    public void setEnableDirtyOnCatalog(boolean enableDirtyOnCatalog) {
-        this.enableDirtyOnCatalog = enableDirtyOnCatalog;
+    public void setEnableFastDirtyOnCatalog(boolean enableFastDirtyOnCatalog) {
+        this.enableFastDirtyOnCatalog = enableFastDirtyOnCatalog;
     }
 
     //****************************************************************************************************************//
