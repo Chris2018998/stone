@@ -9,38 +9,25 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.tools.unsafe.UnsafeAdaptorSunMiscImpl;
-import sun.misc.Unsafe;
+import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.TaskPoolConstants.*;
 
 /**
- * Task work thread
+ * Pooled thread to execute submission tasks
  *
  * @author Chris Liao
  * @version 1.0
  */
 final class TaskWorkThread extends Thread {
-    //unsafe to update state field
-    private static final Unsafe U;
-    private static final long stateOffset;
-
-    static {
-        try {
-            U = UnsafeAdaptorSunMiscImpl.U;
-            stateOffset = U.objectFieldOffset(TaskWorkThread.class.getDeclaredField("state"));
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
+    private static final AtomicReferenceFieldUpdater<TaskWorkThread, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(TaskWorkThread.class, Object.class, "state");
     final Queue<BaseHandle> workQueue;
     private final TaskExecutionPool pool;//owner
-
     volatile long completedCount;//task completed count by this current worker
     volatile BaseHandle curTaskHandle;//task handle in processing
     private volatile Object state;//state definition,@see{@link TaskPoolConstants}
@@ -59,7 +46,7 @@ final class TaskWorkThread extends Thread {
     }
 
     boolean compareAndSetState(Object expect, Object update) {
-        return expect == state && U.compareAndSwapObject(this, stateOffset, expect, update);
+        return expect == state && StateUpd.compareAndSet(this, expect, update);
     }
 
     //***************************************************************************************************************//
@@ -70,7 +57,7 @@ final class TaskWorkThread extends Thread {
     }
 
     //***************************************************************************************************************//
-    //                                      3: thead work methods(2)                                                 //
+    //                                      3: thread work methods(2)                                                 //
     //**************************************************e************************************************************//
     public void run() {
         final Queue<BaseHandle> queue = pool.getTaskQueue();

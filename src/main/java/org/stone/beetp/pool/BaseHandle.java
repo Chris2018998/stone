@@ -16,11 +16,11 @@ import org.stone.beetp.pool.exception.TaskCancelledException;
 import org.stone.beetp.pool.exception.TaskException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
-import org.stone.tools.unsafe.UnsafeAdaptorSunMiscImpl;
-import sun.misc.Unsafe;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.TaskStates.*;
@@ -32,19 +32,7 @@ import static org.stone.beetp.TaskStates.*;
  * @version 1.0
  */
 class BaseHandle implements TaskHandle {
-    //unsafe to update state field
-    private static final Unsafe U;
-    private static final long stateOffset;
-
-    static {
-        try {
-            U = UnsafeAdaptorSunMiscImpl.U;
-            stateOffset = U.objectFieldOffset(BaseHandle.class.getDeclaredField("state"));
-        } catch (Exception e) {
-            throw new Error(e);
-        }
-    }
-
+    private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = IntegerFieldUpdaterImpl.newUpdater(BaseHandle.class, "state");
     final Task task;
     final boolean isRoot;
     final TaskExecutionPool pool;
@@ -82,11 +70,11 @@ class BaseHandle implements TaskHandle {
     }
 
     final boolean setAsCancelled() {
-        return U.compareAndSwapInt(this, stateOffset, TASK_WAITING, TASK_CANCELLED);
+        return StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED);
     }
 
     final boolean setAsRunning(TaskWorkThread thread) {
-        if (U.compareAndSwapInt(this, stateOffset, TASK_WAITING, TASK_EXECUTING)) {
+        if (StateUpd.compareAndSet(this, TASK_WAITING, TASK_EXECUTING)) {
             thread.curTaskHandle = this;
             this.workThread = thread;
             return true;
