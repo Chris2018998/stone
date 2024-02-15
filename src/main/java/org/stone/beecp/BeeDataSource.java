@@ -131,6 +131,9 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         throw new SQLFeatureNotSupportedException("Not support");
     }
 
+    //***************************************************************************************************************//
+    //                                       get from/set to driverManger or Physical datasource? (@todo )           //
+    //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
         throw new SQLFeatureNotSupportedException("Not supported");
     }
@@ -150,6 +153,8 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     public void setLoginTimeout(int seconds) throws SQLException {
         throw new SQLFeatureNotSupportedException("Not supported");
     }
+    //**************************************************** @todo *****************************************************//
+
 
     public boolean isWrapperFor(Class<?> clazz) {
         return clazz != null && clazz.isInstance(this);
