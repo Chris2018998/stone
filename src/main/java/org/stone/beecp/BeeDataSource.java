@@ -46,7 +46,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8);//default vale same to config
     private BeeConnectionPool pool;
-    private CommonDataSource commonDataSource;//used to set loginTimeout and and so on
+    private CommonDataSource subDs;//used to set loginTimeout
     private boolean ready;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause
 
@@ -79,9 +79,9 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
             Object connectionFactory = ds.getConnectionFactory();
             if (connectionFactory instanceof CommonDataSource)
-                ds.commonDataSource = (CommonDataSource) connectionFactory;
+                ds.subDs = (CommonDataSource) connectionFactory;
             else
-                ds.commonDataSource = Dummy_CommonDataSource;
+                ds.subDs = Dummy_CommonDataSource;
 
             ds.ready = true;
         } catch (SQLException e) {
@@ -143,23 +143,23 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                      Override methods from CommonDataSource                                   //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
-        return commonDataSource.getLogWriter();
+        return subDs.getLogWriter();
     }
 
     public void setLogWriter(PrintWriter out) throws SQLException {
-        commonDataSource.setLogWriter(out);
+        subDs.setLogWriter(out);
     }
 
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return commonDataSource.getParentLogger();
+        return subDs.getParentLogger();
     }
 
     public int getLoginTimeout() throws SQLException {
-        return commonDataSource.getLoginTimeout();
+        return subDs.getLoginTimeout();
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {
-        commonDataSource.setLoginTimeout(seconds);
+        subDs.setLoginTimeout(seconds);
     }
     //******************************************************** Override End ******************************************//
 
@@ -221,6 +221,4 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
-
-
 }
