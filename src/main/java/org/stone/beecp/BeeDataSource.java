@@ -28,8 +28,7 @@ import java.util.logging.Logger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.beecp.pool.ConnectionPoolStatics.CommonLog;
-import static org.stone.beecp.pool.ConnectionPoolStatics.createClassInstance;
+import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 
 /**
  * A entrance object to operation on connection pool
@@ -77,7 +76,13 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolClass, BeeConnectionPool.class, "pool");
             pool.init(ds);
             ds.pool = pool;
-            //ds.commonDataSource =(CommonDataSource);//@todo,wait momment here
+
+            Object connectionFactory = ds.getConnectionFactory();
+            if (connectionFactory instanceof CommonDataSource)
+                ds.commonDataSource = (CommonDataSource) connectionFactory;
+            else
+                ds.commonDataSource = Dummy_CommonDataSource;
+
             ds.ready = true;
         } catch (SQLException e) {
             throw e;
@@ -216,4 +221,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
+
+
 }
