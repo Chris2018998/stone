@@ -14,7 +14,9 @@ import org.slf4j.LoggerFactory;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beecp.pool.exception.TestSqlExecFailedException;
 
+import javax.sql.CommonDataSource;
 import javax.sql.XAConnection;
+import java.io.PrintWriter;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,13 +43,35 @@ public class ConnectionPoolStatics {
     public static final String CONFIG_CONNECT_PROP_SIZE = "connectProperties.size";
     //connect properties prefix for driver or driver dataSource
     public static final String CONFIG_CONNECT_PROP_KEY_PREFIX = "connectProperties.";
+
+    public static final CommonDataSource Dummy_CommonDataSource = new CommonDataSource() {
+        public final PrintWriter getLogWriter() throws SQLException {
+            throw new SQLFeatureNotSupportedException("Not supported");
+        }
+
+        public final void setLogWriter(PrintWriter out) throws SQLException {
+            throw new SQLFeatureNotSupportedException("Not supported");
+        }
+
+        public int getLoginTimeout() throws SQLException {
+            throw new SQLFeatureNotSupportedException("Not supported");
+        }
+
+        public final void setLoginTimeout(int seconds) throws SQLException {
+            throw new SQLFeatureNotSupportedException("Not supported");
+        }
+
+        public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
+            throw new SQLFeatureNotSupportedException("Not supported");
+        }
+    };
+
     //pool state
     static final int POOL_NEW = 0;
     static final int POOL_STARTING = 1;
     static final int POOL_READY = 2;
     static final int POOL_CLOSED = 3;
     static final int POOL_CLEARING = 4;
-
     //connection state
     static final int CON_IDLE = 0;
     static final int CON_USING = 1;
