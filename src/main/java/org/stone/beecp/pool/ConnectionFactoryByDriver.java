@@ -63,6 +63,6 @@ public final class ConnectionFactoryByDriver implements RawConnectionFactory, Co
     }
 
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        throw new SQLFeatureNotSupportedException("Not supported");
+        return driver.getParentLogger();
     }
 }
