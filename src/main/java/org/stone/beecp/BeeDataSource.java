@@ -14,6 +14,7 @@ import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreatedException;
 
+import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
@@ -46,6 +47,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8);//default vale same to config
     private BeeConnectionPool pool;
+    private CommonDataSource commonDataSource;//used to set loginTimeout and and so on
     private boolean ready;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause
 
@@ -75,6 +77,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolClass, BeeConnectionPool.class, "pool");
             pool.init(ds);
             ds.pool = pool;
+            //ds.commonDataSource =(CommonDataSource);//@todo,wait momment here
             ds.ready = true;
         } catch (SQLException e) {
             throw e;
@@ -132,28 +135,28 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                       get from/set to driverManger or Physical datasource? (@todo )           //
+    //                                      Override methods from CommonDataSource                                   //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
-        throw new SQLFeatureNotSupportedException("Not supported");
+        return commonDataSource.getLogWriter();
     }
 
     public void setLogWriter(PrintWriter out) throws SQLException {
-        throw new SQLFeatureNotSupportedException("Not supported");
+        commonDataSource.setLogWriter(out);
     }
 
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        throw new SQLFeatureNotSupportedException("Not supported");
+        return commonDataSource.getParentLogger();
     }
 
     public int getLoginTimeout() throws SQLException {
-        throw new SQLFeatureNotSupportedException("Not supported");
+        return commonDataSource.getLoginTimeout();
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {
-        throw new SQLFeatureNotSupportedException("Not supported");
+        commonDataSource.setLoginTimeout(seconds);
     }
-    //**************************************************** @todo *****************************************************//
+    //******************************************************** Override End ******************************************//
 
 
     public boolean isWrapperFor(Class<?> clazz) {
