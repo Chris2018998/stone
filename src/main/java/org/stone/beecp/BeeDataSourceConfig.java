@@ -113,9 +113,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //invocation on <method>Connection.setSchema</method) regards as schema dirty
+    //invocation on <method>Connection.setSchema</method) regards as schema dirty(should set to true while using postgres driver)
     private boolean enableFastDirtyOnSchema;
-    //invocation on <method>Connection.setCatalog</method) regards as catalog dirty
+    //invocation on <method>Connection.setCatalog</method) regards as catalog dirty(should set to true while using postgres driver)
     private boolean enableFastDirtyOnCatalog;
 
     //thread factory class(creation order-2 )
