@@ -245,6 +245,8 @@ final class ProxyClassGenerator {
 
             methodBuffer.delete(0, methodBuffer.length());
             methodBuffer.append("{");
+            boolean existsSQLException = exitsSQLException(ctMethod.getExceptionTypes());
+            if (existsSQLException) methodBuffer.append("  try{");
             if (ctMethod.getReturnType() == ctStatementClass) {
                 newCtMethod.setModifiers(Modifier.PUBLIC | Modifier.FINAL);
                 methodBuffer.append("return new ProxyStatement(raw." + methodName + "($$),this,p);");
@@ -264,6 +266,8 @@ final class ProxyClassGenerator {
                 methodBuffer.append("return raw." + methodName + "($$);");
             }
 
+            if (existsSQLException)
+                methodBuffer.append(" }catch(SQLException e){ p.checkSQLException(e);throw e;}");
             methodBuffer.append("}");
             newCtMethod.setBody(methodBuffer.toString());
             ctConnectionClassProxyClass.addMethod(newCtMethod);
