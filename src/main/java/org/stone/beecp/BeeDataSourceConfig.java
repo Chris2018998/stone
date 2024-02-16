@@ -65,10 +65,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
+    //seconds: max wait time in {@link #RawConnectionFactory #RawXaConnectionFactory} to create a raw connection,set to data source or driver manager when greater than zero
+    private int createTimeout;
     //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool if this value greater than zero
     private long holdTimeout;
+
     //a test sql to validate borrowed connections whether be alive
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get validation result on testing connections
@@ -283,6 +286,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void setMaxWait(long maxWait) {
         if (maxWait > 0L) this.maxWait = maxWait;
+    }
+
+    public int getCreateTimeout() {
+        return createTimeout;
+    }
+
+    public void setCreateTimeout(int createTimeout) {
+        if (createTimeout > 0) this.createTimeout = createTimeout;
     }
 
     public long getIdleTimeout() {

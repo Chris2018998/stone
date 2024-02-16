@@ -83,6 +83,8 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             else
                 ds.subDs = Dummy_CommonDataSource;
 
+            //timeout on connect to db
+            if (ds.getCreateTimeout() > 0) ds.subDs.setLoginTimeout(ds.getCreateTimeout());
             ds.ready = true;
         } catch (SQLException e) {
             throw e;
@@ -162,7 +164,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         subDs.setLoginTimeout(seconds);
     }
     //******************************************************** Override End ******************************************//
-
 
     public boolean isWrapperFor(Class<?> clazz) {
         return clazz != null && clazz.isInstance(this);
