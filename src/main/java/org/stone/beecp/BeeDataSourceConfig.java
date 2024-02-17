@@ -65,7 +65,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
-    //seconds: max wait time in {@link #RawConnectionFactory #RawXaConnectionFactory} to create a raw connection,set to data source or driver manager when greater than zero
+    //seconds: max wait time in {@link RawConnectionFactory} and {@link RawXaConnectionFactory} to create connections
     private int createTimeout;
     //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
@@ -113,9 +113,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //invocation on <method>Connection.setSchema</method) regards as schema dirty(should set to true while using postgres driver)
+    //invocation on <method>Connection.setSchema</method) regards as schema dirty(should set to true when using postgres driver)
     private boolean enableFastDirtyOnSchema;
-    //invocation on <method>Connection.setCatalog</method) regards as catalog dirty(should set to true while using postgres driver)
+    //invocation on <method>Connection.setCatalog</method) regards as catalog dirty(should set to true when using postgres driver)
     private boolean enableFastDirtyOnCatalog;
 
     //thread factory class(creation order-2 )
