@@ -65,7 +65,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
-    //seconds:max wait time in {@link RawConnectionFactory} and {@link RawXaConnectionFactory} to create connections.
+    //seconds:max wait time in {@code RawConnectionFactory} and {@code RawXaConnectionFactory} to create connections.
     //this item can be set into raw datasource or DriverManager as loginTimeout on initialization if its value is greater than zero,
     //but field loginTimeout of DriverManager is shareable info and whose setting change is global to all drivers,and maybe some drivers
     //read loginTimeout from DriverManager as a working control field,so need more careful and set an appropriate value to this field when necessary
@@ -692,7 +692,22 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                 for (int i = 1; i <= size; i++)//properties index begin with 1
                     this.addConnectProperty(getPropertyValue(configProperties, CONFIG_CONNECT_PROP_KEY_PREFIX + i));
             }
-        }
+
+            //4:try to load sql exception fatal code and fatal state
+            String sqlExceptionCode = getPropertyValue(configProperties, CONFIG_SQL_EXCEPTION_CODE);
+            String sqlExceptionState = getPropertyValue(configProperties, CONFIG_SQL_EXCEPTION_STATE);
+            if (!isBlank(sqlExceptionCode)) {
+                for (String code : sqlExceptionCode.trim().split(",")) {
+                    this.addSqlExceptionCode(Integer.parseInt(code));
+                }
+            }
+
+            if (!isBlank(sqlExceptionState)) {
+                for (String state : sqlExceptionState.trim().split(",")) {
+                    this.addSqlExceptionState(state);
+                }
+            }
+        }//synchronized end
     }
 
 
