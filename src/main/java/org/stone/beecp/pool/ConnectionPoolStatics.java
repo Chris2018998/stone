@@ -43,6 +43,10 @@ public class ConnectionPoolStatics {
     public static final String CONFIG_CONNECT_PROP_SIZE = "connectProperties.size";
     //connect properties prefix for driver or driver dataSource
     public static final String CONFIG_CONNECT_PROP_KEY_PREFIX = "connectProperties.";
+    //sql exception fatal code
+    public static final String CONFIG_SQL_EXCEPTION_CODE = "sqlExceptionCodeList";
+    //sql exception fatal state
+    public static final String CONFIG_SQL_EXCEPTION_STATE = "sqlExceptionStateList";
 
     public static final CommonDataSource Dummy_CommonDataSource = new CommonDataSource() {
         public final PrintWriter getLogWriter() throws SQLException {
