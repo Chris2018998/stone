@@ -324,6 +324,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 defaultAutoCommit = rawCon.getAutoCommit();
             if (defaultAutoCommit == null) defaultAutoCommit = Boolean.TRUE;
         } catch (Throwable e) {
+            poolConfig.setEnableDefaultOnAutoCommit(false);
             if (this.printRuntimeLog)
                 Log.warn("BeeCP({})'autoCommit ' property of connection not supported by driver", this.poolName);
         }
@@ -336,6 +337,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             if (defaultTransactionIsolation == null)
                 defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
         } catch (Throwable e) {
+            poolConfig.setEnableDefaultOnTransactionIsolation(false);
             if (this.printRuntimeLog)
                 Log.warn("BeeCP({})'transactionIsolation ' property of connection not supported by driver", this.poolName);
         }
@@ -347,6 +349,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 defaultReadOnly = rawCon.isReadOnly();
             if (defaultReadOnly == null) defaultReadOnly = Boolean.FALSE;
         } catch (Throwable e) {
+            poolConfig.setEnableDefaultOnReadOnly(false);
             if (this.printRuntimeLog)
                 Log.warn("BeeCP({})'readOnly ' property of connection not supported by driver", this.poolName);
         }
