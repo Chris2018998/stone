@@ -117,9 +117,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean enableDefaultOnTransactionIsolation = true;
 
     //invocation on <method>Connection.setSchema</method) regards as schema dirty(should set to true when using postgres driver)
-    private boolean enableFastDirtyOnSchema;
+    private boolean forceDirtyOnSchemaAfterSet;
     //invocation on <method>Connection.setCatalog</method) regards as catalog dirty(should set to true when using postgres driver)
-    private boolean enableFastDirtyOnCatalog;
+    private boolean forceDirtyOnCatalogAfterSet;
 
     //thread factory class(creation order-2 )
     private Class threadFactoryClass;
@@ -521,20 +521,20 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
     }
 
-    public boolean isEnableFastDirtyOnSchema() {
-        return enableFastDirtyOnSchema;
+    public boolean isForceDirtyOnSchemaAfterSet() {
+        return forceDirtyOnSchemaAfterSet;
     }
 
-    public void setEnableFastDirtyOnSchema(boolean enableFastDirtyOnSchema) {
-        this.enableFastDirtyOnSchema = enableFastDirtyOnSchema;
+    public void setForceDirtyOnSchemaAfterSet(boolean forceDirtyOnSchemaAfterSet) {
+        this.forceDirtyOnSchemaAfterSet = forceDirtyOnSchemaAfterSet;
     }
 
-    public boolean isEnableFastDirtyOnCatalog() {
-        return enableFastDirtyOnCatalog;
+    public boolean isForceDirtyOnCatalogAfterSet() {
+        return forceDirtyOnCatalogAfterSet;
     }
 
-    public void setEnableFastDirtyOnCatalog(boolean enableFastDirtyOnCatalog) {
-        this.enableFastDirtyOnCatalog = enableFastDirtyOnCatalog;
+    public void setForceDirtyOnCatalogAfterSet(boolean forceDirtyOnCatalogAfterSet) {
+        this.forceDirtyOnCatalogAfterSet = forceDirtyOnCatalogAfterSet;
     }
 
     //****************************************************************************************************************//
