@@ -121,7 +121,18 @@ final class PooledConnection implements Cloneable {
         this.curAutoCommit = defaultAutoCommit;
     }
 
-    PooledConnection setDefaultAndCopy(Connection rawConn, int state, XAResource rawXaRes) throws SQLException, CloneNotSupportedException {
+    PooledConnection createFirstByClone(Connection rawConn, int state, XAResource rawXaRes) throws CloneNotSupportedException {
+        PooledConnection p = (PooledConnection) clone();
+        p.state = state;
+        p.rawConn = rawConn;
+        p.rawXaRes = rawXaRes;
+        p.resetFlags = FALSE.clone();
+        p.openStatements = new ProxyStatementBase[10];
+        p.lastAccessTime = System.currentTimeMillis();
+        return p;
+    }
+
+    PooledConnection setDefaultAndCreateByClone(Connection rawConn, int state, XAResource rawXaRes) throws SQLException, CloneNotSupportedException {
         if (enableDefaultOnAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
             rawConn.setAutoCommit(defaultAutoCommit);
         if (enableDefaultOnTransactionIsolation && defaultTransactionIsolation != rawConn.getTransactionIsolation())

@@ -265,12 +265,15 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                         rawConn = this.rawConnFactory.create();
                     }
 
+                    PooledConnection p;
                     if (this.templatePooledConnNotCreated) {
                         templatePooledConn = this.createTemplatePooledConn(rawConn);
                         templatePooledConnNotCreated = false;//template pooled connection is ready
+                        p = this.templatePooledConn.createFirstByClone(rawConn, state, rawXaRes);
+                    } else {
+                        p = this.templatePooledConn.setDefaultAndCreateByClone(rawConn, state, rawXaRes);
                     }
 
-                    PooledConnection p = this.templatePooledConn.setDefaultAndCopy(rawConn, state, rawXaRes);
                     if (this.printRuntimeLog)
                         Log.info("BeeCP({}))Created a new pooled connection:{} with state:{}", this.poolName, p, state);
                     PooledConnection[] arrayNew = new PooledConnection[l + 1];
@@ -317,62 +320,124 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-1.6: creates a template connection used to create new pooled connections by cloning
     private PooledConnection createTemplatePooledConn(Connection rawCon) throws SQLException {
-        //step1:prepare default value for autoCommit property
+        //step1:prepare default auto commit and set default to first connection as test
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
-        try {
-            if (defaultAutoCommit == null && poolConfig.isEnableDefaultOnAutoCommit())
-                defaultAutoCommit = rawCon.getAutoCommit();
-            if (defaultAutoCommit == null) defaultAutoCommit = Boolean.TRUE;
-        } catch (Throwable e) {
-            poolConfig.setEnableDefaultOnAutoCommit(false);
-            if (this.printRuntimeLog)
-                Log.warn("BeeCP({})'autoCommit ' property of connection not supported by driver", this.poolName);
+        if (poolConfig.isEnableDefaultOnAutoCommit()) {
+            if (defaultAutoCommit == null) {
+                try {
+                    defaultAutoCommit = rawCon.getAutoCommit();
+                } catch (Throwable e) {
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to get auto commit from first connection", this.poolName, e);
+                }
+            }
+            if (defaultAutoCommit == null) {
+                defaultAutoCommit = Boolean.TRUE;
+                if (this.printRuntimeLog)
+                    Log.warn("BeeCP({})Default auto commit not configured and assign boolean(true)to default value", this.poolName);
+            }
+            try {
+                rawCon.setAutoCommit(defaultAutoCommit);//default setting test
+            } catch (Throwable e) {
+                poolConfig.setEnableDefaultOnAutoCommit(false);
+                if (this.printRuntimeLog)
+                    Log.warn("BeeCP({})Failed to set default auto commit to first connection", this.poolName, e);
+            }
         }
 
         //step2:prepare default value for transactionIsolation property
         Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
-        try {
-            if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnTransactionIsolation())
-                defaultTransactionIsolation = rawCon.getTransactionIsolation();
-            if (defaultTransactionIsolation == null)
+        if (poolConfig.isEnableDefaultOnTransactionIsolation()) {
+            if (defaultTransactionIsolation == null) {
+                try {
+                    defaultTransactionIsolation = rawCon.getTransactionIsolation();
+                } catch (Throwable e) {
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to get transaction isolation from first connection", this.poolName, e);
+                }
+            }
+            if (defaultTransactionIsolation == null) {
                 defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
-        } catch (Throwable e) {
-            poolConfig.setEnableDefaultOnTransactionIsolation(false);
-            if (this.printRuntimeLog)
-                Log.warn("BeeCP({})'transactionIsolation ' property of connection not supported by driver", this.poolName);
+                if (this.printRuntimeLog)
+                    Log.warn("BeeCP({})Default transaction isolation not configured and set int(" + defaultTransactionIsolation + ")to default", this.poolName);
+            }
+            try {
+                rawCon.setTransactionIsolation(defaultTransactionIsolation);//default setting test
+            } catch (Throwable e) {
+                poolConfig.setEnableDefaultOnTransactionIsolation(false);
+                if (this.printRuntimeLog)
+                    Log.warn("BeeCP({})Failed to set default transaction isolation to first connection", this.poolName, e);
+            }
         }
 
         //step3: prepare default value for readOnly property
         Boolean defaultReadOnly = poolConfig.isDefaultReadOnly();
-        try {
-            if (defaultReadOnly == null && poolConfig.isEnableDefaultOnReadOnly())
-                defaultReadOnly = rawCon.isReadOnly();
-            if (defaultReadOnly == null) defaultReadOnly = Boolean.FALSE;
-        } catch (Throwable e) {
-            poolConfig.setEnableDefaultOnReadOnly(false);
-            if (this.printRuntimeLog)
-                Log.warn("BeeCP({})'readOnly ' property of connection not supported by driver", this.poolName);
+        if (poolConfig.isEnableDefaultOnReadOnly()) {
+            if (defaultReadOnly == null) {
+                try {
+                    defaultReadOnly = rawCon.isReadOnly();
+                } catch (Throwable e) {
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to get read only from first connection", this.poolName);
+                }
+            }
+            if (defaultReadOnly == null) {
+                defaultReadOnly = Boolean.FALSE;
+                if (this.printRuntimeLog)
+                    Log.warn("BeeCP({})Default read only not configured and assign boolean(false)to default value", this.poolName);
+            }
+            try {
+                rawCon.setReadOnly(defaultReadOnly);//default setting test
+            } catch (Throwable e) {
+                poolConfig.setEnableDefaultOnTransactionIsolation(false);
+                if (this.printRuntimeLog)
+                    Log.warn("BeeCP({})Failed to set default read only to first connection", this.poolName, e);
+            }
         }
 
         //step4:prepare default value for catalog property
         String defaultCatalog = poolConfig.getDefaultCatalog();
-        if (isBlank(defaultCatalog) && poolConfig.isEnableDefaultOnCatalog())
-            try {
-                defaultCatalog = rawCon.getCatalog();
-            } catch (Throwable e) {
-                if (this.printRuntimeLog)
-                    Log.warn("BeeCP({})'catalog' property of connection not supported by driver", this.poolName);
+        if (poolConfig.isEnableDefaultOnCatalog()) {
+            if (isBlank(defaultCatalog)) {
+                try {
+                    defaultCatalog = rawCon.getCatalog();
+                } catch (Throwable e) {
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to get catalog from first connection", this.poolName, e);
+                }
             }
+            if (!isBlank(defaultCatalog)) {
+                try {
+                    rawCon.setCatalog(defaultCatalog);//default setting test
+                } catch (Throwable e) {
+                    poolConfig.setEnableDefaultOnCatalog(false);
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to set default catalog to first connection", this.poolName, e);
+                }
+            }
+        }
 
         //step5:prepare default value for schema property
         String defaultSchema = poolConfig.getDefaultSchema();
-        if (isBlank(defaultSchema) && poolConfig.isEnableDefaultOnSchema())
-            try {
-                defaultSchema = rawCon.getSchema();
-            } catch (Throwable e) {
-                if (this.printRuntimeLog)
-                    Log.warn("BeeCP({})'schema' property of connection not supported by driver", this.poolName);
+        if (poolConfig.isEnableDefaultOnSchema()) {
+            if (isBlank(defaultSchema)) {
+                try {
+                    defaultSchema = rawCon.getSchema();
+                } catch (Throwable e) {
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to get schema from first connection", this.poolName, e);
+                }
             }
+            if (!isBlank(defaultSchema)) {
+                try {
+                    rawCon.setSchema(defaultSchema);//default setting test
+                } catch (Throwable e) {
+                    poolConfig.setEnableDefaultOnSchema(false);
+                    if (this.printRuntimeLog)
+                        Log.warn("BeeCP({})Failed to set default schema to first connection", this.poolName, e);
+                }
+            }
+        }
 
         //step6: check driver whether support 'isValid' method
         boolean supportIsValid = true;//assume support
