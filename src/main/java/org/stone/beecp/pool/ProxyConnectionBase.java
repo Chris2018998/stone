@@ -95,13 +95,13 @@ abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connectio
 
     public void setCatalog(String catalog) throws SQLException {
         this.raw.setCatalog(catalog);
-        this.p.setResetInd(PS_CATALOG, p.enableFastDirtyOnCatalog || !objectEquals(catalog, this.p.defaultCatalog));
+        this.p.setResetInd(PS_CATALOG, p.forceDirtyOnCatalogAfterSet || !objectEquals(catalog, this.p.defaultCatalog));
     }
 
     //for JDK1.7 begin
     public void setSchema(String schema) throws SQLException {
         this.raw.setSchema(schema);
-        this.p.setResetInd(PS_SCHEMA, p.enableFastDirtyOnSchema || !objectEquals(schema, this.p.defaultSchema));
+        this.p.setResetInd(PS_SCHEMA, p.forceDirtyOnSchemaAfterSet || !objectEquals(schema, this.p.defaultSchema));
     }
 
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
