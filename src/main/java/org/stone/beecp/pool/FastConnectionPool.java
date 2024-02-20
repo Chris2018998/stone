@@ -319,21 +319,37 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private PooledConnection createTemplatePooledConn(Connection rawCon) throws SQLException {
         //step1:prepare default value for autoCommit property
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
-        if (defaultAutoCommit == null && poolConfig.isEnableDefaultOnAutoCommit())
-            defaultAutoCommit = rawCon.getAutoCommit();
-        if (defaultAutoCommit == null) defaultAutoCommit = Boolean.TRUE;
+        try {
+            if (defaultAutoCommit == null && poolConfig.isEnableDefaultOnAutoCommit())
+                defaultAutoCommit = rawCon.getAutoCommit();
+            if (defaultAutoCommit == null) defaultAutoCommit = Boolean.TRUE;
+        } catch (Throwable e) {
+            if (this.printRuntimeLog)
+                Log.warn("BeeCP({})'autoCommit ' property of connection not supported by driver", this.poolName);
+        }
 
         //step2:prepare default value for transactionIsolation property
         Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
-        if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnTransactionIsolation())
-            defaultTransactionIsolation = rawCon.getTransactionIsolation();
-        if (defaultTransactionIsolation == null) defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
+        try {
+            if (defaultTransactionIsolation == null && poolConfig.isEnableDefaultOnTransactionIsolation())
+                defaultTransactionIsolation = rawCon.getTransactionIsolation();
+            if (defaultTransactionIsolation == null)
+                defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
+        } catch (Throwable e) {
+            if (this.printRuntimeLog)
+                Log.warn("BeeCP({})'transactionIsolation ' property of connection not supported by driver", this.poolName);
+        }
 
         //step3: prepare default value for readOnly property
         Boolean defaultReadOnly = poolConfig.isDefaultReadOnly();
-        if (defaultReadOnly == null && poolConfig.isEnableDefaultOnReadOnly())
-            defaultReadOnly = rawCon.isReadOnly();
-        if (defaultReadOnly == null) defaultReadOnly = Boolean.FALSE;
+        try {
+            if (defaultReadOnly == null && poolConfig.isEnableDefaultOnReadOnly())
+                defaultReadOnly = rawCon.isReadOnly();
+            if (defaultReadOnly == null) defaultReadOnly = Boolean.FALSE;
+        } catch (Throwable e) {
+            if (this.printRuntimeLog)
+                Log.warn("BeeCP({})'readOnly ' property of connection not supported by driver", this.poolName);
+        }
 
         //step4:prepare default value for catalog property
         String defaultCatalog = poolConfig.getDefaultCatalog();
