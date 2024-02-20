@@ -28,8 +28,8 @@ public class PostGresRecoverTest extends BaseRecoverTest {
         dataSource.setPassword("root");
 
         //config item added for postgres db,if ignore,test result was failed
-        dataSource.setEnableFastDirtyOnSchema(true);
-        dataSource.setEnableFastDirtyOnCatalog(true);
+        dataSource.setForceDirtyOnSchemaAfterSet(true);
+        dataSource.setForceDirtyOnCatalogAfterSet(true);
 
         PostGresRecoverTest test = new PostGresRecoverTest();
         test.testSchema(dataSource, "Bee", "postgresql", "public", "schema1");
