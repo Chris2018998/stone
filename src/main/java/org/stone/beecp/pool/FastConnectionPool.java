@@ -318,9 +318,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-1.6: creates a template connection used to create new pooled connections by cloning
+    //Method-1.6: creates a template pooled connection on first connection
     private PooledConnection createTemplatePooledConn(Connection rawCon) throws SQLException {
-        //step1:prepare default auto commit and set default to first connection as test
+        //step1:get default value of property auto-commit from config or from first connection
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
         if (poolConfig.isEnableDefaultOnAutoCommit()) {
             if (defaultAutoCommit == null) {
@@ -337,7 +337,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     Log.warn("BeeCP({})Default auto commit not configured and assign boolean(true)to default value", this.poolName);
             }
             try {
-                rawCon.setAutoCommit(defaultAutoCommit);//default setting test
+                rawCon.setAutoCommit(defaultAutoCommit);//setting test with default value
             } catch (Throwable e) {
                 poolConfig.setEnableDefaultOnAutoCommit(false);
                 if (this.printRuntimeLog)
@@ -345,7 +345,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
         }
 
-        //step2:prepare default value for transactionIsolation property
+        //step2:get default value of property transaction-isolation from config or from first connection
         Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
         if (poolConfig.isEnableDefaultOnTransactionIsolation()) {
             if (defaultTransactionIsolation == null) {
@@ -370,7 +370,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
         }
 
-        //step3: prepare default value for readOnly property
+        //step3:get default value of property read-only from config or from first connection
         Boolean defaultReadOnly = poolConfig.isDefaultReadOnly();
         if (poolConfig.isEnableDefaultOnReadOnly()) {
             if (defaultReadOnly == null) {
@@ -395,7 +395,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
         }
 
-        //step4:prepare default value for catalog property
+        //step4:get default value of property catalog from config or from first connection
         String defaultCatalog = poolConfig.getDefaultCatalog();
         if (poolConfig.isEnableDefaultOnCatalog()) {
             if (isBlank(defaultCatalog)) {
@@ -417,7 +417,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
         }
 
-        //step5:prepare default value for schema property
+        //step5:get default value of property schema from config or from first connection
         String defaultSchema = poolConfig.getDefaultSchema();
         if (poolConfig.isEnableDefaultOnSchema()) {
             if (isBlank(defaultSchema)) {
@@ -456,7 +456,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 Log.warn("BeeCP({}) 'isValid' method check failed for driver", this.poolName, e);
         }
 
-        //step7:test validate sql if not support 'isValid' in driver
+        //step7:test driver whether support sql query timeout
         if (!supportIsValid) {
             String conTestSql = this.poolConfig.getValidTestSql();
             boolean supportQueryTimeout = validateTestSql(poolName, rawCon, conTestSql, validTestTimeout, defaultAutoCommit);//check test sql
