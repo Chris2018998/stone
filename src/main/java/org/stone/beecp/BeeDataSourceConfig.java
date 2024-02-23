@@ -38,30 +38,30 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //index on generating default pool name,atomic value starts with 1
+    //atomic index at pool name generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //properties map apply in jdbc driver to connect db
+    //a map store some properties for driver connects to db,@see{@code Driver.connect(url,properties)}
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
-    //jdbc user name
+    //user name applied at connecting to db
     private String username;
-    //jdbc password
+    //password applied at connecting to db
     private String password;
-    //jdbc link url
+    //link url of db server applied at connecting to db
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //a generated name will be set when this value is null or empty
+    //a name assign to pool,if null or empty,then set a generated name to pool on initialization
     private String poolName;
-    //fair boolean indicator applied to pool semaphore
+    //enable pool semaphore works in fair mode
     private boolean fairMode;
-    //creation size of connections on starting up
+    //creation size of connections on pool starting up
     private int initialSize;
-    //indicator to create initial connections by synchronization mode
+    //indicator to create initial connections by async mode
     private boolean asyncCreateInitConnection;
     //max reachable size of pooled connections
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
-    //max permit size of pool semaphore
+    //permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
@@ -75,7 +75,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool if this value greater than zero
     private long holdTimeout;
 
-    //a test sql to validate borrowed connections whether be alive
+    //an alive test sql running on borrowed connections,if dead remove them from pool
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get validation result on testing connections
     private int validTestTimeout = 3;
