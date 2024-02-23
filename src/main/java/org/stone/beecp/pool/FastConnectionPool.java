@@ -72,7 +72,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private int stateCodeOnRelease;
 
     private PooledConnectionTransferPolicy transferPolicy;
-    private boolean templatePooledConnNotCreated = true;
+    private boolean templatePooledConnIsReady;
     private PooledConnection templatePooledConn;
     private ReentrantLock pooledArrayLock;
     private volatile PooledConnection[] pooledArray;
@@ -138,7 +138,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //step2: creates objects related with pooled connections
         this.templatePooledConn = null;
-        this.templatePooledConnNotCreated = true;
+        this.templatePooledConnIsReady = false;//this startup method can be called to restart pool,so need reset this field to false
         this.poolMaxSize = poolConfig.getMaxActive();
         if (POOL_STARTING == this.poolState) {//just create once
             this.pooledArrayLock = new ReentrantLock();
@@ -266,12 +266,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     }
 
                     PooledConnection p;
-                    if (this.templatePooledConnNotCreated) {
-                        templatePooledConn = this.createTemplatePooledConn(rawConn);
-                        templatePooledConnNotCreated = false;//template pooled connection is ready
-                        p = this.templatePooledConn.createFirstByClone(rawConn, state, rawXaRes);
-                    } else {
+                    if (this.templatePooledConnIsReady) {//create pooled connections by clone
                         p = this.templatePooledConn.setDefaultAndCreateByClone(rawConn, state, rawXaRes);
+                    } else {
+                        //create a template pooled connection to clone other news and set default to first connection
+                        this.templatePooledConn = this.createTemplatePooledConn(rawConn);
+                        this.templatePooledConnIsReady = true;//template pooled connection is ready
+                        p = this.templatePooledConn.createFirstByClone(rawConn, state, rawXaRes);//create first pooled connection without default setting
                     }
 
                     if (this.printRuntimeLog)
