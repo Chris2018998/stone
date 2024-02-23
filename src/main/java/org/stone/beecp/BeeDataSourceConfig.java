@@ -51,7 +51,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //a default name generated on pool starting up when this value is null or empty
+    //a generated name will be set when this value is null or empty
     private String poolName;
     //fair boolean indicator applied to pool semaphore
     private boolean fairMode;
@@ -65,8 +65,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
-    //seconds:max wait time in {@code RawConnectionFactory} and {@code RawXaConnectionFactory} to create connections.
-    //this item can be set into raw datasource or DriverManager as loginTimeout on initialization if its value is greater than zero,
+    //seconds:max wait time in {@code RawConnectionFactory.create()} and {@code RawXaConnectionFactory.create()} to create connections.
+    //this item value can be set into raw datasource or DriverManager as loginTimeout on pool initialization if its value is greater than zero,
     //but field loginTimeout of DriverManager is shareable info and whose setting change is global to all drivers,and maybe some drivers
     //read loginTimeout from DriverManager as a working control field,so need more careful and set an appropriate value to this field when necessary
     private int createTimeout;
@@ -116,9 +116,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator on using default transactionIsolation(connection property)
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //invocation on <method>Connection.setSchema</method) regards as schema dirty(should set to true when using postgres driver)
+    //put a dirty flag on schema when invocation success at method {@code Connection.setSchema()} and ignore change on schema
     private boolean forceDirtyOnSchemaAfterSet;
-    //invocation on <method>Connection.setCatalog</method) regards as catalog dirty(should set to true when using postgres driver)
+    //put a dirty flag on catalog when invocation success at method {@code Connection.setCatalog()} and ignore change on catalog
     private boolean forceDirtyOnCatalogAfterSet;
 
     //thread factory class(creation order-2 )
