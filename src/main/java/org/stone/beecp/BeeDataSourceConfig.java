@@ -92,28 +92,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //store some fatal sql exception state(@see field SQLState in SQLException class),if one of these state contains in SQLException thrown from borrowed out connections,then remove them from pool
     private List<String> sqlExceptionStateList;
 
-    //default value to catalog<code>Connection.setCatalog(String)</code>
+    //default value set on property catalog of new connections,@see set method{@code Connection.setCatalog(String)}
     private String defaultCatalog;
-    //default value to schema<code>Connection.setSchema(String)</code>
+    //default value set on property schema of new connections,@see set method{@code Connection.setSchema(String)}
     private String defaultSchema;
-    //default value to readOnly<code>Connection.setReadOnly(boolean)</code>
+    //default value set on property read-only of new connections,@see set method{@code Connection.setReadOnly(boolean)}
     private Boolean defaultReadOnly;
-    //default value to autoCommit<code>Connection.setAutoCommit(boolean)</code>
+    //default value set on property auto-commit of new connections,@see set method{@code Connection.setAutoCommit(boolean)}
     private Boolean defaultAutoCommit;
-    //default value to transactionIsolation<code>Connection.setTransactionIsolation(int)</code>
+    //default value set on property transaction-isolation of new connections,@see set method{@code Connection.setTransactionIsolation(int)}
     private Integer defaultTransactionIsolationCode;
-    //description of default transactionIsolation level code
+    //description of default transaction-isolation level code
     private String defaultTransactionIsolationName;
 
-    //enable indicator on using default catalog(connection property)
+    //indicator to set default value on property catalog of new connections
     private boolean enableDefaultOnCatalog = true;
-    //enable indicator on using default schema(connection property)
+    //indicator to set default value on property schema of new connections
     private boolean enableDefaultOnSchema = true;
-    //enable indicator on using default readOnly(connection property)
+    //indicator to set default value on property read-only of new connections
     private boolean enableDefaultOnReadOnly = true;
-    //enable indicator on using default autoCommit(connection property)
+    //indicator to set default value on property auto-commit of new connections
     private boolean enableDefaultOnAutoCommit = true;
-    //enable indicator on using default transactionIsolation(connection property)
+    //indicator to set default value on property transaction-isolation of new connections
     private boolean enableDefaultOnTransactionIsolation = true;
 
     //put a dirty flag on schema when invocation success at method {@code Connection.setSchema()} and ignore change on schema
