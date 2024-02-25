@@ -7,9 +7,12 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package org.stone.beecp;
+package cn.beecp;
 
-import org.stone.beecp.pool.*;
+import cn.beecp.pool.ConnectionFactoryByDriver;
+import cn.beecp.pool.ConnectionFactoryByDriverDs;
+import cn.beecp.pool.FastConnectionPool;
+import cn.beecp.pool.XaConnectionFactoryByDriverDs;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
@@ -25,11 +28,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static cn.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
+import static cn.beecp.pool.ConnectionPoolStatics.*;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
-import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.tools.CommonUtil.*;
 
 /**
  * Configuration of bee dataSource
@@ -120,13 +122,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean forceDirtyOnSchemaAfterSet;
     //put a dirty flag on catalog when invocation success at method {@code Connection.setCatalog()} and ignore change on catalog
     private boolean forceDirtyOnCatalogAfterSet;
-
-    //thread factory class(creation order-2 )
-    private Class threadFactoryClass;
-    //thread factory instance(creation order-1)
-    private BeeConnectionPoolThreadFactory threadFactory;
-    //thread factory class name(creation order-3),if not set,default factory will be applied in pool
-    private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
 
     /**
      * connection factory class,which must be implement one of the below four interfaces
@@ -553,30 +548,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.connectionFactory = factory;
     }
 
-    public Class getThreadFactoryClass() {
-        return threadFactoryClass;
-    }
-
-    public void setThreadFactoryClass(Class threadFactoryClass) {
-        this.threadFactoryClass = threadFactoryClass;
-    }
-
-    public String getThreadFactoryClassName() {
-        return threadFactoryClassName;
-    }
-
-    public void setThreadFactoryClassName(String threadFactoryClassName) {
-        this.threadFactoryClassName = trimString(threadFactoryClassName);
-    }
-
-    public BeeConnectionPoolThreadFactory getThreadFactory() {
-        return threadFactory;
-    }
-
-    public void setThreadFactory(BeeConnectionPoolThreadFactory threadFactory) {
-        this.threadFactory = threadFactory;
-    }
-
     public Class getConnectionFactoryClass() {
         return this.connectionFactoryClass;
     }
@@ -744,13 +715,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         }
 
         Object connectionFactory = createConnectionFactory();
-        BeeConnectionPoolThreadFactory threadFactory = this.createThreadFactory();
-
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
 
         //set some factories to config
-        checkedConfig.threadFactory = threadFactory;
         checkedConfig.connectionFactory = connectionFactory;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
 
@@ -945,27 +913,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             } catch (Exception e) {
                 throw new BeeDataSourceConfigException("Failed to create connection factory by class:" + this.connectionFactoryClassName, e);
             }
-        }
-    }
-
-    //create Thread factory
-    private BeeConnectionPoolThreadFactory createThreadFactory() throws BeeDataSourceConfigException {
-        //step1:if exists thread factory,then return it
-        if (this.threadFactory != null) return this.threadFactory;
-
-        //step2: configuration of thread factory
-        if (this.threadFactoryClass == null && isBlank(this.threadFactoryClassName))
-            throw new BeeDataSourceConfigException("Configuration item(threadFactoryClass and threadFactoryClassName) can't be null at same time");
-
-        //step3: create thread factory by class or class name
-        try {
-            Class<?> threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
-            Class[] parentClasses = {BeeConnectionPoolThreadFactory.class};
-            return (BeeConnectionPoolThreadFactory) createClassInstance(threadFactClass, parentClasses, "pool thread factory");
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new BeeDataSourceConfigException("Failed to create pool thread factory by class:" + this.threadFactoryClassName, e);
         }
     }
 }
