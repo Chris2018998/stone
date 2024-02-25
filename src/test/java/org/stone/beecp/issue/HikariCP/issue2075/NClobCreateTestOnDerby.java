@@ -14,16 +14,10 @@ import java.sql.SQLException;
  * JDBC-Pool: stone-1.2.8
  * DB: derby-10.14.2.0.jar(engine)
  * Driver: derbytools-10.14.2.0.jar
- * <dependency>
- * <groupId>org.apache.derby</groupId>
- * <artifactId>derby</artifactId>
- * <version>10.17.1.0</version>
- * <scope>test</scope>
- * </dependency>
  * <p>
  * 2)Test Machines
- * Server: Os:Win7_64,CPU:2.8Hz*2(PG80),Memory(8G)
- * Client: Os:Win7_64,CPU:2.8Hz*2(PG80),Memory(8G)
+ * Server: Os:Os:Win7_64,CPU:2.6Hz*4(I5-4210M),Memory(12G)
+ * Client: Os:Win7_64,CPU:2.6Hz*4(I5-4210M),Memory(12G)
  * <p>
  * 3)Test info
  * Chris Liao(Stone project owner)
