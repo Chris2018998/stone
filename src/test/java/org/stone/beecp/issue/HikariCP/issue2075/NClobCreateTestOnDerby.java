@@ -15,9 +15,8 @@ import java.sql.SQLException;
  * DB: derby-10.14.2.0.jar(engine)
  * Driver: derbytools-10.14.2.0.jar
  * <p>
- * 2)Test Machines
- * Server: Os:Os:Win7_64,CPU:2.6Hz*4(I5-4210M),Memory(12G)
- * Client: Os:Win7_64,CPU:2.6Hz*4(I5-4210M),Memory(12G)
+ * 2)Test Machine
+ * Os:Win7_64,CPU:2.6Hz*4(I5-4210M),Memory(12G)
  * <p>
  * 3)Test info
  * Chris Liao(Stone project owner)
@@ -49,7 +48,7 @@ public class NClobCreateTestOnDerby {
             con1 = ds.getConnection();
             rawCon1 = rawField.get(con1);
             con1.createNClob();//SQLFeatureNotSupportedException will thrown,because this feature not implemented in derby
-        } catch (SQLException e) {//test failed on HikariCP,because of a  ERROR 0A000(hardcode in source code)
+        } catch (SQLException e) {//failed on HikariCP,because of a  ERROR 0A000(hardcode in source code)
             e.printStackTrace();
         } finally {
             if (con1 != null) con1.close();
