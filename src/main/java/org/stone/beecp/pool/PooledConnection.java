@@ -193,7 +193,7 @@ final class PooledConnection implements Cloneable {
             this.state = CON_CLOSED;
             this.resetRawConn();
         } catch (Throwable e) {
-            CommonLog.error("Connection close error", e);
+            if (pool.isPrintRuntimeLog()) CommonLog.error("BeeCP({})Connection close error", pool.getPoolName(), e);
         } finally {
             oclose(this.rawConn);
             this.rawXaRes = null;
@@ -246,7 +246,8 @@ final class PooledConnection implements Cloneable {
     void checkSQLException(SQLException e) {//Fatal error code check
         int code = e.getErrorCode();
         if (code != 0 && proxyInUsing != null && sqlExceptionCodeList != null && sqlExceptionCodeList.contains(code)) {
-            CommonLog.error("Connection will be aborted from pool,because of sql exception code:{}", code);
+            if (pool.isPrintRuntimeLog())
+                CommonLog.warn("BeeCP({})Connection broken because of sql exception code:{}", pool.getPoolName(), code);
             this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             this.proxyInUsing = null;
             return;
@@ -254,7 +255,8 @@ final class PooledConnection implements Cloneable {
 
         String state = e.getSQLState();
         if (state != null && proxyInUsing != null && sqlExceptionStateList != null && sqlExceptionStateList.contains(state)) {
-            CommonLog.error("Connection will be aborted from pool,because of sql exception state:{}", state);
+            if (pool.isPrintRuntimeLog())
+                CommonLog.warn("BeeCP({})Connection broken because of sql exception state:{}", pool.getPoolName(), state);
             this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             this.proxyInUsing = null;
         }

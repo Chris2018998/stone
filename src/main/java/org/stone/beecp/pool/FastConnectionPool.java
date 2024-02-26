@@ -111,7 +111,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 startup();//Go,go! launch the pool
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
             } catch (Throwable e) {
-                Log.info("BeeCP({})Initialized failed", e);
+                Log.info("BeeCP({})Initialized failed", this.poolName, e);
                 this.poolState = POOL_NEW;//reset state to new when failed
                 throw e instanceof SQLException ? (SQLException) e : new PoolInitializedException(e);
             }
@@ -913,6 +913,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //                                  5: Pool controller/jmx methods(15)                                              //                                                                                  //
     //***************************************************************************************************************//
     //Method-5.1: indicator on runtime log print,true:enable on;false: enable off
+    boolean isPrintRuntimeLog() {
+        return printRuntimeLog;
+    }
+
     public void setPrintRuntimeLog(boolean indicator) {
         printRuntimeLog = indicator;
     }
@@ -939,17 +943,22 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         return (active > 0) ? active : 0;
     }
 
-    //Method-5.5: size of waiting on semaphore
+    //Method-5.5: return pool name
+    public String getPoolName() {
+        return this.poolName;
+    }
+
+    //Method-5.6: size of waiting on semaphore
     public int getSemaphoreWaitingSize() {
         return this.semaphore.getQueueLength();
     }
 
-    //Method-5.6: acquired count of semaphore permit
+    //Method-5.7: acquired count of semaphore permit
     public int getSemaphoreAcquiredSize() {
         return semaphoreSize - this.semaphore.availablePermits();
     }
 
-    //Method-5.7: count of waiters in queue
+    //Method-5.8: count of waiters in queue
     public int getTransferWaitingSize() {
         int size = 0;
         for (Borrower borrower : this.waitQueue)

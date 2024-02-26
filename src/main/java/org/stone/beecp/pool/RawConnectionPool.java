@@ -178,6 +178,10 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
         //do nothing
     }
 
+    public String getPoolName() {
+        return this.poolName;
+    }
+
     public int getTotalSize() {
         return 0;
     }
