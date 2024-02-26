@@ -36,18 +36,18 @@ import static org.stone.tools.CommonUtil.trimString;
  * @version 1.0
  */
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
-    //index for generating default pool name,atomic value starts with 1
+    //atomic index at pool name generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //store properties which are injected to object factory while pool initialization
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>();
 
-    //if this value is null or empty,a generated pool name set to this field
+    //a name assign to pool,if null or empty,then set a generated name to pool on initialization
     private String poolName;
-    //fair boolean indicator applied in pool semaphore
+    //enable pool semaphore works in fair mode
     private boolean fairMode;
-    //creation size of initial objects
+    //creation size of objects on pool starting up
     private int initialSize;
-    //async indicator to create initial objects
+    //indicator on creating initial objects with a async thread
     private boolean asyncCreateInitObject;
     //max object key size(pool capacity size = (maxObjectKeySize * maxActive)
     private int maxObjectKeySize = 50;
