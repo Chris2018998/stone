@@ -17,6 +17,9 @@ package org.stone.beecp;
  */
 public interface BeeConnectionPoolJmxBean {
 
+    //return poolName
+    String getPoolName();
+
     //return current size(using +idle)
     int getTotalSize();
 
