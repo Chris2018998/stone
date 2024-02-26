@@ -247,7 +247,7 @@ final class PooledConnection implements Cloneable {
         int code = e.getErrorCode();
         if (code != 0 && proxyInUsing != null && sqlExceptionCodeList != null && sqlExceptionCodeList.contains(code)) {
             CommonLog.error("Connection will be aborted from pool,because of sql exception code:{}", code);
-            this.proxyInUsing.abort(null);//will remove from pool
+            this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             this.proxyInUsing = null;
             return;
         }
@@ -255,7 +255,7 @@ final class PooledConnection implements Cloneable {
         String state = e.getSQLState();
         if (state != null && proxyInUsing != null && sqlExceptionStateList != null && sqlExceptionStateList.contains(state)) {
             CommonLog.error("Connection will be aborted from pool,because of sql exception state:{}", state);
-            this.proxyInUsing.abort(null);//will remove from pool
+            this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             this.proxyInUsing = null;
         }
     }
