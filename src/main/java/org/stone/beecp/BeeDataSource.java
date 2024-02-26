@@ -7,12 +7,12 @@
  *
  * Project Licensed under GNU Lesser General Public License v2.1.
  */
-package cn.beecp;
+package org.stone.beecp;
 
-import cn.beecp.pool.exception.ConnectionGetInterruptedException;
-import cn.beecp.pool.exception.ConnectionGetTimeoutException;
-import cn.beecp.pool.exception.PoolCreateFailedException;
-import cn.beecp.pool.exception.PoolNotCreatedException;
+import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
+import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
+import org.stone.beecp.pool.exception.PoolCreateFailedException;
+import org.stone.beecp.pool.exception.PoolNotCreatedException;
 
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
@@ -26,15 +26,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import static cn.beecp.pool.ConnectionPoolStatics.*;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 
 /**
  * A entrance object to operation on connection pool
  * <p>
  * Email: Chris2018998@tom.com
- * Project: https://github.com/Chris2018998/BeeCP
+ * Project: https://github.com/Chris2018998/stone
  *
  * @author Chris Liao
  * @version 1.0
@@ -84,7 +84,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
                 ds.subDs = Dummy_CommonDataSource;
 
             //timeout on connect to db
-            if (ds.getCreateTimeout() > 0) ds.subDs.setLoginTimeout(ds.getCreateTimeout());
+            if (ds.getConnectTimeout() > 0) ds.subDs.setLoginTimeout(ds.getConnectTimeout());
             ds.ready = true;
         } catch (SQLException e) {
             throw e;
