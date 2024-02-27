@@ -113,7 +113,21 @@ public final class BeeDataSourceFactory implements ObjectFactory {
                 config.addConnectProperty(getConfigValue(ref, CONFIG_CONNECT_PROP_KEY_PREFIX + i));
         }
 
-        //8:create dataSource by config
+        //8:try to load sql exception fatal code and fatal state
+        String sqlExceptionCode = getConfigValue(ref, CONFIG_SQL_EXCEPTION_CODE);
+        String sqlExceptionState = getConfigValue(ref, CONFIG_SQL_EXCEPTION_STATE);
+        if (!isBlank(sqlExceptionCode)) {
+            for (String code : sqlExceptionCode.trim().split(",")) {
+                config.addSqlExceptionCode(Integer.parseInt(code));
+            }
+        }
+        if (!isBlank(sqlExceptionState)) {
+            for (String state : sqlExceptionState.trim().split(",")) {
+                config.addSqlExceptionState(state);
+            }
+        }
+
+        //9:create dataSource by config
         BeeDataSource ds = new BeeDataSource(config);
         return (tm != null) ? new BeeJtaDataSource(ds, tm) : ds;
     }
