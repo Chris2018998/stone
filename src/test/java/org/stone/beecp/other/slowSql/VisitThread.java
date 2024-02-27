@@ -34,7 +34,7 @@ public class VisitThread extends Thread {
             LockSupport.parkNanos(timePoint - System.nanoTime());//concurrent timePoint
 
             con = ds.getConnection();
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(9));//delay 9seconds to execute sql
+            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));//delay 9seconds to execute sql
             ps = con.prepareStatement("select * from dummyTable");
             ps.execute();
 

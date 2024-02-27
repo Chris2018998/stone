@@ -47,13 +47,14 @@ public class SlowSqlConcurrentTest extends TestCase {
         if (pool.getTotalSize() != 0) TestUtil.assertError("Total initial connections not as expected 0");
 
         CountDownLatch latch = new CountDownLatch(30);
-        long timePoint = System.nanoTime() + TimeUnit.SECONDS.toNanos(1);
+        long timePoint = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
         for (int i = 0; i < 30; i++) {
             new VisitThread(ds, latch, timePoint).start();
         }
 
         latch.await();
-        if (pool.getTotalSize() != 30) TestUtil.assertError("Total connections not as expected 30");
+        int total = pool.getTotalSize();
+        if (total != 30) TestUtil.assertError("Total connections[" + total + "]not as expected 30");
     }
 
     public void tearDown() throws Throwable {
