@@ -116,9 +116,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //indicator to set default value on property transaction-isolation of new connections
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //put a dirty flag on schema when invocation success at method {@code Connection.setSchema()} and ignore change on schema
+    //put a dirty flag on schema when invocation success at method {@code Connection.setSchema()}and ignore changed or not on schema
     private boolean forceDirtyOnSchemaAfterSet;
-    //put a dirty flag on catalog when invocation success at method {@code Connection.setCatalog()} and ignore change on catalog
+    //put a dirty flag on catalog when invocation success at method {@code Connection.setCatalog()}and ignore changed or not on catalog
     private boolean forceDirtyOnCatalogAfterSet;
 
     //thread factory class(creation order-2 )
