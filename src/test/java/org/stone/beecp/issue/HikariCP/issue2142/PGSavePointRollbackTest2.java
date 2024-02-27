@@ -68,8 +68,8 @@ public class PGSavePointRollbackTest2 {
             conn2 = DriverManager.getConnection(url, username, password);
             statement = conn2.createStatement();
             resultSet = statement.executeQuery("select * from Home_Work");
-            if (resultSet.next()) {//has inserted into db
-                throw new SQLException("SavePoint not be rollback");//exception will be thrown from here,why?
+            if (resultSet.next()) {//table still empty
+                throw new SQLException("SavePoint not be rollback");
             }
         } finally {
             if (conn2 != null) conn2.close();

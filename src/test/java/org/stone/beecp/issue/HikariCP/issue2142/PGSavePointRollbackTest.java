@@ -59,8 +59,8 @@ public class PGSavePointRollbackTest {
 
         //test data whether inserted
         Connection conn2 = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
+        Statement statement;
+        ResultSet resultSet;
         try {
             conn2 = DriverManager.getConnection(url, username, password);
             statement = conn2.createStatement();
@@ -73,7 +73,7 @@ public class PGSavePointRollbackTest {
                  *                       (your point)<---------(rollback(point))
                  *                        --------------------->(commit) so inserted
                  *
-                 * if move point position to prev of sql,test can passed,see another file
+                 * if move point position to prev of sql,test can passed,see another file @{@link PGSavePointRollbackTest2)
                  */
             }
         } finally {
