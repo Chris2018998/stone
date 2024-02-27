@@ -1,7 +1,5 @@
 package org.stone.beecp.issue.HikariCP.issue2142;
 
-import org.stone.beecp.BeeDataSource;
-
 import java.sql.*;
 
 /**
@@ -19,30 +17,22 @@ import java.sql.*;
  * Chris Liao(Stone project owner)
  * Test Date: 2024/02/27 in China
  * <p>
- * Test Result:failed
+ * Test Result:Passed
  */
-public class PGSavePointRollbackTest {
+public class PGSavePointRollbackTest3 {
 
     public static void main(String[] args) throws Exception {
-        BeeDataSource ds = new BeeDataSource();
-        ds.setInitialSize(1);//only one
-        ds.setMaxActive(1);//only one
-        ds.setDefaultSchema("public");
-
         String driverClass = "org.postgresql.Driver";
         String url = "jdbc:postgresql://localhost:5432/postgres";
         String username = "postgres";
         String password = "root";
 
-        ds.setDriverClassName(driverClass);
-        ds.setJdbcUrl(url);
-        ds.setUsername(username);
-        ds.setPassword(password);
 
         Connection conn = null;
         try {
-            conn = ds.getConnection();
+            conn = DriverManager.getConnection(url, username, password);
             conn.setAutoCommit(false);
+
             /**
              * drop table Home_Work;
              * create table Home_Work(name char(10));
@@ -59,27 +49,14 @@ public class PGSavePointRollbackTest {
 
         //test data whether inserted
         Connection conn2 = null;
-        Statement statement;
-        ResultSet resultSet;
+        Statement statement = null;
+        ResultSet resultSet = null;
         try {
             conn2 = DriverManager.getConnection(url, username, password);
             statement = conn2.createStatement();
             resultSet = statement.executeQuery("select * from Home_Work");
-            if (resultSet.next()) {//has inserted into db
-                throw new SQLException("SavePoint not be rollback");//exception will be thrown from here,why?
-
-                /**
-                 * (execute sql) ------->(your point)
-                 *                       (your point)<---------(rollback(point))
-                 *                        --------------------->(commit) so inserted
-                 *
-                 * if move point position to prev of sql,test can passed,see another test files
-                 * 1: point moved :  {@link PGSavePointRollbackTest2),data rollback
-                 * 2: Use driver directly {@link PGSavePointRollbackTest3),data inserted
-                 *
-                 * conclusion: issue 2142 is a not 'real' issue of HikariCP,just point seting....
-                 *
-                 */
+            if (resultSet.next()) {//table still empty
+                throw new SQLException("SavePoint not be rollback");
             }
         } finally {
             if (conn2 != null) conn2.close();
