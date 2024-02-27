@@ -698,7 +698,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             String sqlExceptionState = getPropertyValue(configProperties, CONFIG_SQL_EXCEPTION_STATE);
             if (!isBlank(sqlExceptionCode)) {
                 for (String code : sqlExceptionCode.trim().split(",")) {
-                    this.addSqlExceptionCode(Integer.parseInt(code));
+                    try {
+                        this.addSqlExceptionCode(Integer.parseInt(code));
+                    } catch (NumberFormatException e) {
+                        throw new BeeDataSourceConfigException(code + " is not valid error code");
+                    }
                 }
             }
 

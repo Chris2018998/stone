@@ -118,7 +118,11 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         String sqlExceptionState = getConfigValue(ref, CONFIG_SQL_EXCEPTION_STATE);
         if (!isBlank(sqlExceptionCode)) {
             for (String code : sqlExceptionCode.trim().split(",")) {
-                config.addSqlExceptionCode(Integer.parseInt(code));
+                try {
+                    config.addSqlExceptionCode(Integer.parseInt(code));
+                } catch (NumberFormatException e) {
+                    throw new BeeDataSourceConfigException(code + " is not valid error code");
+                }
             }
         }
         if (!isBlank(sqlExceptionState)) {
