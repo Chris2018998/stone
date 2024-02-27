@@ -17,7 +17,7 @@ import java.sql.*;
  * Chris Liao(Stone project owner)
  * Test Date: 2024/02/27 in China
  * <p>
- * Test Result:Passed
+ * Test Result:failed
  */
 public class PGSavePointRollbackTest3 {
 
@@ -56,7 +56,7 @@ public class PGSavePointRollbackTest3 {
             statement = conn2.createStatement();
             resultSet = statement.executeQuery("select * from Home_Work");
             if (resultSet.next()) {//table still empty
-                throw new SQLException("SavePoint not be rollback");
+                throw new SQLException("SavePoint not be rollback");//<--thrown
             }
         } finally {
             if (conn2 != null) conn2.close();
