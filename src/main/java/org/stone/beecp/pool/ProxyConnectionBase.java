@@ -32,8 +32,16 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
     }
 
     //***************************************************************************************************************//
-    //                                             self-define methods(4)                                            //
+    //                                             self-define methods(5)                                            //
     //***************************************************************************************************************//
+    public final long getCreationTime() {
+        return p.creationTime;
+    }
+
+    public final long getLassAccessTime() {
+        return p.lastAccessTime;
+    }
+
     final void checkClosed() throws SQLException {
         if (this.isClosed) throw new SQLException("No operations allowed after connection closed");
     }

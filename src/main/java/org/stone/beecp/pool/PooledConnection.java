@@ -49,6 +49,7 @@ final class PooledConnection implements Cloneable {
     private final List<Integer> sqlExceptionCodeList;
     private final List<String> sqlExceptionStateList;
 
+    long creationTime;
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
     volatile int state;
@@ -128,7 +129,8 @@ final class PooledConnection implements Cloneable {
         p.rawXaRes = rawXaRes;
         p.resetFlags = FALSE.clone();
         p.openStatements = new ProxyStatementBase[10];
-        p.lastAccessTime = System.currentTimeMillis();
+        p.creationTime = System.currentTimeMillis();
+        p.lastAccessTime = p.creationTime;
         return p;
     }
 
@@ -150,7 +152,8 @@ final class PooledConnection implements Cloneable {
         p.rawXaRes = rawXaRes;
         p.resetFlags = FALSE.clone();
         p.openStatements = new ProxyStatementBase[10];
-        p.lastAccessTime = System.currentTimeMillis();
+        p.creationTime = System.currentTimeMillis();
+        p.lastAccessTime = p.creationTime;
         return p;
     }
 
