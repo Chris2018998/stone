@@ -21,6 +21,10 @@ public interface BeeObjectHandle {
 
     Object getObjectKey();
 
+    long getCreationTime();
+
+    long getLassAccessTime();
+
     void close() throws Exception;
 
     Object getObjectProxy() throws Exception;
