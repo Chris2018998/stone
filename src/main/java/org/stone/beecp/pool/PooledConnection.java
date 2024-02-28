@@ -193,7 +193,7 @@ final class PooledConnection implements Cloneable {
             this.state = CON_CLOSED;
             this.resetRawConn();
         } catch (Throwable e) {
-            if (pool.isPrintRuntimeLog()) CommonLog.warn("BeeCP({})Connection close error", pool.getPoolName(), e);
+            if (pool.isPrintRuntimeLog()) CommonLog.warn("BeeCP({})Resetting connection failed", pool.getPoolName(), e);
         } finally {
             oclose(this.rawConn);
             this.rawXaRes = null;
