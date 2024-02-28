@@ -42,7 +42,7 @@ public class ObjectSimpleHandle implements BeeObjectHandle {
     }
 
     //***************************************************************************************************************//
-    //                                  1: override methods(4)                                                       //                                                                                  //
+    //                                  1: override methods(5)                                                       //                                                                                  //
     //***************************************************************************************************************//
     public String toString() {
         return p.toString();
@@ -50,6 +50,14 @@ public class ObjectSimpleHandle implements BeeObjectHandle {
 
     public boolean isClosed() {
         return isClosed;
+    }
+
+    public final long getCreationTime() {
+        return p.creationTime;
+    }
+
+    public final long getLassAccessTime() {
+        return p.lastAccessTime;
     }
 
     public final void close() throws Exception {

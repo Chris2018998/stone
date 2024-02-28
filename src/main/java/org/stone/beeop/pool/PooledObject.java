@@ -35,7 +35,9 @@ final class PooledObject implements Cloneable {
     Class rawClass;
     volatile int state;
     ObjectSimpleHandle handleInUsing;
-    volatile long lastAccessTime;
+    long creationTime;//milliseconds
+
+    volatile long lastAccessTime;//milliseconds
     private ObjectInstancePool ownerPool;
 
     //***************************************************************************************************************//
@@ -58,7 +60,9 @@ final class PooledObject implements Cloneable {
         p.rawClass = raw.getClass();
         p.state = state;
         p.ownerPool = pool;
-        p.lastAccessTime = currentTimeMillis();
+
+        p.creationTime = currentTimeMillis();
+        p.lastAccessTime = p.creationTime;
         return p;
     }
 
