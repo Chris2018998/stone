@@ -49,11 +49,11 @@ final class PooledConnection implements Cloneable {
     private final List<Integer> sqlExceptionCodeList;
     private final List<String> sqlExceptionStateList;
 
-    long creationTime;
+    long creationTime;//milliseconds
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
     volatile int state;
-    volatile long lastAccessTime;
+    volatile long lastAccessTime;//milliseconds
     int openStmSize;
     boolean curAutoCommit;
     boolean commitDirtyInd;
