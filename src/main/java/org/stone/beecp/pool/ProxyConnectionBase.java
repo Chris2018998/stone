@@ -22,7 +22,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @author Chris Liao
  * @version 1.0
  */
-abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
+public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
     protected Connection raw;
 
     public ProxyConnectionBase(PooledConnection p) {
@@ -65,7 +65,7 @@ abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connectio
     }
 
     public final void setAutoCommit(boolean autoCommit) throws SQLException {
-        if (p.commitDirtyInd) throw new SQLException("Change forbidden during dirty transaction");
+        if (p.commitDirtyInd) throw new SQLException("Change forbidden when in transaction");
         this.raw.setAutoCommit(autoCommit);
         this.p.curAutoCommit = autoCommit;
         this.p.setResetInd(PS_AUTO, autoCommit != this.p.defaultAutoCommit);
