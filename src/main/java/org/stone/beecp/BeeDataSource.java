@@ -133,12 +133,16 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return pool;
     }
 
-    public Connection getConnection(String username, String password) throws SQLException {
-        throw new SQLFeatureNotSupportedException("Not support");
+    public Connection getConnection(String user, String password) throws SQLException {
+        //throw new SQLFeatureNotSupportedException("Not support");
+        CommonLog.warn("getConnection (user,password) ignores authentication - returning default connection");
+        return getConnection();
     }
 
     public XAConnection getXAConnection(String user, String password) throws SQLException {
-        throw new SQLFeatureNotSupportedException("Not support");
+        //throw new SQLFeatureNotSupportedException("Not support");
+        CommonLog.warn("getXAConnection (user,password) ignores authentication - returning default connection");
+        return getXAConnection();
     }
 
     //***************************************************************************************************************//
