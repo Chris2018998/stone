@@ -310,13 +310,14 @@ final class ProxyClassGenerator {
                     methodBuffer.append(ctMethod.getReturnType().getName() + " r=" + rawName + methodName + "($$);");
                     methodBuffer.append("p.lastAccessTime=System.currentTimeMillis();");
                     if (ctMethod.getReturnType() == ctResultSetClass) {
-                        methodBuffer.append("return new ProxyResultSet(r,this,p);");
+                        methodBuffer.append("return r==null?null:new ProxyResultSet(r,this,p);");
                     } else {
                         methodBuffer.append("return r;");
                     }
                 } else {
                     if (ctMethod.getReturnType() == ctResultSetClass) {
-                        methodBuffer.append("return new ProxyResultSet(raw." + methodName + "($$),this,p);");
+                        methodBuffer.append(ctMethod.getReturnType().getName() + " r=" + rawName + methodName + "($$);");
+                        methodBuffer.append("return r==null?null:new ProxyResultSet(r,this,p);");
                     } else
                         methodBuffer.append("return " + rawName + methodName + "($$);");
                 }
@@ -349,7 +350,8 @@ final class ProxyClassGenerator {
             boolean existsSQLException = exitsSQLException(ctMethod.getExceptionTypes());
             if (existsSQLException) methodBuffer.append("  try{");
             if (ctMethod.getReturnType() == ctResultSetClass) {
-                methodBuffer.append("return new ProxyResultSet(raw." + methodName + "($$),p);");
+                methodBuffer.append("ResultSet r = raw." + methodName + "($$);");
+                methodBuffer.append("return r==null?null:new ProxyResultSet(r,p);");
             } else if (ctMethod.getReturnType() == CtClass.voidType) {
                 methodBuffer.append("raw." + methodName + "($$);");
             } else {
