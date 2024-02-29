@@ -141,7 +141,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
     public XAConnection getXAConnection(String user, String password) throws SQLException {
         //throw new SQLFeatureNotSupportedException("Not support");
-        CommonLog.warn("getXAConnection (user,password) ignores authentication - returning default connection");
+        CommonLog.warn("getXAConnection (user,password) ignores authentication - returning default XAConnection");
         return getXAConnection();
     }
 
