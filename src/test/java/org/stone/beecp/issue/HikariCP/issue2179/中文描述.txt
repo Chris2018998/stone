@@ -1,1 +1,70 @@
+关于HikariCP的连接不能重建问题
 
+
+问题描述
+
+在HikariCP的Issue列表中，已有多个用户反映HikariCP存在连接无法重建的问题，即使在数据库重启的情况下也无法及时恢复，比如#1474，#2179等
+
+
+产生原因
+
+原因1：由于数据库服务负载重或网络问题导致创建请求无法得到响应，致使Pool的连接创建线程处于阻塞状态
+
+
+原因2：HikariCP在Connection恢复重建上，应该是存在缺陷，个人曾经做过一个MySQL数据库Down机测试，
+
+      发现HikariCP反应比较迟缓，比如配置超时为30秒，那么就需要等待30秒才反应过来，而BeeCP则反应敏捷。
+
+
+解决办法
+
+办法1：直接人工重启数据库和应用，但是如果问题经常发生的话，人工频繁干预，代价有点高了，似乎用户也是这么干的？
+
+办法2：在池的配置上加入Socket控制参数应该可以缓解问题的发生, Driver一般都提供了连接超时和数据读取超时的两个参数，
+       
+       通过url上追加参数或Properties配置的应用进池（addDataSourceProperty），参数名可以参考下面地址
+
+       https://blog.csdn.net/u012112647/article/details/120763586
+
+
+办法3：应用BeeCP,经过大量实践使用,BeeCP质量更为可靠，在应对断网，数据库Down机的情况，具有很强的自愈能力。
+
+
+BeeCP自2017年以来，经过多个版本的迭代开发趋于稳定，目前已有不少用户在使用它了，反应良好，值得信赖。
+
+
+一次大胆的尝试，也许会给你一个意外的Supprise ^-^
+
+
+       
+    
+
+
+
+
+
+
+ 
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#1474 Randomly HikariPool pool becomes zero and HikariCP is not renewing/creating new connections 
