@@ -1,5 +1,6 @@
 package org.stone.beecp.issue.HikariCP.issue2183;
 
+import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSource;
 
 import javax.sql.DataSource;
@@ -21,7 +22,9 @@ public class SnowflakeDataSource implements DataSource {
     public Connection getConnection() throws SQLException {
         for (; ; ) {
             Connection con = ds.getConnection();
-            SnowflakeConnectionWrapper wrapper = (SnowflakeConnectionWrapper) con;
+            SnowflakeConnectionWrapper wrapper = (SnowflakeConnectionWrapper) TestUtil.getFieldValue(con, "raw");//reflection
+            //SnowflakeConnectionWrapper wrapper = (SnowflakeConnectionWrapper)con.unwrap(Connection.class);
+            //should adjust unwrap method implementation
             if (wrapper.isExpired()) {//expiration check
                 wrapper.abort(null);//pool will remove this expired connection
             } else {
