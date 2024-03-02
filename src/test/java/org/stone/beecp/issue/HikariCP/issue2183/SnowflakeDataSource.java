@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 
 /**
- * DataSource implementation reference for Snowflake
+ * DataSource implementation reference for #2183 of HikariCP
  */
 public class SnowflakeDataSource implements DataSource {
     private BeeDataSource ds;
