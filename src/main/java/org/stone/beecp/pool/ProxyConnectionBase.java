@@ -106,7 +106,7 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
         this.p.setResetInd(PS_CATALOG, p.forceDirtyOnCatalogAfterSet || !objectEquals(catalog, this.p.defaultCatalog));
     }
 
-    //for JDK1.7 begin
+    //--------------------------JDBC 4.1 -----------------------------
     public void setSchema(String schema) throws SQLException {
         this.raw.setSchema(schema);
         this.p.setResetInd(PS_SCHEMA, p.forceDirtyOnSchemaAfterSet || !objectEquals(schema, this.p.defaultSchema));
