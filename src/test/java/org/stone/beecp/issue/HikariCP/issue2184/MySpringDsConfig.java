@@ -41,15 +41,15 @@ public class MySpringDsConfig {
 //        ERROR_CODES.add(1105);
 
         /*
-         * I will add a sql exception predication intefface,which is used to determinate whether evict cons from pool
+         * I will add a sql exception predication interface,which is used to determinate whether evict cons from pool
          * this feature is similar to SQLExceptionOverride of HikariCP,below are some ref code:
          *
          * SqlexceptionPredication predication = new xxxSqlexceptionPredication();
          * config.setSqlexceptionPredication(predication);
          *
          * public class xxxSqlexceptionPredication implements SqlexceptionPredication{
-         *     //return true,evict con
-         *    public boolean evictTest(SQLException e){
+         *     //result is not null or not empty,means a cause of eviction
+         *    public String evictTest(SQLException e){
          *      //put down your code
          *    }
          *  }//
