@@ -21,7 +21,7 @@ import java.sql.SQLException;
 public interface SQLExceptionPredication {
 
     //result is not null or not empty,means a cause of eviction
-    String evictionTest(SQLException e);
+    String check(SQLException e);
 }
 
 
