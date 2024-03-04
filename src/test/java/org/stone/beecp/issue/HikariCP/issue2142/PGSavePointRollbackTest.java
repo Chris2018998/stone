@@ -19,7 +19,7 @@ import java.sql.*;
  * Chris Liao(Stone project owner)
  * Test Date: 2024/02/27 in China
  * <p>
- * Test Result:failed
+ * Test Result:Passed
  */
 public class PGSavePointRollbackTest {
 
@@ -38,51 +38,54 @@ public class PGSavePointRollbackTest {
         ds.setJdbcUrl(url);
         ds.setUsername(username);
         ds.setPassword(password);
+        ds.setDefaultAutoCommit(true);//default value is boolean true
 
-        Connection conn = null;
+        //step1:
+        Connection conn1 = null;
         try {
-            conn = ds.getConnection();
-            conn.setAutoCommit(false);
+            conn1 = ds.getConnection();
+            conn1.setAutoCommit(false);
             /**
              * drop table Home_Work;
              * create table Home_Work(name char(10));
              */
-            conn.createStatement().execute(
+            conn1.createStatement().execute(
                     "INSERT INTO Home_Work (Name) VALUES ('JAVA')");//table data is empty
 
-            Savepoint savepoint = conn.setSavepoint();
-            conn.rollback(savepoint);
-            conn.commit();
+            Savepoint savepoint = conn1.setSavepoint();
+            conn1.rollback(savepoint);
         } finally {
-            if (conn != null) conn.close();
+            if (conn1 != null) conn1.close();
         }
 
-        //test data whether inserted
+        /**
+         * step2:check the autoCommit whether reset to be default(true)
+         * Test Result:passed
+         */
         Connection conn2 = null;
+        try {//
+            conn2 = ds.getConnection();
+            if (!conn2.getAutoCommit()) throw new SQLException("AutoCommit not be reset to default(true)");
+        } finally {
+            if (conn2 != null) conn2.close();
+        }
+
+        /**
+         * step3: test data whether inserted
+         * Test Result:passed(not inserted)
+         */
+        Connection conn3 = null;
         Statement statement;
         ResultSet resultSet;
         try {
-            conn2 = DriverManager.getConnection(url, username, password);
-            statement = conn2.createStatement();
+            conn3 = DriverManager.getConnection(url, username, password);
+            statement = conn3.createStatement();
             resultSet = statement.executeQuery("select * from Home_Work");
             if (resultSet.next()) {//has inserted into db
-                throw new SQLException("SavePoint not be rollback");//exception will be thrown from here,why?
-
-                /**
-                 * (execute sql) ------->(your point)
-                 *                       (your point)<---------(rollback(point))
-                 *                        --------------------->(commit) so inserted
-                 *
-                 * if move point position to prev of sql,test can passed,see another test files
-                 * 1: point moved :  {@link PGSavePointRollbackTest2),data rollback
-                 * 2: Use driver directly {@link PGSavePointRollbackTest3),data inserted
-                 *
-                 * conclusion: issue 2142 is a not 'real' issue of HikariCP,just point seting....
-                 *
-                 */
+                throw new SQLException("Data not inserted");//exception will be thrown from here,why?
             }
         } finally {
-            if (conn2 != null) conn2.close();
+            if (conn3 != null) conn3.close();
         }
 
         System.out.println("Test case passed on SavePoint rollback");

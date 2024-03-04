@@ -55,7 +55,6 @@ public class PGSavePointRollbackTest2 {
 
             //Savepoint savepoint = conn.setSavepoint();
             conn.rollback(savepoint);
-            conn.commit();
         } finally {
             if (conn != null) conn.close();
         }

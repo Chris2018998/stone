@@ -17,7 +17,7 @@ import java.sql.*;
  * Chris Liao(Stone project owner)
  * Test Date: 2024/02/27 in China
  * <p>
- * Test Result:failed
+ * Test Result:passed
  */
 public class PGSavePointRollbackTest3 {
 
@@ -42,7 +42,6 @@ public class PGSavePointRollbackTest3 {
 
             Savepoint savepoint = conn.setSavepoint();
             conn.rollback(savepoint);
-            conn.commit();
         } finally {
             if (conn != null) conn.close();
         }
