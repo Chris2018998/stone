@@ -254,7 +254,7 @@ final class PooledConnection implements Cloneable {
         if (proxyInUsing == null) return;
 
         if (predication != null) {
-            String msg = predication.evictionTest(e);
+            String msg = predication.check(e);
             if (!isBlank(msg)) {
                 if (pool.isPrintRuntimeLog())
                     CommonLog.warn("BeeCP({})Connection has been broken because of eviction checking:({})", pool.getPoolName(), msg);
