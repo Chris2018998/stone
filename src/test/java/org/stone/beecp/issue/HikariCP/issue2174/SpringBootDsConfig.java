@@ -13,6 +13,6 @@ public class SpringBootDsConfig {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setMaxActive(50);
         config.setMaxWait(30000);
-        return new BeeDataSource(config);
+        return new BeeDataSource(config);//very simple? play with my baby pool
     }
 }
