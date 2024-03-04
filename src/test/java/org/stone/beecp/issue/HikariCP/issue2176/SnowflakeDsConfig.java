@@ -9,6 +9,7 @@ import java.sql.SQLException;
 //@Configuration
 public class SnowflakeDsConfig {
 
+    //@Bean
     public DataSource snowDataSource() throws SQLException {
         //1:create a key container to store snowflake keys(just support two keys)
         String firstKey = null;//@todo need you put first key here
