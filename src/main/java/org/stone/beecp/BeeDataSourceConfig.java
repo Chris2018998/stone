@@ -142,6 +142,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //connection factory instance
     private Object connectionFactory;
 
+    //sql exception predication
+    private Class sqlExceptionPredicationClass;
+    //sql exception predication class name
+    private String sqlExceptionPredicationClassName;
+    //sql exception predication instance
+    private SQLExceptionPredication sqlExceptionPredication;
+
     //encryption decoder class on jdbc link info
     private Class jdbcLinkInfoDecoderClass;
     //encryption decoder classname on jdbc link info
@@ -594,6 +601,30 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         this.connectionFactoryClassName = trimString(connectionFactoryClassName);
     }
 
+    public Class getSqlExceptionPredicationClass() {
+        return sqlExceptionPredicationClass;
+    }
+
+    public void setSqlExceptionPredicationClass(Class sqlExceptionPredicationClass) {
+        this.sqlExceptionPredicationClass = sqlExceptionPredicationClass;
+    }
+
+    public String getSqlExceptionPredicationClassName() {
+        return sqlExceptionPredicationClassName;
+    }
+
+    public void setSqlExceptionPredicationClassName(String sqlExceptionPredicationClassName) {
+        this.sqlExceptionPredicationClassName = sqlExceptionPredicationClassName;
+    }
+
+    public SQLExceptionPredication getSqlExceptionPredication() {
+        return sqlExceptionPredication;
+    }
+
+    public void setSqlExceptionPredication(SQLExceptionPredication sqlExceptionPredication) {
+        this.sqlExceptionPredication = sqlExceptionPredication;
+    }
+
     public Class getJdbcLinkInfoDecoderClass() {
         return this.jdbcLinkInfoDecoderClass;
     }
@@ -750,6 +781,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPoolThreadFactory threadFactory = this.createThreadFactory();
+        SQLExceptionPredication predication = this.createSQLExceptionPredication();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -757,6 +789,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         //set some factories to config
         checkedConfig.threadFactory = threadFactory;
         checkedConfig.connectionFactory = connectionFactory;
+        checkedConfig.sqlExceptionPredication = predication;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
 
         return checkedConfig;
@@ -953,6 +986,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         }
     }
 
+
+    //create Thread factory
+    private SQLExceptionPredication createSQLExceptionPredication() throws BeeDataSourceConfigException {
+        //step1:if exists predication,then return it
+        if (this.sqlExceptionPredication != null) return this.sqlExceptionPredication;
+
+        //step2: configuration of sqlExceptionPredication
+        if (this.sqlExceptionPredicationClass == null && isBlank(this.sqlExceptionPredicationClassName))
+            throw new BeeDataSourceConfigException("Configuration item(sqlExceptionPredicationClass and sqlExceptionPredicationClassName) can't be null at same time");
+
+        //step3: create SQLExceptionPredication by class or class name
+        try {
+            Class<?> predicationClass = this.sqlExceptionPredicationClass != null ? this.sqlExceptionPredicationClass : Class.forName(this.sqlExceptionPredicationClassName);
+            Class[] parentClasses = {SQLExceptionPredication.class};
+            return (SQLExceptionPredication) createClassInstance(predicationClass, parentClasses, "SQLException Predication");
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BeeDataSourceConfigException("Failed to create SQLException predication by class:" + this.sqlExceptionPredicationClassName, e);
+        }
+    }
+
     //create Thread factory
     private BeeConnectionPoolThreadFactory createThreadFactory() throws BeeDataSourceConfigException {
         //step1:if exists thread factory,then return it
@@ -973,5 +1028,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             throw new BeeDataSourceConfigException("Failed to create pool thread factory by class:" + this.threadFactoryClassName, e);
         }
     }
+
+
 }
 
