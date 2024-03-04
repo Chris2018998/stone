@@ -251,6 +251,17 @@ final class PooledConnection implements Cloneable {
     }
 
     void checkSQLException(SQLException e) {//Fatal error code check
+        if (predication != null && proxyInUsing != null) {
+            String msg = predication.evictionTest(e);
+            if (!isBlank(msg)) {
+                if (pool.isPrintRuntimeLog())
+                    CommonLog.warn("BeeCP({})Connection has been broken because of eviction checking:({})", pool.getPoolName(), msg);
+                this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
+                this.proxyInUsing = null;
+                return;
+            }
+        }
+
         int code = e.getErrorCode();
         if (code != 0 && proxyInUsing != null && sqlExceptionCodeList != null && sqlExceptionCodeList.contains(code)) {
             if (pool.isPrintRuntimeLog())
@@ -266,17 +277,6 @@ final class PooledConnection implements Cloneable {
                 CommonLog.warn("BeeCP({})Connection has been broken because of SQLSTATE({})", pool.getPoolName(), state);
             this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             this.proxyInUsing = null;
-            return;
-        }
-
-        if (predication != null && proxyInUsing != null) {
-            String msg = predication.evictionTest(e);
-            if (!isBlank(msg)) {
-                if (pool.isPrintRuntimeLog())
-                    CommonLog.warn("BeeCP({})Connection has been broken because of eviction checking:({})", pool.getPoolName(), msg);
-                this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
-                this.proxyInUsing = null;
-            }
         }
     }
 
