@@ -518,7 +518,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 networkTimeoutExecutor,
                 //7:others
                 poolConfig.getSqlExceptionCodeList(),
-                poolConfig.getSqlExceptionStateList());
+                poolConfig.getSqlExceptionStateList(),
+                poolConfig.getSqlExceptionPredication());
     }
 
     //***************************************************************************************************************//

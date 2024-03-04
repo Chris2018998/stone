@@ -9,6 +9,7 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.beecp.SQLExceptionPredication;
 import org.stone.beecp.pool.exception.ConnectionRecycleException;
 
 import javax.transaction.xa.XAResource;
@@ -48,6 +49,7 @@ final class PooledConnection implements Cloneable {
     private final boolean enableDefaultOnTransactionIsolation;
     private final List<Integer> sqlExceptionCodeList;
     private final List<String> sqlExceptionStateList;
+    private final SQLExceptionPredication predication;
 
     long creationTime;//milliseconds
     Connection rawConn;//maybe from XAConnection
@@ -89,7 +91,8 @@ final class PooledConnection implements Cloneable {
             ThreadPoolExecutor networkTimeoutExecutor,
             //7:others
             List<Integer> sqlExceptionCodeList,
-            List<String> sqlExceptionStateList) {
+            List<String> sqlExceptionStateList,
+            SQLExceptionPredication predication) {
 
         //1:defaultAutoCommit
         this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
@@ -117,6 +120,7 @@ final class PooledConnection implements Cloneable {
         //7:others
         this.sqlExceptionCodeList = sqlExceptionCodeList;
         this.sqlExceptionStateList = sqlExceptionStateList;
+        this.predication = predication;
 
         this.pool = pool;
         this.curAutoCommit = defaultAutoCommit;
@@ -262,6 +266,17 @@ final class PooledConnection implements Cloneable {
                 CommonLog.warn("BeeCP({})Connection has been broken because of SQLSTATE({})", pool.getPoolName(), state);
             this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             this.proxyInUsing = null;
+            return;
+        }
+
+        if (predication != null && proxyInUsing != null) {
+            String msg = predication.evictionTest(e);
+            if (!isBlank(msg)) {
+                if (pool.isPrintRuntimeLog())
+                    CommonLog.warn("BeeCP({})Connection has been broken because of eviction checking:({})", pool.getPoolName(), msg);
+                this.proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
+                this.proxyInUsing = null;
+            }
         }
     }
 
