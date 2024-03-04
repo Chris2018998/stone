@@ -986,25 +986,26 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         }
     }
 
-
     //create Thread factory
     private SQLExceptionPredication createSQLExceptionPredication() throws BeeDataSourceConfigException {
         //step1:if exists predication,then return it
         if (this.sqlExceptionPredication != null) return this.sqlExceptionPredication;
 
-        //step2: configuration of sqlExceptionPredication
-        if (this.sqlExceptionPredicationClass == null && isBlank(this.sqlExceptionPredicationClassName))
-            throw new BeeDataSourceConfigException("Configuration item(sqlExceptionPredicationClass and sqlExceptionPredicationClassName) can't be null at same time");
-
-        //step3: create SQLExceptionPredication by class or class name
+        //step2: create SQLExceptionPredication
+        Class predicationClass = this.sqlExceptionPredicationClass;
         try {
-            Class<?> predicationClass = this.sqlExceptionPredicationClass != null ? this.sqlExceptionPredicationClass : Class.forName(this.sqlExceptionPredicationClassName);
-            Class[] parentClasses = {SQLExceptionPredication.class};
-            return (SQLExceptionPredication) createClassInstance(predicationClass, parentClasses, "SQLException Predication");
+            if (predicationClass == null && !isBlank(this.sqlExceptionPredicationClassName))
+                predicationClass = Class.forName(this.sqlExceptionPredicationClassName);
+
+            if (predicationClass != null) {
+                Class[] parentClasses = {SQLExceptionPredication.class};
+                return (SQLExceptionPredication) createClassInstance(predicationClass, parentClasses, "SQLException Predication");
+            }
+            return null;
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            throw new BeeDataSourceConfigException("Failed to create SQLException predication by class:" + this.sqlExceptionPredicationClassName, e);
+            throw new BeeDataSourceConfigException("Failed to create SQLException predication by class:" + predicationClass, e);
         }
     }
 
