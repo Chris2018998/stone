@@ -54,7 +54,7 @@ public class MySpringDsConfig {
          *    }
          *  }//
          *
-         * Ps: Eviction check order: error code check ----> state check ----> Predication check
+         * Ps: predication check -----> error code check ----->SQLState check
          */
 
         return new BeeDataSource(config);
