@@ -65,10 +65,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
-    //seconds:max wait time in {@code RawConnectionFactory.create()} and {@code RawXaConnectionFactory.create()} to create connections.
-    //this item value can be set into raw datasource or DriverManager as loginTimeout on pool initialization if its value is greater than zero,
-    //but field loginTimeout of DriverManager is shareable info and whose setting change is global to all drivers,and maybe some drivers
-    //read loginTimeout from DriverManager as a working control field,so need more careful and set an appropriate value to this field when necessary
+    //seconds: maximum time in seconds that connection factory{@code RawConnectionFactory RawXaConnectionFactory} will wait
+    //while attempting to connect to a database.this item value can be set into raw datasource or DriverManager as loginTimeout
+    //on pool initialization if its value is greater than zero, field loginTimeout of DriverManager is shareable info and
+    //whose setting change is global to all drivers,and maybe some drivers read loginTimeout from DriverManager as a working control
+    //field,so need more careful and set an appropriate value to this field when necessary
     private int connectTimeout;
     //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
