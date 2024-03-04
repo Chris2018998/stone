@@ -14,9 +14,9 @@ public class SnowflakeDataSourceConfig {
 
     //@Bean
     public DataSource SnowflakeDataSource() {
-        String userName = "";//put your userName
+        String userName = "";//put your snowflake userName
         String jdbcUrl = "jdbc:snowflake://localhost:8080";//replace it with your snowflake url
-        String driverName = "com.snowflake.client.jdbc.SnowflakeDriver";//put your driver class name
+        String driverName = "com.snowflake.client.jdbc.SnowflakeDriver";
 
         /* jdbc artifactId
          * <dependency>
