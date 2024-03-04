@@ -40,7 +40,7 @@ public class PGSavePointRollbackTest {
         ds.setPassword(password);
         ds.setDefaultAutoCommit(true);//default value is boolean true
 
-        //step1:
+        //step1:insert a data to table and set a save-point
         Connection conn1 = null;
         try {
             conn1 = ds.getConnection();
@@ -50,7 +50,7 @@ public class PGSavePointRollbackTest {
              * create table Home_Work(name char(10));
              */
             conn1.createStatement().execute(
-                    "INSERT INTO Home_Work (Name) VALUES ('JAVA')");//table data is empty
+                    "INSERT INTO Home_Work (Name) VALUES ('JAVA')");//table is empty
 
             Savepoint savepoint = conn1.setSavepoint();
             conn1.rollback(savepoint);
