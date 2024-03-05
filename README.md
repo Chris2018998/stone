@@ -1,5 +1,5 @@
 <a><img src="https://img.shields.io/badge/JDK-1.8+-green.svg"></a>
-<a><img src="https://img.shields.io/badge/License-LGPL%202.1-blue.svg"></a>
+[![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 <a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
  
 ## 🍑 简 介
