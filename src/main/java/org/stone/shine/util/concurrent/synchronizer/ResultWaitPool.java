@@ -5,7 +5,7 @@
  *
  * Project owner contact:Chris2018998@tom.com.
  *
- * Project Licensed under GNU Lesser General Public License v2.1.
+ * Project Licensed under Apache License v2.0.
  */
 package org.stone.shine.util.concurrent.synchronizer;
 
@@ -57,7 +57,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
 
     private void removeAndWakeupFirst(final SyncNode node) {
         boolean casFail = !SyncNodeUpdater.casState(node, null, CANCELLED);//failure that state must be filled to RUNNING
-        boolean atHead = casFail ? true : waitQueue.peek() == node;
+        boolean atHead = casFail || waitQueue.peek() == node;
         this.waitQueue.remove(node);
         if (casFail || atHead) this.wakeupFirst();
     }
