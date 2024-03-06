@@ -5,7 +5,7 @@
  *
  * Project owner contact:Chris2018998@tom.com.
  *
- * Project Licensed under GNU Lesser General Public License v2.1.
+ * Project Licensed under Apache License v2.0.
  */
 package org.stone.beecp;
 
@@ -51,12 +51,4 @@ public final class TransactionIsolation {
     static Integer getTransactionIsolationCode(String name) {
         return IsolationLevelMap.get(name.toUpperCase(Locale.US));
     }
-
-//    static String getTransactionIsolationName(Integer code) {
-//        for (Map.Entry<String, Integer> entry : TransactionIsolation.IsolationLevelMap.entrySet()) {
-//            if (entry.getValue().equals(code))
-//                return entry.getKey();
-//        }
-//        return null;
-//    }
 }

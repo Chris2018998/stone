@@ -5,14 +5,14 @@
  *
  * Project owner contact:Chris2018998@tom.com.
  *
- * Project Licensed under GNU Lesser General Public License v2.1.
+ * Project Licensed under Apache License v2.0.
  */
 package org.stone.beecp;
 
 import java.sql.SQLException;
 
 /**
- * Connection eviction test on an SQLException
+ * Connection eviction test on SQLException
  *
  * @author Chris Liao
  * @version 1.0
@@ -20,7 +20,7 @@ import java.sql.SQLException;
 
 public interface SQLExceptionPredication {
 
-    //result is not null or not empty,means a cause of eviction
+    //return desc of eviction,if null or empty,not be evicted
     String check(SQLException e);
 }
 
