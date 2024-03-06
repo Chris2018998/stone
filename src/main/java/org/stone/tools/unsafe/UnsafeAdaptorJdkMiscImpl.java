@@ -5,7 +5,7 @@
  *
  * Project owner contact:Chris2018998@tom.com.
  *
- * Project Licensed under GNU Lesser General Public License v2.1.
+ * Project Licensed under Apache License v2.0.
  */
 package org.stone.tools.unsafe;
 
@@ -21,7 +21,7 @@ import java.lang.reflect.Field;
  * @version 1.0
  */
 public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
-    private static final Unsafe U;//
+    private static final Unsafe U;
 
     static {
         try {
