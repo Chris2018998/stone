@@ -12,9 +12,7 @@ import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.JdbcConfig;
 import org.stone.beecp.pool.FastConnectionPool;
-import org.stone.shine.util.concurrent.CountDownLatch;
-
-import java.util.concurrent.TimeUnit;
+import org.stone.shine.util.concurrent.CyclicBarrier;
 
 /**
  * max active size test,detail,please visit: HikariCP issue #2156 link
@@ -46,13 +44,17 @@ public class SlowSqlConcurrentTest extends TestCase {
         FastConnectionPool pool = (FastConnectionPool) TestUtil.getFieldValue(ds, "pool");
         if (pool.getTotalSize() != 0) TestUtil.assertError("Total initial connections not as expected 0");
 
-        CountDownLatch latch = new CountDownLatch(30);
-        long timePoint = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+        int count = 30;
+        VisitThread[] threads = new VisitThread[count];
+        CyclicBarrier barrier = new CyclicBarrier(count);
+        for (int i = 0; i < count; i++) {
+            threads[i] = new VisitThread(ds, barrier);
+            threads[i].start();
+        }
         for (int i = 0; i < 30; i++) {
-            new VisitThread(ds, latch, timePoint).start();
+            threads[i].join();
         }
 
-        latch.await();
         int total = pool.getTotalSize();
         if (total != 30) TestUtil.assertError("Total connections[" + total + "]not as expected 30");
     }

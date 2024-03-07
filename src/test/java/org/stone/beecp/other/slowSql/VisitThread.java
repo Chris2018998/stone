@@ -7,48 +7,30 @@
 package org.stone.beecp.other.slowSql;
 
 import org.stone.beecp.BeeDataSource;
-import org.stone.shine.util.concurrent.CountDownLatch;
+import org.stone.shine.util.concurrent.CyclicBarrier;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 public class VisitThread extends Thread {
-    private long timePoint;
     private BeeDataSource ds;
-    private CountDownLatch latch;
+    private CyclicBarrier barrier;
 
-
-    public VisitThread(BeeDataSource ds, CountDownLatch latch, long timePoint) {
+    VisitThread(BeeDataSource ds, CyclicBarrier barrier) {
         this.ds = ds;
-        this.latch = latch;
-        this.timePoint = timePoint;
+        this.barrier = barrier;
     }
 
     public void run() {
         Connection con = null;
-        PreparedStatement ps = null;
-
         try {
-            LockSupport.parkNanos(timePoint - System.nanoTime());//concurrent timePoint
-
             con = ds.getConnection();
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(5));//delay 9seconds to execute sql
-            ps = con.prepareStatement("select * from dummyTable");
-            ps.execute();
-
+            barrier.await();
         } catch (Exception e) {
         } finally {
-            if (ps != null) try {
-                ps.close();
-            } catch (Exception e) {
-            }
             if (con != null) try {
                 con.close();
             } catch (Exception e) {
             }
         }
-        latch.countDown();
     }
 }
