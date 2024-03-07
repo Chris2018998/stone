@@ -162,6 +162,14 @@ public final class RawConnectionPool implements BeeConnectionPool, BeeConnection
         }
     }
 
+    public long getElapsedTimeOfOwnerThreadInLock() {
+        return 0;
+    }
+
+    public void interruptThreadsOnCreationLock() {
+        //do noting
+    }
+
     /**
      * is pool shutdown
      */

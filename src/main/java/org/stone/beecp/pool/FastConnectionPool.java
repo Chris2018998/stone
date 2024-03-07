@@ -75,6 +75,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean templatePooledConnIsReady;
     private PooledConnection templatePooledConn;
     private ReentrantLock pooledArrayLock;
+    private long startTimeAtLockedSuccess;//milliseconds
     private volatile PooledConnection[] pooledArray;
     private boolean isRawXaConnFactory;
     private RawConnectionFactory rawConnFactory;
@@ -93,7 +94,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean printRuntimeLog;
 
     //***************************************************************************************************************//
-    //               1: Pool initializes and maintenance on pooled connections(5)                                    //                                                                                  //
+    //               1: Pool initializes and maintenance on pooled connections(7)                                    //                                                                                  //
     //***************************************************************************************************************//
 
     /**
@@ -248,6 +249,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //2:creates one pooled connection if not reach max capacity,otherwise return null
         try {
+            this.startTimeAtLockedSuccess = System.currentTimeMillis();
             int l = this.pooledArray.length;
             if (l < this.poolMaxSize) {
                 if (this.printRuntimeLog)
@@ -258,11 +260,11 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 XAResource rawXaRes = null;
                 try {
                     if (this.isRawXaConnFactory) {
-                        rawXaConn = this.rawXaConnFactory.create();
+                        rawXaConn = this.rawXaConnFactory.create();//stuck in driver maybe
                         rawConn = rawXaConn.getConnection();
                         rawXaRes = rawXaConn.getXAResource();
                     } else {
-                        rawConn = this.rawConnFactory.create();
+                        rawConn = this.rawConnFactory.create();//stuck in driver maybe
                     }
 
                     PooledConnection p;
@@ -290,6 +292,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
             return null;
         } finally {
+            this.startTimeAtLockedSuccess = 0L;
             this.pooledArrayLock.unlock();
         }
     }
@@ -319,7 +322,22 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-1.6: creates a template pooled connection on first connection
+    //Method-1.6: interrupt a thread in creating a connection
+    public long getElapsedTimeOfOwnerThreadInLock() {
+        return System.currentTimeMillis() - this.startTimeAtLockedSuccess;
+    }
+
+    //Method-1.7: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
+    public void interruptThreadsOnCreationLock() {
+        try {
+            interruptQueuedWaitersOnLock(this.pooledArrayLock);
+            interruptExclusiveOwnerThread(this.pooledArrayLock);
+        } catch (Throwable e) {
+            Log.warn("BeeCP({})Failed to interrupt threads on lock", e);
+        }
+    }
+
+    //Method-1.8: creates a template pooled connection on first connection
     private PooledConnection createTemplatePooledConn(Connection rawCon) throws SQLException {
         //step1:get default value of property auto-commit from config or from first connection
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
@@ -836,7 +854,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private void removeAllConnections(boolean force, String source) {
         //1:interrupt waiters on lock(maybe stuck on socket)
         try {
-            interruptWaitersOnLock(this.pooledArrayLock);
+            interruptQueuedWaitersOnLock(this.pooledArrayLock);
+            interruptExclusiveOwnerThread(this.pooledArrayLock);
         } catch (Throwable e) {
             Log.info("BeeCP({})Failed to interrupt threads on lock", e);
         }
