@@ -32,8 +32,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
-import static org.stone.tools.CommonUtil.interruptWaitersOnLock;
-import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
+import static org.stone.tools.CommonUtil.*;
 
 /**
  * Object instance Pool Implementation
@@ -80,6 +79,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private PoolSemaphore semaphore;
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
+    private long startTimeAtLockedSuccess;//milliseconds
     private ReentrantLock pooledArrayLock;
     private volatile PooledObject[] pooledArray;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
@@ -168,7 +168,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                2: Pooled object create/remove methods(3)                                                      //                                                                                  //
+    //                2: Pooled object create/remove methods(5)                                                      //                                                                                  //
     //***************************************************************************************************************//
     //Method-2.1: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
@@ -205,6 +205,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //2:try to create a pooled object
         try {
+            this.startTimeAtLockedSuccess = System.currentTimeMillis();
             int l = this.pooledArray.length;
             if (l < this.maxActiveSize) {
                 if (this.printRuntimeLog)
@@ -228,6 +229,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             }
             return null;
         } finally {
+            this.startTimeAtLockedSuccess = 0L;
             pooledArrayLock.unlock();
         }
     }
@@ -254,6 +256,21 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             }
         } finally {
             pooledArrayLock.unlock();
+        }
+    }
+
+    //Method-2.4: interrupt a thread in creating a connection
+    public long getElapsedTimeOfOwnerThreadInLock() {
+        return System.currentTimeMillis() - this.startTimeAtLockedSuccess;
+    }
+
+    //Method-2.5: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
+    public void interruptThreadsOnCreationLock() {
+        try {
+            interruptQueuedWaitersOnLock(this.pooledArrayLock);
+            interruptExclusiveOwnerThread(this.pooledArrayLock);
+        } catch (Throwable e) {
+            Log.warn("BeeOP({})Failed to interrupt threads on lock", e);
         }
     }
 
@@ -516,7 +533,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //2:interrupt waiters on lock(maybe stuck on socket)
         try {
-            interruptWaitersOnLock(this.pooledArrayLock);
+            interruptQueuedWaitersOnLock(this.pooledArrayLock);
+            interruptExclusiveOwnerThread(this.pooledArrayLock);
         } catch (Throwable e) {
             Log.info("BeeOP({})failed to interrupt threads on lock", e);
         }

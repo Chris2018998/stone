@@ -187,6 +187,22 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             throw new PoolInClearingException("Keyed object sub pool was closed or in clearing");
     }
 
+    /**
+     * get blocked time in connection creation a thread
+     */
+    public long getElapsedTimeOfOwnerThreadInLock(Object key) {
+        ObjectInstancePool pool = instancePoolMap.get(key);
+        return pool != null ? pool.getElapsedTimeOfOwnerThreadInLock() : 0L;
+    }
+
+    /**
+     * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
+     */
+    public void interruptThreadsOnCreationLock(Object key) {
+        ObjectInstancePool pool = instancePoolMap.get(key);
+        if (pool != null) pool.interruptThreadsOnCreationLock();
+    }
+
     public BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception {
         if (key == null) throw new ObjectKeyException("Object key can't be null");
 
