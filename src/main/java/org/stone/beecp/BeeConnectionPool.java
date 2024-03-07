@@ -86,6 +86,16 @@ public interface BeeConnectionPool {
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
     /**
+     * get blocked time in connection creation a thread
+     */
+    long getElapsedTimeOfOwnerThreadInLock();
+
+    /**
+     * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
+     */
+    void interruptThreadsOnCreationLock();
+
+    /**
      * Removes all pooled connections,this method should work under synchronization control,success caller update
      * pool state from {@code ConnectionPoolStatics.POOL_READY} to {@code ConnectionPoolStatics.POOL_CLEARING} and
      * interrupts all blocking waiters to leave from pool.Before completion of clearing,the pool rejects borrowing
