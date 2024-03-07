@@ -260,7 +260,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-2.4: interrupt a thread in creating a connection
-    public long getElapsedTimeOfOwnerThreadInLock() {
+    public long getElapsedTimeSinceCreationLock() {
         return this.startTimeAtLockedSuccess > 0L ? System.currentTimeMillis() - this.startTimeAtLockedSuccess : 0L;
     }
 
