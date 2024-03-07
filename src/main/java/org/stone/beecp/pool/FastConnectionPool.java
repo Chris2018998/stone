@@ -322,9 +322,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-1.6: interrupt a thread in creating a connection
+    //Method-1.6: get elapsed time of lock owner thread
     public long getElapsedTimeOfOwnerThreadInLock() {
-        return System.currentTimeMillis() - this.startTimeAtLockedSuccess;
+        return this.startTimeAtLockedSuccess > 0L ? System.currentTimeMillis() - this.startTimeAtLockedSuccess : 0L;
     }
 
     //Method-1.7: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
