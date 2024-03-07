@@ -93,7 +93,7 @@ public interface BeeKeyedObjectPool {
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * get blocked time in connection creation a thread
+     * get elapsed time of lock owner thread
      */
     long getElapsedTimeOfOwnerThreadInLock(Object key);
 
