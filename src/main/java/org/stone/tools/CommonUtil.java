@@ -53,27 +53,25 @@ public class CommonUtil {
         return probe;
     }
 
-    public static void interruptWaitersOnLock(ReentrantLock lock) throws Exception {
-        //1: get syn field value from lock
+    public static void interruptExclusiveOwnerThread(ReentrantLock lock) throws Exception {
         Field syncField = lock.getClass().getDeclaredField("sync");
-        syncField.setAccessible(true);
+        if (!syncField.isAccessible()) syncField.setAccessible(true);
         Object sync = syncField.get(lock);
 
-        //2: get reflection methods about lock threads
-        Method ownerThreadsMethod = AbstractOwnableSynchronizer.class.getDeclaredMethod("getExclusiveOwnerThread");
-        Method waitingThreadsMethod = AbstractQueuedSynchronizer.class.getDeclaredMethod("getExclusiveQueuedThreads");
+        Method ownerThreadsMethod = AbstractOwnableSynchronizer.class.getDeclaredMethod("getExclusiveOwnerThread");//protected
         ownerThreadsMethod.setAccessible(true);
-        waitingThreadsMethod.setAccessible(true);
+        Thread ownerThread = (Thread) ownerThreadsMethod.invoke(sync, new Object[0]);
+        ownerThread.interrupt();
+    }
 
-        /*
-         * 3:interrupt threads on lock
-         * if interruption flag updated after lock acquiring success, and interrupted exception thrown from AQS method at next acquiring
-         * should add a cas <method>cancelAcquire(Thread thread)</method>to do interruption in AQS?
-         */
-        Object[] parameters = new Object[0];
-        Thread ownerThread = (Thread) ownerThreadsMethod.invoke(sync, parameters);
-        if (ownerThread != null) ownerThread.interrupt();//owner thread maybe stuck on socket
-        Collection<Thread> waitingThreads = (Collection<Thread>) waitingThreadsMethod.invoke(sync, parameters);//waiting for lock
+    public static void interruptQueuedWaitersOnLock(ReentrantLock lock) throws Exception {
+        Field syncField = lock.getClass().getDeclaredField("sync");
+        if (!syncField.isAccessible()) syncField.setAccessible(true);
+        Object sync = syncField.get(lock);//get sync object under ReentrantLock
+
+        Method getMethod = AbstractQueuedSynchronizer.class.getDeclaredMethod("getExclusiveQueuedThreads");
+        getMethod.setAccessible(true);
+        Collection<Thread> waitingThreads = (Collection<Thread>) getMethod.invoke(sync, new Object[0]);
         if (waitingThreads != null) {
             for (Thread thread : waitingThreads) {
                 thread.interrupt();
