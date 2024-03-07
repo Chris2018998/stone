@@ -95,7 +95,7 @@ public interface BeeKeyedObjectPool {
     /**
      * get elapsed time of lock owner thread
      */
-    long getElapsedTimeOfOwnerThreadInLock(Object key);
+    long getElapsedTimeSinceCreationLock(Object key);
 
     /**
      * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
