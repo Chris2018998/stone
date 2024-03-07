@@ -323,7 +323,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-1.6: get elapsed time of lock owner thread
-    public long getElapsedTimeOfOwnerThreadInLock() {
+    public long getElapsedTimeSinceCreationLock() {
         return this.startTimeAtLockedSuccess > 0L ? System.currentTimeMillis() - this.startTimeAtLockedSuccess : 0L;
     }
 
