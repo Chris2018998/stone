@@ -88,7 +88,7 @@ public interface BeeConnectionPool {
     /**
      * get elapsed time of lock owner thread
      */
-    long getElapsedTimeOfOwnerThreadInLock();
+    long getElapsedTimeSinceCreationLock();
 
     /**
      * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
