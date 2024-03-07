@@ -93,6 +93,16 @@ public interface BeeKeyedObjectPool {
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
+     * get blocked time in connection creation a thread
+     */
+    long getElapsedTimeOfOwnerThreadInLock(Object key);
+
+    /**
+     * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
+     */
+    void interruptThreadsOnCreationLock(Object key);
+
+    /**
      * get monitor info by key
      *
      * @param key may be mapping to a set of pooled objects
