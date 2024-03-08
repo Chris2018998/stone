@@ -714,6 +714,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             }
 
             //2:inject item value from map to this dataSource config object
+            setValueMap.remove(CONFIG_SQL_EXCEPTION_CODE);//remove item if exists in properties file before injection
+            setValueMap.remove(CONFIG_SQL_EXCEPTION_STATE);//remove item if exists in properties file before injection
             setPropertiesValue(this, setValueMap);
 
             //3:try to find 'connectProperties' config value and put to ds config object
@@ -1029,7 +1031,5 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             throw new BeeDataSourceConfigException("Failed to create pool thread factory by class:" + this.threadFactoryClassName, e);
         }
     }
-
-
 }
 
