@@ -7,11 +7,13 @@
 package org.stone.beecp.config;
 
 import org.stone.base.TestCase;
+import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 
 import static org.stone.tools.CommonUtil.isBlank;
@@ -65,6 +67,17 @@ public class PropertiesFileLoadTest extends TestCase {
         if (testConfig.getTimerCheckInterval() != 30000) return "idleCheckTimeInterval error";
         if (!testConfig.isForceCloseUsingOnClear()) return "forceCloseUsingOnClear error";
         if (testConfig.getDelayTimeForNextClear() != 3000) return "delayTimeForNextClear error";
+        if (!"com.myProject.TestPredication".equals(testConfig.getSqlExceptionPredicationClassName())) return "sqlExceptionPredicationClassName error";
+        List<Integer> sqlExceptionCodeList =(List<Integer>) TestUtil.getFieldValue(testConfig,"sqlExceptionCodeList");
+        List<String> sqlExceptionStateList =(List<String>) TestUtil.getFieldValue(testConfig,"sqlExceptionStateList");
+        for(Integer code:sqlExceptionCodeList){
+            int value = code.intValue();
+            if(value!=500150&&value!=2399)return "sqlExceptionCodeList error";
+        }
+        for(String state:sqlExceptionStateList){
+            if(!"0A000".equals(state) &&!"57P01".equals(state))return "sqlExceptionStateList error";
+        }
+
         if (!"org.stone.beecp.pool.ConnectionFactoryByDriver".equals(testConfig.getConnectionFactoryClassName()))
             return "connectionFactoryClassName error";
         if (!"org.stone.beecp.pool.RawConnectionPool".equals(testConfig.getPoolImplementClassName()))
