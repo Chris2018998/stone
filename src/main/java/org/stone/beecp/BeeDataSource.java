@@ -219,6 +219,16 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         this.pool.clear(forceCloseUsing);
     }
 
+    public long getElapsedTimeSinceCreationLock() throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
+        return this.pool.getElapsedTimeSinceCreationLock();
+    }
+    
+    public void interruptThreadsOnCreationLock() throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
+        this.pool.interruptThreadsOnCreationLock();
+    }
+
     public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
         if (config == null) throw new BeeDataSourceConfigException("Connection pool config can't be null");
