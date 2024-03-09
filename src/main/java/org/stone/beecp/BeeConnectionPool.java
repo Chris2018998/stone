@@ -86,7 +86,7 @@ public interface BeeConnectionPool {
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * get elapsed time of lock owner thread
+     * @return elapsed time of lock owner thread
      */
     long getElapsedTimeSinceCreationLock();
 
