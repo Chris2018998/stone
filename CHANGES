@@ -1,1 +1,8 @@
+stone changes
 
+Changes in 1.2.9
+
+* change project LICENSE from LGPL2.1 to Apache2.0
+* [beecp]add connection eviction predication to support customization on SQLException check
+* [beecp]add a operation method which can be used to try interrupt blocking on Driver.getConencton/DataSource.getConencton
+* [beecp]rename a config item: createTimeout ---> connctTimeout,which is equivalent to loginTimeout field in DriverManager
