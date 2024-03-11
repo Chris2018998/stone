@@ -12,7 +12,7 @@ package org.stone.beetp.once;
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.beetp.*;
-import org.stone.beetp.exception.TaskResultGetTimeoutException;
+import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.ArrayList;
 import java.util.List;

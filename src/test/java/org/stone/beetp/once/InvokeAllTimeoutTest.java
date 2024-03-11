@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.stone.beetp.TaskStates.TASK_CALL_EXCEPTION;
 import static org.stone.beetp.TaskStates.TASK_CANCELLED;
+import static org.stone.beetp.TaskStates.TASK_EXEC_EXCEPTION;
 
 public class InvokeAllTimeoutTest extends TestCase {
     public void test() throws Exception {
@@ -38,7 +38,7 @@ public class InvokeAllTimeoutTest extends TestCase {
 
         for (TaskHandle handle : handleList) {
             int state = handle.getState();
-            if (state == TASK_CANCELLED || state == TASK_CALL_EXCEPTION) {
+            if (state == TASK_CANCELLED || state == TASK_EXEC_EXCEPTION) {
                 existException = true;
                 break;
             }

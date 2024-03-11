@@ -16,7 +16,7 @@ import org.stone.beetp.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.stone.beetp.TaskStates.TASK_CALL_EXCEPTION;
+import static org.stone.beetp.TaskStates.TASK_EXEC_EXCEPTION;
 
 public class InvokeAnyNormalTest extends TestCase {
     public void test() throws Exception {
@@ -30,6 +30,6 @@ public class InvokeAnyNormalTest extends TestCase {
         taskList.add(new ExceptionTask());
         taskList.add(new HelloTask());
         TaskHandle handle = service.invokeAny(taskList);
-        if (handle.getState() == TASK_CALL_EXCEPTION) TestUtil.assertError("InvokeAny test failed");
+        if (handle.getState() == TASK_EXEC_EXCEPTION) TestUtil.assertError("InvokeAny test failed");
     }
 }

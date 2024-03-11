@@ -14,7 +14,7 @@ import org.stone.base.TestUtil;
 import org.stone.beetp.HelloTask;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.exception.TaskRejectedException;
+import org.stone.beetp.pool.exception.TaskRejectedException;
 
 /**
  * task reject test

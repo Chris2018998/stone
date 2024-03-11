@@ -15,7 +15,7 @@ import org.stone.beetp.BlockTask;
 import org.stone.beetp.TaskHandle;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.exception.TaskResultGetTimeoutException;
+import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.concurrent.TimeUnit;
 

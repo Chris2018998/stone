@@ -8,7 +8,7 @@ package org.stone.beetp.config;
 
 import org.stone.base.TestCase;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.exception.TaskServiceConfigException;
+import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.lang.reflect.Field;
 import java.util.LinkedList;

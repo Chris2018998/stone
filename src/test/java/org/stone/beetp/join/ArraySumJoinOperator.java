@@ -51,11 +51,11 @@ public class ArraySumJoinOperator implements TaskJoinOperator<Integer> {
     public Integer join(TaskHandle<Integer>[] children) {
         int sum = 0;
         for (TaskHandle<Integer> handle : children) {
-                try {
-                    sum += handle.get();
-                } catch (Exception e) {
-                }
+            try {
+                sum += handle.get();
+            } catch (Exception e) {
             }
+        }
         return sum;
     }
 }

@@ -15,7 +15,7 @@ import org.stone.beetp.BlockTask;
 import org.stone.beetp.TaskHandle;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.exception.TaskExecutionException;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 
 /**
  * cancel test
