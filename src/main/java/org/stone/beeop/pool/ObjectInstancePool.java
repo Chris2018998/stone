@@ -214,6 +214,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 Object rawObj = null;
                 try {
                     rawObj = this.objectFactory.create(this.key);
+                    if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
+                        if (Thread.interrupted())
+                            throw new ObjectGetInterruptedException("Interrupted on creating a raw object by factory");
+                        throw new ObjectCreateException("Internal error occurred in object factory");
+                    }
+
                     PooledObject p = this.templatePooledObject.setDefaultAndCopy(key, rawObj, state, this);
                     if (this.printRuntimeLog)
                         Log.info("BeeOP({}))has created a new pooled object:{} with state:{}", this.poolName, p, state);
