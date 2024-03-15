@@ -128,7 +128,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             readLock.unlock();
         }
 
-        //read lock will reach
         if (cause != null) throw cause;
         return pool;
     }
@@ -219,11 +218,13 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         this.pool.clear(forceCloseUsing);
     }
 
+    //return lock hold time on creation
     public long getElapsedTimeSinceCreationLock() throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
         return this.pool.getElapsedTimeSinceCreationLock();
     }
 
+    //try this method when pool blocked on creation
     public void interruptThreadsOnCreationLock() throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Connection pool not initialized");
         this.pool.interruptThreadsOnCreationLock();
