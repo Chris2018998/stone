@@ -75,7 +75,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean templatePooledConnIsReady;
     private PooledConnection templatePooledConn;
     private ReentrantLock pooledArrayLock;
-    private long startTimeAtLockedSuccess;//milliseconds
+    private volatile long pooledArrayLockedTimePoint;//milliseconds
     private volatile PooledConnection[] pooledArray;
     private boolean isRawXaConnFactory;
     private RawConnectionFactory rawConnFactory;
@@ -249,7 +249,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //2:creates one pooled connection if not reach max capacity,otherwise return null
         try {
-            this.startTimeAtLockedSuccess = System.currentTimeMillis();
+            this.pooledArrayLockedTimePoint = System.currentTimeMillis();
             int l = this.pooledArray.length;
             if (l < this.poolMaxSize) {
                 if (this.printRuntimeLog)
@@ -303,7 +303,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
             return null;
         } finally {
-            this.startTimeAtLockedSuccess = 0L;
+            this.pooledArrayLockedTimePoint = 0L;
             this.pooledArrayLock.unlock();
         }
     }
@@ -335,7 +335,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-1.6: get elapsed time of lock owner thread
     public long getElapsedTimeSinceCreationLock() {
-        return this.startTimeAtLockedSuccess > 0L ? System.currentTimeMillis() - this.startTimeAtLockedSuccess : 0L;
+        return this.pooledArrayLockedTimePoint > 0L ? System.currentTimeMillis() - this.pooledArrayLockedTimePoint : 0L;
     }
 
     //Method-1.7: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
