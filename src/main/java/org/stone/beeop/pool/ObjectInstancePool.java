@@ -79,8 +79,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private PoolSemaphore semaphore;
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
-    private long startTimeAtLockedSuccess;//milliseconds
     private ReentrantLock pooledArrayLock;
+    private volatile long pooledArrayLockedTimePoint;//milliseconds
     private volatile PooledObject[] pooledArray;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
@@ -205,7 +205,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //2:try to create a pooled object
         try {
-            this.startTimeAtLockedSuccess = System.currentTimeMillis();
+            this.pooledArrayLockedTimePoint = System.currentTimeMillis();
             int l = this.pooledArray.length;
             if (l < this.maxActiveSize) {
                 if (this.printRuntimeLog)
@@ -235,7 +235,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             }
             return null;
         } finally {
-            this.startTimeAtLockedSuccess = 0L;
+            this.pooledArrayLockedTimePoint = 0L;
             pooledArrayLock.unlock();
         }
     }
@@ -267,7 +267,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-2.4: interrupt a thread in creating a connection
     public long getElapsedTimeSinceCreationLock() {
-        return this.startTimeAtLockedSuccess > 0L ? System.currentTimeMillis() - this.startTimeAtLockedSuccess : 0L;
+        return this.pooledArrayLockedTimePoint > 0L ? System.currentTimeMillis() - this.pooledArrayLockedTimePoint : 0L;
     }
 
     //Method-2.5: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
