@@ -260,11 +260,22 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 XAResource rawXaRes = null;
                 try {
                     if (this.isRawXaConnFactory) {
-                        rawXaConn = this.rawXaConnFactory.create();//stuck in driver maybe
+                        rawXaConn = this.rawXaConnFactory.create();//maybe stuck in driver? why not try <method>BeeDataSource.interruptThreadsOnCreationLock()<method>?
+                        if (rawXaConn == null) {//if blocking interrupt on LockSupport.park in driver,maybe just return a null connection?
+                            if (Thread.interrupted())
+                                throw new ConnectionGetInterruptedException("Interrupted on creating a raw xaConnection by factory");
+                            throw new ConnectionCreateException("Internal error occurred in xaConnection factory");
+                        }
+
                         rawConn = rawXaConn.getConnection();
                         rawXaRes = rawXaConn.getXAResource();
                     } else {
-                        rawConn = this.rawConnFactory.create();//stuck in driver maybe
+                        rawConn = this.rawConnFactory.create();
+                        if (rawConn == null) {
+                            if (Thread.interrupted())
+                                throw new ConnectionGetInterruptedException("Interrupted on creating a raw connection by factory");
+                            throw new ConnectionCreateException("Internal error occurred in connection factory");
+                        }
                     }
 
                     PooledConnection p;
