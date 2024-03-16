@@ -106,7 +106,7 @@ public class BeeUserTransaction implements UserTransaction {
      *                         encounters an unexpected error condition.
      */
     public int getStatus() throws SystemException {
-
+        return 0;//@todo
     }
 
     /**
