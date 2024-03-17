@@ -1,0 +1,57 @@
+this issue is same to #2075
+
+A: download HikariCP source code and replace file(com.zaxxer.hikari.pool.ProxyConnection.java) with same name file
+   in the issue folder and make jar by yourself.
+
+B: try beecp,an example is below
+
+* Maven artifact
+ <dependency>
+    <groupId>com.github.chris2018998</groupId>
+    <artifactId>beecp</artifactId>
+    <version>4.0.0</version>
+ </dependency>
+
+ or
+
+ <dependency>
+    <groupId>com.github.chris2018998</groupId>
+    <artifactId>stone</artifactId>
+    <version>1.2.9</version>
+ </dependency>
+
+* Beecp dataSource config file on springboot
+
+  package xxx.xxx.xxx;
+
+  import org.stone.beecp.BeeDataSource;
+  import org.stone.beecp.BeeDataSourceConfig;
+  
+  import javax.sql.DataSource;
+  import java.sql.SQLException;
+  
+  import org.springframework.context.annotation.Bean;
+  import org.springframework.context.annotation.Configuration;
+  
+  @Configuration
+  public class MyDataSourceConfig{
+	@Bean 
+    public DataSource BeeDataSource() {
+		BeeDataSourceConfig config = new BeeDataSourceConfig();
+		config.setDriverClassName("com.mysql.jdbc.Driver");
+        config.setJdbcUrl("jdbc:mysql://192.168.0.103/test");
+        config.setUsername("root");
+		config.setPassword("root");
+
+		config.setInitialSize(1);//default is zero
+		config.setMaxActive(10);//max size of pooled connections
+        config.setMaxWait(8000);//milliseconds,wait timeout on DataSource.getConnection()
+		return new BeeDataSource(config);
+    }
+  }
+
+
+ 
+  
+
+ 
