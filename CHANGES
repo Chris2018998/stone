@@ -5,6 +5,7 @@ Changes in 1.3.0[unrelease]
 * [beeop]enhance interruption handling on object creation 
 * [beecp]rename a pool inner fiel and add volatile type to this field[startTimeAtLockedSuccess ----> pooledArrayLockedTimePoint]
 * [beeop]rename a pool inner fiel and add volatile type to this field[startTimeAtLockedSuccess ----> pooledArrayLockedTimePoint]
+* [beecp]fix a NullPointException in method BeeDataSource.getLogWriter
 
 
 Changes in 1.2.9
