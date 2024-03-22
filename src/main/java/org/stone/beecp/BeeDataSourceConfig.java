@@ -39,7 +39,7 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //atomic index at impl name generation,its value starts with 1
+    //atomic index at pool name generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
     //a map store some properties for driver connects to db,@see{@code Driver.connect(url,properties)}
@@ -52,32 +52,32 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String jdbcUrl;
     //jdbc driver class name
     private String driverClassName;
-    //a name assign to impl,if null or empty,then set a generated name to impl on initialization
+    //a name assign to pool,if null or empty,then set a generated name to pool on initialization
     private String poolName;
-    //enable impl semaphore works in fair mode
+    //enable pool semaphore works in fair mode
     private boolean fairMode;
-    //creation size of connections on impl starting up
+    //creation size of connections on pool starting up
     private int initialSize;
     //indicator to create initial connections by async mode
     private boolean asyncCreateInitConnection;
     //max reachable size of pooled connections
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
-    //permit size of impl semaphore
+    //permit size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
-    //milliseconds:max wait time of a borrower to get a idle connection from impl,if not get one,then throws an exception
+    //milliseconds:max wait time of a borrower to get a idle connection from pool,if not get one,then throws an exception
     private long maxWait = SECONDS.toMillis(8);
     //seconds: maximum time in seconds that connection factory{@code RawConnectionFactory RawXaConnectionFactory} will wait
     //while attempting to connect to a database.this item value can be set into raw datasource or DriverManager as loginTimeout
-    //on impl initialization if its value is greater than zero, field loginTimeout of DriverManager is shareable info and
+    //on pool initialization if its value is greater than zero, field loginTimeout of DriverManager is shareable info and
     //whose setting change is global to all drivers,and maybe some drivers read loginTimeout from DriverManager as a working control
     //field,so need more careful and set an appropriate value to this field when necessary
     private int connectTimeout;
-    //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from impl
+    //milliseconds:max idle time of pooled connections,if time reached and not be borrowed out,then be removed from pool
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds:max hold time and not be active on borrowed connections,which may be force released to impl if this value greater than zero
+    //milliseconds:max hold time and not be active on borrowed connections,which may be force released to pool if this value greater than zero
     private long holdTimeout;
 
-    //an alive test sql running on borrowed connections,if dead remove them from impl
+    //an alive test sql running on borrowed connections,if dead remove them from pool
     private String validTestSql = "SELECT 1";
     //seconds:max wait time to get validation result on testing connections
     private int validTestTimeout = 3;
@@ -85,13 +85,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private long validAssumeTime = 500L;
     //milliseconds:working interval time of a timer thread to scan idle-timeout connections and hold-timeout connections
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator to whether force close using connections when impl clears connections
+    //indicator to whether force close using connections when pool clears connections
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay time for next loop clearance in impl when exits using connections and configured item<config>forceCloseUsingOnClear</config> is false
+    //milliseconds:delay time for next loop clearance in pool when exits using connections and configured item<config>forceCloseUsingOnClear</config> is false
     private long delayTimeForNextClear = 3000L;
-    //store some fatal sql exception code(@see field vendorCode in SQLException class),if one of these codes contains in SQLException thrown from borrowed out connections,then remove them from impl
+    //store some fatal sql exception code(@see field vendorCode in SQLException class),if one of these codes contains in SQLException thrown from borrowed out connections,then remove them from pool
     private List<Integer> sqlExceptionCodeList;
-    //store some fatal sql exception state(@see field SQLState in SQLException class),if one of these state contains in SQLException thrown from borrowed out connections,then remove them from impl
+    //store some fatal sql exception state(@see field SQLState in SQLException class),if one of these state contains in SQLException thrown from borrowed out connections,then remove them from pool
     private List<String> sqlExceptionStateList;
 
     //default value set on property catalog of new connections,@see set method{@code Connection.setCatalog(String)}
@@ -127,7 +127,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private Class threadFactoryClass;
     //thread factory instance(creation order-1)
     private BeeConnectionPoolThreadFactory threadFactory;
-    //thread factory class name(creation order-3),if not set,default factory will be applied in impl
+    //thread factory class name(creation order-3),if not set,default factory will be applied in pool
     private String threadFactoryClassName = ConnectionPoolThreadFactory.class.getName();
 
     /**
@@ -154,14 +154,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private Class jdbcLinkInfoDecoderClass;
     //encryption decoder classname on jdbc link info
     private String jdbcLinkInfDecoderClassName;
-    //impl implementation class name,if not be set,a default implementation applied in bee datasource
+    //pool implementation class name,if not be set,a default implementation applied in bee datasource
     private String poolImplementClassName = FastConnectionPool.class.getName();
 
     //indicator on whether registering jmx
     private boolean enableJmx;
-    //indicator on whether printing configuration items when impl starting up
+    //indicator on whether printing configuration items when pool starting up
     private boolean printConfigInfo;
-    //indicator on printing impl runtime log,this value can be changed by calling impl<method>setPrintRuntimeLog</method>
+    //indicator on printing pool runtime log,this value can be changed by calling pool<method>setPrintRuntimeLog</method>
     private boolean printRuntimeLog;
 
     //****************************************************************************************************************//
@@ -237,7 +237,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
 
     //****************************************************************************************************************//
-    //                                3: configuration about impl inner control(30)                                   //
+    //                                3: configuration about pool inner control(30)                                   //
     //****************************************************************************************************************//
     public String getPoolName() {
         return this.poolName;
@@ -321,7 +321,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void setHoldTimeout(long holdTimeout) {
-        this.holdTimeout = holdTimeout;
+        if (holdTimeout >= 0L) this.holdTimeout = holdTimeout;
     }
 
     public String getValidTestSql() {
@@ -769,26 +769,26 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //****************************************************************************************************************//
     //                                    8: configuration check and connection factory create methods(4)             //
     //****************************************************************************************************************//
-    //check impl configuration
+    //check pool configuration
     public BeeDataSourceConfig check() throws SQLException {
-        if (maxActive <= 0)
-            throw new BeeDataSourceConfigException("maxActive must be greater than zero");
-        if (initialSize < 0)
-            throw new BeeDataSourceConfigException("initialSize must not be less than zero");
+//        if (maxActive <= 0)
+//            throw new BeeDataSourceConfigException("maxActive must be greater than zero");
+//        if (initialSize < 0)
+//            throw new BeeDataSourceConfigException("initialSize must not be less than zero");
         if (initialSize > this.maxActive)
             throw new BeeDataSourceConfigException("initialSize must not be greater than maxActive");
-        if (borrowSemaphoreSize <= 0)
-            throw new BeeDataSourceConfigException("borrowSemaphoreSize must be greater than zero");
+//        if (borrowSemaphoreSize <= 0)
+//            throw new BeeDataSourceConfigException("borrowSemaphoreSize must be greater than zero");
         //fix issue:#19 Chris-2020-08-16 begin
         //if (this.borrowConcurrentSize > maxActive)
-        //throw new BeeDataSourceConfigException("Pool 'borrowConcurrentSize' must not be greater than impl max size");
+        //throw new BeeDataSourceConfigException("Pool 'borrowConcurrentSize' must not be greater than pool max size");
         //fix issue:#19 Chris-2020-08-16 end
-        if (idleTimeout <= 0L)
-            throw new BeeDataSourceConfigException("idleTimeout must be greater than zero");
-        if (holdTimeout < 0L)
-            throw new BeeDataSourceConfigException("holdTimeout must be greater than zero");
-        if (maxWait <= 0L)
-            throw new BeeDataSourceConfigException("maxWait must be greater than zero");
+//        if (idleTimeout <= 0L)
+//            throw new BeeDataSourceConfigException("idleTimeout must be greater than zero");
+//        if (holdTimeout < 0L)
+//            throw new BeeDataSourceConfigException("holdTimeout must be greater than zero");
+//        if (maxWait <= 0L)
+//            throw new BeeDataSourceConfigException("maxWait must be greater than zero");
         //fix issue:#1 The check of validationQuerySQL has logic problem. Chris-2019-05-01 begin
         //if (this.validationQuerySQL != null && validationQuerySQL.trim().length() == 0) {
         if (isBlank(validTestSql))
