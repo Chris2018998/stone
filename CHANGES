@@ -1,6 +1,12 @@
 stone changes
 
-Changes in 1.3.0[unrelease]
+Changes in 1.3.1[unreleased]
+
+* [beecp]support propeties config loading from class path
+* [beeop]support propeties config loading from class path
+
+Changes in 1.3.0 
+
 * [beecp]enhance interruption handling on conneciton creation 
 * [beeop]enhance interruption handling on object creation 
 * [beecp]rename a pool inner fiel and add volatile type to this field[startTimeAtLockedSuccess ----> pooledArrayLockedTimePoint]
