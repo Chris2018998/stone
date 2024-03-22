@@ -382,7 +382,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     }
 
     public void removeSqlExceptionCode(int code) {
-        if (sqlExceptionCodeList != null) this.sqlExceptionCodeList.remove(code);
+        if (sqlExceptionCodeList != null) this.sqlExceptionCodeList.remove(Integer.valueOf(code));
     }
 
     public List<String> getSqlExceptionStateList() {
@@ -684,10 +684,19 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             Properties prop = new Properties();
             try {
                 prop.load(propertiesStream);
-                loadFromProperties(prop);
             } catch (IOException e) {
                 throw new IllegalArgumentException("Configuration properties file load failed", e);
+            } finally {
+                if (propertiesStream != null) {
+                    try {
+                        propertiesStream.close();
+                    } catch (Throwable e) {
+                        //do nothing
+                    }
+                }
             }
+
+            loadFromProperties(prop);
         }
     }
 
