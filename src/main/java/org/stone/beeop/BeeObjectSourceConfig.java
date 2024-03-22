@@ -522,23 +522,22 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //***************************************************************************************************************//
     //check pool configuration
     public BeeObjectSourceConfig check() {
-        if (maxActive <= 0)
-            throw new BeeObjectSourceConfigException("maxActive must be greater than zero");
-        if (initialSize < 0)
-            throw new BeeObjectSourceConfigException("initialSize must be greater than zero");
+//        if (maxActive <= 0)
+//            throw new BeeObjectSourceConfigException("maxActive must be greater than zero");
+//        if (initialSize < 0)
+//            throw new BeeObjectSourceConfigException("initialSize must be greater than zero");
         if (initialSize > this.maxActive)
             throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
-        if (this.maxObjectKeySize < 1)
-            throw new BeeObjectSourceConfigException("maxObjectKeySize must be greater than zero");
-        if (borrowSemaphoreSize <= 0)
-            throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");
-        if (idleTimeout <= 0L)
-            throw new BeeObjectSourceConfigException("idleTimeout must be greater than zero");
-        if (holdTimeout < 0L)
-            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
-        if (maxWait <= 0L)
-            throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
-
+//        if (this.maxObjectKeySize < 1)
+//            throw new BeeObjectSourceConfigException("maxObjectKeySize must be greater than zero");
+//        if (borrowSemaphoreSize <= 0)
+//            throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");
+//        if (idleTimeout <= 0L)
+//            throw new BeeObjectSourceConfigException("idleTimeout must be greater than zero");
+//        if (holdTimeout < 0L)
+//            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
+//        if (maxWait <= 0L)
+//            throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
 
         //1:try to create object factory
         RawObjectFactory objectFactory = this.tryCreateObjectFactory();
