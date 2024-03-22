@@ -15,6 +15,7 @@ import org.stone.beeop.pool.PoolThreadFactory;
 import org.stone.tools.CommonUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -413,7 +414,31 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         if (isBlank(filename)) throw new IllegalArgumentException("Configuration properties file can't be null");
-        this.loadFromPropertiesFile(new File(filename));
+
+        File file = new File(filename);
+        if (file.exists()) {
+            this.loadFromPropertiesFile(file);
+        } else {//try to load config from classpath
+            Class selfClass = BeeObjectSourceConfig.class;
+            InputStream propertiesStream = selfClass.getResourceAsStream(filename);
+            if (propertiesStream == null) propertiesStream = selfClass.getClassLoader().getResourceAsStream(filename);
+
+            Properties prop = new Properties();
+            try {
+                prop.load(propertiesStream);
+                loadFromProperties(prop);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Configuration properties file load failed", e);
+            } finally {
+                if (propertiesStream != null) {
+                    try {
+                        propertiesStream.close();
+                    } catch (Throwable e) {
+                        //do nothing
+                    }
+                }
+            }
+        }
     }
 
     public void loadFromPropertiesFile(File file) {
