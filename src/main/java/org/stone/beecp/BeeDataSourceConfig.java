@@ -730,7 +730,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void loadFromProperties(Properties configProperties) {
         if (configProperties == null || configProperties.isEmpty())
-            throw new BeeDataSourceConfigException("Configuration properties can't be null or empty");
+            throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1:load configuration item values from outside properties
         synchronized (configProperties) {//synchronization mode
