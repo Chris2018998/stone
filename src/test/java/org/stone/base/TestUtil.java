@@ -5,7 +5,7 @@
  *
  * Project owner contact:Chris2018998@tom.com.
  *
- * Project Licensed under GNU Lesser General Public License v2.1.
+ * Project Licensed under Apache License v2.0.
  */
 package org.stone.base;
 
@@ -45,6 +45,12 @@ public class TestUtil {
         Field field = ob.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         return field.get(ob);
+    }
+
+    public static void setFieldValue(Object ob, String fieldName, Object value) throws Exception {
+        Field field = ob.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(ob, value);
     }
 
     public static Object invokeMethod(Object ob, String methodName) {
