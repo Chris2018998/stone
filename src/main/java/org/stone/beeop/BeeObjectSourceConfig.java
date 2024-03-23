@@ -388,9 +388,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         return this.factoryProperties.get(key);
     }
 
-    public void removeFactoryProperty(String key) {
-        this.factoryProperties.remove(key);
-    }
+    public Object removeFactoryProperty(String key) { return this.factoryProperties.remove(key); }
 
     public void addFactoryProperty(String key, Object value) {
         if (!isBlank(key) && value != null) this.factoryProperties.put(key, value);
