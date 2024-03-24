@@ -3,21 +3,21 @@ stone changes
 Changes in 1.3.1[unreleased]
 
 * [beecp]support propeties config loading from class path
-* [beeop]support propeties config loading from class path
 * [beecp]remove some unnecessary check on number config items
-* [beeop]remove some unnecessary check on number config items
 * [beecp]fix IndexOutOfBoundsException on remove error code
-* [beeop]add a new method to BeeDataSourceConfig[getConnectProperty]
+* [beecp]rename a exception class[PoolInitializedException --> PoolInitializeFailedException]
 * [beecp]add a new method to BeeObjectSourceConfig[getFactoryProperty]
 * [beecp]rename three config items
     validTestSql ---> aliveTestSql
     validTestTimeout ---> aliveTestTimeout
     validAssumeTime  ----> aliveAssumeTime
 
-* [beeop]optimize source code of BeeObjectSourceConfig
-    optimize exception handling and shorter some methods body
+* [beeop]support propeties config loading from class path
+* [beeop]remove some unnecessary check on number config items
+* [beeop]add a new method to BeeDataSourceConfig[getConnectProperty]
+* [beeop]optimize source code of BeeObjectSourceConfig(exception handling and shorter some methods body)
 * [beeop]rename a exception class[PoolInitializedException --> PoolInitializeFailedException]
-* [beecp]rename a exception class[PoolInitializedException --> PoolInitializeFailedException]
+
 
 Changes in 1.3.0 
 
