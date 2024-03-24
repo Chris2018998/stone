@@ -271,10 +271,10 @@ public class ObjectPoolStatics {
     private static Constructor getConstructor(Class objectClass, Class[] parentClasses, String objectClassType) throws Exception {
         //1:check class abstract modifier
         if (Modifier.isAbstract(objectClass.getModifiers()))
-            throw new BeeObjectSourceConfigException("Error " + objectClassType + " class[" + objectClass.getName() + "],which can't be an abstract class");
+            throw new BeeObjectSourceConfigException("Cant't create a instance on abstract class[" + objectClass.getName() + "],creation category[" + objectClassType + "]");
         //2:check class public modifier
         if (!Modifier.isPublic(objectClass.getModifiers()))
-            throw new BeeObjectSourceConfigException("Error " + objectClassType + " class[" + objectClass.getName() + "],which must be a public class");
+            throw new BeeObjectSourceConfigException("Cant't create a instance on non-public class[" + objectClass.getName() + "],creation category[" + objectClassType + "]");
         //3:check extension
         boolean isSubClass = false;//pass when match one
         if (parentClasses != null && parentClasses.length > 0) {
@@ -285,7 +285,7 @@ public class ObjectPoolStatics {
                 }
             }
             if (!isSubClass)
-                throw new BeeObjectSourceConfigException("Error " + objectClassType + " class[" + objectClass.getName() + "],which must extend from one of class[" + getClassName(parentClasses) + "]");
+                throw new BeeObjectSourceConfigException("Cant't create a instance on class[" + objectClass.getName() + "]which must extend from one of type[" + getClassName(parentClasses) + "]at least,creation category[" + objectClassType + "]");
         }
 
         //4:check class constructor
