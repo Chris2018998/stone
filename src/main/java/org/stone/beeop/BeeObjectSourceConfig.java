@@ -697,7 +697,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
             return (BeeObjectPoolThreadFactory) createClassInstance(threadFactClass, PoolThreadFactory.class, "pool thread factory");
         } catch (ClassNotFoundException e) {
-            throw new BeeObjectSourceConfigException("Not found thread factory class:" + threadFactoryClassName);
+            throw new BeeObjectSourceConfigException("Not found thread factory class:" + threadFactoryClassName, e);
         } catch (BeeObjectSourceConfigException e) {
             throw e;
         } catch (Throwable e) {
