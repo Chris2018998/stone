@@ -184,7 +184,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 if (e instanceof Exception)
                     throw (Exception) e;
                 else
-                    throw new PoolInitializedException(e);
+                    throw new PoolInitializeFailedException(e);
             } else {
                 Log.warn("BeeOP({})failed to create initialization objects", poolName, e);
             }
