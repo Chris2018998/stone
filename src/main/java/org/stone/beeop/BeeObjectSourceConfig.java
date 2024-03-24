@@ -388,7 +388,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         return this.factoryProperties.get(key);
     }
 
-    public Object removeFactoryProperty(String key) { return this.factoryProperties.remove(key); }
+    public Object removeFactoryProperty(String key) {
+        return this.factoryProperties.remove(key);
+    }
 
     public void addFactoryProperty(String key, Object value) {
         if (!isBlank(key) && value != null) this.factoryProperties.put(key, value);
@@ -525,31 +527,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //***************************************************************************************************************//
     //check pool configuration
     public BeeObjectSourceConfig check() {
-//        if (maxActive <= 0)
-//            throw new BeeObjectSourceConfigException("maxActive must be greater than zero");
-//        if (initialSize < 0)
-//            throw new BeeObjectSourceConfigException("initialSize must be greater than zero");
         if (initialSize > this.maxActive)
             throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
-//        if (this.maxObjectKeySize < 1)
-//            throw new BeeObjectSourceConfigException("maxObjectKeySize must be greater than zero");
-//        if (borrowSemaphoreSize <= 0)
-//            throw new BeeObjectSourceConfigException("borrowSemaphoreSize must be greater than zero");
-//        if (idleTimeout <= 0L)
-//            throw new BeeObjectSourceConfigException("idleTimeout must be greater than zero");
-//        if (holdTimeout < 0L)
-//            throw new BeeObjectSourceConfigException("holdTimeout must be greater than zero");
-//        if (maxWait <= 0L)
-//            throw new BeeObjectSourceConfigException("maxWait must be greater than zero");
 
         //1:try to create object factory
-        RawObjectFactory objectFactory = this.tryCreateObjectFactory();
+        RawObjectFactory objectFactory = this.createObjectFactory();
         if (objectFactory.getDefaultKey() == null)
             throw new BeeObjectSourceConfigException("Default key from factory can't be null");
 
         //2:try to create method filter
-        RawObjectMethodFilter tempMethodFilter = null;
-        if (this.objectMethodFilter == null) tempMethodFilter = this.tryCreateMethodFilter();
+        RawObjectMethodFilter tempMethodFilter = this.tryCreateMethodFilter();
 
         //3:load object implemented interfaces
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
@@ -590,7 +577,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
                 field.set(config, fieldValue);
             }
         } catch (Throwable e) {
-            throw new BeeObjectSourceConfigException("Failed to copy field[" + fieldName + "]", e);
+            throw new BeeObjectSourceConfigException("Failed to filled value on field[" + fieldName + "]", e);
         }
 
         //2:copy 'objectInterfaces'
@@ -635,7 +622,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
                         throw new BeeObjectSourceConfigException("objectInterfaceNames[" + i + "]is empty or null");
                     objectInterfaces[i] = Class.forName(this.objectInterfaceNames[i]);
                 } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Not found objectInterfaceNames[" + i + "]:" + this.objectInterfaceNames[i]);
+                    throw new BeeObjectSourceConfigException("Not found objectInterfaceNames[" + i + "]:" + this.objectInterfaceNames[i], e);
                 }
             }
             return objectInterfaces;
@@ -647,82 +634,74 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         //1:if exists method filter then return it directly
         if (this.objectMethodFilter != null) return objectMethodFilter;
 
-        //2:if filter class is not null,then try to create instance by it
-        if (objectMethodFilterClass != null) {
+        //2: create method filter
+        if (objectMethodFilterClass != null || !isBlank(objectMethodFilterClassName)) {
+            Class filterClass = null;
             try {
-                return (RawObjectMethodFilter) ObjectPoolStatics.createClassInstance(objectMethodFilterClass, RawObjectMethodFilter.class, "object method filter");
-            } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + objectMethodFilterClass.getName(), e);
-            }
-        }
-
-        //3:if filter class name is not null,then try to create instance by it
-        if (!isBlank(this.objectMethodFilterClassName)) {
-            try {
-                Class methodFilterClass = Class.forName(this.objectMethodFilterClassName);
-                return (RawObjectMethodFilter) ObjectPoolStatics.createClassInstance(methodFilterClass, RawObjectMethodFilter.class, "object method filter");
+                filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : Class.forName(objectMethodFilterClassName);
+                return (RawObjectMethodFilter) ObjectPoolStatics.createClassInstance(filterClass, RawObjectMethodFilter.class, "object method filter");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found object filter class:" + this.objectMethodFilterClassName);
+                throw new BeeObjectSourceConfigException("Not found object filter class:" + objectMethodFilterClassName);
+            } catch (BeeObjectSourceConfigException e) {
+                throw e;
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + objectMethodFilterClassName, e);
+                throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + filterClass, e);
             }
         }
 
         return null;
     }
 
-    private RawObjectFactory tryCreateObjectFactory() {
-        //1: set factory from local
+    private RawObjectFactory createObjectFactory() {
+        //1: copy from member field of configuration
         RawObjectFactory rawObjectFactory = this.objectFactory;
 
-        //2: try to create factory by class
-        if (rawObjectFactory == null && objectFactoryClass != null) {
+        //2: create factory instance
+        if (rawObjectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
+            Class factoryClass = null;
             try {
-                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
-            } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + objectFactoryClass.getName(), e);
-            }
-        }
-
-        //3: try to create factory by class name
-        if (rawObjectFactory == null && !isBlank(this.objectFactoryClassName)) {
-            try {
-                Class objectFactoryClass = Class.forName(this.objectFactoryClassName);
-                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(objectFactoryClass, RawObjectFactory.class, "object factory");
+                factoryClass = objectFactoryClass != null ? objectFactoryClass : Class.forName(objectFactoryClassName);
+                rawObjectFactory = (RawObjectFactory) ObjectPoolStatics.createClassInstance(factoryClass, RawObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found object factory class:" + this.objectFactoryClassName);
+                throw new BeeObjectSourceConfigException("Not found object factory class:" + objectFactoryClassName, e);
+            } catch (BeeObjectSourceConfigException e) {
+                throw e;
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + objectFactoryClassName, e);
+                throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + factoryClass, e);
             }
         }
 
-        //4:injects properties to factory
-        if (rawObjectFactory != null) {
-            if (!factoryProperties.isEmpty())
-                ObjectPoolStatics.setPropertiesValue(rawObjectFactory, this.factoryProperties);
-            return rawObjectFactory;
-        } else {
-            throw new BeeObjectSourceConfigException("Must set one of properties['objectFactoryClassName','objectClassName']");
-        }
+        //3: throw check failure exception
+        if (rawObjectFactory == null)
+            throw new BeeObjectSourceConfigException("Must provide one of config items[objectFactory,objectClassName,objectFactoryClassName]");
+
+        //4: inject properties to factory
+        if (!factoryProperties.isEmpty())
+            ObjectPoolStatics.setPropertiesValue(rawObjectFactory, factoryProperties);
+
+        return rawObjectFactory;
     }
 
     //create Thread factory
     private BeeObjectPoolThreadFactory createThreadFactory() throws BeeObjectSourceConfigException {
-        //step1:if exists thread factory,then return it
+        //step1: if exists thread factory,then return it
         if (this.threadFactory != null) return this.threadFactory;
 
         //step2: configuration of thread factory
         if (this.threadFactoryClass == null && isBlank(this.threadFactoryClassName))
-            throw new BeeObjectSourceConfigException("Configuration item(threadFactoryClass and threadFactoryClassName) can't be null at same time");
+            throw new BeeObjectSourceConfigException("Must provide one of config items[threadFactory,threadFactoryClass,threadFactoryClassName]");
 
         //step3: create thread factory by class or class name
+        Class<?> threadFactClass = null;
         try {
-            Class<?> threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
+            threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
             return (BeeObjectPoolThreadFactory) createClassInstance(threadFactClass, PoolThreadFactory.class, "pool thread factory");
-        } catch (RuntimeException e) {
+        } catch (ClassNotFoundException e) {
+            throw new BeeObjectSourceConfigException("Not found thread factory class:" + threadFactoryClassName);
+        } catch (BeeObjectSourceConfigException e) {
             throw e;
-        } catch (Exception e) {
-            throw new BeeObjectSourceConfigException("Failed to create pool thread factory by class:" + this.threadFactoryClassName, e);
+        } catch (Throwable e) {
+            throw new BeeObjectSourceConfigException("Failed to create pool thread factory by class:" + threadFactClass, e);
         }
     }
 }
