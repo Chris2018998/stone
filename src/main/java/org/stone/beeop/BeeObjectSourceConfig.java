@@ -63,9 +63,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //milliseconds:max hold time and not be active on borrowed objects,which may be force released to pool
     private long holdTimeout;
     //seconds:max wait time to get a validation result on testing objects
-    private int validTestTimeout = 3;
+    private int aliveTestTimeout = 3;
     //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume pooled objects in active state,otherwise test them
-    private long validAssumeTime = 500L;
+    private long aliveAssumeTime = 500L;
     //milliseconds:interval time to scan idle-timeout objects and hold-timeout objects
     private long timerCheckInterval = MINUTES.toMillis(3);
     //indicator to whether force close using objects when pool clearing
@@ -216,20 +216,20 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.holdTimeout = holdTimeout;
     }
 
-    public int getValidTestTimeout() {
-        return this.validTestTimeout;
+    public int getAliveTestTimeout() {
+        return this.aliveTestTimeout;
     }
 
-    public void setValidTestTimeout(int validTestTimeout) {
-        if (validTestTimeout >= 0) this.validTestTimeout = validTestTimeout;
+    public void setAliveTestTimeout(int aliveTestTimeout) {
+        if (aliveTestTimeout >= 0) this.aliveTestTimeout = aliveTestTimeout;
     }
 
-    public long getValidAssumeTime() {
-        return this.validAssumeTime;
+    public long getAliveAssumeTime() {
+        return this.aliveAssumeTime;
     }
 
-    public void setValidAssumeTime(long validAssumeTime) {
-        if (validAssumeTime >= 0L) this.validAssumeTime = validAssumeTime;
+    public void setAliveAssumeTime(long aliveAssumeTime) {
+        if (aliveAssumeTime >= 0L) this.aliveAssumeTime = aliveAssumeTime;
     }
 
     public long getTimerCheckInterval() {

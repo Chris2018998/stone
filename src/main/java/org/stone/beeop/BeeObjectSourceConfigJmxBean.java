@@ -34,9 +34,9 @@ public interface BeeObjectSourceConfigJmxBean {
 
     long getHoldTimeout();
 
-    int getValidTestTimeout();
+    int getAliveTestTimeout();
 
-    long getValidAssumeTime();
+    long getAliveAssumeTime();
 
     boolean isForceCloseUsingOnClear();
 

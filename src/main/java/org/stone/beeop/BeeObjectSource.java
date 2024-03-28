@@ -112,13 +112,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     public void close() {
-        if (pool != null) {
-            try {
-                pool.close();
-            } catch (Throwable e) {
-                ObjectPoolStatics.CommonLog.error("Error at closing pool,cause:", e);
-            }
-        }
+        if (pool != null) pool.close();
     }
 
     //override method
