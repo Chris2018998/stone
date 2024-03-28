@@ -104,8 +104,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
         this.supportHoldTimeout = holdTimeoutMs > 0L;
         this.delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
-        this.validAssumeTime = config.getValidAssumeTime();
-        this.validTestTimeout = config.getValidTestTimeout();
+        this.validAssumeTime = config.getAliveAssumeTime();
+        this.validTestTimeout = config.getAliveTestTimeout();
         this.printRuntimeLog = config.isPrintRuntimeLog();
         this.poolState = POOL_NEW;
 
@@ -591,15 +591,18 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     public void close(boolean forceCloseUsing) {
         do {
             int poolStateCode = this.poolState;
-            if ((poolStateCode == POOL_NEW || poolStateCode == POOL_READY) && PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSED)) {
+            if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
+            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
+                LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
+            } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
                 this.clear(forceCloseUsing, DESC_RM_DESTROY);
+
+                this.poolState = POOL_CLOSED;
                 Log.info("BeeOP({})has shutdown", this.poolName);
                 break;
-            } else if (poolStateCode == POOL_CLOSED) {
+            } else {//pool State == POOL_CLOSING
                 break;
-            } else {
-                LockSupport.parkNanos(this.delayTimeForNextClearNs);//block thread for next cas
             }
         } while (true);
     }
