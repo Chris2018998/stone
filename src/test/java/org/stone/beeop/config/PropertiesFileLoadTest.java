@@ -33,8 +33,8 @@ public class PropertiesFileLoadTest extends TestCase {
         if (config.getMaxWait() != 8000) return "maxWait error";
         if (config.getIdleTimeout() != 18000) return "idleTimeout error";
         if (config.getHoldTimeout() != 30000) return "holdTimeout error";
-        if (config.getValidTestTimeout() != 3) return "objectTestTimeout error";
-        if (config.getValidAssumeTime() != 500) return "objectTestInterval error";
+        if (config.getAliveTestTimeout() != 3) return "objectTestTimeout error";
+        if (config.getAliveAssumeTime() != 500) return "objectTestInterval error";
         if (config.getTimerCheckInterval() != 30000) return "idleCheckTimeInterval error";
         if (!config.isForceCloseUsingOnClear()) return "forceCloseUsingOnClear error";
         if (config.getDelayTimeForNextClear() != 3000) return "delayTimeForNextClear error";
