@@ -1,4 +1,4 @@
-<a><img src="https://img.shields.io/badge/JDK-1.8+-green.svg"></a>
+<a><img src="https://img.shields.io/badge/Java8+-green.svg"></a>
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 <a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
  
@@ -14,7 +14,7 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.3.0</version>
+   <version>1.3.1</version>
 </dependency>
 ```
 
