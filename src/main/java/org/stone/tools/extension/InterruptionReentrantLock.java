@@ -12,7 +12,7 @@ package org.stone.tools.extension;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Lock extension impl support interruption by manual
+ * Lock extension impl support manual interruption by manual
  *
  * @author Chris Liao
  * @version 1.0
