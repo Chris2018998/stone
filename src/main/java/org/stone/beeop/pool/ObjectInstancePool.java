@@ -15,6 +15,8 @@ import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
+import org.stone.tools.extension.InterruptionReentrantLock;
+import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -23,16 +25,14 @@ import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
-import static org.stone.tools.CommonUtil.*;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Object instance Pool Implementation
@@ -76,10 +76,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
-    private PoolSemaphore semaphore;
+    private InterruptionSemaphore semaphore;
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
-    private ReentrantLock pooledArrayLock;
+    private InterruptionReentrantLock pooledArrayLock;
     private volatile long pooledArrayLockedTimePoint;//milliseconds
     private volatile PooledObject[] pooledArray;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
@@ -146,11 +146,11 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.key = key;
         this.poolName = ownerName + "-[" + key + "]";
         this.pooledArray = new PooledObject[0];
-        this.pooledArrayLock = new ReentrantLock();
+        this.pooledArrayLock = new InterruptionReentrantLock();
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
 
         this.threadLocal = new BorrowerThreadLocal();
-        this.semaphore = new PoolSemaphore(semaphoreSize, isFairMode);
+        this.semaphore = new InterruptionSemaphore(semaphoreSize, isFairMode);
         this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         this.servantState = new AtomicInteger(THREAD_WAITING);
         this.servantTryCount = new AtomicInteger(0);
@@ -273,8 +273,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //Method-2.5: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
     public void interruptThreadsOnCreationLock() {
         try {
-            interruptQueuedWaitersOnLock(this.pooledArrayLock);
-            interruptExclusiveOwnerThread(this.pooledArrayLock);
+            this.pooledArrayLock.interruptQueuedWaitThreads();
+            this.pooledArrayLock.interruptOwnerThread();
         } catch (Throwable e) {
             Log.warn("BeeOP({})Failed to interrupt threads on lock", e);
         }
@@ -533,14 +533,14 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //Method-6.2: remove all connections from pool
     private void clear(boolean forceCloseUsing, String removeReason) {
         //1:interrupt waiters on semaphore
-        this.semaphore.interruptWaitingThreads();
+        this.semaphore.interruptQueuedWaitThreads();
         PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(clearException);
 
         //2:interrupt waiters on lock(maybe stuck on socket)
         try {
-            interruptQueuedWaitersOnLock(this.pooledArrayLock);
-            interruptExclusiveOwnerThread(this.pooledArrayLock);
+            this.pooledArrayLock.interruptQueuedWaitThreads();
+            this.pooledArrayLock.interruptOwnerThread();
         } catch (Throwable e) {
             Log.info("BeeOP({})failed to interrupt threads on lock", e);
         }
@@ -662,7 +662,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                       9: Inner Classes(7)                                                     //                                                                                  //
+    //                                       9: Inner Classes(6)                                                     //                                                                                  //
     //***************************************************************************************************************//
     private static class ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
@@ -701,21 +701,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         public final boolean tryCatch(PooledObject p) {
             return ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
-        }
-    }
-
-    private static class PoolSemaphore extends Semaphore {
-        PoolSemaphore(int permits, boolean fair) {
-            super(permits, fair);
-        }
-
-        void interruptWaitingThreads() {
-            for (Thread thread : getQueuedThreads()) {
-                //Thread.State state = thread.getState();
-                //if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
-                thread.interrupt();//maybe this operation before parking in semaphore
-                //}
-            }
         }
     }
 
