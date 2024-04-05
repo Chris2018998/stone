@@ -15,6 +15,8 @@ import org.stone.beecp.*;
 import org.stone.beecp.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
+import org.stone.tools.extension.InterruptionReentrantLock;
+import org.stone.tools.extension.InterruptionSemaphore;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -33,10 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.tools.CommonUtil.*;
+import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * JDBC Connection Pool Implementation
@@ -61,7 +63,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean isFairMode;
     private boolean isCompeteMode;
     private int semaphoreSize;
-    private PoolSemaphore semaphore;
+    private InterruptionSemaphore semaphore;
     private long maxWaitNs;//nanoseconds
     private long idleTimeoutMs;//milliseconds
     private long holdTimeoutMs;//milliseconds
@@ -74,7 +76,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private PooledConnectionTransferPolicy transferPolicy;
     private boolean templatePooledConnIsReady;
     private PooledConnection templatePooledConn;
-    private ReentrantLock pooledArrayLock;
+    private InterruptionReentrantLock pooledArrayLock;
     private volatile long pooledArrayLockedTimePoint;//milliseconds
     private volatile PooledConnection[] pooledArray;
     private boolean isRawXaConnFactory;
@@ -141,7 +143,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         this.templatePooledConnIsReady = false;//this startup method can be called to restart pool,so need reset this field to false
         this.poolMaxSize = poolConfig.getMaxActive();
         if (POOL_STARTING == poolWorkState) {//just create once
-            this.pooledArrayLock = new ReentrantLock();
+            this.pooledArrayLock = new InterruptionReentrantLock();
             this.pooledArray = new PooledConnection[0];
         }
 
@@ -173,7 +175,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         this.semaphoreSize = poolConfig.getBorrowSemaphoreSize();
 
         //step6: creates a pool semaphore and threadLocal
-        this.semaphore = new PoolSemaphore(this.semaphoreSize, isFairMode);
+        this.semaphore = new InterruptionSemaphore(this.semaphoreSize, isFairMode);
         this.threadLocal = new BorrowerThreadLocal();//as a cache to store one used connection
 
         //step7: creates pool others objects
@@ -340,8 +342,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-1.7: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
     public void interruptThreadsOnCreationLock() {
         try {
-            interruptQueuedWaitersOnLock(this.pooledArrayLock);
-            interruptExclusiveOwnerThread(this.pooledArrayLock);
+            this.pooledArrayLock.interruptQueuedWaitThreads();
+            this.pooledArrayLock.interruptOwnerThread();
         } catch (Throwable e) {
             Log.warn("BeeCP({})Failed to interrupt threads on lock", e);
         }
@@ -864,14 +866,14 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private void removeAllConnections(boolean force, String source) {
         //1:interrupt waiters on lock(maybe stuck on socket)
         try {
-            interruptQueuedWaitersOnLock(this.pooledArrayLock);
-            interruptExclusiveOwnerThread(this.pooledArrayLock);
+            this.pooledArrayLock.interruptQueuedWaitThreads();
+            this.pooledArrayLock.interruptOwnerThread();
         } catch (Throwable e) {
             Log.info("BeeCP({})Failed to interrupt threads on lock", e);
         }
 
         //2:interrupt waiters on semaphore
-        this.semaphore.interruptWaitingThreads();
+        this.semaphore.interruptQueuedWaitThreads();
         PoolInClearingException exception = new PoolInClearingException("Access rejected,pool in clearing");
         while (!this.waitQueue.isEmpty()) this.transferException(exception);
 
@@ -1106,23 +1108,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.2: sub class supports interruption on blocking waiters of semaphore
-    private static final class PoolSemaphore extends Semaphore {
-        PoolSemaphore(int permits, boolean fair) {
-            super(permits, fair);
-        }
-
-        void interruptWaitingThreads() {
-            for (Thread thread : getQueuedThreads()) {
-                //State state = thread.getState();
-                //if (state == State.WAITING || state == State.TIMED_WAITING) {//
-                thread.interrupt();//maybe this operation before parking in semaphore
-                //}
-            }
-        }
-    }
-
-    //class-6.3: A thread running to create new connections when pool starting up
+    //class-6.2: A thread running to create new connections when pool starting up
     private static final class PoolInitAsyncCreateThread extends Thread {
         private final FastConnectionPool pool;
 
@@ -1142,7 +1128,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.4: A timed thead to scan idle connections and close them
+    //class-6.3: A timed thead to scan idle connections and close them
     private static final class IdleTimeoutScanThread extends Thread {
         private final FastConnectionPool pool;
 
@@ -1165,7 +1151,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.5:JVM exit hook
+    //class-6.4:JVM exit hook
     private static class ConnectionPoolHook extends Thread {
         private final FastConnectionPool pool;
 
@@ -1183,7 +1169,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.6:Fair transfer
+    //class-6.5:Fair transfer
     private static final class FairTransferPolicy implements PooledConnectionTransferPolicy {
         public int getStateCodeOnRelease() {
             return CON_USING;
@@ -1194,14 +1180,14 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //class-6.7: threadLocal caches the last used connections of borrowers(only cache one per borrower)
+    //class-6.6: threadLocal caches the last used connections of borrowers(only cache one per borrower)
     private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<Borrower>> {
         protected WeakReference<Borrower> initialValue() {
             return new WeakReference<Borrower>(new Borrower());
         }
     }
 
-    //class-6.8: alive test on borrowed connections by executing a SQL
+    //class-6.7: alive test on borrowed connections by executing a SQL
     private static final class PooledConnectionAliveTestBySql implements PooledConnectionAliveTest {
         private final String testSql;
         private final String poolName;
