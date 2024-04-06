@@ -12,7 +12,7 @@ package org.stone.tools.extension;
 import java.util.concurrent.Semaphore;
 
 /**
- * Semaphore extension impl support interruption by manual
+ * Semaphore extension impl provide interruption method
  *
  * @author Chris Liao
  * @version 1.0
