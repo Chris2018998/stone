@@ -6,7 +6,10 @@ Changes in 1.3.2
 * [beecp]allow to assign 0 on connectTimeout
 * [beecp]rename a config item(jdbcLinkInfDecoderClassName --> jdbcLinkInfoDecoderClassName)
 * [beecp]fix exception on inner copying configPrintExclusionList
-
+* [beecp]fix null point exception when load invalid properites file
+* [beecp]enhance interruption on pool lock and pool semaphore(two new extension classes in util pacakge)
+* [beeop]fix null point exception when load invalid properites file
+* [beeop]enhance interruption on pool lock and pool semaphore(two new extension classes in util pacakge)
 
 Changes in 1.3.1 
 
