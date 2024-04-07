@@ -32,7 +32,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.CommonUtil.*;
 
 /**
- * Bee dataSource configuration object,which is not thread safe
+ * Bee data source configuration object
  *
  * @author Chris Liao
  * @version 1.0
@@ -43,35 +43,38 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //default exclusion list of config print
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url", "driverClassName");
 
-    //properties work in a factory{@code RawConnectionFactory,RawXaConnectionFactory} to establish a connection
+    //properties work in a factory{@code RawConnectionFactory,RawXaConnectionFactory} to establish connections
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
-    //user name of connection establishment
+    //user name of a database,default is null
     private String username;
-    //user password of connection establishment
+    //user password security link to database,default is null
     private String password;
-    //database jdbc url of connection establishment
+    //database link url for jdbc,default is null
     private String jdbcUrl;
-    //jdbc driver class name
+    //database link driver class name,default is null(if not set,pool try to search a matched driver from driver manager with valid configured url)
     private String driverClassName;
     //pool name for log trace,if null or empty,a generation name will be assigned to it after configuration check passed
     private String poolName;
-    //work mode of pool semaphore,default:unfair mode(competed mode)
+    //work mode of pool semaphore,default:unfair mode(I call it competed mode)
     private boolean fairMode;
     //creation size of initial connections,default is zero
     private int initialSize;
     //creation mode of initial connections;default is false(synchronization mode)
     private boolean asyncCreateInitConnection;
-    //maximum of connections in pool,default is 10(10 =< number <=50)
+    //maximum of connections in pool,default is 10(default range: 10 =< number <=50)
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
     //max permits size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
     //milliseconds:max wait time in pool to get connections for borrowers,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
-    //seconds: maximum time in seconds that connection factory{@code RawConnectionFactory RawXaConnectionFactory} will wait
-    //while attempting to connect to a database.this item value can be set into raw datasource or DriverManager as loginTimeout
-    //on pool initialization if its value is greater than zero, field loginTimeout of DriverManager is shareable info and
-    //whose setting change is global to all drivers,and maybe some drivers read loginTimeout from DriverManager as a working control
-    //field,so need more careful and set an appropriate value to this field when necessary
+
+    //seconds: max wait time effects inside a driver or a datasource to establish raw connections.
+    //Two connection creation modes supported in bee datasource configuration
+    //1: driver mode,driverClassName field has been set or a matched driver can be searched with url
+    //2: factory mode,@see field connectionFactoryClass(supports four types)
+    //* import tips: factory mode is priority for pool,if connection creation works under driver mode,this item value
+    // is assigned to field loginTimeout of DriverManager on pool initialization,but the loginTimeout field is sharable,
+    // in same JVM,other drivers maybe read its value,so need be more careful on this item(connectTimeout),default is zero
     private int connectTimeout;
     //milliseconds: max idle time on unused connections which removed from pool,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3);
@@ -119,9 +122,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //enable indicator to set default value on property transactionIsolation
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //put a dirty flag on schema when invocation success at method {@code Connection.setSchema()}and ignore changed or not on schema
+    //dirty force indicator on schema property(supports recover under transaction in PG database)
     private boolean forceDirtyOnSchemaAfterSet;
-    //put a dirty flag on catalog when invocation success at method {@code Connection.setCatalog()}and ignore changed or not on catalog
+    //dirty force indicator on catalog property(supports recover under transaction in PG database)
     private boolean forceDirtyOnCatalogAfterSet;
 
     //thread factory class(creation order-2 )
@@ -144,7 +147,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //connection factory instance
     private Object connectionFactory;
 
-    //sql exception predication
+    /**
+     * connection eviction check on a thrown sql exception by customization
+     */
+    //sql exception predication class
     private Class sqlExceptionPredicationClass;
     //sql exception predication class name
     private String sqlExceptionPredicationClassName;
