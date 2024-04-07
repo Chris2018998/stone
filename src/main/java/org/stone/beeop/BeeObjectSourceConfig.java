@@ -30,80 +30,85 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
 /**
- * Configuration of bee object source
+ * Bee object source configuration object
  *
  * @author Chris Liao
  * @version 1.0
  */
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
-    //atomic index at pool name generation,its value starts with 1
+    //pool name generation index which is an atomic integer start with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //store properties which are injected to object factory while pool initialization
+    //properties are injected to object factory while pool initialization
     private final Map<String, Object> factoryProperties = new HashMap<String, Object>();
 
-    //a name assign to pool,if null or empty,then set a generated name to pool on initialization
+    //pool name for log trace,if null or empty,a generation name will be assigned to it after configuration check passed
     private String poolName;
-    //enable pool semaphore works in fair mode
+    //work mode of pool semaphore,default:unfair mode
     private boolean fairMode;
-    //creation size of objects on pool starting up
+    //creation size of initial objects,default is zero
     private int initialSize;
-    //indicator on creating initial objects with a async thread
+    //creation mode of initial objects;default is false(synchronization mode)
     private boolean asyncCreateInitObject;
-    //max object key size(pool capacity size = (maxObjectKeySize * maxActive)
+    //max object key size(pool capacity size = (maxObjectKeySize * maxActive),default is 50
     private int maxObjectKeySize = 50;
-    //max reachable size of object instance by per key
+    //maximum of objects in instance pool,default is 10(default range: 10 =< number <=50)
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //max permit size of semaphore by per key
+    //max permits size of instance pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds:max wait time of a borrower to get a idle object from pool,if not get one,then throws an exception
+    //milliseconds:max wait time in pool to get objects for borrowers,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
-    //milliseconds:max idle time of pooled objects,if time reached and not be borrowed out,then be removed from pool
+    //milliseconds: max idle time on unused objects which removed from pool,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds:max hold time and not be active on borrowed objects,which may be force released to pool
+    //milliseconds: max inactive time on borrowed objects,which recycled to pool by force to avoid objects leak,default is zero
     private long holdTimeout;
-    //seconds:max wait time to get a validation result on testing objects
+
+    //seconds:max wait time to get validation result on a test object,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //milliseconds:max gap time between last activity and borrowed,if less this gap value,assume pooled objects in active state,otherwise test them
+    //milliseconds: a gap time value since from last active time,assume object is alive and need't do test on it,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //milliseconds:interval time to scan idle-timeout objects and hold-timeout objects
+    //milliseconds: interval time to scan idle objects or leak objects,default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator to whether force close using objects when pool clearing
+    //indicator on close using objects directly while pool clear,default is false
     private boolean forceCloseUsingOnClear;
-    //milliseconds:delay time for next loop clearing in pool when exits using objects when<config>forceCloseUsingOnClear</config> is false
+    //milliseconds: a delay time value to close using objects return to pool,if still exists using,then continue to next delay,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
 
-    //jmx register indicator
+    //enable indicator to register configuration and pool to Jmx,default is false
     private boolean enableJmx;
-    //config info print indicator while pool initialization
-    private boolean printConfigInfo;
-    //pool runtime info print indicator,which can be changed by calling setPrintRuntimeLog method at runtime
+    //enable indicator to print pool runtime log,default is false
     private boolean printRuntimeLog;
+    //enable indicator to print configuration items on pool initialization,default is false
+    private boolean printConfigInfo;
+    //exclusion list on config items print,default is null
+    private List<String> configPrintExclusionList;
 
-    //interfaces implemented by pooled object
+
+    //object interfaces
     private Class[] objectInterfaces;
-    //names of interfaces implemented by pooled object
+    //object interface names
     private String[] objectInterfaceNames;
 
-    //class of thread factory(priority-2)
-    private Class threadFactoryClass;
-    //class name of thread factory(priority-3),if not set,default factory will be applied in pool
-    private String threadFactoryClassName = PoolThreadFactory.class.getName();
-    //work thread factory(priority-1)
-    private BeeObjectPoolThreadFactory threadFactory;
-
+    //object factory(priority-1)
+    private RawObjectFactory objectFactory;
     //object factory class(priority-2)
     private Class objectFactoryClass;
     //object factory class name(priority-3)
     private String objectFactoryClassName;
-    //object factory(priority-1)
-    private RawObjectFactory objectFactory;
 
+    //method call filter(priority-1)
+    private RawObjectMethodFilter objectMethodFilter;
     //object method call filter class(priority-2)
     private Class objectMethodFilterClass;
     //object method call filter class name(priority-3)
     private String objectMethodFilterClassName;
-    //method call filter(priority-1)
-    private RawObjectMethodFilter objectMethodFilter;
+
+
+    //work thread factory(priority-1)
+    private BeeObjectPoolThreadFactory threadFactory;
+    //class of thread factory(priority-2)
+    private Class threadFactoryClass;
+    //class name of thread factory(priority-3),if not set,default factory will be applied in pool
+    private String threadFactoryClassName = PoolThreadFactory.class.getName();
 
     //pool implementation class name
     private String poolImplementClassName = KeyedObjectPool.class.getName();
@@ -130,7 +135,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     //***************************************************************************************************************//
-    //                                     2: base configuration(37)                                                 //
+    //                                     2: base configuration(40)                                                 //
     //***************************************************************************************************************//
     public String getPoolName() {
         return this.poolName;
@@ -212,7 +217,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setHoldTimeout(long holdTimeout) {
-        this.holdTimeout = holdTimeout;
+        if (holdTimeout >= 0L) this.holdTimeout = holdTimeout;
     }
 
     public int getAliveTestTimeout() {
@@ -255,25 +260,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (delayTimeForNextClear >= 0L) this.delayTimeForNextClear = delayTimeForNextClear;
     }
 
-    public String getPoolImplementClassName() {
-        return this.poolImplementClassName;
-    }
-
-    public void setPoolImplementClassName(String poolImplementClassName) {
-        if (!isBlank(poolImplementClassName))
-            this.poolImplementClassName = trimString(poolImplementClassName);
-    }
-
     public boolean isEnableJmx() {
         return this.enableJmx;
     }
 
     public void setEnableJmx(boolean enableJmx) {
         this.enableJmx = enableJmx;
-    }
-
-    public void setPrintConfigInfo(boolean printConfigInfo) {
-        this.printConfigInfo = printConfigInfo;
     }
 
     public boolean isPrintRuntimeLog() {
@@ -284,55 +276,52 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.printRuntimeLog = printRuntimeLog;
     }
 
+    public boolean isPrintConfigInfo() {
+        return this.printConfigInfo;
+    }
+
+    public void setPrintConfigInfo(boolean printConfigInfo) {
+        this.printConfigInfo = printConfigInfo;
+    }
+
+    public void addConfigPrintExclusion(String fieldName) {
+        if (configPrintExclusionList == null) {
+            configPrintExclusionList = new ArrayList<>(1);
+            configPrintExclusionList.add(fieldName);
+        } else if (!configPrintExclusionList.contains(fieldName)) {
+            configPrintExclusionList.add(fieldName);
+        }
+    }
+
+    public void clearAllConfigPrintExclusion() {
+        if (configPrintExclusionList != null) this.configPrintExclusionList.clear();
+    }
+
+    public boolean removeConfigPrintExclusion(String fieldName) {
+        return configPrintExclusionList != null && configPrintExclusionList.remove(fieldName);
+    }
+
+    public boolean existConfigPrintExclusion(String fieldName) {
+        return configPrintExclusionList != null && configPrintExclusionList.contains(fieldName);
+    }
+
     //***************************************************************************************************************//
-    //                                     3: configuration about object creation(19)                                //
+    //                                     3: creation configuration(20)                                             //
     //***************************************************************************************************************//
     public Class[] getObjectInterfaces() {
-        return (this.objectInterfaces == null) ? ObjectPoolStatics.EMPTY_CLASSES : objectInterfaces.clone();
+        return objectInterfaces;
     }
 
     public void setObjectInterfaces(Class[] interfaces) {
-        if (interfaces == null || interfaces.length == 0) {
-            this.objectInterfaces = null;
-        } else {
-            this.objectInterfaces = interfaces.clone();
-        }
+        this.objectInterfaces = interfaces;
     }
 
     public String[] getObjectInterfaceNames() {
-        return this.objectInterfaceNames == null ? ObjectPoolStatics.EMPTY_CLASS_NAMES : objectInterfaceNames.clone();
+        return this.objectInterfaceNames;
     }
 
     public void setObjectInterfaceNames(String[] interfaceNames) {
-        if (interfaceNames == null || interfaceNames.length == 0) {
-            objectInterfaceNames = null;
-        } else {
-            objectInterfaceNames = interfaceNames.clone();
-        }
-    }
-
-    public Class getThreadFactoryClass() {
-        return threadFactoryClass;
-    }
-
-    public void setThreadFactoryClass(Class threadFactoryClass) {
-        this.threadFactoryClass = threadFactoryClass;
-    }
-
-    public String getThreadFactoryClassName() {
-        return threadFactoryClassName;
-    }
-
-    public void setThreadFactoryClassName(String threadFactoryClassName) {
-        this.threadFactoryClassName = threadFactoryClassName;
-    }
-
-    public BeeObjectPoolThreadFactory getThreadFactory() {
-        return threadFactory;
-    }
-
-    public void setThreadFactory(BeeObjectPoolThreadFactory threadFactory) {
-        this.threadFactory = threadFactory;
+        this.objectInterfaceNames = interfaceNames;
     }
 
     public Class getObjectFactoryClass() {
@@ -413,7 +402,43 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     //***************************************************************************************************************//
-    //                                     4: configuration load from properties load (3)                            //
+    //                                     3: pool work configuration(8)                                             //
+    //***************************************************************************************************************//
+    public BeeObjectPoolThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    public void setThreadFactory(BeeObjectPoolThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
+
+    public Class getThreadFactoryClass() {
+        return threadFactoryClass;
+    }
+
+    public void setThreadFactoryClass(Class threadFactoryClass) {
+        this.threadFactoryClass = threadFactoryClass;
+    }
+
+    public String getThreadFactoryClassName() {
+        return threadFactoryClassName;
+    }
+
+    public void setThreadFactoryClassName(String threadFactoryClassName) {
+        this.threadFactoryClassName = threadFactoryClassName;
+    }
+
+    public String getPoolImplementClassName() {
+        return this.poolImplementClassName;
+    }
+
+    public void setPoolImplementClassName(String poolImplementClassName) {
+        if (!isBlank(poolImplementClassName))
+            this.poolImplementClassName = trimString(poolImplementClassName);
+    }
+
+    //***************************************************************************************************************//
+    //                                     4: configuration file load(3)                                             //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         if (isBlank(filename)) throw new IllegalArgumentException("Configuration properties file can't be null");
@@ -421,7 +446,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         File file = new File(filename);
         if (file.exists()) {
             this.loadFromPropertiesFile(file);
-        } else {//try to load config from classpath
+        } else {//try to load config file from classpath
             Class selfClass = BeeObjectSourceConfig.class;
             InputStream propertiesStream = selfClass.getResourceAsStream(filename);
             if (propertiesStream == null) propertiesStream = selfClass.getClassLoader().getResourceAsStream(filename);
@@ -429,6 +454,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             Properties prop = new Properties();
             try {
                 prop.load(propertiesStream);
+                loadFromProperties(prop);
             } catch (IOException e) {
                 throw new IllegalArgumentException("Configuration properties file load failed", e);
             } finally {
@@ -440,8 +466,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
                     }
                 }
             }
-
-            loadFromProperties(prop);
         }
     }
 
