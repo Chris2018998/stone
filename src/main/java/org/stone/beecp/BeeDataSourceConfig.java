@@ -148,7 +148,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private Object connectionFactory;
 
     /**
-     * connection eviction check on a thrown sql exception by customization
+     * connection eviction check on thrown sql exceptions by customization
+     * eviction check priority logic
+     * 1: if exists a predication,only check on predication
+     * 2: if not exists,priority order: error code check,sql state check
      */
     //sql exception predication class
     private Class sqlExceptionPredicationClass;
@@ -157,23 +160,26 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //sql exception predication instance
     private SQLExceptionPredication sqlExceptionPredication;
 
-    //encryption decoder class on jdbc link info
+    /**
+     * A short lifecycle object and used to decode jdbc link info(url,username,password)in pool initialization check
+     */
+    //decoder class
     private Class jdbcLinkInfoDecoderClass;
-    //encryption decoder classname on jdbc link info
+    //decoder class name
     private String jdbcLinkInfoDecoderClassName;
-    //decoder instance on jdbc link info
+    //decoder instance
     private BeeJdbcLinkInfoDecoder jdbcLinkInfoDecoder;
 
     //pool implementation class name,if not be set,a default implementation applied in bee datasource
     private String poolImplementClassName = FastConnectionPool.class.getName();
 
-    //indicator on whether registering jmx
+    //enable indicator to register configuration and pool to Jmx,default is false
     private boolean enableJmx;
-    //indicator on printing pool runtime log,this value can be changed by calling pool<method>setPrintRuntimeLog</method>
+    //enable indicator to print pool runtime log,default is false
     private boolean printRuntimeLog;
-    //indicator on whether printing configuration items when pool starting up
+    //enable indicator to print configuration items on pool initialization,default is false
     private boolean printConfigInfo;
-    //exclusion print list on printConfigInfo indicator(default exclusion items:username,password,jdbcUrl)
+    //exclusion list on config items print
     private List<String> configPrintExclusionList = new ArrayList<String>(DefaultExclusionList);
 
     //****************************************************************************************************************//
