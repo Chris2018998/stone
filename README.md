@@ -14,7 +14,7 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.3.1</version>
+   <version>1.3.2</version>
 </dependency>
 ```
 
