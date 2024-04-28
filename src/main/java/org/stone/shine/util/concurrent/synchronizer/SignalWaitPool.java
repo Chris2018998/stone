@@ -30,7 +30,7 @@ public final class SignalWaitPool extends ObjectWaitPool {
      * @return true, if get a signal then return true,timeout return false
      * @throws java.lang.InterruptedException exception from call or InterruptedException after thread park
      */
-    public final Object get(SyncVisitConfig config) throws InterruptedException {
+    public Object get(SyncVisitConfig config) throws InterruptedException {
         //1:check call parameter
         if (config == null) throw new NullPointerException("Sync config can't be null");
         if (Thread.interrupted()) throw new InterruptedException();
@@ -42,7 +42,7 @@ public final class SignalWaitPool extends ObjectWaitPool {
         //3:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
 
-        //4: spin control（Logic from BeeCP）
+        //4: spin control(Logic from BeeCP)
         try {
             do {
                 //4.1: read node state

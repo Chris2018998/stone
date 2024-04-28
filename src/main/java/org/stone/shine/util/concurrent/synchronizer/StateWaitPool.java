@@ -40,7 +40,7 @@ public final class StateWaitPool extends ObjectWaitPool {
      * @return a expected state
      * @throws java.lang.InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object get(SyncVisitConfig config) throws InterruptedException {
+    public Object get(SyncVisitConfig config) throws InterruptedException {
         return get(config, validator);
     }
 
@@ -52,7 +52,7 @@ public final class StateWaitPool extends ObjectWaitPool {
      * @return true that the caller got a signal from other,false that the caller wait timeout in pool
      * @throws java.lang.InterruptedException caller waiting interrupted,then throws it
      */
-    public final Object get(SyncVisitConfig config, ResultValidator validator) throws InterruptedException {
+    public Object get(SyncVisitConfig config, ResultValidator validator) throws InterruptedException {
         //1:config check
         if (Thread.interrupted()) throw new InterruptedException();
         if (config == null || validator == null)
@@ -65,7 +65,7 @@ public final class StateWaitPool extends ObjectWaitPool {
         //3:get control parameters from config
         ThreadParkSupport parkSupport = config.getParkSupport();
 
-        //4: spin control（Logic from BeeCP）
+        //4: spin control(Logic from BeeCP)
         try {
             do {
                 //4.1: read node state
