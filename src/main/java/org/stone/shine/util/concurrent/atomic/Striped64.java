@@ -49,7 +49,7 @@ abstract class Striped64 extends Number {
     private transient volatile int cellsBusy;//cells lock
 
     //****************************************************************************************************************//
-    //                                          2: constructor(by chris2018998）                                      //
+    //                                          2: constructor                                                        //
     //****************************************************************************************************************//
     Striped64() {
         this.baseCell = new Cell(0);
@@ -97,7 +97,7 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          4: re-write method(by chris2018998）                                  //
+    //                                          4: re-write method                                                    //
     //****************************************************************************************************************//
     final void longAccumulate(long x, LongBinaryOperator fn) {
         int retrySize = RETRY_SIZE;
@@ -166,7 +166,7 @@ abstract class Striped64 extends Number {
     }
 
     //****************************************************************************************************************//
-    //                                          5: re-write method(by chris2018998）                                  //
+    //                                          5: re-write method(by chris2018998)                                   //
     //****************************************************************************************************************//
     final void doubleAccumulate(double x, DoubleBinaryOperator fn) {
         int retrySize = RETRY_SIZE;
