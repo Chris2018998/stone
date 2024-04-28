@@ -53,7 +53,7 @@ public class PropertiesFileLoadTest extends TestCase {
         if (testConfig.getDefaultTransactionIsolationCode() != 1) return "defaultTransactionIsolationCode error";
         if (!"READ_UNCOMMITTED".equals(testConfig.getDefaultTransactionIsolationName()))
             return "defaultTransactionIsolation error";
-        if (!"SELECT 1".equals(testConfig.getValidTestSql())) return "connectionTestSQL error";
+        if (!"SELECT 1".equals(testConfig.getAliveTestSql())) return "connectionTestSQL error";
         if (!"Pool1".equals(testConfig.getPoolName())) return "poolName error";
         if (!testConfig.isFairMode()) return "fairMode error";
         if (testConfig.getInitialSize() != 1) return "initialSize error";
@@ -62,20 +62,21 @@ public class PropertiesFileLoadTest extends TestCase {
         if (testConfig.getMaxWait() != 8000) return "maxWait error";
         if (testConfig.getIdleTimeout() != 18000) return "idleTimeout error";
         if (testConfig.getHoldTimeout() != 30000) return "holdTimeout error";
-        if (testConfig.getValidTestTimeout() != 3) return "connectionTestTimeout error";
-        if (testConfig.getValidAssumeTime() != 500) return "connectionTestInterval error";
+        if (testConfig.getAliveTestTimeout() != 3) return "connectionTestTimeout error";
+        if (testConfig.getAliveAssumeTime() != 500) return "connectionTestInterval error";
         if (testConfig.getTimerCheckInterval() != 30000) return "idleCheckTimeInterval error";
         if (!testConfig.isForceCloseUsingOnClear()) return "forceCloseUsingOnClear error";
         if (testConfig.getDelayTimeForNextClear() != 3000) return "delayTimeForNextClear error";
-        if (!"com.myProject.TestPredication".equals(testConfig.getSqlExceptionPredicationClassName())) return "sqlExceptionPredicationClassName error";
-        List<Integer> sqlExceptionCodeList =(List<Integer>) TestUtil.getFieldValue(testConfig,"sqlExceptionCodeList");
-        List<String> sqlExceptionStateList =(List<String>) TestUtil.getFieldValue(testConfig,"sqlExceptionStateList");
-        for(Integer code:sqlExceptionCodeList){
+        if (!"com.myProject.TestPredication".equals(testConfig.getSqlExceptionPredicateClassName()))
+            return "sqlExceptionPredicationClassName error";
+        List<Integer> sqlExceptionCodeList = (List<Integer>) TestUtil.getFieldValue(testConfig, "sqlExceptionCodeList");
+        List<String> sqlExceptionStateList = (List<String>) TestUtil.getFieldValue(testConfig, "sqlExceptionStateList");
+        for (Integer code : sqlExceptionCodeList) {
             int value = code.intValue();
-            if(value!=500150&&value!=2399)return "sqlExceptionCodeList error";
+            if (value != 500150 && value != 2399) return "sqlExceptionCodeList error";
         }
-        for(String state:sqlExceptionStateList){
-            if(!"0A000".equals(state) &&!"57P01".equals(state))return "sqlExceptionStateList error";
+        for (String state : sqlExceptionStateList) {
+            if (!"0A000".equals(state) && !"57P01".equals(state)) return "sqlExceptionStateList error";
         }
 
         if (!"org.stone.beecp.pool.ConnectionFactoryByDriver".equals(testConfig.getConnectionFactoryClassName()))

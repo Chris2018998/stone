@@ -24,7 +24,7 @@ public class ValidSqlErrorSetTest extends TestCase {
         testConfig.setDriverClassName(JdbcConfig.JDBC_DRIVER);
         testConfig.setUsername(JdbcConfig.JDBC_USER);
         testConfig.setPassword(JdbcConfig.JDBC_PASSWORD);
-        testConfig.setValidTestSql("?={call test(}");
+        testConfig.setAliveTestSql("?={call test(}");
         try {
             testConfig.check();
         } catch (BeeDataSourceConfigException e) {

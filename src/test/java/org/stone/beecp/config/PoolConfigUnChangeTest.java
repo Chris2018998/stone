@@ -28,7 +28,7 @@ public class PoolConfigUnChangeTest extends TestCase {
         testConfig.setPassword(JdbcConfig.JDBC_PASSWORD);
         testConfig.setInitialSize(initSize);
         testConfig.setMaxActive(maxSize);
-        testConfig.setValidTestSql("SELECT 1 from dual");
+        testConfig.setAliveTestSql("SELECT 1 from dual");
         testConfig.setIdleTimeout(3000);
         ds = new BeeDataSource(testConfig);
     }
