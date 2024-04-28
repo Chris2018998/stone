@@ -45,7 +45,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     //properties applied in a factory{@code RawConnectionFactory,RawXaConnectionFactory} to establish connections
     private final Map<String, Object> connectProperties = new HashMap<String, Object>(2);
-    //user name of a database,default is null
+    //username of a database,default is null
     private String username;
     //user password security link to database,default is null
     private String password;
@@ -85,7 +85,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private String aliveTestSql = "SELECT 1";
     //seconds:max wait time to get validation result on test connections,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //milliseconds: a gap time value from last activity time to borrowed time point,need't do test on connections,default is 500 milliseconds
+    //milliseconds: a gap time value from last activity time to borrowed time point,needn't do test on connections,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
     //milliseconds: interval time to scan idle connections or leak connections,default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3);
@@ -947,7 +947,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             Properties configProperties = new Properties();
             configProperties.putAll(this.connectProperties);//copy local properties
 
-            //step2.4: set user name and password
+            //step2.4: set username and password
             String userName = configProperties.getProperty("user");//read from connectProperties firstly
             String password = configProperties.getProperty("password");//read from connectProperties firstly
             if (isBlank(userName)) {
@@ -964,7 +964,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             }
 
             //step2.5: decode user name and password
-            if (jdbcLinkInfoDecoder != null) {//execute the decoder and reset user name and password
+            if (jdbcLinkInfoDecoder != null) {//execute the decoder and reset username and password
                 if (!isBlank(userName))
                     configProperties.setProperty("user", jdbcLinkInfoDecoder.decodeUsername(userName));
                 if (!isBlank(password))
