@@ -67,7 +67,7 @@ public class PropertiesFileLoadTest extends TestCase {
         if (testConfig.getTimerCheckInterval() != 30000) return "idleCheckTimeInterval error";
         if (!testConfig.isForceCloseUsingOnClear()) return "forceCloseUsingOnClear error";
         if (testConfig.getDelayTimeForNextClear() != 3000) return "delayTimeForNextClear error";
-        if (!"com.myProject.TestPredication".equals(testConfig.getSqlExceptionPredicateClassName()))
+        if (!"com.myProject.TestPredication".equals(testConfig.getEvictPredicateClassName()))
             return "sqlExceptionPredicationClassName error";
         List<Integer> sqlExceptionCodeList = (List<Integer>) TestUtil.getFieldValue(testConfig, "sqlExceptionCodeList");
         List<String> sqlExceptionStateList = (List<String>) TestUtil.getFieldValue(testConfig, "sqlExceptionStateList");
