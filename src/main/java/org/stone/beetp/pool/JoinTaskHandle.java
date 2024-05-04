@@ -28,6 +28,7 @@ import static org.stone.beetp.TaskStates.TASK_EXEC_RESULT;
  * @version 1.0
  */
 final class JoinTaskHandle extends BaseHandle {
+    private final TaskJoinOperator operator;
     //3: fields of child task
     JoinTaskHandle root;
     //1: field of root
@@ -35,7 +36,6 @@ final class JoinTaskHandle extends BaseHandle {
     private JoinTaskHandle[] subTaskHandles;
     private JoinTaskHandle parent;
     private AtomicInteger countDown;//the complete count of sub tasks.
-    private TaskJoinOperator operator;
 
     //***************************************************************************************************************//
     //                                          1: Constructor(2)                                                    //                                                                                  //
@@ -147,8 +147,8 @@ final class JoinTaskHandle extends BaseHandle {
     }
 
     private static class AsynJoinCancelThread extends Thread {
-        private boolean mayInterruptIfRunning;
-        private JoinTaskHandle[] subTaskHandles;
+        private final boolean mayInterruptIfRunning;
+        private final JoinTaskHandle[] subTaskHandles;
 
         AsynJoinCancelThread(JoinTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
             this.subTaskHandles = subTaskHandles;
