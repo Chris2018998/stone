@@ -45,7 +45,7 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
         //false:transfer from tail,which similar to{@link java.util.concurrent.SynchronousQueue#TransferStack}
     }
 
-    public final boolean isFair() {
+    public boolean isFair() {
         return this.fair;
     }
 
@@ -53,7 +53,7 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     //                                          1: offer methods(3)                                                   //
     //****************************************************************************************************************//
     //try to transfer node to a waiter,success return the wait node,failed append to queue as a node
-    public final SyncNode offer(SyncNode node) {
+    public SyncNode offer(SyncNode node) {
         if (node == null) throw new IllegalArgumentException("Node can't be null");
         SyncNode pairNode = tryTransfer(node, Node_Type_Get);
         if (pairNode != null) return pairNode;//matched node
@@ -62,7 +62,7 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     }
 
     //try to transfer the node to a waiter during specified period
-    public final SyncNode offer(SyncVisitConfig config) throws InterruptedException {
+    public SyncNode offer(SyncVisitConfig config) throws InterruptedException {
         if (config == null) throw new NullPointerException("Sync config can't be null");
         SyncNode pairNode = transfer(config, Node_Type_Get);
         if (pairNode != null) return pairNode;//matched node
@@ -73,12 +73,12 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     //****************************************************************************************************************//
     //                                          2: transfer methods(2)                                                //
     //****************************************************************************************************************//
-    public final SyncNode tryTransfer(SyncNode node, Object toNodeType) {
+    public SyncNode tryTransfer(SyncNode node, Object toNodeType) {
         if (node == null) throw new NullPointerException("Node can't be null");
         return this.wakeupOne(fair, toNodeType, node);
     }
 
-    public final SyncNode transfer(SyncVisitConfig config, Object toNodeType) throws InterruptedException {
+    public SyncNode transfer(SyncVisitConfig config, Object toNodeType) throws InterruptedException {
         if (config == null) throw new NullPointerException("Config can't be null");
 
         //1: try to transfer to one waiter
@@ -92,11 +92,11 @@ public final class TransferWaitPool<E> extends ObjectWaitPool {
     //****************************************************************************************************************//
     //                                          3: poll methods(2)                                                    //
     //****************************************************************************************************************//
-    public final SyncNode poll() {
+    public SyncNode poll() {
         return tryTransfer(new SyncNode(Node_Type_Get, null), Node_Type_Data);
     }
 
-    public final SyncNode poll(SyncVisitConfig config) throws InterruptedException {
+    public SyncNode poll(SyncVisitConfig config) throws InterruptedException {
         if (config == null) throw new NullPointerException("Sync config can't be null");
 
         return transfer(config, Node_Type_Data);

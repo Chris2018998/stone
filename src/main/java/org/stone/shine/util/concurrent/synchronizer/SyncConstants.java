@@ -30,14 +30,14 @@ public final class SyncConstants {
 
     //base visit tester
     public static final SyncVisitTester BASE_VISIT_TESTER = new SyncVisitTester() {
-        public final boolean allow(boolean unfair, Object curType, ObjectWaitPool pool) {
+        public boolean allow(boolean unfair, Object curType, ObjectWaitPool pool) {
             return unfair || pool.peekFirst() == null;
         }
     };
 
     //share visit tester
     public static final SyncVisitTester SHARE_VISIT_TESTER = new SyncVisitTester() {
-        public final boolean allow(boolean unfair, Object curType, ObjectWaitPool pool) {
+        public boolean allow(boolean unfair, Object curType, ObjectWaitPool pool) {
             SyncNode first = pool.peekFirst();
             return first == null || unfair && CommonUtil.objectEquals(first.getType(), curType);
         }

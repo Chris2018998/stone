@@ -51,7 +51,7 @@ public final class ResultWaitPool extends ObjectWaitPool {
     //****************************************************************************************************************//
     //                                          3: wakeup for result wait pool(3)                                     //
     //****************************************************************************************************************//
-    public final boolean isFair() {
+    public boolean isFair() {
         return !this.unfair;
     }
 
@@ -62,14 +62,14 @@ public final class ResultWaitPool extends ObjectWaitPool {
         if (casFail || atHead) this.wakeupFirst();
     }
 
-    public final void wakeupFirst() {
+    public void wakeupFirst() {
         final SyncNode first = this.waitQueue.peek();
         if (first != null && SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING)) {
             LockSupport.unpark(first.getThread());
         }
     }
 
-    public final void wakeupFirst(final Object wakeupType) {
+    public void wakeupFirst(final Object wakeupType) {
         final SyncNode first = this.waitQueue.peek();
         if (first != null && (wakeupType == null || wakeupType == first.getType() || wakeupType.equals(first.getType()))) {
             if (SyncNodeUpdater.casState(first, null, SyncNodeStates.RUNNING)) LockSupport.unpark(first.getThread());

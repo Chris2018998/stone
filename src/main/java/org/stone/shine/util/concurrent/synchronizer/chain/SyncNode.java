@@ -43,35 +43,35 @@ public final class SyncNode<E> {
     //****************************************************************************************************************//
     //                                           set/get of chain node                                                //
     //****************************************************************************************************************//
-    public final E getValue() {
+    public E getValue() {
         return this.value;
     }
 
-    public final Object getType() {
+    public Object getType() {
         return this.type;
     }
 
-    public final void setType(Object type) {
+    public void setType(Object type) {
         this.type = type;
     }
 
-    public final Object getState() {
+    public Object getState() {
         return this.state;
     }
 
-    public final void setState(Object newState) {
+    public void setState(Object newState) {
         this.state = newState;
     }
 
-    public final Thread getThread() {
+    public Thread getThread() {
         return this.thread;
     }
 
-    public final void setThread(Thread thread) {
+    public void setThread(Thread thread) {
         this.thread = thread;
     }
 
-    public final boolean receivedSignal() {
+    public boolean receivedSignal() {
         if (this.state == SyncNodeStates.RUNNING) {
             this.state = null;//rest to null for next
             return true;

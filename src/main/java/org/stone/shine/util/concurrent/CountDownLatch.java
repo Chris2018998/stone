@@ -25,8 +25,8 @@ import static org.stone.shine.util.concurrent.synchronizer.validator.ResultEqual
  * @version 1.0
  */
 public final class CountDownLatch implements ResultCall {
-    private AtomicInteger count;
-    private ResultWaitPool waitPool;
+    private final AtomicInteger count;
+    private final ResultWaitPool waitPool;
 
     //create wait pool in constructor
     public CountDownLatch(int count) {

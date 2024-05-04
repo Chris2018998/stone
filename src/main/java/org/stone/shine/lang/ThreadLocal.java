@@ -71,7 +71,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ThreadLocal<T> {
     private static final int HASH_INCREMENT = 0x61c88647;
-    private static AtomicInteger nextHashCode = new AtomicInteger();
+    private static final AtomicInteger nextHashCode = new AtomicInteger();
 
     private static int nextHashCode() {
         return nextHashCode.getAndAdd(HASH_INCREMENT);

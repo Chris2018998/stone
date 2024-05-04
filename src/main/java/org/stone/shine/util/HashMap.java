@@ -34,9 +34,8 @@ public class HashMap<K, V> {
     private static class Node<K, V> implements Map.Entry<K, V> {
         private final int hash;
         private final K key;
+        private final Node<K, V> next;
         private V value;
-        private Node<K, V> next;
-
         //for linkedHashMap
         private Node<K, V> prev;
         private Node<K, V> after;
