@@ -17,6 +17,7 @@ import java.lang.reflect.Modifier;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
  * Task service config
@@ -96,7 +97,7 @@ public class TaskServiceConfig {
     }
 
     public void setPoolImplementClassName(String poolImplementClassName) {
-        if (!isBlank(this.poolImplementClassName))
+        if (isNotBlank(this.poolImplementClassName))
             this.poolImplementClassName = poolImplementClassName;
     }
 
