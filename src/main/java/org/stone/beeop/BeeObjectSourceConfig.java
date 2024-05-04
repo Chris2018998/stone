@@ -26,8 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.createClassInstance;
-import static org.stone.tools.CommonUtil.isBlank;
-import static org.stone.tools.CommonUtil.trimString;
+import static org.stone.tools.CommonUtil.*;
 
 /**
  * Bee object source configuration object
@@ -381,11 +380,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void addFactoryProperty(String key, Object value) {
-        if (!isBlank(key) && value != null) this.factoryProperties.put(key, value);
+        if (isNotBlank(key) && value != null) this.factoryProperties.put(key, value);
     }
 
     public void addFactoryProperty(String propertyText) {
-        if (!isBlank(propertyText)) {
+        if (isNotBlank(propertyText)) {
             String[] attributeArray = propertyText.split("&");
             for (String attribute : attributeArray) {
                 String[] pair = attribute.split("=");
@@ -433,7 +432,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     public void setPoolImplementClassName(String poolImplementClassName) {
-        if (!isBlank(poolImplementClassName))
+        if (isNotBlank(poolImplementClassName))
             this.poolImplementClassName = trimString(poolImplementClassName);
     }
 
@@ -512,7 +511,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             //3:try to find 'factoryProperties' config value
             this.addFactoryProperty(ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties"));
             String factoryPropertiesSize = ObjectPoolStatics.getPropertyValue(configProperties, "factoryProperties.size");
-            if (!isBlank(factoryPropertiesSize)) {
+            if (isNotBlank(factoryPropertiesSize)) {
                 int size = 0;
                 try {
                     size = Integer.parseInt(factoryPropertiesSize.trim());
@@ -525,12 +524,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
 
             //5:try to find 'objectInterfaceNames' config value
             String objectInterfaceNames = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaceNames");
-            if (!isBlank(objectInterfaceNames))
+            if (isNotBlank(objectInterfaceNames))
                 setObjectInterfaceNames(objectInterfaceNames.split(","));
 
             //6:try to find 'objectInterfaces' config value
             String objectInterfaceNames2 = ObjectPoolStatics.getPropertyValue(configProperties, "objectInterfaces");
-            if (!isBlank(objectInterfaceNames2)) {
+            if (isNotBlank(objectInterfaceNames2)) {
                 String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
                 Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
                 for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
@@ -658,7 +657,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         if (this.objectMethodFilter != null) return objectMethodFilter;
 
         //2: create method filter
-        if (objectMethodFilterClass != null || !isBlank(objectMethodFilterClassName)) {
+        if (objectMethodFilterClass != null || isNotBlank(objectMethodFilterClassName)) {
             Class filterClass = null;
             try {
                 filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : Class.forName(objectMethodFilterClassName);
