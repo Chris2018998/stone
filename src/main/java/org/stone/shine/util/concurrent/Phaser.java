@@ -32,8 +32,8 @@ public class Phaser {
     private static final AtomicReferenceFieldUpdater<Phaser, GamePhase> PhaseUpd = ReferenceFieldUpdaterImpl.newUpdater(Phaser.class, GamePhase.class, "phase");
 
     private final ResultWaitPool waitPool;
+    private final Phaser parent;
     private Phaser root;
-    private Phaser parent;
     private volatile GamePhase phase;//current phase，it is a implementation of result call
 
     //****************************************************************************************************************//

@@ -102,11 +102,11 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
     //****************************************************************************************************************//
     //                                       4: Lock Methods(16)                                                      //
     //****************************************************************************************************************//
-    public final boolean isFair() {
+    public boolean isFair() {
         return waitPool.isFair();
     }
 
-    protected Thread getOwner() {
+    private Thread getOwner() {
         return writerLock.getOwner();
     }
 
@@ -134,27 +134,27 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         return readerLock.getHoldCount();
     }
 
-    protected Collection<Thread> getQueuedWriterThreads() {
+    private Collection<Thread> getQueuedWriterThreads() {
         return writerLock.getQueuedThreads();
     }
 
-    protected Collection<Thread> getQueuedReaderThreads() {
+    private Collection<Thread> getQueuedReaderThreads() {
         return waitPool.getQueuedThreads();
     }
 
-    public final boolean hasQueuedThreads() {
+    public boolean hasQueuedThreads() {
         return waitPool.hasQueuedThreads();
     }
 
-    public final boolean hasQueuedThread(Thread thread) {
+    public boolean hasQueuedThread(Thread thread) {
         return waitPool.hasQueuedThread(thread);
     }
 
-    public final int getQueueLength() {
+    public int getQueueLength() {
         return waitPool.getQueueLength();
     }
 
-    protected Collection<Thread> getQueuedThreads() {
+    private Collection<Thread> getQueuedThreads() {
         return waitPool.getQueuedThreads();
     }
 
@@ -166,7 +166,7 @@ public final class ReentrantReadWriteLock implements ReadWriteLock {
         return getLockConditionImpl(condition).getWaitQueueLength();
     }
 
-    protected Collection<Thread> getWaitingThreads(Condition condition) {
+    private Collection<Thread> getWaitingThreads(Condition condition) {
         return getLockConditionImpl(condition).getWaitingThreads();
     }
 

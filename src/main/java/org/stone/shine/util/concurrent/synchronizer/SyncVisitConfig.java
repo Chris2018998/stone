@@ -67,24 +67,24 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              2:set node info(4)                                                //
     //****************************************************************************************************************//
-    public final Object getNodeType() {
+    public Object getNodeType() {
         return this.nodeType;
     }
 
-    public final void setNodeType(Object nodeType) {
+    public void setNodeType(Object nodeType) {
         this.nodeType = nodeType;
     }
 
-    final Object getNodeValue() {
+    Object getNodeValue() {
         return this.nodeValue;
     }
 
-    public final void setNodeInitInfo(Object type, E value) {
+    public void setNodeInitInfo(Object type, E value) {
         this.nodeType = type;
         this.nodeValue = value;
     }
 
-    final SyncNode<E> getSyncNode() {
+    SyncNode<E> getSyncNode() {
         if (node != null) return node;
         return this.node = new SyncNode<>(nodeType, nodeValue);
     }
@@ -92,15 +92,15 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
     //****************************************************************************************************************//
     //                                              3: spin configuration(3)                                          //
     //****************************************************************************************************************//
-    public final boolean isTimed() {
+    public boolean isTimed() {
         return this.isTimed;
     }
 
-    public final long getParkNanos() {
+    public long getParkNanos() {
         return parkNanos;
     }
 
-    final boolean isAllowInterruption() {
+    boolean isAllowInterruption() {
         return allowInterruption;
     }
 
@@ -108,7 +108,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.allowInterruption = allowIndicator;
     }
 
-    final SyncVisitTester getVisitTester() {
+    SyncVisitTester getVisitTester() {
         return visitTester;
     }
 
@@ -124,7 +124,7 @@ public final class SyncVisitConfig<E> implements java.io.Serializable {
         this.propagatedOnSuccess = propagatedOnSuccess;
     }
 
-    public final ThreadParkSupport getParkSupport() {
+    public ThreadParkSupport getParkSupport() {
         if (parkSupport != null) return parkSupport;
         if (deadlineDate != 0)
             return this.parkSupport = new ThreadParkSupport.DateUtilParkSupport(deadlineDate);

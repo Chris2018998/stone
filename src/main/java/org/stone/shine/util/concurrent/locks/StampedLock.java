@@ -89,7 +89,7 @@ public class StampedLock implements java.io.Serializable {
     private final ResultCall stampedWriteCall = new WriteLockCall(this);
     private final ResultValidator resultValidator = new LongResultValidator();
     private final ResultWaitPool waitPool = new ResultWaitPool(false, resultValidator);
-    private volatile long stamp = 2147483648L;
+    private final long stamp = 2147483648L;
 
     //lock views
     private ReadLockView readLockView;
@@ -366,7 +366,7 @@ public class StampedLock implements java.io.Serializable {
     //                                          7: Lock Result Call class(3)                                          //
     //****************************************************************************************************************//
     private static class ReadLockCall implements ResultCall {
-        private StampedLock lock;
+        private final StampedLock lock;
 
         ReadLockCall(StampedLock lock) {
             this.lock = lock;
@@ -378,7 +378,7 @@ public class StampedLock implements java.io.Serializable {
     }
 
     private static class WriteLockCall implements ResultCall {
-        private StampedLock lock;
+        private final StampedLock lock;
 
         WriteLockCall(StampedLock lock) {
             this.lock = lock;

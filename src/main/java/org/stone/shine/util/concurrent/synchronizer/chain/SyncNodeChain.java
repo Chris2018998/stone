@@ -58,7 +58,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     //****************************************************************************************************************//
     //                                          1: queue methods(4)                                                   //
     //****************************************************************************************************************//
-    public final SyncNode peek() {
+    public SyncNode peek() {
         return head.next;
     }
 
@@ -66,7 +66,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         return offer(e);
     }
 
-    public final SyncNode poll() {
+    public SyncNode poll() {
         SyncNode node = head.next;
         if (node != null) {
             node.thread = null;
@@ -76,7 +76,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
         return node;
     }
 
-    public final boolean offer(SyncNode node) {
+    public boolean offer(SyncNode node) {
         do {
             SyncNode t = tail;
             node.prev = t;
@@ -90,7 +90,7 @@ public final class SyncNodeChain implements Queue<SyncNode> {
     //****************************************************************************************************************//
     //                                          2: collection methods(3)                                              //
     //****************************************************************************************************************//
-    public final boolean remove(Object n) {
+    public boolean remove(Object n) {
         SyncNode node = (SyncNode) n;
         node.thread = null;
         node.state = REMOVED;

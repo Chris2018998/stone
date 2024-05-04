@@ -104,7 +104,7 @@ public final class LongAdder extends Striped64 implements Serializable {
      *
      * @param x the value to add
      */
-    public final void add(long x) {
+    public void add(long x) {
         if (!casCell(x, baseCell, operator))
             longAccumulate(x, operator);
     }

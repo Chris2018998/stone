@@ -23,8 +23,8 @@ import static org.stone.shine.util.concurrent.synchronizer.chain.SyncNodeUpdater
  */
 public class SyncNodeWaitArray implements Queue<SyncNode> {
     public final SyncNode[] array;
-    private volatile int putIndex = -1;
-    private volatile int pollIndex = -1;
+    private final int putIndex = -1;
+    private final int pollIndex = -1;
 
     public SyncNodeWaitArray(int size) {
         this.array = new SyncNode[size];
