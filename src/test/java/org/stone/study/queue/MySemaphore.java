@@ -56,7 +56,7 @@ public class MySemaphore {
     /**
      * Synchronization implementation for semaphore.
      */
-    private Sync sync;
+    private final Sync sync;
 
     public MySemaphore(int size, boolean fair) {
         sync = fair ? new FairSync(size) : new NonfairSync(size);
@@ -229,7 +229,7 @@ public class MySemaphore {
             super(size);
         }
 
-        public final void release() { //transfer synchronizer
+        public void release() { //transfer synchronizer
             Borrower borrower;
             while ((borrower = borrowerQueue.poll()) != null)
                 if (transferToWaiter(STS_ACQUIRED, borrower)) return;
@@ -242,7 +242,7 @@ public class MySemaphore {
             super(size);
         }
 
-        public final void release() {//transfer synchronizer
+        public void release() {//transfer synchronizer
             usingSize.decrementAndGet();
             for (Borrower borrower : borrowerQueue)
                 if (transferToWaiter(STS_TRY_ACQUIRE, borrower)) return;

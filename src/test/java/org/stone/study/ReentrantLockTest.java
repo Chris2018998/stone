@@ -48,10 +48,10 @@ public class ReentrantLockTest {
     }
 
     private static class LockThread extends Thread {
+        private final Lock lock;
+        private final long runTime;
         String name;
         long tookTime;
-        private Lock lock;
-        private long runTime;
 
         LockThread(String name, Lock lock, long runTime) {
             this.name = name;

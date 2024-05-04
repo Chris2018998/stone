@@ -19,6 +19,7 @@ package org.stone.study;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Queue;
@@ -90,7 +91,7 @@ public class ConsumerTest {
         producersDownLatch.await();
 
         // Summary and Conclusion
-        long totalExeSize = consumerSize * operateSize;
+        long totalExeSize = (long) consumerSize * operateSize;
         BigDecimal totTime = new BigDecimal(0);
         if (queue instanceof BlockingQueue) {
             for (int i = 0; i < consumerSize; i++) {
@@ -102,7 +103,7 @@ public class ConsumerTest {
             }
         }
 
-        BigDecimal avgTime = totTime.divide(new BigDecimal(totalExeSize), 0, BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgTime = totTime.divide(new BigDecimal(totalExeSize), 0, RoundingMode.HALF_UP);
         System.out.println("<" + queueName + "> producer-size:" + producerSize + ",consumer-size:"
                 + consumerSize + ",poll total size:" + totalExeSize + ",total parkTime:" + totTime.longValue()
                 + "(ns),avg parkTime:" + avgTime + "(ns)");
@@ -111,10 +112,10 @@ public class ConsumerTest {
     }
 
     static final class Producer extends Thread {
-        private long startTime;
-        private AtomicBoolean activeInd;
-        private Queue<Object> queue;
-        private CountDownLatch producersDownLatch;
+        private final long startTime;
+        private final AtomicBoolean activeInd;
+        private final Queue<Object> queue;
+        private final CountDownLatch producersDownLatch;
 
         public Producer(long startTime, Queue<Object> queue, AtomicBoolean activeInd, CountDownLatch producersDownLatch) {
             this.startTime = startTime;
@@ -133,11 +134,11 @@ public class ConsumerTest {
     }
 
     static final class BlqConsumer extends Thread {
+        private final int operateSize;
+        private final CountDownLatch latch;
+        private final BlockingQueue<Object> queue;
         private long startTime;
         private long endTime;
-        private int operateSize;
-        private CountDownLatch latch;
-        private BlockingQueue<Object> queue;
 
         public BlqConsumer(long startTime, BlockingQueue<Object> queue, CountDownLatch latch, int operateSize) {
             this.queue = queue;
@@ -169,11 +170,11 @@ public class ConsumerTest {
     }
 
     static final class FstQConsumer extends Thread {
+        private final int operateSize;
+        private final CountDownLatch latch;
+        private final MyTransferQueue<Object> queue;
         private long startTime;
         private long endTime;
-        private int operateSize;
-        private CountDownLatch latch;
-        private MyTransferQueue<Object> queue;
 
         public FstQConsumer(long startTime, MyTransferQueue<Object> queue, CountDownLatch latch, int operateSize) {
             this.queue = queue;

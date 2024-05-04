@@ -195,7 +195,7 @@ public final class MyTransferQueue<E> extends ConcurrentLinkedQueue<E> {
      *
      * @return {@code true} if there may be other threads waiting
      */
-    public final boolean hasConsumerQueuedThreads() {
+    public boolean hasConsumerQueuedThreads() {
         return !waiterQueue.isEmpty();
     }
 
@@ -204,7 +204,7 @@ public final class MyTransferQueue<E> extends ConcurrentLinkedQueue<E> {
      *
      * @return the estimated number of threads waiting for element
      */
-    public final int getConsumerQueueLength() {
+    public int getConsumerQueueLength() {
         return waiterQueue.size();
     }
 

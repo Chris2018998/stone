@@ -19,6 +19,7 @@ package org.stone.study;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -62,19 +63,19 @@ public class WriteReadTest {
             readTotTime = readTotTime.add(new BigDecimal(threads[i].getReadTime()));
         }
 
-        BigDecimal writeAvgTime = writeTotTime.divide(new BigDecimal(totalExeSize), 0, BigDecimal.ROUND_HALF_UP);
-        BigDecimal readAvgTime = readTotTime.divide(new BigDecimal(totalExeSize), 0, BigDecimal.ROUND_HALF_UP);
+        BigDecimal writeAvgTime = writeTotTime.divide(new BigDecimal(totalExeSize), 0, RoundingMode.HALF_UP);
+        BigDecimal readAvgTime = readTotTime.divide(new BigDecimal(totalExeSize), 0, RoundingMode.HALF_UP);
 
         System.out.println("<" + queueName + "> thread-size:" + testThreadSize + ",operate-size:"
                 + operateSize + ",write avg parkTime:" + writeAvgTime + "(ns),read avg parkTime:" + readAvgTime.longValue() + "(ns)");
     }
 
     static final class WriteAndReadThread extends Thread {
+        private final int operateTimes;
+        private final CountDownLatch latch;
+        private final Queue<Object> queue;
         private long writeTime;
         private long readTime;
-        private int operateTimes;
-        private CountDownLatch latch;
-        private Queue<Object> queue;
 
         public WriteAndReadThread(Queue<Object> queue, int operateTimes, CountDownLatch latch) {
             this.queue = queue;

@@ -42,12 +42,11 @@ public class MyFutureTask<V> implements RunnableFuture {
     private static final AtomicIntegerFieldUpdater<Waiter> updater = AtomicIntegerFieldUpdater
             .newUpdater(Waiter.class, "state");
 
-    private Callable<V> callable;
-    private AtomicInteger taskState;
+    private final Callable<V> callable;
+    private final AtomicInteger taskState;
+    private final AtomicBoolean requestCancel;
+    private final ConcurrentLinkedQueue<Waiter> waitQueue;
     private volatile Thread taskThread;
-    private AtomicBoolean requestCancel;
-    private ConcurrentLinkedQueue<Waiter> waitQueue;
-
     private V result;
     private ExecutionException exception;
 

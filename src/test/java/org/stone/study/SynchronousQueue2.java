@@ -33,7 +33,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     private static final long spinForTimeoutThreshold = 1023L;
     private static final UnsafeAdaptor U = UnsafeAdaptorHolder.U;
 
-    private BufferMatcher<E> matcher;
+    private final BufferMatcher<E> matcher;
 
     //****************************************************************************************************************//
     //                                     1: constructors(2)                                                         //
@@ -231,7 +231,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     //****************************************************************************************************************//
     private static final class QueueMatcher<E> extends BufferMatcher<E> {
 
-        public final E tryMatch(Node<E> s) {
+        public E tryMatch(Node<E> s) {
             Node<E> h = head;
             Node<E> current = h.next;
             final boolean isData = s.isData;
@@ -255,7 +255,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
         }
 
         //******************************* 6.2: match *****************************************************************//
-        public final E match(Node<E> s, long nanos) {
+        public E match(Node<E> s, long nanos) {
             final boolean isData = s.isData;
             E matchedItem;
 
@@ -385,9 +385,9 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
 
         private final E item;
         private final boolean isData;
+        private final Thread waiter;
         private volatile Node<E> next;
         private volatile Node<E> match;
-        private Thread waiter;
 
         Node(E item) {
             this.item = item;

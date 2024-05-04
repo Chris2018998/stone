@@ -19,6 +19,7 @@ package org.stone.study;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Queue;
@@ -108,7 +109,7 @@ public class TryTransferTest {
             }
         }
 
-        BigDecimal avgTime = totTime.divide(new BigDecimal(totPacketSize), 0, BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgTime = totTime.divide(new BigDecimal(totPacketSize), 0, RoundingMode.HALF_UP);
         System.out.println("<" + queueName + "> producer-size:" + producerSize + ",consumer-size:" + consumerSize
                 + ",total packet size:" + totPacketSize + ",total parkTime:" + totTime.longValue() + "(ns),avg parkTime:"
                 + avgTime + "(ns)");
@@ -171,7 +172,7 @@ public class TryTransferTest {
 
     //MyTransferQueue
     static final class MyTransferQueueConsumer extends Consumer {
-        private MyTransferQueue<TransferPacket> queue;
+        private final MyTransferQueue<TransferPacket> queue;
 
         public MyTransferQueueConsumer(MyTransferQueue<TransferPacket> queue, CountDownLatch pollStartLatch, CountDownLatch pollEndDownLatch) {
             super(pollStartLatch, pollEndDownLatch);
@@ -184,7 +185,7 @@ public class TryTransferTest {
     }
 
     static final class MyTransferQueueTryTransferProducer extends Producer {
-        private MyTransferQueue<TransferPacket> queue;
+        private final MyTransferQueue<TransferPacket> queue;
 
         public MyTransferQueueTryTransferProducer(MyTransferQueue<TransferPacket> queue, AtomicBoolean activeInd, CountDownLatch producersDownLatch) {
             super(activeInd, producersDownLatch);
@@ -198,7 +199,7 @@ public class TryTransferTest {
 
     //LinkedTransferQueue
     static final class LinkedTransferQueueConsumer extends Consumer {
-        private LinkedTransferQueue<TransferPacket> queue;
+        private final LinkedTransferQueue<TransferPacket> queue;
 
         public LinkedTransferQueueConsumer(LinkedTransferQueue<TransferPacket> queue, CountDownLatch pollStartLatch, CountDownLatch pollEndDownLatch) {
             super(pollStartLatch, pollEndDownLatch);
@@ -211,7 +212,7 @@ public class TryTransferTest {
     }
 
     static final class LinkedTransferQueueTryTransferProducer extends Producer {
-        private LinkedTransferQueue<TransferPacket> queue;
+        private final LinkedTransferQueue<TransferPacket> queue;
 
         public LinkedTransferQueueTryTransferProducer(LinkedTransferQueue<TransferPacket> queue, AtomicBoolean activeInd, CountDownLatch producersDownLatch) {
             super(activeInd, producersDownLatch);

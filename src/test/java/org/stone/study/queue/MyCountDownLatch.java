@@ -34,8 +34,8 @@ public class MyCountDownLatch {
     private static final int FAILED = 2;//interrupt or timeout
     private static final AtomicIntegerFieldUpdater<Waiter> updater = AtomicIntegerFieldUpdater
             .newUpdater(Waiter.class, "state");
-    private AtomicInteger atomicCount;
-    private ConcurrentLinkedQueue<Waiter> waitQueue;
+    private final AtomicInteger atomicCount;
+    private final ConcurrentLinkedQueue<Waiter> waitQueue;
 
     public MyCountDownLatch(int count) {
         if (count < 0) throw new IllegalArgumentException("count < 0");

@@ -16,6 +16,7 @@
 package org.stone.study;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -26,7 +27,7 @@ import java.util.concurrent.locks.LockSupport;
  * @author Chris Liao
  */
 public class StaticMethodTest {
-    private static long time = TimeUnit.MILLISECONDS.toNanos(10);
+    private static final long time = TimeUnit.MILLISECONDS.toNanos(10);
 
     public static void main(String[] args) throws Exception {
         int threadSize = 1000, operateSize = 1000;
@@ -80,7 +81,7 @@ public class StaticMethodTest {
         }
 
         int totalExeSize = threadSize * operateSize;
-        BigDecimal avgTime = totTime.divide(new BigDecimal(totalExeSize), 0, BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgTime = totTime.divide(new BigDecimal(totalExeSize), 0, RoundingMode.HALF_UP);
         System.out.println("<" + name + "> thread-size:" + threadSize + ",operate-size:"
                 + operateSize + ",write avg parkTime:" + avgTime + "(ns)");
     }
@@ -90,10 +91,10 @@ public class StaticMethodTest {
     }
 
     static final class SingleInstanceThread extends Thread {
+        private final int operateTimes;
+        private final StaticMethodTest test;
+        private final CountDownLatch threadsDownLatch;
         private long tookTime;
-        private int operateTimes;
-        private StaticMethodTest test;
-        private CountDownLatch threadsDownLatch;
 
         public SingleInstanceThread(StaticMethodTest test, int operateTimes, CountDownLatch threadsDownLatch) {
             this.test = test;
@@ -116,9 +117,9 @@ public class StaticMethodTest {
     }
 
     static final class StaticMethodThread extends Thread {
+        private final int operateTimes;
+        private final CountDownLatch threadsDownLatch;
         private long tookTime;
-        private int operateTimes;
-        private CountDownLatch threadsDownLatch;
 
         public StaticMethodThread(int operateTimes, CountDownLatch threadsDownLatch) {
             this.operateTimes = operateTimes;
@@ -140,9 +141,9 @@ public class StaticMethodTest {
     }
 
     static final class ObjectMethodThread extends Thread {
+        private final int operateTimes;
+        private final CountDownLatch threadsDownLatch;
         private long tookTime;
-        private int operateTimes;
-        private CountDownLatch threadsDownLatch;
 
         public ObjectMethodThread(int operateTimes, CountDownLatch threadsDownLatch) {
             this.operateTimes = operateTimes;
@@ -156,7 +157,7 @@ public class StaticMethodTest {
         public void run() {
             long time1 = System.nanoTime();
             for (int i = 0; i < operateTimes; i++) {
-                new StaticMethodTest().work();
+                work();
             }
             tookTime = System.nanoTime() - time1;
             threadsDownLatch.countDown();

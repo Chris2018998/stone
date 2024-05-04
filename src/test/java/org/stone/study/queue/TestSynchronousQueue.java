@@ -5,8 +5,8 @@ import org.stone.study.SynchronousQueue2;
 import java.util.concurrent.*;
 
 public class TestSynchronousQueue {
+    private static final int N = 1000000;
     private static int THREAD_NUM;
-    private static int N = 1000000;
     private static ExecutorService executor;
 
     public static void main(String[] args) throws Exception {

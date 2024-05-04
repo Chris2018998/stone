@@ -19,6 +19,7 @@ package org.stone.study;
 import org.stone.study.queue.MyTransferQueue;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Queue;
@@ -119,7 +120,7 @@ public class PacketFlyTest {
             }
         }
 
-        BigDecimal avgTime = totTime.divide(new BigDecimal(totPacketSize), 0, BigDecimal.ROUND_HALF_UP);
+        BigDecimal avgTime = totTime.divide(new BigDecimal(totPacketSize), 0, RoundingMode.HALF_UP);
         System.out.println("<" + queueName + "> producer-size:" + producerSize + ",consumer-size:" + consumerSize
                 + ",total packet size:" + totPacketSize + ",total parkTime:" + totTime.longValue() + "(ns),avg parkTime:"
                 + avgTime + "(ns)");
@@ -182,7 +183,7 @@ public class PacketFlyTest {
 
     //MyTransferQueue
     static final class MyTransferQueueConsumer extends Consumer {
-        private MyTransferQueue<TransferPacket> queue;
+        private final MyTransferQueue<TransferPacket> queue;
 
         public MyTransferQueueConsumer(MyTransferQueue<TransferPacket> queue, CountDownLatch pollStartLatch, CountDownLatch pollEndDownLatch) {
             super(pollStartLatch, pollEndDownLatch);
@@ -195,7 +196,7 @@ public class PacketFlyTest {
     }
 
     static final class MyTransferQueueOfferProducer extends Producer {
-        private MyTransferQueue<TransferPacket> queue;
+        private final MyTransferQueue<TransferPacket> queue;
 
         public MyTransferQueueOfferProducer(MyTransferQueue<TransferPacket> queue, AtomicBoolean activeInd, CountDownLatch producersDownLatch) {
             super(activeInd, producersDownLatch);
@@ -209,7 +210,7 @@ public class PacketFlyTest {
 
     // BlockingQueue
     static final class BlockingQueueConsumer extends Consumer {
-        private BlockingQueue<TransferPacket> queue;
+        private final BlockingQueue<TransferPacket> queue;
 
         public BlockingQueueConsumer(BlockingQueue<TransferPacket> queue, CountDownLatch pollStartLatch, CountDownLatch pollEndDownLatch) {
             super(pollStartLatch, pollEndDownLatch);
@@ -222,7 +223,7 @@ public class PacketFlyTest {
     }
 
     static final class BlockingQueueOfferProducer extends Producer {
-        private BlockingQueue<TransferPacket> queue;
+        private final BlockingQueue<TransferPacket> queue;
 
         public BlockingQueueOfferProducer(BlockingQueue<TransferPacket> queue, AtomicBoolean activeInd, CountDownLatch producersDownLatch) {
             super(activeInd, producersDownLatch);
