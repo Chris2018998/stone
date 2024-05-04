@@ -53,9 +53,9 @@ public class LockConcurrentTest extends TestCase {
 
     //mock thread
     private static class LockTestThread extends Thread {
+        private final Lock lock;
+        private final long timePointToLock;
         private boolean acquired;
-        private Lock lock;
-        private long timePointToLock;
 
         public LockTestThread(String threadName, Lock lock, long timePointToLock) {
             this.lock = lock;

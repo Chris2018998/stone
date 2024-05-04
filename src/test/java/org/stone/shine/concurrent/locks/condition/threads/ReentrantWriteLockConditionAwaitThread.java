@@ -23,7 +23,7 @@ import java.util.concurrent.locks.Lock;
  * @version 1.0
  */
 public class ReentrantWriteLockConditionAwaitThread extends BaseThread {
-    private Lock lock;
+    private final Lock lock;
     private Date deadline;
     private boolean locked1;
     private boolean locked2;

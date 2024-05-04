@@ -23,7 +23,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  * @version 1.0
  */
 public class ReadWriteLockAcquireThread extends ConcurrentMockThread {
-    private Lock lock;
+    private final Lock lock;
 
     public ReadWriteLockAcquireThread(Lock lock, String methodName) {
         super(methodName);

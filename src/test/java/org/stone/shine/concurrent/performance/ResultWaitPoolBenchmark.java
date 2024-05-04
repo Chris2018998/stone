@@ -5,9 +5,9 @@ import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
+import org.stone.shine.util.concurrent.synchronizer.SyncVisitConfig;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -57,7 +57,7 @@ public class ResultWaitPoolBenchmark {
     }
 
     private static class AtomicResultCall implements ResultCall {
-        private AtomicInteger count = new AtomicInteger(5);
+        private final AtomicInteger count = new AtomicInteger(5);
 
         int incr() {
             return count.incrementAndGet();

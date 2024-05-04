@@ -48,10 +48,10 @@ public class ReentrantLockFullReleaseTest extends ReentrantLockConditionTestCase
     }
 
     private static class ReentrantLockConditionAwaitThread extends Thread {
+        private final ReentrantLock lock;
+        private final Condition condition;
         private AssertionError assertionError;
         private InterruptedException interruptedException;
-        private ReentrantLock lock;
-        private Condition condition;
 
         ReentrantLockConditionAwaitThread(ReentrantLock lock, Condition condition) {
             this.lock = lock;

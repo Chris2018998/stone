@@ -6,9 +6,9 @@ import org.stone.shine.util.concurrent.locks.ReentrantReadWriteLock;
 //import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ReadWriteLockReleaseTest {
-    private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private static ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private static ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private static final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private static final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
     public static void main(String[] args) throws Exception {
         //1: main thread hold write and read lock

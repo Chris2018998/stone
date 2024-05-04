@@ -23,11 +23,11 @@ import java.util.concurrent.locks.Condition;
  * @version 1.0
  */
 public class ReentrantLockConditionAwaitThread extends BaseThread {
-    private ReentrantLock lock;
+    private final ReentrantLock lock;
+    private final CountDownLatch countDown = new CountDownLatch(1);
     private Date deadline;
     private boolean locked1;
     private boolean locked2;
-    private CountDownLatch countDown = new CountDownLatch(1);
 
     public ReentrantLockConditionAwaitThread(ReentrantLock lock, Condition condition, String methodName) {
         super(condition, methodName);

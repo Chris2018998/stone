@@ -49,8 +49,8 @@ public class LockMultipleAcquireTest extends TestCase {
 
     //mock thread
     private static class LockTestThread extends Thread {
+        private final ReentrantLock lock;
         private boolean acquired;
-        private ReentrantLock lock;
 
         public LockTestThread(String threadName, ReentrantLock lock) {
             this.lock = lock;

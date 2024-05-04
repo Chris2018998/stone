@@ -6,9 +6,9 @@ import org.stone.shine.util.concurrent.locks.ReentrantReadWriteLock;
 //import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ReadWriteLockAlternateTest {
-    private static ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private static ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private static ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private static final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private static final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private static final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
     public static void main(String[] args) {
         writeLock.lock();//主线程获写锁
@@ -33,7 +33,7 @@ public class ReadWriteLockAlternateTest {
     }
 
     private static class ReadThread extends Thread {
-        private String name;
+        private final String name;
 
         ReadThread(String name) {
             this.name = name;
@@ -47,7 +47,7 @@ public class ReadWriteLockAlternateTest {
     }
 
     private static class WriteThread extends Thread {
-        private String name;
+        private final String name;
 
         WriteThread(String name) {
             this.name = name;

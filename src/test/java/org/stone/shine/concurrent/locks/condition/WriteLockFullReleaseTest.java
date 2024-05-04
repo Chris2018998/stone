@@ -42,10 +42,10 @@ public class WriteLockFullReleaseTest extends WriteLockConditionTestCase {
     }
 
     private static class ReentrantLockConditionAwaitThread extends Thread {
+        private final Lock lock;
+        private final Condition lockCondition;
         private AssertionError assertionError;
         private InterruptedException interruptedException;
-        private Lock lock;
-        private Condition lockCondition;
 
         ReentrantLockConditionAwaitThread(Lock lock, Condition lockCondition) {
             this.lock = lock;
