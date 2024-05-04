@@ -16,7 +16,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
  * @author Chris Liao
@@ -38,7 +38,7 @@ public class PropertiesFileLoadTest extends TestCase {
 
     public void test() throws Exception {
         String msg = check();
-        if (!isBlank(msg)) throw new BeeDataSourceConfigException(msg);
+        if (isNotBlank(msg)) throw new BeeDataSourceConfigException(msg);
     }
 
     private String check() throws Exception {

@@ -21,9 +21,9 @@ import java.util.Properties;
  * @version 1.0
  */
 public class DriverConnectPropertiesTest extends TestCase {
+    private final String key1 = "OracleConnection.CONNECTION_PROPERTY_THIN_NET_CONNECT_TIMEOUT";
+    private final String key2 = "oracle.jdbc.ReadTimeout";
     private BeeDataSource ds;
-    private String key1 = "OracleConnection.CONNECTION_PROPERTY_THIN_NET_CONNECT_TIMEOUT";
-    private String key2 = "oracle.jdbc.ReadTimeout";
 
     public void setUp() throws Throwable {
         BeeDataSourceConfig config = new BeeDataSourceConfig();

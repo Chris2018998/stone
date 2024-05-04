@@ -28,7 +28,7 @@ public class ValidSqlErrorSetTest extends TestCase {
         try {
             testConfig.check();
         } catch (BeeDataSourceConfigException e) {
-            if (!e.getMessage().equals("validTestSql must be start with 'select '"))
+            if (!e.getMessage().equals("Alive test sql must be start with 'select '"))
                 throw e;
         }
     }
