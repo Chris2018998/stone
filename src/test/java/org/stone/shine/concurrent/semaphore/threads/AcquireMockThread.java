@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class AcquireMockThread extends ConcurrentMockThread {
-    private Semaphore semaphore;
+    private final Semaphore semaphore;
 
     public AcquireMockThread(Semaphore semaphore, String methodName) {
         super(methodName);
