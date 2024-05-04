@@ -116,14 +116,14 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //***************************************************************************************************************//
     //                2: object borrow methods(2)                                                                    //                                                                                  //
     //***************************************************************************************************************//
-    public final BeeObjectHandle getObjectHandle() throws Exception {
+    public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Access forbidden,Keyed object pool was closed or in clearing");
 
         return defaultPool.getObjectHandle();
     }
 
-    public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
+    public BeeObjectHandle getObjectHandle(Object key) throws Exception {
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Access forbidden,Keyed object pool was closed or in clearing");
 

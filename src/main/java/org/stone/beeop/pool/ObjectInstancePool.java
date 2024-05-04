@@ -385,7 +385,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-3.3: return object to pool after borrower end of use object
-    final void recycle(PooledObject p) {
+    void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
         Iterator<ObjectBorrower> iterator = waitQueue.iterator();
 
@@ -421,7 +421,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-3.5: remove object when exception occur in return
-    final void abandonOnReturn(PooledObject p) {
+    void abandonOnReturn(PooledObject p) {
         this.removePooledEntry(p, DESC_RM_BAD);
         this.tryWakeupServantThread();
     }
@@ -685,21 +685,21 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     private static final class FairTransferPolicy implements ObjectTransferPolicy {
-        public final int getStateCodeOnRelease() {
+        public int getStateCodeOnRelease() {
             return OBJECT_USING;
         }
 
-        public final boolean tryCatch(PooledObject p) {
+        public boolean tryCatch(PooledObject p) {
             return p.state == OBJECT_USING;
         }
     }
 
     private static final class CompeteTransferPolicy implements ObjectTransferPolicy {
-        public final int getStateCodeOnRelease() {
+        public int getStateCodeOnRelease() {
             return OBJECT_IDLE;
         }
 
-        public final boolean tryCatch(PooledObject p) {
+        public boolean tryCatch(PooledObject p) {
             return ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
         }
     }
