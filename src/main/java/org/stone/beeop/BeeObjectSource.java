@@ -67,12 +67,12 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                        2: object take methods(3)                                              //
     //***************************************************************************************************************//
-    public final BeeObjectHandle getObjectHandle() throws Exception {
+    public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.ready) return pool.getObjectHandle();
         return createPoolByLock().getObjectHandle();
     }
 
-    public final BeeObjectHandle getObjectHandle(Object key) throws Exception {
+    public BeeObjectHandle getObjectHandle(Object key) throws Exception {
         if (this.ready) return pool.getObjectHandle(key);
         return createPoolByLock().getObjectHandle(key);
     }
