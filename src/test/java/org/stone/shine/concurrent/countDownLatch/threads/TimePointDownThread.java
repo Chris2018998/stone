@@ -20,7 +20,7 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 public class TimePointDownThread extends CountDownThread {
-    private long concurrentTimePoint;
+    private final long concurrentTimePoint;
 
     public TimePointDownThread(CountDownLatch latch, long concurrentTimePoint) {
         super(latch);

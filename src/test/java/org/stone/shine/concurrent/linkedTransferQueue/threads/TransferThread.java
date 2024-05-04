@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @version 1.0
  */
 public class TransferThread extends BaseThread {
-    private Object offerObject;
+    private final Object offerObject;
 
     public TransferThread(LinkedTransferQueue queue, String methodName, Object offerObject) {
         super(queue, methodName);

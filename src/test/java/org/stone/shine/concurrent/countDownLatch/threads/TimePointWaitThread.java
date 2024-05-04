@@ -21,7 +21,7 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 public class TimePointWaitThread extends ZeroCountWaitThread {
-    private long concurrentTimePoint;
+    private final long concurrentTimePoint;
 
     public TimePointWaitThread(CountDownLatch latch, long concurrentTimePoint, String methodName) {
         super(latch, methodName);

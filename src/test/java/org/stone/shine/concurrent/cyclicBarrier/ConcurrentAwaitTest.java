@@ -53,8 +53,8 @@ public class ConcurrentAwaitTest {
     }
 
     static class PassengerThread extends Thread {
-        private long time;
-        private CyclicBarrier barrier2;
+        private final long time;
+        private final CyclicBarrier barrier2;
 
         PassengerThread(CyclicBarrier barrier2, long time) {
             this.barrier2 = barrier2;
