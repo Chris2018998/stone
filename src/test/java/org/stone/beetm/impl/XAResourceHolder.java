@@ -19,9 +19,9 @@ import javax.transaction.xa.Xid;
  * @version 1.0
  */
 public class XAResourceHolder {
-    private Xid xid;
+    private final Xid xid;
 
-    private XAResource resource;
+    private final XAResource resource;
 
     public XAResourceHolder(Xid xid, XAResource resource) {
         this.xid = xid;

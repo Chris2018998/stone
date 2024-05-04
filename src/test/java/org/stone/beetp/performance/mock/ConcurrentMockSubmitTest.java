@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ConcurrentMockSubmitTest {
-    private static LinkedHashMap factoryClassNameMap = new LinkedHashMap(4);
+    private static final LinkedHashMap factoryClassNameMap = new LinkedHashMap(4);
 
     static {
         factoryClassNameMap.put("JDKOnceTask", "org.stone.beetp.performance.mock.JDKOnceTaskSubmitThreadsFactory");

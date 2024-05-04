@@ -12,7 +12,7 @@ import org.stone.beeop.BeeObjectSourceConfigException;
 
 import java.net.URL;
 
-import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
  * @author Chris.Liao
@@ -60,10 +60,10 @@ public class PropertiesFileLoadTest extends TestCase {
         config.loadFromPropertiesFile(url.getFile());
 
         String error = checkBase(config);
-        if (!isBlank(error)) throw new BeeObjectSourceConfigException(error);
+        if (isNotBlank(error)) throw new BeeObjectSourceConfigException(error);
         error = checkTimeValue(config);
-        if (!isBlank(error)) throw new BeeObjectSourceConfigException(error);
+        if (isNotBlank(error)) throw new BeeObjectSourceConfigException(error);
         error = checkInterface(config);
-        if (!isBlank(error)) throw new BeeObjectSourceConfigException(error);
+        if (isNotBlank(error)) throw new BeeObjectSourceConfigException(error);
     }
 }

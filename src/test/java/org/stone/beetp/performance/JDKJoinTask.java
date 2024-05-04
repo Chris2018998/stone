@@ -3,7 +3,7 @@ package org.stone.beetp.performance;
 import java.util.concurrent.RecursiveTask;
 
 public class JDKJoinTask extends RecursiveTask<Integer> {
-    private int[] array;
+    private final int[] array;
 
     public JDKJoinTask(int[] array) {
         this.array = array;
@@ -22,10 +22,8 @@ public class JDKJoinTask extends RecursiveTask<Integer> {
             int[] array2 = new int[len2];
 
             //2: copy value from parent array
-            for (int i = 0; i < len1; i++)
-                array1[i] = array[i];
-            for (int i = 0; i < len2; i++)
-                array2[i] = array[i + len1];
+            System.arraycopy(array, 0, array1, 0, len1);
+            System.arraycopy(array, len1, array2, 0, len2);
 
             JDKJoinTask taskLeft = new JDKJoinTask(array1);
             JDKJoinTask taskRight = new JDKJoinTask(array2);

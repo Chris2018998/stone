@@ -6,6 +6,8 @@
  */
 package org.stone.beeop;
 
+import org.junit.Test;
+
 /**
  * @author Chris.Liao
  * @version 1.0
@@ -17,6 +19,7 @@ public class TestRunner {
         org.stone.base.TestRunner.main(new String[]{"beeop", defaultFilename});
     }
 
+    @Test
     public void testRun() throws Throwable {
         long beginTime = System.currentTimeMillis();
         org.stone.base.TestRunner.main(new String[]{"beeop", defaultFilename});

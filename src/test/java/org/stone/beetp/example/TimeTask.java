@@ -21,7 +21,7 @@ import java.util.Date;
  * @version 1.0
  */
 public class TimeTask implements Task {
-    private SimpleDateFormat format;
+    private final SimpleDateFormat format;
 
     public TimeTask() {
         this.format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");

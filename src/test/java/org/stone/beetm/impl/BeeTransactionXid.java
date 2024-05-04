@@ -18,9 +18,9 @@ import javax.transaction.xa.Xid;
  * @version 1.0
  */
 public class BeeTransactionXid implements Xid {
-    private byte[] globalTransactionId;//generated in BeeTransaction
+    private final byte[] globalTransactionId;//generated in BeeTransaction
 
-    private byte[] branchQualifierId;//generated in local class
+    private final byte[] branchQualifierId;//generated in local class
 
     public BeeTransactionXid(byte[] globalTransactionId) {
         this.globalTransactionId = globalTransactionId;

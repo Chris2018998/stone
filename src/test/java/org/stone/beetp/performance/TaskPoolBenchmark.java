@@ -21,17 +21,16 @@ import java.util.concurrent.*;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 public class TaskPoolBenchmark {
+    private static final int count = 100;
+    private static final int[] numbers = new int[count];
+    private static final JDKJoinTask jdkJoinTask = new JDKJoinTask(numbers);
+    private static final ArraySumComputeTask beeJoinTask = new ArraySumComputeTask(numbers);
+    private static final JDKOnceTask callTask = new JDKOnceTask();
+    private static final BeeOnceTask helloTask = new BeeOnceTask();
+    private static final TaskJoinOperator beeJoinOperator = new ArraySumJoinOperator();
     private static TaskService taskService;
     private static ForkJoinPool forkJoinPool;
     private static ThreadPoolExecutor executor;
-    private static int count = 100;
-    private static int[] numbers = new int[count];
-    private static JDKOnceTask callTask = new JDKOnceTask();
-    private static BeeOnceTask helloTask = new BeeOnceTask();
-
-    private static JDKJoinTask jdkJoinTask = new JDKJoinTask(numbers);
-    private static TaskJoinOperator beeJoinOperator = new ArraySumJoinOperator();
-    private static ArraySumComputeTask beeJoinTask = new ArraySumComputeTask(numbers);
 
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()

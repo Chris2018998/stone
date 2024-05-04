@@ -13,7 +13,7 @@ package org.stone.beetp;
  * @version 1.0
  */
 public class BlockTask implements Task {
-    private Object syn = new Object();
+    private final Object syn = new Object();
 
     public Object call() throws Exception {
         synchronized (syn) {

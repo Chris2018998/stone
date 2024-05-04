@@ -6,6 +6,8 @@
  */
 package org.stone.beetp;
 
+import org.junit.Test;
+
 public class TestRunner {
     private static final String defaultFilename = "beetp/testCase.properties";
 
@@ -13,6 +15,7 @@ public class TestRunner {
         org.stone.base.TestRunner.main(new String[]{"beetp", defaultFilename});
     }
 
+    @Test
     public void testRun() throws Throwable {
         long beginTime = System.currentTimeMillis();
         org.stone.base.TestRunner.main(new String[]{"beetp", defaultFilename});

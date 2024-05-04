@@ -15,12 +15,12 @@ import org.stone.beeop.RawObjectFactory;
  */
 public class JavaBookFactory implements RawObjectFactory {
 
-    public Object getInitialKey(){
+    public Object getInitialKey() {
         return new Object();
     }
 
 
-    public Object getDefaultKey(){
+    public Object getDefaultKey() {
         return new Object();
     }
 

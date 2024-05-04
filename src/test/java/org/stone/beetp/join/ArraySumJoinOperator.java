@@ -31,10 +31,8 @@ public class ArraySumJoinOperator implements TaskJoinOperator<Integer> {
             int[] array2 = new int[len2];
 
             //2: copy value from parent array
-            for (int i = 0; i < len1; i++)
-                array1[i] = array[i];
-            for (int i = 0; i < len2; i++)
-                array2[i] = array[i + len1];
+            System.arraycopy(array, 0, array1, 0, len1);
+            System.arraycopy(array, len1, array2, 0, len2);
 
             //4: return sub task list(bound to parent task)
             Task<Integer>[] subTaskArray = new Task[2];

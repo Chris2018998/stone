@@ -18,7 +18,7 @@ import javax.transaction.*;
  * @version 1.0
  */
 public class BeeUserTransaction implements UserTransaction {
-    private BeeTransactionManager tm;
+    private final BeeTransactionManager tm;
 
     public BeeUserTransaction() {
         this(new BeeTransactionManager());
