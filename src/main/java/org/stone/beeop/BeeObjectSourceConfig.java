@@ -37,39 +37,39 @@ import static org.stone.tools.CommonUtil.*;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //pool name generation index which is an atomic integer start with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //properties are injected to object factory while pool initialization
-    private final Map<String, Object> factoryProperties = new HashMap<String, Object>();
+    //object factory properties map
+    private final Map<String, Object> factoryProperties = new HashMap<>();
 
-    //pool name for log trace,if null or empty,a generation name will be assigned to it after configuration check passed
+    //if null or empty,a generation name will be assigned to it after configuration check passed
     private String poolName;
     //work mode of pool semaphore,default:unfair mode
     private boolean fairMode;
     //creation size of initial objects,default is zero
     private int initialSize;
-    //creation mode of initial objects;default is false(synchronization mode)
+    //creation mode on initial objects;default is false(synchronization mode)
     private boolean asyncCreateInitObject;
-    //max object key size(pool capacity size = (maxObjectKeySize * maxActive),default is 50
+    //max key size(pool capacity size = maxObjectKeySize * maxActive),default is 50
     private int maxObjectKeySize = 50;
     //maximum of objects in instance pool,default is 10(default range: 10 =< number <=50)
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
     //max permits size of instance pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds:max wait time in pool to get objects for borrowers,default is 8000 milliseconds(8 seconds)
+    //milliseconds: max wait time in pool to get objects for borrowers,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
-    //milliseconds: max idle time on unused objects which removed from pool,default is 18000 milliseconds(3 minutes)
+    //milliseconds: max idle time,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds: max inactive time on borrowed objects,which recycled to pool by force to avoid objects leak,default is zero
+    //milliseconds: max inactive time check on borrowed objects,if timeout,pool recycled them by force to avoid objects leak,default is zero
     private long holdTimeout;
 
-    //seconds:max wait time to get validation result on a test object,default is 3 seconds.
+    //seconds: max wait time to get validation result on test connections,default is 3 seconds
     private int aliveTestTimeout = 3;
-    //milliseconds: a gap time value since from last active time,assume object is alive and need't do test on it,default is 500 milliseconds
+    //milliseconds: a gap time value from last activity time to borrowed time point,needn't do test on objects,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //milliseconds: interval time to scan idle objects or leak objects,default is 18000 milliseconds(3 minutes)
+    //milliseconds: an interval time to scan idle objects or long time hold objects,default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator on close using objects directly while pool clear,default is false
+    //indicator on direct closing borrowed objects while pool clears,default is false
     private boolean forceCloseUsingOnClear;
-    //milliseconds: a delay time value to close using objects return to pool,if still exists using,then continue to next delay,default is 3000 milliseconds
+    //milliseconds: A wait time for borrowed objects return to pool in a loop,at end of wait,try to close returned objects,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
 
     //enable indicator to register configuration and pool to Jmx,default is false
@@ -105,7 +105,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //work thread factory(priority-1)
     private BeeObjectPoolThreadFactory threadFactory;
     //class of thread factory(priority-2)
-    private Class threadFactoryClass;
+    private Class<BeeObjectPoolThreadFactory> threadFactoryClass;
     //class name of thread factory(priority-3),if not set,default factory will be applied in pool
     private String threadFactoryClassName = PoolThreadFactory.class.getName();
 
