@@ -9,10 +9,15 @@
  */
 package org.stone.beeop;
 
+import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.beeop.pool.exception.ObjectCreateException;
+import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
+import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
+
 import java.sql.SQLException;
 
 /**
- * keyed object pool interface
+ * A container interface on maintaining keyed pooled objects which can be borrowed out.
  *
  * @author Chris Liao
  * @version 1.0
@@ -20,102 +25,111 @@ import java.sql.SQLException;
 public interface BeeKeyedObjectPool {
 
     //***************************************************************************************************************//
-    //                                             1:Pool initialization                                             //
+    //                                             1: Pool initialization                                            //
     //***************************************************************************************************************//
 
     /**
-     * Launch pool with initial configuration which contains some field level items.
+     * Pool initializes with a configuration object
      *
      * @param config is a configuration object for pool initialization
-     * @throws Exception when configuration checks failed or pool initializes failed
+     * @throws Exception while configuration checks failed or pool initializes failed
      */
     void init(BeeObjectSourceConfig config) throws Exception;
 
-
     //***************************************************************************************************************//
-    //                                             2:Maintenance by keys                                             //
+    //                                             2: Maintenance by keys                                            //
     //***************************************************************************************************************//
 
     /**
-     * returns pooled keys include default key
+     * Gets keys of pooled object groups.
      *
-     * @return pooled keys exists in pool
+     * @return a keys array
      */
     Object[] keys();
 
     /**
-     * returns default pooled key
+     * Gets key of default group
      *
      * @return pooled keys exists in pool
      */
     Object getDefaultKey();
 
     /**
-     * Borrows a pooed object by default key
+     * Borrows an object from default group.
      *
-     * @return handle of a pooled object
-     * @throws Exception when get failed
+     * @return handle of a borrowed object
+     * @throws ObjectCreateException         when failed to create a new object
+     * @throws ObjectGetTimeoutException     when timeout on wait
+     * @throws ObjectGetInterruptedException when interruption on wait
      */
     BeeObjectHandle getObjectHandle() throws Exception;
 
     /**
-     * Borrows a pooled object with parameter key
+     * Borrows an object from group mapping to specified key.
      *
-     * @return handle of a pooled object
-     * @throws Exception when gets failed
+     * @return handle of a borrowed object
+     * @throws ObjectCreateException         when failed to create a new object
+     * @throws ObjectGetTimeoutException     when timeout on wait
+     * @throws ObjectGetInterruptedException when interruption on wait
      */
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     /**
-     * deletes key and key related pooled objects from pool
+     * Deletes an object group mapping to specified key.
      *
-     * @param key may be mapping to a set of pooled objects
-     * @throws Exception when delete failed
+     * @param key can being map to an object group
+     * @throws Exception when deletes failed
      */
     void deleteKey(Object key) throws Exception;
 
     /**
-     * deletes key and key related pooled objects from pool
+     * Deletes an object group mapping to specified key.
      *
-     * @param key             may be mapping to a set of pooled objects
-     * @param forceCloseUsing is true,then remove directly using objects,otherwise delay to remove using until they returned
-     * @throws Exception when delete failed
+     * @param key             can being map to an object group
+     * @param forceCloseUsing is true,direct closes borrowed objects and removes them from key mapping group;false,closes borrowed objects on they return to pool
+     * @throws Exception when group deleted failed
      */
     void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * only deletes key related pooled objects from pool
+     * Delete all objects from a group with key.
      *
-     * @param key             may be mapping to a set of pooled objects
-     * @param forceCloseUsing is true,then remove directly using objects,otherwise delay to remove using until they returned
-     * @throws Exception when delete failed
+     * @param key             can being map to an object group
+     * @param forceCloseUsing is true,direct closes borrowed objects and removes them from key mapping group;false,closes borrowed objects on they return to pool
+     * @throws Exception when objects deleted failed
      */
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * get elapsed time of lock owner thread
+     * Gets owner hold time(milliseconds) on pool lock by key.
+     *
+     * @param key can being map to an object group
+     * @return hold time on pool lock
      */
     long getPoolLockHoldTime(Object key);
 
     /**
-     * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
+     * Interrupts all threads on pool lock by key.
+     *
+     * @param key can being map to an object group
+     * @return interrupted threads
      */
     Thread[] interruptOnPoolLock(Object key);
 
     /**
-     * get monitor info by key
+     * Gets monitor info of a group by key.
      *
      * @param key may be mapping to a set of pooled objects
-     * @return a monitor object by key
+     * @return monitor of an object group
      * @throws Exception when key is null or not exist key in pool
      */
     BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception;
 
     /**
-     * enable indicator on runtime print log
+     * A switch method on runtime logs print by key
      *
      * @param key       pooled key
-     * @param indicator is a boolean value,true on,false off
+     * @param indicator is value,print logs;false,not print
      * @throws Exception when key is null or not exist key in pool
      */
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
@@ -125,23 +139,22 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Method invocation to shut down pool,there is a thead-safe control,only one thread success call
-     * it at concurrent,the pool state mark to be closed and rejects coming requests with a exception.
-     * This method support duplicated call when in closed state,do nothing,just return.
+     * This invocation cause pool to stop work,closes all objects and removes them,pool state marked as closed value
+     * when completion and all operations on pool are disabled.
      */
     void close();
 
     /**
-     * test pool whether in closed state
+     * Gets pool status whether in closed.
      *
-     * @return a boolean,true closed
+     * @return a boolean value of pool close status
      */
     boolean isClosed();
 
     /**
-     * Changes on indicator of pool runtime log print
+     * A switch method on runtime logs print on all groups
      *
-     * @param indicator true,print;false,not print
+     * @param indicator is true,pool prints runtime logs；false,not print
      */
     void setPrintRuntimeLog(boolean indicator);
 
@@ -153,24 +166,19 @@ public interface BeeKeyedObjectPool {
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Removes all pooled objects,this method should work under synchronization control,success caller update
-     * pool state from {@code ObjectPoolStatics.POOL_READY} to {@code ObjectPoolStatics.POOL_CLEARING} and
-     * interrupts all blocking waiters to leave from pool.Before completion of clearing,the pool rejects borrowing
-     * requests.All idle objects closed immediately and removed,if parameter<h1>forceCloseUsing</h1>is true,
-     * do same operation on all using objects like idle,but false,the caller thead waits using return to pool,
-     * then close them.Finally,pool state reset to {@code ObjectPoolStatics.POOL_READY} when done.
+     * Closes all objects and removes them from all groups.
      *
-     * @param forceCloseUsing is a indicator that direct close or delay close on using objects
+     * @param forceCloseUsing is true,direct closes all borrowed objects and removes them;false,closes borrowed objects on they return to pool
      */
     void clear(boolean forceCloseUsing) throws Exception;
 
     /**
-     * Removes all pooled objects and restarts pool with new configuration when the config parameter is not null,
-     * the method is similar to the previous{@link #clear}.
+     * Closes all objects and removes them from pool,then try to do reinitialization on pool with a new configuration object.
      *
-     * @param forceCloseUsing is a indicator that direct close or delay close on using objects
-     * @param config          is new configuration for pool restarting
-     * @throws SQLException when configuration checks failed or pool re-initializes failed
+     * @param forceCloseUsing is true,direct closes all borrowed objects and removes them;false,closes borrowed objects on they return to pool
+     * @param config          is a configuration object for pool reinitialize
+     * @throws BeeDataSourceConfigException when config is null
+     * @throws SQLException                 when pool reinitialize failed
      */
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 
