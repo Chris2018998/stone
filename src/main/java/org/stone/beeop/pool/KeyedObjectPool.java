@@ -190,7 +190,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     /**
      * get blocked time in connection creation a thread
      */
-    public long getElapsedTimeSinceCreationLock(Object key) {
+    public long getPoolLockHoldTime(Object key) {
         ObjectInstancePool pool = instancePoolMap.get(key);
         return pool != null ? pool.getElapsedTimeSinceCreationLock() : 0L;
     }
@@ -198,9 +198,9 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     /**
      * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
      */
-    public void interruptThreadsOnCreationLock(Object key) {
+    public Thread[] interruptOnPoolLock(Object key) {
         ObjectInstancePool pool = instancePoolMap.get(key);
-        if (pool != null) pool.interruptThreadsOnCreationLock();
+        return pool != null ? pool.interruptOnPoolLock() : null;
     }
 
     public BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception {

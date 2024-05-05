@@ -23,6 +23,8 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -271,12 +273,16 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-2.5: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
-    public void interruptThreadsOnCreationLock() {
+    public Thread[] interruptOnPoolLock() {
         try {
-            this.pooledArrayLock.interruptQueuedWaitThreads();
-            this.pooledArrayLock.interruptOwnerThread();
+            List<Thread> interrupedList = new LinkedList<>();
+            interrupedList.addAll(this.pooledArrayLock.interruptQueuedWaitThreads());
+            Thread ownerThread = this.pooledArrayLock.interruptOwnerThread();
+            if (ownerThread != null) interrupedList.add(ownerThread);
+            return (Thread[]) interrupedList.toArray();
         } catch (Throwable e) {
-            Log.warn("BeeOP({})Failed to interrupt threads on lock", e);
+            Log.warn("BeeOP({})Failed to interrupt threads on lock", this.poolName, e);
+            return null;
         }
     }
 
