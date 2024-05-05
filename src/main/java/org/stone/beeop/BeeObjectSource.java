@@ -144,4 +144,42 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
+
+    //***************************************************************************************************************//
+    //                                          4: operation by key                                                  //
+    //***************************************************************************************************************//
+    public void deleteKey(Object key) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        createPoolByLock().deleteKey(key);
+    }
+
+    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        createPoolByLock().deleteKey(key, forceCloseUsing);
+    }
+
+    public void deleteObjects(Object key, boolean forceCloseUsing) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        createPoolByLock().deleteObjects(key, forceCloseUsing);
+    }
+
+    public long getPoolLockHoldTime(Object key) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        return createPoolByLock().getPoolLockHoldTime(key);
+    }
+
+    public Thread[] interruptOnPoolLock(Object key) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        return createPoolByLock().interruptOnPoolLock(key);
+    }
+
+    public BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        return createPoolByLock().getKeyMonitorVo(key);
+    }
+
+    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        createPoolByLock().setPrintRuntimeLog(key, indicator);
+    }
 }
