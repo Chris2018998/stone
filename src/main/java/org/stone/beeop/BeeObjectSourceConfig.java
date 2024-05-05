@@ -411,11 +411,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.threadFactory = threadFactory;
     }
 
-    public Class getThreadFactoryClass() {
+    public Class<BeeObjectPoolThreadFactory> getThreadFactoryClass() {
         return threadFactoryClass;
     }
 
-    public void setThreadFactoryClass(Class threadFactoryClass) {
+    public void setThreadFactoryClass(Class<BeeObjectPoolThreadFactory> threadFactoryClass) {
         this.threadFactoryClass = threadFactoryClass;
     }
 
@@ -440,7 +440,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //                                     4: configuration file load(3)                                             //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
-        if (isBlank(filename)) throw new IllegalArgumentException("Configuration properties file can't be null");
+        if (isBlank(filename))
+            throw new IllegalArgumentException("Configuration file name can't be null or empty");
+        if (!filename.toLowerCase().endsWith(".properties"))
+            throw new IllegalArgumentException("Configuration file name file must end with '.properties'");
 
         File file = new File(filename);
         if (file.exists()) {
@@ -449,13 +452,15 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             Class selfClass = BeeObjectSourceConfig.class;
             InputStream propertiesStream = selfClass.getResourceAsStream(filename);
             if (propertiesStream == null) propertiesStream = selfClass.getClassLoader().getResourceAsStream(filename);
+            if (propertiesStream == null)
+                throw new IllegalArgumentException("Not found configuration file:" + filename);
 
             Properties prop = new Properties();
             try {
                 prop.load(propertiesStream);
                 loadFromProperties(prop);
             } catch (IOException e) {
-                throw new IllegalArgumentException("Configuration properties file load failed", e);
+                throw new IllegalArgumentException("Failed to load configuration properties file:" + filename, e);
             } finally {
                 if (propertiesStream != null) {
                     try {
@@ -484,7 +489,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         } catch (BeeObjectSourceConfigException e) {
             throw e;
         } catch (Throwable e) {
-            throw new BeeObjectSourceConfigException("Failed to load configuration properties file:", e);
+            throw new BeeObjectSourceConfigException("Failed to load configuration properties file:" + file, e);
         } finally {
             if (stream != null) try {
                 stream.close();

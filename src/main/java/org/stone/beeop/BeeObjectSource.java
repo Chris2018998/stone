@@ -21,7 +21,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * Bee Object object source
+ * Bee object source impl.
  * <p>
  * Email:  Chris2018998@tom.com
  * Project: https://github.com/Chris2018998/stone
@@ -128,18 +128,18 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         return pool.getPoolMonitorVo();
     }
 
     public void clear(boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         pool.clear(forceCloseUsing);
     }
 
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
-        if (config == null) throw new BeeObjectSourceConfigException("Object pool config can't be null");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        if (config == null) throw new BeeObjectSourceConfigException("Pool configuration can't be null");
         pool.clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
@@ -149,37 +149,37 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     //                                          4: operation by key                                                  //
     //***************************************************************************************************************//
     public void deleteKey(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         createPoolByLock().deleteKey(key);
     }
 
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         createPoolByLock().deleteKey(key, forceCloseUsing);
     }
 
     public void deleteObjects(Object key, boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         createPoolByLock().deleteObjects(key, forceCloseUsing);
     }
 
     public long getPoolLockHoldTime(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         return createPoolByLock().getPoolLockHoldTime(key);
     }
 
     public Thread[] interruptOnPoolLock(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         return createPoolByLock().interruptOnPoolLock(key);
     }
 
-    public BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
-        return createPoolByLock().getKeyMonitorVo(key);
+    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return createPoolByLock().getMonitorVo(key);
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Object pool not initialized");
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         createPoolByLock().setPrintRuntimeLog(key, indicator);
     }
 }

@@ -9,12 +9,10 @@
  */
 package org.stone.beeop;
 
-import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beeop.pool.exception.ObjectCreateException;
 import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
 import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
-
-import java.sql.SQLException;
+import org.stone.beeop.pool.exception.PoolInitializeFailedException;
 
 /**
  * A container interface on maintaining keyed pooled objects which can be borrowed out.
@@ -123,7 +121,7 @@ public interface BeeKeyedObjectPool {
      * @return monitor of an object group
      * @throws Exception when key is null or not exist key in pool
      */
-    BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception;
+    BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception;
 
     /**
      * A switch method on runtime logs print by key
@@ -177,8 +175,8 @@ public interface BeeKeyedObjectPool {
      *
      * @param forceCloseUsing is true,direct closes all borrowed objects and removes them;false,closes borrowed objects on they return to pool
      * @param config          is a configuration object for pool reinitialize
-     * @throws BeeDataSourceConfigException when config is null
-     * @throws SQLException                 when pool reinitialize failed
+     * @throws BeeObjectSourceConfigException when config is null
+     * @throws PoolInitializeFailedException  when pool reinitialize failed
      */
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 

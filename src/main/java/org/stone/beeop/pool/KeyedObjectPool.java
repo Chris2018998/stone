@@ -203,7 +203,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return pool != null ? pool.interruptOnPoolLock() : null;
     }
 
-    public BeeObjectPoolMonitorVo getKeyMonitorVo(Object key) throws Exception {
+    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
         if (key == null) throw new ObjectKeyException("Object key can't be null");
 
         ObjectInstancePool pool = instancePoolMap.get(key);
