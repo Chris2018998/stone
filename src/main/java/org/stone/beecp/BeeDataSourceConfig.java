@@ -721,9 +721,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //****************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         if (isBlank(filename))
-            throw new IllegalArgumentException("Data source configuration file name can't be null or empty");
+            throw new IllegalArgumentException("Configuration file name can't be null or empty");
         if (!filename.toLowerCase().endsWith(".properties"))
-            throw new IllegalArgumentException("Data source configuration file name file must end with '.properties'");
+            throw new IllegalArgumentException("Configuration file name file must end with '.properties'");
 
         File file = new File(filename);
         if (file.exists()) {
@@ -732,14 +732,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             Class<BeeDataSourceConfig> selfClass = BeeDataSourceConfig.class;
             InputStream propertiesStream = selfClass.getResourceAsStream(filename);
             if (propertiesStream == null) propertiesStream = selfClass.getClassLoader().getResourceAsStream(filename);
-            if (propertiesStream == null) throw new IllegalArgumentException("Not found file:" + filename);
+            if (propertiesStream == null)
+                throw new IllegalArgumentException("Not found configuration file:" + filename);
 
             Properties prop = new Properties();
             try {
                 prop.load(propertiesStream);
                 loadFromProperties(prop);
             } catch (IOException e) {
-                throw new IllegalArgumentException("Configuration properties file load failed", e);
+                throw new IllegalArgumentException("Failed to load configuration properties file:" + filename, e);
             } finally {
                 if (propertiesStream != null) {
                     try {
@@ -754,8 +755,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     public void loadFromPropertiesFile(File file) {
         if (file == null) throw new IllegalArgumentException("Configuration properties file can't be null");
-        if (!file.exists())
-            throw new IllegalArgumentException("Configuration properties file not found:" + file);
+        if (!file.exists()) throw new IllegalArgumentException("Configuration properties file not found:" + file);
         if (!file.isFile()) throw new IllegalArgumentException("Target object is not a valid file");
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
             throw new IllegalArgumentException("Target file is not a properties file");
@@ -770,12 +770,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         } catch (BeeDataSourceConfigException e) {
             throw e;
         } catch (Throwable e) {
-            throw new BeeDataSourceConfigException("Failed to load configuration properties file", e);
+            throw new BeeDataSourceConfigException("Failed to load configuration properties file:" + file, e);
         } finally {
             if (stream != null) try {
                 stream.close();
             } catch (Throwable e) {
-                CommonLog.warn("Failed to close inputStream of configuration properties file", e);
+                CommonLog.warn("Failed to close inputStream of configuration properties file:" + file, e);
             }
         }
     }
