@@ -65,7 +65,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
     //max permits size of pool semaphore
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
-    //milliseconds:max wait time in pool to get connections,default is 8000 milliseconds(8 seconds)
+    //milliseconds: max wait time in pool to get connections,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
 
     //seconds: max wait time effects inside a driver or a datasource to establish raw connections.
@@ -83,15 +83,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     //an alive test sql executed on borrowed connections,if dead,removed from pool
     private String aliveTestSql = "SELECT 1";
-    //seconds:max wait time to get validation result on test connections,default is 3 seconds.
+    //seconds: max wait time to get validation result on test connections,default is 3 seconds.
     private int aliveTestTimeout = 3;
     //milliseconds: a gap time value from last activity time to borrowed time point,needn't do test on connections,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //milliseconds: interval time to scan idle connections or long time hold connections,default is 18000 milliseconds(3 minutes)
+    //milliseconds: an interval time to scan idle connections or long time hold connections,default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator on close using connections directly while pool clear,default is false
+    //indicator on direct closing borrowed connections while pool clears,default is false
     private boolean forceCloseUsingOnClear;
-    //milliseconds: a delay time value to close using connections return to pool,if still exists using,then continue to next delay,default is 3000 milliseconds
+    //milliseconds: A wait time for borrowed connections return to pool in a loop,at end of wait,try to close returned connections,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
     //error code list check on vendorCode of thrown sql exceptions,if matched,connections evicted from pool,@see field vendorCode of SQLException.class
     private List<Integer> sqlExceptionCodeList;
@@ -137,10 +137,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     /**
      * connection factory class,which must be implement one of the below four interfaces
-     * 1:<class>RawConnectionFactory</class>
-     * 2:<class>RawXaConnectionFactory</class>
-     * 3:<class>DataSource</class>
-     * 4:<class>XADataSource</class>
+     * 1: <class>RawConnectionFactory</class>
+     * 2: <class>RawXaConnectionFactory</class>
+     * 3: <class>DataSource</class>
+     * 4: <class>XADataSource</class>
      */
     //connection factory instance
     private Object connectionFactory;
