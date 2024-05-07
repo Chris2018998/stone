@@ -52,7 +52,7 @@ public interface BeeConnectionPool {
     XAConnection getXAConnection() throws SQLException;
 
     /**
-     * This invocation cause pool to stop work,all connections are closed and removed,pool state marked as closed value
+     * This invocation cause pool to stop work,close all connections and removes them,pool state marked as closed value
      * when completion and all operations on pool are disabled.
      */
     void close();
