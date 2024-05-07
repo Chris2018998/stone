@@ -90,14 +90,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //object factory(priority-1)
     private RawObjectFactory objectFactory;
     //object factory class(priority-2)
-    private Class objectFactoryClass;
+    private Class<? extends RawObjectFactory> objectFactoryClass;
     //object factory class name(priority-3)
     private String objectFactoryClassName;
 
     //method call filter(priority-1)
     private RawObjectMethodFilter objectMethodFilter;
     //object method call filter class(priority-2)
-    private Class objectMethodFilterClass;
+    private Class<? extends RawObjectMethodFilter> objectMethodFilterClass;
     //object method call filter class name(priority-3)
     private String objectMethodFilterClassName;
 
@@ -105,7 +105,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //work thread factory(priority-1)
     private BeeObjectPoolThreadFactory threadFactory;
     //class of thread factory(priority-2)
-    private Class<BeeObjectPoolThreadFactory> threadFactoryClass;
+    private Class<? extends BeeObjectPoolThreadFactory> threadFactoryClass;
     //class name of thread factory(priority-3),if not set,default factory will be applied in pool
     private String threadFactoryClassName = PoolThreadFactory.class.getName();
 
@@ -351,8 +351,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         return objectMethodFilterClass;
     }
 
-    public void setObjectMethodFilterClass(Class objectMethodFilterClass) {
-        this.objectMethodFilterClass = objectMethodFilterClass;
+    public void setObjectMethodFilterClass(Class<? extends RawObjectMethodFilter> filterClass) {
+        this.objectMethodFilterClass = filterClass;
     }
 
     public String getObjectMethodFilterClassName() {
@@ -411,11 +411,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.threadFactory = threadFactory;
     }
 
-    public Class<BeeObjectPoolThreadFactory> getThreadFactoryClass() {
+    public Class<? extends BeeObjectPoolThreadFactory> getThreadFactoryClass() {
         return threadFactoryClass;
     }
 
-    public void setThreadFactoryClass(Class<BeeObjectPoolThreadFactory> threadFactoryClass) {
+    public void setThreadFactoryClass(Class<? extends BeeObjectPoolThreadFactory> threadFactoryClass) {
         this.threadFactoryClass = threadFactoryClass;
     }
 
