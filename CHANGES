@@ -10,7 +10,9 @@ Changes in 1.3.3
 4:[beecp]rename connection eviction predicate class.
      SQLExceptionPredication ---> BeeConnectionPredicate
 5:[beecp]some optimization on source code 
-6:[beecp]add more pool methods to BeeObjectSource
+6:[beeop]add more pool methods to BeeObjectSource
+7:[beecp]add toString() method to jdbc proxy objects
+
 
 Changes in 1.3.2
 
