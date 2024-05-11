@@ -71,12 +71,10 @@ public class CommonUtil {
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to load classpath file:" + filename);
         } finally {
-            if (fileStream != null) {
-                try {
-                    fileStream.close();
-                } catch (IOException e) {
-                    System.err.println("Failed to close stream on classpath file:" + filename);
-                }
+            try {
+                fileStream.close();
+            } catch (IOException e) {
+                System.err.println("Failed to close stream on classpath file:" + filename);
             }
         }
     }
