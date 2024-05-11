@@ -14,7 +14,6 @@ import org.stone.beecp.pool.*;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -738,7 +737,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             File file = new File(filename);
             if (!file.exists()) throw new IllegalArgumentException("Not found configuration file:" + filename);
             if (!file.isFile())
-                throw new IllegalArgumentException("Target object is a valid configuration file," + filename);
+                throw new IllegalArgumentException("Target object is a valid configuration file:" + filename);
             loadFromPropertiesFile(file);
         }
     }
