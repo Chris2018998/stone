@@ -18,8 +18,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import static org.stone.beeop.pool.ObjectPoolStatics.PoolClassLoader;
-
 /**
  * Object proxy
  *
@@ -27,6 +25,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.PoolClassLoader;
  * @version 1.0
  */
 public final class ObjectProxyHandle extends ObjectSimpleHandle {
+    private static final ClassLoader PoolClassLoader = ObjectPoolStatics.class.getClassLoader();
     private Object objectProxy;
     private Exception failCause;
 

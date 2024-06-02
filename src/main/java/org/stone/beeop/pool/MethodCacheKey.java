@@ -20,9 +20,9 @@ import java.util.Arrays;
 
 final class MethodCacheKey {
     private final String name;
-    private final Class[] types;
+    private final Class<?>[] types;
 
-    MethodCacheKey(String name, Class[] types) {
+    MethodCacheKey(String name, Class<?>[] types) {
         this.name = name;
         this.types = types;
     }

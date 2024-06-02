@@ -18,5 +18,5 @@ package org.stone.beeop;
 
 public interface RawObjectMethodFilter {
 
-    void doFilter(Object key, String methodName, Class[] paramTypes, Object[] paramValues) throws Exception;
+    void doFilter(Object key, String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
 }

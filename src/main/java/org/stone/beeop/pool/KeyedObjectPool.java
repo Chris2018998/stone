@@ -24,7 +24,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 
 /**
- * keyed Keyed object pool
+ * keyed object pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -87,7 +87,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (this.servantService == null || servantService.getCorePoolSize() != coreThreadSize) {
             if (servantService != null) servantService.shutdown();
             this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15,
-                    TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(maxObjectKeySize), poolThreadFactory);
+                    TimeUnit.SECONDS, new LinkedBlockingQueue<>(maxObjectKeySize), poolThreadFactory);
         }
 
         //step4: create idle-scan scheduled executor
@@ -261,10 +261,10 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         int idleSize = 0, usingSize = 0;
         for (ObjectInstancePool pool : instancePoolMap.values()) {
             BeeObjectPoolMonitorVo monitorVo = pool.getPoolMonitorVo();
-            idleSize = +monitorVo.getIdleSize();
-            usingSize = +monitorVo.getUsingSize();
-            semaphoreWaitingSize = +monitorVo.getSemaphoreWaitingSize();
-            transferWaitingSize = +monitorVo.getTransferWaitingSize();
+            idleSize += monitorVo.getIdleSize();
+            usingSize += monitorVo.getUsingSize();
+            semaphoreWaitingSize += monitorVo.getSemaphoreWaitingSize();
+            transferWaitingSize += monitorVo.getTransferWaitingSize();
         }
         poolMonitorVo.setIdleSize(idleSize);
         poolMonitorVo.setUsingSize(usingSize);

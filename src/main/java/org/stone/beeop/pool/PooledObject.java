@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
+import static org.stone.tools.BeanUtil.CommonLog;
 
 /**
  * Pooled object
@@ -86,7 +87,7 @@ final class PooledObject implements Cloneable {
         try {
             state = ObjectPoolStatics.OBJECT_CLOSED;
         } catch (Throwable e) {
-            ObjectPoolStatics.CommonLog.error("Object close error", e);
+            CommonLog.error("Object close error", e);
         } finally {
             this.factory.destroy(key, raw);
         }

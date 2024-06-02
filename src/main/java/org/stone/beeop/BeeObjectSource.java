@@ -9,7 +9,6 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.pool.ObjectPoolStatics;
 import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
 import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
 import org.stone.beeop.pool.exception.PoolNotCreatedException;
@@ -19,12 +18,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.stone.tools.BeanUtil.createClassInstance;
 
 /**
  * Bee object source impl.
  * <p>
  * Email:  Chris2018998@tom.com
- * Project: https://github.com/Chris2018998/stone
+ * Project: <a href="https://github.com/Chris2018998/stone">...</a>
  *
  * @author Chris Liao
  * @version 1.0
@@ -57,7 +57,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
 
     private static void createPool(BeeObjectSource os) throws Exception {
         Class<?> poolClass = Class.forName(os.getPoolImplementClassName());
-        BeeKeyedObjectPool pool = (BeeKeyedObjectPool) ObjectPoolStatics.createClassInstance(poolClass, BeeKeyedObjectPool.class, "pool");
+        BeeKeyedObjectPool pool = (BeeKeyedObjectPool) createClassInstance(poolClass, BeeKeyedObjectPool.class, "pool");
 
         pool.init(os);
         os.pool = pool;
