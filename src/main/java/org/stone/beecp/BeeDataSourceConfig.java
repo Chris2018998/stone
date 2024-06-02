@@ -10,6 +10,7 @@
 package org.stone.beecp;
 
 import org.stone.beecp.pool.*;
+import org.stone.tools.exception.BeanException;
 
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
@@ -28,6 +29,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
 
 /**
@@ -67,7 +69,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     //milliseconds: max wait time in pool to get connections,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
 
-    //seconds: max wait time effects inside a driver or a datasource to establish raw connections.
+    //seconds: a driver level item,which is a max wait time establish connections to db.
     //Two connection creation modes supported in bee datasource configuration
     //1: driver mode,driverClassName field has been set or a matched driver can be searched with url
     //2: factory mode,@see field connectionFactoryClass(supports four types)
@@ -788,7 +790,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
         String sqlExceptionCode = setValueMap.remove(CONFIG_SQL_EXCEPTION_CODE);//remove item if exists in properties file before injection
         String sqlExceptionState = setValueMap.remove(CONFIG_SQL_EXCEPTION_STATE);//remove item if exists in properties file before injection
         String exclusionListText = setValueMap.remove(CONFIG_CONFIG_PRINT_EXCLUSION_LIST);
-        setPropertiesValue(this, setValueMap);
+        try {
+            setPropertiesValue(this, setValueMap);
+        } catch (BeanException e) {
+            throw new BeeDataSourceConfigException(e.getMessage(), e);
+        }
+
 
         //3:try to find 'connectProperties' config value and put to ds config object
         this.addConnectProperty(connectPropertiesText);

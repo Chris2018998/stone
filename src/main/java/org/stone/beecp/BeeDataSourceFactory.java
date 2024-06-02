@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
@@ -95,7 +96,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
         //3:get all properties set methods
         Map<String, Method> setMethodMap = getClassSetMethodMap(config.getClass());
         //4:create properties to collect config value
-        Map<String, Object> setValueMap = new HashMap<String, Object>(setMethodMap.size());
+        Map<String, Object> setValueMap = new HashMap<>(setMethodMap.size());
         //5:loop to find out properties config value by set methods
         for (String propertyName : setMethodMap.keySet()) {
             String configVal = getConfigValue(ref, propertyName);
