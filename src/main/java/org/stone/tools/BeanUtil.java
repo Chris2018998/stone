@@ -65,7 +65,7 @@ public class BeanUtil {
      * <p>
      * conversion1(hump): maxActive
      * conversion2(middle-line): max-active
-     * conversion2(under-line): max_active
+     * conversion2(under_line): max_active
      *
      * @param valueMap     is a properties value map
      * @param propertyName is a value search key
@@ -94,7 +94,7 @@ public class BeanUtil {
      * <p>
      * conversion1(hump): maxActive
      * conversion2(middle-line): max-active
-     * conversion2(under-line): max_active
+     * conversion2(under_line): max_active
      *
      * @param valueMap     is a properties value map
      * @param propertyName is a value search key
@@ -179,13 +179,13 @@ public class BeanUtil {
                 try {
                     setMethod.invoke(bean, setValue);
                 } catch (IllegalAccessException e) {
-                    throw new PropertyValueSetFailedException("Failed to set value on property[" + propertyName + "],message" + e.getMessage(), e);
+                    throw new PropertyValueSetFailedException("Failed to set value on property[" + propertyName + "],message:" + e.getMessage(), e);
                 } catch (InvocationTargetException e) {
                     Throwable cause = e.getTargetException();
                     if (cause == null) {
-                        throw new PropertyValueSetFailedException("Failed to set value on property[" + propertyName + "],message" + e.getMessage(), e);
+                        throw new PropertyValueSetFailedException("Failed to set value on property[" + propertyName + "],message:" + e.getMessage(), e);
                     } else {
-                        throw new PropertyValueSetFailedException("Failed to set value on property[" + propertyName + "],message" + cause.getMessage(), cause);
+                        throw new PropertyValueSetFailedException("Failed to set value on property[" + propertyName + "],message:" + cause.getMessage(), cause);
                     }
                 }
             }
@@ -193,7 +193,7 @@ public class BeanUtil {
     }
 
     /**
-     * Create an instance for a bean class
+     * Create instance for a bean class
      *
      * @param beanClass       is need be instantiated
      * @param parentClass     is parent class for type check(it may be an interface should be implemented by bean class)
@@ -206,7 +206,7 @@ public class BeanUtil {
     }
 
     /**
-     * Create an instance for a bean class
+     * Create instance for a bean class
      *
      * @param beanClass     is need be instantiated
      * @param parentClasses is an array for type check(bean parent class and interfaces)
@@ -222,7 +222,7 @@ public class BeanUtil {
         int modifiers = beanClass.getModifiers();
         if (Modifier.isAbstract(modifiers))
             throw new BeanException("Bean class can't be abstract");
-        //2:check class public modifier
+        //3:check class public modifier
         if (!Modifier.isPublic(modifiers))
             throw new BeanException("Not defined public constructor in bean class");
         //4:check extension
@@ -238,10 +238,10 @@ public class BeanUtil {
                 }
             }
             if (parentClassCount > 0 && !isSubClass)
-                throw new BeanException("Can‘t create a instance on class[" + beanClass.getName() + "]which must extend from one of type[" + getClassName(parentClasses) + "]at least,creation category[" + beanClassType + "]");
+                throw new BeanException("Can‘t create instance on class[" + beanClass.getName() + "]which must extend from one of type[" + getClassName(parentClasses) + "]at least,creation category[" + beanClassType + "]");
         }
 
-        //4:create instance with constructor
+        //5: create instance with constructor
         try {
             return beanClass.getConstructor().newInstance();
         } catch (Throwable e) {
