@@ -84,6 +84,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private InterruptionReentrantLock pooledArrayLock;
     private volatile long pooledArrayLockedTimePoint;//milliseconds
     private volatile PooledObject[] pooledArray;
+    private final boolean enableThreadLocal;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
     private ObjectPoolMonitorVo monitorVo;
@@ -99,6 +100,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
         this.poolMode = isFairMode ? "fair" : "compete";
+        this.enableThreadLocal = config.isEnableThreadLocal();
         this.semaphoreSize = config.getBorrowSemaphoreSize();
         this.maxWaitMs = config.getMaxWait();
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
@@ -151,7 +153,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.pooledArrayLock = new InterruptionReentrantLock();
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
 
-        this.threadLocal = new BorrowerThreadLocal();
+        if (this.enableThreadLocal)
+            this.threadLocal = new BorrowerThreadLocal();
         this.semaphore = new InterruptionSemaphore(semaphoreSize, isFairMode);
         this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         this.servantState = new AtomicInteger(THREAD_WAITING);
@@ -302,17 +305,23 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             throw new ObjectGetForbiddenException("Access rejected,cause:pool closed or in clearing");
 
         //0:try to get from threadLocal cache
-        ObjectBorrower b = this.threadLocal.get().get();
-        if (b != null) {
-            PooledObject p = b.lastUsed;
-            if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
-                if (this.testOnBorrow(p)) return handleFactory.createHandle(p, b);
-                b.lastUsed = null;
+        ObjectBorrower b;
+        if (this.enableThreadLocal) {
+            b = this.threadLocal.get().get();
+            if (b != null) {
+                PooledObject p = b.lastUsed;
+                if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
+                    if (this.testOnBorrow(p)) return handleFactory.createHandle(p, b);
+                    b.lastUsed = null;
+                }
+            } else {
+                b = new ObjectBorrower();
+                this.threadLocal.set(new WeakReference<>(b));
             }
         } else {
             b = new ObjectBorrower();
-            this.threadLocal.set(new WeakReference<ObjectBorrower>(b));
         }
+
 
         long deadline = System.nanoTime();
         try {

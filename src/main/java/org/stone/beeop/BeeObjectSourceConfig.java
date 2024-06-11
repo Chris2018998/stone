@@ -10,7 +10,6 @@
 package org.stone.beeop;
 
 import org.stone.beeop.pool.KeyedObjectPool;
-import org.stone.beeop.pool.PoolThreadFactory;
 import org.stone.tools.CommonUtil;
 import org.stone.tools.exception.BeanException;
 
@@ -71,6 +70,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     //milliseconds: A wait time for borrowed objects return to pool in a loop,at end of wait,try to close returned objects,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
 
+
+    //thread local cache enable,default is true(set to be false to support virtual threads)
+    private boolean enableThreadLocal = true;
     //enable indicator to register configuration and pool to Jmx,default is false
     private boolean enableJmx;
     //enable indicator to print pool runtime log,default is false
@@ -99,14 +101,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     private Class<? extends RawObjectMethodFilter> objectMethodFilterClass;
     //object method call filter class name(priority-3)
     private String objectMethodFilterClassName;
-
-
-    //work thread factory(priority-1)
-    private BeeObjectPoolThreadFactory threadFactory;
-    //class of thread factory(priority-2)
-    private Class<? extends BeeObjectPoolThreadFactory> threadFactoryClass;
-    //class name of thread factory(priority-3),if not set,default factory will be applied in pool
-    private String threadFactoryClassName = PoolThreadFactory.class.getName();
 
     //pool implementation class name
     private String poolImplementClassName = KeyedObjectPool.class.getName();
@@ -266,6 +260,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         this.enableJmx = enableJmx;
     }
 
+    public boolean isEnableThreadLocal() {
+        return enableThreadLocal;
+    }
+
+    public void setEnableThreadLocal(boolean enableThreadLocal) {
+        this.enableThreadLocal = enableThreadLocal;
+    }
+
     public boolean isPrintRuntimeLog() {
         return this.printRuntimeLog;
     }
@@ -400,32 +402,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
     }
 
     //***************************************************************************************************************//
-    //                                     3: pool work configuration(8)                                             //
+    //                                     3: pool work configuration(2)                                             //
     //***************************************************************************************************************//
-    public BeeObjectPoolThreadFactory getThreadFactory() {
-        return threadFactory;
-    }
-
-    public void setThreadFactory(BeeObjectPoolThreadFactory threadFactory) {
-        this.threadFactory = threadFactory;
-    }
-
-    public Class<? extends BeeObjectPoolThreadFactory> getThreadFactoryClass() {
-        return threadFactoryClass;
-    }
-
-    public void setThreadFactoryClass(Class<? extends BeeObjectPoolThreadFactory> threadFactoryClass) {
-        this.threadFactoryClass = threadFactoryClass;
-    }
-
-    public String getThreadFactoryClassName() {
-        return threadFactoryClassName;
-    }
-
-    public void setThreadFactoryClassName(String threadFactoryClassName) {
-        this.threadFactoryClassName = threadFactoryClassName;
-    }
-
     public String getPoolImplementClassName() {
         return this.poolImplementClassName;
     }
@@ -559,16 +537,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
         //3:load object implemented interfaces
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
 
-        //create pool thread factory
-        BeeObjectPoolThreadFactory threadFactory = this.createThreadFactory();
-
         //4:create a checked configuration and copy local fields to it
         BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
         copyTo(checkedConfig);
 
         //5:set temp to config
         checkedConfig.objectFactory = objectFactory;
-        checkedConfig.threadFactory = threadFactory;
         if (tempMethodFilter != null) checkedConfig.objectMethodFilter = tempMethodFilter;
         if (tempObjectInterfaces != null) checkedConfig.objectInterfaces = tempObjectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
@@ -702,29 +676,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigJmxBean {
             }
 
         return rawObjectFactory;
-    }
-
-    //create Thread factory
-    private BeeObjectPoolThreadFactory createThreadFactory() throws BeeObjectSourceConfigException {
-        //step1: if exists thread factory,then return it
-        if (this.threadFactory != null) return this.threadFactory;
-
-        //step2: configuration of thread factory
-        if (this.threadFactoryClass == null && isBlank(this.threadFactoryClassName))
-            throw new BeeObjectSourceConfigException("Must provide one of config items[threadFactory,threadFactoryClass,threadFactoryClassName]");
-
-        //step3: create thread factory by class or class name
-        Class<?> threadFactClass = null;
-        try {
-            threadFactClass = this.threadFactoryClass != null ? this.threadFactoryClass : Class.forName(this.threadFactoryClassName);
-            return (BeeObjectPoolThreadFactory) createClassInstance(threadFactClass, PoolThreadFactory.class, "pool thread factory");
-        } catch (ClassNotFoundException e) {
-            throw new BeeObjectSourceConfigException("Not found thread factory class:" + threadFactoryClassName, e);
-        } catch (BeeObjectSourceConfigException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new BeeObjectSourceConfigException("Failed to create pool thread factory by class:" + threadFactClass, e);
-        }
     }
 }
 
