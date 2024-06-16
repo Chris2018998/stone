@@ -71,9 +71,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final String poolHostIP;
     private final long poolThreadId;
     private final String poolThreadName;
-    private boolean printRuntimeLog;
+    private final boolean enableThreadLocal;
     //clone end
-
+    private boolean printRuntimeLog;
     //set by clone method
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
@@ -84,7 +84,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private InterruptionReentrantLock pooledArrayLock;
     private volatile long pooledArrayLockedTimePoint;//milliseconds
     private volatile PooledObject[] pooledArray;
-    private final boolean enableThreadLocal;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
     private ObjectPoolMonitorVo monitorVo;
@@ -181,15 +180,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         try {
             for (int i = 0; i < initSize; i++)
                 this.createPooledEntry(OBJECT_IDLE);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             for (PooledObject pooledEntry : this.pooledArray)
                 this.removePooledEntry(pooledEntry, DESC_RM_INIT);
 
             if (syn) {//throw exception on syn mode
-                if (e instanceof Exception)
-                    throw (Exception) e;
-                else
-                    throw new PoolInitializeFailedException(e);
+                throw e;
             } else {
                 Log.warn("BeeOP({})failed to create initialization objects", poolName, e);
             }
@@ -455,7 +451,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //                          4: Async Servant(2)                                                                  //                                                                                  //
     //***************************************************************************************************************//
-    //Method-4.1: try to wakeup servant thread to work if it waiting
+    //Method-4.1: try to wakeup servant thread to work if it in waiting
     private void tryWakeupServantThread() {
         int c;
         do {
@@ -557,7 +553,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             this.pooledArrayLock.interruptQueuedWaitThreads();
             this.pooledArrayLock.interruptOwnerThread();
         } catch (Throwable e) {
-            Log.info("BeeOP({})failed to interrupt threads on lock", e);
+            Log.info("BeeOP({})failed to interrupt threads on lock", this.poolName, e);
         }
 
         //3:clear all connections
@@ -607,6 +603,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         do {
             int poolStateCode = this.poolState;
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
+            if (poolStateCode == POOL_NEW && PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
                 LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
