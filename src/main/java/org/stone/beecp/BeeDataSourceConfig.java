@@ -778,7 +778,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
             throw new BeeDataSourceConfigException(e.getMessage(), e);
         }
 
-
         //3:try to find 'connectProperties' config value and put to ds config object
         this.addConnectProperty(connectPropertiesText);
         if (isNotBlank(connectPropertiesSize)) {
@@ -851,7 +850,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
 
     //copy configuration info to other from local
     void copyTo(BeeDataSourceConfig config) {
-        String fieldName = "";
+        String fieldName = null;
         try {
             for (Field field : BeeDataSourceConfig.class.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers())) continue;
@@ -875,10 +874,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
                         break;
                     default: //other config items
                         field.set(config, field.get(this));
-                        break;
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new BeeDataSourceConfigException("Failed to copy field[" + fieldName + "]", e);
         }
     }
