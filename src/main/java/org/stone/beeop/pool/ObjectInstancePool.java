@@ -273,16 +273,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-2.5: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
     public Thread[] interruptOnPoolLock() {
-        try {
-            List<Thread> interrupedList = new LinkedList<>();
-            interrupedList.addAll(this.pooledArrayLock.interruptQueuedWaitThreads());
-            Thread ownerThread = this.pooledArrayLock.interruptOwnerThread();
-            if (ownerThread != null) interrupedList.add(ownerThread);
-            return (Thread[]) interrupedList.toArray();
-        } catch (Throwable e) {
-            Log.warn("BeeOP({})Failed to interrupt threads on lock", this.poolName, e);
-            return null;
-        }
+        List<Thread> interrupedList = new LinkedList<>(this.pooledArrayLock.interruptQueuedWaitThreads());
+        Thread ownerThread = this.pooledArrayLock.interruptOwnerThread();
+        if (ownerThread != null) interrupedList.add(ownerThread);
+
+        Thread[] interruptThreads = new Thread[interrupedList.size()];
+        return interrupedList.toArray(interruptThreads);
     }
 
     //***************************************************************************************************************//
