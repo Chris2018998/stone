@@ -268,7 +268,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-2.4: interrupt a thread in creating a connection
     public long getElapsedTimeSinceCreationLock() {
-        return this.pooledArrayLockedTimePoint > 0L ? System.currentTimeMillis() - this.pooledArrayLockedTimePoint : 0L;
+        return this.pooledArrayLockedTimePoint;
     }
 
     //Method-2.5: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
