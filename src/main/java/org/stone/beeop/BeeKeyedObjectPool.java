@@ -99,7 +99,7 @@ public interface BeeKeyedObjectPool {
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * Gets owner hold time(milliseconds) on pool lock by key.
+     * Gets owner hold time point(milliseconds) on pool lock by key.
      *
      * @param key can being map to an object group
      * @return hold time on pool lock
