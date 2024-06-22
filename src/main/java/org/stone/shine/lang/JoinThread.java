@@ -19,7 +19,7 @@ public class JoinThread extends Thread {
     public void join(java.lang.Thread.State targetState) {
         for (; ; ) {
             java.lang.Thread.State curState = this.getState();
-            if (curState == State.NEW || curState == State.TERMINATED || targetState == curState) {
+            if (curState == State.TERMINATED || targetState == curState) {
                 return;
             } else {
                 LockSupport.parkNanos(5L);
@@ -37,7 +37,7 @@ public class JoinThread extends Thread {
         if (targetStates.length == 0) throw new IllegalArgumentException("target states can't be empty");
         for (; ; ) {
             java.lang.Thread.State curState = this.getState();
-            if (curState == State.NEW || curState == State.TERMINATED) {
+            if (curState == State.TERMINATED) {
                 return;
             } else {
                 for (State state : targetStates) {
