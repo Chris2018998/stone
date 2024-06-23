@@ -9,12 +9,15 @@
  */
 package org.stone.tools.unsafe;
 
+import org.stone.tools.exception.ReflectionOperationException;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
+import static org.stone.tools.BeanUtil.setAccessible;
+
 /**
- * A Unsafe adaptor,whose inside unsafe field type should be declared to
+ * An Unsafe adaptor,whose inside unsafe field type should be declared to
  * {@code jdk.internal.misc.Unsafe} at jdk higher version(Java8)
  *
  * @author Chris Liao
@@ -26,10 +29,10 @@ public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
     static {
         try {
             Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
+            setAccessible(theUnsafe);
             U = (Unsafe) theUnsafe.get(null);
-        } catch (Exception e) {
-            throw new Error(e);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new ReflectionOperationException(e);
         }
     }
 
@@ -37,17 +40,17 @@ public final class UnsafeAdaptorJdkMiscImpl implements UnsafeAdaptor {
     //                                          methods of int type                                                   //
     //****************************************************************************************************************//
     public long objectFieldOffset(Field field) {
-        if (!field.isAccessible()) field.setAccessible(true);
+        if (!field.isAccessible()) setAccessible(field);
         return U.objectFieldOffset(field);
     }
 
     public long staticFieldOffset(Field field) {
-        if (!field.isAccessible()) field.setAccessible(true);
+        if (!field.isAccessible()) setAccessible(field);
         return U.staticFieldOffset(field);
     }
 
     public Object staticFieldBase(Field field) {
-        if (!field.isAccessible()) field.setAccessible(true);
+        if (!field.isAccessible()) setAccessible(field);
         return U.staticFieldBase(field);
     }
 

@@ -15,11 +15,14 @@ import org.stone.tools.exception.BeanException;
 import org.stone.tools.exception.PropertyValueConvertException;
 import org.stone.tools.exception.PropertyValueSetFailedException;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,6 +40,38 @@ public class BeanUtil {
     public static final String Separator_UnderLine = "_";
     //a SLF4 logger used in stone project
     public static final Logger CommonLog = LoggerFactory.getLogger(BeanUtil.class);
+
+    /**
+     * set a field accessible under AccessController
+     *
+     * @param field reflection access field
+     */
+    public static void setAccessible(final Field field) {
+        if (!field.isAccessible()) {
+            AccessController.doPrivileged(new PrivilegedAction<Field>() {
+                public Field run() {
+                    field.setAccessible(true);
+                    return field;
+                }
+            });
+        }
+    }
+
+    /**
+     * set a method accessible under AccessController
+     *
+     * @param method reflection access method
+     */
+    public static void setAccessible(final Method method) {
+        if (!method.isAccessible()) {
+            AccessController.doPrivileged(new PrivilegedAction<Method>() {
+                public Method run() {
+                    method.setAccessible(true);
+                    return method;
+                }
+            });
+        }
+    }
 
     /**
      * finds out all properties set method with public modifier from a bean class
@@ -71,7 +106,7 @@ public class BeanUtil {
      * @param propertyName is a value search key
      * @return mapped value
      */
-    public static String getPropertyValue(Map<String, String> valueMap, String propertyName) {
+    public static String getPropertyValue(Map<String, String> valueMap, final String propertyName) {
         String value = valueMap.get(propertyName);
         if (value != null) return value;
         value = valueMap.get(propertyNameToFieldId(propertyName, Separator_MiddleLine));
@@ -81,8 +116,7 @@ public class BeanUtil {
 
         String firstChar = propertyName.substring(0, 1);
         if (Character.isLowerCase(firstChar.charAt(0))) {//try again if first char is lowercase
-            propertyName = firstChar.toUpperCase() + propertyName.substring(1);
-            return valueMap.get(propertyName);
+            return valueMap.get(firstChar.toUpperCase() + propertyName.substring(1));
         }
         return null;
     }
@@ -100,7 +134,7 @@ public class BeanUtil {
      * @param propertyName is a value search key
      * @return mapped value
      */
-    private static Object getFieldValue(Map<String, ?> valueMap, String propertyName) {
+    private static Object getFieldValue(Map<String, ?> valueMap, final String propertyName) {
         Object value = valueMap.get(propertyName);
         if (value != null) return value;
         value = valueMap.get(propertyNameToFieldId(propertyName, Separator_MiddleLine));
@@ -110,8 +144,7 @@ public class BeanUtil {
 
         String firstChar = propertyName.substring(0, 1);
         if (Character.isLowerCase(firstChar.charAt(0))) {
-            propertyName = firstChar.toUpperCase() + propertyName.substring(1);
-            return valueMap.get(propertyName);
+            return valueMap.get(firstChar.toUpperCase() + propertyName.substring(1));
         }
         return null;
     }
