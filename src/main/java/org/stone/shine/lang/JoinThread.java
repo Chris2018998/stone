@@ -13,8 +13,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * A loop to wait for a thread state change, which is not a good choice on performance and should use synchronized keyword to implement here
- * same to other thread join methods.
+ * There are three join methods in Jdk {@link Thread},callers may be blocked in these methods invocation and wait for death notification of a target thread,
+ * like this,other states should be supported on wait-notification mode? So I made a new one and name it to state join(JDK join should be named as time join?)
+ * and provide four new join methods,refer to {@link #join(State)},{@link  #join(State, long)},{@link #joinAny(State[])},
+ * {@link #joinAny(State[], long)}in this class and blocking implementation is provided in these methods by checking this thread state in a loop
+ * and performance is not good,it is better that using synchronized keyword like jdk join methods.
  *
  * @author Chris Liao
  */
@@ -33,17 +36,7 @@ public class JoinThread extends Thread {
      * @throws InterruptedException while interrupted on wait
      */
     public Thread.State join(Thread.State state) throws InterruptedException {
-        if (state == null) throw new IllegalArgumentException("Expected thread state can't be null");
-
-        for (; ; ) {
-            Thread.State curState = this.getState();
-            //1: state has changed to target state,so exit
-            if (curState == State.TERMINATED || curState == state) return curState;
-            //2: park 5 Nanos for next check
-            LockSupport.parkNanos(JoinParkNanos);
-            //3: check waiter thread state,if interrupted then exit
-            if (Thread.interrupted()) throw new InterruptedException();
-        }
+        return join(state, 0L);
     }
 
     /**
@@ -56,23 +49,33 @@ public class JoinThread extends Thread {
      */
     public Thread.State join(Thread.State state, long millis) throws InterruptedException {
         if (state == null) throw new IllegalArgumentException("Expected thread state can't be null");
-        if (millis <= 0L) throw new IllegalArgumentException("Wait time must greater than zero");
-        long endNanosTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis);
+        long endNanosTime = millis > 0L ? System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis) : 0L;
 
-        for (; ; ) {
-            Thread.State curState = this.getState();
-            //1: state has changed to target state,so exit
-            if (curState == State.TERMINATED || curState == state) return curState;
+        if (endNanosTime > 0L) {
+            for (; ; ) {
+                Thread.State curState = this.getState();
+                //1: state has changed to target state,so exit
+                if (curState == State.TERMINATED || curState == state) return curState;
 
-            //2: elapsed time has reach max wait time,so exit
-            if (System.nanoTime() >= endNanosTime) return this.getState();
-            //3: park 5 Nanos for next check
-            LockSupport.parkNanos(JoinParkNanos);
-            //4: check waiter thread state,if interrupted then exit
-            if (Thread.interrupted()) throw new InterruptedException();
+                //2: elapsed time has reach max wait time,so exit
+                if (System.nanoTime() >= endNanosTime) return this.getState();
+                //3: park 5 Nanos for next check
+                LockSupport.parkNanos(JoinParkNanos);
+                //4: check waiter thread state,if interrupted then exit
+                if (Thread.interrupted()) throw new InterruptedException();
+            }
+        } else {
+            for (; ; ) {
+                Thread.State curState = this.getState();
+                //1: state has changed to target state,so exit
+                if (curState == State.TERMINATED || curState == state) return curState;
+                //2: park 5 Nanos for next check
+                LockSupport.parkNanos(JoinParkNanos);
+                //3: check waiter thread state,if interrupted then exit
+                if (Thread.interrupted()) throw new InterruptedException();
+            }
         }
     }
-
 
     /**
      * Waits on this thread util its state become any expected state in array or {@link State#TERMINATED} state.
@@ -84,21 +87,7 @@ public class JoinThread extends Thread {
     public Thread.State joinAny(Thread.State[] states) throws InterruptedException {
         if (states == null) throw new IllegalArgumentException("Expected thread states can't be null");
         if (states.length == 0) throw new IllegalArgumentException("Expected thread states can't be empty");
-
-        for (; ; ) {
-            Thread.State curState = this.getState();
-            //1: if terminated,then return terminated state
-            if (curState == State.TERMINATED) return curState;
-
-            //2: if match one,then return it
-            for (Thread.State state : states)
-                if (state == curState) return curState;
-
-            //3: park 5 Nanos for next check
-            LockSupport.parkNanos(JoinParkNanos);
-            //4: check waiter thread state,if interrupted then exit
-            if (Thread.interrupted()) throw new InterruptedException();
-        }
+        return joinAny(states, 0L);
     }
 
     /**
@@ -112,24 +101,40 @@ public class JoinThread extends Thread {
     public Thread.State joinAny(Thread.State[] states, long millis) throws InterruptedException {
         if (states == null) throw new IllegalArgumentException("Expected thread states can't be null");
         if (states.length == 0) throw new IllegalArgumentException("Expected thread states can't be empty");
-        if (millis <= 0L) throw new IllegalArgumentException("Wait time must greater than zero");
-        long endNanosTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis);
+        long endNanosTime = millis > 0L ? System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis) : 0L;
 
-        for (; ; ) {
-            Thread.State curState = this.getState();
-            //1: if terminated,then return terminated state
-            if (curState == State.TERMINATED) return curState;
+        if (endNanosTime > 0L) {
+            for (; ; ) {
+                Thread.State curState = this.getState();
+                //1: if terminated,then return terminated state
+                if (curState == State.TERMINATED) return curState;
 
-            //2: if match one,then return it
-            for (Thread.State state : states)
-                if (state == curState) return curState;
+                //2: if match one,then return it
+                for (Thread.State state : states)
+                    if (state == curState) return curState;
 
-            //3: elapsed time has reach max wait time,so exit
-            if (System.nanoTime() >= endNanosTime) return this.getState();
-            //4: park 5 nanoseconds for next check
-            LockSupport.parkNanos(JoinParkNanos);
-            //5: check waiter thread state,if interrupted then exit
-            if (Thread.interrupted()) throw new InterruptedException();
+                //3: elapsed time has reach max wait time,so exit
+                if (System.nanoTime() >= endNanosTime) return this.getState();
+                //4: park 5 nanoseconds for next check
+                LockSupport.parkNanos(JoinParkNanos);
+                //5: check waiter thread state,if interrupted then exit
+                if (Thread.interrupted()) throw new InterruptedException();
+            }
+        } else {
+            for (; ; ) {
+                Thread.State curState = this.getState();
+                //1: if terminated,then return terminated state
+                if (curState == State.TERMINATED) return curState;
+
+                //2: if match one,then return it
+                for (Thread.State state : states)
+                    if (state == curState) return curState;
+
+                //3: park 5 Nanos for next check
+                LockSupport.parkNanos(JoinParkNanos);
+                //4: check waiter thread state,if interrupted then exit
+                if (Thread.interrupted()) throw new InterruptedException();
+            }
         }
     }
 }
