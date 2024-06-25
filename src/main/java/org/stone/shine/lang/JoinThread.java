@@ -85,8 +85,6 @@ public class JoinThread extends Thread {
      * @throws InterruptedException while interrupted on wait
      */
     public Thread.State joinAny(Thread.State[] states) throws InterruptedException {
-        if (states == null) throw new IllegalArgumentException("Expected thread states can't be null");
-        if (states.length == 0) throw new IllegalArgumentException("Expected thread states can't be empty");
         return joinAny(states, 0L);
     }
 
