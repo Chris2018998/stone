@@ -49,9 +49,9 @@ public class JoinThread extends Thread {
      */
     public Thread.State join(Thread.State state, long millis) throws InterruptedException {
         if (state == null) throw new IllegalArgumentException("Expected thread state can't be null");
-        long endNanosTime = millis > 0L ? System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis) : 0L;
 
-        if (endNanosTime > 0L) {
+        if (millis > 0L) {
+            long endNanosTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis);
             for (; ; ) {
                 Thread.State curState = this.getState();
                 //1: state has changed to target state,so exit
@@ -99,9 +99,9 @@ public class JoinThread extends Thread {
     public Thread.State joinAny(Thread.State[] states, long millis) throws InterruptedException {
         if (states == null) throw new IllegalArgumentException("Expected thread states can't be null");
         if (states.length == 0) throw new IllegalArgumentException("Expected thread states can't be empty");
-        long endNanosTime = millis > 0L ? System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis) : 0L;
 
-        if (endNanosTime > 0L) {
+        if (millis > 0L) {
+            long endNanosTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(millis);
             for (; ; ) {
                 Thread.State curState = this.getState();
                 //1: if terminated,then return terminated state
