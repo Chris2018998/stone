@@ -242,9 +242,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-2.3: remove one pooled object
-    private void removePooledEntry(PooledObject p, String removeType) {
+    private void removePooledEntry(PooledObject p, String cause) {
         if (this.printRuntimeLog)
-            Log.info("BeeOP({}))begin to remove a pooled object:{},reason:{}", this.poolName, p, removeType);
+            Log.info("BeeOP({}))begin to remove a pooled object:{} for cause:{}", this.poolName, p, cause);
         p.onBeforeRemove();
 
         this.pooledArrayLock.lock();
@@ -257,7 +257,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                     if (m > 0) System.arraycopy(this.pooledArray, i + 1, arrayNew, i, m);
                     this.pooledArray = arrayNew;
                     if (this.printRuntimeLog)
-                        Log.info("BeeOP({}))has removed pooled object:{},reason:{}", this.poolName, p, removeType);
+                        Log.info("BeeOP({}))has removed pooled object:{} for cause:{}", this.poolName, p, cause);
                     break;
                 }
             }
