@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
@@ -72,6 +73,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final long poolThreadId;
     private final String poolThreadName;
     private final boolean enableThreadLocal;
+    private final long createTimeoutMs;//milliseconds
     //clone end
     private boolean printRuntimeLog;
     //set by clone method
@@ -103,6 +105,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.semaphoreSize = config.getBorrowSemaphoreSize();
         this.maxWaitMs = config.getMaxWait();
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
+        this.createTimeoutMs = SECONDS.toMillis(config.getCreateTimeout());
         this.idleTimeoutMs = config.getIdleTimeout();//milliseconds
         this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
         this.supportHoldTimeout = holdTimeoutMs > 0L;
@@ -487,7 +490,15 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             Log.info("BeeOP({})-before idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
-        //step2: remove idle timeout and hold timeout
+        //step2:interrupt all waiting on pool lock if create timeout
+        if (createTimeoutMs > 0L) {
+            long holdTimePoint = this.pooledArrayLockedTimePoint;
+            if (holdTimePoint > 0L && System.currentTimeMillis() - holdTimePoint >= createTimeoutMs) {
+                this.interruptOnPoolLock();
+            }
+        }
+
+        //step3: remove idle timeout and hold timeout
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array) {
             int state = p.state;
@@ -513,7 +524,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             }
         }
 
-        //step3: print pool info after idle clean
+        //step4: print pool info after idle clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})-after idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
