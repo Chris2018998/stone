@@ -33,6 +33,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private int transferWaitingSize;
     private String osId;
     private String osUUID;
+    private long poolLockHoldTime;
 
     ObjectPoolMonitorVo(
             String poolName, String hostIP, long threadId,
@@ -127,6 +128,14 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
 
     public int getPoolMaxSize() {
         return maxSize;
+    }
+
+    public long getPoolLockHoldTime() {
+        return poolLockHoldTime;
+    }
+
+    void setPoolLockHoldTime(long poolLockHoldTime) {
+        this.poolLockHoldTime = poolLockHoldTime;
     }
 
 }

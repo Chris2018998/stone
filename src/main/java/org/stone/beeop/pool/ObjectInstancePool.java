@@ -666,6 +666,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         monitorVo.setUsingSize(totSize - idleSize);
         monitorVo.setSemaphoreWaitingSize(this.semaphore.getQueueLength());
         monitorVo.setTransferWaitingSize(getTransferWaitingSize());
+        monitorVo.setPoolLockHoldTime(this.pooledArrayLockedTimePoint);
         return this.monitorVo;
     }
 
