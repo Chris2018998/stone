@@ -42,4 +42,6 @@ public interface BeeObjectPoolMonitorVo {
     int getSemaphoreWaitingSize();
 
     int getTransferWaitingSize();
+
+    long getPoolLockHoldTime();
 }
