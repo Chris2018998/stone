@@ -276,7 +276,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-2.5: return check result of pool lock hold timeout
     public boolean isCreatingTimeout() {
-        return createTimeoutMs > 0L && pooledArrayLockedTimePoint > 0L && System.currentTimeMillis() - pooledArrayLockedTimePoint >= createTimeoutMs;
+        final long lockHoldTime = pooledArrayLockedTimePoint;
+        return createTimeoutMs > 0L && lockHoldTime > 0L && System.currentTimeMillis() - lockHoldTime >= createTimeoutMs;
     }
 
     //Method-2.6: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
@@ -496,11 +497,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         //step2:interrupt lock owner and all waiters on lock
-        if (createTimeoutMs > 0L) {
-            long holdTimePoint = this.pooledArrayLockedTimePoint;
-            if (holdTimePoint > 0L && System.currentTimeMillis() - holdTimePoint >= createTimeoutMs) {
-                this.interruptOnCreation();
-            }
+        if (isCreatingTimeout()) {
+            Log.info("BeeOP({})pool lock has been hold timeout and an interruption will be executed on lock", this.poolName);
+            this.interruptOnCreation();
         }
 
         //step3: remove idle timeout and hold timeout
