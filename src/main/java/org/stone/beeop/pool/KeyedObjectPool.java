@@ -190,25 +190,25 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     /**
      * get blocked time in connection creation a thread
      */
-    public long getPoolLockHoldTime(Object key) {
+    public long getLastCreateTime(Object key) {
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null ? pool.getPoolLockHoldTime() : 0L;
+        return pool != null ? pool.getLastCreateTime() : 0L;
     }
 
     /**
-     * checks pool lock state with lock hold time,refer to {@link #getPoolLockHoldTime(Object key)}
+     * checks pool lock state with lock hold time,refer to {@link #getLastCreateTime(Object key)}
      */
-    public boolean isPoolLockHoldTimeout(Object key) {
+    public boolean isCreateTimeout(Object key) {
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null && pool.isPoolLockHoldTimeout();
+        return pool != null && pool.isCreateTimeout();
     }
 
     /**
      * interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
      */
-    public Thread[] interruptOnPoolLock(Object key) {
+    public Thread[] interruptOnCreation(Object key) {
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null ? pool.interruptOnPoolLock() : null;
+        return pool != null ? pool.interruptOnCreation() : null;
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {

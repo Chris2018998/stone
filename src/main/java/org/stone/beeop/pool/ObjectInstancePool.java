@@ -270,17 +270,17 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-2.4: interrupt a thread in creating a connection
-    public long getPoolLockHoldTime() {
+    public long getLastCreateTime() {
         return this.pooledArrayLockedTimePoint;
     }
 
     //Method-2.5: return check result of pool lock hold timeout
-    public boolean isPoolLockHoldTimeout() {
+    public boolean isCreateTimeout() {
         return createTimeoutMs > 0L && pooledArrayLockedTimePoint > 0L && System.currentTimeMillis() - pooledArrayLockedTimePoint >= createTimeoutMs;
     }
 
     //Method-2.6: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
-    public Thread[] interruptOnPoolLock() {
+    public Thread[] interruptOnCreation() {
         List<Thread> interrupedList = new LinkedList<>(this.pooledArrayLock.interruptQueuedWaitThreads());
         Thread ownerThread = this.pooledArrayLock.interruptOwnerThread();
         if (ownerThread != null) interrupedList.add(ownerThread);
@@ -499,7 +499,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         if (createTimeoutMs > 0L) {
             long holdTimePoint = this.pooledArrayLockedTimePoint;
             if (holdTimePoint > 0L && System.currentTimeMillis() - holdTimePoint >= createTimeoutMs) {
-                this.interruptOnPoolLock();
+                this.interruptOnCreation();
             }
         }
 
