@@ -165,7 +165,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
 
     public long getPoolLockHoldTime(Object key) throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return createPoolByLock().getLastCreateTime(key);
+        return createPoolByLock().getCreatingTime(key);
     }
 
     public Thread[] interruptOnPoolLock(Object key) throws Exception {

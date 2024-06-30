@@ -270,12 +270,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-2.4: interrupt a thread in creating a connection
-    public long getLastCreateTime() {
+    public long getCreatingTime() {
         return this.pooledArrayLockedTimePoint;
     }
 
     //Method-2.5: return check result of pool lock hold timeout
-    public boolean isCreateTimeout() {
+    public boolean isCreatingTimeout() {
         return createTimeoutMs > 0L && pooledArrayLockedTimePoint > 0L && System.currentTimeMillis() - pooledArrayLockedTimePoint >= createTimeoutMs;
     }
 

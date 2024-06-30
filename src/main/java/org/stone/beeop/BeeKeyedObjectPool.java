@@ -99,19 +99,19 @@ public interface BeeKeyedObjectPool {
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * Get last start time to create a connection in pool,timeunit:milliseconds
+     * Get start time in creating an object in pool,timeunit:milliseconds
      *
      * @param key can being map to an object group
      * @return hold time on pool lock
      */
-    long getLastCreateTime(Object key);
+    long getCreatingTime(Object key);
 
     /**
-     * checks creation timeout,refer to {@link #getLastCreateTime(Object key)}
+     * checks current creation timeout,refer to {@link #getCreatingTime(Object key)}
      *
      * @return an indicator of pool lock hold timeout,true or false
      */
-    boolean isCreateTimeout(Object key);
+    boolean isCreatingTimeout(Object key);
 
     /**
      * interrupt creation thread of connection and all waiters to create connections
