@@ -107,6 +107,13 @@ public interface BeeKeyedObjectPool {
     long getPoolLockHoldTime(Object key);
 
     /**
+     * checks pool lock state with lock hold time,refer to {@link #getPoolLockHoldTime(Object key)}
+     *
+     * @return an indicator of pool lock hold timeout,true or false
+     */
+    boolean isPoolLockHoldTimeout(Object key);
+
+    /**
      * Interrupts all threads on pool lock by key.
      *
      * @param key can being map to an object group

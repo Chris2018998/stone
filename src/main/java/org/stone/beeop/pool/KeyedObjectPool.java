@@ -192,7 +192,15 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
      */
     public long getPoolLockHoldTime(Object key) {
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null ? pool.getElapsedTimeSinceCreationLock() : 0L;
+        return pool != null ? pool.getPoolLockHoldTime() : 0L;
+    }
+
+    /**
+     * checks pool lock state with lock hold time,refer to {@link #getPoolLockHoldTime(Object key)}
+     */
+    public boolean isPoolLockHoldTimeout(Object key) {
+        ObjectInstancePool pool = instancePoolMap.get(key);
+        return pool != null && pool.isPoolLockHoldTimeout();
     }
 
     /**
