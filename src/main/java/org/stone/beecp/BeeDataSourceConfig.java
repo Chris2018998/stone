@@ -42,95 +42,90 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
-    //pool name generation index which is an atomic integer start with 1
+    //an int sequence generator for pool names,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //default exclusion list of config print(info level,still print them under debug mode)
+    //a default list of configuration items skip INFO print on pool initialization(pool still print them under debug mode)
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
 
-    //properties applied in a factory{@code RawConnectionFactory,RawXaConnectionFactory} to establish connections
+    //a properties map,whose entry values are injected to a connection factory or a datasource on pool initializes
     private final Map<String, Object> connectProperties = new HashMap<>();
-    //username of a database,default is null
+    //jdbc username link to a database,default is null
     private String username;
-    //user password security link to database,default is null
+    //jdbc password link to a database,default is null
     private String password;
-    //database link url for jdbc,default is null
+    //jdbc url link to a database,default is null
     private String jdbcUrl;
-    //database link driver class name,default is null(if not set,pool try to search a matched driver from driver manager with valid configured url)
+    //jdbc driver class name,default is null;if not set,pool try to search a matched driver with non {@code dbcUrl}
     private String driverClassName;
-    //pool name for log trace,if null or empty,a generation name will be assigned to pool after configuration check passed
+    //pool name,default is null;if not set,a pool name generated with {@code PoolNameIndex} for it
     private String poolName;
-    //work mode of pool semaphore,default is false(unfair mode,I call it competition mode)
+    //a mechanism for borrowers to get connections from pool,default is false(unfair)
     private boolean fairMode;
     //creation size of initial connections,default is zero
     private int initialSize;
-    //creation mode of initial connections;default is false(synchronization mode)
+    //an indicator to create initial connections by an async thread,default is false(synchronization)
     private boolean asyncCreateInitConnection;
-    //maximum of connections in pool,default is 10(default range: 10 =< number <=50)
+    //maximum of connections in pool,its original value is calculated with an expression
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
-    //max permits size of pool semaphore
+    //max permit size of pool semaphore,its original value is calculated with an expression
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
-    //milliseconds: max wait time in pool to get connections,default is 8000 milliseconds(8 seconds)
+    //milliseconds: max wait time for borrowers in pool for a released connection,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
 
-    //seconds: a driver level item,which is a max wait time establish connections to db.
-    //Two connection creation modes supported in bee datasource configuration
-    //1: driver mode,driverClassName field has been set or a matched driver can be searched with url
-    //2: factory mode,@see field connectionFactoryClass(supports four types)
-    //* import tips: factory mode is priority for pool,if connection creation works under driver mode,this item value
-    // is assigned to field loginTimeout of DriverManager on pool initialization,but the loginTimeout field is sharable,
-    // in same JVM,other drivers maybe read its value,so need more careful on this item(connectTimeout),default is zero
+    //seconds: max wait time on pool connection factory or pool internal datasource to create a connection
+    //if this field value is greater than zero,its value will be assigned to loginTimeout field of DriverManager.
     private int createTimeout;
-    //milliseconds: max idle time check on not borrowed connections,if timeout,then remove them from pool,default is 18000 milliseconds(3 minutes)
+    //milliseconds: max idle time on connections,if timeout,pool will close them and remove from pool,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds: max inactive time check on borrowed connections,if timeout,pool recycled them by force to avoid connections leak,default is zero
+    //milliseconds: max inactive time on borrowed connections,if timeout,pool recycled them by force to avoid connections leak,default is zero
     private long holdTimeout;
 
-    //an alive test sql executed on borrowed connections,if dead,removed from pool
+    //a test sql to check connection alive
     private String aliveTestSql = "SELECT 1";
-    //seconds: max wait time to get validation result on test connections,default is 3 seconds.
+    //seconds: max wait time to get alive test result on connections,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //milliseconds: a gap time value from last activity time to borrowed time point,needn't do test on connections,default is 500 milliseconds
+    //milliseconds: a period time assume connections alive from last activity,need not do test,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //milliseconds: an interval time to scan idle connections or long time hold connections,default is 18000 milliseconds(3 minutes)
+    //milliseconds: an interval time to scan timeout connections(idle timeout,hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator on direct closing borrowed connections while pool clears,default is false
+    //an indicator to close connections in using while pool clears,default is false
     private boolean forceCloseUsingOnClear;
-    //milliseconds: A wait time for borrowed connections return to pool in a loop,at end of wait,try to close returned connections,default is 3000 milliseconds
+    //milliseconds:a pause time to wait using connections return to pool and close them in a loop when {@code forceCloseUsingOnClear} is false,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
-    //error code list check on vendorCode of thrown sql exceptions,if matched,connections evicted from pool,@see field vendorCode of SQLException.class
+    //an error code list to check sql-exceptions thrown from connections,if true,source connections will be evicted from pool
     private List<Integer> sqlExceptionCodeList;
-    //error state list check on SQLState of thrown sql exceptions,if matched,connections evicted from pool,@see field SQLState of SQLException.class
+    //an error state list to check sql-exceptions thrown from connections,if true,source connections will be evicted from pool
     private List<String> sqlExceptionStateList;
 
-    //an initial value assigned to property catalog of new connections,refer to method{@code Connection.setCatalog(String)}
+    //an initial value of catalog property on new connections,refer to {@code Connection.setCatalog(String)}
     private String defaultCatalog;
-    //an initial value assigned to property schema of new connections,refer to method{@code Connection.setSchema(String)}
+    //an initial value of schema; property on new connections,refer to {@code Connection.setSchema(String)}
     private String defaultSchema;
-    //an initial value assigned to property readOnly of new connections,refer to method{@code Connection.setReadOnly(boolean)}
+    //an initial value of readOnly property on new connections,refer to {@code Connection.setReadOnly(boolean)}
     private Boolean defaultReadOnly;
-    //an initial value assigned to property autoCommit of new connections,refer to method{@code Connection.setAutoCommit(boolean)}
+    //an initial value of autoCommit property on new connections,refer to {@code Connection.setAutoCommit(boolean)}
     private Boolean defaultAutoCommit;
-    //an initial value assigned to property transactionIsolation of new connections,refer to method{@code Connection.setTransactionIsolation(int)}
+    //an initial value of transactionIsolation property on new connections,refer to {@code Connection.setTransactionIsolation(int)}
     private Integer defaultTransactionIsolationCode;
-    //transaction isolation name,which can get a mapping code as initial value of property transactionIsolation
+    //a name of a transaction isolation code,which is set to {@code defaultTransactionIsolationCode} on pool initialization
     private String defaultTransactionIsolationName;
 
-    //thread local cache enable,default is true(set to be false to support virtual threads)
+    //an indicator to use thread local cache or not(set false to support virtual threads)
     private boolean enableThreadLocal = true;
-    //enable indicator to set default value on property catalog
+    //an indicator to set initial value to catalog property after connections are created
     private boolean enableDefaultOnCatalog = true;
-    //enable indicator to set default value on property schema
+    //an indicator to set initial value to schema property after connections are created
     private boolean enableDefaultOnSchema = true;
-    //enable indicator to set default value on property readOnly
+    //an indicator to set initial value to readOnly property after connections are created
     private boolean enableDefaultOnReadOnly = true;
-    //enable indicator to set default value on property autoCommit
+    //an indicator to set initial value to autoCommit property after connections are created
     private boolean enableDefaultOnAutoCommit = true;
-    //enable indicator to set default value on property transactionIsolation
+    //an indicator to set initial value to transactionIsolation property after connections are created
     private boolean enableDefaultOnTransactionIsolation = true;
 
-    //dirty force indicator on schema property(supports recover under transaction in PG database)
+    //a force dirty on schema property to support recovery under transaction mode(set true if use PG driver)
     private boolean forceDirtyOnSchemaAfterSet;
-    //dirty force indicator on catalog property(supports recover under transaction in PG database)
+    //a force dirty on catalog property to support recovery under transaction mode(set true if use PG driver)
     private boolean forceDirtyOnCatalogAfterSet;
 
     /**
@@ -176,7 +171,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigJmxBean {
     private boolean printRuntimeLog;
     //enable indicator to print configuration items on pool initialization,default is false
     private boolean printConfigInfo;
-    //config items exclusion list on info-level print
+    //a skip list on configuration info-print,original items are copied from default skip list,refer to {@code DefaultExclusionList}
     private List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
 
     //pool implementation class name,if not be set,a default implementation applied in bee datasource
