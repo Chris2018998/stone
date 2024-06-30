@@ -128,17 +128,17 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         return pool.getPoolMonitorVo();
     }
 
     public void clear(boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         pool.clear(forceCloseUsing);
     }
 
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         if (config == null) throw new BeeObjectSourceConfigException("Pool configuration can't be null");
         pool.clear(forceCloseUsing, config);
         config.copyTo(this);
@@ -149,37 +149,46 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     //                                          4: operation by key                                                  //
     //***************************************************************************************************************//
     public void deleteKey(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         createPoolByLock().deleteKey(key);
     }
 
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         createPoolByLock().deleteKey(key, forceCloseUsing);
     }
 
     public void deleteObjects(Object key, boolean forceCloseUsing) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         createPoolByLock().deleteObjects(key, forceCloseUsing);
     }
 
-    public long getPoolLockHoldTime(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+    public long getCreatingTime(Object key) throws Exception {
+        checkPool();
         return createPoolByLock().getCreatingTime(key);
     }
 
+    public boolean isCreatingTimeout(Object key) throws Exception {
+        checkPool();
+        return createPoolByLock().isCreatingTimeout(key);
+    }
+
     public Thread[] interruptOnPoolLock(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         return createPoolByLock().interruptOnCreation(key);
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         return createPoolByLock().getMonitorVo(key);
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        checkPool();
         createPoolByLock().setPrintRuntimeLog(key, indicator);
+    }
+
+    private void checkPool() throws Exception {
+        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
     }
 }
