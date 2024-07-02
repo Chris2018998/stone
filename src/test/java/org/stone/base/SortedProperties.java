@@ -5,7 +5,7 @@
  *
  * Project owner contact:Chris2018998@tom.com.
  *
- * Project Licensed under GNU Lesser General Public License v2.1.
+ * Project Licensed under Apache License v2.0.
  */
 package org.stone.base;
 
@@ -19,7 +19,7 @@ import java.util.Vector;
  * @author chris liao
  */
 class SortedProperties extends Properties {
-    private final Vector<Object> keyVector = new Vector<Object>(10);
+    private final Vector<Object> keyVector = new Vector<>(10);
 
     public synchronized Enumeration<Object> keys() {
         return keyVector.elements();
