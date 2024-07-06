@@ -556,17 +556,13 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private void clear(boolean forceCloseUsing, String removeReason) {
         //1:interrupt waiters on semaphore
         this.semaphore.interruptQueuedWaitThreads();
-        PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
-        while (!this.waitQueue.isEmpty()) this.transferException(clearException);
-
-        //2:interrupt waiters on lock(maybe stuck on socket)
-        try {
-            this.pooledArrayLock.interruptQueuedWaitThreads();
-            this.pooledArrayLock.interruptOwnerThread();
-        } catch (Throwable e) {
-            Log.info("BeeOP({})failed to interrupt threads on lock", this.poolName, e);
+        if (!this.waitQueue.isEmpty()) {
+            PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
+            while (!this.waitQueue.isEmpty()) this.transferException(clearException);
         }
 
+        //2:interrupt waiters on lock(maybe stuck on socket)
+        this.interruptOnCreation();
         //3:clear all connections
         while (true) {
             PooledObject[] array = this.pooledArray;
