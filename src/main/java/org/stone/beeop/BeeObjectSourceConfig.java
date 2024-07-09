@@ -55,8 +55,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //milliseconds: max wait time in pool to get objects for borrowers,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
 
-    //seconds:max wait time to get an object instance from object factory,default is zero
-    private int createTimeout;
     //milliseconds: max idle time,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3);
     //milliseconds: max inactive time check on borrowed objects,if timeout,pool recycled them by force to avoid objects leak,default is zero
@@ -197,14 +195,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
     public void setMaxWait(long maxWait) {
         if (maxWait > 0L) this.maxWait = maxWait;
-    }
-
-    public int getCreateTimeout() {
-        return createTimeout;
-    }
-
-    public void setCreateTimeout(int createTimeout) {
-        if (createTimeout >= 0) this.createTimeout = createTimeout;
     }
 
     public long getIdleTimeout() {

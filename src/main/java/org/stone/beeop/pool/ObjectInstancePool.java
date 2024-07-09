@@ -33,7 +33,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
@@ -73,7 +72,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final long poolThreadId;
     private final String poolThreadName;
     private final boolean enableThreadLocal;
-    private final long createTimeoutMs;//milliseconds
+
     //clone end
     private boolean printRuntimeLog;
     //set by clone method
@@ -84,7 +83,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
     private InterruptionReentrantLock pooledArrayLock;
-    private volatile long pooledArrayLockedTimePoint;//milliseconds
+    private volatile long pooledArrayLockedTimePoint;//nanoseconds
     private volatile PooledObject[] pooledArray;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
@@ -105,7 +104,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.semaphoreSize = config.getBorrowSemaphoreSize();
         this.maxWaitMs = config.getMaxWait();
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
-        this.createTimeoutMs = SECONDS.toMillis(config.getCreateTimeout());
         this.idleTimeoutMs = config.getIdleTimeout();//milliseconds
         this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
         this.supportHoldTimeout = holdTimeoutMs > 0L;
@@ -209,7 +207,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //2:try to create a pooled object
         try {
-            this.pooledArrayLockedTimePoint = System.currentTimeMillis();
+            this.pooledArrayLockedTimePoint = System.nanoTime();
             int l = this.pooledArray.length;
             if (l < this.maxActiveSize) {
                 if (this.printRuntimeLog)
@@ -277,7 +275,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //Method-2.5: return check result of pool lock hold timeout
     public boolean isCreatingTimeout() {
         final long lockHoldTime = pooledArrayLockedTimePoint;
-        return createTimeoutMs > 0L && lockHoldTime > 0L && System.currentTimeMillis() - lockHoldTime >= createTimeoutMs;
+        return lockHoldTime != 0L && System.nanoTime() - lockHoldTime > maxWaitNs;
     }
 
     //Method-2.6: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
