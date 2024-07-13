@@ -6,14 +6,14 @@
  */
 package org.stone.beeop.object;
 
-import org.stone.beeop.RawObjectFactory;
+import org.stone.beeop.BeeObjectFactory;
 
 /**
  * ObjectFactory subclass
  *
  * @author chris.liao
  */
-public class JavaBookFactory implements RawObjectFactory {
+public class JavaBookFactory implements BeeObjectFactory {
 
     public Object getInitialKey() {
         return new Object();

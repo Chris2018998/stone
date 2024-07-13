@@ -13,8 +13,8 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.beecp.RawConnectionFactory;
-import org.stone.beecp.RawXaConnectionFactory;
+import org.stone.beecp.BeeConnectionFactory;
+import org.stone.beecp.BeeXaConnectionFactory;
 import org.stone.beecp.driver.MockDataSource;
 import org.stone.beecp.driver.MockXaDataSource;
 import org.stone.beecp.objects.MockCreateNullConnectionFactory;
@@ -33,7 +33,7 @@ public class Tc0011ConnectionFactoryTest extends TestCase {
     public void testOnSetGet() {
         BeeDataSourceConfig config = createEmpty();
 
-        Class<? extends RawXaConnectionFactory> factClass = MockCreateNullXaConnectionFactory.class;
+        Class<? extends BeeXaConnectionFactory> factClass = MockCreateNullXaConnectionFactory.class;
         config.setConnectionFactoryClass(factClass);
         Assert.assertEquals(config.getConnectionFactoryClass(), factClass);
 
@@ -41,12 +41,12 @@ public class Tc0011ConnectionFactoryTest extends TestCase {
         config.setConnectionFactoryClassName(factClassName);
         Assert.assertEquals(config.getConnectionFactoryClassName(), factClassName);
 
-        RawConnectionFactory factory1 = new MockCreateNullConnectionFactory();
-        config.setRawConnectionFactory(factory1);
+        BeeConnectionFactory factory1 = new MockCreateNullConnectionFactory();
+        config.setConnectionFactory(factory1);
         Assert.assertEquals(config.getConnectionFactory(), factory1);
 
-        RawXaConnectionFactory factory2 = new MockCreateNullXaConnectionFactory();
-        config.setRawXaConnectionFactory(factory2);
+        BeeXaConnectionFactory factory2 = new MockCreateNullXaConnectionFactory();
+        config.setXaConnectionFactory(factory2);
         Assert.assertEquals(config.getConnectionFactory(), factory2);
     }
 

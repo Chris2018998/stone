@@ -11,7 +11,7 @@ import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.RawObjectMethodFilter;
+import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.object.Book;
 import org.stone.beeop.object.JavaBookFactory;
 
@@ -70,7 +70,7 @@ public class ObjectMethodIllegalAccessTest extends TestCase {
         }
     }
 
-    class ExcludeMethodFilter implements RawObjectMethodFilter {
+    class ExcludeMethodFilter implements BeeObjectMethodFilter {
         public void doFilter(Object key, String methodName, Class[] paramTypes, Object[] paramValues) throws Exception {
             if ("getName".equals(methodName)) throw new IllegalAccessException();
         }

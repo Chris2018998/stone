@@ -56,7 +56,7 @@ public class PoolRestartWithConfigTest extends TestCase {
         obs.close();
     }
 
-    class StringFactory implements RawObjectFactory {
+    class StringFactory implements BeeObjectFactory {
         public Object getInitialKey() {
             return new Object();
         }
