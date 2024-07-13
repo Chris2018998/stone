@@ -10,7 +10,7 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.RawObjectMethodFilter;
+import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectCallException;
 
 import java.lang.reflect.Method;
@@ -28,7 +28,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
 public class ObjectSimpleHandle implements BeeObjectHandle {
     final PooledObject p;
     private final Object raw;
-    private final RawObjectMethodFilter filter;
+    private final BeeObjectMethodFilter filter;
     private final Map<MethodCacheKey, Method> methodCache;
     protected boolean isClosed;
 

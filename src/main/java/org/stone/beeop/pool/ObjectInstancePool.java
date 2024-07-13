@@ -63,7 +63,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
     private final long delayTimeForNextClearNs;//nanoseconds
-    private final RawObjectFactory objectFactory;
+    private final BeeObjectFactory objectFactory;
     private final PooledObject templatePooledObject;
     private final ObjectTransferPolicy transferPolicy;
     private final ObjectHandleFactory handleFactory;

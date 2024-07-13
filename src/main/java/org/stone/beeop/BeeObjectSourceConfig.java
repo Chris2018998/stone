@@ -90,16 +90,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     private String[] objectInterfaceNames;
 
     //object factory(priority-1)
-    private RawObjectFactory objectFactory;
+    private BeeObjectFactory objectFactory;
     //object factory class(priority-2)
-    private Class<? extends RawObjectFactory> objectFactoryClass;
+    private Class<? extends BeeObjectFactory> objectFactoryClass;
     //object factory class name(priority-3)
     private String objectFactoryClassName;
 
     //method call filter(priority-1)
-    private RawObjectMethodFilter objectMethodFilter;
+    private BeeObjectMethodFilter objectMethodFilter;
     //object method call filter class(priority-2)
-    private Class<? extends RawObjectMethodFilter> objectMethodFilterClass;
+    private Class<? extends BeeObjectMethodFilter> objectMethodFilterClass;
     //object method call filter class name(priority-3)
     private String objectMethodFilterClassName;
 
@@ -341,11 +341,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
-    public RawObjectFactory getObjectFactory() {
+    public BeeObjectFactory getObjectFactory() {
         return this.objectFactory;
     }
 
-    public void setRawObjectFactory(RawObjectFactory factory) {
+    public void setRawObjectFactory(BeeObjectFactory factory) {
         this.objectFactory = factory;
     }
 
@@ -353,7 +353,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return objectMethodFilterClass;
     }
 
-    public void setObjectMethodFilterClass(Class<? extends RawObjectMethodFilter> filterClass) {
+    public void setObjectMethodFilterClass(Class<? extends BeeObjectMethodFilter> filterClass) {
         this.objectMethodFilterClass = filterClass;
     }
 
@@ -365,11 +365,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectMethodFilterClassName = objectMethodFilterClassName;
     }
 
-    public RawObjectMethodFilter getObjectMethodFilter() {
+    public BeeObjectMethodFilter getObjectMethodFilter() {
         return objectMethodFilter;
     }
 
-    public void setObjectMethodFilter(RawObjectMethodFilter objectMethodFilter) {
+    public void setObjectMethodFilter(BeeObjectMethodFilter objectMethodFilter) {
         this.objectMethodFilter = objectMethodFilter;
     }
 
@@ -528,12 +528,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
 
         //1:try to create object factory
-        RawObjectFactory objectFactory = this.createObjectFactory();
+        BeeObjectFactory objectFactory = this.createObjectFactory();
         if (objectFactory.getDefaultKey() == null)
             throw new BeeObjectSourceConfigException("Default key from factory can't be null");
 
         //2:try to create method filter
-        RawObjectMethodFilter tempMethodFilter = this.tryCreateMethodFilter();
+        BeeObjectMethodFilter tempMethodFilter = this.tryCreateMethodFilter();
 
         //3:load object implemented interfaces
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
@@ -623,7 +623,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return null;
     }
 
-    private RawObjectMethodFilter tryCreateMethodFilter() {
+    private BeeObjectMethodFilter tryCreateMethodFilter() {
         //1:if exists method filter then return it directly
         if (this.objectMethodFilter != null) return objectMethodFilter;
 
@@ -632,7 +632,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             Class filterClass = null;
             try {
                 filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : Class.forName(objectMethodFilterClassName);
-                return (RawObjectMethodFilter) createClassInstance(filterClass, RawObjectMethodFilter.class, "object method filter");
+                return (BeeObjectMethodFilter) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object filter class:" + objectMethodFilterClassName);
             } catch (BeeObjectSourceConfigException e) {
@@ -645,16 +645,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return null;
     }
 
-    private RawObjectFactory createObjectFactory() {
+    private BeeObjectFactory createObjectFactory() {
         //1: copy from member field of configuration
-        RawObjectFactory rawObjectFactory = this.objectFactory;
+        BeeObjectFactory rawObjectFactory = this.objectFactory;
 
         //2: create factory instance
         if (rawObjectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
             Class factoryClass = null;
             try {
                 factoryClass = objectFactoryClass != null ? objectFactoryClass : Class.forName(objectFactoryClassName);
-                rawObjectFactory = (RawObjectFactory) createClassInstance(factoryClass, RawObjectFactory.class, "object factory");
+                rawObjectFactory = (BeeObjectFactory) createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object factory class:" + objectFactoryClassName, e);
             } catch (BeeObjectSourceConfigException e) {

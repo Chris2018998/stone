@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectException;
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.RawObjectMethodFilter;
+import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectCallException;
 
 import java.lang.reflect.InvocationHandler;
@@ -59,7 +59,7 @@ public final class ObjectProxyHandle extends ObjectSimpleHandle {
         private final Object raw;
         private final PooledObject p;
         private final BeeObjectHandle handle;
-        private final RawObjectMethodFilter filter;
+        private final BeeObjectMethodFilter filter;
 
         ObjectReflectHandler(PooledObject p, ObjectSimpleHandle handle) {
             this.p = p;

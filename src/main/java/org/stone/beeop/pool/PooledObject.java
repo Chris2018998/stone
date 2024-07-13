@@ -9,8 +9,8 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.RawObjectFactory;
-import org.stone.beeop.RawObjectMethodFilter;
+import org.stone.beeop.BeeObjectFactory;
+import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectRecycleException;
 
 import java.lang.reflect.Method;
@@ -27,9 +27,9 @@ import static org.stone.tools.BeanUtil.CommonLog;
  */
 final class PooledObject implements Cloneable {
     final Class[] objectInterfaces;
-    final RawObjectMethodFilter filter;
+    final BeeObjectMethodFilter filter;
     final Map<MethodCacheKey, Method> methodCache;
-    private final RawObjectFactory factory;
+    private final BeeObjectFactory factory;
 
     Object key;
     Object raw;
@@ -44,8 +44,8 @@ final class PooledObject implements Cloneable {
     //***************************************************************************************************************//
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(RawObjectFactory factory, Class[] objectInterfaces,
-                 RawObjectMethodFilter filter, Map<MethodCacheKey, Method> methodCache) {
+    PooledObject(BeeObjectFactory factory, Class[] objectInterfaces,
+                 BeeObjectMethodFilter filter, Map<MethodCacheKey, Method> methodCache) {
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
         this.filter = filter;

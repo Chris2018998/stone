@@ -70,7 +70,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         //step1:create default pool
         this.defaultPool = new ObjectInstancePool(config, this);
         this.poolName = config.getPoolName();
-        RawObjectFactory objectFactory = config.getObjectFactory();
+        BeeObjectFactory objectFactory = config.getObjectFactory();
         this.defaultKey = objectFactory.getDefaultKey();
         this.defaultPool.startup(poolName, defaultKey,
                 config.getInitialSize(), config.isAsyncCreateInitObject());
