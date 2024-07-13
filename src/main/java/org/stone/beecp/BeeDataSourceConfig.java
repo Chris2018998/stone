@@ -583,11 +583,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //connection factory
-    public void setRawConnectionFactory(RawConnectionFactory factory) {
+    public void setConnectionFactory(BeeConnectionFactory factory) {
         this.connectionFactory = factory;
     }
 
-    public void setRawXaConnectionFactory(RawXaConnectionFactory factory) {
+    public void setXaConnectionFactory(BeeXaConnectionFactory factory) {
         this.connectionFactory = factory;
     }
 
@@ -821,6 +821,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
+        if (this.connectionFactory != null || connectionFactoryClass != null || isNotBlank(connectionFactoryClassName)) {
+            if (isNotBlank(this.username) || isNotBlank(this.password) || isNotBlank(this.jdbcUrl) || isNotBlank(driverClassName)) {
+                CommonLog.info("BeeCP({})Configuration of connection factory,Jdbc link info abandoned", poolName);
+                checkedConfig.username = null;
+                checkedConfig.password = null;
+                checkedConfig.jdbcUrl = null;
+                checkedConfig.driverClassName = null;
+            }
+        }
 
         //set some factories to config
         this.connectionFactory = connectionFactory;
@@ -941,7 +950,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 conFactClass = this.connectionFactoryClass != null ? this.connectionFactoryClass : Class.forName(this.connectionFactoryClassName);
 
                 //3.2: check connection factory class
-                Class[] parentClasses = {RawConnectionFactory.class, RawXaConnectionFactory.class, DataSource.class, XADataSource.class};
+                Class[] parentClasses = {BeeConnectionFactory.class, BeeXaConnectionFactory.class, DataSource.class, XADataSource.class};
 
                 //3.3: create connection factory instance
                 Object factory = createClassInstance(conFactClass, parentClasses, "connection factory");
@@ -982,7 +991,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 setPropertiesValue(factory, localConnectProperties);
 
                 //3.10: return RawConnectionFactory or RawXaConnectionFactory
-                if (factory instanceof RawConnectionFactory || factory instanceof RawXaConnectionFactory) {
+                if (factory instanceof BeeConnectionFactory || factory instanceof BeeXaConnectionFactory) {
                     return factory;
                 } else if (factory instanceof XADataSource) {
                     return new XaConnectionFactoryByDriverDs((XADataSource) factory, username, password);
