@@ -213,7 +213,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         String poolInitInfo;
         String driverClassNameOrFactoryName;
         if (isNotBlank(poolConfig.getDriverClassName())) {
-            driverClassNameOrFactoryName = rawFactory.getClass().getName();
+            driverClassNameOrFactoryName = poolConfig.getDriverClassName();
             poolInitInfo = "BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,driver:{}}";
         } else {
             driverClassNameOrFactoryName = rawFactory.getClass().getName();
