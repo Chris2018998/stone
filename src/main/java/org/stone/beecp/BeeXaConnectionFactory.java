@@ -13,7 +13,7 @@ import javax.sql.XAConnection;
 import java.sql.SQLException;
 
 /**
- * XAConnection factory interface whose impl instance build xa connections to pool.
+ * A XAConnection factory interface,whose implementation are used to create XAConnections for pool
  *
  * @author Chris Liao
  * @version 1.0
