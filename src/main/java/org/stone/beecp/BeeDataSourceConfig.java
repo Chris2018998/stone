@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.beecp.TransactionIsolation.TRANS_LEVEL_CODE_LIST;
+import static org.stone.beecp.BeeTransactionIsolationLevels.TRANS_LEVEL_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
@@ -507,7 +507,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
     public void setDefaultTransactionIsolationName(String transactionIsolationName) {
         String transactionIsolationNameTemp = trimString(transactionIsolationName);
-        this.defaultTransactionIsolationCode = TransactionIsolation.getTransactionIsolationCode(transactionIsolationNameTemp);
+        this.defaultTransactionIsolationCode = BeeTransactionIsolationLevels.getTransactionIsolationCode(transactionIsolationNameTemp);
         if (this.defaultTransactionIsolationCode != null) {
             defaultTransactionIsolationName = transactionIsolationNameTemp;
         } else {
