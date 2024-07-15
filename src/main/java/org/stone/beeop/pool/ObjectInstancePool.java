@@ -267,7 +267,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
     }
 
-    //Method-2.4: interrupt a thread in creating a connection
+    //Method-2.4: Gets owner hold time point(nanoseconds) on pool lock.
     public long getCreatingTime() {
         return this.pooledArrayLockedTimePoint;
     }

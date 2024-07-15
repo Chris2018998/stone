@@ -99,7 +99,7 @@ public interface BeeKeyedObjectPool {
     void deleteObjects(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * Get start time in creating an object in pool,timeunit:milliseconds
+     * Get start time in creating an object in pool,timeunit:nanoseconds
      *
      * @param key can being map to an object group
      * @return hold time on pool lock
