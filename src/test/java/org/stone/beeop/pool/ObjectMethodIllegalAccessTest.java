@@ -9,9 +9,9 @@ package org.stone.beeop.pool;
 import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.object.Book;
 import org.stone.beeop.object.JavaBookFactory;
 
