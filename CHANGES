@@ -1,5 +1,10 @@
 stone changes
 
+Changes in 1.3.5
+[beecp]
+1：fix nullpoint exception when set default to first connction
+2: fix log not print issue when set default to first connction 
+
 Changes in 1.3.4
 [beecp]
  1: add an indicator on threadlocal(set false to support virtual threads)
