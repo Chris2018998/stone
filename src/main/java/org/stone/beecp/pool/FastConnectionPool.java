@@ -859,7 +859,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-4.2: removes all pooled connections,then startup with new configuration if it is not null and valid
     public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
-            Log.info("BeeCP({})begin to clean pool", this.poolName);
 
             Log.info("BeeCP({})begin to remove all connections", this.poolName);
             this.removeAllConnections(forceCloseUsing, DESC_RM_CLEAR);
@@ -867,7 +866,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
             try {
                 if (config != null) {
-                    Log.info("BeeCP({})begin to reinitialize pool with a new configuration", this.poolName);
+                    Log.info("BeeCP({})begin to re-initialize pool with a new configuration", this.poolName);
                     this.poolConfig = config.check();
 
                     /*
@@ -875,13 +874,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                      * so still reset pool state to ready,but just do clear again with right configuration to fix it
                      */
                     startup(POOL_CLEARING);
+                    Log.info("BeeCP({})completed to re-initialize pool successful", this.poolName);
                 }
             } catch (Throwable e) {
-                Log.error("BeeCP({})reinitialized failed", this.poolName, e);
+                Log.error("BeeCP({})re-initialized pool failed", this.poolName, e);
                 throw e instanceof SQLException ? (SQLException) e : new PoolInitializeFailedException(e);
             } finally {
                 this.poolState = POOL_READY;//reset pool state to be ready once pool restart failed with the new config
-                Log.info("BeeCP({})completed to clean pool", this.poolName);
             }
         }
     }
