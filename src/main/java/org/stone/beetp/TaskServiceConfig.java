@@ -37,9 +37,9 @@ public class TaskServiceConfig {
     private int initWorkerSize;
     //maximum of workers in pool,default is core size of cup
     private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
-    //daemon indicator of worker thread
+    //daemon indicator of worker thread,default is false(works as user thread)
     private boolean workerInDaemon;
-    //milliseconds: max idle time for workers
+    //milliseconds: max idle time for workers,default is zero(not timeout)
     private long workerIdleTimeout;
 
     //class name of task pool implementation
