@@ -28,7 +28,7 @@ public class JoinTaskCountTest extends TestCase {
     public void test() throws Exception {
         //1: create task pool
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkInDaemon(true);
+        config.setWorkerInDaemon(true);
         config.setMaxWorkerSize(10);
         TaskService service = new TaskService(config);
 

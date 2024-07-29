@@ -85,7 +85,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
         this.maxWorkerSize = config.getMaxWorkerSize();
-        this.workInDaemon = config.isWorkInDaemon();
+        this.workInDaemon = config.isWorkerInDaemon();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
 

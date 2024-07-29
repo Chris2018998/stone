@@ -30,7 +30,7 @@ import static org.stone.beetp.TaskStates.TASK_EXEC_RESULT;
 public class OnceTimedTaskTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkInDaemon(true);
+        config.setWorkerInDaemon(true);
         config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
 

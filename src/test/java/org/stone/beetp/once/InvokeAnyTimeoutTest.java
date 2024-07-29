@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class InvokeAnyTimeoutTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkInDaemon(true);
+        config.setWorkerInDaemon(true);
         config.setMaxWorkerSize(2);
         TaskService service = new TaskService(config);
 

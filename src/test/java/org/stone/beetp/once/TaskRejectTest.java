@@ -26,7 +26,7 @@ public class TaskRejectTest extends TestCase {
 
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkInDaemon(true);
+        config.setWorkerInDaemon(true);
         config.setMaxWorkerSize(1);
         config.setMaxTaskSize(1);
         TaskService service = new TaskService(config);

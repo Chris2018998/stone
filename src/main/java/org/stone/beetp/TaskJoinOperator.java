@@ -19,17 +19,17 @@ package org.stone.beetp;
 public interface TaskJoinOperator<E> {
 
     /**
-     * try to split a given task into some sub tasks,worker thread offers them to worker private queue.
+     * try to split a given task into some subtasks,worker thread offers them to worker private queue.
      *
      * @param task target task
-     * @return an array of sub tasks split from the given task,if cannot to be divided,then return a null array
+     * @return an array of subtasks split from the given task,if cannot to be divided,then return a null array
      */
     Task<E>[] split(Task<E> task);
 
     /**
-     * Join sub task handles to result
+     * Join subtask handles to result
      *
-     * @param subTaskHandles result array of sub tasks
+     * @param subTaskHandles result array of subtasks
      * @return joined result
      */
     E join(TaskHandle<E>[] subTaskHandles);

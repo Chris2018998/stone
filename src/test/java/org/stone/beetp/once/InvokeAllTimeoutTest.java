@@ -23,7 +23,7 @@ import static org.stone.beetp.TaskStates.TASK_EXEC_EXCEPTION;
 public class InvokeAllTimeoutTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkInDaemon(true);
+        config.setWorkerInDaemon(true);
         config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
 

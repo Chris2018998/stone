@@ -10,22 +10,16 @@
 package org.stone.beetp;
 
 /**
- * Task Interface,which is similar to {@link java.util.concurrent.Callable} interface.
- * This interface defines a single method{@link #call},which returns a computed result or throws
- * an exception. Usually,task implementation instances are submitted to task pools(maybe call it thread executor),
- * and pooled worker threads will execute them by invoking their {@code call} methods.
+ * A Task interface,whose implementation instances
  *
- * @author Chris Liao
- * @version 1.0
+ * @param <T> is a generic type of task execution task
  */
 
 public interface Task<T> {
 
     /**
-     * method call then return its computed result or throws out failed exception of computation
-     *
-     * @return a computed result
-     * @throws Exception if executed failed in pool
+     * @return result of task execution
+     * @throws Exception when failed to be executed
      */
     T call() throws Exception;
 }
