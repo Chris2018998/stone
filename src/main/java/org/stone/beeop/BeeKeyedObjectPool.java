@@ -9,10 +9,7 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.pool.exception.ObjectCreateException;
-import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
-import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
-import org.stone.beeop.pool.exception.PoolInitializeFailedException;
+import org.stone.beeop.pool.exception.*;
 
 /**
  * A container interface on maintaining keyed pooled objects which can be borrowed out.
@@ -39,31 +36,31 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Gets keys of pooled object groups.
+     * get keys maintained in pool
      *
      * @return a keys array
      */
     Object[] keys();
 
     /**
-     * Gets key of default group
+     * get default key of pooled objects
      *
-     * @return pooled keys exists in pool
+     * @return default key in pool
      */
     Object getDefaultKey();
 
     /**
-     * Borrows an object from default group.
+     * Attempts to get an object from pool with default key,return a handle of a pooled object when success
      *
-     * @return handle of a borrowed object
-     * @throws ObjectCreateException         when failed to create a new object
-     * @throws ObjectGetTimeoutException     when timeout on wait
-     * @throws ObjectGetInterruptedException when interruption on wait
+     * @return handle of borrowed object
+     * @throws ObjectCreateException         when fail to create a pooled object
+     * @throws ObjectGetTimeoutException     when wait timeout for an object released from other borrower
+     * @throws ObjectGetInterruptedException that an interruption occurs while borrower waits for a released object
      */
     BeeObjectHandle getObjectHandle() throws Exception;
 
     /**
-     * Borrows an object from group mapping to specified key.
+     * Attempts to get an object from pool with a specified key
      *
      * @return handle of a borrowed object
      * @throws ObjectCreateException         when failed to create a new object
@@ -73,19 +70,21 @@ public interface BeeKeyedObjectPool {
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     /**
-     * Deletes an object group mapping to specified key.
+     * Deletes a pooled key from pool and remove all pooled objects associated with the key
      *
-     * @param key can being map to an object group
-     * @throws Exception when deletes failed
+     * @param key is a key to remove
+     * @throws ObjectKeyException if key is null
+     * @throws ObjectKeyException if key is default key
      */
     void deleteKey(Object key) throws Exception;
 
     /**
-     * Deletes an object group mapping to specified key.
+     * Deletes a pooled key from pool and remove all pooled objects associated with the key
      *
-     * @param key             can being map to an object group
-     * @param forceCloseUsing is true,direct closes borrowed objects and removes them from key mapping group;false,closes borrowed objects on they return to pool
-     * @throws Exception when group deleted failed
+     * @param key             is a key to remove from pool
+     * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null
+     * @throws ObjectKeyException if key is default key
      */
     void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 

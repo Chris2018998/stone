@@ -17,21 +17,21 @@ package org.stone.beeop;
  */
 public interface BeeObjectFactory {
 
-    //create a key for default pooled objects
+    //returns default key for being pooled
     Object getDefaultKey();
 
-    //create object instance
+    //creates an object to pool with specified key
     Object create(Object key) throws Exception;
 
-    //set default value to keyed object after object creation
+    //set default to a pooled object
     void setDefault(Object key, Object obj) throws Exception;
 
-    //reset some default value to dirty properties
+    //reset dirty properties of given object to default
     void reset(Object key, Object obj) throws Exception;
 
-    //alive test on a borrowed object
+    //executes alive test on an object
     boolean isValid(Object key, Object obj, int timeout);
 
-    //destroy a keyed object when object is bad or pool clearing
+    //destroy an object
     void destroy(Object key, Object obj);
 }
