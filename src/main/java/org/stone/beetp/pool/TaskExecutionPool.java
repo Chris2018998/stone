@@ -44,8 +44,9 @@ public final class TaskExecutionPool implements TaskPool {
 
     //2: fields about tasks
     private int maxTaskSize;
-    private long completedCount;//update in <method>removeTaskWorker</method>
-    private AtomicInteger taskCount;//(once count + scheduled count + join count(root))
+    private long completedCount;//completion count of tasks,worker threads update this value after executed tasks end
+    // update in <method>removeTaskWorker</method>
+    private AtomicInteger taskCount;//(count of once tasks + count of scheduled tasks + root count of joined tasks)
 
     //2: fields about worker threads
     private int maxWorkerSize;
@@ -59,7 +60,7 @@ public final class TaskExecutionPool implements TaskPool {
     //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
     private ScheduledTaskQueue scheduledDelayedQueue;
-    private PoolScheduledTaskPeekThread scheduledPeekThread;//wait at first task of scheduled queue util first task timeout,then poll it from queue
+    private PoolScheduledTaskPollThread scheduledPeekThread;//wait at first task of scheduled queue util first task timeout,then poll it from queue
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -70,9 +71,9 @@ public final class TaskExecutionPool implements TaskPool {
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
                 startup(config.check());
-                this.poolState = POOL_RUNNING;//ready to accept coming task submission
+                this.poolState = POOL_RUNNING;//ready to accept submitted tasks
             } catch (Throwable e) {
-                this.poolState = POOL_NEW;//reset to initial state when failed to startup
+                this.poolState = POOL_NEW;//reset pool state to new when initializes fail
                 throw e;
             }
         } else {
@@ -81,7 +82,7 @@ public final class TaskExecutionPool implements TaskPool {
     }
 
     private void startup(TaskServiceConfig config) {
-        //step1: copy config item to pool
+        //step1: assign values to some local variables
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
         this.maxWorkerSize = config.getMaxWorkerSize();
@@ -89,7 +90,7 @@ public final class TaskExecutionPool implements TaskPool {
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
 
-        //step2: create some queues(worker queue,task queue, wait queue on termination)
+        //step2: create task queue and pool lock
         if (workerArray == null) {
             this.workerArrayLock = new ReentrantLock();
             this.taskQueue = new ConcurrentLinkedQueue<>();
@@ -100,7 +101,7 @@ public final class TaskExecutionPool implements TaskPool {
             this.monitorVo = new TaskPoolMonitorVo();
         }
 
-        //step4: create initial work threads
+        //step4: create worker threads on pool initialization
         String workerName = poolName + "-task worker";
         int workerInitSize = config.getInitWorkerSize();
         this.workerArray = new TaskWorkThread[workerInitSize];
@@ -110,14 +111,15 @@ public final class TaskExecutionPool implements TaskPool {
             worker.setName(workerName);
             workerArray[i] = worker;
         }
+        //delay to start to avoid to scan null workers
         for (int i = 0; i < workerInitSize; i++) {
             workerArray[i].start();
         }
 
-        //step5: create delayed queue and peek thread working on queue
+        //step5: create a queue to store scheduled tasks and a thread to poll expired tasks from scheduled tasks queue and pull to execution queue
         if (scheduledPeekThread == null) {
             this.scheduledDelayedQueue = new ScheduledTaskQueue(0);
-            this.scheduledPeekThread = new PoolScheduledTaskPeekThread();
+            this.scheduledPeekThread = new PoolScheduledTaskPollThread();
             this.scheduledPeekThread.start();
         }
     }
@@ -531,8 +533,8 @@ public final class TaskExecutionPool implements TaskPool {
     //***************************************************************************************************************//
     //                                 9: Pool worker class and scheduled class (2)                                  //
     //***************************************************************************************************************//
-    private class PoolScheduledTaskPeekThread extends Thread {
-        PoolScheduledTaskPeekThread() {
+    private class PoolScheduledTaskPollThread extends Thread {
+        PoolScheduledTaskPollThread() {
             this.setName(poolName + "-ScheduledPeek");
             this.setDaemon(true);
         }
