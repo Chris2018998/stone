@@ -26,22 +26,23 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    //index for generating default pool name,atomic value starts with 1
+    //an int sequence generator for pool names,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //if this value is null or empty,a generated pool name set to this field
+    //pool name,default is null;if not set,a pool name generated with {@code PoolNameIndex} for it
     private String poolName;
-    ///max reachable size of task instance by per key(once tasks + scheduled tasks)
+    //maximum of tasks(once tasks + scheduled tasks),default is 100
     private int maxTaskSize = 100;
-    //worker creation size while pool initialization
+    //size of worker created on pool initialization
     private int initWorkerSize;
-    //max worker siz in pool
+    //maximum of workers in pool,default is core size of cup
     private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
-    //daemon ind of worker thread
-    private boolean workInDaemon;
-    //idle timeout of worker thread(zero value means not timeout)
-    private long workerKeepAliveTime;
-    //pool implementation class name
+    //daemon indicator of worker thread
+    private boolean workerInDaemon;
+    //milliseconds: max idle time for workers
+    private long workerIdleTimeout;
+
+    //class name of task pool implementation
     private String poolImplementClassName = TaskExecutionPool.class.getName();
 
     public String getPoolName() {
@@ -76,20 +77,20 @@ public class TaskServiceConfig {
         if (maxWorkerSize > 0) this.maxWorkerSize = maxWorkerSize;
     }
 
-    public boolean isWorkInDaemon() {
-        return workInDaemon;
+    public boolean isWorkerInDaemon() {
+        return workerInDaemon;
     }
 
-    public void setWorkInDaemon(boolean workInDaemon) {
-        this.workInDaemon = workInDaemon;
+    public void setWorkerInDaemon(boolean workerInDaemon) {
+        this.workerInDaemon = workerInDaemon;
     }
 
     public long getWorkerKeepAliveTime() {
-        return workerKeepAliveTime;
+        return workerIdleTimeout;
     }
 
     public void setWorkerKeepAliveTime(long workerKeepAliveTime) {
-        if (workerKeepAliveTime > 0L) this.workerKeepAliveTime = workerKeepAliveTime;
+        if (workerKeepAliveTime > 0L) this.workerIdleTimeout = workerKeepAliveTime;
     }
 
     public String getPoolImplementClassName() {
@@ -110,7 +111,7 @@ public class TaskServiceConfig {
             throw new TaskServiceConfigException("maxWorkerSize must be greater than zero");
         if (maxWorkerSize < initWorkerSize)
             throw new TaskServiceConfigException("maxWorkerSize must be not less than initWorkerSize");
-        if (workerKeepAliveTime < 0L)
+        if (workerIdleTimeout < 0L)
             throw new TaskServiceConfigException("workerKeepAliveTime must be greater than zero");
 
         //2:create new config and copy field value from current
