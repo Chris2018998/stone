@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * a interface represents handle of pooled object
+ * represent a handle of a borrowed object
  *
  * @author Chris Liao
  * @version 1.0
@@ -22,6 +22,8 @@ public interface BeeObjectHandle {
     Object getObjectKey();
 
     long getCreationTime();
+
+
 
     long getLassAccessTime();
 
