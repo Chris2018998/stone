@@ -33,7 +33,8 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private int transferWaitingSize;
     private String osId;
     private String osUUID;
-    private long poolLockHoldTime;
+    private long creatingTime;
+    private boolean isCreatingTimeout;
 
     ObjectPoolMonitorVo(
             String poolName, String hostIP, long threadId,
@@ -130,13 +131,20 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return maxSize;
     }
 
-    public long getPoolLockHoldTime() {
-        return poolLockHoldTime;
+    public long getCreatingTime() {
+        return creatingTime;
     }
 
-    void setPoolLockHoldTime(long poolLockHoldTime) {
-        this.poolLockHoldTime = poolLockHoldTime;
+    void setCreatingTime(long creatingTime) {
+        this.creatingTime = creatingTime;
     }
 
+    public boolean isCreatingTimeout() {
+        return this.isCreatingTimeout;
+    }
+
+    void setCreatingTimeout(boolean creatingTimeout) {
+        this.isCreatingTimeout = creatingTimeout;
+    }
 }
 

@@ -33,7 +33,7 @@ public interface BeeKeyedObjectPool {
     void close();
 
     /**
-     * Checks pool state whether in closed
+     * Checks pool state whether is closed
      *
      * @return a boolean value of pool close status
      */
@@ -54,25 +54,25 @@ public interface BeeKeyedObjectPool {
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Cleanup pool and all pooled objects removed from pool
+     * Removes all pooled objects
      *
      * @param forceCloseUsing is true that close borrowed object immediately;false that close borrowed objects when them return to pool
      */
     void clear(boolean forceCloseUsing) throws Exception;
 
     /**
-     * After cleaned up,pool re-initialize with a new configuration object
+     * After removing all pooled objects,do reinitialization on pool with a new configuration object
      *
      * @param forceCloseUsing is true that close borrowed object immediately;false that close borrowed objects when them return to pool
      * @param config          is a configuration object for pool reinitialize
      * @throws BeeObjectSourceConfigException when config is null
-     * @throws PoolInitializeFailedException  when pool reinitialize failed
+     * @throws PoolInitializeFailedException  when reinitialize failed
      */
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 
 
     //***************************************************************************************************************//
-    //                                     some methods with poole key                                               //
+    //                                     some methods with pool key                                               //
     //***************************************************************************************************************//
 
     /**
@@ -104,7 +104,7 @@ public interface BeeKeyedObjectPool {
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
     /**
-     * Gets start time of creating an object for a thread
+     * Gets start time of creating an object for a thread,timeunit:nanoseconds
      *
      * @param key is
      * @return start time of creation
@@ -112,7 +112,7 @@ public interface BeeKeyedObjectPool {
     long getCreatingTime(Object key);
 
     /**
-     * Gets timeout check result of creating an object for a thread
+     * checks current creation timeout,refer to {@link #getCreatingTime(Object)}
      *
      * @return true that already timeout,false that not timeout or not creation
      */

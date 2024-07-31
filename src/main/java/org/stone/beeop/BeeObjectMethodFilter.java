@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * filter on methods call
+ * A filter interface of method invocation on pooled object
  *
  * @author Chris
  * @version 1.0

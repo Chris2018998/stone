@@ -107,12 +107,12 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                          3: pool other methods(7)                                             //
     //***************************************************************************************************************//
-    public boolean isClosed() {
-        return pool == null || pool.isClosed();
-    }
-
     public void close() {
         if (pool != null) pool.close();
+    }
+
+    public boolean isClosed() {
+        return pool == null || pool.isClosed();
     }
 
     //override method
@@ -146,22 +146,8 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                          4: operation by key                                                  //
+    //                                          4: operation with key                                                //
     //***************************************************************************************************************//
-    public void deleteKey(Object key) throws Exception {
-        checkPool();
-        createPoolByLock().deleteKey(key);
-    }
-
-    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        checkPool();
-        createPoolByLock().deleteKey(key, forceCloseUsing);
-    }
-
-    public void deleteObjects(Object key, boolean forceCloseUsing) throws Exception {
-        checkPool();
-        createPoolByLock().deleteObjects(key, forceCloseUsing);
-    }
 
     public long getCreatingTime(Object key) throws Exception {
         checkPool();
@@ -173,7 +159,7 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
         return createPoolByLock().isCreatingTimeout(key);
     }
 
-    public Thread[] interruptOnPoolLock(Object key) throws Exception {
+    public Thread[] interruptOnCreation(Object key) throws Exception {
         checkPool();
         return createPoolByLock().interruptOnCreation(key);
     }
@@ -187,6 +173,18 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
         checkPool();
         createPoolByLock().setPrintRuntimeLog(key, indicator);
     }
+
+
+    public void deleteKey(Object key) throws Exception {
+        checkPool();
+        createPoolByLock().deleteKey(key);
+    }
+
+    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        checkPool();
+        createPoolByLock().deleteKey(key, forceCloseUsing);
+    }
+
 
     private void checkPool() throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Pool not be created");
