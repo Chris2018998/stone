@@ -691,7 +691,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             throw new IllegalArgumentException("Configuration file name can't be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
         if (!fileLowerCaseName.endsWith(".properties"))
-            throw new IllegalArgumentException("Configuration file name file must end with '.properties'");
+            throw new IllegalArgumentException("Configuration file name file must be end with '.properties'");
 
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());

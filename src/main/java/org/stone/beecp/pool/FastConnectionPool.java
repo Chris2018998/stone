@@ -511,7 +511,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //step8: check driver whether support networkTimeout
         int defaultNetworkTimeout = 0;
-        boolean supportNetworkTimeoutInd = true;//assume support
+        boolean supportNetworkTimeoutInd = true;//assume supportable
         try {
             defaultNetworkTimeout = rawCon.getNetworkTimeout();
             if (defaultNetworkTimeout < 0) {
