@@ -38,7 +38,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //object factory properties map
     private final Map<String, Object> factoryProperties = new HashMap<>();
 
-    //if null or empty,a generation name will be assigned to it after configuration check passed
+    //pool name,if not set,a generation name assigned to it with atomic integer,refer to {@code PoolNameIndex} item
     private String poolName;
     //work mode of pool semaphore,default:unfair mode
     private boolean fairMode;
@@ -71,39 +71,44 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //milliseconds: A wait time for borrowed objects return to pool in a loop,at end of wait,try to close returned objects,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
 
-
-    //thread local cache enable,default is true(set to be false to support virtual threads)
+    //an indicator to apply a thread local in pool or not,default is true
     private boolean enableThreadLocal = true;
-    //enable indicator to register configuration and pool to Jmx,default is false
+    //an indicator to register pool to MBean server or not
     private boolean enableJmx;
-    //enable indicator to print pool runtime log,default is false
+    //a switch to print runtime logs of pool working
     private boolean printRuntimeLog;
-    //enable indicator to print configuration items on pool initialization,default is false
+    //a switch to print configuration items and their values on pool initialization
     private boolean printConfigInfo;
-    //exclusion list on config items print,default is null
+    //an exclusion list contains some names of items,them not be printed on pool initialization
     private List<String> configPrintExclusionList;
 
-
-    //object interfaces
+    //an array of interfaces implemented by pooled object class
     private Class[] objectInterfaces;
-    //object interface names
+    //an array of interface names of pooled object class
     private String[] objectInterfaceNames;
 
-    //object factory(priority-1)
+    //object factory to create pooled object for pool,first priority to used it in pool
     private BeeObjectFactory objectFactory;
-    //object factory class(priority-2)
+    //class of object factory,whose instance can be created when set,second priority to used it in pool
     private Class<? extends BeeObjectFactory> objectFactoryClass;
-    //object factory class name(priority-3)
+    //class name of object factory,whose instance can be created when set,third priority to used it in pool
     private String objectFactoryClassName;
 
-    //method call filter(priority-1)
+    //filter on method invocation,first priority to used it in pool
     private BeeObjectMethodFilter objectMethodFilter;
-    //object method call filter class(priority-2)
+    //class of filter on method invocation,second priority to used it in pool
     private Class<? extends BeeObjectMethodFilter> objectMethodFilterClass;
-    //object method call filter class name(priority-3)
+    //class name of filter on method invocation,third priority to used it in pool
     private String objectMethodFilterClassName;
 
-    //pool implementation class name
+    //eviction predicate
+    private BeeObjectPredicate evictPredicate;
+    //eviction predicate class
+    private Class<? extends BeeObjectPredicate> evictPredicateClass;
+    //eviction predicate class name
+    private String evictPredicateClassName;
+
+    //class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
 
     //***************************************************************************************************************//
@@ -112,17 +117,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     public BeeObjectSourceConfig() {
     }
 
-    //load configuration from properties file
     public BeeObjectSourceConfig(File propertiesFile) {
         loadFromPropertiesFile(propertiesFile);
     }
 
-    //load configuration from properties file
     public BeeObjectSourceConfig(String propertiesFileName) {
         loadFromPropertiesFile(propertiesFileName);
     }
 
-    //load configuration from properties
     public BeeObjectSourceConfig(Properties configProperties) {
         loadFromProperties(configProperties);
     }
@@ -373,6 +375,30 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectMethodFilter = objectMethodFilter;
     }
 
+    public BeeObjectPredicate getEvictPredicate() {
+        return evictPredicate;
+    }
+
+    public void setEvictPredicate(BeeObjectPredicate evictPredicate) {
+        this.evictPredicate = evictPredicate;
+    }
+
+    public Class<? extends BeeObjectPredicate> getEvictPredicateClass() {
+        return evictPredicateClass;
+    }
+
+    public void setEvictPredicateClass(Class<? extends BeeObjectPredicate> evictPredicateClass) {
+        this.evictPredicateClass = evictPredicateClass;
+    }
+
+    public String getEvictPredicateClassName() {
+        return evictPredicateClassName;
+    }
+
+    public void setEvictPredicateClassName(String evictPredicateClassName) {
+        this.evictPredicateClassName = evictPredicateClassName;
+    }
+
     public Object getFactoryProperty(String key) {
         return this.factoryProperties.get(key);
     }
@@ -420,7 +446,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     public void loadFromPropertiesFile(String filename) {
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
         if (!fileLowerCaseName.endsWith(".properties"))
-            throw new IllegalArgumentException("Configuration file name file must end with '.properties'");
+            throw new IllegalArgumentException("Configuration file name file must be end with '.properties'");
 
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());
@@ -535,15 +561,18 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         //2:try to create method filter
         BeeObjectMethodFilter tempMethodFilter = this.tryCreateMethodFilter();
 
-        //3:load object implemented interfaces
+        //3: build object interfaces with configuration item
         Class[] tempObjectInterfaces = this.loadObjectInterfaces();
+        //4: create predicate
+        BeeObjectPredicate predicate = this.createObjectPredicate();
 
-        //4:create a checked configuration and copy local fields to it
+        //5: create a new configuration and copy local fields to it
         BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
         copyTo(checkedConfig);
 
-        //5:set temp to config
+        //5: set some created objects on new configuration(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
+        checkedConfig.evictPredicate = predicate;
         if (tempMethodFilter != null) checkedConfig.objectMethodFilter = tempMethodFilter;
         if (tempObjectInterfaces != null) checkedConfig.objectInterfaces = tempObjectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
@@ -678,5 +707,28 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         return rawObjectFactory;
     }
+
+    private BeeObjectPredicate createObjectPredicate() throws BeeObjectSourceConfigException {
+        //step1:if exits a set predicate,then return it
+        if (this.evictPredicate != null) return this.evictPredicate;
+
+        //step2: create predicate instance with a class or class name
+        if (evictPredicateClass != null || isNotBlank(evictPredicateClassName)) {
+            Class<?> predicationClass = null;
+            try {
+                predicationClass = evictPredicateClass != null ? evictPredicateClass : Class.forName(evictPredicateClassName);
+                return (BeeObjectPredicate) createClassInstance(predicationClass, BeeObjectPredicate.class, "object predicate");
+            } catch (ClassNotFoundException e) {
+                throw new BeeObjectSourceConfigException("Not found predicate class[" + evictPredicateClassName + "]", e);
+            } catch (BeeObjectSourceConfigException e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create predicate instance with class[" + predicationClass + "]", e);
+            }
+        }
+
+        return null;
+    }
+
 }
 
