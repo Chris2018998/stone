@@ -200,9 +200,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //1:try to acquire lock
         try {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectCreateException("Timeout at acquiring lock to create a pooled object");
+                throw new ObjectCreateException("Waited timeout on pool lock");
         } catch (InterruptedException e) {
-            throw new ObjectCreateException("Interrupted at acquiring lock to create a pooled object");
+            throw new ObjectCreateException("An interruption occurred while waiting on pool lock");
         }
 
         //2:try to create a pooled object
@@ -303,8 +303,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Access rejected,cause:pool closed or in clearing");
 
-        //0:try to get from threadLocal cache
-        ObjectBorrower b;
+        //1: try to reuse object in thread local
+        ObjectBorrower b = null;
         if (this.enableThreadLocal) {
             b = this.threadLocal.get().get();
             if (b != null) {
@@ -313,27 +313,27 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                     if (this.testOnBorrow(p)) return handleFactory.createHandle(p, b);
                     b.lastUsed = null;
                 }
-            } else {
-                b = new ObjectBorrower();
-                this.threadLocal.set(new WeakReference<>(b));
             }
-        } else {
-            b = new ObjectBorrower();
         }
 
-
+        //2: try to acquire a permit of pool semaphore
         long deadline = System.nanoTime();
         try {
-            //1:try to acquire a permit
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectGetTimeoutException("Timeout at acquiring semaphore to get a idle object");
+                throw new ObjectGetTimeoutException("Waited timeout on pool semaphore");
         } catch (InterruptedException e) {
-            throw new ObjectGetInterruptedException("Interrupted at acquiring semaphore to get a idle object");
+            throw new ObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
         }
 
-        //2:try search one or create one
+        //3: create a borrower when local variable b is null
+        if (this.enableThreadLocal && b == null) {
+            b = new ObjectBorrower();
+            this.threadLocal.set(new WeakReference<>(b));
+        }
+
+        //4: try to search idle one or create new one
         PooledObject p;
-        try {//semaphore acquired
+        try {
             p = this.searchOrCreate();
             if (p != null) {
                 semaphore.release();
@@ -344,24 +344,27 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             throw e;
         }
 
-        //3:try to get one transferred one
-        b.state = null;
+        //5: wait in queue for released one
+        if (b == null)
+            b = new ObjectBorrower();
+        else
+            b.state = null;
         this.waitQueue.offer(b);
         BeeObjectException cause = null;
         deadline += this.maxWaitNs;
 
         do {
-            Object s = b.state;
+            Object s = b.state;//one of possible types: PooledObject,Throwable,null
             if (s instanceof PooledObject) {
                 p = (PooledObject) s;
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                    waitQueue.remove(b);
                     semaphore.release();
+                    waitQueue.remove(b);
                     return handleFactory.createHandle(p, b);
                 }
             } else if (s instanceof Throwable) {
-                waitQueue.remove(b);
                 semaphore.release();
+                waitQueue.remove(b);
                 throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
             }
 
@@ -378,9 +381,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
                     LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
                     if (Thread.interrupted())
-                        cause = new ObjectGetInterruptedException("Interrupted while waiting in queue");
+                        cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
                 } else if (t <= 0L) {//timeout
-                    cause = new ObjectGetTimeoutException("Timeout in wait queue");
+                    cause = new ObjectGetTimeoutException("Waited timeout for a released object");
                 }
             }//end (state == BOWER_NORMAL)
         } while (true);//while
@@ -685,14 +688,14 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     private static class ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            b.lastUsed = p;
+            if (b != null) b.lastUsed = p;
             return new ObjectSimpleHandle(p);
         }
     }
 
     private static class ObjectProxyHandleFactory extends ObjectHandleFactory {
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            b.lastUsed = p;
+            if (b != null) b.lastUsed = p;
             return new ObjectProxyHandle(p);
         }
     }
