@@ -19,7 +19,6 @@ import org.stone.tools.extension.InterruptionReentrantLock;
 import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
@@ -118,8 +117,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         Class[] objectInterfaces = config.getObjectInterfaces();
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
-        this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces, config.getObjectMethodFilter(),
-                new ConcurrentHashMap<MethodCacheKey, Method>(16));
+        this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces,
+                config.getObjectMethodFilter(),
+                config.getEvictPredicate(),
+                new ConcurrentHashMap<>(16));
 
         if (objectInterfaces != null && objectInterfaces.length > 0)
             this.handleFactory = new ObjectProxyHandleFactory();
@@ -153,8 +154,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.pooledArrayLock = new InterruptionReentrantLock();
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
 
-        if (this.enableThreadLocal)
-            this.threadLocal = new BorrowerThreadLocal();
+        if (this.enableThreadLocal) this.threadLocal = new BorrowerThreadLocal();
         this.semaphore = new InterruptionSemaphore(semaphoreSize, isFairMode);
         this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
         this.servantState = new AtomicInteger(THREAD_WAITING);
@@ -438,8 +438,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-3.5: remove object when exception occur in return
-    void abandonOnReturn(PooledObject p) {
-        this.removePooledEntry(p, DESC_RM_BAD);
+    void abandonOnReturn(PooledObject p, String reason) {
+        this.removePooledEntry(p, reason);
         this.tryWakeupServantThread();
     }
 

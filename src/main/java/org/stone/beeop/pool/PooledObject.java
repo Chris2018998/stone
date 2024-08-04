@@ -9,14 +9,18 @@
  */
 package org.stone.beeop.pool;
 
+import org.stone.beecp.pool.ProxyConnectionBase;
 import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.BeeObjectMethodFilter;
+import org.stone.beeop.BeeObjectPredicate;
 import org.stone.beeop.pool.exception.ObjectRecycleException;
 
 import java.lang.reflect.Method;
 import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
+import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_ABORT;
+import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
 import static org.stone.tools.BeanUtil.CommonLog;
 
 /**
@@ -28,6 +32,7 @@ import static org.stone.tools.BeanUtil.CommonLog;
 final class PooledObject implements Cloneable {
     final Class[] objectInterfaces;
     final BeeObjectMethodFilter filter;
+    final BeeObjectPredicate predicate;
     final Map<MethodCacheKey, Method> methodCache;
     private final BeeObjectFactory factory;
 
@@ -45,10 +50,13 @@ final class PooledObject implements Cloneable {
     //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(BeeObjectFactory factory, Class[] objectInterfaces,
-                 BeeObjectMethodFilter filter, Map<MethodCacheKey, Method> methodCache) {
+                 BeeObjectMethodFilter filter,
+                 BeeObjectPredicate predicate,
+                 Map<MethodCacheKey, Method> methodCache) {
         this.factory = factory;
         this.objectInterfaces = objectInterfaces;
         this.filter = filter;
+        this.predicate = predicate;
         this.methodCache = methodCache;
     }
 
@@ -99,11 +107,18 @@ final class PooledObject implements Cloneable {
             this.factory.reset(key, raw);
             this.ownerPool.recycle(this);
         } catch (Throwable e) {
-            this.ownerPool.abandonOnReturn(this);
+            this.ownerPool.abandonOnReturn(this, DESC_RM_BAD);
             if (e instanceof Exception)
                 throw (Exception) e;
             else
                 throw new ObjectRecycleException(e);
         }
+    }
+
+    /**
+     * remove connection from pool,method called by {@link ProxyConnectionBase#abort}
+     */
+    void removeSelf() {
+        ownerPool.abandonOnReturn(this, DESC_RM_ABORT);
     }
 }
