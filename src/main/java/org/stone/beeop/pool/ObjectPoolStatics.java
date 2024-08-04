@@ -40,6 +40,7 @@ public class ObjectPoolStatics {
     //remove reason
     static final String DESC_RM_INIT = "init";
     static final String DESC_RM_BAD = "bad";
+    static final String DESC_RM_ABORT = "abort";
     static final String DESC_RM_IDLE = "idle";
     static final String DESC_RM_CLOSED = "closed";
     static final String DESC_RM_CLEAR = "clear";
