@@ -35,12 +35,12 @@ import static org.stone.tools.CommonUtil.*;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //an int sequence for pool names generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //object factory properties map
+    //a map store value of putted items,which are injected to an object factory,default is empty
     private final Map<String, Object> factoryProperties = new HashMap<>();
 
-    //pool name,if not set,a generation name assigned to it with atomic integer,refer to {@code PoolNameIndex} item
+    //if not set,a generation name assigned to it,default is null
     private String poolName;
-    //work mode of pool semaphore,default:unfair mode
+    //an indicator of pool work mode,default is false(unfair)
     private boolean fairMode;
     //creation size of initial objects,default is zero
     private int initialSize;
@@ -48,38 +48,38 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     private boolean asyncCreateInitObject;
     //max key size(pool capacity size = maxObjectKeySize * maxActive),default is 50
     private int maxObjectKeySize = 50;
-    //maximum of objects in instance pool,default is 10(default range: 10 =< number <=50)
+    //maximum of object instances in pool,its original value is calculated with an expression
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //max permits size of instance pool semaphore
+    //max permit size of pool semaphore,its original value is calculated with an expression
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds: max wait time in pool to get objects for borrowers,default is 8000 milliseconds(8 seconds)
+    //milliseconds: max wait time to get an object instance for a borrower in pool,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8);
 
-    //milliseconds: max idle time,default is 18000 milliseconds(3 minutes)
+    //milliseconds: max idle time of un-borrowed object,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3);
-    //milliseconds: max inactive time check on borrowed objects,if timeout,pool recycled them by force to avoid objects leak,default is zero
+    //milliseconds: max inactive time of borrowed object,which can be recycled by force,default is zero
     private long holdTimeout;
 
-    //seconds: max wait time to get validation result on test connections,default is 3 seconds
+    //seconds: max wait time to get alive test result from objects,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //milliseconds: a gap time value from last activity time to borrowed time point,needn't do test on objects,default is 500 milliseconds
+    //milliseconds: a threshold time of alive test when borrowed success,if time gap value since last access is less than it,no test on objects,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //milliseconds: an interval time to scan idle objects or long time hold objects,default is 18000 milliseconds(3 minutes)
+    //milliseconds: an interval time that pool scans out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3);
-    //indicator on direct closing borrowed objects while pool clears,default is false
+    //an indicator that close borrowed objects immediately,or that close them when them return to pool when clean pool and close pool,default is false.
     private boolean forceCloseUsingOnClear;
-    //milliseconds: A wait time for borrowed objects return to pool in a loop,at end of wait,try to close returned objects,default is 3000 milliseconds
+    //milliseconds: a park time for waiting borrowed objects return to pool when clean pool and close pool,default is 3000 milliseconds
     private long delayTimeForNextClear = 3000L;
 
-    //an indicator to apply a thread local in pool or not,default is true
+    //an indicator to use thread local cache or not(set false to support virtual threads)
     private boolean enableThreadLocal = true;
     //an indicator to register pool to MBean server or not
     private boolean enableJmx;
-    //a switch to print runtime logs of pool working
+    //enable indicator to print pool runtime log,default is false
     private boolean printRuntimeLog;
-    //a switch to print configuration items and their values on pool initialization
+    //enable indicator to print configuration items on pool initialization,default is false
     private boolean printConfigInfo;
-    //an exclusion list contains some names of items,them not be printed on pool initialization
+    //a skip list on configuration info-print,original items are copied from default skip list
     private List<String> configPrintExclusionList;
 
     //an array of interfaces implemented by pooled object class
@@ -553,28 +553,27 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         if (initialSize > this.maxActive)
             throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
 
-        //1:try to create object factory
+        //1: try to create object factory
         BeeObjectFactory objectFactory = this.createObjectFactory();
         if (objectFactory.getDefaultKey() == null)
-            throw new BeeObjectSourceConfigException("Default key from factory can't be null");
+            throw new BeeObjectSourceConfigException("Object factory must provide a valid default pool key");
 
-        //2:try to create method filter
-        BeeObjectMethodFilter tempMethodFilter = this.tryCreateMethodFilter();
+        //2: try to load interfaces
+        Class[] objectInterfaces = this.loadObjectInterfaces();
 
-        //3: build object interfaces with configuration item
-        Class[] tempObjectInterfaces = this.loadObjectInterfaces();
-        //4: create predicate
+        //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
+        BeeObjectMethodFilter methodFilter = this.tryCreateMethodFilter();
 
-        //5: create a new configuration and copy local fields to it
+        //4: create a copy from this current configuration object
         BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
         copyTo(checkedConfig);
 
-        //5: set some created objects on new configuration(such as factory,filter,predicate)
+        //5: assign above objects to the checked configuration object(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
-        checkedConfig.evictPredicate = predicate;
-        if (tempMethodFilter != null) checkedConfig.objectMethodFilter = tempMethodFilter;
-        if (tempObjectInterfaces != null) checkedConfig.objectInterfaces = tempObjectInterfaces;
+        if (predicate != null) checkedConfig.evictPredicate = predicate;
+        if (methodFilter != null) checkedConfig.objectMethodFilter = methodFilter;
+        if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
         return checkedConfig;
     }
@@ -632,7 +631,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                 if (!objectInterfaces[i].isInterface())
                     throw new BeeObjectSourceConfigException("interfaces array[" + i + "]is not valid interface");
             }
-            return objectInterfaces;
+            return objectInterfaces.clone();
         }
 
         //2: try to load interfaces by names
@@ -726,9 +725,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                 throw new BeeObjectSourceConfigException("Failed to create predicate instance with class[" + predicationClass + "]", e);
             }
         }
-
         return null;
     }
-
 }
 

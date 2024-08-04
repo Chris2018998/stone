@@ -72,7 +72,7 @@ public interface BeeKeyedObjectPool {
 
 
     //***************************************************************************************************************//
-    //                                     some methods with pool key                                               //
+    //                                     some methods with pool key                                                //
     //***************************************************************************************************************//
 
     /**
@@ -95,7 +95,7 @@ public interface BeeKeyedObjectPool {
     /**
      * Attempts to get an object from pool with a specified key
      *
-     * @param key is a object
+     * @param key may be mapping to a set of pooled objects
      * @return handle of a borrowed object
      * @throws ObjectCreateException         when failed to create a new object
      * @throws ObjectGetTimeoutException     when timeout on wait
@@ -106,7 +106,7 @@ public interface BeeKeyedObjectPool {
     /**
      * Gets start time of creating an object for a thread,timeunit:nanoseconds
      *
-     * @param key is
+     * @param key may be mapping to a set of pooled objects
      * @return start time of creation
      */
     long getCreatingTime(Object key);
