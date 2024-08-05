@@ -9,7 +9,6 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beecp.pool.ProxyConnectionBase;
 import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.BeeObjectPredicate;
@@ -19,7 +18,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
-import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_ABORT;
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
 import static org.stone.tools.BeanUtil.CommonLog;
 
@@ -107,7 +105,7 @@ final class PooledObject implements Cloneable {
             this.factory.reset(key, raw);
             this.ownerPool.recycle(this);
         } catch (Throwable e) {
-            this.ownerPool.abandonOnReturn(this, DESC_RM_BAD);
+            this.ownerPool.abort(this, DESC_RM_BAD);
             if (e instanceof Exception)
                 throw (Exception) e;
             else
@@ -115,10 +113,7 @@ final class PooledObject implements Cloneable {
         }
     }
 
-    /**
-     * remove connection from pool,method called by {@link ProxyConnectionBase#abort}
-     */
-    void removeSelf() {
-        ownerPool.abandonOnReturn(this, DESC_RM_ABORT);
+    void abortSelf(String reason) {
+        ownerPool.abort(this, reason);
     }
 }

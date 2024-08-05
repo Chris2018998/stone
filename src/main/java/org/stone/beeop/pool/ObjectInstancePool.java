@@ -11,6 +11,7 @@ package org.stone.beeop.pool;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
@@ -202,7 +203,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
                 throw new ObjectCreateException("Waited timeout on pool lock");
         } catch (InterruptedException e) {
-            throw new ObjectCreateException("An interruption occurred while waiting on pool lock");
+            throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool lock");
         }
 
         //2:try to create a pooled object
@@ -420,7 +421,18 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     /**
-     * Method-3.4: when object create failed,creator thread will transfer caused exception to one waiting borrower,
+     * Method-4.4: terminate a Pooled Connection
+     *
+     * @param p      to be closed and removed
+     * @param reason is a cause for be aborted
+     */
+    void abort(PooledObject p, String reason) {
+        this.removePooledEntry(p, reason);
+        this.tryWakeupServantThread();
+    }
+
+    /**
+     * Method-3.5: when object create failed,creator thread will transfer caused exception to one waiting borrower,
      * which will exit wait and throw this exception.
      *
      * @param e: transfer Exception to waiter
@@ -435,12 +447,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 return;
             }
         }
-    }
-
-    //Method-3.5: remove object when exception occur in return
-    void abandonOnReturn(PooledObject p, String reason) {
-        this.removePooledEntry(p, reason);
-        this.tryWakeupServantThread();
     }
 
     //Method-3.6: check object alive state,if not alive then remove it from pool

@@ -17,8 +17,7 @@ import org.stone.beeop.pool.exception.ObjectCallException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASSES;
-import static org.stone.beeop.pool.ObjectPoolStatics.EMPTY_CLASS_NAMES;
+import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
@@ -64,7 +63,7 @@ public class ObjectSimpleHandle implements BeeObjectHandle {
 
     public void abort() throws Exception {
         checkClosed();
-        p.removeSelf();
+        p.abortSelf(DESC_RM_ABORT);
     }
 
     public final void close() throws Exception {
@@ -110,7 +109,7 @@ public class ObjectSimpleHandle implements BeeObjectHandle {
             return v;
         } catch (Exception e) {
             if (predicate != null && isNotBlank(predicate.evictTest(e)))
-                p.removeSelf();
+                p.abortSelf(DESC_RM_BAD);
 
             throw e;
         }
