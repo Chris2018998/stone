@@ -25,17 +25,17 @@ public interface BeeObjectHandle {
     boolean isClosed();
 
     /**
-     * Closes this handle object and
+     * Closes this handle object
      */
     void close() throws Exception;
 
     /**
-     * abandon pooled object related with this handle
+     * Abort pooled object related with this handle
      */
     void abort() throws Exception;
 
     /**
-     * Gets pooled key associated with the object
+     * Gets pooled key associated with the handle
      *
      * @return associated pooled key
      * @throws Exception if handle is closed
@@ -43,7 +43,7 @@ public interface BeeObjectHandle {
     Object getObjectKey() throws Exception;
 
     /**
-     * Gets time of last accessed time on accessed on object
+     * Gets last accessed time on this handle
      *
      * @return a milliseconds time value
      * @throws Exception if handle is closed
@@ -53,13 +53,13 @@ public interface BeeObjectHandle {
     /**
      * Gets proxy of borrowed object
      *
-     * @return proxy if exists, otherwise return null
+     * @return proxy if exists,otherwise return null
      * @throws Exception if handle is closed
      */
     Object getObjectProxy() throws Exception;
 
     /**
-     * call a parameterless method on a borrowed object through its handle.
+     * call a parameterless method of borrowed object.
      *
      * @param methodName is name of target method
      * @return an object as result of method call
@@ -68,7 +68,7 @@ public interface BeeObjectHandle {
     Object call(String methodName) throws Exception;
 
     /**
-     * call a method on a borrowed object with a parameter array through its handle.
+     * call a method of borrowed object with a parameter array.
      *
      * @param methodName  is name of target method
      * @param paramTypes  is signed parameter type array of method

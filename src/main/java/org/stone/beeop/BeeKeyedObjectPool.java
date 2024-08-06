@@ -28,42 +28,42 @@ public interface BeeKeyedObjectPool {
     void init(BeeObjectSourceConfig config) throws Exception;
 
     /**
-     * close pool
+     * Closes pool
      */
     void close();
 
     /**
-     * Checks pool state whether is closed
+     * Query pool state whether is closed.
      *
      * @return a boolean value of pool close status
      */
     boolean isClosed();
 
     /**
-     * Changes a switch to print runtime logs in pool,or not print
+     * Turns on switch of print runtime logs of pool,or turns off
      *
-     * @param indicator is true,pool prints runtime logs；false,not print
+     * @param indicator is true that print logs,false not print
      */
     void setPrintRuntimeLog(boolean indicator);
 
     /**
-     * Get a monitor object,this object contains some runtime info of pool
+     * Gets runtime monitor object of pool.
      *
      * @return a monitor of pool
      */
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Removes all pooled objects
+     * Removes all pooled objects.
      *
-     * @param forceCloseUsing is true that close borrowed object immediately;false that close borrowed objects when them return to pool
+     * @param forceCloseUsing is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
      */
     void clear(boolean forceCloseUsing) throws Exception;
 
     /**
-     * After removing all pooled objects,do reinitialization on pool with a new configuration object
+     * Removes all pooled objects,and re-initializes pool with a new configuration object.
      *
-     * @param forceCloseUsing is true that close borrowed object immediately;false that close borrowed objects when them return to pool
+     * @param forceCloseUsing is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
      * @param config          is a configuration object for pool reinitialize
      * @throws BeeObjectSourceConfigException when config is null
      * @throws PoolInitializeFailedException  when reinitialize failed
@@ -112,21 +112,21 @@ public interface BeeKeyedObjectPool {
     long getCreatingTime(Object key);
 
     /**
-     * checks current creation timeout,refer to {@link #getCreatingTime(Object)}
+     * Query elapsed time of current creation is whether timeout,call {@link #getCreatingTime(Object)} to get start time.
      *
-     * @return true that already timeout,false that not timeout or not creation
+     * @return true that already timeout,false that not timeout or no creation
      */
     boolean isCreatingTimeout(Object key);
 
     /**
-     * attempt to interrupt thread in creating object and waiting to create objects
+     * attempt to interrupt a thread in creating object and waiting to create objects
      *
      * @return interrupted threads
      */
     Thread[] interruptOnCreation(Object key);
 
     /**
-     * enable indicator to print runtime logs for a pooled key,or not print
+     * operation on log switch to disable log print or enable print
      *
      * @param key       pooled key
      * @param indicator is true,print logs;false,not print
@@ -135,7 +135,7 @@ public interface BeeKeyedObjectPool {
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
 
     /**
-     * Get a monitor object by pooled key
+     * Get monitor object of category pool by key.
      *
      * @param key may be mapping to a set of pooled objects
      * @return monitor of an object group
@@ -144,7 +144,7 @@ public interface BeeKeyedObjectPool {
     BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception;
 
     /**
-     * Deletes a set of pooled objects related to the given key
+     * Deletes a category pool by key.
      *
      * @param key is a key to remove
      * @throws ObjectKeyException if key is null
@@ -153,9 +153,9 @@ public interface BeeKeyedObjectPool {
     void deleteKey(Object key) throws Exception;
 
     /**
-     * Deletes a set of pooled objects related to the given key
+     * Deletes a category pool by key.
      *
-     * @param key             is a key to remove from pool
+     * @param key             is a key may map to a category pool
      * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
      * @throws ObjectKeyException if key is null
      * @throws ObjectKeyException if key is default key
