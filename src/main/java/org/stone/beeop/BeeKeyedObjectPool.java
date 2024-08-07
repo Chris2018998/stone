@@ -49,7 +49,7 @@ public interface BeeKeyedObjectPool {
     /**
      * Gets runtime monitor object of pool.
      *
-     * @return a monitor of pool
+     * @return monitor of pool
      */
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 

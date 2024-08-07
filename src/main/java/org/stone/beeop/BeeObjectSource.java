@@ -185,7 +185,6 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
         createPoolByLock().deleteKey(key, forceCloseUsing);
     }
 
-
     private void checkPool() throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Pool not be created");
     }
