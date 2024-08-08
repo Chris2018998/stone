@@ -12,8 +12,8 @@ package org.stone.shine.util.concurrent.locks;
 import org.stone.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.shine.util.concurrent.synchronizer.ResultValidator;
 import org.stone.shine.util.concurrent.synchronizer.ResultWaitPool;
-import org.stone.tools.unsafe.UnsafeAdaptor;
-import org.stone.tools.unsafe.UnsafeAdaptorHolder;
+import org.stone.tools.UnsafeHolder;
+import sun.misc.Unsafe;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -72,12 +72,12 @@ public class StampedLock implements java.io.Serializable {
     private static final int WRITE_LOCK_FLAG = 0;
     private static final int READ_LOCK_FLAG = 1;
     private static final long acquireFailedStamp = -1L;
-    private static final UnsafeAdaptor U;
+    private static final Unsafe U;
     private static final long stampOffset;
 
     static {
         try {
-            U = UnsafeAdaptorHolder.U;
+            U = UnsafeHolder.getUnsafe();
             stampOffset = U.objectFieldOffset(StampedLock.class.getDeclaredField("stamp"));
         } catch (Exception e) {
             throw new Error(e);

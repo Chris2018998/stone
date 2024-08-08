@@ -9,8 +9,8 @@
  */
 package org.stone.shine.util.concurrent;
 
-import org.stone.tools.unsafe.UnsafeAdaptor;
-import org.stone.tools.unsafe.UnsafeAdaptorHolder;
+import org.stone.tools.UnsafeHolder;
+import sun.misc.Unsafe;
 
 import java.util.*;
 
@@ -24,14 +24,14 @@ public class ConcurrentLinkedDeque<E> extends AbstractCollection<E> implements D
     //***************************************************************************************************************//
     //                                           1: CAS Chain info                                                   //
     //***************************************************************************************************************//
-    private final static UnsafeAdaptor U;
+    private final static Unsafe U;
     private final static long itemOffSet;
     private final static long prevOffSet;
     private final static long nextOffSet;
 
     static {
         try {
-            U = UnsafeAdaptorHolder.U;
+            U = UnsafeHolder.getUnsafe();
             prevOffSet = U.objectFieldOffset(Node.class.getDeclaredField("prev"));
             nextOffSet = U.objectFieldOffset(Node.class.getDeclaredField("next"));
             itemOffSet = U.objectFieldOffset(Node.class.getDeclaredField("item"));

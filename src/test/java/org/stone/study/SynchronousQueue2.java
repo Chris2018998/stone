@@ -9,8 +9,8 @@
  */
 package org.stone.study;
 
-import org.stone.tools.unsafe.UnsafeAdaptor;
-import org.stone.tools.unsafe.UnsafeAdaptorHolder;
+import org.stone.tools.UnsafeHolder;
+import sun.misc.Unsafe;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
@@ -31,7 +31,7 @@ public class SynchronousQueue2<E> extends AbstractQueue<E> implements BlockingQu
     private static final int maxTimedSpins = (NCPUS < 2) ? 0 : 32;
     private static final int maxUntimedSpins = maxTimedSpins * 16;
     private static final long spinForTimeoutThreshold = 1023L;
-    private static final UnsafeAdaptor U = UnsafeAdaptorHolder.U;
+    private static final Unsafe U = UnsafeHolder.getUnsafe();
 
     private final BufferMatcher<E> matcher;
 
