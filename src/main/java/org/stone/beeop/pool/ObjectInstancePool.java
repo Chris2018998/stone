@@ -636,6 +636,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //                                       8: Pool monitor(9)                                                      //                                                                                  //
     //***************************************************************************************************************//
+    long getMaxWaitNs() {
+        return this.maxWaitNs;
+    }
+
     String getPoolHostIP() {
         return poolHostIP;
     }
