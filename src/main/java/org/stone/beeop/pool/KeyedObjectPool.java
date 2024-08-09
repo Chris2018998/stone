@@ -45,6 +45,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private long maxWaitNs;
     private Object defaultKey;
     private ObjectInstancePool defaultPool;
+    private int maxIndexNoOfInstanceArray;
     private ReentrantLock[] instancePoolCreateLocks;
     private ObjectPoolMonitorVo poolMonitorVo;
     private ThreadPoolExecutor servantService;
@@ -81,6 +82,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
 
         //step2: copy some configured items to pool local variables
         this.maxObjectKeySize = config.getMaxObjectKeySize();
+        this.maxIndexNoOfInstanceArray = maxObjectKeySize - 1;
         this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
         this.delayTimeForNextClearNs = MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
         this.instancePoolCreateLocks = new ReentrantLock[maxObjectKeySize];
@@ -142,7 +144,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (pool != null) return pool.getObjectHandle();
 
         //3: create category pool by key
-        int index = Math.abs(key.hashCode()) % maxObjectKeySize;
+        int index = key.hashCode();
+        index = maxIndexNoOfInstanceArray & (index ^ (index >>> 16));
         ReentrantLock lock = instancePoolCreateLocks[index];
         try {
             if (lock.tryLock(defaultPool.getMaxWaitNs(), TimeUnit.NANOSECONDS)) {
