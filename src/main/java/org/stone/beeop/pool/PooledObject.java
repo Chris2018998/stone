@@ -11,7 +11,6 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.BeeObjectMethodFilter;
-import org.stone.beeop.BeeObjectPredicate;
 import org.stone.beeop.pool.exception.ObjectRecycleException;
 
 import java.lang.reflect.Method;
@@ -27,50 +26,35 @@ import static org.stone.tools.BeanUtil.CommonLog;
  * @author Chris Liao
  * @version 1.0
  */
-final class PooledObject implements Cloneable {
-    final Class[] objectInterfaces;
-    final BeeObjectMethodFilter filter;
-    final BeeObjectPredicate predicate;
-    final Map<MethodCacheKey, Method> methodCache;
+final class PooledObject {
+    final Object key;
+    final Object raw;
+    private final Class<?> rawType;
     private final BeeObjectFactory factory;
+    private final ObjectInstancePool ownerPool;
+    private final BeeObjectMethodFilter methodFilter;
+    private final Map<MethodCacheKey, Method> methodMap;
 
-    Object key;
-    Object raw;
-    Class rawClass;
     volatile int state;
-    ObjectSimpleHandle handleInUsing;
-    long creationTime;//milliseconds
-
+    PooledObjectPlainHandle handleInUsing;
     volatile long lastAccessTime;//milliseconds
-    private ObjectInstancePool ownerPool;
 
     //***************************************************************************************************************//
-    //                                  1: Pooled entry create/clone methods(2)                                      //                                                                                  //
+    //                                  1: Pooled entry create/clone methods(1)                                      //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(BeeObjectFactory factory, Class[] objectInterfaces,
-                 BeeObjectMethodFilter filter,
-                 BeeObjectPredicate predicate,
-                 Map<MethodCacheKey, Method> methodCache) {
+    PooledObject(Object key, Object raw, BeeObjectFactory factory,
+                 Map<MethodCacheKey, Method> methodMap, BeeObjectMethodFilter methodFilter,
+                 ObjectInstancePool ownerPool) {
+
+        this.key = key;
+        this.raw = raw;
+        this.rawType = raw.getClass();
         this.factory = factory;
-        this.objectInterfaces = objectInterfaces;
-        this.filter = filter;
-        this.predicate = predicate;
-        this.methodCache = methodCache;
-    }
+        this.methodMap = methodMap;
+        this.methodFilter = methodFilter;
+        this.ownerPool = ownerPool;
 
-    PooledObject setDefaultAndCopy(Object k, Object raw, int state, ObjectInstancePool pool) throws Exception {
-        this.factory.setDefault(k, raw);
-        PooledObject p = (PooledObject) this.clone();
-
-        p.key = k;
-        p.raw = raw;
-        p.rawClass = raw.getClass();
-        p.state = state;
-        p.ownerPool = pool;
-
-        p.creationTime = currentTimeMillis();
-        p.lastAccessTime = p.creationTime;
-        return p;
+        this.lastAccessTime = currentTimeMillis();
     }
 
     //***************************************************************************************************************//
@@ -88,17 +72,25 @@ final class PooledObject implements Cloneable {
         this.lastAccessTime = currentTimeMillis();
     }
 
-    //called by pool before remove from pool
-    void onBeforeRemove() {
-        try {
-            state = ObjectPoolStatics.OBJECT_CLOSED;
-        } catch (Throwable e) {
-            CommonLog.error("Object close error", e);
-        } finally {
-            this.factory.destroy(key, raw);
+    //handle call this method to get a method of object by parameter info
+    Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
+        if (methodFilter != null) methodFilter.doFilter(key, name, types, params);
+        MethodCacheKey key = new MethodCacheKey(name, types);
+        Method method = methodMap.get(key);
+
+        if (method == null) {
+            method = rawType.getMethod(name, types);
+            methodMap.put(key, method);
         }
+        return method;
     }
 
+    //handle call this method to abort this object
+    void abortSelf(String reason) {
+        ownerPool.abort(this, reason);
+    }
+
+    //handle call this method to recycle this object
     void recycleSelf() throws Exception {
         try {
             this.handleInUsing = null;
@@ -113,7 +105,14 @@ final class PooledObject implements Cloneable {
         }
     }
 
-    void abortSelf(String reason) {
-        ownerPool.abort(this, reason);
+    //pool call this method before this object removed
+    void onBeforeRemove() {
+        try {
+            state = ObjectPoolStatics.OBJECT_CLOSED;
+        } catch (Throwable e) {
+            CommonLog.error("Object close error", e);
+        } finally {
+            this.factory.destroy(key, raw);
+        }
     }
 }

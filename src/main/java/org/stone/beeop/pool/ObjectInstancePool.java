@@ -20,11 +20,13 @@ import org.stone.tools.extension.InterruptionReentrantLock;
 import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -64,18 +66,19 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final int validTestTimeout;//seconds
     private final long delayTimeForNextClearNs;//nanoseconds
     private final BeeObjectFactory objectFactory;
-    private final PooledObject templatePooledObject;
+    private final ObjectPlainHandleFactory handleFactory;
     private final ObjectTransferPolicy transferPolicy;
-    private final ObjectHandleFactory handleFactory;
+
     private final KeyedObjectPool ownerPool;
     private final String poolHostIP;
     private final long poolThreadId;
     private final String poolThreadName;
     private final boolean enableThreadLocal;
-
-    //clone end
+    private final BeeObjectMethodFilter methodFilter;
+    private final Map<MethodCacheKey, Method> methodMap;
     private boolean printRuntimeLog;
-    //set by clone method
+    //clone end
+    
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
@@ -115,18 +118,18 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //step2:object type field setting
         this.objectFactory = config.getObjectFactory();
-        Class[] objectInterfaces = config.getObjectInterfaces();
+        Class<?>[] objectInterfaces = config.getObjectInterfaces();
+        BeeObjectPredicate predicate = config.getEvictPredicate();
+        this.methodFilter = config.getObjectMethodFilter();
+        this.methodMap = new ConcurrentHashMap<>();
+
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
-        this.templatePooledObject = new PooledObject(objectFactory, objectInterfaces,
-                config.getObjectMethodFilter(),
-                config.getEvictPredicate(),
-                new ConcurrentHashMap<>(16));
 
         if (objectInterfaces != null && objectInterfaces.length > 0)
-            this.handleFactory = new ObjectProxyHandleFactory();
+            this.handleFactory = new ObjectProxyHandleFactory(predicate, this.getClass().getClassLoader(), objectInterfaces, methodFilter);
         else
-            this.handleFactory = new ObjectHandleFactory();
+            this.handleFactory = new ObjectPlainHandleFactory(predicate);
 
         //step3:pool monitor setting
         Thread currentThread = Thread.currentThread();
@@ -223,7 +226,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                         throw new ObjectCreateException("Internal error occurred in object factory");
                     }
 
-                    PooledObject p = this.templatePooledObject.setDefaultAndCopy(key, rawObj, state, this);
+                    objectFactory.setDefault(key, rawObj);
+                    PooledObject p = new PooledObject(key, rawObj, objectFactory, methodMap, this.methodFilter, this);
                     if (this.printRuntimeLog)
                         Log.info("BeeOP({}))has created a new pooled object:{} with state:{}", this.poolName, p, state);
                     PooledObject[] arrayNew = new PooledObject[l + 1];
@@ -696,17 +700,34 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //                                       9: Inner Classes(6)                                                     //                                                                                  //
     //***************************************************************************************************************//
-    private static class ObjectHandleFactory {
+    private static class ObjectPlainHandleFactory {
+        protected final BeeObjectPredicate predicate;
+
+        ObjectPlainHandleFactory(BeeObjectPredicate predicate) {
+            this.predicate = predicate;
+        }
+
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             if (b != null) b.lastUsed = p;
-            return new ObjectSimpleHandle(p);
+            return new PooledObjectPlainHandle(p, predicate);
         }
     }
 
-    private static class ObjectProxyHandleFactory extends ObjectHandleFactory {
+    private static class ObjectProxyHandleFactory extends ObjectPlainHandleFactory {
+        private final ClassLoader poolClassLoader;
+        private final Class<?>[] objectInterfaces;
+        private final BeeObjectMethodFilter methodFilter;
+
+        ObjectProxyHandleFactory(BeeObjectPredicate predicate, ClassLoader poolClassLoader, Class<?>[] objectInterfaces, BeeObjectMethodFilter methodFilter) {
+            super(predicate);
+            this.poolClassLoader = poolClassLoader;
+            this.objectInterfaces = objectInterfaces;
+            this.methodFilter = methodFilter;
+        }
+
         BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
             if (b != null) b.lastUsed = p;
-            return new ObjectProxyHandle(p);
+            return new PooledObjectProxyHandle(p, predicate, poolClassLoader, objectInterfaces, methodFilter);
         }
     }
 

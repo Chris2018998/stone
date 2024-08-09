@@ -375,6 +375,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             this.threadName = threadName;
         }
 
+        @Override
         public Thread newThread(Runnable runnable) {
             Thread thread = new Thread(runnable, threadName);
             thread.setDaemon(true);
