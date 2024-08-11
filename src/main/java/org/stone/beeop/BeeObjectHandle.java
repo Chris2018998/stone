@@ -48,7 +48,7 @@ public interface BeeObjectHandle {
      * @return a milliseconds time value
      * @throws Exception if handle is closed
      */
-    long getLassAccessedTime() throws Exception;
+    long getLastAccessedTime() throws Exception;
 
     /**
      * Gets proxy of borrowed object

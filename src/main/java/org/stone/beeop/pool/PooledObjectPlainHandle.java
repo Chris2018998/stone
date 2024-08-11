@@ -46,7 +46,7 @@ public class PooledObjectPlainHandle implements BeeObjectHandle {
         return p.toString();
     }
 
-    public final long getLassAccessedTime() throws Exception {
+    public final long getLastAccessedTime() throws Exception {
         checkClosed();
         return p.lastAccessTime;
     }
