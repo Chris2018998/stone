@@ -60,7 +60,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //a scheduled tasks pool works to scan timeout objects and clean them(idle timeout and hold timeout)
     private ScheduledThreadPoolExecutor scheduledService;
 
-    private BeeObjectSourceConfig usingConfig;
+    private BeeObjectSourceConfig poolConfig;
     //A Hook thread to close pool when JVM exit
     private ObjectPoolHook exitHook;
 
@@ -75,7 +75,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             try {
                 BeeObjectSourceConfig checkedConfig = config.check();
                 startup(checkedConfig);
-                this.usingConfig = checkedConfig;
+                this.poolConfig = checkedConfig;
                 this.poolState = POOL_READY;
             } catch (Throwable e) {
                 this.poolState = POOL_NEW;//reset to new state when fail
@@ -212,8 +212,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     //1.8: remove all pooled objects and if parameter reInit is true,then reinitialize pool with a new configuration
-    private void clear(boolean forceCloseUsing, boolean reInit, BeeObjectSourceConfig config) throws Exception {
-        if (reInit && config == null)
+    private void clear(boolean forceCloseUsing, boolean reinit, BeeObjectSourceConfig config) throws Exception {
+        if (reinit && config == null)
             throw new BeeObjectSourceConfigException("Configuration for pool reinitialization can' be null");
 
         //clean pool after cas pool state success
@@ -221,20 +221,25 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             try {
                 //check the parameter configuration,if fail then exit method since here
                 BeeObjectSourceConfig checkedConfig = null;
-                if (reInit) checkedConfig = config.check();
+                if (reinit) checkedConfig = config.check();
 
                 //clean sub pools one by one
+                Log.info("BeeOP({})begin to remove all connections", this.poolName);
                 for (ObjectInstancePool pool : instancePoolMap.values())
                     pool.clear(forceCloseUsing);
                 instancePoolMap.clear();
+                Log.info("BeeOP({})completed to remove all connections", this.poolName);
 
                 //re-startup pool with checked configuration
-                if (reInit) {
+                if (reinit) {
                     try {
+                        Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
                         this.startup(checkedConfig);
-                        this.usingConfig = checkedConfig;
+                        this.poolConfig = checkedConfig;
+                        Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
                     } catch (Throwable e) {//only throw from startup method
-                        this.startup(usingConfig);//re-startup with last successful configuration
+                        Log.error("BeeOP({})reinitialized pool failed", this.poolName, e);
+                        this.startup(poolConfig);//restartup with last successful configuration
                         throw e;
                     }
                 }
