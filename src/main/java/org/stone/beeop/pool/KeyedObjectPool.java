@@ -60,18 +60,22 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //a scheduled tasks pool works to scan timeout objects and clean them(idle timeout and hold timeout)
     private ScheduledThreadPoolExecutor scheduledService;
 
+    private BeeObjectSourceConfig usingConfig;
     //A Hook thread to close pool when JVM exit
     private ObjectPoolHook exitHook;
 
     //***************************************************************************************************************//
-    //                1: pool initializes method(2)                                                                   //                                                                                  //
+    //                1: Methods to operation on keyed pool                                                          //                                                                                  //
     //***************************************************************************************************************//
+    //1.1: initializes pool with a parameter configuration
     public void init(BeeObjectSourceConfig config) throws Exception {
         //step1: config check
         if (config == null) throw new PoolInitializeFailedException("Object pool configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
-                startup(config.check());
+                BeeObjectSourceConfig checkedConfig = config.check();
+                startup(checkedConfig);
+                this.usingConfig = checkedConfig;
                 this.poolState = POOL_READY;
             } catch (Throwable e) {
                 this.poolState = POOL_NEW;//reset to new state when fail
@@ -82,6 +86,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         }
     }
 
+    //1.2: A internal method to startup pool with a checked configuration
     private void startup(BeeObjectSourceConfig config) throws Exception {
         //step1: create default sub pool and startup it.
         this.poolName = config.getPoolName();
@@ -134,9 +139,117 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 maxSubPoolSize * config.getMaxActive());
     }
 
+    //1.3: query this keyed pool state is whether closed
+    public boolean isClosed() {
+        return this.poolState == POOL_CLOSED;
+    }
+
+    //1.4: closes this keyed pool
+    public void close() {
+        do {
+            int poolStateCode = this.poolState;
+            if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
+            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
+                LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
+            } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
+                Log.info("BeeOP({})Begin to shutdown", this.poolName);
+                for (ObjectInstancePool pool : instancePoolMap.values())
+                    pool.close(forceCloseUsingOnClear);
+
+                servantService.shutdown();
+                scheduledService.shutdown();
+
+                try {
+                    Runtime.getRuntime().removeShutdownHook(this.exitHook);
+                } catch (Throwable e) {
+                    //do nothing
+                }
+
+                this.poolState = POOL_CLOSED;
+                Log.info("BeeOP({})has shutdown", this.poolName);
+                break;
+            } else {//pool State == POOL_CLOSING
+                break;
+            }
+        } while (true);
+    }
+
+    //1.4: enable runtime logs print or disable print by a boolean switch
+    public void setPrintRuntimeLog(boolean indicator) {
+        for (ObjectInstancePool pool : instancePoolMap.values()) {
+            pool.setPrintRuntimeLog(indicator);
+        }
+    }
+
+    //1.5: get monitor object of this keyed pool
+    public BeeObjectPoolMonitorVo getPoolMonitorVo() {
+        int semaphoreWaitingSize = 0;
+        int transferWaitingSize = 0;
+        int idleSize = 0, usingSize = 0;
+        for (ObjectInstancePool pool : instancePoolMap.values()) {
+            BeeObjectPoolMonitorVo monitorVo = pool.getPoolMonitorVo();
+            idleSize += monitorVo.getIdleSize();
+            usingSize += monitorVo.getUsingSize();
+            semaphoreWaitingSize += monitorVo.getSemaphoreWaitingSize();
+            transferWaitingSize += monitorVo.getTransferWaitingSize();
+        }
+        poolMonitorVo.setIdleSize(idleSize);
+        poolMonitorVo.setUsingSize(usingSize);
+        poolMonitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
+        poolMonitorVo.setTransferWaitingSize(transferWaitingSize);
+        poolMonitorVo.setPoolState(poolState);
+        return poolMonitorVo;
+    }
+
+    //1.6: remove all pooled objects
+    public void clear(boolean forceCloseUsing) throws Exception {
+        clear(forceCloseUsing, false, null);
+    }
+
+    //1.7: remove all pooled objects and reinitialize pool with a new configuration
+    public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
+        clear(forceCloseUsing, true, config);
+    }
+
+    //1.8: remove all pooled objects and if parameter reInit is true,then reinitialize pool with a new configuration
+    private void clear(boolean forceCloseUsing, boolean reInit, BeeObjectSourceConfig config) throws Exception {
+        if (reInit && config == null)
+            throw new BeeObjectSourceConfigException("Configuration for pool reinitialization can' be null");
+
+        //clean pool after cas pool state success
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+            try {
+                //check the parameter configuration,if fail then exit method since here
+                BeeObjectSourceConfig checkedConfig = null;
+                if (reInit) checkedConfig = config.check();
+
+                //clean sub pools one by one
+                for (ObjectInstancePool pool : instancePoolMap.values())
+                    pool.clear(forceCloseUsing);
+                instancePoolMap.clear();
+
+                //re-startup pool with checked configuration
+                if (reInit) {
+                    try {
+                        this.startup(checkedConfig);
+                        this.usingConfig = checkedConfig;
+                    } catch (Throwable e) {//only throw from startup method
+                        this.startup(usingConfig);//re-startup with last successful configuration
+                        throw e;
+                    }
+                }
+            } finally {
+                this.poolState = POOL_READY;//reset pool state to ready
+            }
+        } else {
+            throw new PoolInClearingException("Object keyed pool was closed or in cleaning");
+        }
+    }
+
     //***************************************************************************************************************//
     //                2: object borrow methods(2)                                                                    //                                                                                  //
     //***************************************************************************************************************//
+
     public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Object keyed pool was closed or in cleaning");
@@ -145,14 +258,11 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     public BeeObjectHandle getObjectHandle(Object key) throws Exception {
-        if (key == null) throw new ObjectKeyException("Object key can't be null");
-        if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Object keyed pool was closed or in cleaning");
-
-        //1: get pool from generic map
+        this.checkParameterKey(key);
+        //1: get handle from default sub pool
         if (isDefaultKey(key)) return defaultPool.getObjectHandle();
 
-        //2: get sub pool from map with a key
+        //2: get sub pool from ConcurrentHashMap with a key
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) return pool.getObjectHandle();
 
@@ -205,8 +315,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        if (key == null) throw new ObjectKeyException("Object keyed pool was closed or in cleaning");
-        if (isDefaultKey(key)) throw new ObjectKeyException("Default key is not allowed to be deleted from keyed pool");
+        this.checkParameterKey(key);
 
         ObjectInstancePool pool = instancePoolMap.remove(key);
         if (pool != null && !pool.clear(forceCloseUsing))
@@ -214,129 +323,60 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
 
-    public long getCreatingTime(Object key) {
+    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
+        this.checkParameterKey(key);
+
+        ObjectInstancePool pool = instancePoolMap.get(key);
+        if (pool != null) pool.setPrintRuntimeLog(indicator);
+    }
+
+
+    public long getCreatingTime(Object key) throws Exception {
+        this.checkParameterKey(key);
+
         ObjectInstancePool pool = instancePoolMap.get(key);
         return pool != null ? pool.getCreatingTime() : 0L;
     }
 
-    public boolean isCreatingTimeout(Object key) {
+    public boolean isCreatingTimeout(Object key) throws Exception {
+        this.checkParameterKey(key);
+
         ObjectInstancePool pool = instancePoolMap.get(key);
         return pool != null && pool.isCreatingTimeout();
     }
 
-    public Thread[] interruptOnCreation(Object key) {
+    public Thread[] interruptOnCreation(Object key) throws Exception {
+        this.checkParameterKey(key);
+
         ObjectInstancePool pool = instancePoolMap.get(key);
         return pool != null ? pool.interruptOnCreation() : null;
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
-        if (key == null) throw new ObjectKeyException("Object key can't be null");
+        this.checkParameterKey(key);
 
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) pool.getPoolMonitorVo();
         throw new ObjectKeyNotExistsException("Not found object key:" + key);
     }
 
-    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
-        ObjectInstancePool pool = instancePoolMap.get(key);
-        if (pool != null) pool.setPrintRuntimeLog(indicator);
-    }
 
     //***************************************************************************************************************//
     //                4: Pool runtime maintain methods(6)                                                            //                                                                                  //
     //***************************************************************************************************************//
-    //check pool is whether closed
-    public boolean isClosed() {
-        return this.poolState == POOL_CLOSED;
-    }
 
-    //close pool
-    public void close() {
-        do {
-            int poolStateCode = this.poolState;
-            if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
-            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
-                LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
-            } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
-                Log.info("BeeOP({})Begin to shutdown", this.poolName);
-                for (ObjectInstancePool pool : instancePoolMap.values())
-                    pool.close(forceCloseUsingOnClear);
-
-                servantService.shutdown();
-                scheduledService.shutdown();
-
-                try {
-                    Runtime.getRuntime().removeShutdownHook(this.exitHook);
-                } catch (Throwable e) {
-                    //do nothing
-                }
-
-                this.poolState = POOL_CLOSED;
-                Log.info("BeeOP({})has shutdown", this.poolName);
-                break;
-            } else {//pool State == POOL_CLOSING
-                break;
-            }
-        } while (true);
-    }
-
-    //get pool monitor vo
-    public BeeObjectPoolMonitorVo getPoolMonitorVo() {
-        int semaphoreWaitingSize = 0;
-        int transferWaitingSize = 0;
-        int idleSize = 0, usingSize = 0;
-        for (ObjectInstancePool pool : instancePoolMap.values()) {
-            BeeObjectPoolMonitorVo monitorVo = pool.getPoolMonitorVo();
-            idleSize += monitorVo.getIdleSize();
-            usingSize += monitorVo.getUsingSize();
-            semaphoreWaitingSize += monitorVo.getSemaphoreWaitingSize();
-            transferWaitingSize += monitorVo.getTransferWaitingSize();
-        }
-        poolMonitorVo.setIdleSize(idleSize);
-        poolMonitorVo.setUsingSize(usingSize);
-        poolMonitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
-        poolMonitorVo.setTransferWaitingSize(transferWaitingSize);
-        poolMonitorVo.setPoolState(poolState);
-        return poolMonitorVo;
-    }
-
-    //enable Runtime Log
-    public void setPrintRuntimeLog(boolean indicator) {
-        for (ObjectInstancePool pool : instancePoolMap.values()) {
-            pool.setPrintRuntimeLog(indicator);
-        }
-    }
-
-    //remove all objects from pool
-    public void clear(boolean forceCloseUsing) throws Exception {
-        clear(forceCloseUsing, null);
-    }
-
-    //remove all objects from pool
-    public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        BeeObjectSourceConfig tempConfig = null;
-        if (config != null) tempConfig = config.check();
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
-            for (ObjectInstancePool pool : instancePoolMap.values())
-                pool.clear(forceCloseUsing);
-
-            instancePoolMap.clear();//only place for clearing
-
-            try {
-                if (tempConfig != null) this.startup(tempConfig);
-            } finally {
-                this.poolState = POOL_READY;// reset state to POOL_READY
-            }
-        } else {
-            throw new PoolInClearingException("Keyed object pool was closed or in clearing");
-        }
-    }
 
     //***************************************************************************************************************//
     //                5: idle close and async servant methods(2)                                                           //                                                                                  //
     //***************************************************************************************************************//
     void submitServantTask(Runnable task) {
         this.servantService.submit(task);
+    }
+
+    private void checkParameterKey(Object key) throws Exception {
+        if (key == null) throw new ObjectKeyException("Object key can't be null");
+        if (this.poolState != POOL_READY)
+            throw new ObjectGetForbiddenException("Object keyed pool was closed or in cleaning");
     }
 
     //***************************************************************************************************************//
