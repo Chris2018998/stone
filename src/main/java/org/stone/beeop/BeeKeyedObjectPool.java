@@ -107,21 +107,21 @@ public interface BeeKeyedObjectPool {
      * @param key may be mapping to a set of pooled objects
      * @return start time of creation
      */
-    long getCreatingTime(Object key);
+    long getCreatingTime(Object key) throws Exception;
 
     /**
      * Query elapsed time of current creation is whether timeout,call {@link #getCreatingTime(Object)} to get start time.
      *
      * @return true that already timeout,false that not timeout or no creation
      */
-    boolean isCreatingTimeout(Object key);
+    boolean isCreatingTimeout(Object key) throws Exception;
 
     /**
      * attempt to interrupt a thread in creating object and waiting to create objects
      *
      * @return interrupted threads
      */
-    Thread[] interruptOnCreation(Object key);
+    Thread[] interruptOnCreation(Object key) throws Exception;
 
     /**
      * operation on log switch to disable log print or enable print
