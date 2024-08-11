@@ -3,9 +3,10 @@ stone changes
 Changes in 1.3.6
 
 [beecp]
-1: support pool rollback when reinitialize fail
+1: support rollback when pool reinitialize fail
 
-
+[beeop]
+1: support rollback when pool reinitialize fail
 
 Changes in 1.3.5
 [beecp]
