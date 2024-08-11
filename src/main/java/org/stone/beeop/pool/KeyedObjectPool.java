@@ -65,7 +65,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private ObjectPoolHook exitHook;
 
     //***************************************************************************************************************//
-    //                1: Methods to operation on keyed pool                                                          //                                                                                  //
+    //                1: Methods to operation on keyed pool(8)                                                        //                                                                                  //
     //***************************************************************************************************************//
     //1.1: initializes pool with a parameter configuration
     public void init(BeeObjectSourceConfig config) throws Exception {
@@ -86,7 +86,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         }
     }
 
-    //1.2: A internal method to startup pool with a checked configuration
+    //1.2: An internal method to startup pool with a checked configuration
     private void startup(BeeObjectSourceConfig config) throws Exception {
         //step1: create default sub pool and startup it.
         this.poolName = config.getPoolName();
@@ -120,7 +120,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (scheduledService.getCorePoolSize() != coreThreadSize)
             this.scheduledService.setCorePoolSize(coreThreadSize);
         this.timerCheckInterval = config.getTimerCheckInterval();
-        this.scheduledService.scheduleWithFixedDelay(new IdleClearTask(defaultPool), timerCheckInterval,
+        this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask(defaultPool), timerCheckInterval,
                 timerCheckInterval, MILLISECONDS);
 
         //step5: create a JVM hook for keyed pool
@@ -174,7 +174,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         } while (true);
     }
 
-    //1.4: enable runtime logs print or disable print by a boolean switch
+    //1.5: enable runtime logs print or disable print by a boolean switch
     public void setPrintRuntimeLog(boolean indicator) {
         for (ObjectInstancePool pool : instancePoolMap.values()) {
             pool.setPrintRuntimeLog(indicator);
@@ -247,9 +247,9 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     //***************************************************************************************************************//
-    //                2: object borrow methods(2)                                                                    //                                                                                  //
+    //                                    2: Methods to borrow pooled objects(2)                                     //
     //***************************************************************************************************************//
-
+    //2.1: gets an object from default sub pool
     public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Object keyed pool was closed or in cleaning");
@@ -257,12 +257,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return defaultPool.getObjectHandle();
     }
 
+    //2.2: gets an object from sub pool map to given key
     public BeeObjectHandle getObjectHandle(Object key) throws Exception {
         this.checkParameterKey(key);
-        //1: get handle from default sub pool
+        //1:if key is equal to default key,then get object from default sub pool
         if (isDefaultKey(key)) return defaultPool.getObjectHandle();
 
-        //2: get sub pool from ConcurrentHashMap with a key
+        //2: get sub pool from ConcurrentHashMap with given key
         ObjectInstancePool pool = instancePoolMap.get(key);
         if (pool != null) return pool.getObjectHandle();
 
@@ -282,7 +283,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                         pool = defaultPool.createByClone();
                         pool.startup(poolName, key, 0, true);
                         instancePoolMap.put(key, pool);
-                        this.scheduledService.scheduleWithFixedDelay(new IdleClearTask(pool), timerCheckInterval,
+                        this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask(pool), timerCheckInterval,
                                 timerCheckInterval, MILLISECONDS);
                     }
                 } finally {
@@ -300,37 +301,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     //***************************************************************************************************************//
-    //                3: key methods(7)                                                                              //                                                                                  //
+    //                                    3: Methods to maintain pooed keys(5)                                       //
     //***************************************************************************************************************//
-    public Object[] keys() {
-        return this.instancePoolMap.keySet().toArray();
-    }
-
-    private boolean isDefaultKey(Object key) {
-        return defaultKey == key || defaultKey.equals(key);
-    }
-
-    public void deleteKey(Object key) throws Exception {
-        deleteKey(key, false);
-    }
-
-    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        this.checkParameterKey(key);
-
-        ObjectInstancePool pool = instancePoolMap.remove(key);
-        if (pool != null && !pool.clear(forceCloseUsing))
-            throw new PoolInClearingException("Keyed sub pool was closed or in cleaning");
-    }
-
-
-    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
-        this.checkParameterKey(key);
-
-        ObjectInstancePool pool = instancePoolMap.get(key);
-        if (pool != null) pool.setPrintRuntimeLog(indicator);
-    }
-
-
     public long getCreatingTime(Object key) throws Exception {
         this.checkParameterKey(key);
 
@@ -352,6 +324,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return pool != null ? pool.interruptOnCreation() : null;
     }
 
+    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
+        this.checkParameterKey(key);
+
+        ObjectInstancePool pool = instancePoolMap.get(key);
+        if (pool != null) pool.setPrintRuntimeLog(indicator);
+    }
+
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
         this.checkParameterKey(key);
 
@@ -362,15 +341,33 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
 
 
     //***************************************************************************************************************//
-    //                4: Pool runtime maintain methods(6)                                                            //                                                                                  //
+    //                                    4: Methods to maintain pooed keys(3)                                        //
     //***************************************************************************************************************//
+    public Object[] keys() {
+        return this.instancePoolMap.keySet().toArray();
+    }
 
+    public void deleteKey(Object key) throws Exception {
+        deleteKey(key, false);
+    }
+
+    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
+        this.checkParameterKey(key);
+
+        ObjectInstancePool pool = instancePoolMap.remove(key);
+        if (pool != null && !pool.clear(forceCloseUsing))
+            throw new PoolInClearingException("Keyed sub pool was closed or in cleaning");
+    }
 
     //***************************************************************************************************************//
-    //                5: idle close and async servant methods(2)                                                           //                                                                                  //
+    //                5: private methods and friendly methods (3)                                                    //                                                                                  //
     //***************************************************************************************************************//
     void submitServantTask(Runnable task) {
         this.servantService.submit(task);
+    }
+
+    private boolean isDefaultKey(Object key) {
+        return defaultKey == key || defaultKey.equals(key);
     }
 
     private void checkParameterKey(Object key) throws Exception {
@@ -380,12 +377,12 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     //***************************************************************************************************************//
-    //                      6: Pool inner interface/class(3)                                                         //                                                                                  //
+    //                      6:  internal classes(3)                                                                  //                                                                                  //
     //***************************************************************************************************************//
-    private static class IdleClearTask implements Runnable {
+    private static class TimeoutScanTask implements Runnable {
         private final ObjectInstancePool pool;
 
-        IdleClearTask(ObjectInstancePool pool) {
+        TimeoutScanTask(ObjectInstancePool pool) {
             this.pool = pool;
         }
 
