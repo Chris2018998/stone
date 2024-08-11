@@ -238,8 +238,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                         this.poolConfig = checkedConfig;
                         Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
                     } catch (Throwable e) {//only throw from startup method
-                        Log.error("BeeOP({})reinitialized pool failed", this.poolName, e);
-                        this.startup(poolConfig);//restartup with last successful configuration
+                        Log.error("BeeOP({})reinitialized pool failed,rollback pool with last config", this.poolName, e);
+                        this.startup(poolConfig);//re-startup with last successful configuration
                         throw e;
                     }
                 }
