@@ -72,15 +72,8 @@ public interface BeeKeyedObjectPool {
 
 
     //***************************************************************************************************************//
-    //                                     some methods with pool key                                                //
+    //                                    Methods to borrow pooled objects                                           //
     //***************************************************************************************************************//
-
-    /**
-     * gets keys maintained in pool
-     *
-     * @return a keys array
-     */
-    Object[] keys();
 
     /**
      * Attempts to get an object from pool
@@ -102,6 +95,11 @@ public interface BeeKeyedObjectPool {
      * @throws ObjectGetInterruptedException when interruption on wait
      */
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
+
+
+    //***************************************************************************************************************//
+    //                                  Methods to monitor runtime pool                                              //
+    //***************************************************************************************************************//
 
     /**
      * Gets start time of creating an object for a thread,timeunit:nanoseconds
@@ -135,7 +133,7 @@ public interface BeeKeyedObjectPool {
     void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
 
     /**
-     * Get monitor object of category pool by key.
+     * Get monitor object of sub pool by key.
      *
      * @param key may be mapping to a set of pooled objects
      * @return monitor of an object group
@@ -143,8 +141,20 @@ public interface BeeKeyedObjectPool {
      */
     BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception;
 
+
+    //***************************************************************************************************************//
+    //                                     Methods to maintain pooed keys                                            //
+    //***************************************************************************************************************//
+
     /**
-     * Deletes a category pool by key.
+     * gets keys maintained in pool
+     *
+     * @return a keys array
+     */
+    Object[] keys();
+
+    /**
+     * Deletes sub pool map to a given parameter key.
      *
      * @param key is a key to remove
      * @throws ObjectKeyException if key is null
@@ -153,9 +163,9 @@ public interface BeeKeyedObjectPool {
     void deleteKey(Object key) throws Exception;
 
     /**
-     * Deletes a category pool by key.
+     * Deletes sub pool map to a given parameter key.
      *
-     * @param key             is a key may map to a category pool
+     * @param key             is a key may map to a sub pool
      * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
      * @throws ObjectKeyException if key is null
      * @throws ObjectKeyException if key is default key

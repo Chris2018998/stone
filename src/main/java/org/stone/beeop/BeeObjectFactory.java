@@ -17,7 +17,7 @@ package org.stone.beeop;
  */
 public interface BeeObjectFactory {
 
-    //returns default key for being pooled
+    //returns default key to be pooled
     Object getDefaultKey();
 
     //creates an object to pool with specified key

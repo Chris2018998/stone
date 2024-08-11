@@ -78,7 +78,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final Map<MethodCacheKey, Method> methodMap;
     private boolean printRuntimeLog;
     //clone end
-    
+
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
