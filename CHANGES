@@ -1,5 +1,12 @@
 stone changes
 
+Changes in 1.3.6
+
+[beecp]
+1: support pool rollback when reinitialize fail
+
+
+
 Changes in 1.3.5
 [beecp]
 1: fix nullpoint exception when set default to first connction
