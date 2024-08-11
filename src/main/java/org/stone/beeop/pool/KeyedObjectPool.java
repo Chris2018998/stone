@@ -55,6 +55,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private ObjectPoolMonitorVo poolMonitorVo;
     //a thread pool run tasks to search idles or create objects,then transfer to waiters
     private ThreadPoolExecutor servantService;
+    //a timed value for interval execute to scheduled tasks
+    private long timerCheckInterval;
     //a scheduled tasks pool works to scan timeout objects and clean them(idle timeout and hold timeout)
     private ScheduledThreadPoolExecutor scheduledService;
 
@@ -98,29 +100,31 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
         this.delayTimeForNextClearNs = MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
 
-        //step3: create an executor to execute servant tasks to search idles or create news
+        //step3: create a common thread pool to service all sub pools(search idle or create new and transfer to waiters)
         int coreThreadSize = Math.min(NCPU, maxSubPoolSize);
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
-        if (this.servantService == null || servantService.getCorePoolSize() != coreThreadSize) {
-            if (servantService != null) servantService.shutdown();
+        if (this.servantService == null)
             this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15,
                     TimeUnit.SECONDS, new LinkedBlockingQueue<>(maxSubPoolSize), poolThreadFactory);
-        }
+        if (servantService.getCorePoolSize() != coreThreadSize)
+            this.servantService.setCorePoolSize(coreThreadSize);
 
-        //step4: create a scheduled executor to execute timed task to scan timeout objects(idle timeout and hold timeout)
-        if (this.scheduledService == null) {
-            scheduledService = new ScheduledThreadPoolExecutor(1, poolThreadFactory);
-            scheduledService.scheduleWithFixedDelay(new IdleClearTask(this), 0,
-                    config.getTimerCheckInterval(), MILLISECONDS);
-        }
+        //step4: create a common scheduled thread pool to service all sub pools(scan out idle timeout and hold timeout)
+        if (this.scheduledService == null)
+            this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
+        if (scheduledService.getCorePoolSize() != coreThreadSize)
+            this.scheduledService.setCorePoolSize(coreThreadSize);
+        this.timerCheckInterval = config.getTimerCheckInterval();
+        this.scheduledService.scheduleWithFixedDelay(new IdleClearTask(defaultPool), timerCheckInterval,
+                timerCheckInterval, MILLISECONDS);
 
-        //step5: register JVM hook
+        //step5: create a JVM hook for keyed pool
         if (this.exitHook == null) {
             this.exitHook = new ObjectPoolHook(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
 
-        //step6: create monitor object
+        //step6: create monitor object of keyed pool
         this.poolMonitorVo = new ObjectPoolMonitorVo(
                 poolName,
                 defaultPool.getPoolHostIP(),
@@ -164,9 +168,12 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                         if (instancePoolMap.size() == maxSubPoolSize)
                             throw new ObjectGetException("The count of pooled keys has reached max size:" + maxSubPoolSize);
 
+                        //create a new sub pool by clone and submit it to schedule pool
                         pool = defaultPool.createByClone();
-                        pool.startup(poolName, key, 0, true);//start up sub pool by syn mode
+                        pool.startup(poolName, key, 0, true);
                         instancePoolMap.put(key, pool);
+                        this.scheduledService.scheduleWithFixedDelay(new IdleClearTask(pool), timerCheckInterval,
+                                timerCheckInterval, MILLISECONDS);
                     }
                 } finally {
                     lock.unlock();
@@ -332,19 +339,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         this.servantService.submit(task);
     }
 
-    private void closeIdleTimeout() {
-        for (ObjectInstancePool instancePool : instancePoolMap.values()) {
-            instancePool.closeIdleTimeout();
-        }
-    }
-
     //***************************************************************************************************************//
     //                      6: Pool inner interface/class(3)                                                         //                                                                                  //
     //***************************************************************************************************************//
     private static class IdleClearTask implements Runnable {
-        private final KeyedObjectPool pool;
+        private final ObjectInstancePool pool;
 
-        IdleClearTask(KeyedObjectPool pool) {
+        IdleClearTask(ObjectInstancePool pool) {
             this.pool = pool;
         }
 
