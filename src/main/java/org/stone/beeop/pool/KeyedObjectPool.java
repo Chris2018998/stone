@@ -230,18 +230,12 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 instancePoolMap.clear();
                 Log.info("BeeOP({})completed to remove all connections", this.poolName);
 
-                //re-startup pool with checked configuration
                 if (reinit) {
-                    try {
-                        Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
-                        this.startup(checkedConfig);
-                        this.poolConfig = checkedConfig;
-                        Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
-                    } catch (Throwable e) {//only throw from startup method
-                        Log.error("BeeOP({})reinitialized pool failed,rollback pool with last config", this.poolName, e);
-                        this.startup(poolConfig);//re-startup with last successful configuration
-                        throw e;
-                    }
+                    this.poolConfig = checkedConfig;
+                    Log.info("BeeOP({})start to reinitialize keyed pool", this.poolName);
+                    this.startup(checkedConfig);//throws Exception only fail to create initial objects for default pool
+                    //note: if failed,this method may be recalled with correct configuration
+                    Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
                 }
             } finally {
                 this.poolState = POOL_READY;//reset pool state to ready
