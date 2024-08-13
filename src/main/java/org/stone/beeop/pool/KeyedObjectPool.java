@@ -23,6 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
+import static org.stone.tools.CommonUtil.getArrayIndex;
 
 /**
  * keyed object pool
@@ -65,7 +66,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private ObjectPoolHook exitHook;
 
     //***************************************************************************************************************//
-    //                1: Methods to operation on keyed pool(8)                                                        //                                                                                  //
+    //                1: Methods to operation on keyed pool(9)                                                       //                                                                                  //
     //***************************************************************************************************************//
     //1.1: initializes pool with a parameter configuration
     public void init(BeeObjectSourceConfig config) throws Exception {
@@ -73,9 +74,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (config == null) throw new PoolInitializeFailedException("Object pool configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
-                BeeObjectSourceConfig checkedConfig = config.check();
-                startup(checkedConfig);
-                this.poolConfig = checkedConfig;
+                this.poolConfig = config.check();
+                startup(poolConfig);
                 this.poolState = POOL_READY;
             } catch (Throwable e) {
                 this.poolState = POOL_NEW;//reset to new state when fail
@@ -181,7 +181,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         }
     }
 
-    //1.5: get monitor object of this keyed pool
+    //1.6: get monitor object of this keyed pool
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
         int semaphoreWaitingSize = 0;
         int transferWaitingSize = 0;
@@ -201,17 +201,17 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return poolMonitorVo;
     }
 
-    //1.6: remove all pooled objects
+    //1.7: remove all pooled objects
     public void clear(boolean forceCloseUsing) throws Exception {
         clear(forceCloseUsing, false, null);
     }
 
-    //1.7: remove all pooled objects and reinitialize pool with a new configuration
+    //1.8: remove all pooled objects and reinitialize pool with a new configuration
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
         clear(forceCloseUsing, true, config);
     }
 
-    //1.8: remove all pooled objects and if parameter reInit is true,then reinitialize pool with a new configuration
+    //1.9: remove all pooled objects and if parameter reInit is true,then reinitialize pool with a new configuration
     private void clear(boolean forceCloseUsing, boolean reinit, BeeObjectSourceConfig config) throws Exception {
         if (reinit && config == null)
             throw new BeeObjectSourceConfigException("Configuration for pool reinitialization can' be null");
@@ -233,7 +233,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 if (reinit) {
                     this.poolConfig = checkedConfig;
                     Log.info("BeeOP({})start to reinitialize keyed pool", this.poolName);
-                    this.startup(checkedConfig);//throws Exception only fail to create initial objects for default pool
+                    this.startup(checkedConfig);//throws Exception only fail to create initial objects for default pool or fail to set default values
                     //note: if failed,this method may be recalled with correct configuration
                     Log.info("BeeOP({})completed to reinitialize pool successful", this.poolName);
                 }
@@ -267,9 +267,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (pool != null) return pool.getObjectHandle();
 
         //3: create a sub pool under lock
-        int index = key.hashCode();
-        index = (maxSubPoolSize - 1) & (index ^ (index >>> 16));
-        ReentrantLock lock = subPoolsCreationLocks[index];
+        ReentrantLock lock = subPoolsCreationLocks[getArrayIndex(key.hashCode(), maxSubPoolSize)];
         try {
             if (lock.tryLock(defaultPool.getMaxWaitNs(), TimeUnit.NANOSECONDS)) {
                 try {

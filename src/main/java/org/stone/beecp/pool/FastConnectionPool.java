@@ -884,7 +884,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 if (reinit) {
                     this.poolConfig = checkedConfig;
                     Log.info("BeeCP({})start to reinitialize pool", this.poolName);
-                    startup(POOL_CLEARING);//throws SQLException only fail to create initial connections
+                    startup(POOL_CLEARING);//throws SQLException only fail to create initial connections or fail to set default
                     //note: if failed,this method may be recalled with correct configuration
                     Log.info("BeeCP({})completed to reinitialize pool successful", this.poolName);
                 }
