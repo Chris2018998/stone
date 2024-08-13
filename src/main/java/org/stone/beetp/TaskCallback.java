@@ -10,7 +10,7 @@
 package org.stone.beetp;
 
 /**
- * A callback interface around task execution,which may be submitted to task pool with a task
+ * Call back interface of {@link Task}
  *
  * @author Chris Liao
  * @version 1.0

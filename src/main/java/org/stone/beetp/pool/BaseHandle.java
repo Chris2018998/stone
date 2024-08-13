@@ -31,9 +31,9 @@ import static org.stone.beetp.TaskStates.*;
  * @author Chris Liao
  * @version 1.0
  */
-class BaseHandle implements TaskHandle {
+class BaseHandle<V> implements TaskHandle<V> {
     private static final AtomicIntegerFieldUpdater<BaseHandle> StateUpd = IntegerFieldUpdaterImpl.newUpdater(BaseHandle.class, "state");
-    final Task task;
+    final Task<V> task;
     final boolean isRoot;
     final TaskExecutionPool pool;
     Object result;
@@ -47,14 +47,14 @@ class BaseHandle implements TaskHandle {
     //                                  1: constructor(2)                                                            //
     //**************************************************e************************************************************//
     //1:constructor for sub join task
-    BaseHandle(Task task, TaskExecutionPool pool) {
+    BaseHandle(Task<V> task, TaskExecutionPool pool) {
         this.task = task;
         this.pool = pool;
         this.isRoot = false;
     }
 
     //2:constructor for once task,schedule task,root join task
-    BaseHandle(Task task, TaskCallback callback, TaskExecutionPool pool) {
+    BaseHandle(Task<V> task, TaskCallback callback, TaskExecutionPool pool) {
         this.task = task;
         this.pool = pool;
         this.isRoot = true;
@@ -107,19 +107,19 @@ class BaseHandle implements TaskHandle {
     //***************************************************************************************************************//
     //                                 3: result getting methods(3)                                                  //
     //***************************************************************************************************************//
-    public Object get() throws TaskException, InterruptedException {
+    public V get() throws TaskException, InterruptedException {
         return this.get(0);
     }
 
-    public Object get(final long timeout, final TimeUnit unit) throws TaskException, InterruptedException {
+    public V get(final long timeout, final TimeUnit unit) throws TaskException, InterruptedException {
         if (timeout < 0) throw new IllegalArgumentException("Time out must be greater than zero");
         if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
         return this.get(unit.toNanos(timeout));
     }
 
-    private Object get(final long nanoseconds) throws TaskException, InterruptedException {
+    private V get(final long nanoseconds) throws TaskException, InterruptedException {
         int stateCode = this.state;
-        if (stateCode == TASK_EXEC_RESULT) return this.result;
+        if (stateCode == TASK_EXEC_RESULT) return (V) this.result;
         this.throwFailureException(stateCode);
 
         final Thread currentThread = Thread.currentThread();
@@ -131,7 +131,7 @@ class BaseHandle implements TaskHandle {
             do {
                 //read task result,if done,then return
                 stateCode = this.state;
-                if (stateCode == TASK_EXEC_RESULT) return this.result;
+                if (stateCode == TASK_EXEC_RESULT) return (V) this.result;
                 this.throwFailureException(stateCode);
 
                 //if not done,then waiting until done, timeout,or interrupted

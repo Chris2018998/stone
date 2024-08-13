@@ -31,7 +31,7 @@ public interface TaskPool {
     //***************************************************************************************************************//
     //                2: task submit(6)                                                                              //
     //***************************************************************************************************************//
-    TaskHandle submit(Task<T> task) throws TaskException;
+    TaskHandle submit(Task task) throws TaskException;
 
     TaskHandle submit(Task task, TaskCallback callback) throws TaskException;
 

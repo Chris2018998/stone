@@ -10,14 +10,16 @@
 package org.stone.beetp;
 
 /**
- * A Task interface,whose implementation instances
+ * A callable task interface.
  *
- * @param <T> is a generic type of task execution task
+ * @param <T> is result type of task execution
  */
 
 public interface Task<T> {
 
     /**
+     * This method called in {@link TaskPool}
+     *
      * @return result of task execution
      * @throws Exception when failed to be executed
      */
