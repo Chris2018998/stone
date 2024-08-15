@@ -4,6 +4,7 @@ Changes in 1.3.6
 
 [beecp]
 1: refactor clear method
+2: remove dirty check from method setAutoCommit
 
 [beeop]
 1: refactor clear method
