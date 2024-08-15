@@ -26,17 +26,20 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    //an int sequence generator for pool names,its value starts with 1
+    //an int sequence for pool names generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //pool name,default is null;if not set,a pool name generated with {@code PoolNameIndex} for it
+    //if not set,a generation name assigned to it,default is null
     private String poolName;
+
+
     //maximum of tasks(once tasks + scheduled tasks),default is 100
     private int maxTaskSize = 100;
-    //size of worker created on pool initialization
-    private int initWorkerSize;
     //maximum of workers in pool,default is core size of cup
     private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
+    //size of worker created on pool initialization
+    private int initWorkerSize;
+
     //daemon indicator of worker thread,default is false(works as user thread)
     private boolean workerInDaemon;
     //milliseconds: max idle time for workers,default is zero(not timeout)
