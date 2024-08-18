@@ -180,7 +180,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setMaxObjectKeySize(int maxObjectKeySize) {
-        if (maxObjectKeySize >= 1) this.maxObjectKeySize = maxObjectKeySize;
+        if (maxObjectKeySize >0) this.maxObjectKeySize = maxObjectKeySize;
     }
 
     public int getBorrowSemaphoreSize() {
@@ -327,6 +327,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectInterfaceNames = interfaceNames;
     }
 
+    public BeeObjectFactory getObjectFactory() {
+        return this.objectFactory;
+    }
+
+    public void setObjectFactory(BeeObjectFactory factory) {
+        this.objectFactory = factory;
+    }
+
     public Class getObjectFactoryClass() {
         return this.objectFactoryClass;
     }
@@ -341,14 +349,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
     public void setObjectFactoryClassName(String objectFactoryClassName) {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
-    }
-
-    public BeeObjectFactory getObjectFactory() {
-        return this.objectFactory;
-    }
-
-    public void setRawObjectFactory(BeeObjectFactory factory) {
-        this.objectFactory = factory;
     }
 
     public Class getObjectMethodFilterClass() {
@@ -551,12 +551,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //check pool configuration
     public BeeObjectSourceConfig check() {
         if (initialSize > this.maxActive)
-            throw new BeeObjectSourceConfigException("initialSize must not be greater than 'maxActive'");
+            throw new BeeObjectSourceConfigException("initial-size must not be greater than max-active");
 
         //1: try to create object factory
         BeeObjectFactory objectFactory = this.createObjectFactory();
         if (objectFactory.getDefaultKey() == null)
-            throw new BeeObjectSourceConfigException("Object factory must provide a valid default pool key");
+            throw new BeeObjectSourceConfigException("Object factory must provide a non null default pooled key");
 
         //2: try to load interfaces
         Class[] objectInterfaces = this.loadObjectInterfaces();
