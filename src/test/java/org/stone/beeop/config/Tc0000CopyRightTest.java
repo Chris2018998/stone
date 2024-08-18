@@ -23,7 +23,7 @@ public class Tc0000CopyRightTest extends TestCase {
     public void testOnPrintRightInfo() {
         String buf = "*********************************************************************************\n" +
                 "*                                                                               *\n" +
-                "*                             Test case(beeop)                                  *\n" +
+                "*                             Cases Test(beeop)                                 *\n" +
                 "*                                                                               *\n" +
                 "*                                                     Author:Chris2018998       *\n" +
                 "*                                                     All rights reserved       *\n" +
