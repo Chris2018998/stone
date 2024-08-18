@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>1.3.5</version>
+    <version>1.3.6</version>
     <name>stone</name>
     <url>https://www.github.com/Chris2018998/stone</url>
     <description>Java Tools Suite</description>
@@ -156,6 +156,8 @@
                     <includes>
                         <include>org/stone/beecp/*</include>
                         <include>org/stone/beecp/pool/*</include>
+                        <include>org/stone/beeop/*</include>
+                        <include>org/stone/beeop/pool/*</include>
                     </includes>
                     <excludes>
                         <exclude>org/stone/beecp/jta/*</exclude>
