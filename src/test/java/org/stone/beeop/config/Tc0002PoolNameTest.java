@@ -31,7 +31,7 @@ public class Tc0002PoolNameTest extends TestCase {
         Assert.assertEquals(config.getPoolName(), "pool1");
     }
 
-    public void testOnGeneration() throws Exception {
+    public void testOnGeneration() {
 
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setObjectFactoryClass(org.stone.beeop.objects.JavaBookFactory.class);
