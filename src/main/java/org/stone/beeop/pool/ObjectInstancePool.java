@@ -315,7 +315,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             if (b != null) {
                 PooledObject p = b.lastUsed;
                 if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
-                    if (this.testOnBorrow(p)) return handleFactory.createHandle(p, b);
+                    if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
                     b.lastUsed = null;
                 }
             }
@@ -330,42 +330,47 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             throw new ObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
         }
 
-        //3: create a borrower when local variable b is null
-        if (this.enableThreadLocal && b == null) {
-            b = new ObjectBorrower();
-            this.threadLocal.set(new WeakReference<>(b));
-        }
-
-        //4: try to search idle one or create new one
+        //3: try to search idle one or create new one
         PooledObject p;
         try {
             p = this.searchOrCreate();
             if (p != null) {
                 semaphore.release();
-                return handleFactory.createHandle(p, b);
+                if (this.enableThreadLocal)
+                    putToThreadLocal(p, b, b != null);
+
+                return handleFactory.createHandle(p);
             }
         } catch (Exception e) {
             semaphore.release();
             throw e;
         }
 
-        //5: wait in queue for released one
-        if (b == null)
+        //4: add the borrower to wait queue
+        boolean hasCached;
+        if (b == null) {
+            hasCached = false;
             b = new ObjectBorrower();
-        else
+        } else {
             b.state = null;
+            hasCached = true;
+        }
         this.waitQueue.offer(b);
         BeeObjectException cause = null;
         deadline += this.maxWaitNs;
 
+        //5: self-spin to get transferred object
         do {
-            Object s = b.state;//one of possible types: PooledObject,Throwable,null
+            Object s = b.state;//one of possible values: PooledObject,Throwable,null
             if (s instanceof PooledObject) {
                 p = (PooledObject) s;
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                     semaphore.release();
                     waitQueue.remove(b);
-                    return handleFactory.createHandle(p, b);
+                    if (this.enableThreadLocal)
+                        putToThreadLocal(p, b, hasCached);
+
+                    return handleFactory.createHandle(p);
                 }
             } else if (s instanceof Throwable) {
                 semaphore.release();
@@ -394,7 +399,18 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         } while (true);//while
     }
 
-    //Method-3.2: search one idle Object,if not found,then try to create one
+    //Method-3.2: put borrowed pooled connection to thread local
+    private void putToThreadLocal(PooledObject p, ObjectBorrower b, boolean hasCached) {
+        if (hasCached) {
+            b.lastUsed = p;
+        } else {
+            if (b == null) b = new ObjectBorrower();
+            b.lastUsed = p;
+            this.threadLocal.set(new WeakReference<>(b));
+        }
+    }
+
+    //Method-3.3: search one idle Object,if not found,then try to create one
     private PooledObject searchOrCreate() throws Exception {
         PooledObject[] array = this.pooledArray;
         for (PooledObject p : array) {
@@ -406,7 +422,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         return null;
     }
 
-    //Method-3.3: return object to pool after borrower end of use object
+    //Method-3.4: return object to pool after borrower end of use object
     void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
         Iterator<ObjectBorrower> iterator = waitQueue.iterator();
@@ -425,7 +441,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     /**
-     * Method-4.4: terminate a Pooled Connection
+     * Method-3.5: terminate a Pooled object
      *
      * @param p      to be closed and removed
      * @param reason is a cause for be aborted
@@ -436,7 +452,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     /**
-     * Method-3.5: when object create failed,creator thread will transfer caused exception to one waiting borrower,
+     * Method-3.6: when object create failed,creator thread will transfer caused exception to one waiting borrower,
      * which will exit wait and throw this exception.
      *
      * @param e: transfer Exception to waiter
@@ -453,16 +469,16 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
     }
 
-    //Method-3.6: check object alive state,if not alive then remove it from pool
+    //Method-3.7: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject p) {
         try {
             if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
                 this.removePooledEntry(p, DESC_RM_BAD);
                 this.tryWakeupServantThread();
                 return false;
-            }else{
-				return true;
-			}
+            } else {
+                return true;
+            }
         } catch (Throwable e) {
             if (this.printRuntimeLog)
                 Log.warn("BeeOP({})alive test failed on a borrowed object", this.poolName, e);
@@ -721,8 +737,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             this.predicate = predicate;
         }
 
-        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            if (b != null) b.lastUsed = p;
+        BeeObjectHandle createHandle(PooledObject p) {
             return new PooledObjectPlainHandle(p, predicate);
         }
     }
@@ -739,8 +754,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             this.methodFilter = methodFilter;
         }
 
-        BeeObjectHandle createHandle(PooledObject p, ObjectBorrower b) {
-            if (b != null) b.lastUsed = p;
+        BeeObjectHandle createHandle(PooledObject p) {
             return new PooledObjectProxyHandle(p, predicate, poolClassLoader, objectInterfaces, methodFilter);
         }
     }
