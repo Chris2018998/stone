@@ -310,10 +310,11 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //1: try to reuse object in thread local
         ObjectBorrower b = null;
+        PooledObject p;
         if (this.enableThreadLocal) {
             b = this.threadLocal.get().get();
             if (b != null) {
-                PooledObject p = b.lastUsed;
+                p = b.lastUsed;
                 if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
                     if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
                     b.lastUsed = null;
@@ -331,7 +332,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         //3: try to search idle one or create new one
-        PooledObject p;
         try {
             p = this.searchOrCreate();
             if (p != null) {

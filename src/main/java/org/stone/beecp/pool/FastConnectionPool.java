@@ -526,7 +526,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } else {//driver support networkTimeout
                 if (this.networkTimeoutExecutor == null) {
                     this.networkTimeoutExecutor = new ThreadPoolExecutor(poolMaxSize, poolMaxSize, 10, SECONDS,
-                            new LinkedBlockingQueue<Runnable>(poolMaxSize), new PoolThreadThreadFactory("BeeCP(" + poolName + ")"));
+                            new LinkedBlockingQueue<>(poolMaxSize), new PoolThreadThreadFactory("BeeCP(" + poolName + ")"));
                     this.networkTimeoutExecutor.allowCoreThreadTimeOut(true);
                 }
                 rawCon.setNetworkTimeout(networkTimeoutExecutor, defaultNetworkTimeout);
@@ -595,10 +595,11 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //1: try to reuse connection in thread local
         Borrower b = null;
+        PooledConnection p;
         if (this.enableThreadLocal) {
             b = this.threadLocal.get().get();
             if (b != null) {
-                PooledConnection p = b.lastUsed;
+                p = b.lastUsed;
                 if (p != null && p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
                     if (this.testOnBorrow(p)) return b.lastUsed = p;
                     b.lastUsed = null;
@@ -616,12 +617,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //3: try to search idle one or create new one
-        PooledConnection p;
         try {
             p = this.searchOrCreate();
             if (p != null) {
                 semaphore.release();
-
                 //put connection to thread local
                 if (this.enableThreadLocal)
                     putToThreadLocal(p, b, b != null);
