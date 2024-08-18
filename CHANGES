@@ -5,9 +5,12 @@ Changes in 1.3.6
 [beecp]
 1: refactor clear method
 2: remove dirty check from method setAutoCommit
+3: improve pool performance
 
 [beeop]
 1: refactor clear method
+2: improve pool performance
+
 
 Changes in 1.3.5
 [beecp]
