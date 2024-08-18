@@ -30,8 +30,8 @@ public interface BeeObjectFactory {
     void reset(Object key, Object obj) throws Exception;
 
     //executes alive test on an object
-    boolean isValid(Object key, Object obj, int timeout);
+    boolean isValid(Object key, Object obj, int timeout) throws Exception;
 
     //destroy an object
-    void destroy(Object key, Object obj);
+    void destroy(Object key, Object obj) throws Exception;
 }

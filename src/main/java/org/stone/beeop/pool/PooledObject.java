@@ -18,6 +18,7 @@ import java.util.Map;
 
 import static java.lang.System.currentTimeMillis;
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
+import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
 import static org.stone.tools.BeanUtil.CommonLog;
 
 /**
@@ -108,11 +109,18 @@ final class PooledObject {
     //pool call this method before this object removed
     void onBeforeRemove() {
         try {
-            state = ObjectPoolStatics.OBJECT_CLOSED;
+            this.state = OBJECT_CLOSED;
+            this.factory.reset(key, raw);
         } catch (Throwable e) {
-            CommonLog.error("Object close error", e);
+            if (ownerPool.isPrintRuntimeLog())
+                CommonLog.warn("BeeOP({})reset object failed", ownerPool.getPoolName(), e);
         } finally {
-            this.factory.destroy(key, raw);
+            try {
+                this.factory.destroy(key, raw);
+            } catch (Throwable e) {
+                if (ownerPool.isPrintRuntimeLog())
+                    CommonLog.warn("BeeOP({})An error occurred when destroyed object", ownerPool.getPoolName(), e);
+            }
         }
     }
 }

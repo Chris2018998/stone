@@ -455,13 +455,19 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-3.6: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject p) {
-        if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
-            this.removePooledEntry(p, DESC_RM_BAD);
-            this.tryWakeupServantThread();
-            return false;
-        } else {
-            return true;
+        try {
+            if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
+                this.removePooledEntry(p, DESC_RM_BAD);
+                this.tryWakeupServantThread();
+                return false;
+            }else{
+				return true;
+			}
+        } catch (Throwable e) {
+            if (this.printRuntimeLog)
+                Log.warn("BeeOP({})alive test failed on a borrowed object", this.poolName, e);
         }
+        return false;
     }
 
     //***************************************************************************************************************//
@@ -640,6 +646,14 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //                                       8: Pool monitor(9)                                                      //                                                                                  //
     //***************************************************************************************************************//
+    String getPoolName() {
+        return poolName;
+    }
+
+    String getPoolMode() {
+        return poolMode;
+    }
+
     long getMaxWaitNs() {
         return this.maxWaitNs;
     }
@@ -656,8 +670,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         return poolThreadName;
     }
 
-    String getPoolMode() {
-        return poolMode;
+    boolean isPrintRuntimeLog() {
+        return this.printRuntimeLog;
     }
 
     void setPrintRuntimeLog(boolean indicator) {
