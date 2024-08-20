@@ -12,6 +12,10 @@ package org.stone.beeop.config;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.objects.Book;
+import org.stone.beeop.objects.JavaBookFactory;
+import org.stone.beeop.objects.JavaBookMethodFilter;
+import org.stone.beeop.objects.JavaBookPredicate;
 
 /**
  * @author Chris Liao
@@ -99,6 +103,44 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         Assert.assertEquals(config.getMaxObjectKeySize(), maxObjectKeySize);
         config.setMaxObjectKeySize(1);
         Assert.assertEquals(config.getMaxObjectKeySize(), 1);
+
+        //object factory
+        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
+        Assert.assertEquals(JavaBookFactory.class.getName(), config.getObjectFactoryClassName());
+        config.setObjectFactoryClass(JavaBookFactory.class);
+        Assert.assertEquals(JavaBookFactory.class, config.getObjectFactoryClass());
+        JavaBookFactory factory = new JavaBookFactory();
+        config.setObjectFactory(factory);
+        Assert.assertEquals(factory, config.getObjectFactory());
+
+        //MethodFilter
+        config.setObjectMethodFilterClassName(JavaBookMethodFilter.class.getName());
+        Assert.assertEquals(JavaBookMethodFilter.class.getName(), config.getObjectMethodFilterClassName());
+        config.setObjectMethodFilterClass(JavaBookMethodFilter.class);
+        Assert.assertEquals(JavaBookMethodFilter.class, config.getObjectMethodFilterClass());
+        JavaBookMethodFilter filter = new JavaBookMethodFilter();
+        config.setObjectMethodFilter(filter);
+        Assert.assertEquals(filter, config.getObjectMethodFilter());
+
+        //BeeObjectPredicate
+        config.setObjectPredicateClassName(JavaBookPredicate.class.getName());
+        Assert.assertEquals(JavaBookPredicate.class.getName(), config.getObjectPredicateClassName());
+
+        config.setObjectPredicateClass(JavaBookPredicate.class);
+        Assert.assertEquals(JavaBookPredicate.class, config.getObjectPredicateClass());
+        JavaBookPredicate predicate = new JavaBookPredicate();
+        config.setObjectPredicate(predicate);
+        Assert.assertEquals(predicate, config.getObjectPredicate());
+
+        //object interfaces
+        Class<?>[] interfaces = new Class[]{Book.class};
+        String[] interfaceNames = new String[]{Book.class.getName()};
+        config.setObjectInterfaces(interfaces);
+        config.setObjectInterfaceNames(interfaceNames);
+        for (String name : config.getObjectInterfaceNames())
+            Assert.assertEquals(name, Book.class.getName());
+        for (Class<?> oInterface : config.getObjectInterfaces())
+            Assert.assertEquals(oInterface, Book.class);
 
         //enableJmx
         config.setEnableJmx(true);
