@@ -101,12 +101,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //class name of filter on method invocation,third priority to used it in pool
     private String objectMethodFilterClassName;
 
-    //eviction predicate
-    private BeeObjectPredicate evictPredicate;
-    //eviction predicate class
-    private Class<? extends BeeObjectPredicate> evictPredicateClass;
-    //eviction predicate class name
-    private String evictPredicateClassName;
+    //object predicate
+    private BeeObjectPredicate objectPredicate;
+    //object predicate class
+    private Class<? extends BeeObjectPredicate> objectPredicateClass;
+    //object predicate class name
+    private String objectPredicateClassName;
 
     //class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
@@ -180,7 +180,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setMaxObjectKeySize(int maxObjectKeySize) {
-        if (maxObjectKeySize >0) this.maxObjectKeySize = maxObjectKeySize;
+        if (maxObjectKeySize > 0) this.maxObjectKeySize = maxObjectKeySize;
     }
 
     public int getBorrowSemaphoreSize() {
@@ -375,28 +375,28 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectMethodFilter = objectMethodFilter;
     }
 
-    public BeeObjectPredicate getEvictPredicate() {
-        return evictPredicate;
+    public BeeObjectPredicate getObjectPredicate() {
+        return objectPredicate;
     }
 
-    public void setEvictPredicate(BeeObjectPredicate evictPredicate) {
-        this.evictPredicate = evictPredicate;
+    public void setObjectPredicate(BeeObjectPredicate objectPredicate) {
+        this.objectPredicate = objectPredicate;
     }
 
-    public Class<? extends BeeObjectPredicate> getEvictPredicateClass() {
-        return evictPredicateClass;
+    public Class<? extends BeeObjectPredicate> getObjectPredicateClass() {
+        return objectPredicateClass;
     }
 
-    public void setEvictPredicateClass(Class<? extends BeeObjectPredicate> evictPredicateClass) {
-        this.evictPredicateClass = evictPredicateClass;
+    public void setObjectPredicateClass(Class<? extends BeeObjectPredicate> objectPredicateClass) {
+        this.objectPredicateClass = objectPredicateClass;
     }
 
-    public String getEvictPredicateClassName() {
-        return evictPredicateClassName;
+    public String getObjectPredicateClassName() {
+        return objectPredicateClassName;
     }
 
-    public void setEvictPredicateClassName(String evictPredicateClassName) {
-        this.evictPredicateClassName = evictPredicateClassName;
+    public void setObjectPredicateClassName(String objectPredicateClassName) {
+        this.objectPredicateClassName = objectPredicateClassName;
     }
 
     public Object getFactoryProperty(String key) {
@@ -571,7 +571,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         //5: assign above objects to the checked configuration object(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
-        if (predicate != null) checkedConfig.evictPredicate = predicate;
+        if (predicate != null) checkedConfig.objectPredicate = predicate;
         if (methodFilter != null) checkedConfig.objectMethodFilter = methodFilter;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
@@ -709,16 +709,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
     private BeeObjectPredicate createObjectPredicate() throws BeeObjectSourceConfigException {
         //step1:if exits a set predicate,then return it
-        if (this.evictPredicate != null) return this.evictPredicate;
+        if (this.objectPredicate != null) return this.objectPredicate;
 
         //step2: create predicate instance with a class or class name
-        if (evictPredicateClass != null || isNotBlank(evictPredicateClassName)) {
+        if (objectPredicateClass != null || isNotBlank(objectPredicateClassName)) {
             Class<?> predicationClass = null;
             try {
-                predicationClass = evictPredicateClass != null ? evictPredicateClass : Class.forName(evictPredicateClassName);
+                predicationClass = objectPredicateClass != null ? objectPredicateClass : Class.forName(objectPredicateClassName);
                 return (BeeObjectPredicate) createClassInstance(predicationClass, BeeObjectPredicate.class, "object predicate");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found predicate class[" + evictPredicateClassName + "]", e);
+                throw new BeeObjectSourceConfigException("Not found predicate class[" + objectPredicateClassName + "]", e);
             } catch (BeeObjectSourceConfigException e) {
                 throw e;
             } catch (Throwable e) {

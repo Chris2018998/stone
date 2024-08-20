@@ -49,7 +49,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private ReentrantLock[] subPoolsCreationLocks;
 
     //wait time for borrowed objects return to pool,time unit is nanoseconds
-    private long delayTimeForNextClearNs;  //
+    private long delayTimeForNextClearNs;
     //close borrowed objects immediately on cleaning pool
     private boolean forceCloseUsingOnClear;
     //a monitor object of this key pool

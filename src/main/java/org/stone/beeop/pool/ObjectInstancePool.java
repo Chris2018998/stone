@@ -119,7 +119,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //step2:object type field setting
         this.objectFactory = config.getObjectFactory();
         Class<?>[] objectInterfaces = config.getObjectInterfaces();
-        BeeObjectPredicate predicate = config.getEvictPredicate();
+        BeeObjectPredicate predicate = config.getObjectPredicate();
         this.methodFilter = config.getObjectMethodFilter();
         this.methodMap = new ConcurrentHashMap<>();
 
