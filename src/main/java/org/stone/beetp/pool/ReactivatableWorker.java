@@ -13,6 +13,7 @@ import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Pool task worker(a draft Class)
@@ -24,6 +25,13 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 final class ReactivatableWorker implements Runnable {
     private static final int BaseVal = 0xFFFF;
     private static final int MOVE_SHIFT = 16;
+    private static final int STATE_WORKING = 0;
+    private static final int STATE_WAITING = 1;
+    private static final int STATE_DEAD = 2;
+
+    private static final int STATE_WAITING_HBase = STATE_WAITING << MOVE_SHIFT;
+    private static final int STATE_WORKING_HBase = STATE_WORKING << MOVE_SHIFT;
+    private static final int STATE_DEAD_HBase = STATE_DEAD << MOVE_SHIFT;
     private static final AtomicIntegerFieldUpdater<ReactivatableWorker> CtrlUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivatableWorker.class, "workCtrl");
 
     //work thread created by thread factory
@@ -33,11 +41,9 @@ final class ReactivatableWorker implements Runnable {
     //store tasks of this worker
     private ConcurrentLinkedQueue<BaseHandle> taskQueue;
 
-
     public ReactivatableWorker() {
 
     }
-
 
     //***************************************************************************************************************//
     //                                            IN/OUT tasks                                                       //
@@ -53,7 +59,6 @@ final class ReactivatableWorker implements Runnable {
         taskQueue.offer(taskHandle);
         //2: increase the count of task offered into queue
         this.increaseTaskCount();
-        //3:wake up work thread if in sleeping or create new thread to process task @todo
     }
 
     /**
@@ -73,13 +78,26 @@ final class ReactivatableWorker implements Runnable {
     //***************************************************************************************************************//
     //                                            cas methods                                                        //
     //***************************************************************************************************************//
-    private short increaseTaskCount() {
+    private int increaseTaskCount() {
         for (; ; ) {
             int curControl = workCtrl;
-            short taskCount = (short) (curControl & BaseVal);
+            int taskCount = curControl & BaseVal;
 
             int newCtrl = curControl | (++taskCount & BaseVal);
-            if (CtrlUpd.compareAndSet(this, curControl, newCtrl)) return taskCount;
+            if (CtrlUpd.compareAndSet(this, curControl, newCtrl)) {//cas1
+                int curSate = curControl >>> MOVE_SHIFT;
+                if (curSate != STATE_WORKING && CtrlUpd.compareAndSet(this, newCtrl,
+                        STATE_WORKING_HBase | (taskCount & BaseVal))) {//cas2
+
+                    if (STATE_WAITING == curSate) {
+                        LockSupport.unpark(workThread);
+                    } else if (STATE_DEAD == curSate) {
+                        this.workThread = new Thread(this);
+                        this.workThread.start();
+                    }
+                }
+                return taskCount;
+            }
         }
     }
 
@@ -101,23 +119,23 @@ final class ReactivatableWorker implements Runnable {
 
     }
 
-//    private static short getCount(int v) {
-//        return (short) (v & BaseVal);
+//    private static int getCount(int v) {
+//        return v & BaseVal;
 //    }
 //
-//    private static short getState(int v) {
-//        return (short) (v >>> MOVE_SHIFT);
+//    private static int getState(int v) {
+//        return v >>> MOVE_SHIFT;
 //    }
 //
-//    private static int build(short h, short l) {
-//        return ((int) h << MOVE_SHIFT) | (l & BaseVal);
+//    private static int build(int h, int l) {
+//        return (h << MOVE_SHIFT) | (l & BaseVal);
 //    }
 //
 //    public static void main(String[] args) {
-//        short l1 = getCount(Integer.MIN_VALUE);
-//        int value1 = Integer.MIN_VALUE | (int)l1;
+//        int l1 = getCount(Integer.MIN_VALUE);
+//        int value1 = Integer.MIN_VALUE | l1;
 //
-//        short l2 = getCount(Integer.MAX_VALUE);
+//        int l2 = getCount(Integer.MAX_VALUE);
 //        int value2 = Integer.MAX_VALUE | (l2 & BaseVal);
 //
 //        System.out.println(value1 + " " + (value1 == Integer.MIN_VALUE));
