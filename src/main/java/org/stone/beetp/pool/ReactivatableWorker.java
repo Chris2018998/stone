@@ -31,7 +31,7 @@ final class ReactivatableWorker implements Runnable {
     private final TaskExecutionPool ownerPool;
     private final ConcurrentLinkedQueue<BaseHandle> taskQueue;
 
-    //section of value changeable
+    //code section of value changeable
     private Thread workThread;
 
     /**
@@ -41,6 +41,7 @@ final class ReactivatableWorker implements Runnable {
      * line3: STATE_WORKING ---> STATE_DEAD
      */
     private volatile int state;
+
     private volatile BaseHandle processingHandle;
 
     //create in pool
@@ -92,7 +93,7 @@ final class ReactivatableWorker implements Runnable {
             //1:check worker state,if dead then exit loop
             if (state == STATE_DEAD) break;
 
-            //2: poll task from queue of this worker
+            //2: poll a task from queue of this worker
             BaseHandle handle = taskQueue.poll();
 
             //3: poll task from other workers
@@ -112,12 +113,19 @@ final class ReactivatableWorker implements Runnable {
 
                         handle.beforeExecute();
                         //handle.executeTask(this);//@todo
+                    } catch (Throwable e) {
+                        //@todo some code need be putted here
                     } finally {
                         this.processingHandle = null;
                         //handle.afterExecute(this);//@todo
                     }
                 }
             } else if (StateUpd.compareAndSet(this, STATE_WORKING, STATE_WAITING)) {//park work thread if cas successful
+                //clear interrupted flag,if exists
+                if (Thread.interrupted()) {
+                    //do nothing
+                }
+
                 boolean timeout = false;
                 if (useTimePark) {
                     long parkStartTime = System.nanoTime();
@@ -137,32 +145,6 @@ final class ReactivatableWorker implements Runnable {
                     }
                 }
             }
-
-            //@todo clear interruption flag here? (from pool or task cancel)
-
         } while (true);
     }
-
-    //    private static int getCount(int v) {
-//        return v & BaseVal;
-//    }
-//
-//    private static int getState(int v) {
-//        return v >>> MOVE_SHIFT;
-//    }
-//
-//    private static int build(int h, int l) {
-//        return (h << MOVE_SHIFT) | (l & BaseVal);
-//    }
-//
-//    public static void main(String[] args) {
-//        int l1 = getCount(Integer.MIN_VALUE);
-//        int value1 = Integer.MIN_VALUE | l1;
-//
-//        int l2 = getCount(Integer.MAX_VALUE);
-//        int value2 = Integer.MAX_VALUE | (l2 & BaseVal);
-//
-//        System.out.println(value1 + " " + (value1 == Integer.MIN_VALUE));
-//        System.out.println(value2 + " " + (value2 == Integer.MAX_VALUE));
-//    }
 }
