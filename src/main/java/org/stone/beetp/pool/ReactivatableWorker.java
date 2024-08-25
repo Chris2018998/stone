@@ -23,31 +23,31 @@ import java.util.concurrent.locks.LockSupport;
  */
 
 final class ReactivatableWorker implements Runnable {
-    private static final int BaseVal = 0xFFFF;
-    private static final int MOVE_SHIFT = 16;
     private static final int STATE_WORKING = 0;
     private static final int STATE_WAITING = 1;
     private static final int STATE_DEAD = 2;
+    private static final AtomicIntegerFieldUpdater<ReactivatableWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivatableWorker.class, "state");
 
-    private static final int STATE_WAITING_HBase = STATE_WAITING << MOVE_SHIFT;
-    private static final int STATE_WORKING_HBase = STATE_WORKING << MOVE_SHIFT;
-    private static final int STATE_DEAD_HBase = STATE_DEAD << MOVE_SHIFT;
-    private static final AtomicIntegerFieldUpdater<ReactivatableWorker> CtrlUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivatableWorker.class, "workCtrl");
+    private final TaskExecutionPool ownerPool;
+    private final ConcurrentLinkedQueue<BaseHandle> taskQueue;
 
-    //work thread created by thread factory
+    //section of value changeable
     private Thread workThread;
-    //high-16:worker state,low-16:task count
-    private volatile int workCtrl;
-    //store tasks of this worker
-    private ConcurrentLinkedQueue<BaseHandle> taskQueue;
 
-    public ReactivatableWorker() {
+    /**
+     * state map lines
+     * line1: STATE_WORKING ---> STATE_WAITING ---> STATE_WORKING (main line)
+     * line2: STATE_WORKING ---> STATE_WAITING ---> STATE_DEAD
+     * line3: STATE_WORKING ---> STATE_DEAD
+     */
+    private volatile int state;
+    private volatile BaseHandle processingHandle;
 
+    //create in pool
+    public ReactivatableWorker(TaskExecutionPool ownerPool) {
+        this.ownerPool = ownerPool;
+        this.taskQueue = new ConcurrentLinkedQueue<>();
     }
-
-    //***************************************************************************************************************//
-    //                                            IN/OUT tasks                                                       //
-    //***************************************************************************************************************//
 
     /**
      * Pool call this method to push a task to worker.
@@ -55,60 +55,17 @@ final class ReactivatableWorker implements Runnable {
      * @param taskHandle is a handle passed from pool
      */
     void pushTask(BaseHandle taskHandle) {
-        //1: offer task to queue
         taskQueue.offer(taskHandle);
-        //2: increase the count of task offered into queue
-        this.increaseTaskCount();
-    }
 
-    /**
-     * This worker(maybe other workers) attempt to poll a task from private queue,if not task,then return null.
-     *
-     * @return a pulled out task
-     */
-    BaseHandle pollTask() {
-        //poll a task from queue
-        BaseHandle taskHandle = taskQueue.poll();
-        //decrease the count of tasks in queue
-        if (taskHandle != null) decreaseTaskCount();
-        //return the pulled out task
-        return taskHandle;
-    }
-
-    //***************************************************************************************************************//
-    //                                            cas methods                                                        //
-    //***************************************************************************************************************//
-    private int increaseTaskCount() {
-        for (; ; ) {
-            int curControl = workCtrl;
-            int taskCount = curControl & BaseVal;
-
-            int newCtrl = curControl | (++taskCount & BaseVal);
-            if (CtrlUpd.compareAndSet(this, curControl, newCtrl)) {//cas1
-                int curSate = curControl >>> MOVE_SHIFT;
-                if (curSate != STATE_WORKING && CtrlUpd.compareAndSet(this, newCtrl,
-                        STATE_WORKING_HBase | (taskCount & BaseVal))) {//cas2
-
-                    if (STATE_WAITING == curSate) {
-                        LockSupport.unpark(workThread);
-                    } else if (STATE_DEAD == curSate) {
-                        this.workThread = new Thread(this);
-                        this.workThread.start();
-                    }
-                }
-                return taskCount;
+        //wake up work thread to execute this task
+        int curState = state;
+        if (curState != STATE_WORKING && StateUpd.compareAndSet(this, curState, STATE_WORKING)) {
+            if (STATE_WAITING == curState) {
+                LockSupport.unpark(workThread);
+            } else if (STATE_DEAD == curState) {//reactivate work thread
+                this.workThread = new Thread(this);
+                this.workThread.start();
             }
-        }
-    }
-
-    private short decreaseTaskCount() {
-        for (; ; ) {
-            int curControl = workCtrl;
-            short taskCount = (short) (curControl & BaseVal);
-
-            if (taskCount == 0) return taskCount;
-            int newCtrl = curControl | (--taskCount & BaseVal);
-            if (CtrlUpd.compareAndSet(this, curControl, newCtrl)) return taskCount;
         }
     }
 
@@ -116,10 +73,63 @@ final class ReactivatableWorker implements Runnable {
     //                                             core method to process tasks                                      //
     //***************************************************************************************************************//
     public void run() {
+        final boolean useTimePark = ownerPool.isIdleTimeoutValid();
+        final long idleTimeoutNanos = ownerPool.getIdleTimeoutNanos();
+        final ReactivatableWorker[] allWorkers = null;//@todo
 
+        do {
+            //1:check worker state,if dead then exit loop
+            if (state == STATE_DEAD) break;
+
+            //2: poll task from queue of this worker
+            BaseHandle handle = taskQueue.poll();
+
+            //3: poll task from other workers
+            if (handle == null) {//steal a task from other workers
+                for (ReactivatableWorker worker : allWorkers) {
+                    if (worker == this) continue;
+                    handle = worker.taskQueue.poll();
+                    if (handle != null) break;
+                }
+            }
+
+            //4: process task or park working thread
+            if (handle != null) {
+                if (handle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
+                    try {
+                        this.processingHandle = handle;
+
+                        handle.beforeExecute();
+                        //handle.executeTask(this);//@todo
+                    } finally {
+                        this.processingHandle = null;
+                        //handle.afterExecute(this);//@todo
+                    }
+                }
+            } else if (StateUpd.compareAndSet(this, STATE_WORKING, STATE_WAITING)) {//park work thread if cas successful
+                boolean timeout = false;
+                if (useTimePark) {
+                    long parkStartTime = System.nanoTime();
+                    LockSupport.parkNanos(idleTimeoutNanos);
+                    timeout = System.nanoTime() - parkStartTime >= idleTimeoutNanos;
+                } else {
+                    LockSupport.park();
+                }
+
+                //state check after park
+                if (state == STATE_WAITING) {//two possibility: park fail or interrupted
+                    if (timeout) {
+                        if (StateUpd.compareAndSet(this, STATE_WAITING, STATE_DEAD))
+                            break;//break out while(work thread become terminated)
+                    } else {
+                        StateUpd.compareAndSet(this, STATE_WAITING, STATE_WORKING);
+                    }
+                }
+            }
+        } while (true);
     }
 
-//    private static int getCount(int v) {
+    //    private static int getCount(int v) {
 //        return v & BaseVal;
 //    }
 //
