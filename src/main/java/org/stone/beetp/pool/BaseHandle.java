@@ -40,7 +40,7 @@ class BaseHandle<V> implements TaskHandle<V> {
     volatile int state;
 
     private TaskCallback callback;
-    private TaskWorkThread workThread;//set before execution,clear after execution
+    private ReactivatableWorker worker;
     private ConcurrentLinkedQueue<Thread> waitQueue;//queue store result getting waiters
 
     //***************************************************************************************************************//

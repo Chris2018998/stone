@@ -15,8 +15,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.beetp.TaskStates.TASK_EXEC_EXCEPTION;
+
 /**
- * Pool task worker(a draft Class)
+ * Pool task worker
  *
  * @author Chris Liao
  * @version 1.0
@@ -31,9 +33,6 @@ final class ReactivatableWorker implements Runnable {
     private final TaskExecutionPool ownerPool;
     private final ConcurrentLinkedQueue<BaseHandle> taskQueue;
 
-    //code section of value changeable
-    private Thread workThread;
-
     /**
      * state map lines
      * line1: STATE_WORKING ---> STATE_WAITING ---> STATE_WORKING (main line)
@@ -41,8 +40,8 @@ final class ReactivatableWorker implements Runnable {
      * line3: STATE_WORKING ---> STATE_DEAD
      */
     private volatile int state;
-
     private volatile BaseHandle processingHandle;
+    private Thread workThread;
 
     //create in pool
     public ReactivatableWorker(TaskExecutionPool ownerPool) {
@@ -92,6 +91,10 @@ final class ReactivatableWorker implements Runnable {
         do {
             //1:check worker state,if dead then exit loop
             if (state == STATE_DEAD) break;
+            //clear interrupted flag,if it exists
+            if (workThread.isInterrupted() && Thread.interrupted()) {
+                //no code here,just clear flag of interruption
+            }
 
             //2: poll a task from queue of this worker
             BaseHandle handle = taskQueue.poll();
@@ -107,25 +110,19 @@ final class ReactivatableWorker implements Runnable {
 
             //4: process task or park working thread
             if (handle != null) {
-                if (handle.setAsRunning(this)) {//maybe cancellation concurrent,so cas state
+                if (handle.setAsRunning(this)) {//mark task to running state via CAS
                     try {
                         this.processingHandle = handle;
-
                         handle.beforeExecute();
-                        //handle.executeTask(this);//@todo
+                        handle.executeTask(this);
                     } catch (Throwable e) {
-                        //@todo some code need be putted here
+                        handle.setResult(TASK_EXEC_EXCEPTION, e);
                     } finally {
                         this.processingHandle = null;
-                        //handle.afterExecute(this);//@todo
+                        handle.afterExecute(this);
                     }
                 }
             } else if (StateUpd.compareAndSet(this, STATE_WORKING, STATE_WAITING)) {//park work thread if cas successful
-                //clear interrupted flag,if exists
-                if (Thread.interrupted()) {
-                    //do nothing
-                }
-
                 boolean timeout = false;
                 if (useTimePark) {
                     long parkStartTime = System.nanoTime();

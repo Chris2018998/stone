@@ -16,13 +16,12 @@ import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.TaskStates.TASK_CANCELLED;
@@ -37,27 +36,18 @@ import static org.stone.beetp.pool.TaskPoolConstants.*;
  */
 public final class TaskExecutionPool implements TaskPool {
     private static final AtomicIntegerFieldUpdater<TaskExecutionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecutionPool.class, "poolState");
-
-    //1:fields about pool
     private String poolName;
     private volatile int poolState;
 
-    //2: fields about tasks
     private int maxTaskSize;
-    private long completedCount;//completion count of tasks,worker threads update this value after executed tasks end
-    // update in <method>removeTaskWorker</method>
-    private AtomicInteger taskCount;//(count of once tasks + count of scheduled tasks + root count of joined tasks)
+    private LongAdder taskCount;//(count of once tasks + count of scheduled tasks + root count of joined tasks)
+    private long completedCount;
 
-    //2: fields about worker threads
-    private int maxWorkerSize;
-    private boolean workInDaemon;
     private long idleTimeoutNanos;
     private boolean idleTimeoutValid;
-    private ReentrantLock workerArrayLock;
-    private volatile TaskWorkThread[] workerArray;
-    private ConcurrentLinkedQueue<BaseHandle> taskQueue;
+    private int workerArrayIndexHashBase;
+    private ReactivatableWorker[] workerArray;
 
-    //4: fields about task execution
     private TaskPoolMonitorVo monitorVo;
     private ScheduledTaskQueue scheduledDelayedQueue;
     private PoolScheduledTaskPollThread scheduledPeekThread;//wait at first task of scheduled queue util first task timeout,then poll it from queue
@@ -82,41 +72,25 @@ public final class TaskExecutionPool implements TaskPool {
     }
 
     private void startup(TaskServiceConfig config) {
-        //step1: assign values to some local variables
+        //step1: copy values of some configured items to pool local fields
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
-        this.maxWorkerSize = config.getMaxWorkerSize();
-        this.workInDaemon = config.isWorkerInDaemon();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
 
-        //step2: create task queue and pool lock
-        if (workerArray == null) {
-            this.workerArrayLock = new ReentrantLock();
-            this.taskQueue = new ConcurrentLinkedQueue<>();
-            this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
+        //step2: create some runtime objects
+        this.taskCount = new LongAdder();
+        this.monitorVo = new TaskPoolMonitorVo();
+        this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-            //step3: atomic fields of pool monitor
-            this.taskCount = new AtomicInteger();
-            this.monitorVo = new TaskPoolMonitorVo();
-        }
+        //step3: create workers array and fill workers full size
+        int maxWorkerSize = config.getMaxWorkerSize();
+        this.workerArrayIndexHashBase = maxWorkerSize - 1;
+        this.workerArray = new ReactivatableWorker[maxWorkerSize];
+        for (int i = 0; i < maxWorkerSize; i++)
+            workerArray[i] = new ReactivatableWorker(this);
 
-        //step4: create worker threads on pool initialization
-        String workerName = poolName + "-task worker";
-        int workerInitSize = config.getInitWorkerSize();
-        this.workerArray = new TaskWorkThread[workerInitSize];
-        for (int i = 0; i < workerInitSize; i++) {
-            TaskWorkThread worker = new TaskWorkThread(WORKER_WORKING, this);
-            worker.setDaemon(workInDaemon);
-            worker.setName(workerName);
-            workerArray[i] = worker;
-        }
-        //delay to start to avoid to scan null workers
-        for (int i = 0; i < workerInitSize; i++) {
-            workerArray[i].start();
-        }
-
-        //step5: create a queue to store scheduled tasks and a thread to poll expired tasks from scheduled tasks queue and pull to execution queue
+        //step4: create daemon thread to poll expired tasks from scheduled queue and assign to workers
         if (scheduledPeekThread == null) {
             this.scheduledDelayedQueue = new ScheduledTaskQueue(0);
             this.scheduledPeekThread = new PoolScheduledTaskPollThread();
@@ -140,7 +114,7 @@ public final class TaskExecutionPool implements TaskPool {
         //3: create task handle
         BaseHandle handle = new BaseHandle(task, callback, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle, this.taskQueue);
+        this.pushToExecutionQueue(handle);
         //5: return handle
         return handle;
     }
@@ -159,7 +133,7 @@ public final class TaskExecutionPool implements TaskPool {
         //3: create join task handle(root)
         BaseHandle handle = new JoinTaskHandle(task, operator, callback, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle, this.taskQueue);
+        this.pushToExecutionQueue(handle);
         //5: return handle
         return handle;
     }
@@ -177,7 +151,7 @@ public final class TaskExecutionPool implements TaskPool {
         //3: create tree task handle(root)
         TreeTaskHandle handle = new TreeTaskHandle(task, callback, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle, this.taskQueue);
+        this.pushToExecutionQueue(handle);
         //5: return handle
         return handle;
     }
@@ -213,32 +187,19 @@ public final class TaskExecutionPool implements TaskPool {
     //                                  4: task check and task offer(4)                                              //
     //***************************************************************************************************************//
     private void checkPool() throws TaskException {
-        //1: pool state check
-        if (this.poolState != POOL_RUNNING)
-            throw new TaskRejectedException("Pool has been closed or in clearing");
+        //pool state check and pool full check
+        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool has been closed or in clearing");
+        if (taskCount.sum() >= maxTaskSize) throw new TaskRejectedException("Task count has reach max capacity");
 
-        //2: task capacity full check
-        do {
-            int currentCount = taskCount.get();
-            if (currentCount >= maxTaskSize) throw new TaskRejectedException("Capacity of tasks has reached max size");
-            if (taskCount.compareAndSet(currentCount, currentCount + 1)) return;
-        } while (true);
+        //add 1 on taskCount
+        taskCount.increment();//increase
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    void pushToExecutionQueue(BaseHandle taskHandle, Queue<BaseHandle> taskQueue) {
-        //1:try to wakeup a idle work thread to process this task
-        TaskWorkThread[] workers = this.workerArray;
-        for (TaskWorkThread worker : workers) {
-            if (worker.compareAndSetState(WORKER_IDLE, taskHandle)) {
-                LockSupport.unpark(worker);
-                return;
-            }
-        }
-
-        //2:try to create a new worker
-        if (this.workerArray.length >= this.maxWorkerSize || this.createTaskWorker(taskHandle) == null)
-            taskQueue.offer(taskHandle);
+    void pushToExecutionQueue(BaseHandle taskHandle) {
+        int threadHashCode = Thread.currentThread().hashCode();
+        int arrayIndex = this.workerArrayIndexHashBase & (threadHashCode ^ (threadHashCode >>> 16));
+        this.workerArray[arrayIndex].pushTask(taskHandle);
     }
 
     void wakeupSchedulePeekThread() {
@@ -336,7 +297,7 @@ public final class TaskExecutionPool implements TaskPool {
         }
 
         //3: remove work threads
-        for (TaskWorkThread workerThread : workerArray) {
+        for (ReactivatableWorker workerThread : workerArray) {
             if (mayInterruptIfRunning) {
                 workerThread.setState(WORKER_TERMINATED);
                 workerThread.interrupt();
