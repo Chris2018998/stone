@@ -69,6 +69,17 @@ final class ReactivatableWorker implements Runnable {
         }
     }
 
+    /**
+     * cancel a given task from this worker
+     *
+     * @param taskHandle            is handle of a task
+     * @param mayInterruptIfRunning is true that worker thread is interrupted if task blocking in process
+     * @return true if cancel success;otherwise return false
+     */
+    boolean cancel(BaseHandle taskHandle, boolean mayInterruptIfRunning) {
+        return true;//return a dummy value,@todo
+    }
+
     //***************************************************************************************************************//
     //                                             core method to process tasks                                      //
     //***************************************************************************************************************//
@@ -126,6 +137,9 @@ final class ReactivatableWorker implements Runnable {
                     }
                 }
             }
+
+            //@todo clear interruption flag here? (from pool or task cancel)
+
         } while (true);
     }
 
