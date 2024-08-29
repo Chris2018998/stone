@@ -17,61 +17,84 @@ import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * A object handle interface for a submitted task,after task submission to a pool,
- * an implementation instance of this interface will be generated and return to submitter
- * <p>
- * A task handle provides three kind of methods:
- * 1: task state query method,@see {@link #getState}
- * 2: task cancellation method,@see {@link #cancel}
- * 3: result getting methods,@see {@link #get}
+ * An object handle interface,when submit a task to {@link TaskPool} success,pool return a handle,which can be used to
+ * get call result of task or cancel execution of task.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface TaskHandle<T> {
+public interface TaskHandle<V> {
 
     /**
-     * return present state of a task;state static definition,@see{@link TaskStates}
+     * Query task state is whether in waiting for being executed
      *
-     * @return task state
+     * @return true that in waiting
      */
-    int getState();
+    boolean isWaiting();
 
     /**
-     * try to cancel this task from pool
+     * Query task state is whether in running
      *
-     * @param mayInterruptIfRunning true,if task has been in blocking,then interrupt it
-     * @return true means cancel success,otherwise,task has been completed
+     * @return true that in running
+     */
+    boolean isRunning();
+
+    /**
+     * Query task state is whether completed(success,failed,cancelled)
+     *
+     * @return true that task is completed
+     */
+    boolean isCompleted();
+
+    /**
+     * Query task state is whether cancelled
+     *
+     * @return true that task is cancelled
+     */
+    boolean isCancelled();
+
+    /**
+     * Query task state is whether success and a result can be retrieved by get method
+     *
+     * @return true that task is cancelled
+     */
+    boolean isSucceed();
+
+    /**
+     * Query task state is whether failed
+     *
+     * @return true that task execution failed
+     */
+    boolean isFailed();
+
+    /**
+     * Attempts to cancel task of this handle from pool.
+     *
+     * @param mayInterruptIfRunning is true then attempt to interrupt execution if exists blocking
+     * @return a boolean value,true is that cancel success
      */
     boolean cancel(boolean mayInterruptIfRunning);
 
     /**
-     * retrieves task computed result,some keys point are below
-     * 1: returns result or throws exception immediately when task call is in completed state
-     * 2: if task  not in completed state,then blocking util completion
-     * 3: supports interruption while blocking
+     * Get result of task call of this handle.
      *
-     * @return the computed result
-     * @throws TaskCancelledException if the computation was cancelled
-     * @throws TaskExecutionException if the computation threw an exception
-     * @throws InterruptedException   if the current thread was interrupted while waiting
+     * @return an object type value as call result
+     * @throws TaskCancelledException if task is cancelled
+     * @throws TaskExecutionException if task is executed fail
+     * @throws InterruptedException   if task execution is interrupted
      */
-    T get() throws TaskException, InterruptedException;
+    V get() throws TaskException, InterruptedException;
 
     /**
-     * retrieves task computed result,some keys point are below
-     * 1: returns result or throws exception immediately when task call is in completed state
-     * 2: if task not in completed state,then blocking util completion
-     * 3: supports timed waiting to get computed result
-     * 4: supports interruption while blocking
+     * Get result of task call of this handle.
      *
-     * @param timeout the maximum time to wait
-     * @param unit    the time unit of the timeout argument
-     * @return the computed result
-     * @throws TaskCancelledException        if the computation was cancelled
-     * @throws TaskExecutionException        if the computation threw an exception
-     * @throws InterruptedException          if the current thread was interrupted while waiting
-     * @throws TaskResultGetTimeoutException if the wait timed out
+     * @param timeout is a max wait time for result of task call,a zero value is allowed
+     * @param unit    is measure unit of timeout
+     * @return an object type value as call result
+     * @throws TaskCancelledException        if task is cancelled
+     * @throws TaskExecutionException        if task is executed fail
+     * @throws InterruptedException          if task execution is interrupted
+     * @throws TaskResultGetTimeoutException if not get result when timeout reach
      */
-    T get(long timeout, TimeUnit unit) throws TaskException, InterruptedException;
+    V get(long timeout, TimeUnit unit) throws TaskException, InterruptedException;
 }

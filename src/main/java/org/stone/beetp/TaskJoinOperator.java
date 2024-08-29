@@ -10,27 +10,26 @@
 package org.stone.beetp;
 
 /**
- * Joining operation interface,be submitted to pool with its owner task,
- * the entire purpose is similar to {@link java.util.concurrent.ForkJoinTask} class.
+ * An operator interface on joined task
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface TaskJoinOperator<E> {
+public interface TaskJoinOperator<V> {
 
     /**
-     * try to split a given task into some subtasks,worker thread offers them to worker private queue.
+     * Attempt to split a task to some subtasks
      *
-     * @param task target task
-     * @return an array of subtasks split from the given task,if cannot to be divided,then return a null array
+     * @param task to be split
+     * @return an array of subtask split from given task
      */
-    Task<E>[] split(Task<E> task);
+    Task<V>[] split(Task<V> task);
 
     /**
-     * Join subtask handles to result
+     * Join handles of subtasks to make a joined result object
      *
      * @param subTaskHandles result array of subtasks
-     * @return joined result
+     * @return join result of subtask handles
      */
-    E join(TaskHandle<E>[] subTaskHandles);
+    V join(TaskHandle<V>[] subTaskHandles);
 }

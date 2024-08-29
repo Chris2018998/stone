@@ -10,18 +10,18 @@
 package org.stone.beetp;
 
 /**
- * A callable task interface.
+ * A callable task interface
  *
- * @param <T> is result type of task execution
+ * @param <V> is result type of task execution
  */
 
-public interface Task<T> {
+public interface Task<V> {
 
     /**
-     * This method called in {@link TaskPool}
+     * Method to compute a result
      *
      * @return result of task execution
-     * @throws Exception when failed to be executed
+     * @throws Exception when fail
      */
-    T call() throws Exception;
+    V call() throws Exception;
 }

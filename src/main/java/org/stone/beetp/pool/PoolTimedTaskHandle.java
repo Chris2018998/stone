@@ -10,11 +10,9 @@
 package org.stone.beetp.pool;
 
 import org.stone.beetp.Task;
-import org.stone.beetp.TaskCallback;
+import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TaskScheduledHandle;
 import org.stone.beetp.pool.exception.TaskException;
-
-import static org.stone.beetp.TaskStates.*;
 
 /**
  * Scheduled task handle Impl
@@ -22,10 +20,10 @@ import static org.stone.beetp.TaskStates.*;
  * @author Chris Liao
  * @version 1.0
  */
-final class ScheduledTaskHandle extends BaseHandle implements TaskScheduledHandle {
+public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements TaskScheduledHandle<V> {
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
-    private long nextRunTime;//time sortable
+    private final long nextRunTime;//time sortable
 
     //only support periodic
     private int prevState;
@@ -35,8 +33,8 @@ final class ScheduledTaskHandle extends BaseHandle implements TaskScheduledHandl
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
-    ScheduledTaskHandle(Task task, TaskCallback callback,
-                        long firstRunTime, long intervalTime, boolean fixedDelay, TaskExecutionPool pool) {
+    PoolTimedTaskHandle(Task<V> task, TaskAspect<V> callback,
+                        long firstRunTime, long intervalTime, boolean fixedDelay, PoolTaskCenter pool) {
         super(task, callback, pool);
         this.nextRunTime = firstRunTime;//first run time
         this.intervalTime = intervalTime;
@@ -65,32 +63,37 @@ final class ScheduledTaskHandle extends BaseHandle implements TaskScheduledHandl
     }
 
     //retrieve result of prev call
-    public Object getPrevResult() throws TaskException {
-        if (!isPeriodic()) throw new TaskException("Only support periodic schedule");
-        if (prevState == TASK_EXEC_RESULT) return prevResult;
-        if (prevState == TASK_EXEC_EXCEPTION) throw (TaskException) prevResult;
-        throw new TaskException("Task not be called or not done until current");
+    public V getPrevResult() throws TaskException {
+//        if (!isPeriodic()) throw new TaskException("Only support periodic schedule");
+//        if (prevState == TASK_COMPLETED) return (V) prevResult;
+//        if (prevState == TASK_FAILED) throw (TaskException) prevResult;
+//        throw new TaskException("Task not be called or not done until current");
+
+        return null;
     }
 
     //***************************************************************************************************************//
     //                              3: execute task                                                                  //
     //***************************************************************************************************************//
-    void beforeExecute() {
-        if (!isPeriodic()) pool.getTaskCount().decrementAndGet();
+    protected void beforeExecute() {
+        //@todo to be implemented
+        //if (!isPeriodic()) pool.getTaskCount().decrementAndGet();
     }
 
-    void afterExecute(TaskWorkThread worker) {
-        if (this.isPeriodic()) {
-            this.prevState = this.state;
-            this.prevResult = this.result;
-            this.prevTime = this.nextRunTime;
-            this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
-            this.state = TASK_WAITING;//reset to waiting state for next call
+    private void afterExecute(TaskExecuteWorker worker) {
+        //@todo to be implemented
 
-            if (pool.getScheduledDelayedQueue().add(this) == 0)
-                pool.wakeupSchedulePeekThread();
-        } else {//one timed task,so end
-            worker.completedCount++;
-        }
+//        if (this.isPeriodic()) {
+//            this.prevState = this.state;
+//            this.prevResult = this.result;
+//            this.prevTime = this.nextRunTime;
+//            this.nextRunTime = intervalTime + (fixedDelay ? System.nanoTime() : nextRunTime);
+//            this.state = TASK_WAITING;//reset to waiting state for next call
+//
+//            if (pool.getScheduledDelayedQueue().add(this) == 0)
+//                pool.wakeupSchedulePeekThread();
+//        } else {//one timed task,so end
+//            worker.completedCount++;
+//        }
     }
 }

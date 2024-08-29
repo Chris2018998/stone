@@ -9,7 +9,7 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.TaskExecutionPool;
+import org.stone.beetp.pool.PoolTaskCenter;
 import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.lang.reflect.Field;
@@ -20,7 +20,7 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
- * Task service config
+ * Task service config object
  *
  * @author Chris Liao
  * @version 1.0
@@ -29,24 +29,16 @@ public class TaskServiceConfig {
     //an int sequence for pool names generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
 
-    //if not set,a generation name assigned to it,default is null
+    //pool name,if not set,a generation name will be assigned to it
     private String poolName;
-
-
     //maximum of tasks(once tasks + scheduled tasks),default is 100
     private int maxTaskSize = 100;
     //maximum of workers in pool,default is core size of cup
-    private int maxWorkerSize = Runtime.getRuntime().availableProcessors();
-    //size of worker created on pool initialization
-    private int initWorkerSize;
-
-    //daemon indicator of worker thread,default is false(works as user thread)
-    private boolean workerInDaemon;
-    //milliseconds: max idle time for workers,default is zero(not timeout)
+    private int workerSize = Runtime.getRuntime().availableProcessors();
+    //milliseconds:max idle time that no tasks to be processed
     private long workerIdleTimeout;
-
     //class name of task pool implementation
-    private String poolImplementClassName = TaskExecutionPool.class.getName();
+    private String poolImplementClassName = PoolTaskCenter.class.getName();
 
     public String getPoolName() {
         return poolName;
@@ -64,28 +56,12 @@ public class TaskServiceConfig {
         if (maxTaskSize > 0) this.maxTaskSize = maxTaskSize;
     }
 
-    public int getInitWorkerSize() {
-        return initWorkerSize;
+    public int getWorkerSize() {
+        return workerSize;
     }
 
-    public void setInitWorkerSize(int initWorkerSize) {
-        if (initWorkerSize > 0) this.initWorkerSize = initWorkerSize;
-    }
-
-    public int getMaxWorkerSize() {
-        return maxWorkerSize;
-    }
-
-    public void setMaxWorkerSize(int maxWorkerSize) {
-        if (maxWorkerSize > 0) this.maxWorkerSize = maxWorkerSize;
-    }
-
-    public boolean isWorkerInDaemon() {
-        return workerInDaemon;
-    }
-
-    public void setWorkerInDaemon(boolean workerInDaemon) {
-        this.workerInDaemon = workerInDaemon;
+    public void setWorkerSize(int workerSize) {
+        if (workerSize > 0) this.workerSize = workerSize;
     }
 
     public long getWorkerKeepAliveTime() {
@@ -107,15 +83,13 @@ public class TaskServiceConfig {
 
     public TaskServiceConfig check() throws TaskServiceConfigException {
         if (maxTaskSize <= 0)
-            throw new TaskServiceConfigException("maxTaskSize must be greater than zero");
-        if (initWorkerSize < 0)
-            throw new TaskServiceConfigException("initWorkerSize must be not less than zero");
-        if (maxWorkerSize <= 0)
-            throw new TaskServiceConfigException("maxWorkerSize must be greater than zero");
-        if (maxWorkerSize < initWorkerSize)
-            throw new TaskServiceConfigException("maxWorkerSize must be not less than initWorkerSize");
+            throw new TaskServiceConfigException("max-task-size must be greater than zero");
+        if (workerSize <= 0)
+            throw new TaskServiceConfigException("worker-size must be greater than zero");
+        if (workerSize > 4 * Runtime.getRuntime().availableProcessors())
+            throw new TaskServiceConfigException("worker-size can not be greater than 4 times of cpu core size");
         if (workerIdleTimeout < 0L)
-            throw new TaskServiceConfigException("workerKeepAliveTime must be greater than zero");
+            throw new TaskServiceConfigException("worker-idle-timeout must be greater than zero");
 
         //2:create new config and copy field value from current
         TaskServiceConfig checkedConfig = new TaskServiceConfig();

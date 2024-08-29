@@ -19,6 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
+import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
+
 /**
  * Task service
  *
@@ -61,7 +64,7 @@ public final class TaskService extends TaskServiceConfig {
         service.ready = true;
     }
 
-    private static int checkParameters(Collection<? extends Task> tasks, long timeout, TimeUnit unit) {
+    private static int checkParameters(Collection<? extends Task<?>> tasks, long timeout, TimeUnit unit) {
         if (tasks == null) throw new NullPointerException();
         if (unit == null) throw new NullPointerException();
         int totalSize = tasks.size();
@@ -72,32 +75,32 @@ public final class TaskService extends TaskServiceConfig {
     //***************************************************************************************************************//
     //                                        2: task submit methods(6)                                              //
     //***************************************************************************************************************//
-    public TaskHandle submit(Task task) throws TaskException, TaskPoolException {
+    public <V> TaskHandle<V> submit(Task<V> task) throws TaskException, TaskPoolException {
         if (this.ready) return pool.submit(task);
         return createPoolByLock().submit(task);
     }
 
-    public TaskHandle submit(Task task, TaskCallback callback) throws TaskException, TaskPoolException {
+    public <V> TaskHandle<V> submit(Task<V> task, TaskAspect<V> callback) throws TaskException, TaskPoolException {
         if (this.ready) return pool.submit(task, callback);
         return createPoolByLock().submit(task, callback);
     }
 
-    public TaskHandle submit(Task task, TaskJoinOperator joinOperator) throws TaskException, TaskPoolException {
+    public <V> TaskHandle<V> submit(Task<V> task, TaskJoinOperator<V> joinOperator) throws TaskException, TaskPoolException {
         if (this.ready) return pool.submit(task, joinOperator);
         return createPoolByLock().submit(task, joinOperator);
     }
 
-    public TaskHandle submit(Task task, TaskJoinOperator joinOperator, TaskCallback callback) throws TaskException, TaskPoolException {
+    public <V> TaskHandle<V> submit(Task<V> task, TaskJoinOperator<V> joinOperator, TaskAspect<V> callback) throws TaskException, TaskPoolException {
         if (this.ready) return pool.submit(task, joinOperator, callback);
         return createPoolByLock().submit(task, joinOperator, callback);
     }
 
-    public TaskHandle submit(TreeTask task) throws TaskException, TaskPoolException {
+    public <V> TaskHandle<V> submit(TreeLayerTask<V> task) throws TaskException, TaskPoolException {
         if (this.ready) return pool.submit(task);
         return createPoolByLock().submit(task);
     }
 
-    public TaskHandle submit(TreeTask task, TaskCallback callback) throws TaskException, TaskPoolException {
+    public <V> TaskHandle<V> submit(TreeLayerTask<V> task, TaskAspect<V> callback) throws TaskException, TaskPoolException {
         if (this.ready) return pool.submit(task, callback);
         return createPoolByLock().submit(task, callback);
     }
@@ -105,32 +108,32 @@ public final class TaskService extends TaskServiceConfig {
     //***************************************************************************************************************//
     //                                   3: task schedule(6)                                                          //
     //***************************************************************************************************************//
-    public TaskScheduledHandle schedule(Task task, long delay, TimeUnit unit) throws TaskException, TaskPoolException {
+    public <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit) throws TaskException, TaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit);
         return createPoolByLock().schedule(task, delay, unit);
     }
 
-    public TaskScheduledHandle schedule(Task task, long delay, TimeUnit unit, TaskCallback callback) throws TaskException, TaskPoolException {
+    public <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit, TaskAspect<V> callback) throws TaskException, TaskPoolException {
         if (this.ready) return pool.schedule(task, delay, unit, callback);
         return createPoolByLock().schedule(task, delay, unit, callback);
     }
 
-    public TaskScheduledHandle scheduleAtFixedRate(Task task, long initialDelay, long period, TimeUnit unit) throws TaskException, TaskPoolException {
+    public <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit) throws TaskException, TaskPoolException {
         if (this.ready) return pool.scheduleAtFixedRate(task, initialDelay, period, unit);
         return createPoolByLock().scheduleAtFixedRate(task, initialDelay, period, unit);
     }
 
-    public TaskScheduledHandle scheduleAtFixedRate(Task task, long initialDelay, long period, TimeUnit unit, TaskCallback callback) throws TaskException, TaskPoolException {
+    public <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit, TaskAspect<V> callback) throws TaskException, TaskPoolException {
         if (this.ready) return pool.scheduleAtFixedRate(task, initialDelay, period, unit, callback);
         return createPoolByLock().scheduleAtFixedRate(task, initialDelay, period, unit, callback);
     }
 
-    public TaskScheduledHandle scheduleWithFixedDelay(Task task, long initialDelay, long delay, TimeUnit unit) throws TaskException, TaskPoolException {
+    public <V> TaskScheduledHandle<V> scheduleWithFixedDelay(Task<V> task, long initialDelay, long delay, TimeUnit unit) throws TaskException, TaskPoolException {
         if (this.ready) return pool.scheduleWithFixedDelay(task, initialDelay, delay, unit);
         return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit);
     }
 
-    public TaskScheduledHandle scheduleWithFixedDelay(Task task, long initialDelay, long delay, TimeUnit unit, TaskCallback callback) throws TaskException, TaskPoolException {
+    public <V> TaskScheduledHandle<V> scheduleWithFixedDelay(Task<V> task, long initialDelay, long delay, TimeUnit unit, TaskAspect<V> callback) throws TaskException, TaskPoolException {
         if (this.ready) return pool.scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
         return createPoolByLock().scheduleWithFixedDelay(task, initialDelay, delay, unit, callback);
     }
@@ -208,11 +211,11 @@ public final class TaskService extends TaskServiceConfig {
     //***************************************************************************************************************//
     //                                        7: tasks invoke(4)                                                     //
     //***************************************************************************************************************//
-    public TaskHandle invokeAny(Collection<? extends Task> tasks) throws TaskException, TaskPoolException, InterruptedException {
+    public <V> TaskHandle<V> invokeAny(Collection<? extends Task<V>> tasks) throws TaskException, TaskPoolException, InterruptedException {
         return invokeAny(tasks, 0L, TimeUnit.NANOSECONDS);
     }
 
-    public TaskHandle invokeAny(Collection<? extends Task> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
+    public <V> TaskHandle<V> invokeAny(Collection<? extends Task<V>> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
         ///1: check parameters
         int taskSize = checkParameters(tasks, timeout, unit);
         //2: try to create execution if not ready
@@ -220,15 +223,15 @@ public final class TaskService extends TaskServiceConfig {
 
 
         //3:task submission preparation
-        TaskHandle completedHandle;//contains a result
-        AnyCallback callback = new AnyCallback(taskSize);
-        List<TaskHandle> handleList = new ArrayList<>(taskSize);
+        TaskHandle<V> completedHandle;//contains a result
+        AnyCallback<V> callback = new AnyCallback<>(taskSize);
+        List<TaskHandle<V>> handleList = new ArrayList<>(taskSize);
         final boolean timed = timeout > 0L;
         final long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0L;
 
         try {
             //4:task submission
-            for (Task task : tasks) {
+            for (Task<V> task : tasks) {
                 //4.1:try to read out a handle from callback before submit a new task to execution
                 completedHandle = callback.completedHandle;
                 if (completedHandle != null) return completedHandle;
@@ -264,31 +267,31 @@ public final class TaskService extends TaskServiceConfig {
             throw new TaskExecutionException();
         } finally {
             //7:cancel not done tasks
-            for (TaskHandle handle : handleList)
-                if (!TaskStates.isDone(handle.getState())) handle.cancel(true);
+            for (TaskHandle<V> handle : handleList)
+                if (!handle.isCompleted()) handle.cancel(true);
         }
     }
 
-    public List<TaskHandle> invokeAll(Collection<? extends Task> tasks) throws TaskException, TaskPoolException, InterruptedException {
+    public <V> List<TaskHandle<V>> invokeAll(Collection<? extends Task<V>> tasks) throws TaskException, TaskPoolException, InterruptedException {
         return invokeAll(tasks, 0L, TimeUnit.NANOSECONDS);
     }
 
-    public List<TaskHandle> invokeAll(Collection<? extends Task> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
+    public <V> List<TaskHandle<V>> invokeAll(Collection<? extends Task<V>> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
         ///1: check parameters
         int taskSize = checkParameters(tasks, timeout, unit);
         //2: try to create execution if not ready
         if (!this.ready) pool = createPoolByLock();
 
         //3:task submission preparation
-        AllCallback callback = new AllCallback(taskSize);
-        List<TaskHandle> handleList = new ArrayList<>(taskSize);//submitted list
+        AllCallback<V> callback = new AllCallback<>(taskSize);
+        List<TaskHandle<V>> handleList = new ArrayList<>(taskSize);//submitted list
         boolean timed = timeout > 0L;
         long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0L;
         boolean allDone = false;
 
         try {
             //4:task submission
-            for (Task task : tasks) {
+            for (Task<V> task : tasks) {
                 handleList.add(pool.submit(task, callback));
                 if (timed && deadline - System.nanoTime() <= 0L) return handleList;
             }
@@ -317,8 +320,8 @@ public final class TaskService extends TaskServiceConfig {
             return handleList;
         } finally {
             if (!allDone) {//timeout or interrupted
-                for (TaskHandle handle : handleList)
-                    if (!TaskStates.isDone(handle.getState())) handle.cancel(true);
+                for (TaskHandle<V> handle : handleList)
+                    if (!handle.isCompleted()) handle.cancel(true);
             }
         }
     }
@@ -326,11 +329,11 @@ public final class TaskService extends TaskServiceConfig {
     //***************************************************************************************************************//
     //                             8: callback impl(2)(result collector and wakeup call thread)                      //
     //***************************************************************************************************************//
-    private static final class AnyCallback implements TaskCallback {
+    private static final class AnyCallback<V> implements TaskAspect<V> {
         private final int taskSize;
         private final Thread callThread;
         private final AtomicInteger doneCount;
-        private volatile TaskHandle completedHandle;//we don't care who arrive firstly
+        private volatile TaskHandle<V> completedHandle;//we don't care who arrive firstly
         private volatile TaskExecutionException failCause;
 
         AnyCallback(int taskTotalSize) {
@@ -339,16 +342,16 @@ public final class TaskService extends TaskServiceConfig {
             this.doneCount = new AtomicInteger(0);
         }
 
-        public void beforeCall(TaskHandle handle) {
+        public void beforeCall(TaskHandle<V> handle) {
         }
 
         //1:task completed 2:execute exception 3:task cancelled by execution
-        public void afterCall(int resultCode, Object resultObject, TaskHandle handle) {
+        public void afterCall(Object resultCode, Object resultObject, TaskHandle<V> handle) {
             boolean hasWakeup = false;
             try {
-                if (TaskStates.TASK_EXEC_EXCEPTION == resultCode && resultObject instanceof TaskExecutionException)
+                if (TASK_FAILED == resultCode && resultObject instanceof TaskExecutionException)
                     this.failCause = (TaskExecutionException) resultObject;
-                else if (TaskStates.TASK_EXEC_RESULT == resultCode) {
+                else if (TASK_SUCCEED == resultCode) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);
                     hasWakeup = true;
@@ -359,7 +362,7 @@ public final class TaskService extends TaskServiceConfig {
         }
     }
 
-    private static final class AllCallback implements TaskCallback {
+    private static final class AllCallback<V> implements TaskAspect<V> {
         private final int taskSize;
         private final Thread callThread;
         private final AtomicInteger doneCount;
@@ -370,10 +373,10 @@ public final class TaskService extends TaskServiceConfig {
             this.doneCount = new AtomicInteger(0);
         }
 
-        public void beforeCall(TaskHandle handle) {
+        public void beforeCall(TaskHandle<V> handle) {
         }
 
-        public void afterCall(int resultCode, Object resultObject, TaskHandle handle) {
+        public void afterCall(Object resultCode, Object resultObject, TaskHandle<V> handle) {
             if (this.doneCount.incrementAndGet() == taskSize)
                 LockSupport.unpark(callThread);
         }

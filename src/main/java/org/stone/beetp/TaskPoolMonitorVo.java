@@ -10,7 +10,7 @@
 package org.stone.beetp;
 
 /**
- * Task Pool Monitor Vo
+ * A monitor object of pool runtime info
  *
  * @author Chris Liao
  * @version 1.0

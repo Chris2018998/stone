@@ -12,23 +12,20 @@ package org.stone.beetp;
 import org.stone.beetp.pool.exception.TaskException;
 
 /**
- * Task scheduled handle
+ * handle of a timed task scheduled in pool.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface TaskScheduledHandle<T> extends TaskHandle<T> {
+public interface TaskScheduledHandle<V> extends TaskHandle<V> {
 
     boolean isPeriodic();
 
     boolean isFixedDelay();
 
-    //nanoseconds(less than System.nanoTime())
     long getPrevTime();
 
-    //value should be more than System.nanoTime(),when call done,then update time for next call
     long getNextTime();
 
-    //retrieve result of prev call
-    T getPrevResult() throws TaskException;
+    V getPrevResult() throws TaskException;
 }

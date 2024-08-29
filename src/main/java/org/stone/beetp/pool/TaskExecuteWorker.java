@@ -15,23 +15,23 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.TaskStates.TASK_EXEC_EXCEPTION;
-
 /**
- * Pool task worker
+ * Pool task execution worker
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-final class ReactivatableWorker implements Runnable {
-    private static final int STATE_WORKING = 0;
+public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
+    private static final int STATE_DEAD = 0;
     private static final int STATE_WAITING = 1;
-    private static final int STATE_DEAD = 2;
-    private static final AtomicIntegerFieldUpdater<ReactivatableWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivatableWorker.class, "state");
+    private static final int STATE_WORKING = 2;
+    private static final AtomicIntegerFieldUpdater<TaskExecuteWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecuteWorker.class, "state");
 
-    private final TaskExecutionPool ownerPool;
-    private final ConcurrentLinkedQueue<BaseHandle> taskQueue;
+    //owner pool of this worker
+    private final PoolTaskCenter ownerPool;
+    //stores some tasks pushed by ownerPool
+    private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
 
     /**
      * state map lines
@@ -40,21 +40,39 @@ final class ReactivatableWorker implements Runnable {
      * line3: STATE_WORKING ---> STATE_DEAD
      */
     private volatile int state;
-    private volatile BaseHandle processingHandle;
+    //a task handle in being processed by this worker
+    private PoolTaskHandle<?> taskHandle;
+    //work thread of this worker
     private Thread workThread;
+    //count of task completed by this worker
+    private long completedCount;
 
-    //create in pool
-    public ReactivatableWorker(TaskExecutionPool ownerPool) {
+    public TaskExecuteWorker(PoolTaskCenter ownerPool) {
         this.ownerPool = ownerPool;
         this.taskQueue = new ConcurrentLinkedQueue<>();
     }
+
+    //***************************************************************************************************************//
+    //                                             1: completion methods                                             //
+    //***************************************************************************************************************//
+    public long getCompletedCount() {
+        return this.completedCount;
+    }
+
+    public void incrementCompletedCount() {
+        this.completedCount++;
+    }
+
+    //***************************************************************************************************************//
+    //                                            2: bucket methods                                                  //
+    //***************************************************************************************************************//
 
     /**
      * Pool call this method to push a task to worker.
      *
      * @param taskHandle is a handle passed from pool
      */
-    void pushTask(BaseHandle taskHandle) {
+    public void put(PoolTaskHandle<?> taskHandle) {
         taskQueue.offer(taskHandle);
 
         //wake up work thread to execute this task
@@ -76,8 +94,8 @@ final class ReactivatableWorker implements Runnable {
      * @param mayInterruptIfRunning is true that worker thread is interrupted if task blocking in process
      * @return true if cancel success;otherwise return false
      */
-    boolean cancel(BaseHandle taskHandle, boolean mayInterruptIfRunning) {
-        return true;//return a dummy value,@todo
+    public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
+        return true;//@todo to be implemented
     }
 
     //***************************************************************************************************************//
@@ -86,7 +104,7 @@ final class ReactivatableWorker implements Runnable {
     public void run() {
         final boolean useTimePark = ownerPool.isIdleTimeoutValid();
         final long idleTimeoutNanos = ownerPool.getIdleTimeoutNanos();
-        final ReactivatableWorker[] allWorkers = null;//@todo
+        final TaskExecuteWorker[] allWorkers = ownerPool.getexecuteWorkers();
 
         do {
             //1:check worker state,if dead then exit loop
@@ -97,31 +115,25 @@ final class ReactivatableWorker implements Runnable {
             }
 
             //2: poll a task from queue of this worker
-            BaseHandle handle = taskQueue.poll();
+            PoolTaskHandle<?> handle = taskQueue.poll();
 
             //3: poll task from other workers
             if (handle == null) {//steal a task from other workers
-                for (ReactivatableWorker worker : allWorkers) {
+                for (TaskExecuteWorker worker : allWorkers) {
                     if (worker == this) continue;
                     handle = worker.taskQueue.poll();
                     if (handle != null) break;
                 }
             }
 
-            //4: process task or park working thread
+            //4: process this task or park working thread if no task
             if (handle != null) {
-                if (handle.setAsRunning(this)) {//mark task to running state via CAS
-                    try {
-                        this.processingHandle = handle;
-                        handle.beforeExecute();
-                        handle.executeTask(this);
-                    } catch (Throwable e) {
-                        handle.setResult(TASK_EXEC_EXCEPTION, e);
-                    } finally {
-                        this.processingHandle = null;
-                        handle.afterExecute(this);
-                    }
-                }
+                this.taskHandle = handle;//record the pull task
+
+                //attempt to execute this task(under cas success)
+                handle.executeTask(this);
+
+                this.taskHandle = null;//reset to null
             } else if (StateUpd.compareAndSet(this, STATE_WORKING, STATE_WAITING)) {//park work thread if cas successful
                 boolean timeout = false;
                 if (useTimePark) {
