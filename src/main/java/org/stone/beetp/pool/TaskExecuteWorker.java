@@ -44,8 +44,6 @@ public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
     private PoolTaskHandle<?> taskHandle;
     //work thread of this worker
     private Thread workThread;
-    //count of task completed by this worker
-    private long completedCount;
 
     public TaskExecuteWorker(PoolTaskCenter ownerPool) {
         this.ownerPool = ownerPool;
@@ -53,18 +51,7 @@ public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
     }
 
     //***************************************************************************************************************//
-    //                                             1: completion methods                                             //
-    //***************************************************************************************************************//
-    public long getCompletedCount() {
-        return this.completedCount;
-    }
-
-    public void incrementCompletedCount() {
-        this.completedCount++;
-    }
-
-    //***************************************************************************************************************//
-    //                                            2: bucket methods                                                  //
+    //                                            1: bucket methods                                                  //
     //***************************************************************************************************************//
 
     /**
@@ -99,7 +86,7 @@ public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
     }
 
     //***************************************************************************************************************//
-    //                                             core method to process tasks                                      //
+    //                                             2: core method to process tasks                                   //
     //***************************************************************************************************************//
     public void run() {
         final boolean useTimePark = ownerPool.isIdleTimeoutValid();
