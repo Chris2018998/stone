@@ -53,7 +53,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
     }
 
     //nanoseconds(less than System.nanoTime())
-    public long getPrevTime() {
+    public long getLastTime() {
         return prevTime;
     }
 
@@ -63,7 +63,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
     }
 
     //retrieve result of prev call
-    public V getPrevResult() throws TaskException {
+    public V getLastResult() throws TaskException {
 //        if (!isPeriodic()) throw new TaskException("Only support periodic schedule");
 //        if (prevState == TASK_COMPLETED) return (V) prevResult;
 //        if (prevState == TASK_FAILED) throw (TaskException) prevResult;

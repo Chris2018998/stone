@@ -19,13 +19,39 @@ import org.stone.beetp.pool.exception.TaskException;
  */
 public interface TaskScheduledHandle<V> extends TaskHandle<V> {
 
+    /**
+     * Query task execution is whether periodic
+     *
+     * @return true that time periodic
+     */
     boolean isPeriodic();
 
+    /**
+     * Query time delay type
+     *
+     * @return true that is fixed delay
+     */
     boolean isFixedDelay();
 
-    long getPrevTime();
+    /**
+     * Get last execution time of task
+     *
+     * @return milli seconds
+     */
+    long getLastTime();
 
+    /**
+     * Get task result of last execution
+     *
+     * @return execution result
+     * @throws TaskException if failure of last execution
+     */
+    V getLastResult() throws TaskException;
+
+    /**
+     * Get next execution time of task
+     *
+     * @return milli seconds
+     */
     long getNextTime();
-
-    V getPrevResult() throws TaskException;
 }

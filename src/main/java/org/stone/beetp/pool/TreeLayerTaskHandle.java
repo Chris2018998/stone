@@ -82,7 +82,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     }
 
     protected Object invokeTaskCall() throws Exception {
-        return task.call(null);
+        return task.join(null);
     }
 
     protected void executeTask(TaskExecuteWorker worker) {

@@ -32,5 +32,5 @@ public interface TreeLayerTask<V> {
      * @return execution value of method call
      * @throws Exception occurred in execution
      */
-    V call(TaskHandle<V>[] subTaskHandles) throws Exception;
+    V join(TaskHandle<V>[] subTaskHandles) throws Exception;
 }
