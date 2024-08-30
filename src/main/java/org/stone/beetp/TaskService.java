@@ -346,12 +346,13 @@ public final class TaskService extends TaskServiceConfig {
         }
 
         //1:task completed 2:execute exception 3:task cancelled by execution
-        public void afterCall(Object resultCode, Object resultObject, TaskHandle<V> handle) {
+        public void afterCall(boolean isSuccess, Object resultObject, TaskHandle<V> handle) {
             boolean hasWakeup = false;
             try {
-                if (TASK_FAILED == resultCode && resultObject instanceof TaskExecutionException)
+                final Object targetState = isSuccess ? TASK_SUCCEED : TASK_FAILED;
+                if (TASK_FAILED == targetState && resultObject instanceof TaskExecutionException)
                     this.failCause = (TaskExecutionException) resultObject;
-                else if (TASK_SUCCEED == resultCode) {
+                else if (TASK_SUCCEED == targetState) {
                     this.completedHandle = handle;
                     LockSupport.unpark(callThread);
                     hasWakeup = true;
@@ -376,7 +377,9 @@ public final class TaskService extends TaskServiceConfig {
         public void beforeCall(TaskHandle<V> handle) {
         }
 
-        public void afterCall(Object resultCode, Object resultObject, TaskHandle<V> handle) {
+        public void afterCall(boolean isSuccess, Object resultObject, TaskHandle<V> handle) {
+            //final Object targetState = isSuccess ? TASK_SUCCEED : TASK_FAILED;
+
             if (this.doneCount.incrementAndGet() == taskSize)
                 LockSupport.unpark(callThread);
         }

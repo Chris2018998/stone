@@ -27,9 +27,9 @@ public interface TaskAspect<V> {
     /**
      * method to execute some computation after a task call
      *
-     * @param state  is an object represents result state of a call
-     * @param result is result-value object of call
-     * @param handle of a task
+     * @param isSuccess is true that tall call is successful
+     * @param result    is result of call or an TaskExecutionException
+     * @param handle    of a task
      */
-    void afterCall(Object state, Object result, TaskHandle<V> handle);
+    void afterCall(boolean isSuccess, Object result, TaskHandle<V> handle);
 }

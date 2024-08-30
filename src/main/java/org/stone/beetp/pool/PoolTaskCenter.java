@@ -189,7 +189,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    <V> void pushToExecutionQueue(PoolTaskHandle<V> taskHandle) {
+    void pushToExecutionQueue(PoolTaskHandle<?> taskHandle) {
         int threadHashCode = Thread.currentThread().hashCode();
         int arrayIndex = this.executeWorkersIndexHashBase & (threadHashCode ^ (threadHashCode >>> 16));
         this.executeWorkers[arrayIndex].put(taskHandle);
@@ -389,29 +389,7 @@ public final class PoolTaskCenter implements TaskPool {
     //***************************************************************************************************************//
     //                                     7: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
-//    ConcurrentLinkedQueue<PoolTaskHandle> getTaskQueue() {
-//        return taskQueue;
-//    }
 
-    TaskExecuteWorker[] getexecuteWorkers() {
-        return this.executeWorkers;
-    }
-
-    boolean isIdleTimeoutValid() {
-        return this.idleTimeoutValid;
-    }
-
-    long getIdleTimeoutNanos() {
-        return this.idleTimeoutNanos;
-    }
-
-//    AtomicInteger getTaskCount() {
-//        return this.taskCount;
-//    }
-
-//    ScheduledTaskQueue getScheduledDelayedQueue() {
-//        return scheduledDelayedQueue;
-//    }
 
     public PoolMonitorVo getPoolMonitorVo() {
 
@@ -445,12 +423,32 @@ public final class PoolTaskCenter implements TaskPool {
         return monitorVo;
     }
 
+    public int getPoolState() {
+        return this.poolState;
+    }
+
+    public LongAdder getTaskCount() {
+        return taskCount;
+    }
+
     public LongAdder getRunningCount() {
         return runningCount;
     }
 
     public LongAdder getCompletedCount() {
         return completedCount;
+    }
+
+    public long getIdleTimeoutNanos() {
+        return this.idleTimeoutNanos;
+    }
+
+    public boolean isIdleTimeoutValid() {
+        return this.idleTimeoutValid;
+    }
+
+    public TaskExecuteWorker[] getExecuteWorkers() {
+        return this.executeWorkers;
     }
 
 }

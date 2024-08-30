@@ -13,6 +13,8 @@ package org.stone.beetp;
  * A callable task interface
  *
  * @param <V> is result type of task execution
+ * @author Chris Liao
+ * @version 1.0
  */
 
 public interface Task<V> {

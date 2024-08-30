@@ -22,7 +22,7 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 
-public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
+final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
     private static final int STATE_DEAD = 0;
     private static final int STATE_WAITING = 1;
     private static final int STATE_WORKING = 2;
@@ -30,7 +30,7 @@ public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
 
     //owner pool of this worker
     private final PoolTaskCenter ownerPool;
-    //stores some tasks pushed by ownerPool
+    //stores some tasks pushed from ownerPool
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
 
     /**
@@ -61,6 +61,7 @@ public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
      */
     public void put(PoolTaskHandle<?> taskHandle) {
         taskQueue.offer(taskHandle);
+        taskHandle.setTaskBucket(this);//set bucket to handle if not exists
 
         //wake up work thread to execute this task
         int curState = state;
@@ -91,7 +92,7 @@ public final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
     public void run() {
         final boolean useTimePark = ownerPool.isIdleTimeoutValid();
         final long idleTimeoutNanos = ownerPool.getIdleTimeoutNanos();
-        final TaskExecuteWorker[] allWorkers = ownerPool.getexecuteWorkers();
+        final TaskExecuteWorker[] allWorkers = ownerPool.getExecuteWorkers();
 
         do {
             //1:check worker state,if dead then exit loop

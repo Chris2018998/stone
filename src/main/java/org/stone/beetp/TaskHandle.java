@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public interface TaskHandle<V> {
 
     /**
-     * Query task state is whether in waiting for being executed
+     * Query task state is whether in waiting to be executed
      *
      * @return true that in waiting
      */

@@ -45,13 +45,10 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     //aspect around call
     private TaskAspect<V> callAspect;
     //owner buck contains this handle
-    private PoolTaskBucket bucket;
+    private PoolTaskBucket taskBucket;
     //store waiters for call result
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
-    //***************************************************************************************************************//
-    //                                  1: constructor(2)                                                            //
-    //**************************************************e************************************************************//
     //1:constructor for sub join task
     PoolTaskHandle(Task<V> task, PoolTaskCenter pool) {
         this.task = task;
@@ -69,12 +66,19 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //***************************************************************************************************************//
-    //                                  2: task states(6)                                                            //
+    //                                  1: constructor(2)                                                            //
     //**************************************************e************************************************************//
-    public boolean isRoot() {
+    boolean isRoot() {
         return isRoot;
     }
 
+    void setTaskBucket(PoolTaskBucket taskBucket) {
+        if (this.taskBucket == null) this.taskBucket = taskBucket;
+    }
+
+    //***************************************************************************************************************//
+    //                                  2: task states(6)                                                            //
+    //**************************************************e************************************************************//
     public boolean isWaiting() {
         return state == TASK_WAITING;
     }
@@ -110,13 +114,17 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
         //1: try to change state to cancelled
         if (state == TASK_WAITING && StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED)) {
             this.fillTaskResult(TASK_CANCELLED, null);
-            this.bucket.remove(this, mayInterruptIfRunning);
+            this.taskBucket.cancel(this, false);//just remove it from bucket
             return true;
         }
 
-        //2: re-read state,if it is a worker then attempt to interrupt execution
-        if (mayInterruptIfRunning && state instanceof TaskExecuteWorker) {
-            //@todo
+        //2: if parameter mayInterruptIfRunning is true then interrupt possible blocking
+        if (mayInterruptIfRunning) {
+            Object curState = state;
+            if (curState instanceof TaskExecuteWorker) {
+                TaskExecuteWorker worker = (TaskExecuteWorker) curState;
+                return worker.cancel(this, true);//need check worker thread state whether in blocking
+            }
         }
 
         return false;
@@ -204,6 +212,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     protected void afterExecute() {
         pool.getRunningCount().decrement();
         pool.getCompletedCount().increment();
+        pool.getTaskCount().decrement();
     }
 
     /**
@@ -213,7 +222,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
         if (!StateUpd.compareAndSet(this, TASK_WAITING, worker)) return;
 
         Object result = null;
-        Object resultState = TASK_SUCCEED;//assume call success
+        boolean succeed = true;//assume call success
 
         try {
             //1: call beforeExecute method
@@ -225,19 +234,20 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
 
             //3: execute call of task(** key step **)
             result = this.invokeTaskCall();
+            //System.out.println("result:"+result);
         } catch (Throwable e) {
-            resultState = TASK_FAILED;
+            succeed = false;
             result = new TaskExecutionException(e);
         } finally {
             //4: fill result and wakeup waiters if exists
-            this.fillTaskResult(resultState, result);
+            this.fillTaskResult(succeed ? TASK_SUCCEED : TASK_FAILED, result);
 
             //5: call afterExecute method
             this.afterExecute();
 
             //6: execute afterCall method of aspect
             if (callAspect != null)
-                callAspect.afterCall(resultState, result, this);
+                callAspect.afterCall(succeed, result, this);
         }
     }
 
