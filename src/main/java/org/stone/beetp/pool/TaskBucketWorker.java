@@ -11,7 +11,10 @@ package org.stone.beetp.pool;
 
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
 
@@ -43,7 +46,30 @@ abstract class TaskBucketWorker implements Runnable {
     }
 
     /**
-     * Pool push a task to worker by call its method
+     * pool terminate worker by call this method
+     *
+     * @return an un-run list of tasks after terminated
+     */
+    public List<PoolTaskHandle<?>> terminate() {
+        int curState = state;
+        if (curState == WORKER_DEAD) return new LinkedList<>();
+        if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
+            LockSupport.unpark(workThread);
+            return pollAllTasks();
+        } else {
+            return new LinkedList<>();
+        }
+    }
+
+    /**
+     * poll tasks from worker
+     *
+     * @return a list of polled tasks
+     */
+    abstract List<PoolTaskHandle<?>> pollAllTasks();
+
+    /**
+     * Pool push a task to worker by call this method
      *
      * @param taskHandle is a handle passed from pool
      */
@@ -54,7 +80,7 @@ abstract class TaskBucketWorker implements Runnable {
      *
      * @param taskHandle            to be cancelled
      * @param mayInterruptIfRunning is true that interrupt blocking in execupting if exists
-     * @return true cancel succesful
+     * @return true cancel successful
      */
     abstract boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning);
 

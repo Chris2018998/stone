@@ -36,7 +36,7 @@ public interface TaskScheduledHandle<V> extends TaskHandle<V> {
     /**
      * Get last execution time of task
      *
-     * @return milli seconds
+     * @return nano seconds
      */
     long getLastTime();
 
@@ -51,7 +51,7 @@ public interface TaskScheduledHandle<V> extends TaskHandle<V> {
     /**
      * Get next execution time of task
      *
-     * @return milli seconds
+     * @return nano seconds
      */
     long getNextTime();
 }

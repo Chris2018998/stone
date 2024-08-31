@@ -106,7 +106,7 @@ public final class PoolTaskCenter implements TaskPool {
         //3: create task handle
         PoolTaskHandle<V> handle = new PoolTaskHandle<>(task, aspect, this, true);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle);
+        this.pushToExecuteWorker(handle);
         //5: return handle
         return handle;
     }
@@ -125,7 +125,7 @@ public final class PoolTaskCenter implements TaskPool {
         //3: create join task handle(root)
         PoolTaskHandle<V> handle = new JoinTaskHandle<>(task, operator, aspect, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle);
+        this.pushToExecuteWorker(handle);
         //5: return handle
         return handle;
     }
@@ -143,7 +143,7 @@ public final class PoolTaskCenter implements TaskPool {
         //3: create tree task handle(root)
         TreeLayerTaskHandle<V> handle = new TreeLayerTaskHandle<>(task, aspect, this);
         //4: push task to execution queue
-        this.pushToExecutionQueue(handle);
+        this.pushToExecuteWorker(handle);
         //5: return handle
         return handle;
     }
@@ -188,7 +188,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    void pushToExecutionQueue(PoolTaskHandle<?> taskHandle) {
+    void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
         int threadHashCode = Thread.currentThread().hashCode();
         int arrayIndex = this.executeWorkersIndexHashBase & (threadHashCode ^ (threadHashCode >>> 16));
         this.executeWorkers[arrayIndex].put(taskHandle);

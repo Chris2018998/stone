@@ -12,10 +12,11 @@ package org.stone.beetp.pool;
 import org.stone.shine.util.concurrent.locks.ReentrantLock;
 
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.pool.PoolConstants.POOL_CLEARING;
-import static org.stone.beetp.pool.PoolConstants.POOL_RUNNING;
+import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
 
 /**
  * Pool task schedule worker
@@ -27,6 +28,7 @@ import static org.stone.beetp.pool.PoolConstants.POOL_RUNNING;
 final class TaskScheduleWorker extends TaskBucketWorker {
     private final ReentrantLock lockOfHandles;
     private int countOfHandles;
+    //a sorted array
     private PoolTimedTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(PoolTaskCenter pool) {
@@ -44,7 +46,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         int insertPos = -1;//insertion pos of given handle
         lockOfHandles.lock();//lock of handles array
         try {
-            //grow array of tasks
+            //grow length of array if full
             if (handles.length == countOfHandles) this.growArray();
             final long taskNextTime = handle.getNextTime();
 
@@ -66,23 +68,28 @@ final class TaskScheduleWorker extends TaskBucketWorker {
             lockOfHandles.unlock();//unlock
         }
 
-        //if insertion pos is zero,then wakeup worker thread to re-pick on new head
+        //if insert at first pos,then wakeup work thread to re-pick first handle
         if (insertPos == 0) LockSupport.unpark(workThread);
     }
 
-    public PoolTimedTaskHandle<?>[] clearAll() {
+    public List<PoolTaskHandle<?>> pollAllTasks() {
+        List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
         lockOfHandles.lock();
         try {
-            PoolTimedTaskHandle<?>[] tasks = handles;
+            allTasks.addAll(Arrays.asList(handles));
+
             this.handles = new PoolTimedTaskHandle[0];
             this.countOfHandles = 0;
-            return tasks;
         } finally {
             lockOfHandles.unlock();
         }
+
+        //wakeup work thread to re-peek
+        LockSupport.unpark(workThread);
+        return allTasks;
     }
 
-    public int remove(PoolTaskHandle<?> taskHandle) {
+    public void remove(PoolTaskHandle<?> taskHandle) {
         int pos = -1;
         lockOfHandles.lock();//lock of handles array
         try {
@@ -90,17 +97,19 @@ final class TaskScheduleWorker extends TaskBucketWorker {
             for (int i = maxSeq; i >= 0; i--) {//from tail to head
                 if (taskHandle == handles[i]) {
                     pos = i;
-                    //copy of front move
+
+                    //copy forward
                     System.arraycopy(handles, pos + 1, handles, pos, maxSeq - pos);
                     handles[maxSeq] = null;
                     this.countOfHandles--;
                     break;
                 }
             }
-            return pos;
         } finally {
             lockOfHandles.unlock();//unlock
         }
+
+        if (pos == 0) LockSupport.unpark(workThread);
     }
 
     public Object pollExpiredHandle() {
@@ -140,32 +149,34 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     public void run() {//poll expired tasks and push them to execute workers
         while (true) {
-            int poolCurState = pool.getPoolState();
-            if (poolCurState == POOL_RUNNING) {
-
-                //1: poll expired task
-                Object polledObject = this.pollExpiredHandle();
-
-                //2: if polled object is expired schedule task
-                if (polledObject instanceof PoolTimedTaskHandle) {
-                    PoolTimedTaskHandle<?> taskHandle = (PoolTimedTaskHandle<?>) polledObject;
-                    if (taskHandle.isWaiting())
-                        pool.pushToExecutionQueue(taskHandle);
-                    else
-                        pool.getTaskCount().decrement();
-                } else {//3: the polled object is time,then park
-                    Long time = (Long) polledObject;
-                    if (time > 0L) {
-                        LockSupport.parkNanos(time);
-                    } else {
-                        LockSupport.park();
-                    }
-                }
+            //1: check worker state,if dead then exit from loop
+            if (state == WORKER_DEAD) {
+                this.workThread = null;
+                break;
+            }
+            //2: clear interrupted flag of this worker thread if it exists
+            if (workThread.isInterrupted() && Thread.interrupted()) {
+                //no code here
             }
 
-            //4: pool state check,if in clearing,then park peek thread
-            if (poolCurState == POOL_CLEARING) LockSupport.park();
-            if (poolCurState > POOL_CLEARING) break;
+            //3: poll expired timed task
+            Object polledObject = this.pollExpiredHandle();
+
+            //4: if polled object is expired schedule task
+            if (polledObject instanceof PoolTimedTaskHandle) {
+                PoolTimedTaskHandle<?> taskHandle = (PoolTimedTaskHandle<?>) polledObject;
+                if (taskHandle.isWaiting())
+                    pool.pushToExecuteWorker(taskHandle);
+                else
+                    pool.getTaskCount().decrement();
+            } else {
+                Long time = (Long) polledObject;
+                if (time > 0L) {
+                    LockSupport.parkNanos(time);
+                } else {
+                    LockSupport.park();
+                }
+            }
         }
     }
 }

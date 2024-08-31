@@ -44,7 +44,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //aspect around call
     private TaskAspect<V> callAspect;
-    //owner buck contains this handle
+    //owner bucket contains this handle
     private TaskBucketWorker taskBucket;
     //store waiters for call result
     private ConcurrentLinkedQueue<Thread> waitQueue;

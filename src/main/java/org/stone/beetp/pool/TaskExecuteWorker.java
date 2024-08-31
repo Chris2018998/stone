@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
@@ -58,6 +60,19 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 this.workThread.start();
             }
         }
+    }
+
+    /**
+     * poll tasks from worker
+     *
+     * @return a list of polled tasks
+     */
+    public List<PoolTaskHandle<?>> pollAllTasks() {
+        List<PoolTaskHandle<?> allTasks = new LinkedList<>();
+        while ((PoolTaskHandle < ? > handle = taskQueue.poll())!=null){
+            allTasks.add(handle);
+        }
+        return allTasks;
     }
 
     /**
