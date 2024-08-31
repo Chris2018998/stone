@@ -38,14 +38,14 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //constructor for root task
     JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, TaskAspect<V> callback, PoolTaskCenter pool) {
-        super(task, callback, pool);
+        super(task, callback, pool, true);
         this.operator = operator;
         this.exceptionInd = new AtomicBoolean();
     }
 
     //constructor for children task
     private JoinTaskHandle(Task<V> task, JoinTaskHandle<V> parent, AtomicInteger countDown, TaskJoinOperator<V> operator, PoolTaskCenter pool, JoinTaskHandle<V> root) {
-        super(task, pool);
+        super(task, null, pool, false);
         this.root = root;
         this.parent = parent;
         this.operator = operator;

@@ -45,24 +45,20 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     //aspect around call
     private TaskAspect<V> callAspect;
     //owner buck contains this handle
-    private PoolTaskBucket taskBucket;
+    private TaskBucketWorker taskBucket;
     //store waiters for call result
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
-    //1:constructor for sub join task
-    PoolTaskHandle(Task<V> task, PoolTaskCenter pool) {
-        this.task = task;
-        this.pool = pool;
-        this.isRoot = false;
-    }
 
-    //2:constructor for once task,schedule task,root task join task
-    PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool) {
+    PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean isRoot) {
         this.task = task;
         this.pool = pool;
-        this.isRoot = true;
-        this.callAspect = callAspect;
-        this.waitQueue = new ConcurrentLinkedQueue<>();
+        this.isRoot = isRoot;
+
+        if (isRoot) {
+            this.callAspect = callAspect;
+            this.waitQueue = new ConcurrentLinkedQueue<>();
+        }
     }
 
     //***************************************************************************************************************//
@@ -72,7 +68,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
         return isRoot;
     }
 
-    void setTaskBucket(PoolTaskBucket taskBucket) {
+    void setTaskBucket(TaskBucketWorker taskBucket) {
         if (this.taskBucket == null) this.taskBucket = taskBucket;
     }
 
@@ -93,7 +89,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //one of completed states
-    public boolean isSucceed() {
+    public boolean isSuccessful() {
         return state == TASK_SUCCEED;
     }
 

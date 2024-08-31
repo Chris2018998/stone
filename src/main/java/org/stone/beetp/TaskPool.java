@@ -28,28 +28,28 @@ public interface TaskPool {
 
     <V> TaskHandle<V> submit(Task<V> task) throws TaskException;
 
-    <V> TaskHandle<V> submit(Task<V> task, TaskAspect<V> callback) throws TaskException;
+    <V> TaskHandle<V> submit(Task<V> task, TaskAspect<V> aspect) throws TaskException;
 
     <V> TaskHandle<V> submit(Task<V> task, TaskJoinOperator<V> joinOperator) throws TaskException;
 
-    <V> TaskHandle<V> submit(Task<V> task, TaskJoinOperator<V> joinOperator, TaskAspect<V> callback) throws TaskException;
+    <V> TaskHandle<V> submit(Task<V> task, TaskJoinOperator<V> joinOperator, TaskAspect<V> aspect) throws TaskException;
 
     <V> TaskHandle<V> submit(TreeLayerTask<V> task) throws TaskException;
 
-    <V> TaskHandle<V> submit(TreeLayerTask<V> task, TaskAspect<V> callback) throws TaskException;
+    <V> TaskHandle<V> submit(TreeLayerTask<V> task, TaskAspect<V> aspect) throws TaskException;
 
 
     <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit) throws TaskException;
 
-    <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit, TaskAspect<V> callback) throws TaskException;
+    <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit, TaskAspect<V> aspect) throws TaskException;
 
     <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit) throws TaskException;
 
-    <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit, TaskAspect<V> callback) throws TaskException;
+    <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit, TaskAspect<V> aspect) throws TaskException;
 
     <V> TaskScheduledHandle<V> scheduleWithFixedDelay(Task<V> task, long initialDelay, long delay, TimeUnit unit) throws TaskException;
 
-    <V> TaskScheduledHandle<V> scheduleWithFixedDelay(Task<V> task, long initialDelay, long delay, TimeUnit unit, TaskAspect<V> callback) throws TaskException;
+    <V> TaskScheduledHandle<V> scheduleWithFixedDelay(Task<V> task, long initialDelay, long delay, TimeUnit unit, TaskAspect<V> aspect) throws TaskException;
 
 
     boolean isTerminated();

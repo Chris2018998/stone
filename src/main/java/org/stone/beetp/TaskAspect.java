@@ -18,18 +18,18 @@ package org.stone.beetp;
 public interface TaskAspect<V> {
 
     /**
-     * method to execute some computation before a task call
+     * method to execute some computation before task call
      *
      * @param handle of a task
      */
     void beforeCall(TaskHandle<V> handle);
 
     /**
-     * method to execute some computation after a task call
+     * method to execute some computation after task Successful
      *
-     * @param isSuccess is true that tall call is successful
-     * @param result    is result of call or an TaskExecutionException
-     * @param handle    of a task
+     * @param isSuccessful is true that task call success
+     * @param result       is result of call or an TaskExecutionException
+     * @param handle       of a task
      */
-    void afterCall(boolean isSuccess, Object result, TaskHandle<V> handle);
+    void afterCall(boolean isSuccessful, Object result, TaskHandle<V> handle);
 }

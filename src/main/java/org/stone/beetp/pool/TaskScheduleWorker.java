@@ -24,22 +24,15 @@ import static org.stone.beetp.pool.PoolConstants.POOL_RUNNING;
  * @version 1.0
  */
 
-final class TaskScheduleWorker implements PoolTaskBucket, Runnable {
-    private final Thread workThread;
-    private final PoolTaskCenter pool;
+final class TaskScheduleWorker extends TaskBucketWorker {
     private final ReentrantLock lockOfHandles;
-
     private int countOfHandles;
     private PoolTimedTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(PoolTaskCenter pool) {
-        this.pool = pool;
+        super(pool);
         this.lockOfHandles = new ReentrantLock();
         this.handles = new PoolTimedTaskHandle<?>[0];
-
-        //@todo created by thread factory
-        this.workThread = new Thread(this);
-        this.workThread.start();
     }
 
     //***************************************************************************************************************//

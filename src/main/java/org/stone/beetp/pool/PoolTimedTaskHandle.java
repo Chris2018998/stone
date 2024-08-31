@@ -35,7 +35,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
     //***************************************************************************************************************//
     PoolTimedTaskHandle(Task<V> task, TaskAspect<V> callback,
                         long firstRunTime, long intervalTime, boolean fixedDelay, PoolTaskCenter pool) {
-        super(task, callback, pool);
+        super(task, callback, pool, true);
         this.nextRunTime = firstRunTime;//first run time
         this.intervalTime = intervalTime;
         this.fixedDelay = fixedDelay;//true:calculate next run time from task prev call end t

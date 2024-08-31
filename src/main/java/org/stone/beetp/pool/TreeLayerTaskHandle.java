@@ -37,14 +37,14 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //constructor for root task
     TreeLayerTaskHandle(TreeLayerTask task, final TaskAspect callback, PoolTaskCenter pool) {
-        super(null, callback, pool);
+        super(null, callback, pool, true);
         this.task = task;
         this.exceptionInd = new AtomicBoolean();
     }
 
     //constructor for children task
     private TreeLayerTaskHandle(TreeLayerTask task, TreeLayerTaskHandle parent, AtomicInteger countDown, PoolTaskCenter pool, TreeLayerTaskHandle root) {
-        super(null, pool);
+        super(null, null, pool, false);
         this.task = task;
         this.root = root;
         this.parent = parent;

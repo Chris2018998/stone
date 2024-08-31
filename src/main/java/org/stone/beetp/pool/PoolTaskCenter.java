@@ -44,7 +44,7 @@ public final class PoolTaskCenter implements TaskPool {
     private TaskExecuteWorker[] executeWorkers;
 
     private PoolMonitorVo monitorVo;
-    private TaskScheduleWorker scheduleWorker;//wait at first task of scheduled queue util first task timeout,then poll it from queue
+    private TaskScheduleWorker scheduleWorker;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -74,9 +74,9 @@ public final class PoolTaskCenter implements TaskPool {
 
         //step2: create some runtime objects
         this.taskCount = new LongAdder();
-        this.monitorVo = new PoolMonitorVo();
         this.runningCount = new LongAdder();
         this.completedCount = new LongAdder();
+        this.monitorVo = new PoolMonitorVo();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
         //step3: create workers array and fill workers full size
@@ -87,8 +87,7 @@ public final class PoolTaskCenter implements TaskPool {
             executeWorkers[i] = new TaskExecuteWorker(this);
 
         //step4: create daemon thread to poll expired tasks from scheduled queue and assign to workers
-        if (scheduleWorker == null)
-            this.scheduleWorker = new TaskScheduleWorker(this);
+        if (scheduleWorker == null) this.scheduleWorker = new TaskScheduleWorker(this);
     }
 
     //***************************************************************************************************************//
@@ -105,7 +104,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkPool();
 
         //3: create task handle
-        PoolTaskHandle<V> handle = new PoolTaskHandle<>(task, aspect, this);
+        PoolTaskHandle<V> handle = new PoolTaskHandle<>(task, aspect, this, true);
         //4: push task to execution queue
         this.pushToExecutionQueue(handle);
         //5: return handle
@@ -344,6 +343,7 @@ public final class PoolTaskCenter implements TaskPool {
     public TaskPoolTerminatedVo terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
             TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
+
 
             this.poolState = POOL_TERMINATED;
             for (Thread thread : poolTerminateWaitQueue)

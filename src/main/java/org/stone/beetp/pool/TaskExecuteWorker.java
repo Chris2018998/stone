@@ -9,11 +9,10 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
-
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
+
+import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
  * Pool task execution worker
@@ -22,53 +21,39 @@ import java.util.concurrent.locks.LockSupport;
  * @version 1.0
  */
 
-final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
-    private static final int STATE_DEAD = 0;
-    private static final int STATE_WAITING = 1;
-    private static final int STATE_WORKING = 2;
-    private static final AtomicIntegerFieldUpdater<TaskExecuteWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskExecuteWorker.class, "state");
-
-    //owner pool of this worker
-    private final PoolTaskCenter ownerPool;
-    //stores some tasks pushed from ownerPool
+final class TaskExecuteWorker extends TaskBucketWorker {
+    //stores some tasks pushed from ownerPool by call its {@link #put()}methods
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
 
-    /**
-     * state map lines
-     * line1: STATE_WORKING ---> STATE_WAITING ---> STATE_WORKING (main line)
-     * line2: STATE_WORKING ---> STATE_WAITING ---> STATE_DEAD
-     * line3: STATE_WORKING ---> STATE_DEAD
-     */
-    private volatile int state;
     //a task handle in being processed by this worker
     private PoolTaskHandle<?> taskHandle;
-    //work thread of this worker
-    private Thread workThread;
 
-    public TaskExecuteWorker(PoolTaskCenter ownerPool) {
-        this.ownerPool = ownerPool;
+    public TaskExecuteWorker(PoolTaskCenter pool) {
+        super(pool);
         this.taskQueue = new ConcurrentLinkedQueue<>();
     }
 
     //***************************************************************************************************************//
-    //                                            1: bucket methods                                                  //
+    //                                            1: bucket methods(2)                                               //
     //***************************************************************************************************************//
 
     /**
-     * Pool call this method to push a task to worker.
+     * Pool push a task to worker by call its method
      *
      * @param taskHandle is a handle passed from pool
      */
     public void put(PoolTaskHandle<?> taskHandle) {
+        //1: offer task handle to queue
         taskQueue.offer(taskHandle);
-        taskHandle.setTaskBucket(this);//set bucket to handle if not exists
+        //2: set this worker to task handle as owner bucket
+        taskHandle.setTaskBucket(this);
 
-        //wake up work thread to execute this task
+        //3: notify internal thread to run this task
         int curState = state;
-        if (curState != STATE_WORKING && StateUpd.compareAndSet(this, curState, STATE_WORKING)) {
-            if (STATE_WAITING == curState) {
+        if (curState != WORKER_RUNNING && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
+            if (WORKER_WAITING == curState) {//unkpark thread
                 LockSupport.unpark(workThread);
-            } else if (STATE_DEAD == curState) {//reactivate work thread
+            } else if (WORKER_DEAD == curState) {//create or re-create a thread to run task
                 this.workThread = new Thread(this);
                 this.workThread.start();
             }
@@ -78,34 +63,33 @@ final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
     /**
      * cancel a given task from this worker
      *
-     * @param taskHandle            is handle of a task
-     * @param mayInterruptIfRunning is true that worker thread is interrupted if task blocking in process
-     * @return true if cancel success;otherwise return false
+     * @param taskHandle            to be cancelled
+     * @param mayInterruptIfRunning is true that interrupt blocking in execupting if exists
+     * @return true cancel succesful
      */
     public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
         return true;//@todo to be implemented
     }
 
     //***************************************************************************************************************//
-    //                                             2: core method to process tasks                                   //
+    //                                             2: task process method(core)                                      //
     //***************************************************************************************************************//
     public void run() {
-        final boolean useTimePark = ownerPool.isIdleTimeoutValid();
-        final long idleTimeoutNanos = ownerPool.getIdleTimeoutNanos();
-        final TaskExecuteWorker[] allWorkers = ownerPool.getExecuteWorkers();
+        final boolean useTimePark = pool.isIdleTimeoutValid();
+        final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
+        final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
 
         do {
-            //1:check worker state,if dead then exit loop
-            if (state == STATE_DEAD) break;
-            //clear interrupted flag,if it exists
-            if (workThread.isInterrupted() && Thread.interrupted()) {
-                //no code here,just clear flag of interruption
+            //1: check worker state,if dead then exit from loop
+            if (state == WORKER_DEAD) {
+                this.workThread = null;
+                break;
             }
 
-            //2: poll a task from queue of this worker
+            //2: attempt to poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
 
-            //3: poll task from other workers
+            //3: attempt to poll a task from other worker's queue if poll out a null task
             if (handle == null) {//steal a task from other workers
                 for (TaskExecuteWorker worker : allWorkers) {
                     if (worker == this) continue;
@@ -114,31 +98,33 @@ final class TaskExecuteWorker implements PoolTaskBucket, Runnable {
                 }
             }
 
-            //4: process this task or park working thread if no task
+            //4: clear interrupted flag of this worker thread if it exists
+            if (workThread.isInterrupted() && Thread.interrupted()) {
+                //no code here
+            }
+
+            //5: process the pulled task
             if (handle != null) {
-                this.taskHandle = handle;//record the pull task
-
-                //attempt to execute this task(under cas success)
+                this.taskHandle = handle;//put running task to local field
                 handle.executeTask(this);
-
-                this.taskHandle = null;//reset to null
-            } else if (StateUpd.compareAndSet(this, STATE_WORKING, STATE_WAITING)) {//park work thread if cas successful
-                boolean timeout = false;
+                this.taskHandle = null;//reset local field to null after completion
+            } else if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {//cas stete to waiting
+                boolean parkTimeout = false;
                 if (useTimePark) {
                     long parkStartTime = System.nanoTime();
                     LockSupport.parkNanos(idleTimeoutNanos);
-                    timeout = System.nanoTime() - parkStartTime >= idleTimeoutNanos;
+                    //check timeout with elapsed time on park
+                    parkTimeout = System.nanoTime() - parkStartTime >= idleTimeoutNanos;
                 } else {
                     LockSupport.park();
                 }
 
-                //state check after park
-                if (state == STATE_WAITING) {//two possibility: park fail or interrupted
-                    if (timeout) {
-                        if (StateUpd.compareAndSet(this, STATE_WAITING, STATE_DEAD))
-                            break;//break out while(work thread become terminated)
+                //6: worker state check after park
+                if (state == WORKER_WAITING) {//park timeout,interrupted,park fail
+                    if (parkTimeout) {
+                        StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_DEAD);
                     } else {
-                        StateUpd.compareAndSet(this, STATE_WAITING, STATE_WORKING);
+                        StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING);
                     }
                 }
             }
