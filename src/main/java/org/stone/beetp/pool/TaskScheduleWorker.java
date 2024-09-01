@@ -9,14 +9,14 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.shine.util.concurrent.locks.ReentrantLock;
-
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
 
-import static org.stone.beetp.pool.PoolConstants.*;
+import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
+import static org.stone.beetp.pool.PoolConstants.WORKER_RUNNING;
 
 /**
  * Pool task schedule worker
@@ -34,6 +34,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         super(pool);
         this.lockOfHandles = new ReentrantLock();
         this.handles = new PoolTimedTaskHandle<?>[0];
+        this.state = WORKER_DEAD;
     }
 
     //***************************************************************************************************************//
@@ -43,6 +44,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         //1: insert given handle to array
         PoolTimedTaskHandle<?> handle = (PoolTimedTaskHandle<?>) taskHandle;
         int insertPos = -1;//insertion pos in array
+
         try {
             //acquire lock of array
             lockOfHandles.lock();
@@ -54,7 +56,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 this.handles = newHandles;
             }
 
-            //find the index to insert handle
+            //find out index to insert handle
             final int maxSeq = countOfHandles - 1;
             final long taskNextTime = handle.getNextTime();
             for (int i = maxSeq; i >= 0; i--) {//from tail to head
@@ -81,24 +83,37 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         //step2: if insertion index is zero,then wakeup work thread to pick it or wait it util expired
         if (insertPos == 0) {
             int curState = state;
-            if (curState != WORKER_RUNNING && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
-                if (WORKER_WAITING == curState) {
-                    LockSupport.unpark(workThread);
-                } else if (WORKER_DEAD == curState) {//create or re-create a thread to run task
-                    this.workThread = new Thread(this);
-                    this.workThread.start();
-                }
+            if (curState == WORKER_DEAD && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
+                this.workThread = new Thread(this);
+                this.workThread.start();
+            } else {
+                LockSupport.unpark(workThread);
             }
         }
     }
 
-    public List<PoolTaskHandle<?>> pollAllTasks() {
-        List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
-        lockOfHandles.lock();
-        try {
+    public List<PoolTaskHandle<?>> terminate() {
+        int curState = state;
+        if (curState == WORKER_DEAD) return emptyList;
+        if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
+            List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
+
             allTasks.addAll(Arrays.asList(handles));
             this.handles = new PoolTimedTaskHandle[0];
             this.countOfHandles = 0;
+            LockSupport.unpark(workThread);
+            return allTasks;
+        } else {
+            return emptyList;
+        }
+    }
+
+
+    public List<PoolTaskHandle<?>> drain() {
+        List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
+        lockOfHandles.lock();
+        try {
+
         } finally {
             lockOfHandles.unlock();
         }
@@ -117,7 +132,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 if (taskHandle == handles[i]) {
                     pos = i;
 
-                    //copy forward
+                    //move handles forward
                     System.arraycopy(handles, pos + 1, handles, pos, maxSeq - pos);
                     handles[maxSeq] = null;
                     this.countOfHandles--;
@@ -154,13 +169,14 @@ final class TaskScheduleWorker extends TaskBucketWorker {
 
     public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
         return false;
-
     }
 
     //***************************************************************************************************************//
     //                                            2: core method to process tasks                                    //
     //***************************************************************************************************************//
     public void run() {//poll expired tasks and push them to execute workers
+        final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
+
         while (true) {
             //1: check worker state,if dead then exit from loop
             if (state == WORKER_DEAD) {

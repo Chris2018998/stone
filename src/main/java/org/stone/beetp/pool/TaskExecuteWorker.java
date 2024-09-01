@@ -66,12 +66,22 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      *
      * @return a list of polled tasks
      */
-    public List<PoolTaskHandle<?>> pollAllTasks() {
-        List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
-        while ((PoolTaskHandle < ? > handle = taskQueue.poll())!=null){
-            allTasks.add(handle);
+    public List<PoolTaskHandle<?>> terminate() {
+        int curState = state;
+        if (curState == WORKER_DEAD) return emptyList;
+        if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
+            List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
+            do {
+                PoolTaskHandle<?> handle = taskQueue.poll();
+                if (handle == null) break;
+                allTasks.add(handle);
+            } while (true);
+
+            LockSupport.unpark(workThread);
+            return allTasks;
+        } else {
+            return emptyList;
         }
-        return allTasks;
     }
 
     /**

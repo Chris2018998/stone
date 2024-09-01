@@ -14,7 +14,6 @@ import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
 
@@ -26,7 +25,8 @@ import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
  */
 abstract class TaskBucketWorker implements Runnable {
     protected static final AtomicIntegerFieldUpdater<TaskBucketWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskBucketWorker.class, "state");
-    private static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
+    protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
+
     //owner pool of this worker
     protected final PoolTaskCenter pool;
 
@@ -49,25 +49,9 @@ abstract class TaskBucketWorker implements Runnable {
     /**
      * terminate worker and make it stop working
      *
-     * @return an un-run list of tasks after terminated
+     * @return an uncompleted list of tasks after terminated
      */
-    public List<PoolTaskHandle<?>> terminate() {
-        int curState = state;
-        if (curState == WORKER_DEAD) return emptyList;
-        if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
-            LockSupport.unpark(workThread);
-            return pollAllTasks();
-        } else {
-            return emptyList;
-        }
-    }
-
-    /**
-     * poll tasks from worker
-     *
-     * @return a list of polled tasks
-     */
-    abstract List<PoolTaskHandle<?>> pollAllTasks();
+    abstract List<PoolTaskHandle<?>> terminate();
 
     /**
      * Pool push a task to worker by call this method
@@ -80,9 +64,8 @@ abstract class TaskBucketWorker implements Runnable {
      * cancel a given task from this worker
      *
      * @param taskHandle            to be cancelled
-     * @param mayInterruptIfRunning is true that interrupt blocking in execupting if exists
+     * @param mayInterruptIfRunning is true that interrupt blocking in executing if exists
      * @return true cancel successful
      */
     abstract boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning);
-
 }
