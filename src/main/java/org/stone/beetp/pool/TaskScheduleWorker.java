@@ -96,9 +96,8 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         int curState = state;
         if (curState == WORKER_DEAD) return emptyList;
         if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
-            List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
 
-            allTasks.addAll(Arrays.asList(handles));
+            List<PoolTaskHandle<?>> allTasks = new LinkedList<>(Arrays.asList(handles));
             this.handles = new PoolTimedTaskHandle[0];
             this.countOfHandles = 0;
             LockSupport.unpark(workThread);
@@ -106,21 +105,6 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         } else {
             return emptyList;
         }
-    }
-
-
-    public List<PoolTaskHandle<?>> drain() {
-        List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
-        lockOfHandles.lock();
-        try {
-
-        } finally {
-            lockOfHandles.unlock();
-        }
-
-        //wakeup work thread to re-peek
-        LockSupport.unpark(workThread);
-        return allTasks;
     }
 
     public void remove(PoolTaskHandle<?> taskHandle) {
@@ -175,9 +159,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     //                                            2: core method to process tasks                                    //
     //***************************************************************************************************************//
     public void run() {//poll expired tasks and push them to execute workers
-        final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
-
-        while (true) {
+        do {
             //1: check worker state,if dead then exit from loop
             if (state == WORKER_DEAD) {
                 this.workThread = null;
@@ -206,7 +188,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                     LockSupport.park();
                 }
             }
-        }
+        } while (true);
     }
 }
 

@@ -248,10 +248,14 @@ public final class PoolTaskCenter implements TaskPool {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
             TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
 
+            scheduleWorker.terminate();
+            for (TaskExecuteWorker worker : executeWorkers)
+                worker.terminate();
 
-            this.poolState = POOL_TERMINATED;
             for (Thread thread : poolTerminateWaitQueue)
                 LockSupport.unpark(thread);
+
+            this.poolState = POOL_TERMINATED;
             return info;
         } else {
             throw new TaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
