@@ -132,7 +132,6 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 handle.executeTask(this);
                 this.taskHandle = null;//reset local field to null after completion
             } else if (useTimePark) {
-                boolean parkTimeout = false;
                 long parkStartTime = System.nanoTime();
                 LockSupport.parkNanos(idleTimeoutNanos);
                 if (System.nanoTime() - parkStartTime >= idleTimeoutNanos)
