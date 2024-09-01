@@ -27,7 +27,7 @@ public interface TaskAspect<V> {
     /**
      * method to execute some computation after task Successful
      *
-     * @param isSuccessful is true that task call success
+     * @param isSuccessful is true that task call successful
      * @param result       is result of call or an TaskExecutionException
      * @param handle       of a task
      */

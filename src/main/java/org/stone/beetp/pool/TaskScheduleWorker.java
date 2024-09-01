@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
+import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
  * Pool task schedule worker
@@ -28,7 +28,6 @@ import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
 final class TaskScheduleWorker extends TaskBucketWorker {
     private final ReentrantLock lockOfHandles;
     private int countOfHandles;
-    //a sorted array
     private PoolTimedTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(PoolTaskCenter pool) {
@@ -41,16 +40,23 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     //                                            1: bucket methods(4)                                               //
     //***************************************************************************************************************//
     public void put(PoolTaskHandle<?> taskHandle) {
+        //1: insert given handle to array
         PoolTimedTaskHandle<?> handle = (PoolTimedTaskHandle<?>) taskHandle;
-
-        int insertPos = -1;//insertion pos of given handle
-        lockOfHandles.lock();//lock of handles array
+        int insertPos = -1;//insertion pos in array
         try {
-            //grow length of array if full
-            if (handles.length == countOfHandles) this.growArray();
-            final long taskNextTime = handle.getNextTime();
+            //acquire lock of array
+            lockOfHandles.lock();
+            //create a new array if full
+            if (handles.length == countOfHandles) {
+                int newCapacity = countOfHandles + (countOfHandles < 64 ? countOfHandles + 2 : countOfHandles >> 1);
+                PoolTimedTaskHandle<?>[] newHandles = new PoolTimedTaskHandle<?>[newCapacity];
+                System.arraycopy(handles, 0, newHandles, 0, countOfHandles);
+                this.handles = newHandles;
+            }
 
+            //find the index to insert handle
             final int maxSeq = countOfHandles - 1;
+            final long taskNextTime = handle.getNextTime();
             for (int i = maxSeq; i >= 0; i--) {//from tail to head
                 if (taskNextTime >= handles[i].getNextTime()) {//found pos
                     insertPos = i + 1;
@@ -58,18 +64,32 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 }
             }
 
+            //move handles backward
             if (insertPos == -1) insertPos = 0;
-            if (insertPos <= maxSeq)//copy of backward move
+            if (insertPos <= maxSeq)
                 System.arraycopy(handles, insertPos, handles, insertPos + 1, countOfHandles - insertPos);
 
+            //put handle to pos of array
             handles[insertPos] = handle;
+
+            //increase count of tasks
             countOfHandles++;
         } finally {
             lockOfHandles.unlock();//unlock
         }
 
-        //if insert at first pos,then wakeup work thread to re-pick first handle
-        if (insertPos == 0) LockSupport.unpark(workThread);
+        //step2: if insertion index is zero,then wakeup work thread to pick it or wait it util expired
+        if (insertPos == 0) {
+            int curState = state;
+            if (curState != WORKER_RUNNING && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
+                if (WORKER_WAITING == curState) {
+                    LockSupport.unpark(workThread);
+                } else if (WORKER_DEAD == curState) {//create or re-create a thread to run task
+                    this.workThread = new Thread(this);
+                    this.workThread.start();
+                }
+            }
+        }
     }
 
     public List<PoolTaskHandle<?>> pollAllTasks() {
@@ -77,7 +97,6 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         lockOfHandles.lock();
         try {
             allTasks.addAll(Arrays.asList(handles));
-
             this.handles = new PoolTimedTaskHandle[0];
             this.countOfHandles = 0;
         } finally {
@@ -131,12 +150,6 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         } finally {
             lockOfHandles.unlock();
         }
-    }
-
-    private void growArray() {
-        int oldCapacity = handles.length;
-        int newCapacity = oldCapacity + (oldCapacity < 64 ? oldCapacity + 2 : oldCapacity >> 1);
-        this.handles = Arrays.copyOf(handles, newCapacity);
     }
 
     public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {

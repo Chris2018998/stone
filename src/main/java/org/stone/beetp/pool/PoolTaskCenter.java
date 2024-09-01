@@ -13,6 +13,7 @@ import org.stone.beetp.*;
 import org.stone.beetp.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -98,16 +99,10 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public <V> TaskHandle<V> submit(Task<V> task, TaskAspect<V> aspect) throws TaskException {
-        //1: check task
-        if (task == null) throw new TaskException("Task can't be null");
-        //2: check pool state and task capacity
-        this.checkPool();
+        this.checkSubmittedTask(task);
 
-        //3: create task handle
         PoolTaskHandle<V> handle = new PoolTaskHandle<>(task, aspect, this, true);
-        //4: push task to execution queue
         this.pushToExecuteWorker(handle);
-        //5: return handle
         return handle;
     }
 
@@ -116,17 +111,11 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public <V> TaskHandle<V> submit(Task<V> task, TaskJoinOperator<V> operator, TaskAspect<V> aspect) throws TaskException {
-        //1: check task
-        if (task == null) throw new TaskException("Task can't be null");
         if (operator == null) throw new TaskException("Task join operator can't be null");
-        //2: check pool state and task capacity
-        this.checkPool();
+        this.checkSubmittedTask(task);
 
-        //3: create join task handle(root)
         PoolTaskHandle<V> handle = new JoinTaskHandle<>(task, operator, aspect, this);
-        //4: push task to execution queue
         this.pushToExecuteWorker(handle);
-        //5: return handle
         return handle;
     }
 
@@ -135,16 +124,10 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public <V> TaskHandle<V> submit(TreeLayerTask<V> task, TaskAspect<V> aspect) throws TaskException {
-        //1: check task
-        if (task == null) throw new TaskException("Task can't be null");
-        //2: check pool state and task capacity
-        this.checkPool();
+        this.checkSubmittedTask(task);
 
-        //3: create tree task handle(root)
         TreeLayerTaskHandle<V> handle = new TreeLayerTaskHandle<>(task, aspect, this);
-        //4: push task to execution queue
         this.pushToExecuteWorker(handle);
-        //5: return handle
         return handle;
     }
 
@@ -176,15 +159,14 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                  4: task check and task offer(4)                                              //
+    //                                  4: check submitted tasks and offer them                                       //
     //***************************************************************************************************************//
-    private void checkPool() throws TaskException {
-        //pool state check and pool full check
+    private void checkSubmittedTask(Object task) throws TaskException {
+        if (task == null) throw new TaskException("Task can't be null");
         if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool has been closed or in clearing");
         if (taskCount.sum() >= maxTaskSize) throw new TaskRejectedException("Task count has reach max capacity");
 
-        //add 1 on taskCount
-        taskCount.increment();//increase
+        taskCount.increment();
     }
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
@@ -194,45 +176,27 @@ public final class PoolTaskCenter implements TaskPool {
         this.executeWorkers[arrayIndex].put(taskHandle);
     }
 
-    void wakeupSchedulePeekThread() {
-        //LockSupport.unpark(scheduledPeekThread);
-    }
-
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {
-//        //1: check task
-//        if (task == null) throw new TaskException("Task can't be null");
-//        if (unit == null) throw new TaskException("Task time unit can't be null");
-//        if (initialDelay < 0)
-//            throw new TaskException(scheduledType == 1 ? "Delay" : "Initial delay" + " time can't be less than zero");
-//        if (intervalTime <= 0 && scheduledType != 1)
-//            throw new TaskException(scheduledType == 2 ? "Period" : "Delay" + " time must be greater than zero");
-//
-//        //2: check pool state and task capacity
-//        this.checkPool();
-//
-//        //3: create task handle
-//        long intervalNanos = unit.toNanos(intervalTime);
-//        long firstRunNanos = unit.toNanos(initialDelay) + System.nanoTime();
-//        ScheduledTaskHandle<V> handle = new ScheduledTaskHandle<>(task, aspect, firstRunNanos, intervalNanos, fixedDelay, this);
-//
-//        //4: add task handle to time sortable array,and gets its index in array
-//        int index = scheduledDelayedQueue.add(handle);
-//
-//        //re-check pool state,if not in running,then try to cancel task
-//        if (this.poolState != POOL_RUNNING) {
-//            if (handle.setAsCancelled()) {
-//                if (scheduledDelayedQueue.remove(handle) >= 0) taskCount.decrementAndGet();
-//                throw new TaskRejectedException("Pool has been closed or in clearing");
-//            }
-//        }
-//
-//        //if the task at first of scheduled queue,then wakeup the peek thread
-//        if (index == 0) wakeupSchedulePeekThread();
-//        return handle;
+        //1: check task
+        if (task == null) throw new TaskException("Task can't be null");
+        if (unit == null) throw new TaskException("Task time unit can't be null");
+        if (initialDelay < 0)
+            throw new TaskException(scheduledType == 1 ? "Delay" : "Initial delay" + " time can't be less than zero");
+        if (intervalTime <= 0 && scheduledType != 1)
+            throw new TaskException(scheduledType == 2 ? "Period" : "Delay" + " time must be greater than zero");
 
-        return null;
+        //2: check pool state and task capacity
+        this.checkSubmittedTask(task);
+
+        //3: create task handle
+        long intervalNanos = unit.toNanos(intervalTime);
+        long firstRunNanos = unit.toNanos(initialDelay) + System.nanoTime();
+        PoolTimedTaskHandle<V> handle = new PoolTimedTaskHandle<>(task, aspect, firstRunNanos, intervalNanos, fixedDelay, this);
+
+        //4: add task handle to time sortable array,and gets its index in array
+        scheduleWorker.put(handle);
+        return handle;
     }
-
 
     //***************************************************************************************************************//
     //                                      5: Pool clear/remove(3)                                                  //
@@ -246,76 +210,16 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public boolean clear(boolean mayInterruptIfRunning, TaskServiceConfig config) throws TaskServiceConfigException {
-//        TaskServiceConfig checkedConfig = null;
-//        if (config != null) checkedConfig = config.check();
-//
-//        if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_CLEARING)) {
-//            this.removeAll(mayInterruptIfRunning);
-//            if (checkedConfig != null) startup(checkedConfig);
-//
-//            this.poolState = POOL_RUNNING;
-//            LockSupport.unpark(this.scheduledPeekThread);
-//            return true;
-//        } else {
-//            return false;
-//        }
-
         return false;
     }
 
     private TaskPoolTerminatedVo removeAll(boolean mayInterruptIfRunning) {
-        return null;
-//        List<Task> onceTaskList = new LinkedList<>();
-//        List<Task> scheduledTaskList = new LinkedList<>();
-//        List<Task> joinTaskList = new LinkedList<>();
-//        List<TreeLayerTask> TreeLayerTaskList = new LinkedList<>();
-//
-//        //1: remove scheduled tasks
-//        for (ScheduledTaskHandle handle : scheduledDelayedQueue.clearAll()) {
-//            if (handle.setAsCancelled()) {//collect cancelled tasks by execution
-//                scheduledTaskList.add(handle.task);
-//                handle.setResult(TASK_CANCELLED, null);
-//            }
-//        }
-//
-//        //2: remove tasks in execution queue(once tasks + join tasks)
-//        PoolTaskHandle handle;
-//        while ((handle = taskQueue.poll()) != null) {
-//            if (handle.setAsCancelled()) {//collect cancelled tasks by execution
-//                handle.setResult(TASK_CANCELLED, null);
-//                if (handle instanceof TreeLayerTaskHandle) {
-//                    TreeLayerTaskList.add(((TreeLayerTaskHandle) handle).getTreeLayerTask());
-//                } else if (handle instanceof JoinTaskHandle) {
-//                    joinTaskList.add(handle.task);
-//                } else if (!(handle instanceof ScheduledTaskHandle)) {
-//                    onceTaskList.add(handle.task);
-//                }
-//            }
-//        }
-//
-//        //3: remove work threads
-//        for (TaskExecuteWorker workerThread : executeWorkers) {
-//            if (mayInterruptIfRunning) {
-//                workerThread.setState(WORKER_TERMINATED);
-//                workerThread.interrupt();
-//            }
-//
-//            try {
-//                workerThread.join();
-//            } catch (Exception e) {
-//                //do nothing
-//            }
-//        }
-//
-//        //4:reset atomic numbers to zero
-//        this.completedCount = 0;
-//        this.taskCount.set(0);
-//        this.executeWorkers = new TaskExecuteWorker[0];
-//        return new TaskPoolTerminatedVo(
-//                onceTaskList,
-//                scheduledTaskList,
-//                joinTaskList,
-//                TreeLayerTaskList);
+        List<PoolTaskHandle<?>> unCompletedHandleList = scheduleWorker.terminate();
+        for (TaskExecuteWorker worker : executeWorkers) {
+            worker.terminate();
+        }
+
+        return null;//@todo to be implemented
     }
 
     //remove from array or queue(method called inside handle)

@@ -24,7 +24,6 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskExecuteWorker extends TaskBucketWorker {
-    //stores some tasks pushed from ownerPool by call its {@link #put()}methods
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
 
     //a task handle in being processed by this worker
@@ -68,7 +67,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      * @return a list of polled tasks
      */
     public List<PoolTaskHandle<?>> pollAllTasks() {
-        List<PoolTaskHandle<?> allTasks = new LinkedList<>();
+        List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
         while ((PoolTaskHandle < ? > handle = taskQueue.poll())!=null){
             allTasks.add(handle);
         }

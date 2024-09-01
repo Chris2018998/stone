@@ -26,6 +26,7 @@ import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
  */
 abstract class TaskBucketWorker implements Runnable {
     protected static final AtomicIntegerFieldUpdater<TaskBucketWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskBucketWorker.class, "state");
+    private static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
     //owner pool of this worker
     protected final PoolTaskCenter pool;
 
@@ -46,18 +47,18 @@ abstract class TaskBucketWorker implements Runnable {
     }
 
     /**
-     * pool terminate worker by call this method
+     * terminate worker and make it stop working
      *
      * @return an un-run list of tasks after terminated
      */
     public List<PoolTaskHandle<?>> terminate() {
         int curState = state;
-        if (curState == WORKER_DEAD) return new LinkedList<>();
+        if (curState == WORKER_DEAD) return emptyList;
         if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
             LockSupport.unpark(workThread);
             return pollAllTasks();
         } else {
-            return new LinkedList<>();
+            return emptyList;
         }
     }
 
