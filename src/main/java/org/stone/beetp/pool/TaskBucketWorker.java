@@ -26,18 +26,9 @@ import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
 abstract class TaskBucketWorker implements Runnable {
     protected static final AtomicIntegerFieldUpdater<TaskBucketWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskBucketWorker.class, "state");
     protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
-
-    //owner pool of this worker
     protected final PoolTaskCenter pool;
 
-    /**
-     * state map lines
-     * line1: WORKER_DEAD ---> WORKER_WORKING ---> WORKER_WAITING (main line)
-     * line2: WORKER_WORKING ---> WORKER_WAITING ---> STATE_DEAD
-     * line3: WORKER_WORKING ---> WORKER_DEAD
-     */
     protected int state;
-    //work thread of this worker
     protected Thread workThread;
 
     //constructor with pool

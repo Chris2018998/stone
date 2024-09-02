@@ -49,12 +49,18 @@ final class TaskExecuteWorker extends TaskBucketWorker {
         taskQueue.offer(taskHandle);
         //2: set this worker to task handle as owner bucket
         taskHandle.setTaskBucket(this);
+    }
 
-        //3: notify internal thread to run this task
+    /**
+     * Pool wakeup woker to process tasks by call this method
+     */
+    public void wakeup() {
         int curState = state;
-        if (curState == WORKER_DEAD && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
-            this.workThread = new Thread(this);
-            this.workThread.start();
+        if (curState == WORKER_DEAD) {
+            if (StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
+                this.workThread = new Thread(this);
+                this.workThread.start();
+            }
         } else {
             LockSupport.unpark(workThread);
         }
@@ -111,11 +117,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
 
             //2: attempt to poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
-
             //3: attempt to poll a task from other worker's queue if poll out a null task
             if (handle == null) {//steal a task from other workers
                 for (TaskExecuteWorker worker : allWorkers) {
-                    if (worker == this) continue;
                     handle = worker.taskQueue.poll();
                     if (handle != null) break;
                 }
