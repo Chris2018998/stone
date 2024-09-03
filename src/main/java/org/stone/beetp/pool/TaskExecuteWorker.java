@@ -16,6 +16,8 @@ import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
 import static org.stone.beetp.pool.PoolConstants.WORKER_RUNNING;
+import static org.stone.tools.CommonUtil.maxTimedSpins;
+import static org.stone.tools.CommonUtil.maxUntimedSpins;
 
 /**
  * Pool task execution worker
@@ -107,6 +109,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
         final boolean useTimePark = pool.isIdleTimeoutValid();
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
         final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
+        int spins = useTimePark ? maxTimedSpins : maxUntimedSpins;
 
         do {
             //1: check worker state,if dead then exit from loop

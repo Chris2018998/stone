@@ -40,7 +40,7 @@ abstract class TaskBucketWorker implements Runnable {
     /**
      * terminate worker and make it stop working
      *
-     * @return an uncompleted list of tasks after terminated
+     * @return a list of uncompleted tasks
      */
     abstract List<PoolTaskHandle<?>> terminate();
 

@@ -175,13 +175,13 @@ public final class PoolTaskCenter implements TaskPool {
         int arrayIndex = this.executeWorkersIndexHashBase & (threadHashCode ^ (threadHashCode >>> 16));
         TaskExecuteWorker bucketWorker = this.executeWorkers[arrayIndex];
         bucketWorker.put(taskHandle);
-        bucketWorker.wakeup();
 
-//        if(taskCount.sum() > executeWorkers.length){
-//            for(TaskExecuteWorker worker:executeWorkers){
-//                worker.wakeup();
-//            }
-//        }
+        if (taskCount.sum() > executeWorkers.length) {//wakeup all workers
+            for (TaskExecuteWorker worker : executeWorkers)
+                worker.wakeup();
+        } else {//wakeup worker
+            bucketWorker.wakeup();
+        }
     }
 
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {
