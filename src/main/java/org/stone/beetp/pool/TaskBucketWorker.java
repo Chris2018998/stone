@@ -28,8 +28,9 @@ abstract class TaskBucketWorker implements Runnable {
     protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
     protected final PoolTaskCenter pool;
 
-    protected int state;
-    protected Thread workThread;
+    protected volatile int state;
+    protected volatile Thread workThread;
+    protected volatile long completedCount;
 
     //constructor with pool
     public TaskBucketWorker(PoolTaskCenter pool) {

@@ -201,13 +201,11 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     //***************************************************************************************************************//
     //this method can override
     protected void beforeExecute() {
-        pool.getRunningCount().increment();
+
     }
 
     //this method can override
     protected void afterExecute() {
-        pool.getRunningCount().decrement();
-        pool.getCompletedCount().increment();
         pool.getTaskCount().decrement();
     }
 

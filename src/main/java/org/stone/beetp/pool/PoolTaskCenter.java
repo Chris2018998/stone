@@ -22,6 +22,8 @@ import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beetp.pool.PoolConstants.*;
+import static org.stone.tools.CommonUtil.maxTimedSpins;
+import static org.stone.tools.CommonUtil.maxUntimedSpins;
 
 /**
  * Task Pool Impl
@@ -36,12 +38,14 @@ public final class PoolTaskCenter implements TaskPool {
 
     private int maxTaskSize;
     private LongAdder taskCount;//(count of once tasks + count of scheduled tasks + root count of joined tasks)
-    private LongAdder runningCount;
-    private LongAdder completedCount;
 
     private long idleTimeoutNanos;
     private boolean idleTimeoutValid;
-    private int executeWorkersIndexHashBase;
+
+    private int workerSpins;
+    private int workerCount;
+    private int maxSeqOfWorkerArray;
+    private TaskWakeupWorker wakeupWorker;
     private TaskExecuteWorker[] executeWorkers;
 
     private PoolMonitorVo monitorVo;
@@ -72,22 +76,24 @@ public final class PoolTaskCenter implements TaskPool {
         this.maxTaskSize = config.getMaxTaskSize();
         this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
+        this.workerSpins = idleTimeoutValid ? maxTimedSpins : maxUntimedSpins;
 
         //step2: create some runtime objects
         this.taskCount = new LongAdder();
-        this.runningCount = new LongAdder();
-        this.completedCount = new LongAdder();
         this.monitorVo = new PoolMonitorVo();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
         //step3: create workers array and fill workers full size
-        int workerSize = config.getWorkerSize();
-        this.executeWorkersIndexHashBase = workerSize - 1;
-        this.executeWorkers = new TaskExecuteWorker[workerSize];
-        for (int i = 0; i < workerSize; i++)
+        int workerCount = config.getWorkerSize();
+        this.maxSeqOfWorkerArray = workerCount - 1;
+        this.executeWorkers = new TaskExecuteWorker[workerCount];
+        for (int i = 0; i < workerCount; i++)
             executeWorkers[i] = new TaskExecuteWorker(this);
 
-        //step4: create daemon thread to poll expired tasks from scheduled queue and assign to workers
+        //step4:
+        this.wakeupWorker = new TaskWakeupWorker(this);
+
+        //step5: create daemon thread to poll expired tasks from scheduled queue and assign to workers
         if (scheduleWorker == null) this.scheduleWorker = new TaskScheduleWorker(this);
     }
 
@@ -171,17 +177,19 @@ public final class PoolTaskCenter implements TaskPool {
 
     //push task to execution queue(**scheduled peek thread calls this method to push task**)
     void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
+        //1: push a task to a worker
         int threadHashCode = Thread.currentThread().hashCode();
-        int arrayIndex = this.executeWorkersIndexHashBase & (threadHashCode ^ (threadHashCode >>> 16));
+        int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
         TaskExecuteWorker bucketWorker = this.executeWorkers[arrayIndex];
         bucketWorker.put(taskHandle);
 
-        if (taskCount.sum() > executeWorkers.length) {//wakeup all workers
-            for (TaskExecuteWorker worker : executeWorkers)
-                worker.wakeup();
-        } else {//wakeup worker
-            bucketWorker.wakeup();
-        }
+        //2: wakeup the worker or workup all workers
+        //if (taskCount.sum() < this.workerCount) {
+        bucketWorker.wakeup();
+//        } else {//wakeup all workers(async is better?)
+//            for (TaskExecuteWorker worker : executeWorkers)
+//                worker.wakeup();
+//        }
     }
 
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {
@@ -335,7 +343,7 @@ public final class PoolTaskCenter implements TaskPool {
 //        }
 
 //        monitorVo.setTaskRunningCount(runningCount);
-        monitorVo.setTaskCompletedCount(completedCount.sum());
+        //monitorVo.setTaskCompletedCount(completedCount.sum());
         return monitorVo;
     }
 
@@ -343,17 +351,21 @@ public final class PoolTaskCenter implements TaskPool {
         return this.poolState;
     }
 
+    public int getWorkerSpins() {
+        return this.workerSpins;
+    }
+
     public LongAdder getTaskCount() {
         return taskCount;
     }
 
-    public LongAdder getRunningCount() {
-        return runningCount;
-    }
-
-    public LongAdder getCompletedCount() {
-        return completedCount;
-    }
+//    public LongAdder getRunningCount() {
+//        return runningCount;
+//    }
+//
+//    public LongAdder getCompletedCount() {
+//        return completedCount;
+//    }
 
     public long getIdleTimeoutNanos() {
         return this.idleTimeoutNanos;
