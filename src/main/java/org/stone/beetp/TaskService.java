@@ -175,44 +175,52 @@ public final class TaskService extends TaskServiceConfig {
     }
 
     public boolean clear(boolean mayInterruptIfRunning, TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException {
-        if (pool == null) throw new TaskPoolException("Task execution not be initialized");
+        this.checkPool();
         return pool.clear(mayInterruptIfRunning, config);
     }
 
     //***************************************************************************************************************//
     //                                        5: execution termination(4)                                                 //
     //***************************************************************************************************************//
-    public boolean isTerminated() {
-        return pool == null || pool.isTerminated();
+    public boolean isTerminated() throws TaskPoolException {
+        this.checkPool();
+        return pool.isTerminated();
     }
 
-    public boolean isTerminating() {
-        return pool == null || pool.isTerminating();
+    public boolean isTerminating() throws TaskPoolException {
+        this.checkPool();
+        return pool.isTerminating();
     }
 
-    public int getRunningCount() {
-        return pool == null ? 0 : pool.getRunningCount();
+    public int getRunningCount() throws TaskPoolException {
+        this.checkPool();
+        return pool.getRunningCount();
     }
 
-    public long getCompletedCount() {
-        return pool == null ? 0 : pool.getCompletedCount();
+    public long getCompletedCount() throws TaskPoolException {
+        this.checkPool();
+        return pool.getCompletedCount();
     }
 
     public void terminate(boolean cancelRunningTask) throws TaskPoolException {
-        if (pool == null) throw new TaskPoolException("Task execution not be initialized");
+        this.checkPool();
         pool.terminate(cancelRunningTask);
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException, TaskPoolException {
-        if (pool == null) throw new TaskPoolException("Task execution not be initialized");
+        this.checkPool();
         return pool.awaitTermination(timeout, unit);
+    }
+
+    private void checkPool() throws TaskPoolException {
+        if (pool == null) throw new TaskPoolException("Task pool not be created");
     }
 
     //***************************************************************************************************************//
     //                                     6: Pool monitor(1)                                                        //
     //***************************************************************************************************************//
     public TaskPoolMonitorVo getPoolMonitorVo() throws TaskPoolException {
-        if (pool == null) throw new TaskPoolException("Task execution not be initialized");
+        this.checkPool();
         return pool.getPoolMonitorVo();
     }
 
@@ -224,7 +232,8 @@ public final class TaskService extends TaskServiceConfig {
     }
 
     public <V> TaskHandle<V> invokeAny(Collection<? extends Task<V>> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
-        ///1: check parameters
+        this.checkPool();
+        //1: check parameters
         int taskSize = checkParameters(tasks, timeout, unit);
         //2: try to create execution if not ready
         if (!this.ready) pool = createPoolByLock();
@@ -285,7 +294,8 @@ public final class TaskService extends TaskServiceConfig {
     }
 
     public <V> List<TaskHandle<V>> invokeAll(Collection<? extends Task<V>> tasks, long timeout, TimeUnit unit) throws TaskException, TaskPoolException, InterruptedException {
-        ///1: check parameters
+        this.checkPool();
+        //1: check parameters
         int taskSize = checkParameters(tasks, timeout, unit);
         //2: try to create execution if not ready
         if (!this.ready) pool = createPoolByLock();
