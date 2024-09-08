@@ -25,11 +25,13 @@ public class PoolConstants {
     public static final int POOL_TERMINATED = 5;
 
     //a state of worker is dead
-    public static final int WORKER_DEAD = 0;
+    public static final int WORKER_INACTIVE = 0;
+    //a state of worker in initializing
+    public static final int WORKER_STARTING = 1;
     //a state of worker in working
-    public static final int WORKER_RUNNING = 1;
+    public static final int WORKER_RUNNING = 2;
     //a state of worker in waiting
-    public static final int WORKER_WAITING = 2;
+    public static final int WORKER_WAITING = 3;
 
     //a task state that wait to be executed
     public static final Object TASK_WAITING = new Object();

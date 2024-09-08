@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
+import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
 import static org.stone.beetp.pool.PoolConstants.WORKER_RUNNING;
 
 /**
@@ -34,7 +34,6 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         super(pool);
         this.lockOfHandles = new ReentrantLock();
         this.handles = new PoolTimedTaskHandle<?>[0];
-        this.state = WORKER_DEAD;
     }
 
     //***************************************************************************************************************//
@@ -83,7 +82,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         //step2: if insertion index is zero,then wakeup work thread to pick it or wait it util expired
         if (insertPos == 0) {
             int curState = state;
-            if (curState == WORKER_DEAD && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
+            if (curState == WORKER_INACTIVE && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
                 this.workThread = new Thread(this);
                 this.workThread.start();
             } else {
@@ -94,8 +93,8 @@ final class TaskScheduleWorker extends TaskBucketWorker {
 
     public List<PoolTaskHandle<?>> terminate() {
         int curState = state;
-        if (curState == WORKER_DEAD) return emptyList;
-        if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
+        if (curState == WORKER_INACTIVE) return emptyList;
+        if (StateUpd.compareAndSet(this, curState, WORKER_INACTIVE)) {
 
             List<PoolTaskHandle<?>> allTasks = new LinkedList<>(Arrays.asList(handles));
             this.handles = new PoolTimedTaskHandle[0];
@@ -161,7 +160,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     public void run() {//poll expired tasks and push them to execute workers
         do {
             //1: check worker state,if dead then exit from loop
-            if (state == WORKER_DEAD) {
+            if (state == WORKER_INACTIVE) {
                 this.workThread = null;
                 break;
             }

@@ -15,7 +15,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static org.stone.beetp.pool.PoolConstants.WORKER_DEAD;
+import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
 
 /**
  * Base pool worker,which works as a bucket to store some tasks and process them
@@ -28,14 +28,14 @@ abstract class TaskBucketWorker implements Runnable {
     protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
     protected final PoolTaskCenter pool;
 
+    protected Thread workThread;
     protected volatile int state;
-    protected volatile Thread workThread;
     protected volatile long completedCount;
 
     //constructor with pool
     public TaskBucketWorker(PoolTaskCenter pool) {
-        this.state = WORKER_DEAD;
         this.pool = pool;
+        this.state = WORKER_INACTIVE;
     }
 
     /**

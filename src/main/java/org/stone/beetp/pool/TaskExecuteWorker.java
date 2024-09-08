@@ -54,12 +54,15 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      */
     public void wakeup() {
         int curState = state;
-        if (curState != WORKER_RUNNING && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
-            if (WORKER_WAITING == curState) {//unkpark thread
-                LockSupport.unpark(workThread);
-            } else if (WORKER_DEAD == curState) {//create or re-create a thread to run task
+        if (curState == WORKER_INACTIVE) {
+            if (StateUpd.compareAndSet(this, WORKER_INACTIVE, WORKER_STARTING)) {
                 this.workThread = new Thread(this);
+                this.state = WORKER_RUNNING;
                 this.workThread.start();
+            }
+        } else if (curState == WORKER_WAITING) {
+            if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING)) {
+                LockSupport.unpark(workThread);
             }
         }
     }
@@ -71,9 +74,12 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      */
     public List<PoolTaskHandle<?>> terminate() {
         int curState = state;
-        if (curState == WORKER_DEAD) return emptyList;
-        if (StateUpd.compareAndSet(this, curState, WORKER_DEAD)) {
-            LockSupport.unpark(workThread);
+        if (curState == WORKER_INACTIVE) return emptyList;
+
+        if (StateUpd.compareAndSet(this, curState, WORKER_INACTIVE)) {
+            workThread.interrupt();
+
+            //LockSupport.unpark(workThread);
 
             List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
             do {
@@ -103,14 +109,14 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //                                             2: task process method(core)                                      //
     //***************************************************************************************************************//
     public void run() {
+        int spinSize = pool.getWorkerSpins();
         final boolean useTimePark = pool.isIdleTimeoutValid();
         final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
         final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
 
         do {
-            //2: attempt to poll a task from queue
+            //1: poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
-            //3: attempt to poll a task from other worker's queue if poll out a null task
             if (handle == null) {//steal a task from other workers
                 for (TaskExecuteWorker worker : allWorkers) {
                     if (worker == this) continue;
@@ -119,34 +125,35 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 }
             }
 
-            //4: clear interrupted flag of this worker thread if it exists
+            //2: clear interrupted flag before process or park if it exists
             if (workThread.isInterrupted() && Thread.interrupted()) {
                 //no code here
             }
 
-            //5: process the pulled task
+            //3: proccess the polled task
             if (handle != null) {
-                this.taskHandle = handle;//put running task to local field
-                handle.executeTask(this);
-                this.taskHandle = null;//reset local field to null after completion
-            } else if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {//cas stete to waiting
+                try {
+                    this.taskHandle = handle;
+                    handle.executeTask(this);
+                } finally {
+                    this.taskHandle = null;
+                }
+            } else if (spinSize > 0) {
+                spinSize--;
+            } else {//park work thread
+                this.state = WORKER_WAITING;
                 boolean parkTimeout = false;
                 if (useTimePark) {
                     long parkStartTime = System.nanoTime();
                     LockSupport.parkNanos(idleTimeoutNanos);
-                    //check timeout with elapsed time on park
                     parkTimeout = System.nanoTime() - parkStartTime >= idleTimeoutNanos;
                 } else {
                     LockSupport.park();
                 }
 
-                //6: worker state check after park
-                if (state == WORKER_WAITING) {//park timeout,interrupted,park fail
-                     StateUpd.compareAndSet(this, WORKER_WAITING, parkTimeout? WORKER_DEAD:WORKER_RUNNING);
-                }
+                StateUpd.compareAndSet(this, WORKER_WAITING, parkTimeout ? WORKER_INACTIVE : WORKER_RUNNING);
+                spinSize = pool.getWorkerSpins();
             }
-        } while (state != WORKER_DEAD);
-
-        this.workThread = null;
+        } while (state != WORKER_INACTIVE);
     }
 }
