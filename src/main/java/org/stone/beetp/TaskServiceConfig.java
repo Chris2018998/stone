@@ -36,7 +36,7 @@ public class TaskServiceConfig {
     //maximum of workers in pool,default is core size of cup
     private int workerSize = Runtime.getRuntime().availableProcessors();
     //milliseconds:max idle time that no tasks to be processed
-    private long workerIdleTimeout;
+    private long workerKeepAliveTime;
     //class name of task pool implementation
     private String poolImplementClassName = PoolTaskCenter.class.getName();
 
@@ -65,11 +65,11 @@ public class TaskServiceConfig {
     }
 
     public long getWorkerKeepAliveTime() {
-        return workerIdleTimeout;
+        return workerKeepAliveTime;
     }
 
     public void setWorkerKeepAliveTime(long workerKeepAliveTime) {
-        if (workerKeepAliveTime > 0L) this.workerIdleTimeout = workerKeepAliveTime;
+        if (workerKeepAliveTime > 0L) this.workerKeepAliveTime = workerKeepAliveTime;
     }
 
     public String getPoolImplementClassName() {
@@ -87,9 +87,9 @@ public class TaskServiceConfig {
         if (workerSize <= 0)
             throw new TaskServiceConfigException("worker-size must be greater than zero");
         if (workerSize > 4 * Runtime.getRuntime().availableProcessors())
-            throw new TaskServiceConfigException("worker-size can not be greater than 4 times of cpu core size");
-        if (workerIdleTimeout < 0L)
-            throw new TaskServiceConfigException("worker-idle-timeout must be greater than zero");
+            throw new TaskServiceConfigException("worker-size can't be greater than 4 times of cpu core size");
+        if (workerKeepAliveTime < 0L)
+            throw new TaskServiceConfigException("worker-keep-alive-time can't be less than zero");
 
         //2:create new config and copy field value from current
         TaskServiceConfig checkedConfig = new TaskServiceConfig();

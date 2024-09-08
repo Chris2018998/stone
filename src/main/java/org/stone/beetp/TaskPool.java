@@ -62,7 +62,7 @@ public interface TaskPool {
 
     boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
-    boolean clear(boolean mayInterruptIfRunning);
+    boolean clear(boolean mayInterruptIfRunning) throws TaskServiceConfigException;
 
     boolean clear(boolean mayInterruptIfRunning, TaskServiceConfig config) throws TaskServiceConfigException;
 }

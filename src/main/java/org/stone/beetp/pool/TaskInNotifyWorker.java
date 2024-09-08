@@ -10,17 +10,15 @@
 package org.stone.beetp.pool;
 
 /**
- * Pool task schedule worker
- *
  * @author Chris Liao
  * @version 1.0
  */
 
-class TaskWakeupWorker extends Thread {
+class TaskInNotifyWorker extends Thread {
 
     private final PoolTaskCenter pool;
 
-    public TaskWakeupWorker(PoolTaskCenter pool) {
+    public TaskInNotifyWorker(PoolTaskCenter pool) {
         this.pool = pool;
     }
 

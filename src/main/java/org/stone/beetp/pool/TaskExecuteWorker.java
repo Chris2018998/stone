@@ -110,9 +110,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     public void run() {
         int spinSize = pool.getWorkerSpins();
-        final boolean useTimePark = pool.isIdleTimeoutValid();
-        final long idleTimeoutNanos = pool.getIdleTimeoutNanos();
+        final long keepAliveTimeNanos = pool.getKeepAliveTimeNanos();
         final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
+        final boolean useTimePark = keepAliveTimeNanos > 0L;
 
         do {
             //1: poll a task from queue
@@ -145,8 +145,8 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 boolean parkTimeout = false;
                 if (useTimePark) {
                     long parkStartTime = System.nanoTime();
-                    LockSupport.parkNanos(idleTimeoutNanos);
-                    parkTimeout = System.nanoTime() - parkStartTime >= idleTimeoutNanos;
+                    LockSupport.parkNanos(keepAliveTimeNanos);
+                    parkTimeout = System.nanoTime() - parkStartTime >= keepAliveTimeNanos;
                 } else {
                     LockSupport.park();
                 }

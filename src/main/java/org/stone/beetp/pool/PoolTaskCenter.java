@@ -33,23 +33,31 @@ import static org.stone.tools.CommonUtil.maxUntimedSpins;
  */
 public final class PoolTaskCenter implements TaskPool {
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "poolState");
+    //pool name
     private String poolName;
+    //pool state can be changed via cas
     private volatile int poolState;
-
-    private int maxTaskSize;
-    private LongAdder taskCount;//(count of once tasks + count of scheduled tasks + root count of joined tasks)
-
-    private long idleTimeoutNanos;
-    private boolean idleTimeoutValid;
-
-    private int workerSpins;
-    private int workerCount;
-    private int maxSeqOfWorkerArray;
-    private TaskWakeupWorker wakeupWorker;
-    private TaskExecuteWorker[] executeWorkers;
-
+    //monitor vo of pool
     private PoolMonitorVo monitorVo;
+
+    //max capacity of pool tasks
+    private int maxTaskSize;
+    //count of tasks in pool,its value =count of once tasks + count of scheduled tasks + root count of joined tasks
+    private LongAdder taskCount;
+
+    //spin size of worker to poll tasks
+    private int workerSpins;
+    //base hash value for computing index of buckets
+    private int maxSeqOfWorkerArray;
+    //an internal thread to wake up all execution workers if task count greater than bucket size
+    private TaskInNotifyWorker wakeupWorker;
+    //an array of execution workers,it has fixed length
+    private TaskExecuteWorker[] executeWorkers;
+    //keep alive time of worker when no tasks to process
+    private long keepAliveTimeNanos;
+    //a worker to schedule timed tasks
     private TaskScheduleWorker scheduleWorker;
+    //wait queue on pool termination
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -74,31 +82,30 @@ public final class PoolTaskCenter implements TaskPool {
         //step1: copy values of some configured items to pool local fields
         this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
-        this.idleTimeoutNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
-        this.idleTimeoutValid = this.idleTimeoutNanos > 0L;
-        this.workerSpins = idleTimeoutValid ? maxTimedSpins : maxUntimedSpins;
+        this.keepAliveTimeNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
+        this.workerSpins = this.keepAliveTimeNanos > 0L ? maxTimedSpins : maxUntimedSpins;
 
         //step2: create some runtime objects
         this.taskCount = new LongAdder();
         this.monitorVo = new PoolMonitorVo();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-        //step3: create workers array and fill workers full size
+        //step3: create execution workers in inactive state
         int workerCount = config.getWorkerSize();
         this.maxSeqOfWorkerArray = workerCount - 1;
         this.executeWorkers = new TaskExecuteWorker[workerCount];
         for (int i = 0; i < workerCount; i++)
             executeWorkers[i] = new TaskExecuteWorker(this);
 
-        //step4:
-        this.wakeupWorker = new TaskWakeupWorker(this);
+        //step4: create notification worker
+        this.wakeupWorker = new TaskInNotifyWorker(this);
 
-        //step5: create daemon thread to poll expired tasks from scheduled queue and assign to workers
+        //step5: create schedule worker to manage timed tasks
         if (scheduleWorker == null) this.scheduleWorker = new TaskScheduleWorker(this);
     }
 
     //***************************************************************************************************************//
-    //                                       2: task submission(6)                                                   //
+    //                                       2: task submission(6+2)                                                 //
     //***************************************************************************************************************//
     public <V> TaskHandle<V> submit(Task<V> task) throws TaskException {
         return submit(task, (TaskAspect<V>) null);
@@ -137,8 +144,33 @@ public final class PoolTaskCenter implements TaskPool {
         return handle;
     }
 
+    private void checkSubmittedTask(Object task) throws TaskException {
+        if (task == null) throw new TaskException("Task can't be null");
+        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool has been closed or in clearing");
+        if (taskCount.sum() >= maxTaskSize) throw new TaskRejectedException("Pool task capacity has full");
+
+        taskCount.increment();
+    }
+
+    //push a task handle to execution worker
+    void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
+        //1: compute index of worker by hash
+        int threadHashCode = Thread.currentThread().hashCode();
+        int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
+        TaskExecuteWorker bucketWorker = this.executeWorkers[arrayIndex];
+        bucketWorker.put(taskHandle);//push this task to worker
+
+        //2: wake up worker or all workers
+        if (taskCount.sum() < this.executeWorkers.length) {
+            bucketWorker.wakeup();
+        } else {//wakeup all workers(async is better?)
+            for (TaskExecuteWorker worker : executeWorkers)
+                worker.wakeup();
+        }
+    }
+
     //***************************************************************************************************************//
-    //                                    3: Scheduled task submit(6)                                                //
+    //                                    3: Timed task submit(6+1)                                                  //
     //***************************************************************************************************************//
     public <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit) throws TaskException {
         return addScheduleTask(task, unit, delay, 0, false, null, 1);
@@ -164,65 +196,31 @@ public final class PoolTaskCenter implements TaskPool {
         return addScheduleTask(task, unit, initialDelay, delay, true, aspect, 3);
     }
 
-    //***************************************************************************************************************//
-    //                                  4: check submitted tasks and offer them                                       //
-    //***************************************************************************************************************//
-    private void checkSubmittedTask(Object task) throws TaskException {
-        if (task == null) throw new TaskException("Task can't be null");
-        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool has been closed or in clearing");
-        if (taskCount.sum() >= maxTaskSize) throw new TaskRejectedException("Task count has reach max capacity");
-
-        taskCount.increment();
-    }
-
-    //push task to execution queue(**scheduled peek thread calls this method to push task**)
-    void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
-        //1: push a task to a worker
-        int threadHashCode = Thread.currentThread().hashCode();
-        int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
-        TaskExecuteWorker bucketWorker = this.executeWorkers[arrayIndex];
-        bucketWorker.put(taskHandle);
-
-        //2: wakeup the worker or workup all workers
-        //if (taskCount.sum() < this.workerCount) {
-        bucketWorker.wakeup();
-//        } else {//wakeup all workers(async is better?)
-//            for (TaskExecuteWorker worker : executeWorkers)
-//                worker.wakeup();
-//        }
-    }
-
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {
-        //1: check task
-        if (task == null) throw new TaskException("Task can't be null");
-        if (unit == null) throw new TaskException("Task time unit can't be null");
+        //1: check time
+        if (unit == null) throw new TaskException("Time unit can't be null");
         if (initialDelay < 0)
             throw new TaskException(scheduledType == 1 ? "Delay" : "Initial delay" + " time can't be less than zero");
         if (intervalTime <= 0 && scheduledType != 1)
             throw new TaskException(scheduledType == 2 ? "Period" : "Delay" + " time must be greater than zero");
 
-        //2: check pool state and task capacity
+        //2: check task
         this.checkSubmittedTask(task);
-
-        //3: create task handle
+        //3: create task handle and put it to schedule worker
         long intervalNanos = unit.toNanos(intervalTime);
         long firstRunNanos = unit.toNanos(initialDelay) + System.nanoTime();
         PoolTimedTaskHandle<V> handle = new PoolTimedTaskHandle<>(task, aspect, firstRunNanos, intervalNanos, fixedDelay, this);
-
-        //4: add task handle to time sortable array,and gets its index in array
         scheduleWorker.put(handle);
+
+        //4: return this handle to method caller
         return handle;
     }
 
     //***************************************************************************************************************//
-    //                                      5: Pool clear/remove(3)                                                  //
+    //                                      5: Pool clear(2+2)                                                       //
     //***************************************************************************************************************//
-    public boolean clear(boolean mayInterruptIfRunning) {
-        try {
-            return clear(mayInterruptIfRunning, null);
-        } catch (TaskServiceConfigException e) {
-            return false;
-        }
+    public boolean clear(boolean mayInterruptIfRunning) throws TaskServiceConfigException {
+        return clear(mayInterruptIfRunning, null);
     }
 
     public boolean clear(boolean mayInterruptIfRunning, TaskServiceConfig config) throws TaskServiceConfigException {
@@ -234,7 +232,6 @@ public final class PoolTaskCenter implements TaskPool {
         for (TaskExecuteWorker worker : executeWorkers) {
             worker.terminate();
         }
-
         return null;//@todo to be implemented
     }
 
@@ -261,6 +258,12 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public TaskPoolTerminatedVo terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
+        int state = this.poolState;
+        if (state == POOL_TERMINATED)
+            throw new TaskPoolException("Pool has been terminated");
+        if (state == POOL_TERMINATING)
+            throw new TaskPoolException("Operation failed,a termination process has been in executing");
+
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
             TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
 
@@ -274,20 +277,19 @@ public final class PoolTaskCenter implements TaskPool {
             this.poolState = POOL_TERMINATED;
             return info;
         } else {
-            throw new TaskPoolException("Termination forbidden,pool has been in terminating or afterTerminated");
+            throw new TaskPoolException("Operation failed,a termination process has been in executing");
         }
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         if (this.poolState == POOL_TERMINATED) return true;
-        if (timeout < 0) throw new IllegalArgumentException("Time out value must be greater than zero");
-        if (unit == null) throw new IllegalArgumentException("Time unit can't be null");
+
+        boolean timed = timeout > 0L;
+        if (timed && unit == null) throw new IllegalArgumentException("Time unit can't be null");
 
         Thread currentThread = Thread.currentThread();
         poolTerminateWaitQueue.offer(currentThread);
-        long timeoutNano = unit.toNanos(timeout);
-        boolean timed = timeoutNano > 0;
-        long deadline = System.nanoTime() + timeoutNano;
+        long deadline = timed ? System.nanoTime() + unit.toNanos(timeout) : 0L;
 
         try {
             do {
@@ -316,7 +318,6 @@ public final class PoolTaskCenter implements TaskPool {
 
 
     public PoolMonitorVo getPoolMonitorVo() {
-
 //        monitorVo.setPoolState(this.poolState);
 //        monitorVo.setWorkerCount(executeWorkers.length);
 //        monitorVo.setTaskHoldingCount(taskCount.get());
@@ -359,24 +360,11 @@ public final class PoolTaskCenter implements TaskPool {
         return taskCount;
     }
 
-//    public LongAdder getRunningCount() {
-//        return runningCount;
-//    }
-//
-//    public LongAdder getCompletedCount() {
-//        return completedCount;
-//    }
-
-    public long getIdleTimeoutNanos() {
-        return this.idleTimeoutNanos;
-    }
-
-    public boolean isIdleTimeoutValid() {
-        return this.idleTimeoutValid;
+    public long getKeepAliveTimeNanos() {
+        return this.keepAliveTimeNanos;
     }
 
     public TaskExecuteWorker[] getExecuteWorkers() {
         return this.executeWorkers;
     }
-
 }
