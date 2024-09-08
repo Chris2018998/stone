@@ -216,6 +216,86 @@ public final class PoolTaskCenter implements TaskPool {
         return handle;
     }
 
+
+    //***************************************************************************************************************//
+    //                                    4: some query methods()                                                    //
+    //***************************************************************************************************************//
+    public LongAdder getTaskCount() {
+        return taskCount;
+    }
+
+    public int getPoolState() {
+        return this.poolState;
+    }
+
+    public int getWorkerSpins() {
+        return this.workerSpins;
+    }
+
+    public boolean isTerminated() {
+        return poolState == POOL_TERMINATED;
+    }
+
+    public boolean isTerminating() {
+        return poolState == POOL_TERMINATING;
+    }
+
+    public long getKeepAliveTimeNanos() {
+        return this.keepAliveTimeNanos;
+    }
+
+    public TaskExecuteWorker[] getExecuteWorkers() {
+        return this.executeWorkers;
+    }
+
+    public int getRunningCount() {
+        int count = 0;
+        for (TaskExecuteWorker worker : executeWorkers) {
+            if (worker.getProcessingHandle() != null) count++;
+        }
+        return count;
+    }
+
+    public long getCompletedCount() {
+        long count = 0;
+        for (TaskExecuteWorker worker : executeWorkers) {
+            count += worker.getCompletedCount();
+        }
+        return count + scheduleWorker.getCompletedCount();
+    }
+
+    public PoolMonitorVo getPoolMonitorVo() {
+//        monitorVo.setPoolState(this.poolState);
+//        monitorVo.setWorkerCount(executeWorkers.length);
+//        monitorVo.setTaskHoldingCount(taskCount.get());
+//        int runningCount = 0;
+//        List<PoolTaskHandle> runningTasks = new ArrayList<>(10);
+//        for (TaskExecuteWorker worker : executeWorkers) {
+//            completedCount += worker.completedCount;
+//            PoolTaskHandle curTaskHandle = worker.curTaskHandle;
+//            if (curTaskHandle != null) {
+//                PoolTaskHandle rootHandle = null;
+//                if (curTaskHandle.isRoot) {
+//                    rootHandle = curTaskHandle;
+//                } else if (curTaskHandle instanceof JoinTaskHandle) {
+//                    rootHandle = ((JoinTaskHandle) curTaskHandle).root;
+//                } else if (curTaskHandle instanceof TreeLayerTaskHandle) {
+//                    rootHandle = ((TreeLayerTaskHandle) curTaskHandle).root;
+//                }
+//
+//                if (!runningTasks.contains(rootHandle)) {
+//                    runningTasks.add(rootHandle);
+//                    runningCount++;
+//                }
+//            }
+//        }
+
+//        monitorVo.setTaskRunningCount(runningCount);
+        //monitorVo.setTaskCompletedCount(completedCount.sum());
+        return monitorVo;
+    }
+
+
     //***************************************************************************************************************//
     //                                      5: Pool clear(2+2)                                                       //
     //***************************************************************************************************************//
@@ -249,13 +329,6 @@ public final class PoolTaskCenter implements TaskPool {
     //***************************************************************************************************************//
     //                                      6: Pool shutdown (4)                                                     //
     //***************************************************************************************************************//
-    public boolean isTerminated() {
-        return poolState == POOL_TERMINATED;
-    }
-
-    public boolean isTerminating() {
-        return poolState == POOL_TERMINATING;
-    }
 
     public TaskPoolTerminatedVo terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
         int state = this.poolState;
@@ -312,59 +385,4 @@ public final class PoolTaskCenter implements TaskPool {
         }
     }
 
-    //***************************************************************************************************************//
-    //                                     7: Pool monitor(1)                                                        //
-    //***************************************************************************************************************//
-
-
-    public PoolMonitorVo getPoolMonitorVo() {
-//        monitorVo.setPoolState(this.poolState);
-//        monitorVo.setWorkerCount(executeWorkers.length);
-//        monitorVo.setTaskHoldingCount(taskCount.get());
-//        int runningCount = 0;
-//        List<PoolTaskHandle> runningTasks = new ArrayList<>(10);
-//        for (TaskExecuteWorker worker : executeWorkers) {
-//            completedCount += worker.completedCount;
-//            PoolTaskHandle curTaskHandle = worker.curTaskHandle;
-//            if (curTaskHandle != null) {
-//                PoolTaskHandle rootHandle = null;
-//                if (curTaskHandle.isRoot) {
-//                    rootHandle = curTaskHandle;
-//                } else if (curTaskHandle instanceof JoinTaskHandle) {
-//                    rootHandle = ((JoinTaskHandle) curTaskHandle).root;
-//                } else if (curTaskHandle instanceof TreeLayerTaskHandle) {
-//                    rootHandle = ((TreeLayerTaskHandle) curTaskHandle).root;
-//                }
-//
-//                if (!runningTasks.contains(rootHandle)) {
-//                    runningTasks.add(rootHandle);
-//                    runningCount++;
-//                }
-//            }
-//        }
-
-//        monitorVo.setTaskRunningCount(runningCount);
-        //monitorVo.setTaskCompletedCount(completedCount.sum());
-        return monitorVo;
-    }
-
-    public int getPoolState() {
-        return this.poolState;
-    }
-
-    public int getWorkerSpins() {
-        return this.workerSpins;
-    }
-
-    public LongAdder getTaskCount() {
-        return taskCount;
-    }
-
-    public long getKeepAliveTimeNanos() {
-        return this.keepAliveTimeNanos;
-    }
-
-    public TaskExecuteWorker[] getExecuteWorkers() {
-        return this.executeWorkers;
-    }
 }

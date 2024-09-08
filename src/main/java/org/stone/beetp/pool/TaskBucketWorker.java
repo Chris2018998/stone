@@ -39,6 +39,15 @@ abstract class TaskBucketWorker implements Runnable {
     }
 
     /**
+     * query this completed count of tasks
+     *
+     * @return completed count
+     */
+    public long getCompletedCount() {
+        return completedCount;
+    }
+
+    /**
      * terminate worker and make it stop working
      *
      * @return a list of uncompleted tasks

@@ -190,6 +190,10 @@ public final class TaskService extends TaskServiceConfig {
         return pool == null || pool.isTerminating();
     }
 
+    public int getRunningCount() {return pool == null ? 0 : pool.getRunningCount();}
+
+    public long getCompletedCount() {return pool == null ? 0 : pool.getCompletedCount();}
+
     public void terminate(boolean cancelRunningTask) throws TaskPoolException {
         if (pool == null) throw new TaskPoolException("Task execution not be initialized");
         pool.terminate(cancelRunningTask);

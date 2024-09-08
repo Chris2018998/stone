@@ -36,6 +36,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     //                                            1: bucket methods(2)                                               //
     //***************************************************************************************************************//
+    public PoolTaskHandle getProcessingHandle() {
+        return taskHandle;
+    }
 
     /**
      * Pool push a task to worker by call this method
