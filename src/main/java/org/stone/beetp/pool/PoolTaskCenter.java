@@ -267,33 +267,11 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public PoolMonitorVo getPoolMonitorVo() {
-//        monitorVo.setPoolState(this.poolState);
-//        monitorVo.setWorkerCount(executeWorkers.length);
-//        monitorVo.setTaskHoldingCount(taskCount.get());
-//        int runningCount = 0;
-//        List<PoolTaskHandle> runningTasks = new ArrayList<>(10);
-//        for (TaskExecuteWorker worker : executeWorkers) {
-//            completedCount += worker.completedCount;
-//            PoolTaskHandle curTaskHandle = worker.curTaskHandle;
-//            if (curTaskHandle != null) {
-//                PoolTaskHandle rootHandle = null;
-//                if (curTaskHandle.isRoot) {
-//                    rootHandle = curTaskHandle;
-//                } else if (curTaskHandle instanceof JoinTaskHandle) {
-//                    rootHandle = ((JoinTaskHandle) curTaskHandle).root;
-//                } else if (curTaskHandle instanceof TreeLayerTaskHandle) {
-//                    rootHandle = ((TreeLayerTaskHandle) curTaskHandle).root;
-//                }
-//
-//                if (!runningTasks.contains(rootHandle)) {
-//                    runningTasks.add(rootHandle);
-//                    runningCount++;
-//                }
-//            }
-//        }
-
-//        monitorVo.setTaskRunningCount(runningCount);
-        //monitorVo.setTaskCompletedCount(completedCount.sum());
+        monitorVo.setPoolState(this.poolState);
+        monitorVo.setWorkerCount(this.executionWorkerSize);
+        monitorVo.setTaskHoldingCount(taskCount.get());
+        monitorVo.setTaskRunningCount(getRunningCount());
+        monitorVo.setTaskCompletedCount(getCompletedCount());
         return monitorVo;
     }
 
