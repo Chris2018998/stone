@@ -91,19 +91,12 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         }
     }
 
-    public List<PoolTaskHandle<?>> terminate() {
-        int curState = state;
-        if (curState == WORKER_INACTIVE) return emptyList;
-        if (StateUpd.compareAndSet(this, curState, WORKER_INACTIVE)) {
-
-            List<PoolTaskHandle<?>> allTasks = new LinkedList<>(Arrays.asList(handles));
-            this.handles = new PoolTimedTaskHandle[0];
-            this.countOfHandles = 0;
-            LockSupport.unpark(workThread);
-            return allTasks;
-        } else {
-            return emptyList;
-        }
+    public List<PoolTaskHandle<?>> getUnCompletedTasks() {
+        List<PoolTaskHandle<?>> allTasks = new LinkedList<>(Arrays.asList(handles));
+        this.handles = new PoolTimedTaskHandle[0];
+        this.countOfHandles = 0;
+        LockSupport.unpark(workThread);
+        return allTasks;
     }
 
     public void remove(PoolTaskHandle<?> taskHandle) {
@@ -178,7 +171,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 if (taskHandle.isWaiting())
                     pool.pushToExecuteWorker(taskHandle);
                 else
-                    pool.getTaskCount().decrement();
+                    pool.getTaskCount().decrementAndGet();
             } else {
                 Long time = (Long) polledObject;
                 if (time > 0L) {

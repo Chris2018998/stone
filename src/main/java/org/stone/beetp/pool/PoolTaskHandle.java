@@ -206,7 +206,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //this method can override
     protected void afterExecute() {
-        pool.getTaskCount().decrement();
+        pool.getTaskCount().decrementAndGet();
     }
 
     /**

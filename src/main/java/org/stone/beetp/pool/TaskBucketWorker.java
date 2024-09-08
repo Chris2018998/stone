@@ -9,13 +9,8 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
-
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
-import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
 
 /**
  * Base pool worker,which works as a bucket to store some tasks and process them
@@ -23,19 +18,12 @@ import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
  * @author Chris Liao
  * @version 1.0
  */
-abstract class TaskBucketWorker implements Runnable {
-    protected static final AtomicIntegerFieldUpdater<TaskBucketWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(TaskBucketWorker.class, "state");
+abstract class TaskBucketWorker extends ReactivateWorker {
     protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
-    protected final PoolTaskCenter pool;
-
-    protected Thread workThread;
-    protected volatile int state;
     protected volatile long completedCount;
 
-    //constructor with pool
     public TaskBucketWorker(PoolTaskCenter pool) {
-        this.pool = pool;
-        this.state = WORKER_INACTIVE;
+        super(pool);
     }
 
     /**
@@ -48,11 +36,20 @@ abstract class TaskBucketWorker implements Runnable {
     }
 
     /**
-     * terminate worker and make it stop working
+     * increment completed count of tasks
+     *
+     * @return completed count
+     */
+    public long incrementCompletedCount() {
+        return ++completedCount;
+    }
+
+    /**
+     * get a list of uncompleted task
      *
      * @return a list of uncompleted tasks
      */
-    abstract List<PoolTaskHandle<?>> terminate();
+    abstract List<PoolTaskHandle<?>> getUnCompletedTasks();
 
     /**
      * Pool push a task to worker by call this method

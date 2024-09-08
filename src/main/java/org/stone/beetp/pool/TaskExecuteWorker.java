@@ -25,8 +25,7 @@ import static org.stone.beetp.pool.PoolConstants.*;
 
 final class TaskExecuteWorker extends TaskBucketWorker {
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
-
-    private volatile PoolTaskHandle<?> taskHandle;
+    private volatile PoolTaskHandle<?> processingHandle;
 
     public TaskExecuteWorker(PoolTaskCenter pool) {
         super(pool);
@@ -36,8 +35,14 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     //                                            1: bucket methods(2)                                               //
     //***************************************************************************************************************//
+
+    /**
+     * get task handle in processing by this worker
+     *
+     * @return handle in processing,if not,then return null
+     */
     public PoolTaskHandle getProcessingHandle() {
-        return taskHandle;
+        return processingHandle;
     }
 
     /**
@@ -53,48 +58,18 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     }
 
     /**
-     * Pool wakeup woker to process tasks by call this method
-     */
-    public void wakeup() {
-        int curState = state;
-        if (curState == WORKER_INACTIVE) {
-            if (StateUpd.compareAndSet(this, WORKER_INACTIVE, WORKER_STARTING)) {
-                this.workThread = new Thread(this);
-                this.state = WORKER_RUNNING;
-                this.workThread.start();
-            }
-        } else if (curState == WORKER_WAITING) {
-            if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING)) {
-                LockSupport.unpark(workThread);
-            }
-        }
-    }
-
-    /**
      * poll tasks from worker
      *
      * @return a list of polled tasks
      */
-    public List<PoolTaskHandle<?>> terminate() {
-        int curState = state;
-        if (curState == WORKER_INACTIVE) return emptyList;
-
-        if (StateUpd.compareAndSet(this, curState, WORKER_INACTIVE)) {
-            workThread.interrupt();
-
-            //LockSupport.unpark(workThread);
-
-            List<PoolTaskHandle<?>> allTasks = new LinkedList<>();
-            do {
-                PoolTaskHandle<?> handle = taskQueue.poll();
-                if (handle == null) break;
-                allTasks.add(handle);
-            } while (true);
-
-            return allTasks;
-        } else {
-            return emptyList;
-        }
+    public List<PoolTaskHandle<?>> getUnCompletedTasks() {
+        List<PoolTaskHandle<?>> taskList = new LinkedList<>();
+        do {
+            PoolTaskHandle<?> handle = taskQueue.poll();
+            if (handle == null) break;
+            taskList.add(handle);
+        } while (true);
+        return taskList;
     }
 
     /**
@@ -136,10 +111,10 @@ final class TaskExecuteWorker extends TaskBucketWorker {
             //3: proccess the polled task
             if (handle != null) {
                 try {
-                    this.taskHandle = handle;
+                    this.processingHandle = handle;
                     handle.executeTask(this);
                 } finally {
-                    this.taskHandle = null;
+                    this.processingHandle = null;
                 }
             } else if (spinSize > 0) {
                 spinSize--;
