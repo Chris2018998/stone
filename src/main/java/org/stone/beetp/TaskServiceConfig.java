@@ -31,7 +31,7 @@ public class TaskServiceConfig {
 
     //pool name,if not set,a generation name will be assigned to it
     private String poolName;
-    //maximum of tasks(once tasks + scheduled tasks),default is 100
+    //maximum of tasks,default is 100
     private int maxTaskSize = 100;
     //maximum of workers in pool,default is core size of cup
     private int workerSize = Runtime.getRuntime().availableProcessors();
