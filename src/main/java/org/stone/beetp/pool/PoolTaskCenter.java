@@ -47,6 +47,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     //spin size of worker to poll tasks
     private int workerSpins;
+    private int executionWorkerSize;
     //base hash value for computing index of buckets
     private int maxSeqOfWorkerArray;
     //an internal thread to wake up all execution workers if task count greater than worker size
@@ -91,10 +92,10 @@ public final class PoolTaskCenter implements TaskPool {
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
         //step3: create execution workers in inactive state
-        int workerCount = config.getWorkerSize();
-        this.maxSeqOfWorkerArray = workerCount - 1;
-        this.executeWorkers = new TaskExecuteWorker[workerCount];
-        for (int i = 0; i < workerCount; i++)
+        this.executionWorkerSize = config.getWorkerSize();
+        this.maxSeqOfWorkerArray = executionWorkerSize - 1;
+        this.executeWorkers = new TaskExecuteWorker[executionWorkerSize];
+        for (int i = 0; i < executionWorkerSize; i++)
             executeWorkers[i] = new TaskExecuteWorker(this);
 
         //step4: create notification worker
@@ -164,9 +165,9 @@ public final class PoolTaskCenter implements TaskPool {
         worker.put(taskHandle);//push this task to worker
 
         //2: wake up worker or all workers
-        if (taskCount.get() < this.executeWorkers.length) {
+        if (taskCount.get() < this.executionWorkerSize) {
             worker.wakeup();
-        } else {//Notification worker to wake up all workers
+        } else {//wake up all workers
             notifyWorker.wakeup();
         }
     }
