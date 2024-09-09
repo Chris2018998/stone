@@ -35,18 +35,9 @@ abstract class ReactivateWorker implements Runnable {
         this.state = WORKER_INACTIVE;
     }
 
-    //@todo need more thinking here
-    public void terminate() {
-        int curState = this.state;
-        if (curState == WORKER_INACTIVE) return;
-
-        if (curState == WORKER_WAITING) {
-            if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE)) {
-                LockSupport.unpark(workThread);
-            }
-        }
-    }
-
+    /**
+     * active this worker to run
+     */
     public void wakeup() {
         int curState = state;
         if (curState == WORKER_INACTIVE) {
@@ -60,5 +51,33 @@ abstract class ReactivateWorker implements Runnable {
                 LockSupport.unpark(workThread);
             }
         }
+    }
+
+    /**
+     * terminate this worker and make it to be in inactive state
+     *
+     * @param mayInterruptIfRunning is true then attempt to interrupt worker thread if in blocking
+     * @return true when successful;otherwise return false
+     */
+    public boolean terminate(boolean mayInterruptIfRunning) {
+        do {
+            int curState = this.state;
+            if (curState == WORKER_INACTIVE) return false;
+
+            if (curState == WORKER_WAITING) {
+                if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE)) {
+                    LockSupport.unpark(workThread);
+                    return true;
+                }
+            } else if (mayInterruptIfRunning) {
+                Thread.State threadState = workThread.getState();
+                if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING) {
+                    workThread.interrupt();
+                    return workThread.isInterrupted();
+                }
+            } else {
+                return false;
+            }
+        } while (true);
     }
 }

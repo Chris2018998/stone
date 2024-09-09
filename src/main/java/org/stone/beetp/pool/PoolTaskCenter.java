@@ -289,7 +289,7 @@ public final class PoolTaskCenter implements TaskPool {
     private TaskPoolTerminatedVo removeAll(boolean mayInterruptIfRunning) {
         List<PoolTaskHandle<?>> unCompletedHandleList = scheduleWorker.getUnCompletedTasks();
         for (TaskExecuteWorker worker : executeWorkers) {
-            worker.terminate();
+            worker.terminate(mayInterruptIfRunning);
         }
         return null;//@todo to be implemented
     }
@@ -319,9 +319,9 @@ public final class PoolTaskCenter implements TaskPool {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
             TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
 
-            scheduleWorker.terminate();
+            scheduleWorker.terminate(mayInterruptIfRunning);
             for (TaskExecuteWorker worker : executeWorkers)
-                worker.terminate();
+                worker.terminate(mayInterruptIfRunning);
 
             for (Thread thread : poolTerminateWaitQueue)
                 LockSupport.unpark(thread);

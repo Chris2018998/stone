@@ -212,7 +212,7 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     /**
      * core method to execute task
      */
-    protected void executeTask(TaskExecuteWorker worker) {
+    void executeTask(TaskExecuteWorker worker) {
         if (!StateUpd.compareAndSet(this, TASK_WAITING, worker)) return;
 
         Object result = null;
@@ -221,14 +221,11 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
         try {
             //1: call beforeExecute method
             this.beforeExecute();
-
             //2: execute beforeCall method of aspect
             if (callAspect != null)
                 callAspect.beforeCall(this);
-
             //3: execute call of task(** key step **)
             result = this.invokeTaskCall();
-            //System.out.println("result:"+result);
         } catch (Throwable e) {
             succeed = false;
             result = new TaskExecutionException(e);

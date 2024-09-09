@@ -110,12 +110,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
 
             //3: proccess the polled task
             if (handle != null) {
-                try {
-                    this.processingHandle = handle;
-                    handle.executeTask(this);
-                } finally {
-                    this.processingHandle = null;
-                }
+                this.processingHandle = handle;
+                handle.executeTask(this);
+                this.processingHandle = null;
             } else if (spinSize > 0) {
                 spinSize--;
             } else {//park work thread
