@@ -54,6 +54,13 @@ abstract class ReactivateWorker implements Runnable {
     }
 
     /**
+     * interrupt this worker
+     */
+    public void interrupt() {
+        if (workThread != null) workThread.interrupt();
+    }
+
+    /**
      * terminate this worker and make it to be in inactive state
      *
      * @param mayInterruptIfRunning is true then attempt to interrupt worker thread if in blocking
