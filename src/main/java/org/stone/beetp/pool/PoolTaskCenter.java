@@ -158,7 +158,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     //push a task handle to execution worker
     void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
-        //1: compute index of worker by hash
+        //1: compute array index by hash
         int threadHashCode = Thread.currentThread().hashCode();
         int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
         TaskExecuteWorker worker = this.executeWorkers[arrayIndex];
@@ -176,7 +176,7 @@ public final class PoolTaskCenter implements TaskPool {
     //                                    3: Timed task submit(6+1)                                                  //
     //***************************************************************************************************************//
     public <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit) throws TaskException {
-        return addScheduleTask(task, unit, delay, 0, false, null, 1);
+        return addScheduleTask(task, unit, delay, 0L, false, null, 1);
     }
 
     public <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit) throws TaskException {
@@ -188,7 +188,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     public <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit, TaskAspect<V> aspect) throws TaskException {
-        return addScheduleTask(task, unit, delay, 0, false, aspect, 1);
+        return addScheduleTask(task, unit, delay, 0L, false, aspect, 1);
     }
 
     public <V> TaskScheduledHandle<V> scheduleAtFixedRate(Task<V> task, long initialDelay, long period, TimeUnit unit, TaskAspect<V> aspect) throws TaskException {
@@ -202,9 +202,9 @@ public final class PoolTaskCenter implements TaskPool {
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {
         //1: check time
         if (unit == null) throw new TaskException("Time unit can't be null");
-        if (initialDelay < 0)
+        if (initialDelay < 0L)
             throw new TaskException(scheduledType == 1 ? "Delay" : "Initial delay" + " time can't be less than zero");
-        if (intervalTime <= 0 && scheduledType != 1)
+        if (intervalTime <= 0L && scheduledType != 1)
             throw new TaskException(scheduledType == 2 ? "Period" : "Delay" + " time must be greater than zero");
 
         //2: check task
@@ -220,18 +220,15 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                    4: some query methods(5+5)                                                 //
+    //                                    4: some query methods(5+4)                                                 //
     //***************************************************************************************************************//
-    int getPoolState() {
-        return this.poolState;
+
+    int getWorkerSpins() {
+        return this.workerSpins;
     }
 
     AtomicInteger getTaskCount() {
         return taskCount;
-    }
-
-    int getWorkerSpins() {
-        return this.workerSpins;
     }
 
     long getKeepAliveTimeNanos() {
@@ -254,7 +251,6 @@ public final class PoolTaskCenter implements TaskPool {
         int count = 0;
         for (TaskExecuteWorker worker : executeWorkers)
             if (worker.getProcessingHandle() != null) count++;
-
         return count;
     }
 
@@ -262,7 +258,6 @@ public final class PoolTaskCenter implements TaskPool {
         long count = 0;
         for (TaskExecuteWorker worker : executeWorkers)
             count += worker.getCompletedCount();
-
         return count + scheduleWorker.getCompletedCount();
     }
 
@@ -292,17 +287,6 @@ public final class PoolTaskCenter implements TaskPool {
             worker.terminate(mayInterruptIfRunning);
         }
         return null;//@todo to be implemented
-    }
-
-    //remove from array or queue(method called inside handle)
-    void removeCancelledTask(PoolTaskHandle handle) {
-//        if (handle instanceof ScheduledTaskHandle) {
-//            int taskIndex = scheduledDelayedQueue.remove((ScheduledTaskHandle) handle);
-//            if (taskIndex >= 0) taskCount.decrementAndGet();//task removed successfully by call thread
-//            if (taskIndex == 0) wakeupSchedulePeekThread();
-//        } else if (taskQueue.remove(handle) && handle.isRoot) {
-//            taskCount.decrementAndGet();
-//        }
     }
 
     //***************************************************************************************************************//

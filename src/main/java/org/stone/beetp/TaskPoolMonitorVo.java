@@ -19,12 +19,10 @@ public interface TaskPoolMonitorVo {
 
     int getPoolState();
 
-    int getWorkerCount();
+    int getTaskCount();
 
-    int getTaskHoldingCount();
+    int getRunningCount();
 
-    int getTaskRunningCount();
-
-    long getTaskCompletedCount();
+    long getCompletedCount();
 
 }

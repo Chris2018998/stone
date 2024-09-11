@@ -49,7 +49,6 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     //store waiters for call result
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
-
     PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean isRoot) {
         this.task = task;
         this.pool = pool;

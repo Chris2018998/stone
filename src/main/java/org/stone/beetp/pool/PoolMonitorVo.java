@@ -41,7 +41,7 @@ public final class PoolMonitorVo implements TaskPoolMonitorVo {
         this.workerCount = workerCount;
     }
 
-    public int getTaskHoldingCount() {
+    public int getTaskCount() {
         return taskHoldingCount;
     }
 
@@ -49,7 +49,7 @@ public final class PoolMonitorVo implements TaskPoolMonitorVo {
         this.taskHoldingCount = taskHoldingCount;
     }
 
-    public int getTaskRunningCount() {
+    public int getRunningCount() {
         return taskRunningCount;
     }
 
@@ -57,7 +57,7 @@ public final class PoolMonitorVo implements TaskPoolMonitorVo {
         this.taskRunningCount = taskRunningCount;
     }
 
-    public long getTaskCompletedCount() {
+    public long getCompletedCount() {
         return taskCompletedCount;
     }
 
