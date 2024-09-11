@@ -14,7 +14,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.pool.PoolConstants.*;
+import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
+import static org.stone.beetp.pool.PoolConstants.WORKER_WAITING;
 
 /**
  * Pool task execution worker
@@ -103,31 +104,29 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 }
             }
 
-            //2: clear interrupted flag before process or park if it exists
-            if (workThread.isInterrupted() && Thread.interrupted()) {
-                //no code here
-            }
-
             //3: proccess the polled task
             if (handle != null) {
                 this.processingHandle = handle;
-                handle.executeTask(this);
+                handle.executeTask(this);//@todo clear interrupted flag inside method
                 this.processingHandle = null;
             } else if (spinSize > 0) {
                 spinSize--;
             } else {//park work thread
                 this.state = WORKER_WAITING;
-                boolean parkTimeout = false;
+                spinSize = pool.getWorkerSpins();
                 if (useTimePark) {
                     long parkStartTime = System.nanoTime();
                     LockSupport.parkNanos(keepAliveTimeNanos);
-                    parkTimeout = System.nanoTime() - parkStartTime >= keepAliveTimeNanos;
+                    if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos && StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE)) {
+                        break;
+                    }
                 } else {
                     LockSupport.park();
                 }
-
-                StateUpd.compareAndSet(this, WORKER_WAITING, parkTimeout ? WORKER_INACTIVE : WORKER_RUNNING);
-                spinSize = pool.getWorkerSpins();
+                if (workThread.isInterrupted() && Thread.interrupted()) {
+                    //no code here
+                }
+                this.state = WORKER_WAITING;
             }
         } while (state != WORKER_INACTIVE);
     }
