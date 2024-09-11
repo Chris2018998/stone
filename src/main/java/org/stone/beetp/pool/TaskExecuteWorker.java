@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
-import static org.stone.beetp.pool.PoolConstants.WORKER_WAITING;
+import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
  * Pool task execution worker
@@ -96,37 +95,41 @@ final class TaskExecuteWorker extends TaskBucketWorker {
         do {
             //1: poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
-            if (handle == null) {//steal a task from other workers
+            if (handle == null) {//steal a task from other worker
                 for (TaskExecuteWorker worker : allWorkers) {
-                    if (worker == this) continue;
                     handle = worker.taskQueue.poll();
                     if (handle != null) break;
                 }
             }
 
-            //3: proccess the polled task
+            //2: proccess the polled task
             if (handle != null) {
                 this.processingHandle = handle;
                 handle.executeTask(this);//@todo clear interrupted flag inside method
                 this.processingHandle = null;
             } else if (spinSize > 0) {
                 spinSize--;
-            } else {//park work thread
-                this.state = WORKER_WAITING;
+            } else {
+                //3: park work thread
                 spinSize = pool.getWorkerSpins();
-                if (useTimePark) {
-                    long parkStartTime = System.nanoTime();
-                    LockSupport.parkNanos(keepAliveTimeNanos);
-                    if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos && StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE)) {
-                        break;
+                if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
+                    if (useTimePark) {
+                        final long parkStartTime = System.nanoTime();
+                        LockSupport.parkNanos(keepAliveTimeNanos);
+                        if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos && StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE))
+                            break;
+                    } else {
+                        LockSupport.park();
                     }
-                } else {
-                    LockSupport.park();
+
+                    //4: clear interrupted flag if it exist
+                    if (workThread.isInterrupted() && Thread.interrupted()) {
+                        //no code here
+                    }
+
+                    //5: set running state
+                    if (state == WORKER_WAITING) StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING);
                 }
-                if (workThread.isInterrupted() && Thread.interrupted()) {
-                    //no code here
-                }
-                this.state = WORKER_WAITING;
             }
         } while (state != WORKER_INACTIVE);
     }
