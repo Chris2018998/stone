@@ -105,7 +105,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
             //2: proccess the polled task
             if (handle != null) {
                 this.processingHandle = handle;
-                handle.executeTask(this);//@todo clear interrupted flag inside method
+                spinSize = pool.getWorkerSpins();
+                Thread.interrupted();
+                handle.executeTask(this);
                 this.processingHandle = null;
             } else if (spinSize > 0) {
                 spinSize--;
@@ -113,6 +115,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 //3: park work thread
                 spinSize = pool.getWorkerSpins();
                 if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
+                    Thread.interrupted();
                     if (useTimePark) {
                         final long parkStartTime = System.nanoTime();
                         LockSupport.parkNanos(keepAliveTimeNanos);
@@ -122,12 +125,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                         LockSupport.park();
                     }
 
-                    //4: clear interrupted flag if it exist
-                    if (workThread.isInterrupted() && Thread.interrupted()) {
-                        //no code here
-                    }
-
-                    //5: set running state
+                    //4: set running state
                     if (state == WORKER_WAITING) StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING);
                 }
             }
