@@ -21,17 +21,13 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskInNotifyWorker extends ReactivateWorker {
-    public TaskInNotifyWorker(PoolTaskCenter pool) {
-        super(pool);
+    public TaskInNotifyWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
+        super(pool, keepAliveTimeNanos, useTimePark, defaultSpins);
     }
 
     public void run() {
-        final long keepAliveTimeNanos = pool.getKeepAliveTimeNanos();
-        final TaskExecuteWorker[] executeWorkers = pool.getExecuteWorkers();
-        final boolean useTimePark = keepAliveTimeNanos > 0L;
-
         do {
-            for (TaskExecuteWorker worker : executeWorkers)
+            for (TaskExecuteWorker worker : allWorkers)
                 worker.wakeup();
 
             this.state = WORKER_WAITING;

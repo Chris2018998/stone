@@ -27,8 +27,8 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
     private volatile PoolTaskHandle<?> processingHandle;
 
-    public TaskExecuteWorker(PoolTaskCenter pool) {
-        super(pool);
+    public TaskExecuteWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
+        super(pool, keepAliveTimeNanos, useTimePark, defaultSpins);
         this.taskQueue = new ConcurrentLinkedQueue<>();
     }
 
@@ -87,11 +87,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //                                             2: task process method(core)                                      //
     //***************************************************************************************************************//
     public void run() {
-        int spinSize = pool.getWorkerSpins();
-        final long keepAliveTimeNanos = pool.getKeepAliveTimeNanos();
-        final TaskExecuteWorker[] allWorkers = pool.getExecuteWorkers();
-        final boolean useTimePark = keepAliveTimeNanos > 0L;
-
+        int spinSize = defaultSpins;
         do {
             //1: poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
@@ -105,7 +101,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
             //2: proccess the polled task
             if (handle != null) {
                 this.processingHandle = handle;
-                spinSize = pool.getWorkerSpins();
+                spinSize = defaultSpins;
                 Thread.interrupted();
                 handle.executeTask(this);
                 this.processingHandle = null;
@@ -113,7 +109,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 spinSize--;
             } else {
                 //3: park work thread
-                spinSize = pool.getWorkerSpins();
+                spinSize = defaultSpins;
                 if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
                     Thread.interrupted();
                     if (useTimePark) {

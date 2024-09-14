@@ -31,7 +31,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     private PoolTimedTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(PoolTaskCenter pool) {
-        super(pool);
+        super(pool, 0L, false, 1);
         this.lockOfHandles = new ReentrantLock();
         this.handles = new PoolTimedTaskHandle<?>[0];
     }

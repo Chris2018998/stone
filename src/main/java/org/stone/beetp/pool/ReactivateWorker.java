@@ -26,13 +26,22 @@ import static org.stone.beetp.pool.PoolConstants.*;
 abstract class ReactivateWorker implements Runnable {
     protected static final AtomicIntegerFieldUpdater<ReactivateWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivateWorker.class, "state");
     protected final PoolTaskCenter pool;
+    protected final int defaultSpins;
+    protected final boolean useTimePark;
+    protected final long keepAliveTimeNanos;
+    protected final TaskExecuteWorker[] allWorkers;
 
     protected volatile int state;
     protected Thread workThread;
 
-    public ReactivateWorker(PoolTaskCenter pool) {
+    public ReactivateWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         this.pool = pool;
         this.state = WORKER_INACTIVE;
+
+        this.useTimePark = useTimePark;
+        this.defaultSpins = defaultSpins;
+        this.keepAliveTimeNanos = keepAliveTimeNanos;
+        this.allWorkers = pool.getExecuteWorkers();
     }
 
     /**

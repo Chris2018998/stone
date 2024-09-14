@@ -33,8 +33,6 @@ import static org.stone.tools.CommonUtil.maxUntimedSpins;
  */
 public final class PoolTaskCenter implements TaskPool {
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "poolState");
-    //pool name
-    private String poolName;
     //pool state can be changed via cas
     private volatile int poolState;
     //monitor vo of pool
@@ -45,8 +43,6 @@ public final class PoolTaskCenter implements TaskPool {
     //count of tasks in pool,its value =count of once tasks + count of scheduled tasks + root count of joined tasks
     private AtomicInteger taskCount;
 
-    //spin size of worker to poll tasks
-    private int workerSpins;
     private int executionWorkerSize;
     //base hash value for computing index of buckets
     private int maxSeqOfWorkerArray;
@@ -54,8 +50,6 @@ public final class PoolTaskCenter implements TaskPool {
     private TaskInNotifyWorker notifyWorker;
     //an array of execution workers,it has fixed length
     private TaskExecuteWorker[] executeWorkers;
-    //keep alive time of worker when no tasks to process
-    private long keepAliveTimeNanos;
     //a worker to schedule timed tasks
     private TaskScheduleWorker scheduleWorker;
     //wait queue on pool termination
@@ -80,29 +74,22 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     private void startup(TaskServiceConfig config) {
-        //step1: copy values of some configured items to pool local fields
-        this.poolName = config.getPoolName();
         this.maxTaskSize = config.getMaxTaskSize();
-        this.keepAliveTimeNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
-        this.workerSpins = this.keepAliveTimeNanos > 0L ? maxTimedSpins : maxUntimedSpins;
-
-        //step2: create some runtime objects
         this.taskCount = new AtomicInteger();
         this.monitorVo = new PoolMonitorVo();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-        //step3: create execution workers in inactive state
         this.executionWorkerSize = config.getWorkerSize();
         this.maxSeqOfWorkerArray = executionWorkerSize - 1;
         this.executeWorkers = new TaskExecuteWorker[executionWorkerSize];
+        long keepAliveTimeNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
+        boolean useTimePark = keepAliveTimeNanos > 0L;
+        int workerSpins = useTimePark ? maxTimedSpins : maxUntimedSpins;
+
+        this.scheduleWorker = new TaskScheduleWorker(this);
+        this.notifyWorker = new TaskInNotifyWorker(this, keepAliveTimeNanos, useTimePark, workerSpins);
         for (int i = 0; i < executionWorkerSize; i++)
-            executeWorkers[i] = new TaskExecuteWorker(this);
-
-        //step4: create notification worker
-        this.notifyWorker = new TaskInNotifyWorker(this);
-
-        //step5: create schedule worker to manage timed tasks
-        if (scheduleWorker == null) this.scheduleWorker = new TaskScheduleWorker(this);
+            executeWorkers[i] = new TaskExecuteWorker(this, keepAliveTimeNanos, useTimePark, workerSpins);
     }
 
     //***************************************************************************************************************//
@@ -222,17 +209,8 @@ public final class PoolTaskCenter implements TaskPool {
     //***************************************************************************************************************//
     //                                    4: some query methods(5+4)                                                 //
     //***************************************************************************************************************//
-
-    int getWorkerSpins() {
-        return this.workerSpins;
-    }
-
     AtomicInteger getTaskCount() {
         return taskCount;
-    }
-
-    long getKeepAliveTimeNanos() {
-        return this.keepAliveTimeNanos;
     }
 
     TaskExecuteWorker[] getExecuteWorkers() {
