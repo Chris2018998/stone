@@ -40,6 +40,9 @@ public final class PoolTaskCenter implements TaskPool {
 
     //max capacity of pool tasks
     private int maxTaskSize;
+    //task size of full work
+    private int fullWorkTaskSize;
+
     //count of tasks in pool,its value =count of once tasks + count of scheduled tasks + root count of joined tasks
     private AtomicInteger taskCount;
 
@@ -51,6 +54,8 @@ public final class PoolTaskCenter implements TaskPool {
     private TaskInNotifyWorker notifyWorker;
     //an array of execution workers,it has fixed length
     private TaskExecuteWorker[] executeWorkers;
+
+
     //a worker to schedule timed tasks
     private TaskScheduleWorker scheduleWorker;
     //wait queue on pool termination
@@ -76,6 +81,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     private void startup(TaskServiceConfig config) {
         this.maxTaskSize = config.getMaxTaskSize();
+        this.fullWorkTaskSize = config.getFullWorkTaskSize();
         this.taskCount = new AtomicInteger();
         this.monitorVo = new PoolMonitorVo();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
@@ -152,10 +158,10 @@ public final class PoolTaskCenter implements TaskPool {
         TaskExecuteWorker worker = this.executeWorkers[arrayIndex];
         worker.put(taskHandle);//push this task to worker
 
-        //2: Notify one worker or all workers,
-        if (taskCount.get() < this.executionWorkerSize) {//@todo: need more thinking
+        //2: Notify one worker or all workers
+        if (taskCount.get() < fullWorkTaskSize) {
             worker.wakeup();
-        } else {
+        } else {//@todo need set a threshold?
             notifyWorker.wakeup();
         }
     }

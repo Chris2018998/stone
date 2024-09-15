@@ -31,10 +31,14 @@ public class TaskServiceConfig {
 
     //pool name,if not set,a generation name will be assigned to it
     private String poolName;
-    //maximum of tasks,default is 100
-    private int maxTaskSize = 100;
+    //maximum of tasks,default is Integer.MAX_VALUE
+    private int maxTaskSize = Integer.MAX_VALUE;
+
     //maximum of workers in pool,default is core size of cup
     private int workerSize = Runtime.getRuntime().availableProcessors();
+    //a threshold task size to wake up all workers,its value not greater than max size of tasks,default=worker size * 2
+    private int fullWorkTaskSize = workerSize * 2;
+
     //milliseconds:max idle time that no tasks to be processed
     private long workerKeepAliveTime;
     //class name of task pool implementation
@@ -64,6 +68,14 @@ public class TaskServiceConfig {
         if (workerSize > 0) this.workerSize = workerSize;
     }
 
+    public int getFullWorkTaskSize() {
+        return fullWorkTaskSize;
+    }
+
+    public void setFullWorkTaskSize(int fullWorkTaskSize) {
+        if (fullWorkTaskSize > 0) this.fullWorkTaskSize = fullWorkTaskSize;
+    }
+
     public long getWorkerKeepAliveTime() {
         return workerKeepAliveTime;
     }
@@ -82,14 +94,10 @@ public class TaskServiceConfig {
     }
 
     public TaskServiceConfig check() throws TaskServiceConfigException {
-        if (maxTaskSize <= 0)
-            throw new TaskServiceConfigException("max-task-size must be greater than zero");
-        if (workerSize <= 0)
-            throw new TaskServiceConfigException("worker-size must be greater than zero");
         if (workerSize > 4 * Runtime.getRuntime().availableProcessors())
             throw new TaskServiceConfigException("worker-size can't be greater than 4 times of cpu core size");
-        if (workerKeepAliveTime < 0L)
-            throw new TaskServiceConfigException("worker-keep-alive-time can't be less than zero");
+        if (fullWorkTaskSize > maxTaskSize)
+            throw new TaskServiceConfigException("full-work-task-size can't be greater than max task size");
 
         //2:create new config and copy field value from current
         TaskServiceConfig checkedConfig = new TaskServiceConfig();
