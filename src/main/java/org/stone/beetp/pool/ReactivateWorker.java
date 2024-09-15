@@ -56,7 +56,7 @@ abstract class ReactivateWorker implements Runnable {
                     return;
                 }
             } else if (curState == WORKER_PASSIVATED) {
-                if (StateUpd.compareAndSet(this, WORKER_PASSIVATED, WORKER_STARTING)) {
+                if (StateUpd.compareAndSet(this, WORKER_PASSIVATED, WORKER_ACTIVATING)) {
                     this.workThread = new Thread(this);
                     this.state = WORKER_RUNNING;
                     this.workThread.start();
@@ -77,7 +77,7 @@ abstract class ReactivateWorker implements Runnable {
             int curState = this.state;
             if (curState == WORKER_PASSIVATED) return false;
 
-            if (curState != WORKER_STARTING && StateUpd.compareAndSet(this, curState, WORKER_PASSIVATED)) {
+            if (curState != WORKER_ACTIVATING && StateUpd.compareAndSet(this, curState, WORKER_PASSIVATED)) {
                 if (curState == WORKER_WAITING) {
                     LockSupport.unpark(workThread);
                 } else if (mayInterruptIfRunning) {
@@ -94,7 +94,7 @@ abstract class ReactivateWorker implements Runnable {
     public void interrupt() {
         do {
             int curState = state;
-            if (curState == WORKER_PASSIVATED || curState == WORKER_STARTING) break;
+            if (curState == WORKER_PASSIVATED || curState == WORKER_ACTIVATING) break;
 
             if (curState == WORKER_WAITING) {
                 LockSupport.unpark(workThread);
