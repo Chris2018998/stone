@@ -88,6 +88,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     public void run() {
         int spinSize = defaultSpins;
+
         do {
             //1: poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
@@ -110,8 +111,8 @@ final class TaskExecuteWorker extends TaskBucketWorker {
             } else {
                 //3: park work thread
                 if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
-                    Thread.interrupted();//clear interrupted flag
                     int resetState = WORKER_RUNNING;
+                    Thread.interrupted();//clear interrupted flag
                     if (useTimePark) {
                         final long parkStartTime = System.nanoTime();
                         LockSupport.parkNanos(keepAliveTimeNanos);

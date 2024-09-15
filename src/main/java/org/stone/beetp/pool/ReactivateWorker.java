@@ -45,6 +45,13 @@ abstract class ReactivateWorker implements Runnable {
     }
 
     /**
+     * interrupt this worker
+     */
+    public void interrupt() {
+        if (workThread != null) workThread.interrupt();
+    }
+
+    /**
      * active this worker to run
      */
     public void wakeup() {
@@ -60,13 +67,6 @@ abstract class ReactivateWorker implements Runnable {
                 LockSupport.unpark(workThread);
             }
         }
-    }
-
-    /**
-     * interrupt this worker
-     */
-    public void interrupt() {
-        if (workThread != null) workThread.interrupt();
     }
 
     /**

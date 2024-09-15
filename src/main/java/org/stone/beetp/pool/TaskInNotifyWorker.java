@@ -21,19 +21,20 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskInNotifyWorker extends ReactivateWorker {
+
     public TaskInNotifyWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         super(pool, keepAliveTimeNanos, useTimePark, defaultSpins);
     }
 
     public void run() {
         do {
-            //@todo:wake target worker or all workers?
+            //@todo:wakeup target worker or all workers?
             for (TaskExecuteWorker worker : allWorkers)
                 worker.wakeup();
 
             if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
-                Thread.interrupted();//clear interrupted flag
                 int resetState = WORKER_RUNNING;
+                Thread.interrupted();//clear interrupted flag
                 if (useTimePark) {
                     final long parkStartTime = System.nanoTime();
                     LockSupport.parkNanos(keepAliveTimeNanos);
