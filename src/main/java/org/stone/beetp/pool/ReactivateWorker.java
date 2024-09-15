@@ -36,7 +36,7 @@ abstract class ReactivateWorker implements Runnable {
 
     public ReactivateWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         this.pool = pool;
-        this.state = WORKER_INACTIVE;
+        this.state = WORKER_PASSIVATED;
 
         this.useTimePark = useTimePark;
         this.defaultSpins = defaultSpins;
@@ -44,55 +44,64 @@ abstract class ReactivateWorker implements Runnable {
         this.allWorkers = pool.getExecuteWorkers();
     }
 
-    /**
-     * interrupt this worker
-     */
-    public void interrupt() {
-        if (workThread != null) workThread.interrupt();
+    //activate this worker to process tasks
+    public void activate() {
+        do {
+            int curState = state;
+            if (curState == WORKER_RUNNING) break;
+
+            if (curState == WORKER_WAITING) {
+                if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING)) {
+                    LockSupport.unpark(workThread);
+                    return;
+                }
+            } else if (curState == WORKER_PASSIVATED) {
+                if (StateUpd.compareAndSet(this, WORKER_PASSIVATED, WORKER_STARTING)) {
+                    this.workThread = new Thread(this);
+                    this.state = WORKER_RUNNING;
+                    this.workThread.start();
+                    return;
+                }
+            }
+        } while (true);
     }
 
     /**
-     * active this worker to run
-     */
-    public void wakeup() {
-        int curState = state;
-        if (curState == WORKER_INACTIVE) {
-            if (StateUpd.compareAndSet(this, WORKER_INACTIVE, WORKER_STARTING)) {
-                this.workThread = new Thread(this);
-                this.state = WORKER_RUNNING;
-                this.workThread.start();
-            }
-        } else if (curState == WORKER_WAITING) {
-            if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING)) {
-                LockSupport.unpark(workThread);
-            }
-        }
-    }
-
-    /**
-     * terminate this worker and make it to be in inactive state
+     * passivate this worker and make it to be in passivated state
      *
      * @param mayInterruptIfRunning is true then attempt to interrupt worker thread if in blocking
      * @return true when successful;otherwise return false
      */
-    public boolean terminate(boolean mayInterruptIfRunning) {
+    public boolean passivate(boolean mayInterruptIfRunning) {
         do {
             int curState = this.state;
-            if (curState == WORKER_INACTIVE) return false;
+            if (curState == WORKER_PASSIVATED) return false;
+
+            if (curState != WORKER_STARTING && StateUpd.compareAndSet(this, curState, WORKER_PASSIVATED)) {
+                if (curState == WORKER_WAITING) {
+                    LockSupport.unpark(workThread);
+                } else if (mayInterruptIfRunning) {
+                    workThread.interrupt();
+                }
+                return true;
+            }
+        } while (true);
+    }
+
+    /**
+     * interrupt this worker
+     */
+    public void interrupt() {
+        do {
+            int curState = state;
+            if (curState == WORKER_PASSIVATED || curState == WORKER_STARTING) break;
 
             if (curState == WORKER_WAITING) {
-                if (StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE)) {
-                    LockSupport.unpark(workThread);
-                    return true;
-                }
-            } else if (mayInterruptIfRunning) {
-                Thread.State threadState = workThread.getState();
-                if (threadState == Thread.State.WAITING || threadState == Thread.State.TIMED_WAITING) {
-                    workThread.interrupt();
-                    return workThread.isInterrupted();
-                }
-            } else {
-                return false;
+                LockSupport.unpark(workThread);
+                break;
+            } else if (curState == WORKER_RUNNING) {
+                this.workThread.interrupt();
+                break;
             }
         } while (true);
     }

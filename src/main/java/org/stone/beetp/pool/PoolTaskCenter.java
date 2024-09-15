@@ -160,9 +160,9 @@ public final class PoolTaskCenter implements TaskPool {
 
         //2: Notify one worker or all workers
         if (taskCount.get() < fullWorkTaskSize) {
-            worker.wakeup();
+            worker.activate();
         } else {//@todo need set a threshold?
-            notifyWorker.wakeup();
+            notifyWorker.activate();
         }
     }
 
@@ -269,7 +269,7 @@ public final class PoolTaskCenter implements TaskPool {
     private TaskPoolTerminatedVo removeAll(boolean mayInterruptIfRunning) {
         List<PoolTaskHandle<?>> unCompletedHandleList = scheduleWorker.getUnCompletedTasks();
         for (TaskExecuteWorker worker : executeWorkers) {
-            worker.terminate(mayInterruptIfRunning);
+            worker.passivate(mayInterruptIfRunning);
         }
         return null;//@todo to be implemented
     }
@@ -288,9 +288,9 @@ public final class PoolTaskCenter implements TaskPool {
         if (PoolStateUpd.compareAndSet(this, POOL_RUNNING, POOL_TERMINATING)) {
             TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
 
-            scheduleWorker.terminate(mayInterruptIfRunning);
+            scheduleWorker.passivate(mayInterruptIfRunning);
             for (TaskExecuteWorker worker : executeWorkers)
-                worker.terminate(mayInterruptIfRunning);
+                worker.passivate(mayInterruptIfRunning);
 
             for (Thread thread : poolTerminateWaitQueue)
                 LockSupport.unpark(thread);

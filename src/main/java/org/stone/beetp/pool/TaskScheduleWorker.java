@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.stone.beetp.pool.PoolConstants.WORKER_INACTIVE;
+import static org.stone.beetp.pool.PoolConstants.WORKER_PASSIVATED;
 import static org.stone.beetp.pool.PoolConstants.WORKER_RUNNING;
 
 /**
@@ -82,7 +82,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         //step2: if insertion index is zero,then wakeup work thread to pick it or wait it util expired
         if (insertPos == 0) {
             int curState = state;
-            if (curState == WORKER_INACTIVE && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
+            if (curState == WORKER_PASSIVATED && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
                 this.workThread = new Thread(this);
                 this.workThread.start();
             } else {
@@ -153,7 +153,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     public void run() {//poll expired tasks and push them to execute workers
         do {
             //1: check worker state,if dead then exit from loop
-            if (state == WORKER_INACTIVE) {
+            if (state == WORKER_PASSIVATED) {
                 this.workThread = null;
                 break;
             }

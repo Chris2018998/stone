@@ -30,7 +30,7 @@ final class TaskInNotifyWorker extends ReactivateWorker {
         do {
             //@todo:wakeup target worker or all workers?
             for (TaskExecuteWorker worker : allWorkers)
-                worker.wakeup();
+                worker.activate();
 
             if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
                 int resetState = WORKER_RUNNING;
@@ -38,16 +38,16 @@ final class TaskInNotifyWorker extends ReactivateWorker {
                 if (useTimePark) {
                     final long parkStartTime = System.nanoTime();
                     LockSupport.parkNanos(keepAliveTimeNanos);
-                    if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_INACTIVE;
+                    if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_PASSIVATED;
                 } else {
                     LockSupport.park();
                 }
 
                 //reset state
-                if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_INACTIVE) {
+                if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED) {
                     break;
                 }
             }
-        } while (state != WORKER_INACTIVE);
+        } while (state != WORKER_PASSIVATED);
     }
 }

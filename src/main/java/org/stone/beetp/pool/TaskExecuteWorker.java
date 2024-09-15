@@ -116,19 +116,19 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                     if (useTimePark) {
                         final long parkStartTime = System.nanoTime();
                         LockSupport.parkNanos(keepAliveTimeNanos);
-                        if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_INACTIVE;
+                        if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_PASSIVATED;
                     } else {
                         LockSupport.park();
                     }
 
                     //reset state
-                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_INACTIVE) {
+                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED) {
                         break;
                     }
                 }
 
                 spinSize = defaultSpins;//reset spin size to default
             }
-        } while (state != WORKER_INACTIVE);
+        } while (state != WORKER_PASSIVATED);
     }
 }

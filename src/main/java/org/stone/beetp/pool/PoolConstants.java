@@ -24,8 +24,8 @@ public class PoolConstants {
     public static final int POOL_TERMINATING = 4;
     public static final int POOL_TERMINATED = 5;
 
-    //a state of worker is dead
-    public static final int WORKER_INACTIVE = 0;
+    //a state of worker is passivated
+    public static final int WORKER_PASSIVATED = 0;
     //a state of worker in initializing
     public static final int WORKER_STARTING = 1;
     //a state of worker in working
