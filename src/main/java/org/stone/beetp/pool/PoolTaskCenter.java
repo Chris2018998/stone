@@ -43,6 +43,7 @@ public final class PoolTaskCenter implements TaskPool {
     //count of tasks in pool,its value =count of once tasks + count of scheduled tasks + root count of joined tasks
     private AtomicInteger taskCount;
 
+    //size of pool workers
     private int executionWorkerSize;
     //base hash value for computing index of buckets
     private int maxSeqOfWorkerArray;
@@ -139,22 +140,22 @@ public final class PoolTaskCenter implements TaskPool {
         int curCount;
         do {
             curCount = taskCount.get();
-            if (curCount == maxTaskSize) throw new TaskRejectedException("Pool task capacity has full");
+            if (curCount == maxTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
         } while (!taskCount.compareAndSet(curCount, curCount + 1));
     }
 
     //push a task handle to execution worker
     void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
-        //1: compute array index by hash
-        int threadHashCode = Thread.currentThread().hashCode();
+        //1: compute index of worker array and push task
+        int threadHashCode = (int) Thread.currentThread().getId();
         int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
         TaskExecuteWorker worker = this.executeWorkers[arrayIndex];
         worker.put(taskHandle);//push this task to worker
 
-        //2: wake up worker or all workers
+        //2: Notify one worker or all workers
         if (taskCount.get() < this.executionWorkerSize) {
             worker.wakeup();
-        } else {//wake up all workers
+        } else {
             notifyWorker.wakeup();
         }
     }
