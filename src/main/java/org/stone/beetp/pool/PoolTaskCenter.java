@@ -152,8 +152,8 @@ public final class PoolTaskCenter implements TaskPool {
         TaskExecuteWorker worker = this.executeWorkers[arrayIndex];
         worker.put(taskHandle);//push this task to worker
 
-        //2: Notify one worker or all workers
-        if (taskCount.get() < this.executionWorkerSize) {
+        //2: Notify one worker or all workers,
+        if (taskCount.get() < this.executionWorkerSize) {//@todo: need more thinking
             worker.wakeup();
         } else {
             notifyWorker.wakeup();

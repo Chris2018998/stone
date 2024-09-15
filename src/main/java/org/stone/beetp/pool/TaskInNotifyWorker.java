@@ -27,20 +27,26 @@ final class TaskInNotifyWorker extends ReactivateWorker {
 
     public void run() {
         do {
+            //@todo:wake target worker or all workers?
             for (TaskExecuteWorker worker : allWorkers)
                 worker.wakeup();
 
-            this.state = WORKER_WAITING;
-            boolean parkTimeout = false;
-            if (useTimePark) {
-                long parkStartTime = System.nanoTime();
-                LockSupport.parkNanos(keepAliveTimeNanos);
-                parkTimeout = System.nanoTime() - parkStartTime >= keepAliveTimeNanos;
-            } else {
-                LockSupport.park();
-            }
+            if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
+                Thread.interrupted();//clear interrupted flag
+                int resetState = WORKER_RUNNING;
+                if (useTimePark) {
+                    final long parkStartTime = System.nanoTime();
+                    LockSupport.parkNanos(keepAliveTimeNanos);
+                    if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_INACTIVE;
+                } else {
+                    LockSupport.park();
+                }
 
-            StateUpd.compareAndSet(this, WORKER_WAITING, parkTimeout ? WORKER_INACTIVE : WORKER_RUNNING);
+                //reset state
+                if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_INACTIVE) {
+                    break;
+                }
+            }
         } while (state != WORKER_INACTIVE);
     }
 }

@@ -101,29 +101,32 @@ final class TaskExecuteWorker extends TaskBucketWorker {
             //2: proccess the polled task
             if (handle != null) {
                 this.processingHandle = handle;
-                spinSize = defaultSpins;
-                Thread.interrupted();
-                handle.executeTask(this);
+                Thread.interrupted();//clear interrupted flag
+                handle.executeTask(this);//not throws exceptions
                 this.processingHandle = null;
+                spinSize = defaultSpins;
             } else if (spinSize > 0) {
                 spinSize--;
             } else {
                 //3: park work thread
-                spinSize = defaultSpins;
                 if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
-                    Thread.interrupted();
+                    Thread.interrupted();//clear interrupted flag
+                    int resetState = WORKER_RUNNING;
                     if (useTimePark) {
                         final long parkStartTime = System.nanoTime();
                         LockSupport.parkNanos(keepAliveTimeNanos);
-                        if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos && StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_INACTIVE))
-                            break;
+                        if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_INACTIVE;
                     } else {
                         LockSupport.park();
                     }
 
-                    //4: set running state
-                    if (state == WORKER_WAITING) StateUpd.compareAndSet(this, WORKER_WAITING, WORKER_RUNNING);
+                    //reset state
+                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_INACTIVE) {
+                        break;
+                    }
                 }
+
+                spinSize = defaultSpins;//reset spin size to default
             }
         } while (state != WORKER_INACTIVE);
     }
