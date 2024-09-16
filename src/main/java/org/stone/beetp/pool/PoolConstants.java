@@ -26,7 +26,7 @@ public class PoolConstants {
 
     //a state of worker is passivated
     public static final int WORKER_PASSIVATED = 0;
-    //a state of worker in activating state
+    //a state of worker in activating
     public static final int WORKER_ACTIVATING = 1;
     //a state of worker in working
     public static final int WORKER_RUNNING = 2;

@@ -75,13 +75,13 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    protected void beforeExecute() {
+    private void beforeExecute() {
     }
 
     private void afterExecute(TaskExecuteWorker worker) {
     }
 
-    protected Object invokeTaskCall() throws Exception {
+    private Object invokeTaskCall() throws Exception {
         return task.join(null);
     }
 

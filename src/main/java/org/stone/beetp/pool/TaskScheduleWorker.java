@@ -15,11 +15,10 @@ import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static org.stone.beetp.pool.PoolConstants.WORKER_PASSIVATED;
-import static org.stone.beetp.pool.PoolConstants.WORKER_RUNNING;
+import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
- * Pool task schedule worker
+ * Pool worker to schedule timed tasks.
  *
  * @author Chris Liao
  * @version 1.0
@@ -27,7 +26,9 @@ import static org.stone.beetp.pool.PoolConstants.WORKER_RUNNING;
 
 final class TaskScheduleWorker extends TaskBucketWorker {
     private final ReentrantLock lockOfHandles;
+    //count of handles in below array
     private int countOfHandles;
+    //an array of scheduled task handles
     private PoolTimedTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(PoolTaskCenter pool) {
@@ -40,13 +41,14 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     //                                            1: bucket methods(4)                                               //
     //***************************************************************************************************************//
     public void put(PoolTaskHandle<?> taskHandle) {
-        //1: insert given handle to array
+        int insertPos = -1;
+        taskHandle.setTaskBucket(this);
         PoolTimedTaskHandle<?> handle = (PoolTimedTaskHandle<?>) taskHandle;
-        int insertPos = -1;//insertion pos in array
 
         try {
             //acquire lock of array
             lockOfHandles.lock();
+
             //create a new array if full
             if (handles.length == countOfHandles) {
                 int newCapacity = countOfHandles + (countOfHandles < 64 ? countOfHandles + 2 : countOfHandles >> 1);
@@ -64,7 +66,6 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                     break;
                 }
             }
-
             //move handles backward
             if (insertPos == -1) insertPos = 0;
             if (insertPos <= maxSeq)
@@ -72,22 +73,21 @@ final class TaskScheduleWorker extends TaskBucketWorker {
 
             //put handle to pos of array
             handles[insertPos] = handle;
-
             //increase count of tasks
             countOfHandles++;
+
+            //if insertion pos is at first,then wake up work thread
+            if (insertPos == 0) {
+                if (this.state == WORKER_PASSIVATED) {
+                    this.workThread = new Thread(this);
+                    this.state = WORKER_RUNNING;
+                    this.workThread.start();
+                } else {
+                    LockSupport.unpark(workThread);
+                }
+            }
         } finally {
             lockOfHandles.unlock();//unlock
-        }
-
-        //step2: if insertion index is zero,then wakeup work thread to pick it or wait it util expired
-        if (insertPos == 0) {
-            int curState = state;
-            if (curState == WORKER_PASSIVATED && StateUpd.compareAndSet(this, curState, WORKER_RUNNING)) {
-                this.workThread = new Thread(this);
-                this.workThread.start();
-            } else {
-                LockSupport.unpark(workThread);
-            }
         }
     }
 
@@ -101,8 +101,8 @@ final class TaskScheduleWorker extends TaskBucketWorker {
 
     public void remove(PoolTaskHandle<?> taskHandle) {
         int pos = -1;
-        lockOfHandles.lock();//lock of handles array
         try {
+            lockOfHandles.lock();//lock of handles array
             final int maxSeq = countOfHandles - 1;
             for (int i = maxSeq; i >= 0; i--) {//from tail to head
                 if (taskHandle == handles[i]) {
@@ -122,27 +122,6 @@ final class TaskScheduleWorker extends TaskBucketWorker {
         if (pos == 0) LockSupport.unpark(workThread);
     }
 
-    public Object pollExpiredHandle() {
-        lockOfHandles.lock();
-        try {
-            if (countOfHandles == 0) return -1L;
-            PoolTimedTaskHandle<?> handle = handles[0];
-
-            //if first handle not expired,then return the
-            long remainTime = handle.getNextTime() - System.nanoTime();
-            if (remainTime > 0) return remainTime;//nanoseconds
-
-            final int maxSeq = countOfHandles - 1;
-            System.arraycopy(handles, 1, handles, 0, maxSeq);
-            handles[maxSeq] = null;
-            this.countOfHandles--;
-
-            return handle;
-        } finally {
-            lockOfHandles.unlock();
-        }
-    }
-
     public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
         return false;
     }
@@ -150,37 +129,46 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     //                                            2: core method to process tasks                                    //
     //***************************************************************************************************************//
-    public void run() {//poll expired tasks and push them to execute workers
+    public void run() {
+        long parkTimeForFirstHandle;
+        PoolTimedTaskHandle<?> firstHandle;
+
         do {
-            //1: check worker state,if dead then exit from loop
-            if (state == WORKER_PASSIVATED) {
-                this.workThread = null;
-                break;
-            }
-            //2: clear interrupted flag of this worker thread if it exists
-            if (workThread.isInterrupted() && Thread.interrupted()) {
-                //no code here
+            firstHandle = null;
+            parkTimeForFirstHandle = 0L;
+
+            //1:poll out first hande if expired
+            try {
+                lockOfHandles.lock();
+                if (countOfHandles > 0) {
+                    parkTimeForFirstHandle = handles[0].getNextTime() - System.nanoTime();
+                    if (parkTimeForFirstHandle < 0L) {//expired,then poll it from array
+                        firstHandle = handles[0];
+                        final int maxSeq = countOfHandles - 1;
+                        System.arraycopy(handles, 1, handles, 0, maxSeq);//move forward
+                        handles[maxSeq] = null;
+                        this.countOfHandles--;
+                    }
+                }
+            } finally {
+                lockOfHandles.unlock();
             }
 
-            //3: poll expired timed task
-            Object polledObject = this.pollExpiredHandle();
-
-            //4: if polled object is expired schedule task
-            if (polledObject instanceof PoolTimedTaskHandle) {
-                PoolTimedTaskHandle<?> taskHandle = (PoolTimedTaskHandle<?>) polledObject;
-                if (taskHandle.isWaiting())
-                    pool.pushToExecuteWorker(taskHandle);
+            //2: process handle if first handle is not null
+            if (firstHandle != null) {
+                if (firstHandle.isWaiting())
+                    pool.pushToExecuteWorker(firstHandle, true);
                 else
                     pool.getTaskCount().decrementAndGet();
-            } else {
-                Long time = (Long) polledObject;
-                if (time > 0L) {
-                    LockSupport.parkNanos(time);
-                } else {
-                    LockSupport.park();
-                }
+            } else if (parkTimeForFirstHandle > 0L) {//park work thread with specified time
+                LockSupport.parkNanos(parkTimeForFirstHandle);
+            } else {//if no timed task,then park
+                LockSupport.park();
             }
-        } while (true);
+        } while (pool.getPoolState() == POOL_RUNNING);
+
+        //set worker state to passivated
+        this.state = WORKER_PASSIVATED;
     }
 }
 

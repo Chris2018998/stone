@@ -31,21 +31,21 @@ import static org.stone.beetp.pool.PoolConstants.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class PoolTaskHandle<V> implements TaskHandle<V> {
+class PoolTaskHandle<V> implements TaskHandle<V> {
     private static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
+    protected final PoolTaskCenter pool;
     private final Task<V> task;
     private final boolean isRoot;
-    private final PoolTaskCenter pool;
 
+    //owner bucket contains this handle
+    protected TaskBucketWorker taskBucket;
     //it may be a completion result or a fail exception,this due to state value
-    private Object result;
+    protected Object result;
     //task state(if it is an execution worker,that means in running)
-    private volatile Object state = TASK_WAITING;
+    protected volatile Object state = TASK_WAITING;
 
     //aspect around call
     private TaskAspect<V> callAspect;
-    //owner bucket contains this handle
-    private TaskBucketWorker taskBucket;
     //store waiters for call result
     private ConcurrentLinkedQueue<Thread> waitQueue;
 
@@ -199,13 +199,9 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
     //                              6: task execution(3)                                                             //
     //***************************************************************************************************************//
     //this method can override
-    protected void beforeExecute() {
-
-    }
-
-    //this method can override
     protected void afterExecute() {
         pool.getTaskCount().decrementAndGet();
+        taskBucket.incrementCompletedCount();
     }
 
     /**
@@ -218,48 +214,22 @@ public class PoolTaskHandle<V> implements TaskHandle<V> {
         boolean succeed = true;//assume call success
 
         try {
-            //1: call beforeExecute method
-            this.beforeExecute();
-            //2: execute beforeCall method of aspect
+            //1: execute beforeCall method of aspect
             if (callAspect != null)
                 callAspect.beforeCall(this);
-            //3: execute call of task(** key step **)
-            result = this.invokeTaskCall();
+            //2: execute call of task(** key step **)
+            result = task.call();
         } catch (Throwable e) {
             succeed = false;
             result = new TaskExecutionException(e);
         } finally {
-            //4: fill result and wakeup waiters if exists
+            //3: fill result and wakeup waiters if exists
             this.fillTaskResult(succeed ? TASK_SUCCEED : TASK_FAILED, result);
-
-            //5: call afterExecute method
+            //4: call afterExecute method
             this.afterExecute();
-
-            //6: execute afterCall method of aspect
+            //5: execute afterCall method of aspect
             if (callAspect != null)
                 callAspect.afterCall(succeed, result, this);
         }
     }
-
-    //***************************************************************************************************************//
-    //                              7: others                                                                        //
-    //***************************************************************************************************************//
-    void afterSetResult(int state, Object result) {
-    }
-
-    Object invokeTaskCall() throws Exception {
-        return task.call();
-    }
-
-//        //2: execute callAspect
-//        if (this.callAspect != null) {
-//            try {
-//                this.callAspect.afterCall(state, result, this);
-//            } catch (final Throwable e) {
-//                System.err.println("Failed to execute callAspect.afterCall");
-//            }
-//        }
-//
-//        //3: plugin method call
-//        this.afterSetResult(state, result);
 }

@@ -51,10 +51,10 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      * @param taskHandle is a handle passed from pool
      */
     public void put(PoolTaskHandle<?> taskHandle) {
-        //1: offer task handle to queue
-        taskQueue.offer(taskHandle);
-        //2: set this worker to task handle as owner bucket
+        //1: set this worker to task handle as owner bucket
         taskHandle.setTaskBucket(this);
+        //2: offer task handle to queue
+        taskQueue.offer(taskHandle);
     }
 
     /**

@@ -72,7 +72,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    protected void beforeExecute() {
+    private void beforeExecute() {
     }
 
     protected void afterExecute() {

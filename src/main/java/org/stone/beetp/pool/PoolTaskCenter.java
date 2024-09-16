@@ -40,12 +40,8 @@ public final class PoolTaskCenter implements TaskPool {
 
     //max capacity of pool tasks
     private int maxTaskSize;
-    //task size of full work
-    private int fullWorkTaskSize;
-
     //count of tasks in pool,its value =count of once tasks + count of scheduled tasks + root count of joined tasks
     private AtomicInteger taskCount;
-
     //size of pool workers
     private int executionWorkerSize;
     //base hash value for computing index of buckets
@@ -54,7 +50,6 @@ public final class PoolTaskCenter implements TaskPool {
     private TaskInNotifyWorker notifyWorker;
     //an array of execution workers,it has fixed length
     private TaskExecuteWorker[] executeWorkers;
-
 
     //a worker to schedule timed tasks
     private TaskScheduleWorker scheduleWorker;
@@ -81,7 +76,6 @@ public final class PoolTaskCenter implements TaskPool {
 
     private void startup(TaskServiceConfig config) {
         this.maxTaskSize = config.getMaxTaskSize();
-        this.fullWorkTaskSize = config.getFullWorkTaskSize();
         this.taskCount = new AtomicInteger();
         this.monitorVo = new PoolMonitorVo();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
@@ -110,7 +104,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkSubmittedTask(task);
 
         PoolTaskHandle<V> handle = new PoolTaskHandle<>(task, aspect, this, true);
-        this.pushToExecuteWorker(handle);
+        this.pushToExecuteWorker(handle, false);
         return handle;
     }
 
@@ -123,7 +117,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkSubmittedTask(task);
 
         PoolTaskHandle<V> handle = new JoinTaskHandle<>(task, operator, aspect, this);
-        this.pushToExecuteWorker(handle);
+        this.pushToExecuteWorker(handle, false);
         return handle;
     }
 
@@ -135,7 +129,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkSubmittedTask(task);
 
         TreeLayerTaskHandle<V> handle = new TreeLayerTaskHandle<>(task, aspect, this);
-        this.pushToExecuteWorker(handle);
+        this.pushToExecuteWorker(handle, false);
         return handle;
     }
 
@@ -151,18 +145,35 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //push a task handle to execution worker
-    void pushToExecuteWorker(PoolTaskHandle<?> taskHandle) {
-        //1: compute index of worker array and push task
-        int threadHashCode = (int) Thread.currentThread().getId();
-        int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
-        TaskExecuteWorker worker = this.executeWorkers[arrayIndex];
-        worker.put(taskHandle);//push this task to worker
+    void pushToExecuteWorker(PoolTaskHandle<?> taskHandle, boolean isTimedTask) {
+        if (isTimedTask) {//schedule worker work under a single thread
+            TaskExecuteWorker targetWorker = null;
+            for (TaskExecuteWorker worker : executeWorkers) {
+                if (!worker.isRunning()) {//waiting worker or passivated worker is priority selection
+                    targetWorker = worker;
+                    break;
+                }
+            }
+            if (targetWorker == null) {
+                int threadHashCode = taskHandle.hashCode();
+                int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
+                targetWorker = this.executeWorkers[arrayIndex];
+            }
+            targetWorker.put(taskHandle);
+            targetWorker.activate();
+        } else {
+            //1: compute index of worker array to store task
+            int threadHashCode = (int) Thread.currentThread().getId();
+            int arrayIndex = this.maxSeqOfWorkerArray & (threadHashCode ^ (threadHashCode >>> 16));
+            TaskExecuteWorker worker = this.executeWorkers[arrayIndex];
+            worker.put(taskHandle);//push this task to worker
 
-        //2: Notify one worker or all workers
-        if (taskCount.get() < fullWorkTaskSize) {
-            worker.activate();
-        } else {//@todo need set a threshold?
-            notifyWorker.activate();
+            //2: Notify one worker or all workers
+            if (taskCount.get() < executionWorkerSize) {
+                worker.activate();
+            } else {
+                notifyWorker.activate();
+            }
         }
     }
 
@@ -216,6 +227,10 @@ public final class PoolTaskCenter implements TaskPool {
     //***************************************************************************************************************//
     //                                    4: some query methods(5+4)                                                 //
     //***************************************************************************************************************//
+    int getPoolState() {
+        return this.poolState;
+    }
+
     AtomicInteger getTaskCount() {
         return taskCount;
     }

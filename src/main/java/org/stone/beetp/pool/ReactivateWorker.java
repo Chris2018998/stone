@@ -44,7 +44,16 @@ abstract class ReactivateWorker implements Runnable {
         this.allWorkers = pool.getExecuteWorkers();
     }
 
-    //activate this worker to process tasks
+    /**
+     * Query worker state is whether in running
+     *
+     * @return true that worker is running
+     */
+    public boolean isRunning() {
+        return state == WORKER_RUNNING;
+    }
+
+    //activate this worker to work
     public void activate() {
         do {
             int curState = state;
@@ -94,14 +103,14 @@ abstract class ReactivateWorker implements Runnable {
     public void interrupt() {
         do {
             int curState = state;
-            if (curState == WORKER_PASSIVATED || curState == WORKER_ACTIVATING) break;
+            if (curState == WORKER_PASSIVATED || curState == WORKER_ACTIVATING) return;
 
             if (curState == WORKER_WAITING) {
                 LockSupport.unpark(workThread);
-                break;
+                return;
             } else if (curState == WORKER_RUNNING) {
                 this.workThread.interrupt();
-                break;
+                return;
             }
         } while (true);
     }
