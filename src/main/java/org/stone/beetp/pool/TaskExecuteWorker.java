@@ -25,7 +25,7 @@ import static org.stone.beetp.pool.PoolConstants.*;
 
 final class TaskExecuteWorker extends TaskBucketWorker {
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
-    private volatile PoolTaskHandle<?> processingHandle;
+    private PoolTaskHandle<?> processingHandle;
 
     public TaskExecuteWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         super(pool, keepAliveTimeNanos, useTimePark, defaultSpins);
@@ -41,7 +41,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      *
      * @return handle in processing,if not,then return null
      */
-    public PoolTaskHandle getProcessingHandle() {
+    public PoolTaskHandle<?> getProcessingHandle() {
         return processingHandle;
     }
 
@@ -51,10 +51,19 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      * @param taskHandle is a handle passed from pool
      */
     public void put(PoolTaskHandle<?> taskHandle) {
-        //1: set this worker to task handle as owner bucket
         taskHandle.setTaskBucket(this);
-        //2: offer task handle to queue
         taskQueue.offer(taskHandle);
+    }
+
+    /**
+     * Pool push a list of task handles
+     *
+     * @param handleList is a handle passed from pool
+     */
+    public void put(List<PoolTaskHandle<?>> handleList) {
+        for (PoolTaskHandle<?> handle : handleList)
+            handle.setTaskBucket(this);
+        taskQueue.addAll(handleList);
     }
 
     /**
@@ -76,8 +85,8 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      * cancel a given task from this worker
      *
      * @param taskHandle            to be cancelled
-     * @param mayInterruptIfRunning is true that interrupt blocking in execupting if exists
-     * @return true cancel succesful
+     * @param mayInterruptIfRunning is true that interrupt blocking in executing if exists
+     * @return true cancel successful
      */
     public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
         return true;//@todo to be implemented
@@ -99,11 +108,13 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 }
             }
 
-            //2: proccess the polled task
+            //2: process the polled task
             if (handle != null) {
                 this.processingHandle = handle;
-                Thread.interrupted();//clear interrupted flag
-                handle.executeTask(this);//not throws exceptions
+                if (handle.setRunWorker(this)) {
+                    Thread.interrupted();//clear interrupted flag
+                    handle.executeTask();
+                }
                 this.processingHandle = null;
                 spinSize = defaultSpins;
             } else if (spinSize > 0) {
@@ -122,11 +133,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                     }
 
                     //reset state
-                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED) {
+                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED)
                         break;
-                    }
                 }
-
                 spinSize = defaultSpins;//reset spin size to default
             }
         } while (state != WORKER_PASSIVATED);

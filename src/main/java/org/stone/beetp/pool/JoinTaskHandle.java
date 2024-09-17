@@ -12,9 +12,15 @@ package org.stone.beetp.pool;
 import org.stone.beetp.Task;
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TaskJoinOperator;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
+import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
 
 /**
  * join task handle impl
@@ -24,14 +30,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     private final TaskJoinOperator<V> operator;
-    //3: fields of child task
     JoinTaskHandle<V> root;
 
-    //1: field of root
-    private AtomicBoolean exceptionInd;
-    private JoinTaskHandle<V>[] subTaskHandles;
     private JoinTaskHandle<V> parent;
-    private AtomicInteger countDown;//the complete count of sub tasks.
+    private AtomicBoolean exceptionInd;
+
+    private JoinTaskHandle<V>[] subTaskHandles;
+    private AtomicInteger completedDownOfSubTask;//the complete count of subtasks.
 
     //***************************************************************************************************************//
     //                                          1: Constructor(2)                                                    //                                                                                  //
@@ -49,7 +54,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
         this.root = root;
         this.parent = parent;
         this.operator = operator;
-        this.countDown = countDown;
+        this.completedDownOfSubTask = countDown;
     }
 
     //***************************************************************************************************************//
@@ -60,9 +65,9 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
 
         if (subTaskHandles != null) {
             if (this.isRoot()) {
-                new AsynJoinCancelThread(root.subTaskHandles, mayInterruptIfRunning).start();
+                new AsynJoinCancelThread<>(root.subTaskHandles, mayInterruptIfRunning).start();
             } else {
-                for (JoinTaskHandle childHandle : subTaskHandles)
+                for (JoinTaskHandle<V> childHandle : subTaskHandles)
                     childHandle.cancel(mayInterruptIfRunning);
             }
         }
@@ -72,74 +77,60 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    private void beforeExecute() {
-    }
+    protected void executeTask() {
+        Task<V>[] subTasks = operator.split(this.task);
+        if (subTasks != null && subTasks.length > 0) {
+            JoinTaskHandle<V> root = isRoot() ? this : this.root;
+            List<PoolTaskHandle<?>> handleList = new LinkedList<>();
+            AtomicInteger completedDownOfSubTask = new AtomicInteger(subTasks.length);
 
-    protected void afterExecute() {
+            for (Task<V> subTask : subTasks)
+                handleList.add(new JoinTaskHandle<>(subTask, this, completedDownOfSubTask, operator, pool, root));
 
-    }
-
-    private void executeTask() {
-//        //1: try to split current task into sub tasks
-//        Task[] subTasks = operator.split(this.task);
-//
-//        //2: push sub tasks to execute queue
-//        if (subTasks != null && subTasks.length > 0) {
-//            int subSize = subTasks.length;
-//            JoinTaskHandle root = isRoot() ? this : this.root;
-//            this.subTaskHandles = new JoinTaskHandle[subSize];//current task is parent
-//            AtomicInteger countDown = new AtomicInteger(subSize);
-//            Queue<PoolTaskHandle> workQueue = worker.workQueue;
-//
-//            for (int i = 0; i < subSize; i++) {
-//                subTaskHandles[i] = new JoinTaskHandle(subTasks[i], this, countDown, operator, pool, root);
-//                pool.pushToExecutionQueue(subTaskHandles[i], workQueue);
-//            }
-//
-//            //pool.wakeupStealWorkers(subSize);
-//        } else {//4: execute leaf task
-//            super.executeTask(worker);
-//        }
+            ((TaskExecuteWorker) this.state).put(handleList);
+        } else {//4: execute leaf task
+            super.executeTask();
+        }
     }
 
     //***************************************************************************************************************//
     //                                  5: result method                                                             //
     //***************************************************************************************************************//
-    void afterSetResult(final int state, final Object result) {
-//        if (countDown == null) return;
-//
-//        if (state == TASK_EXEC_EXCEPTION) {
-//            this.handleSubTaskException(result);
-//        } else {
-//            do {
-//                int currentSize = countDown.get();
-//                if (currentSize == 0) break;
-//                if (countDown.compareAndSet(currentSize, currentSize - 1)) {
-//                    if (currentSize == 1) {
-//                        try {
-//                            parent.setResult(TASK_EXEC_RESULT, operator.join(parent.subTaskHandles));//join children
-//                            if (parent.isRoot) {
-//                                pool.getTaskCount().decrementAndGet();
-//                                ((TaskExecuteWorker) Thread.currentThread()).completedCount++;
-//                            }
-//                        } catch (Throwable e) {
-//                            this.handleSubTaskException(new TaskExecutionException(e));
-//                        }
-//                    }
-//                    break;
-//                }
-//            } while (true);
-//        }
+    protected void afterExecute(boolean successful, Object result) {
+        if (completedDownOfSubTask == null) return;
+
+        if (successful) {
+            do {
+                int currentSize = completedDownOfSubTask.get();
+                if (currentSize == 0) break;
+                if (completedDownOfSubTask.compareAndSet(currentSize, currentSize - 1)) {
+                    if (currentSize == 1) {
+                        try {
+                            parent.fillTaskResult(TASK_SUCCEED, operator.join(parent.subTaskHandles));//join children
+                            if (parent.isRoot()) {
+                                pool.getTaskCount().decrementAndGet();
+                                // ((TaskExecuteWorker) Thread.currentThread()).incrementCompletedCount();
+                            }
+                        } catch (Throwable e) {
+                            this.handleSubTaskException(new TaskExecutionException(e));
+                        }
+                    }
+                    break;
+                }
+            } while (true);
+        } else {
+            this.handleSubTaskException(result);
+        }
     }
 
     private void handleSubTaskException(Object result) {
-//        if (root.exceptionInd.compareAndSet(false, true)) {
-//            root.setResult(TASK_EXEC_EXCEPTION, result);
-//            pool.getTaskCount().decrementAndGet();
-//            ((TaskExecuteWorker) Thread.currentThread()).completedCount++;
-//
-//            new AsynJoinCancelThread(root.subTaskHandles, true).start();
-//        }
+        if (root.exceptionInd.compareAndSet(false, true)) {
+            root.fillTaskResult(TASK_FAILED, result);
+            pool.getTaskCount().decrementAndGet();
+            //((TaskExecuteWorker) Thread.currentThread()).incrementCompletedCount();
+
+            new AsynJoinCancelThread<V>(root.subTaskHandles, true).start();
+        }
     }
 
     private static class AsynJoinCancelThread<V> extends Thread {

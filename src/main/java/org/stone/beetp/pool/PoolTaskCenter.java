@@ -40,7 +40,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     //max capacity of pool tasks
     private int maxTaskSize;
-    //count of tasks in pool,its value =count of once tasks + count of scheduled tasks + root count of joined tasks
+    //count of tasks in pool,its value=count of once tasks + count of scheduled tasks + root count of joined tasks
     private AtomicInteger taskCount;
     //size of pool workers
     private int executionWorkerSize;
@@ -172,9 +172,14 @@ public final class PoolTaskCenter implements TaskPool {
             if (taskCount.get() < executionWorkerSize) {
                 worker.activate();
             } else {
-                notifyWorker.activate();
+
             }
         }
+    }
+
+    void wakeupAllWorkers() {
+
+
     }
 
     //***************************************************************************************************************//

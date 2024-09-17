@@ -74,7 +74,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
     //***************************************************************************************************************//
     //                              3: execute task                                                                  //
     //***************************************************************************************************************//
-    protected void afterExecute() {
+    private void afterExecute() {
         if (this.isPeriodic()) {
             this.lastExecutedState = this.state;
             this.lastExecutedResult = this.result;

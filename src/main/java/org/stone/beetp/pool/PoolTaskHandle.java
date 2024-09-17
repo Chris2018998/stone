@@ -34,30 +34,26 @@ import static org.stone.beetp.pool.PoolConstants.*;
 class PoolTaskHandle<V> implements TaskHandle<V> {
     private static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
     protected final PoolTaskCenter pool;
-    private final Task<V> task;
+    protected final Task<V> task;
     private final boolean isRoot;
+    private final TaskAspect<V> callAspect;
+    private final ConcurrentLinkedQueue<Thread> waitQueue;
 
-    //owner bucket contains this handle
-    protected TaskBucketWorker taskBucket;
     //it may be a completion result or a fail exception,this due to state value
     protected Object result;
     //task state(if it is an execution worker,that means in running)
-    protected volatile Object state = TASK_WAITING;
-
-    //aspect around call
-    private TaskAspect<V> callAspect;
-    //store waiters for call result
-    private ConcurrentLinkedQueue<Thread> waitQueue;
+    protected volatile Object state;
+    //owner bucket contains this handle
+    protected TaskBucketWorker taskBucket;
 
     PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean isRoot) {
         this.task = task;
         this.pool = pool;
         this.isRoot = isRoot;
+        this.callAspect = callAspect;
+        this.waitQueue = isRoot ? new ConcurrentLinkedQueue<>() : null;
 
-        if (isRoot) {
-            this.callAspect = callAspect;
-            this.waitQueue = new ConcurrentLinkedQueue<>();
-        }
+        this.state = TASK_WAITING;
     }
 
     //***************************************************************************************************************//
@@ -182,7 +178,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     //***************************************************************************************************************//
     //                                 5: fill result(change state and result)                                       //
     //***************************************************************************************************************//
-    private void fillTaskResult(Object state, Object result) {
+    void fillTaskResult(Object state, Object result) {
         //1: update result and state
         this.result = result;
         this.state = state;
@@ -198,25 +194,18 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     //***************************************************************************************************************//
     //                              6: task execution(3)                                                             //
     //***************************************************************************************************************//
-    //this method can override
-    protected void afterExecute() {
-        pool.getTaskCount().decrementAndGet();
-        taskBucket.incrementCompletedCount();
+    boolean setRunWorker(TaskExecuteWorker worker) {
+        return StateUpd.compareAndSet(this, TASK_WAITING, worker);
     }
 
-    /**
-     * core method to execute task
-     */
-    void executeTask(TaskExecuteWorker worker) {
-        if (!StateUpd.compareAndSet(this, TASK_WAITING, worker)) return;
-
+    //core method to execute task
+    protected void executeTask() {
         Object result = null;
         boolean succeed = true;//assume call success
 
         try {
             //1: execute beforeCall method of aspect
-            if (callAspect != null)
-                callAspect.beforeCall(this);
+            if (callAspect != null) callAspect.beforeCall(this);
             //2: execute call of task(** key step **)
             result = task.call();
         } catch (Throwable e) {
@@ -226,10 +215,16 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
             //3: fill result and wakeup waiters if exists
             this.fillTaskResult(succeed ? TASK_SUCCEED : TASK_FAILED, result);
             //4: call afterExecute method
-            this.afterExecute();
+            this.afterExecute(succeed, result);
             //5: execute afterCall method of aspect
             if (callAspect != null)
                 callAspect.afterCall(succeed, result, this);
         }
+    }
+
+    //this method can override
+    protected void afterExecute(boolean succeed, Object result) {
+        pool.getTaskCount().decrementAndGet();
+        taskBucket.incrementCompletedCount();
     }
 }

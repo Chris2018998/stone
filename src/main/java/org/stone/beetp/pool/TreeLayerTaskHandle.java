@@ -11,9 +11,15 @@ package org.stone.beetp.pool;
 
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TreeLayerTask;
+import org.stone.beetp.pool.exception.TaskExecutionException;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
+import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
 
 /**
  * join task handle impl
@@ -30,25 +36,25 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     //2: field of parent
     private TreeLayerTaskHandle<V>[] subTaskHandles;
     private TreeLayerTaskHandle<V> parent;
-    private AtomicInteger countDown;//the complete count of sub tasks.
+    private AtomicInteger completedDownOfSubTask;//the complete count of sub tasks.
 
     //***************************************************************************************************************//
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
     //constructor for root task
-    TreeLayerTaskHandle(TreeLayerTask task, final TaskAspect callback, PoolTaskCenter pool) {
+    TreeLayerTaskHandle(TreeLayerTask<V> task, final TaskAspect<V> callback, PoolTaskCenter pool) {
         super(null, callback, pool, true);
         this.task = task;
         this.exceptionInd = new AtomicBoolean();
     }
 
     //constructor for children task
-    private TreeLayerTaskHandle(TreeLayerTask task, TreeLayerTaskHandle parent, AtomicInteger countDown, PoolTaskCenter pool, TreeLayerTaskHandle root) {
+    private TreeLayerTaskHandle(TreeLayerTask<V> task, TreeLayerTaskHandle<V> parent, AtomicInteger countDown, PoolTaskCenter pool, TreeLayerTaskHandle<V> root) {
         super(null, null, pool, false);
         this.task = task;
         this.root = root;
         this.parent = parent;
-        this.countDown = countDown;
+        this.completedDownOfSubTask = countDown;
     }
 
     TreeLayerTask getTreeLayerTask() {
@@ -65,7 +71,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
             if (this.isRoot()) {
                 new AsynTreeCancelThread(subTaskHandles, mayInterruptIfRunning).start();
             } else {
-                for (TreeLayerTaskHandle childHandle : subTaskHandles)
+                for (TreeLayerTaskHandle<V> childHandle : subTaskHandles)
                     childHandle.cancel(mayInterruptIfRunning);
             }
         }
@@ -85,78 +91,74 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         return task.join(null);
     }
 
-    protected void executeTask(TaskExecuteWorker worker) {
-//        //2: try to split current task into sub tasks
-//        TreeLayerTask[] subTasks = this.task.getSubTasks();
-//
-//        //3: push sub tasks to execute queue
-//        if (subTasks != null && subTasks.length > 0) {
-//            int subSize = subTasks.length;
-//            AtomicInteger countDownLatch = new AtomicInteger(subSize);
-//            TreeLayerTaskHandle[] subJoinHandles = new TreeLayerTaskHandle[subSize];
-//            TreeLayerTaskHandle root = isRoot() ? this : this.root;
-//            this.subTaskHandles = subJoinHandles;
-//            Queue<PoolTaskHandle> workQueue = worker.workQueue;
-//
-//            for (int i = 0; i < subSize; i++) {
-//                subJoinHandles[i] = new TreeLayerTaskHandle(subTasks[i], this, countDownLatch, pool, root);
-//                pool.pushToExecutionQueue(subTaskHandles[i], workQueue);
-//            }
-//        } else {//4: execute leaf task
-//            super.executeTask(worker);
-//        }
+    private void executeTask(TaskExecuteWorker worker) {
+        //2: try to split current task into subtasks
+        TreeLayerTask<V>[] subTasks = this.task.getSubTasks();
+
+        //3: push sub tasks to execute queue
+        if (subTasks != null && subTasks.length > 0) {
+            AtomicInteger completedDownOfSubTask = new AtomicInteger(subTasks.length);
+            List<PoolTaskHandle<?>> handleList = new LinkedList<>();
+            for (TreeLayerTask<V> subTask : subTasks)
+                handleList.add(new TreeLayerTaskHandle<V>(subTask, this, completedDownOfSubTask, pool, root));
+
+            ((TaskExecuteWorker) this.state).put(handleList);
+        } else {//4: execute leaf task
+            super.executeTask();
+        }
     }
 
     //***************************************************************************************************************//
     //                              4: task result                                                                   //                                                                                  //
     //***************************************************************************************************************//
-    void afterSetResult(final int state, final Object result) {
-//        if (countDown == null) return;
-//
-//        if (state == TASK_EXEC_EXCEPTION) {
-//            this.handleTreeSubTaskException(result);
-//        } else {
-//            do {
-//                int currentSize = countDown.get();
-//                if (currentSize == 0) break;
-//                if (countDown.compareAndSet(currentSize, currentSize - 1)) {
-//                    if (currentSize == 1) {
-//                        try {
-//                            parent.setResult(TASK_EXEC_RESULT, parent.task.call(parent.subTaskHandles));//join children
-//                            if (parent.isRoot) {
-//                                pool.getTaskCount().decrementAndGet();
-//                                ((TaskWorkThread) Thread.currentThread()).completedCount++;
-//                            }
-//                        } catch (Throwable e) {
-//                            this.handleTreeSubTaskException(new TaskExecutionException(e));
-//                        }
-//                    }
-//                    break;
-//                }
-//            } while (true);
-//        }
+    protected void afterExecute(boolean successful, Object result) {
+        if (completedDownOfSubTask == null) return;
+
+        if (successful) {
+            do {
+                int currentSize = completedDownOfSubTask.get();
+                if (currentSize == 0) break;
+                if (completedDownOfSubTask.compareAndSet(currentSize, currentSize - 1)) {
+                    if (currentSize == 1) {
+                        try {
+                            parent.fillTaskResult(TASK_SUCCEED, parent.task.join(parent.subTaskHandles));//join children
+                            if (parent.isRoot()) {
+                                pool.getTaskCount().decrementAndGet();
+                                // ((TaskExecuteWorker) Thread.currentThread()).incrementCompletedCount();
+                            }
+                        } catch (Throwable e) {
+                            this.handleSubTaskException(new TaskExecutionException(e));
+                        }
+                    }
+                    break;
+                }
+            } while (true);
+        } else {
+            this.handleSubTaskException(result);
+        }
     }
 
-    private void handleTreeSubTaskException(Object result) {
-//        if (root.exceptionInd.compareAndSet(false, true)) {
-//            root.setResult(TASK_EXEC_EXCEPTION, result);
-//            pool.getTaskCount().decrementAndGet();
-//            ((TaskWorkThread) Thread.currentThread()).completedCount++;
-//            new AsynTreeCancelThread(root.subTaskHandles, true).start();
-//        }
+    private void handleSubTaskException(Object result) {
+        if (root.exceptionInd.compareAndSet(false, true)) {
+            root.fillTaskResult(TASK_FAILED, result);
+            pool.getTaskCount().decrementAndGet();
+            //((TaskExecuteWorker) Thread.currentThread()).incrementCompletedCount();
+
+            new AsynTreeCancelThread<V>(root.subTaskHandles, true).start();
+        }
     }
 
-    private static class AsynTreeCancelThread extends Thread {
+    private static class AsynTreeCancelThread<V> extends Thread {
         private final boolean mayInterruptIfRunning;
-        private final TreeLayerTaskHandle[] subTaskHandles;
+        private final TreeLayerTaskHandle<V>[] subTaskHandles;
 
-        AsynTreeCancelThread(TreeLayerTaskHandle[] subTaskHandles, boolean mayInterruptIfRunning) {
+        AsynTreeCancelThread(TreeLayerTaskHandle<V>[] subTaskHandles, boolean mayInterruptIfRunning) {
             this.subTaskHandles = subTaskHandles;
             this.mayInterruptIfRunning = mayInterruptIfRunning;
         }
 
         public void run() {
-            for (TreeLayerTaskHandle childHandle : subTaskHandles)
+            for (TreeLayerTaskHandle<V> childHandle : subTaskHandles)
                 childHandle.cancel(mayInterruptIfRunning);
         }
     }
