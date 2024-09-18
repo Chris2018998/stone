@@ -186,9 +186,25 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         //2: wakeup waiters to get result
         if (waitQueue != null) {
             Thread waitThread;
-            while ((waitThread = waitQueue.poll()) != null)
+            while ((waitThread = waitQueue.poll()) != null) {
                 LockSupport.unpark(waitThread);
+            }
         }
+
+        final boolean success = state == TASK_SUCCEED;
+        try {
+            this.afterExecute(success, result);
+        } catch (Throwable e) {
+            //e.printStackTrace();
+        }
+
+        if (callAspect != null)
+            try {
+                callAspect.afterCall(success, result, this);
+            } catch (Throwable e) {
+                //e.printStackTrace();
+                //do nothing
+            }
     }
 
     //***************************************************************************************************************//
@@ -200,30 +216,22 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //core method to execute task
     protected void executeTask() {
-        Object result = null;
-        boolean succeed = true;//assume call success
-
+        Object state, result;
         try {
-            //1: execute beforeCall method of aspect
-            if (callAspect != null) callAspect.beforeCall(this);
-            //2: execute call of task(** key step **)
-            result = task.call();
-        } catch (Throwable e) {
-            succeed = false;
-            result = new TaskExecutionException(e);
-        } finally {
-            //3: fill result and wakeup waiters if exists
-            this.fillTaskResult(succeed ? TASK_SUCCEED : TASK_FAILED, result);
-            //4: call afterExecute method
-            this.afterExecute(succeed, result);
-            //5: execute afterCall method of aspect
             if (callAspect != null)
-                callAspect.afterCall(succeed, result, this);
+                callAspect.beforeCall(this);
+            result = task.call();
+            state = TASK_SUCCEED;
+        } catch (Throwable e) {
+            state = TASK_FAILED;
+            result = new TaskExecutionException(e);
         }
+
+        this.fillTaskResult(state, result);
     }
 
     //this method can override
-    protected void afterExecute(boolean succeed, Object result) {
+    protected void afterExecute(boolean success, Object result) {
         pool.getTaskCount().decrementAndGet();
         taskBucket.incrementCompletedCount();
     }

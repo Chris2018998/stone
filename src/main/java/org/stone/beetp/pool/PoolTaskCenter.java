@@ -172,14 +172,9 @@ public final class PoolTaskCenter implements TaskPool {
             if (taskCount.get() < executionWorkerSize) {
                 worker.activate();
             } else {
-
+                notifyWorker.activate();
             }
         }
-    }
-
-    void wakeupAllWorkers() {
-
-
     }
 
     //***************************************************************************************************************//

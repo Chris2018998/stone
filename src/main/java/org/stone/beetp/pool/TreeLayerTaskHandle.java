@@ -13,8 +13,7 @@ import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TreeLayerTask;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -97,12 +96,14 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
 
         //3: push sub tasks to execute queue
         if (subTasks != null && subTasks.length > 0) {
+            int childCount = subTasks.length;
+            this.subTaskHandles = new TreeLayerTaskHandle[childCount];
             AtomicInteger completedDownOfSubTask = new AtomicInteger(subTasks.length);
-            List<PoolTaskHandle<?>> handleList = new LinkedList<>();
-            for (TreeLayerTask<V> subTask : subTasks)
-                handleList.add(new TreeLayerTaskHandle<V>(subTask, this, completedDownOfSubTask, pool, root));
 
-            ((TaskExecuteWorker) this.state).put(handleList);
+            for (int i = 0; i < childCount; i++)
+                subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, completedDownOfSubTask, pool, root);
+
+            ((TaskExecuteWorker) this.state).put(Arrays.asList(subTaskHandles));
         } else {//4: execute leaf task
             super.executeTask();
         }
