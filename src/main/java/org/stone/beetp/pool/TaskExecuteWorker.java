@@ -46,6 +46,15 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     }
 
     /**
+     * get task queue
+     *
+     * @return task queue
+     */
+    public ConcurrentLinkedQueue<PoolTaskHandle<?>> getQueue() {
+        return taskQueue;
+    }
+
+    /**
      * Pool push a task to worker by call this method
      *
      * @param taskHandle is a handle passed from pool
@@ -53,17 +62,6 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     public void put(PoolTaskHandle<?> taskHandle) {
         taskHandle.setTaskBucket(this);
         taskQueue.offer(taskHandle);
-    }
-
-    /**
-     * Pool push a list of task handles
-     *
-     * @param handleList is a handle passed from pool
-     */
-    public void put(List<PoolTaskHandle<?>> handleList) {
-        for (PoolTaskHandle<?> handle : handleList)
-            handle.setTaskBucket(this);
-        taskQueue.addAll(handleList);
     }
 
     /**

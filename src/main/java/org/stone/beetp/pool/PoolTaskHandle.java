@@ -35,7 +35,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     private static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
     protected final PoolTaskCenter pool;
     protected final Task<V> task;
-    private final boolean isRoot;
+    protected final boolean isRoot;
     private final TaskAspect<V> callAspect;
     private final ConcurrentLinkedQueue<Thread> waitQueue;
 
@@ -59,10 +59,6 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     //***************************************************************************************************************//
     //                                  1: constructor(2)                                                            //
     //**************************************************e************************************************************//
-    boolean isRoot() {
-        return isRoot;
-    }
-
     void setTaskBucket(TaskBucketWorker taskBucket) {
         if (this.taskBucket == null) this.taskBucket = taskBucket;
     }
