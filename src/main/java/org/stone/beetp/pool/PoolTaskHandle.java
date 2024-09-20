@@ -33,9 +33,8 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 class PoolTaskHandle<V> implements TaskHandle<V> {
     private static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
-    protected final PoolTaskCenter pool;
     protected final Task<V> task;
-    protected final boolean isRoot;
+    protected final PoolTaskCenter pool;
     private final TaskAspect<V> callAspect;
     private final ConcurrentLinkedQueue<Thread> waitQueue;
 
@@ -46,12 +45,11 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     //owner bucket contains this handle
     protected TaskBucketWorker taskBucket;
 
-    PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean isRoot) {
+    PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean supportWait) {
         this.task = task;
         this.pool = pool;
-        this.isRoot = isRoot;
         this.callAspect = callAspect;
-        this.waitQueue = isRoot ? new ConcurrentLinkedQueue<>() : null;
+        this.waitQueue = supportWait ? new ConcurrentLinkedQueue<>() : null;
 
         this.state = TASK_WAITING;
     }

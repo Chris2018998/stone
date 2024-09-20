@@ -12,10 +12,10 @@ package org.stone.beetp.pool;
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TreeLayerTask;
 import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
 import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
@@ -27,15 +27,15 @@ import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
  * @version 1.0
  */
 final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
-    //3: fields of child task
+    private static final AtomicIntegerFieldUpdater<TreeLayerTaskHandle> exceptionIndUpd = IntegerFieldUpdaterImpl.newUpdater(TreeLayerTaskHandle.class, "exceptionInd");
+    private static final AtomicIntegerFieldUpdater<TreeLayerTaskHandle> unCompletedCountUpd = IntegerFieldUpdaterImpl.newUpdater(TreeLayerTaskHandle.class, "subTaskHandleCount");
+
+    private final TreeLayerTaskHandle<V> root;
+    private final TreeLayerTaskHandle<V> parent;
     private final TreeLayerTask<V> task;
-    TreeLayerTaskHandle<V> root;
-    //1: field of root
-    private AtomicBoolean exceptionInd;
-    //2: field of parent
+    private volatile int exceptionInd;
+    private volatile int subTaskHandleCount;
     private TreeLayerTaskHandle<V>[] subTaskHandles;
-    private TreeLayerTaskHandle<V> parent;
-    private AtomicInteger brotherCount;//the complete count of sub tasks.
 
     //***************************************************************************************************************//
     //                                          1: Constructor(2)                                                    //                                                                                  //
@@ -44,17 +44,15 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     TreeLayerTaskHandle(TreeLayerTask<V> task, final TaskAspect<V> callback, PoolTaskCenter pool) {
         super(null, callback, pool, true);
         this.task = task;
-        this.exceptionInd = new AtomicBoolean();
+        this.root = this;
+        this.parent = null;
     }
 
-    //constructor for children task
-    private TreeLayerTaskHandle(TreeLayerTask<V> task, AtomicInteger brotherCount,
-                                TaskExecuteWorker bucketWorker, TreeLayerTaskHandle<V> parent, TreeLayerTaskHandle<V> root, PoolTaskCenter pool) {
+    private TreeLayerTaskHandle(TreeLayerTask<V> task, TaskExecuteWorker bucketWorker, TreeLayerTaskHandle<V> parent, TreeLayerTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
         super(null, null, pool, false);
         this.task = task;
         this.root = root;
         this.parent = parent;
-        this.brotherCount = brotherCount;
         this.taskBucket = bucketWorker;
     }
 
@@ -69,7 +67,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         boolean cancelled = super.cancel(mayInterruptIfRunning);
 
         if (subTaskHandles != null) {
-            if (this.isRoot) {
+            if (this == root) {
                 new AsynTreeCancelThread(subTaskHandles, mayInterruptIfRunning).start();
             } else {
                 for (TreeLayerTaskHandle<V> childHandle : subTaskHandles)
@@ -91,13 +89,12 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            TreeLayerTaskHandle<V> root = isRoot ? this : this.root;
             this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
-            AtomicInteger brotherCount = new AtomicInteger(splitChildCount);
+            this.subTaskHandleCount = splitChildCount;
             TaskExecuteWorker currentWorker = (TaskExecuteWorker) this.state;
 
             for (int i = 0; i < splitChildCount; i++)
-                subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], brotherCount, currentWorker, this, root, pool);
+                subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], currentWorker, this, root, pool);
 
             currentWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
         } else {//4: execute leaf task
@@ -109,17 +106,17 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     //                              4: task result                                                                   //                                                                                  //
     //***************************************************************************************************************//
     protected void afterExecute(boolean successful, Object result) {
-        if (brotherCount == null) return;
+        if (parent == null) return;
 
         if (successful) {
             do {
-                int currentSize = brotherCount.get();
+                int currentSize = parent.subTaskHandleCount;
                 if (currentSize == 0) break;
-                if (brotherCount.compareAndSet(currentSize, currentSize - 1)) {
+                if (unCompletedCountUpd.compareAndSet(parent, currentSize, currentSize - 1)) {
                     if (currentSize == 1) {
                         try {
                             parent.fillTaskResult(TASK_SUCCEED, parent.task.join(parent.subTaskHandles));//join children
-                            if (parent.isRoot) {
+                            if (parent == root) {
                                 pool.getTaskCount().decrementAndGet();
                                 ((TaskExecuteWorker) this.state).incrementCompletedCount();
                             }
@@ -136,7 +133,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     }
 
     private void handleSubTaskException(Object result) {
-        if (root.exceptionInd.compareAndSet(false, true)) {
+        if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
             root.fillTaskResult(TASK_FAILED, result);
             pool.getTaskCount().decrementAndGet();
             ((TaskExecuteWorker) this.state).incrementCompletedCount();

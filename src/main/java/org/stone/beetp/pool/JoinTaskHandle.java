@@ -13,10 +13,10 @@ import org.stone.beetp.Task;
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TaskJoinOperator;
 import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
 import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
@@ -28,32 +28,31 @@ import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
  * @version 1.0
  */
 final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
-    private final TaskJoinOperator<V> operator;
-    private JoinTaskHandle<V> root;
-    private JoinTaskHandle<V> parent;
-    private JoinTaskHandle<V>[] subTaskHandles;
+    private static final AtomicIntegerFieldUpdater<JoinTaskHandle> exceptionIndUpd = IntegerFieldUpdaterImpl.newUpdater(JoinTaskHandle.class, "exceptionInd");
+    private static final AtomicIntegerFieldUpdater<JoinTaskHandle> unCompletedCountUpd = IntegerFieldUpdaterImpl.newUpdater(JoinTaskHandle.class, "subTaskHandleCount");
 
-    private AtomicBoolean exceptionInd;
-    private AtomicInteger brotherCount;//the complete count of subtasks.
+    private final JoinTaskHandle<V> root;
+    private final JoinTaskHandle<V> parent;
+    private final TaskJoinOperator<V> operator;
+    private volatile int exceptionInd;
+    private volatile int subTaskHandleCount;
+    private JoinTaskHandle<V>[] subTaskHandles;
 
     //***************************************************************************************************************//
     //                                          1: Constructor(2)                                                    //                                                                                  //
     //***************************************************************************************************************//
-    //constructor for root task
-    JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, TaskAspect<V> callback, PoolTaskCenter pool) {
+    JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, TaskAspect<V> callback, PoolTaskCenter pool) {//root task
         super(task, callback, pool, true);
         this.operator = operator;
-        this.exceptionInd = new AtomicBoolean();
+        this.root = this;
+        this.parent = null;
     }
 
-    //constructor for children task
-    private JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, AtomicInteger brotherCount,
-                           TaskExecuteWorker bucketWorker, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {
+    private JoinTaskHandle(Task<V> task, TaskExecuteWorker bucketWorker, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
         super(task, null, pool, false);
         this.root = root;
         this.parent = parent;
-        this.operator = operator;
-        this.brotherCount = brotherCount;
+        this.operator = null;
         this.taskBucket = bucketWorker;
     }
 
@@ -64,7 +63,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
         boolean cancelled = super.cancel(mayInterruptIfRunning);
 
         if (subTaskHandles != null) {
-            if (this.isRoot) {
+            if (this == root) {
                 new AsynJoinCancelThread<V>(root.subTaskHandles, mayInterruptIfRunning).start();
             } else {
                 for (JoinTaskHandle childHandle : subTaskHandles)
@@ -78,20 +77,19 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
     protected void executeTask() {
-        Task<V>[] subTasks = operator.split(this.task);
+        Task<V>[] subTasks = root.operator.split(this.task);
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            JoinTaskHandle<V> root = isRoot ? this : this.root;
             this.subTaskHandles = new JoinTaskHandle[splitChildCount];
-            AtomicInteger brotherCount = new AtomicInteger(splitChildCount);
+            this.subTaskHandleCount = splitChildCount;
             TaskExecuteWorker currentWorker = (TaskExecuteWorker) this.state;
 
             for (int i = 0; i < splitChildCount; i++)
-                subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], operator, brotherCount, currentWorker, this, root, pool);
+                subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], currentWorker, this, root, pool);
 
             currentWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
-        } else {//4: execute leaf task
+        } else {
             super.executeTask();
         }
     }
@@ -100,17 +98,17 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //                                  5: result method                                                             //
     //***************************************************************************************************************//
     protected void afterExecute(boolean successful, Object result) {
-        if (brotherCount == null) return;
+        if (parent == null) return;
 
         if (successful) {
             do {
-                int currentSize = brotherCount.get();
+                int currentSize = parent.subTaskHandleCount;
                 if (currentSize == 0) break;
-                if (brotherCount.compareAndSet(currentSize, currentSize - 1)) {
+                if (unCompletedCountUpd.compareAndSet(parent, currentSize, currentSize - 1)) {
                     if (currentSize == 1) {
                         try {
-                            parent.fillTaskResult(TASK_SUCCEED, operator.join(parent.subTaskHandles));
-                            if (parent.isRoot) {
+                            parent.fillTaskResult(TASK_SUCCEED, root.operator.join(parent.subTaskHandles));
+                            if (parent == root) {
                                 pool.getTaskCount().decrementAndGet();
 
                                 //((TaskExecuteWorker) this.state).incrementCompletedCount();
@@ -128,7 +126,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     }
 
     private void handleSubTaskException(Object result) {
-        if (root.exceptionInd.compareAndSet(false, true)) {
+        if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
             root.fillTaskResult(TASK_FAILED, result);
             pool.getTaskCount().decrementAndGet();
             //((TaskExecuteWorker) this.state).incrementCompletedCount();
