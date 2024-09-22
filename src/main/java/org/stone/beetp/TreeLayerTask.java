@@ -11,7 +11,7 @@
 package org.stone.beetp;
 
 /**
- * task interface,which has treed type structure
+ * tree task interface
  *
  * @author Chris Liao
  * @version 1.0
@@ -19,18 +19,18 @@ package org.stone.beetp;
 public interface TreeLayerTask<V> {
 
     /**
-     * Gets subtasks of this tree task
+     * Gets subtasks of tree task
      *
      * @return an array of subtasks of tree task
      */
     TreeLayerTask<V>[] getSubTasks();
 
     /**
-     * Join handles of subtasks to make a joined object
+     * Join handles of subtasks to make a joined result
      *
-     * @param subTaskHandles handle array of subtasks
-     * @return execution value of method call
-     * @throws Exception occurred in execution
+     * @param subTaskHandles is a handle array of subtasks
+     * @return a joined result of subtask handles
+     * @throws Exception when join fail
      */
     V join(TaskHandle<V>[] subTaskHandles) throws Exception;
 }

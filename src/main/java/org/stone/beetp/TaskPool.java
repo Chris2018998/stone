@@ -16,7 +16,7 @@ import org.stone.beetp.pool.exception.TaskServiceConfigException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Task pool interface,which provide some task submission methods.
+ * Task pool interface
  *
  * @author Chris Liao
  * @version 1.0
