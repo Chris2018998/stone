@@ -26,6 +26,7 @@ import static org.stone.beetp.pool.PoolConstants.*;
 final class TaskExecuteWorker extends TaskBucketWorker {
     private final TaskExecuteWorker[] executeWorkers;
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
+    private volatile long completedCount;
     private PoolTaskHandle<?> processingHandle;
 
     public TaskExecuteWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
@@ -37,6 +38,30 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     //                                            1: bucket methods(2)                                               //
     //***************************************************************************************************************//
+
+    /**
+     * query this completed count of tasks
+     *
+     * @return completed count
+     */
+    public long getCompletedCount() {
+        return completedCount;
+    }
+
+    /**
+     * increment completed count of tasks
+     *
+     * @return completed count
+     */
+    public long incrementCompletedCount() {
+        long count = completedCount;
+        if (++count < 0) {
+            completedCount = 1;//reset to 1 when exceeded
+        } else {
+            completedCount = count;
+        }
+        return completedCount;
+    }
 
     /**
      * get task handle in processing by this worker

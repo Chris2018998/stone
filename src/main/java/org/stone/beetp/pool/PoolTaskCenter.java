@@ -88,7 +88,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                       2: task submission(6+4)                                                 //
+    //                                       2: task submission(6+5)                                                 //
     //***************************************************************************************************************//
     public <V> TaskHandle<V> submit(Task<V> task) throws TaskException {
         return submit(task, (TaskAspect<V>) null);
@@ -138,6 +138,10 @@ public final class PoolTaskCenter implements TaskPool {
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, curCount + 1));
     }
 
+    void activateAllWorkers() {
+        workersNotifier.activate();
+    }
+
     void decrementExecTaskCount() {
         int curCount;
         do {
@@ -159,26 +163,21 @@ public final class PoolTaskCenter implements TaskPool {
     //push a task handle to execution worker
     void pushToExecuteWorker(PoolTaskHandle<?> taskHandle, boolean isTimedTask) {
         if (isTimedTask) {
-            if (incrementExecTaskCount(1)) {
-                TaskExecuteWorker targetWorker = null;
-                for (TaskExecuteWorker worker : workers) {
-                    if (!worker.isRunning()) {
-                        targetWorker = worker;
-                        break;
-                    }
+            TaskExecuteWorker targetWorker = null;
+            for (TaskExecuteWorker worker : workers) {
+                if (!worker.isRunning()) {
+                    targetWorker = worker;
+                    break;
                 }
-
-                if (targetWorker == null) {
-                    int arrayIndex = this.maxNoOfWorkers & taskHandle.hashCode();
-                    targetWorker = this.workers[arrayIndex];
-                }
-
-                targetWorker.put(taskHandle);
-                targetWorker.activate();
-            } else {
-                //@todo need fill failure exception
-                System.out.println("Task count exceeded");
             }
+
+            if (targetWorker == null) {
+                int arrayIndex = this.maxNoOfWorkers & taskHandle.hashCode();
+                targetWorker = this.workers[arrayIndex];
+            }
+
+            targetWorker.put(taskHandle);
+            targetWorker.activate();
         } else {
             //1: compute index of worker array to store task
             int threadHashCode = (int) Thread.currentThread().getId();
@@ -196,7 +195,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //***************************************************************************************************************//
-    //                                    3: Timed task submit(6+1)                                                  //
+    //                                    3: Timed task submit(6+2)                                                  //
     //***************************************************************************************************************//
     public <V> TaskScheduledHandle<V> schedule(Task<V> task, long delay, TimeUnit unit) throws TaskException {
         return addScheduleTask(task, unit, delay, 0L, false, null, 1);
@@ -243,7 +242,8 @@ public final class PoolTaskCenter implements TaskPool {
         int curCount;
         do {
             curCount = timedTaskCount;
-            if (curCount == maxTimedTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
+            if (curCount == maxTimedTaskSize)
+                throw new TaskRejectedException("Pool time task count has reach max size");
         } while (!TimedTaskCountUpd.compareAndSet(this, curCount, curCount + 1));
 
         //3: create task handle and put it to schedule worker
@@ -282,7 +282,8 @@ public final class PoolTaskCenter implements TaskPool {
         long count = 0;
         for (TaskExecuteWorker worker : workers)
             count += worker.getCompletedCount();
-        return count + scheduleWorker.getCompletedCount();
+
+        return count;
     }
 
     public PoolMonitorVo getPoolMonitorVo() {

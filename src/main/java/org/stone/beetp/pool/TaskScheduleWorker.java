@@ -142,7 +142,8 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 lockOfHandles.lock();
                 if (countOfHandles > 0) {
                     parkTimeForFirstHandle = handles[0].getNextTime() - System.nanoTime();
-                    if (parkTimeForFirstHandle < 0L) {//expired,then poll it from array
+
+                    if (parkTimeForFirstHandle <= 0L && pool.incrementExecTaskCount(1)) {
                         firstHandle = handles[0];
                         final int maxSeq = countOfHandles - 1;
                         System.arraycopy(handles, 1, handles, 0, maxSeq);//move forward
@@ -158,8 +159,10 @@ final class TaskScheduleWorker extends TaskBucketWorker {
             if (firstHandle != null) {
                 if (firstHandle.isWaiting())
                     pool.pushToExecuteWorker(firstHandle, true);
-                else
+                else {
                     pool.decrementTimedTaskCount();
+                    pool.decrementExecTaskCount();
+                }
             } else if (parkTimeForFirstHandle > 0L) {//park work thread with specified time
                 LockSupport.parkNanos(parkTimeForFirstHandle);
             } else {//if no timed task,then park

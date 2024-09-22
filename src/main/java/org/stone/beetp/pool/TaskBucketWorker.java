@@ -18,28 +18,9 @@ import java.util.List;
  * @version 1.0
  */
 abstract class TaskBucketWorker extends ReactivateWorker {
-    protected volatile long completedCount;
 
     public TaskBucketWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         super(keepAliveTimeNanos, useTimePark, defaultSpins);
-    }
-
-    /**
-     * query this completed count of tasks
-     *
-     * @return completed count
-     */
-    public long getCompletedCount() {
-        return completedCount;
-    }
-
-    /**
-     * increment completed count of tasks
-     *
-     * @return completed count
-     */
-    public long incrementCompletedCount() {
-        return ++completedCount;
     }
 
     /**
