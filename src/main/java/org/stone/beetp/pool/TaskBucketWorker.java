@@ -9,7 +9,6 @@
  */
 package org.stone.beetp.pool;
 
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -19,7 +18,6 @@ import java.util.List;
  * @version 1.0
  */
 abstract class TaskBucketWorker extends ReactivateWorker {
-    protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
     protected volatile long completedCount;
 
     public TaskBucketWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {

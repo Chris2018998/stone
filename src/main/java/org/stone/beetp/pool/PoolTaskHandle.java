@@ -170,19 +170,36 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //***************************************************************************************************************//
-    //                                 5: fill result(change state and result)                                       //
+    //                              6: task execution(3)                                                             //
     //***************************************************************************************************************//
+    boolean setRunWorker(TaskExecuteWorker worker) {
+        return StateUpd.compareAndSet(this, TASK_WAITING, worker);
+    }
+
+    protected void afterExecute(boolean success, Object result) {
+    }
+
+    protected void executeTask(TaskExecuteWorker execWorker) {
+        try {
+            if (callAspect != null) callAspect.beforeCall(this);
+            this.fillTaskResult(TASK_SUCCEED, task.call());//set success result
+        } catch (Throwable e) {
+            this.fillTaskResult(TASK_FAILED, new TaskExecutionException(e));//set failure exception
+        } finally {
+            pool.decrementExecTaskCount();
+            execWorker.incrementCompletedCount();
+        }
+    }
+
     void fillTaskResult(Object state, Object result) {
         //1: update result and state
         this.result = result;
         this.state = state;
-
         //2: wakeup waiters to get result
         if (waitQueue != null) {
             Thread waitThread;
-            while ((waitThread = waitQueue.poll()) != null) {
+            while ((waitThread = waitQueue.poll()) != null)
                 LockSupport.unpark(waitThread);
-            }
         }
 
         final boolean success = state == TASK_SUCCEED;
@@ -197,36 +214,6 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
                 callAspect.afterCall(success, result, this);
             } catch (Throwable e) {
                 //e.printStackTrace();
-                //do nothing
             }
-    }
-
-    //***************************************************************************************************************//
-    //                              6: task execution(3)                                                             //
-    //***************************************************************************************************************//
-    boolean setRunWorker(TaskExecuteWorker worker) {
-        return StateUpd.compareAndSet(this, TASK_WAITING, worker);
-    }
-
-    //core method to execute task
-    protected void executeTask() {
-        Object state, result;
-        try {
-            if (callAspect != null)
-                callAspect.beforeCall(this);
-            result = task.call();
-            state = TASK_SUCCEED;
-        } catch (Throwable e) {
-            state = TASK_FAILED;
-            result = new TaskExecutionException(e);
-        }
-
-        this.fillTaskResult(state, result);
-    }
-
-    //this method can override
-    protected void afterExecute(boolean success, Object result) {
-        pool.decrementExecTaskCount();
-        taskBucket.incrementCompletedCount();
     }
 }

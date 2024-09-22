@@ -84,21 +84,24 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         return task.join(null);
     }
 
-    protected void executeTask() {
+    protected void executeTask(TaskExecuteWorker execWorker) {
         TreeLayerTask<V>[] subTasks = this.task.getSubTasks();
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
-            this.subTaskHandleCount = splitChildCount;
-            TaskExecuteWorker currentWorker = (TaskExecuteWorker) this.state;
+            if (pool.incrementExecTaskCount(subTaskHandleCount)) {
+                this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
+                this.subTaskHandleCount = splitChildCount;
+                for (int i = 0; i < splitChildCount; i++)
+                    subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], execWorker, this, root, pool);
 
-            for (int i = 0; i < splitChildCount; i++)
-                subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], currentWorker, this, root, pool);
-
-            currentWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
+                execWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
+            } else {
+                //@todo need fill failure exception
+                System.out.println("Task count exceeded");
+            }
         } else {//4: execute leaf task
-            super.executeTask();
+            super.executeTask(execWorker);
         }
     }
 
@@ -116,10 +119,6 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
                     if (currentSize == 1) {
                         try {
                             parent.fillTaskResult(TASK_SUCCEED, parent.task.join(parent.subTaskHandles));//join children
-                            if (parent == root) {
-                                pool.decrementExecTaskCount();
-                                ((TaskExecuteWorker) this.state).incrementCompletedCount();
-                            }
                         } catch (Throwable e) {
                             this.handleSubTaskException(new TaskExecutionException(e));
                         }
@@ -135,9 +134,6 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     private void handleSubTaskException(Object result) {
         if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
             root.fillTaskResult(TASK_FAILED, result);
-            pool.decrementExecTaskCount();
-            ((TaskExecuteWorker) this.state).incrementCompletedCount();
-
             new AsynTreeCancelThread<V>(root.subTaskHandles, true).start();
         }
     }

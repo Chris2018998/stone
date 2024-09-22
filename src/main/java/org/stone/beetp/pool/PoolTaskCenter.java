@@ -134,18 +134,8 @@ public final class PoolTaskCenter implements TaskPool {
         int curCount;
         do {
             curCount = execTaskCount;
-            if (curCount == maxExecTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
+            if (curCount >= maxExecTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, curCount + 1));
-    }
-
-    //join handles and tree handles call this method to add split count
-    void incrementExecTaskCount(int addCount) throws TaskException {
-        int curCount, newCount;
-        do {
-            curCount = execTaskCount;
-            newCount = curCount + addCount;
-            if (newCount <= 0) throw new TaskException("Task count exceeded");
-        } while (!ExecTaskCountUpd.compareAndSet(this, curCount, newCount));
     }
 
     void decrementExecTaskCount() {
@@ -156,32 +146,39 @@ public final class PoolTaskCenter implements TaskPool {
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, curCount - 1));
     }
 
-    void decrementTimedTaskCount() {
-        int curCount;
+    boolean incrementExecTaskCount(int addCount) {
+        int curCount, newCount;
         do {
-            curCount = timedTaskCount;
-            if (curCount == 0) return;
-        } while (!TimedTaskCountUpd.compareAndSet(this, curCount, curCount - 1));
+            curCount = execTaskCount;
+            newCount = curCount + addCount;
+            if (newCount <= 0) return false;//Task count exceeded
+        } while (!ExecTaskCountUpd.compareAndSet(this, curCount, newCount));
+        return true;
     }
 
     //push a task handle to execution worker
     void pushToExecuteWorker(PoolTaskHandle<?> taskHandle, boolean isTimedTask) {
         if (isTimedTask) {
-            TaskExecuteWorker targetWorker = null;
-            for (TaskExecuteWorker worker : workers) {
-                if (!worker.isRunning()) {
-                    targetWorker = worker;
-                    break;
+            if (incrementExecTaskCount(1)) {
+                TaskExecuteWorker targetWorker = null;
+                for (TaskExecuteWorker worker : workers) {
+                    if (!worker.isRunning()) {
+                        targetWorker = worker;
+                        break;
+                    }
                 }
-            }
 
-            if (targetWorker == null) {
-                int arrayIndex = this.maxNoOfWorkers & taskHandle.hashCode();
-                targetWorker = this.workers[arrayIndex];
-            }
+                if (targetWorker == null) {
+                    int arrayIndex = this.maxNoOfWorkers & taskHandle.hashCode();
+                    targetWorker = this.workers[arrayIndex];
+                }
 
-            targetWorker.put(taskHandle);
-            targetWorker.activate();
+                targetWorker.put(taskHandle);
+                targetWorker.activate();
+            } else {
+                //@todo need fill failure exception
+                System.out.println("Task count exceeded");
+            }
         } else {
             //1: compute index of worker array to store task
             int threadHashCode = (int) Thread.currentThread().getId();
@@ -223,6 +220,14 @@ public final class PoolTaskCenter implements TaskPool {
 
     public <V> TaskScheduledHandle<V> scheduleWithFixedDelay(Task<V> task, long initialDelay, long delay, TimeUnit unit, TaskAspect<V> aspect) throws TaskException {
         return addScheduleTask(task, unit, initialDelay, delay, true, aspect, 3);
+    }
+
+    void decrementTimedTaskCount() {
+        int curCount;
+        do {
+            curCount = timedTaskCount;
+            if (curCount == 0) return;
+        } while (!TimedTaskCountUpd.compareAndSet(this, curCount, curCount - 1));
     }
 
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {

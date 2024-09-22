@@ -113,7 +113,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
                 this.processingHandle = handle;
                 if (handle.setRunWorker(this)) {
                     Thread.interrupted();//clear interrupted flag
-                    handle.executeTask();
+                    handle.executeTask(this);
                     spinSize = defaultSpins;
                 }
                 this.processingHandle = null;

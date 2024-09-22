@@ -76,22 +76,23 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    protected void executeTask() {
+    protected void executeTask(TaskExecuteWorker execWorker) {
         Task<V>[] subTasks = root.operator.split(this.task);
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            this.subTaskHandles = new JoinTaskHandle[splitChildCount];
-            this.subTaskHandleCount = splitChildCount;
-            TaskExecuteWorker currentWorker = (TaskExecuteWorker) this.state;
-
-            for (int i = 0; i < splitChildCount; i++)
-                subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], currentWorker, this, root, pool);
-
-            currentWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
-            //pool.incrementTaskCount(subTaskHandleCount);//@todo
+            if (pool.incrementExecTaskCount(subTaskHandleCount)) {
+                this.subTaskHandles = new JoinTaskHandle[splitChildCount];
+                this.subTaskHandleCount = splitChildCount;
+                for (int i = 0; i < splitChildCount; i++)
+                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], execWorker, this, root, pool);
+                execWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
+            } else {
+                //@todo need fill failure exception
+                System.out.println("Task count exceeded");
+            }
         } else {
-            super.executeTask();
+            super.executeTask(execWorker);
         }
     }
 
@@ -109,11 +110,6 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
                     if (currentSize == 1) {
                         try {
                             parent.fillTaskResult(TASK_SUCCEED, root.operator.join(parent.subTaskHandles));
-                            if (parent == root) {
-                                pool.decrementExecTaskCount();
-
-                                //((TaskExecuteWorker) this.state).incrementCompletedCount();
-                            }
                         } catch (Throwable e) {
                             this.handleSubTaskException(new TaskExecutionException(e));
                         }
@@ -129,9 +125,6 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     private void handleSubTaskException(Object result) {
         if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
             root.fillTaskResult(TASK_FAILED, result);
-            pool.decrementExecTaskCount();
-            //((TaskExecuteWorker) this.state).incrementCompletedCount();
-
             new AsynJoinCancelThread<V>(root.subTaskHandles, true).start();
         }
     }
