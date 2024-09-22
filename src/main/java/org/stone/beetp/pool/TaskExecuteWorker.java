@@ -24,11 +24,13 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskExecuteWorker extends TaskBucketWorker {
+    private final TaskExecuteWorker[] executeWorkers;
     private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
     private PoolTaskHandle<?> processingHandle;
 
-    public TaskExecuteWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
-        super(pool, keepAliveTimeNanos, useTimePark, defaultSpins);
+    public TaskExecuteWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
+        super(keepAliveTimeNanos, useTimePark, defaultSpins);
+        this.executeWorkers = executeWorkers;
         this.taskQueue = new ConcurrentLinkedQueue<>();
     }
 
@@ -100,7 +102,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
             //1: poll a task from queue
             PoolTaskHandle<?> handle = taskQueue.poll();
             if (handle == null) {//steal a task from other worker
-                for (TaskExecuteWorker worker : allWorkers) {
+                for (TaskExecuteWorker worker : executeWorkers) {
                     handle = worker.taskQueue.poll();
                     if (handle != null) break;
                 }

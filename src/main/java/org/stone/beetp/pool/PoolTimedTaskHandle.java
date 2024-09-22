@@ -23,6 +23,7 @@ import static org.stone.beetp.pool.PoolConstants.TASK_WAITING;
  * @version 1.0
  */
 public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements TaskScheduledHandle<V> {
+    private final int hashCode;
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
     private long executeTime;//time sortable
@@ -38,14 +39,21 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
                         long firstRunTime, long intervalTime, boolean fixedDelay, PoolTaskCenter pool) {
         super(task, callback, pool, true);
 
-        this.executeTime = firstRunTime;//first run time
+        this.executeTime = firstRunTime;
         this.intervalTime = intervalTime;
-        this.fixedDelay = fixedDelay;//true:calculate next run time from task prev call end t
+        this.fixedDelay = fixedDelay;
+
+        int hashCode = super.hashCode();
+        this.hashCode = hashCode ^ (hashCode >>> 16);
     }
 
     //***************************************************************************************************************//
     //                2: impl interface methods(5)                                                                   //                                                                                  //
     //***************************************************************************************************************//
+    public int hashCode() {
+        return hashCode;
+    }
+
     public boolean isPeriodic() {
         return intervalTime != 0;
     }
@@ -84,7 +92,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
             this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
             taskBucket.put(this);
         } else {
-            pool.getTaskCount().decrementAndGet();
+            pool.decrementTaskCount();
             taskBucket.incrementCompletedCount();
         }
     }

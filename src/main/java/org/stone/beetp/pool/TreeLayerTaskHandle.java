@@ -117,7 +117,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
                         try {
                             parent.fillTaskResult(TASK_SUCCEED, parent.task.join(parent.subTaskHandles));//join children
                             if (parent == root) {
-                                pool.getTaskCount().decrementAndGet();
+                                pool.decrementTaskCount();
                                 ((TaskExecuteWorker) this.state).incrementCompletedCount();
                             }
                         } catch (Throwable e) {
@@ -135,7 +135,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     private void handleSubTaskException(Object result) {
         if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
             root.fillTaskResult(TASK_FAILED, result);
-            pool.getTaskCount().decrementAndGet();
+            pool.decrementTaskCount();
             ((TaskExecuteWorker) this.state).incrementCompletedCount();
 
             new AsynTreeCancelThread<V>(root.subTaskHandles, true).start();

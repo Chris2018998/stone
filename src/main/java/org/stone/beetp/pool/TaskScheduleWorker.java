@@ -25,14 +25,14 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskScheduleWorker extends TaskBucketWorker {
+    private final PoolTaskCenter pool;
     private final ReentrantLock lockOfHandles;
-    //count of handles in below array
     private int countOfHandles;
-    //an array of scheduled task handles
     private PoolTimedTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(PoolTaskCenter pool) {
-        super(pool, 0L, false, 1);
+        super(0L, false, 1);
+        this.pool = pool;
         this.lockOfHandles = new ReentrantLock();
         this.handles = new PoolTimedTaskHandle<?>[0];
     }
@@ -159,7 +159,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 if (firstHandle.isWaiting())
                     pool.pushToExecuteWorker(firstHandle, true);
                 else
-                    pool.getTaskCount().decrementAndGet();
+                    pool.decrementTaskCount();
             } else if (parkTimeForFirstHandle > 0L) {//park work thread with specified time
                 LockSupport.parkNanos(parkTimeForFirstHandle);
             } else {//if no timed task,then park

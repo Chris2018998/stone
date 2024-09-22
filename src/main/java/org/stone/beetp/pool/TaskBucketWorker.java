@@ -22,8 +22,8 @@ abstract class TaskBucketWorker extends ReactivateWorker {
     protected static final List<PoolTaskHandle<?>> emptyList = new LinkedList<>();
     protected volatile long completedCount;
 
-    public TaskBucketWorker(PoolTaskCenter pool, long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
-        super(pool, keepAliveTimeNanos, useTimePark, defaultSpins);
+    public TaskBucketWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
+        super(keepAliveTimeNanos, useTimePark, defaultSpins);
     }
 
     /**

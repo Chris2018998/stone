@@ -38,7 +38,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     private final TaskAspect<V> callAspect;
     private final ConcurrentLinkedQueue<Thread> waitQueue;
 
-    //it may be a completion result or a fail exception,this due to state value
+    //it may be a result or a fail exception,this due to state value
     protected Object result;
     //task state(if it is an execution worker,that means in running)
     protected volatile Object state;
@@ -226,7 +226,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //this method can override
     protected void afterExecute(boolean success, Object result) {
-        pool.getTaskCount().decrementAndGet();
+        pool.decrementTaskCount();
         taskBucket.incrementCompletedCount();
     }
 }
