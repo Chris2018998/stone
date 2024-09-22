@@ -159,7 +159,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 if (firstHandle.isWaiting())
                     pool.pushToExecuteWorker(firstHandle, true);
                 else
-                    pool.decrementTaskCount();
+                    pool.decrementTimedTaskCount();
             } else if (parkTimeForFirstHandle > 0L) {//park work thread with specified time
                 LockSupport.parkNanos(parkTimeForFirstHandle);
             } else {//if no timed task,then park

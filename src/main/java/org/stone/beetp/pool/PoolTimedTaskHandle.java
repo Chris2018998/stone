@@ -92,7 +92,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
             this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
             taskBucket.put(this);
         } else {
-            pool.decrementTaskCount();
+            pool.decrementExecTaskCount();
             taskBucket.incrementCompletedCount();
         }
     }

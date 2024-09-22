@@ -226,7 +226,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //this method can override
     protected void afterExecute(boolean success, Object result) {
-        pool.decrementTaskCount();
+        pool.decrementExecTaskCount();
         taskBucket.incrementCompletedCount();
     }
 }

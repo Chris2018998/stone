@@ -24,26 +24,11 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    //maximum of tasks,default is Integer.MAX_VALUE
-    private int maxTaskSize = Integer.MAX_VALUE;
-    //maximum of workers in pool,default is core size of cup
+    private int maxExecTaskSize = Integer.MAX_VALUE;
+    private int maxTimedTaskSize = Integer.MAX_VALUE;
     private int workerSize = Runtime.getRuntime().availableProcessors();
-
-    //milliseconds:max idle time that no tasks to be processed
-    private long workerKeepAliveTime;
-    //class name of task pool implementation
+    private long workerKeepAliveTime;//milliseconds
     private String poolImplementClassName = PoolTaskCenter.class.getName();
-
-    public int getMaxTaskSize() {
-        return maxTaskSize;
-    }
-
-    public void setMaxTaskSize(int maxTaskSize) {
-        if (maxTaskSize > 0) {
-            this.maxTaskSize = maxTaskSize;
-            this.workerSize = Math.min(maxTaskSize, Runtime.getRuntime().availableProcessors());
-        }
-    }
 
     public int getWorkerSize() {
         return workerSize;
@@ -51,6 +36,26 @@ public class TaskServiceConfig {
 
     public void setWorkerSize(int workerSize) {
         if (workerSize > 0) this.workerSize = workerSize;
+    }
+
+    public int getMaxExecTaskSize() {
+        return maxExecTaskSize;
+    }
+
+    public void setMaxExecTaskSize(int maxExecTaskSize) {
+        if (maxExecTaskSize > 0) {
+            this.maxExecTaskSize = maxExecTaskSize;
+            this.workerSize = Math.min(maxExecTaskSize, Runtime.getRuntime().availableProcessors());
+        }
+    }
+
+    public int getMaxTimedTaskSize() {
+        return maxTimedTaskSize;
+    }
+
+    public void setMaxTimedTaskSize(int maxTimedTaskSize) {
+        if (maxTimedTaskSize > 0)
+            this.maxTimedTaskSize = maxTimedTaskSize;
     }
 
     public long getWorkerKeepAliveTime() {

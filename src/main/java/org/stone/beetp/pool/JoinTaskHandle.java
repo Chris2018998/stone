@@ -89,6 +89,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
                 subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], currentWorker, this, root, pool);
 
             currentWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
+            //pool.incrementTaskCount(subTaskHandleCount);//@todo
         } else {
             super.executeTask();
         }
@@ -109,7 +110,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
                         try {
                             parent.fillTaskResult(TASK_SUCCEED, root.operator.join(parent.subTaskHandles));
                             if (parent == root) {
-                                pool.decrementTaskCount();
+                                pool.decrementExecTaskCount();
 
                                 //((TaskExecuteWorker) this.state).incrementCompletedCount();
                             }
@@ -128,7 +129,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     private void handleSubTaskException(Object result) {
         if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
             root.fillTaskResult(TASK_FAILED, result);
-            pool.decrementTaskCount();
+            pool.decrementExecTaskCount();
             //((TaskExecuteWorker) this.state).incrementCompletedCount();
 
             new AsynJoinCancelThread<V>(root.subTaskHandles, true).start();
