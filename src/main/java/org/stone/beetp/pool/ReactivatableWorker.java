@@ -9,6 +9,7 @@
  */
 package org.stone.beetp.pool;
 
+import org.stone.beetp.TaskPoolThreadFactory;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -23,17 +24,20 @@ import static org.stone.beetp.pool.PoolConstants.*;
  * @version 1.0
  */
 
-abstract class ReactivateWorker implements Runnable {
-    protected static final AtomicIntegerFieldUpdater<ReactivateWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivateWorker.class, "state");
+abstract class ReactivatableWorker implements Runnable {
+    protected static final AtomicIntegerFieldUpdater<ReactivatableWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(ReactivatableWorker.class, "state");
     protected final int defaultSpins;
     protected final boolean useTimePark;
     protected final long keepAliveTimeNanos;
+    protected final TaskPoolThreadFactory threadFactory;
 
     protected volatile int state;
     protected Thread workThread;
 
-    public ReactivateWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
+    public ReactivatableWorker(TaskPoolThreadFactory threadFactory,
+                               long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         this.state = WORKER_PASSIVATED;
+        this.threadFactory = threadFactory;
         this.useTimePark = useTimePark;
         this.defaultSpins = defaultSpins;
         this.keepAliveTimeNanos = keepAliveTimeNanos;
@@ -61,7 +65,7 @@ abstract class ReactivateWorker implements Runnable {
                 }
             } else if (curState == WORKER_PASSIVATED) {
                 if (StateUpd.compareAndSet(this, WORKER_PASSIVATED, WORKER_ACTIVATING)) {
-                    this.workThread = new Thread(this);
+                    this.workThread = threadFactory.newThread(this);
                     this.state = WORKER_RUNNING;
                     this.workThread.start();
                     return;

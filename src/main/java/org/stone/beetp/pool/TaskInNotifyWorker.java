@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import org.stone.beetp.TaskPoolThreadFactory;
+
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolConstants.*;
@@ -20,11 +22,12 @@ import static org.stone.beetp.pool.PoolConstants.*;
  * @version 1.0
  */
 
-final class TaskInNotifyWorker extends ReactivateWorker {
+final class TaskInNotifyWorker extends ReactivatableWorker {
     private final TaskExecuteWorker[] executeWorkers;
 
-    public TaskInNotifyWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
-        super(keepAliveTimeNanos, useTimePark, defaultSpins);
+    public TaskInNotifyWorker(TaskPoolThreadFactory threadFactory,
+                              long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
+        super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
         this.executeWorkers = executeWorkers;
     }
 

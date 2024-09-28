@@ -22,5 +22,4 @@ public final class TaskExecutionException extends TaskException {
     public TaskExecutionException(Throwable cause) {
         super(cause);
     }
-
 }

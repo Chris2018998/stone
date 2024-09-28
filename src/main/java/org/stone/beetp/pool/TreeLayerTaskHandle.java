@@ -11,6 +11,7 @@ package org.stone.beetp.pool;
 
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TreeLayerTask;
+import org.stone.beetp.pool.exception.TaskCountExceededException;
 import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
@@ -89,7 +90,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            if (pool.incrementExecTaskCount(subTaskHandleCount)) {
+            if (pool.incrementInternalTaskCount(subTaskHandleCount)) {
                 this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
                 this.subTaskHandleCount = splitChildCount;
                 for (int i = 0; i < splitChildCount; i++)
@@ -97,8 +98,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
 
                 execWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
             } else {
-                //@todo need fill failure exception
-                System.out.println("Task count exceeded");
+                this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));
             }
         } else {//4: execute leaf task
             super.executeTask(execWorker);

@@ -10,12 +10,15 @@
 package org.stone.beetp;
 
 import org.stone.beetp.pool.PoolTaskCenter;
+import org.stone.beetp.pool.PoolThreadFactory;
 import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
+import static org.stone.tools.BeanUtil.createClassInstance;
 import static org.stone.tools.CommonUtil.isNotBlank;
+import static org.stone.tools.CommonUtil.trimString;
 
 /**
  * Task service config object
@@ -28,6 +31,10 @@ public class TaskServiceConfig {
     private int maxTimedTaskSize = Integer.MAX_VALUE;
     private int workerSize = Runtime.getRuntime().availableProcessors();
     private long workerKeepAliveTime;//milliseconds
+
+    private TaskPoolThreadFactory threadFactory;
+    private Class<TaskPoolThreadFactory> threadFactoryClass;
+    private String threadFactoryClassName = PoolThreadFactory.class.getName();
     private String poolImplementClassName = PoolTaskCenter.class.getName();
 
     public int getWorkerSize() {
@@ -66,6 +73,31 @@ public class TaskServiceConfig {
         if (workerKeepAliveTime > 0L) this.workerKeepAliveTime = workerKeepAliveTime;
     }
 
+    public TaskPoolThreadFactory getThreadFactory() {
+        return threadFactory;
+    }
+
+    public void setThreadFactory(TaskPoolThreadFactory threadFactory) {
+        this.threadFactory = threadFactory;
+    }
+
+    public Class<TaskPoolThreadFactory> getThreadFactoryClass() {
+        return threadFactoryClass;
+    }
+
+    public void setThreadFactoryClass(Class<TaskPoolThreadFactory> threadFactoryClass) {
+        this.threadFactoryClass = threadFactoryClass;
+    }
+
+    public String getThreadFactoryClassName() {
+        return threadFactoryClassName;
+    }
+
+    public void setThreadFactoryClassName(String threadFactoryClassName) {
+        if (isNotBlank(threadFactoryClassName))
+            this.threadFactoryClassName = trimString(threadFactoryClassName);
+    }
+
     public String getPoolImplementClassName() {
         return poolImplementClassName;
     }
@@ -77,7 +109,11 @@ public class TaskServiceConfig {
 
     public TaskServiceConfig check() throws TaskServiceConfigException {
         TaskServiceConfig checkedConfig = new TaskServiceConfig();
+        TaskPoolThreadFactory threadFactory = createTaskPoolThreadFactory();
+
         copyTo(checkedConfig);
+
+        checkedConfig.threadFactory = threadFactory;
         return checkedConfig;
     }
 
@@ -93,5 +129,22 @@ public class TaskServiceConfig {
         } catch (Throwable e) {
             throw new TaskServiceConfigException("Failed to copy field[" + fieldName + "]", e);
         }
+    }
+
+    private TaskPoolThreadFactory createTaskPoolThreadFactory() throws TaskServiceConfigException {
+        if (threadFactory != null) return this.threadFactory;
+
+        if (threadFactoryClass != null || isNotBlank(threadFactoryClassName)) {
+            Class<?> factoryClass = null;
+            try {
+                factoryClass = threadFactoryClass != null ? threadFactoryClass : Class.forName(threadFactoryClassName);
+                return (TaskPoolThreadFactory) createClassInstance(factoryClass, TaskPoolThreadFactory.class, "thread factory");
+            } catch (ClassNotFoundException e) {
+                throw new TaskServiceConfigException("Not found thread factory class[" + threadFactoryClassName + "]", e);
+            } catch (Throwable e) {
+                throw new TaskServiceConfigException("Failed to create thread factory", e);
+            }
+        }
+        return null;
     }
 }

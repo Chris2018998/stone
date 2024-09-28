@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import org.stone.beetp.TaskPoolThreadFactory;
+
 import java.util.List;
 
 /**
@@ -17,10 +19,11 @@ import java.util.List;
  * @author Chris Liao
  * @version 1.0
  */
-abstract class TaskBucketWorker extends ReactivateWorker {
+abstract class TaskBucketWorker extends ReactivatableWorker {
 
-    public TaskBucketWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
-        super(keepAliveTimeNanos, useTimePark, defaultSpins);
+    public TaskBucketWorker(TaskPoolThreadFactory threadFactory,
+                            long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
+        super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
     }
 
     /**

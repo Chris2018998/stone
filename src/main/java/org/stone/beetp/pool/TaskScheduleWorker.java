@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import org.stone.beetp.TaskPoolThreadFactory;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,8 +32,8 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     private int countOfHandles;
     private PoolTimedTaskHandle<?>[] handles;
 
-    public TaskScheduleWorker(PoolTaskCenter pool) {
-        super(0L, false, 1);
+    public TaskScheduleWorker(TaskPoolThreadFactory threadFactory, PoolTaskCenter pool) {
+        super(threadFactory, 0L, false, 1);
         this.pool = pool;
         this.lockOfHandles = new ReentrantLock();
         this.handles = new PoolTimedTaskHandle<?>[0];
@@ -143,7 +145,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 if (countOfHandles > 0) {
                     parkTimeForFirstHandle = handles[0].getNextTime() - System.nanoTime();
 
-                    if (parkTimeForFirstHandle <= 0L && pool.incrementExecTaskCount(1)) {
+                    if (parkTimeForFirstHandle <= 0L && pool.incrementInternalTaskCount(1)) {
                         firstHandle = handles[0];
                         final int maxSeq = countOfHandles - 1;
                         System.arraycopy(handles, 1, handles, 0, maxSeq);//move forward

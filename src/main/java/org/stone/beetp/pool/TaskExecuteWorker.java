@@ -9,6 +9,8 @@
  */
 package org.stone.beetp.pool;
 
+import org.stone.beetp.TaskPoolThreadFactory;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -29,8 +31,9 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     private volatile long completedCount;
     private PoolTaskHandle<?> processingHandle;
 
-    public TaskExecuteWorker(long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
-        super(keepAliveTimeNanos, useTimePark, defaultSpins);
+    public TaskExecuteWorker(TaskPoolThreadFactory threadFactory,
+                             long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
+        super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
         this.executeWorkers = executeWorkers;
         this.taskQueue = new ConcurrentLinkedQueue<>();
     }

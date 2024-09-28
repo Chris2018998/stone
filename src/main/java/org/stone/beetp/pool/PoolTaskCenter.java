@@ -77,14 +77,16 @@ public final class PoolTaskCenter implements TaskPool {
         this.workerSize = config.getWorkerSize();
         this.maxNoOfWorkers = workerSize - 1;
         this.workers = new TaskExecuteWorker[workerSize];
+
         long keepAliveTimeNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         boolean useTimePark = keepAliveTimeNanos > 0L;
         int workerSpins = useTimePark ? maxTimedSpins : maxUntimedSpins;
 
-        this.scheduleWorker = new TaskScheduleWorker(this);
-        this.workersNotifier = new TaskInNotifyWorker(keepAliveTimeNanos, useTimePark, workerSpins, workers);
+        TaskPoolThreadFactory threadFactory = config.getThreadFactory();
+        this.scheduleWorker = new TaskScheduleWorker(threadFactory, this);
+        this.workersNotifier = new TaskInNotifyWorker(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
         for (int i = 0; i < workerSize; i++)
-            workers[i] = new TaskExecuteWorker(keepAliveTimeNanos, useTimePark, workerSpins, workers);
+            workers[i] = new TaskExecuteWorker(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
     }
 
     //***************************************************************************************************************//
@@ -134,7 +136,7 @@ public final class PoolTaskCenter implements TaskPool {
         int curCount;
         do {
             curCount = execTaskCount;
-            if (curCount >= maxExecTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
+            if (curCount == maxExecTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, curCount + 1));
     }
 
@@ -150,11 +152,12 @@ public final class PoolTaskCenter implements TaskPool {
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, curCount - 1));
     }
 
-    boolean incrementExecTaskCount(int addCount) {
+    boolean incrementInternalTaskCount(int addCount) {//add count of join tasks or count of tree subtasks
         int curCount, newCount;
         do {
             curCount = execTaskCount;
             newCount = curCount + addCount;
+
             if (newCount <= 0) return false;//Task count exceeded
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, newCount));
         return true;
@@ -317,7 +320,6 @@ public final class PoolTaskCenter implements TaskPool {
     //***************************************************************************************************************//
     //                                      6: Pool shutdown (4)                                                     //
     //***************************************************************************************************************//
-
     public TaskPoolTerminatedVo terminate(boolean mayInterruptIfRunning) throws TaskPoolException {
         int state = this.poolState;
         if (state == POOL_TERMINATED)
