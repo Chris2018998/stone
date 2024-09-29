@@ -1,5 +1,14 @@
 stone changes
 
+Changes in 1.3.8
+[beetp]
+1: support thread factory
+
+
+Changes in 1.3.7
+[beetp]
+1: refactor pool
+
 Changes in 1.3.6
 
 [beecp]
