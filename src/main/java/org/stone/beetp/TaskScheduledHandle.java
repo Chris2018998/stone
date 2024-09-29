@@ -34,11 +34,18 @@ public interface TaskScheduledHandle<V> extends TaskHandle<V> {
     boolean isFixedDelay();
 
     /**
+     * Get next execution time of task
+     *
+     * @return nano seconds
+     */
+    long getNextTime();
+
+    /**
      * Get last execution time of task
      *
      * @return nano seconds
      */
-    long getLastTime();
+    long getLastTime() throws TaskException;
 
     /**
      * Get task result of last execution
@@ -48,10 +55,4 @@ public interface TaskScheduledHandle<V> extends TaskHandle<V> {
      */
     V getLastResult() throws TaskException;
 
-    /**
-     * Get next execution time of task
-     *
-     * @return nano seconds
-     */
-    long getNextTime();
 }

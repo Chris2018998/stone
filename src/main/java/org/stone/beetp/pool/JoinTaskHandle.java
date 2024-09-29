@@ -54,7 +54,6 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
         this.root = root;
         this.parent = parent;
         this.operator = null;
-        //this.taskBucket = bucketWorker;
     }
 
     //***************************************************************************************************************//

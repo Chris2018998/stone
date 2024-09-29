@@ -45,9 +45,9 @@ public final class PoolTaskCenter implements TaskPool {
     private int workerSize;
     private int maxNoOfWorkers;
     private TaskExecutionWorker[] workers;
+    private TaskExecutionNotifier notifier;
     private ConcurrentLinkedQueue<PoolTaskHandle<?>>[] executionBuckets;
 
-    private TaskExecutionNotifier workersNotifier;
     private TaskScheduleWorker scheduleWorker;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
@@ -81,7 +81,7 @@ public final class PoolTaskCenter implements TaskPool {
 
         TaskPoolThreadFactory threadFactory = config.getThreadFactory();
         this.scheduleWorker = new TaskScheduleWorker(threadFactory, this);
-        this.workersNotifier = new TaskExecutionNotifier(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
+        this.notifier = new TaskExecutionNotifier(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
 
         this.workerSize = config.getWorkerSize();
         this.maxNoOfWorkers = workerSize - 1;
@@ -145,7 +145,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     void activateAllWorkers() {
-        workersNotifier.activate();
+        notifier.activate();
     }
 
     void decrementExecTaskCount() {
@@ -193,7 +193,7 @@ public final class PoolTaskCenter implements TaskPool {
             if (execTaskCount < workerSize) {
                 workers[arrayIndex].activate();
             } else {
-                workersNotifier.activate();
+                notifier.activate();
             }
         }
     }

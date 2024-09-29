@@ -12,9 +12,10 @@ package org.stone.beetp.pool;
 import org.stone.beetp.Task;
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TaskScheduledHandle;
+import org.stone.beetp.pool.exception.TaskCancelledException;
 import org.stone.beetp.pool.exception.TaskException;
 
-import static org.stone.beetp.pool.PoolConstants.TASK_WAITING;
+import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
  * Scheduled task handle Impl
@@ -65,30 +66,34 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
         return fixedDelay;
     }
 
-    //nanoseconds(less than System.nanoTime())
-    public long getLastTime() {
-        return lastExecutedTime;
-    }
-
     //value should be more than System.nanoTime(),when call done,then update time for next call
     public long getNextTime() {
         return executeTime;
     }
 
-    //retrieve result of last call
+    //nanoseconds(less than System.nanoTime())
+    public long getLastTime() throws TaskException {
+        if (lastExecutedState == null) throw new TaskException("Task has not  been executed");
+        return lastExecutedTime;
+    }
+
     public V getLastResult() throws TaskException {
-        return (V) lastExecutedResult;
+        if (lastExecutedState == null) throw new TaskException("Task has not  been executed");
+        if (lastExecutedState == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
+        if (lastExecutedState == TASK_FAILED) throw (TaskException) this.result;
+        if (lastExecutedState == TASK_SUCCEED) return (V) this.lastExecutedResult;
+        throw new TaskException("unknown last state");
     }
 
     //***************************************************************************************************************//
     //                              3: execute task                                                                  //
     //***************************************************************************************************************//
     protected void afterExecute(boolean success, Object result) {
-        if (this.isPeriodic()) {
-            this.lastExecutedState = this.state;
-            this.lastExecutedResult = this.result;
-            this.lastExecutedTime = this.executeTime;
+        this.lastExecutedResult = this.result;
+        this.lastExecutedTime = this.executeTime;
+        this.lastExecutedState = this.state;
 
+        if (this.isPeriodic()) {
             this.state = TASK_WAITING;
             this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
             scheduleWorker.put(this);
