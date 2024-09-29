@@ -49,12 +49,12 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
         this.parent = null;
     }
 
-    private JoinTaskHandle(Task<V> task, TaskExecuteWorker bucketWorker, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
+    private JoinTaskHandle(Task<V> task, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
         super(task, null, pool, false);
         this.root = root;
         this.parent = parent;
         this.operator = null;
-        this.taskBucket = bucketWorker;
+        //this.taskBucket = bucketWorker;
     }
 
     //***************************************************************************************************************//
@@ -77,16 +77,17 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    protected void executeTask(TaskExecuteWorker execWorker) {
+    protected void executeTask(TaskExecutionWorker execWorker) {
         Task<V>[] subTasks = root.operator.split(this.task);
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            if (pool.incrementInternalTaskCount(subTaskHandleCount)) {
+            if (pool.incrementTaskCountForInternal(subTaskHandleCount)) {
                 this.subTaskHandles = new JoinTaskHandle[splitChildCount];
                 this.subTaskHandleCount = splitChildCount;
                 for (int i = 0; i < splitChildCount; i++)
-                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], execWorker, this, root, pool);
+                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], this, root, pool);
+
                 execWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
             } else {
                 this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));

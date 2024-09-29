@@ -49,12 +49,12 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         this.parent = null;
     }
 
-    private TreeLayerTaskHandle(TreeLayerTask<V> task, TaskExecuteWorker bucketWorker, TreeLayerTaskHandle<V> parent, TreeLayerTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
+    private TreeLayerTaskHandle(TreeLayerTask<V> task, TreeLayerTaskHandle<V> parent, TreeLayerTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
         super(null, null, pool, false);
         this.task = task;
         this.root = root;
         this.parent = parent;
-        this.taskBucket = bucketWorker;
+        //this.taskBucket = bucketWorker;
     }
 
     TreeLayerTask getTreeLayerTask() {
@@ -85,16 +85,16 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         return task.join(null);
     }
 
-    protected void executeTask(TaskExecuteWorker execWorker) {
+    protected void executeTask(TaskExecutionWorker execWorker) {
         TreeLayerTask<V>[] subTasks = this.task.getSubTasks();
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            if (pool.incrementInternalTaskCount(subTaskHandleCount)) {
+            if (pool.incrementTaskCountForInternal(subTaskHandleCount)) {
                 this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
                 this.subTaskHandleCount = splitChildCount;
                 for (int i = 0; i < splitChildCount; i++)
-                    subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], execWorker, this, root, pool);
+                    subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, root, pool);
 
                 execWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
             } else {

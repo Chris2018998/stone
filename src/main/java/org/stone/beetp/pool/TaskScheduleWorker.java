@@ -26,27 +26,24 @@ import static org.stone.beetp.pool.PoolConstants.*;
  * @version 1.0
  */
 
-final class TaskScheduleWorker extends TaskBucketWorker {
+final class TaskScheduleWorker extends PoolBaseWorker {
     private final PoolTaskCenter pool;
     private final ReentrantLock lockOfHandles;
     private int countOfHandles;
-    private PoolTimedTaskHandle<?>[] handles;
+    private ScheduledTaskHandle<?>[] handles;
 
     public TaskScheduleWorker(TaskPoolThreadFactory threadFactory, PoolTaskCenter pool) {
         super(threadFactory, 0L, false, 1);
         this.pool = pool;
         this.lockOfHandles = new ReentrantLock();
-        this.handles = new PoolTimedTaskHandle<?>[0];
+        this.handles = new ScheduledTaskHandle<?>[0];
     }
 
     //***************************************************************************************************************//
     //                                            1: bucket methods(4)                                               //
     //***************************************************************************************************************//
-    public void put(PoolTaskHandle<?> taskHandle) {
+    public void put(ScheduledTaskHandle<?> handle) {
         int insertPos = -1;
-        taskHandle.setTaskBucket(this);
-        PoolTimedTaskHandle<?> handle = (PoolTimedTaskHandle<?>) taskHandle;
-
         try {
             //acquire lock of array
             lockOfHandles.lock();
@@ -54,7 +51,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
             //create a new array if full
             if (handles.length == countOfHandles) {
                 int newCapacity = countOfHandles + (countOfHandles < 64 ? countOfHandles + 2 : countOfHandles >> 1);
-                PoolTimedTaskHandle<?>[] newHandles = new PoolTimedTaskHandle<?>[newCapacity];
+                ScheduledTaskHandle<?>[] newHandles = new ScheduledTaskHandle<?>[newCapacity];
                 System.arraycopy(handles, 0, newHandles, 0, countOfHandles);
                 this.handles = newHandles;
             }
@@ -95,7 +92,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
 
     public List<PoolTaskHandle<?>> getUnCompletedTasks() {
         List<PoolTaskHandle<?>> allTasks = new LinkedList<>(Arrays.asList(handles));
-        this.handles = new PoolTimedTaskHandle[0];
+        this.handles = new ScheduledTaskHandle[0];
         this.countOfHandles = 0;
         LockSupport.unpark(workThread);
         return allTasks;
@@ -133,7 +130,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
     //***************************************************************************************************************//
     public void run() {
         long parkTimeForFirstHandle;
-        PoolTimedTaskHandle<?> firstHandle;
+        ScheduledTaskHandle<?> firstHandle;
 
         do {
             firstHandle = null;
@@ -145,7 +142,7 @@ final class TaskScheduleWorker extends TaskBucketWorker {
                 if (countOfHandles > 0) {
                     parkTimeForFirstHandle = handles[0].getNextTime() - System.nanoTime();
 
-                    if (parkTimeForFirstHandle <= 0L && pool.incrementInternalTaskCount(1)) {
+                    if (parkTimeForFirstHandle <= 0L && pool.incrementTaskCountForInternal(1)) {
                         firstHandle = handles[0];
                         final int maxSeq = countOfHandles - 1;
                         System.arraycopy(handles, 1, handles, 0, maxSeq);//move forward

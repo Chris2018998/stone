@@ -44,10 +44,11 @@ public final class PoolTaskCenter implements TaskPool {
 
     private int workerSize;
     private int maxNoOfWorkers;
-    private TaskExecuteWorker[] workers;
-    private TaskInNotifyWorker workersNotifier;
-    private TaskScheduleWorker scheduleWorker;
+    private TaskExecutionWorker[] workers;
+    private ConcurrentLinkedQueue<PoolTaskHandle<?>>[] executionBuckets;
 
+    private TaskExecutionNotifier workersNotifier;
+    private TaskScheduleWorker scheduleWorker;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
 
     //***************************************************************************************************************//
@@ -74,19 +75,22 @@ public final class PoolTaskCenter implements TaskPool {
         this.maxTimedTaskSize = config.getMaxTimedTaskSize();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-        this.workerSize = config.getWorkerSize();
-        this.maxNoOfWorkers = workerSize - 1;
-        this.workers = new TaskExecuteWorker[workerSize];
-
         long keepAliveTimeNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
         boolean useTimePark = keepAliveTimeNanos > 0L;
         int workerSpins = useTimePark ? maxTimedSpins : maxUntimedSpins;
 
         TaskPoolThreadFactory threadFactory = config.getThreadFactory();
         this.scheduleWorker = new TaskScheduleWorker(threadFactory, this);
-        this.workersNotifier = new TaskInNotifyWorker(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
-        for (int i = 0; i < workerSize; i++)
-            workers[i] = new TaskExecuteWorker(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
+        this.workersNotifier = new TaskExecutionNotifier(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
+
+        this.workerSize = config.getWorkerSize();
+        this.maxNoOfWorkers = workerSize - 1;
+        this.workers = new TaskExecutionWorker[workerSize];
+        this.executionBuckets = new ConcurrentLinkedQueue[workerSize];
+        for (int i = 0; i < workerSize; i++) {
+            executionBuckets[i] = new ConcurrentLinkedQueue<>();
+            workers[i] = new TaskExecutionWorker(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, executionBuckets[i], executionBuckets);
+        }
     }
 
     //***************************************************************************************************************//
@@ -152,7 +156,7 @@ public final class PoolTaskCenter implements TaskPool {
         } while (!ExecTaskCountUpd.compareAndSet(this, curCount, curCount - 1));
     }
 
-    boolean incrementInternalTaskCount(int addCount) {//add count of join tasks or count of tree subtasks
+    boolean incrementTaskCountForInternal(int addCount) {
         int curCount, newCount;
         do {
             curCount = execTaskCount;
@@ -166,31 +170,28 @@ public final class PoolTaskCenter implements TaskPool {
     //push a task handle to execution worker
     void pushToExecuteWorker(PoolTaskHandle<?> taskHandle, boolean isTimedTask) {
         if (isTimedTask) {
-            TaskExecuteWorker targetWorker = null;
-            for (TaskExecuteWorker worker : workers) {
-                if (!worker.isRunning()) {
-                    targetWorker = worker;
+            int arrayIndex = -1;
+            for (int i = 0; i < workerSize; i++) {
+                if (!workers[i].isRunning()) {
+                    arrayIndex = i;
                     break;
                 }
             }
 
-            if (targetWorker == null) {
-                int arrayIndex = this.maxNoOfWorkers & taskHandle.hashCode();
-                targetWorker = this.workers[arrayIndex];
-            }
-
-            targetWorker.put(taskHandle);
-            targetWorker.activate();
+            if (arrayIndex == -1) arrayIndex = this.maxNoOfWorkers & taskHandle.hashCode();
+            ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket = this.executionBuckets[arrayIndex];
+            bucket.offer(taskHandle);
+            taskHandle.setExecutionBucket(bucket);
+            workers[arrayIndex].activate();
         } else {
-            //1: compute index of worker array to store task
             int threadHashCode = (int) Thread.currentThread().getId();
             int arrayIndex = this.maxNoOfWorkers & (threadHashCode ^ (threadHashCode >>> 16));
-            TaskExecuteWorker worker = this.workers[arrayIndex];
-            worker.put(taskHandle);
+            ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket = this.executionBuckets[arrayIndex];
+            bucket.offer(taskHandle);
+            taskHandle.setExecutionBucket(bucket);
 
-            //2: Notify one worker or all workers
             if (execTaskCount < workerSize) {
-                worker.activate();
+                workers[arrayIndex].activate();
             } else {
                 workersNotifier.activate();
             }
@@ -252,7 +253,7 @@ public final class PoolTaskCenter implements TaskPool {
         //3: create task handle and put it to schedule worker
         long intervalNanos = unit.toNanos(intervalTime);
         long firstRunNanos = unit.toNanos(initialDelay) + System.nanoTime();
-        PoolTimedTaskHandle<V> handle = new PoolTimedTaskHandle<>(task, aspect, firstRunNanos, intervalNanos, fixedDelay, this);
+        ScheduledTaskHandle<V> handle = new ScheduledTaskHandle<>(task, aspect, firstRunNanos, intervalNanos, fixedDelay, scheduleWorker, this);
         scheduleWorker.put(handle);
 
         //4: return this handle to method caller
@@ -276,14 +277,14 @@ public final class PoolTaskCenter implements TaskPool {
 
     public int getRunningCount() {
         int count = 0;
-        for (TaskExecuteWorker worker : workers)
+        for (TaskExecutionWorker worker : workers)
             if (worker.getProcessingHandle() != null) count++;
         return count;
     }
 
     public long getCompletedCount() {
         long count = 0;
-        for (TaskExecuteWorker worker : workers)
+        for (TaskExecutionWorker worker : workers)
             count += worker.getCompletedCount();
 
         return count;
@@ -311,7 +312,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     private TaskPoolTerminatedVo removeAll(boolean mayInterruptIfRunning) {
         List<PoolTaskHandle<?>> unCompletedHandleList = scheduleWorker.getUnCompletedTasks();
-        for (TaskExecuteWorker worker : workers) {
+        for (TaskExecutionWorker worker : workers) {
             worker.passivate(mayInterruptIfRunning);
         }
         return null;//@todo to be implemented
@@ -331,7 +332,7 @@ public final class PoolTaskCenter implements TaskPool {
             TaskPoolTerminatedVo info = this.removeAll(mayInterruptIfRunning);
 
             scheduleWorker.passivate(mayInterruptIfRunning);
-            for (TaskExecuteWorker worker : workers)
+            for (TaskExecutionWorker worker : workers)
                 worker.passivate(mayInterruptIfRunning);
 
             for (Thread thread : poolTerminateWaitQueue)

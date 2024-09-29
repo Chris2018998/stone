@@ -22,12 +22,13 @@ import static org.stone.beetp.pool.PoolConstants.TASK_WAITING;
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements TaskScheduledHandle<V> {
+public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements TaskScheduledHandle<V> {
     private final int hashCode;
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
-    private long executeTime;//time sortable
+    private final TaskScheduleWorker scheduleWorker;
 
+    private long executeTime;//time sortable
     private long lastExecutedTime;
     private Object lastExecutedState;
     private Object lastExecutedResult;
@@ -35,13 +36,15 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
     //***************************************************************************************************************//
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
-    PoolTimedTaskHandle(Task<V> task, TaskAspect<V> callback,
-                        long firstRunTime, long intervalTime, boolean fixedDelay, PoolTaskCenter pool) {
+    ScheduledTaskHandle(Task<V> task, TaskAspect<V> callback,
+                        long firstRunTime, long intervalTime, boolean fixedDelay, final TaskScheduleWorker scheduleWorker,
+                        PoolTaskCenter pool) {
         super(task, callback, pool, true);
 
         this.executeTime = firstRunTime;
         this.intervalTime = intervalTime;
         this.fixedDelay = fixedDelay;
+        this.scheduleWorker = scheduleWorker;
 
         int hashCode = super.hashCode();
         this.hashCode = hashCode ^ (hashCode >>> 16);
@@ -74,8 +77,6 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
 
     //retrieve result of last call
     public V getLastResult() throws TaskException {
-
-
         return (V) lastExecutedResult;
     }
 
@@ -90,7 +91,7 @@ public final class PoolTimedTaskHandle<V> extends PoolTaskHandle<V> implements T
 
             this.state = TASK_WAITING;
             this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
-            taskBucket.put(this);
+            scheduleWorker.put(this);
         } else {
             pool.decrementTimedTaskCount();
         }

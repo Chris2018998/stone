@@ -40,10 +40,10 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //it may be a result or a fail exception,this due to state value
     protected Object result;
-    //task state(if it is an execution worker,that means in running)
+    //task state(if it is an execution worker,which means that task in being executing)
     protected volatile Object state;
-    //owner bucket contains this handle
-    protected TaskBucketWorker taskBucket;
+    //task bucket of task
+    protected ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket;
 
     PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean supportWait) {
         this.task = task;
@@ -55,13 +55,6 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //***************************************************************************************************************//
-    //                                  1: constructor(2)                                                            //
-    //**************************************************e************************************************************//
-    void setTaskBucket(TaskBucketWorker taskBucket) {
-        if (this.taskBucket == null) this.taskBucket = taskBucket;
-    }
-
-    //***************************************************************************************************************//
     //                                  2: task states(6)                                                            //
     //**************************************************e************************************************************//
     public boolean isWaiting() {
@@ -69,7 +62,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     public boolean isRunning() {
-        return state instanceof TaskExecuteWorker;
+        return state instanceof TaskExecutionWorker;
     }
 
     //one of completed states
@@ -93,21 +86,21 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //***************************************************************************************************************//
-    //                                  3: task cancel(1)                                                            //
+    //                                  3: cancel(1)                                                                 //
     //***************************************************************************************************************//
     public boolean cancel(final boolean mayInterruptIfRunning) {
         //1: try to change state to cancelled
         if (state == TASK_WAITING && StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED)) {
             this.fillTaskResult(TASK_CANCELLED, null);
-            this.taskBucket.cancel(this, false);//just remove it from bucket
+            this.executionBucket.remove(this);
             return true;
         }
 
         //2: if parameter mayInterruptIfRunning is true then interrupt possible blocking
         if (mayInterruptIfRunning) {
             Object curState = state;
-            if (curState instanceof TaskExecuteWorker) {
-                TaskExecuteWorker worker = (TaskExecuteWorker) curState;
+            if (curState instanceof TaskExecutionWorker) {
+                TaskExecutionWorker worker = (TaskExecutionWorker) curState;
                 return worker.cancel(this, true);//need check worker thread state whether in blocking
             }
         }
@@ -170,16 +163,21 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //***************************************************************************************************************//
-    //                              6: task execution(3)                                                             //
+    //                              6: task execution(5)                                                             //
     //***************************************************************************************************************//
-    boolean setRunWorker(TaskExecuteWorker worker) {
+    void setExecutionBucket(ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket) {
+        this.executionBucket = executionBucket;
+    }
+
+    boolean setExecutionWorker(TaskExecutionWorker worker) {
         return StateUpd.compareAndSet(this, TASK_WAITING, worker);
     }
 
     protected void afterExecute(boolean success, Object result) {
+
     }
 
-    protected void executeTask(TaskExecuteWorker execWorker) {
+    protected void executeTask(TaskExecutionWorker execWorker) {
         try {
             if (callAspect != null) callAspect.beforeCall(this);
             this.fillTaskResult(TASK_SUCCEED, task.call());//set success result

@@ -27,8 +27,8 @@ import static org.stone.tools.CommonUtil.trimString;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    private int maxExecTaskSize = Integer.MAX_VALUE;
-    private int maxTimedTaskSize = Integer.MAX_VALUE;
+    private int maxExecTaskSize = 1000;
+    private int maxTimedTaskSize = 1000;
     private int workerSize = Runtime.getRuntime().availableProcessors();
     private long workerKeepAliveTime;//milliseconds
 
@@ -73,6 +73,7 @@ public class TaskServiceConfig {
         if (workerKeepAliveTime > 0L) this.workerKeepAliveTime = workerKeepAliveTime;
     }
 
+
     public TaskPoolThreadFactory getThreadFactory() {
         return threadFactory;
     }
@@ -103,8 +104,8 @@ public class TaskServiceConfig {
     }
 
     public void setPoolImplementClassName(String poolImplementClassName) {
-        if (isNotBlank(this.poolImplementClassName))
-            this.poolImplementClassName = poolImplementClassName;
+        if (isNotBlank(poolImplementClassName))
+            this.poolImplementClassName = trimString(poolImplementClassName);
     }
 
     public TaskServiceConfig check() throws TaskServiceConfigException {
@@ -142,7 +143,7 @@ public class TaskServiceConfig {
             } catch (ClassNotFoundException e) {
                 throw new TaskServiceConfigException("Not found thread factory class[" + threadFactoryClassName + "]", e);
             } catch (Throwable e) {
-                throw new TaskServiceConfigException("Failed to create thread factory", e);
+                throw new TaskServiceConfigException("Failed to create thread factory with class[" + factoryClass + "]", e);
             }
         }
         return null;

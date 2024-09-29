@@ -24,13 +24,13 @@ public class PoolConstants {
     public static final int POOL_TERMINATING = 4;
     public static final int POOL_TERMINATED = 5;
 
-    //a state of worker is passivated
+    //a state of worker is passivated(initial state)
     public static final int WORKER_PASSIVATED = 0;
     //a state of worker in activating
     public static final int WORKER_ACTIVATING = 1;
-    //a state of worker in working
+    //a state of worker in working(executing a task)
     public static final int WORKER_RUNNING = 2;
-    //a state of worker in waiting
+    //a state of worker in waiting(waiting for a task)
     public static final int WORKER_WAITING = 3;
 
     //a task state that wait to be executed

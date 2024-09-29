@@ -16,24 +16,24 @@ import java.util.concurrent.locks.LockSupport;
 import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
- * A worker to wake up pool execution workers
+ * A worker to activate all execution workers in pool
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-final class TaskInNotifyWorker extends ReactivatableWorker {
-    private final TaskExecuteWorker[] executeWorkers;
+final class TaskExecutionNotifier extends PoolBaseWorker {
+    private final TaskExecutionWorker[] executeWorkers;
 
-    public TaskInNotifyWorker(TaskPoolThreadFactory threadFactory,
-                              long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
+    public TaskExecutionNotifier(TaskPoolThreadFactory threadFactory,
+                                 long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecutionWorker[] executeWorkers) {
         super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
         this.executeWorkers = executeWorkers;
     }
 
     public void run() {
         do {
-            for (TaskExecuteWorker worker : executeWorkers)
+            for (TaskExecutionWorker worker : executeWorkers)
                 worker.activate();
 
             if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {

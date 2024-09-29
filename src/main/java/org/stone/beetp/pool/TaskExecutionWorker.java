@@ -19,23 +19,28 @@ import java.util.concurrent.locks.LockSupport;
 import static org.stone.beetp.pool.PoolConstants.*;
 
 /**
- * Pool task execution worker
+ * Task execution worker
  *
  * @author Chris Liao
  * @version 1.0
  */
 
-final class TaskExecuteWorker extends TaskBucketWorker {
-    private final TaskExecuteWorker[] executeWorkers;
-    private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskQueue;
-    private volatile long completedCount;
-    private PoolTaskHandle<?> processingHandle;
+final class TaskExecutionWorker extends PoolBaseWorker {
+    private final ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket;
+    private final ConcurrentLinkedQueue<PoolTaskHandle<?>>[] executionBuckets;
 
-    public TaskExecuteWorker(TaskPoolThreadFactory threadFactory,
-                             long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecuteWorker[] executeWorkers) {
+    private volatile long completedCount;
+    private volatile PoolTaskHandle<?> processingHandle;
+
+    public TaskExecutionWorker(TaskPoolThreadFactory threadFactory,
+                               long keepAliveTimeNanos, boolean useTimePark, int defaultSpins,
+
+                               ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket,
+                               ConcurrentLinkedQueue<PoolTaskHandle<?>>[] executionBuckets) {
+
         super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
-        this.executeWorkers = executeWorkers;
-        this.taskQueue = new ConcurrentLinkedQueue<>();
+        this.executionBucket = executionBucket;
+        this.executionBuckets = executionBuckets;
     }
 
     //***************************************************************************************************************//
@@ -81,17 +86,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
      * @return task queue
      */
     public ConcurrentLinkedQueue<PoolTaskHandle<?>> getQueue() {
-        return taskQueue;
-    }
-
-    /**
-     * Pool push a task to worker by call this method
-     *
-     * @param taskHandle is a handle passed from pool
-     */
-    public void put(PoolTaskHandle<?> taskHandle) {
-        taskHandle.setTaskBucket(this);
-        taskQueue.offer(taskHandle);
+        return executionBucket;
     }
 
     /**
@@ -102,7 +97,7 @@ final class TaskExecuteWorker extends TaskBucketWorker {
     public List<PoolTaskHandle<?>> getUnCompletedTasks() {
         List<PoolTaskHandle<?>> taskList = new LinkedList<>();
         do {
-            PoolTaskHandle<?> handle = taskQueue.poll();
+            PoolTaskHandle<?> handle = executionBucket.poll();
             if (handle == null) break;
             taskList.add(handle);
         } while (true);
@@ -127,24 +122,25 @@ final class TaskExecuteWorker extends TaskBucketWorker {
         int spinSize = defaultSpins;
 
         do {
-            //1: poll a task from queue
-            PoolTaskHandle<?> handle = taskQueue.poll();
-            if (handle == null) {//steal a task from other worker
-                for (TaskExecuteWorker worker : executeWorkers) {
-                    handle = worker.taskQueue.poll();
+            //1: poll a task from private queue
+            PoolTaskHandle<?> handle = executionBucket.poll();
+            //2: steal a task from other worker when poll a null task
+            if (handle == null) {
+                for (ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket : executionBuckets) {
+                    handle = bucket.poll();
                     if (handle != null) break;
                 }
             }
 
-            //2: process the polled task
+            //3: process the polled task
             if (handle != null) {
                 this.processingHandle = handle;
-                if (handle.setRunWorker(this)) {
+                if (handle.setExecutionWorker(this)) {
                     Thread.interrupted();//clear interrupted flag
                     handle.executeTask(this);
-                    spinSize = defaultSpins;
                 }
                 this.processingHandle = null;
+                spinSize = defaultSpins;
             } else if (spinSize > 0) {
                 spinSize--;
             } else {
