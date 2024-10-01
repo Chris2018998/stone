@@ -25,4 +25,6 @@ public interface TaskPoolMonitorVo {
 
     long getCompletedCount();
 
+    int getScheduledTaskCount();
+
 }

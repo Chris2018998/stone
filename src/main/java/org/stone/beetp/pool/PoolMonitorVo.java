@@ -20,10 +20,10 @@ import org.stone.beetp.TaskPoolMonitorVo;
 
 public final class PoolMonitorVo implements TaskPoolMonitorVo {
     private int poolState;
-    private int workerCount;
-    private int taskHoldingCount;
+    private int taskCount;
     private int taskRunningCount;
     private long taskCompletedCount;
+    private int scheduledTaskCount;
 
     public int getPoolState() {
         return poolState;
@@ -33,20 +33,12 @@ public final class PoolMonitorVo implements TaskPoolMonitorVo {
         this.poolState = poolState;
     }
 
-    public int getWorkerCount() {
-        return workerCount;
-    }
-
-    void setWorkerCount(int workerCount) {
-        this.workerCount = workerCount;
-    }
-
     public int getTaskCount() {
-        return taskHoldingCount;
+        return taskCount;
     }
 
-    void setTaskHoldingCount(int taskHoldingCount) {
-        this.taskHoldingCount = taskHoldingCount;
+    void setTaskCount(int taskCount) {
+        this.taskCount = taskCount;
     }
 
     public int getRunningCount() {
@@ -63,5 +55,13 @@ public final class PoolMonitorVo implements TaskPoolMonitorVo {
 
     void setTaskCompletedCount(long taskCompletedCount) {
         this.taskCompletedCount = taskCompletedCount;
+    }
+
+    public int getScheduledTaskCount() {
+        return scheduledTaskCount;
+    }
+
+    void setScheduledTaskCount(int scheduledTaskCount) {
+        this.scheduledTaskCount = scheduledTaskCount;
     }
 }
