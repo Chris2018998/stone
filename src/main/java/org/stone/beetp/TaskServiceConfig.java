@@ -27,8 +27,8 @@ import static org.stone.tools.CommonUtil.trimString;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    private int maxExecTaskSize = 1000;
-    private int maxTimedTaskSize = 1000;
+    private int maxTaskSize = 1000;
+    private int maxScheduleTaskSize = 1000;
     private int workerSize = Runtime.getRuntime().availableProcessors();
     private long workerKeepAliveTime;//milliseconds
 
@@ -45,24 +45,24 @@ public class TaskServiceConfig {
         if (workerSize > 0) this.workerSize = workerSize;
     }
 
-    public int getMaxExecTaskSize() {
-        return maxExecTaskSize;
+    public int getMaxTaskSize() {
+        return maxTaskSize;
     }
 
-    public void setMaxExecTaskSize(int maxExecTaskSize) {
-        if (maxExecTaskSize > 0) {
-            this.maxExecTaskSize = maxExecTaskSize;
-            this.workerSize = Math.min(maxExecTaskSize, Runtime.getRuntime().availableProcessors());
+    public void setMaxTaskSize(int maxTaskSize) {
+        if (maxTaskSize > 0) {
+            this.maxTaskSize = maxTaskSize;
+            this.workerSize = Math.min(maxTaskSize, Runtime.getRuntime().availableProcessors());
         }
     }
 
-    public int getMaxTimedTaskSize() {
-        return maxTimedTaskSize;
+    public int getMaxScheduleTaskSize() {
+        return maxScheduleTaskSize;
     }
 
-    public void setMaxTimedTaskSize(int maxTimedTaskSize) {
-        if (maxTimedTaskSize > 0)
-            this.maxTimedTaskSize = maxTimedTaskSize;
+    public void setMaxScheduleTaskSize(int maxScheduleTaskSize) {
+        if (maxScheduleTaskSize > 0)
+            this.maxScheduleTaskSize = maxScheduleTaskSize;
     }
 
     public long getWorkerKeepAliveTime() {
@@ -109,11 +109,12 @@ public class TaskServiceConfig {
     }
 
     public TaskServiceConfig check() throws TaskServiceConfigException {
-        TaskServiceConfig checkedConfig = new TaskServiceConfig();
+        if (maxScheduleTaskSize > maxTaskSize)
+            throw new TaskServiceConfigException("Max schedule task size can't be greater than max task size");
         TaskPoolThreadFactory threadFactory = createTaskPoolThreadFactory();
 
+        TaskServiceConfig checkedConfig = new TaskServiceConfig();
         copyTo(checkedConfig);
-
         checkedConfig.threadFactory = threadFactory;
         return checkedConfig;
     }

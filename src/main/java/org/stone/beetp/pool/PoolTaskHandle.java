@@ -43,7 +43,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     //task state(if it is an execution worker,which means that task in being executing)
     protected volatile Object state;
     //task bucket of task
-    protected ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket;
+    protected ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket;
 
     PoolTaskHandle(Task<V> task, TaskAspect<V> callAspect, PoolTaskCenter pool, boolean supportWait) {
         this.task = task;
@@ -92,7 +92,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         //1: try to change state to cancelled
         if (state == TASK_WAITING && StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED)) {
             this.fillTaskResult(TASK_CANCELLED, null);
-            this.executionBucket.remove(this);
+            this.taskBucket.remove(this);
             return true;
         }
 
@@ -165,8 +165,8 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     //***************************************************************************************************************//
     //                              6: task execution(5)                                                             //
     //***************************************************************************************************************//
-    void setExecutionBucket(ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket) {
-        this.executionBucket = executionBucket;
+    void setTaskBucket(ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket) {
+        this.taskBucket = taskBucket;
     }
 
     boolean setExecutionWorker(TaskExecutionWorker worker) {

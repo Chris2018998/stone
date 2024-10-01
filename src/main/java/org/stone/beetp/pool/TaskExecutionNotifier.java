@@ -23,17 +23,17 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskExecutionNotifier extends PoolBaseWorker {
-    private final TaskExecutionWorker[] executeWorkers;
+    private final TaskExecutionWorker[] workers;
 
     public TaskExecutionNotifier(TaskPoolThreadFactory threadFactory,
-                                 long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecutionWorker[] executeWorkers) {
+                                 long keepAliveTimeNanos, boolean useTimePark, int defaultSpins, TaskExecutionWorker[] workers) {
         super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
-        this.executeWorkers = executeWorkers;
+        this.workers = workers;
     }
 
     public void run() {
         do {
-            for (TaskExecutionWorker worker : executeWorkers)
+            for (TaskExecutionWorker worker : workers)
                 worker.activate();
 
             if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {

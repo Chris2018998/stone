@@ -129,20 +129,20 @@ final class TaskScheduleWorker extends PoolBaseWorker {
     //                                            2: core method to process tasks                                    //
     //***************************************************************************************************************//
     public void run() {
-        long parkTimeForFirstHandle;
+        long parkTimeOnFirstHandle;
         ScheduledTaskHandle<?> firstHandle;
 
         do {
             firstHandle = null;
-            parkTimeForFirstHandle = 0L;
+            parkTimeOnFirstHandle = 0L;
 
             //1:poll out first hande if expired
             try {
                 lockOfHandles.lock();
                 if (countOfHandles > 0) {
-                    parkTimeForFirstHandle = handles[0].getNextTime() - System.nanoTime();
+                    parkTimeOnFirstHandle = handles[0].getNextTime() - System.nanoTime();
 
-                    if (parkTimeForFirstHandle <= 0L && pool.incrementTaskCountForInternal(1)) {
+                    if (parkTimeOnFirstHandle <= 0L && pool.incrementTaskCountForInternal(1)) {
                         firstHandle = handles[0];
                         final int maxSeq = countOfHandles - 1;
                         System.arraycopy(handles, 1, handles, 0, maxSeq);//move forward
@@ -159,11 +159,11 @@ final class TaskScheduleWorker extends PoolBaseWorker {
                 if (firstHandle.isWaiting())
                     pool.pushToExecuteWorker(firstHandle, true);
                 else {
-                    pool.decrementTimedTaskCount();
+                    pool.decrementScheduledTaskCount();
                     pool.decrementExecTaskCount();
                 }
-            } else if (parkTimeForFirstHandle > 0L) {//park work thread with specified time
-                LockSupport.parkNanos(parkTimeForFirstHandle);
+            } else if (parkTimeOnFirstHandle > 0L) {//park work thread with specified time
+                LockSupport.parkNanos(parkTimeOnFirstHandle);
             } else {//if no timed task,then park
                 LockSupport.park();
             }

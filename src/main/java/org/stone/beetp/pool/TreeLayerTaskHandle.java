@@ -96,7 +96,7 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
                 for (int i = 0; i < splitChildCount; i++)
                     subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, root, pool);
 
-                execWorker.getQueue().addAll(Arrays.asList(subTaskHandles));
+                execWorker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
             } else {
                 this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));
             }

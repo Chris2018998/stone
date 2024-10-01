@@ -98,7 +98,7 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
             this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
             scheduleWorker.put(this);
         } else {
-            pool.decrementTimedTaskCount();
+            pool.decrementScheduledTaskCount();
         }
     }
 }

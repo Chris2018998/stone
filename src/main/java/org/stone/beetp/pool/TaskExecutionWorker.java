@@ -26,21 +26,20 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 final class TaskExecutionWorker extends PoolBaseWorker {
-    private final ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket;
-    private final ConcurrentLinkedQueue<PoolTaskHandle<?>>[] executionBuckets;
+    private final ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket;
+    private final ConcurrentLinkedQueue<PoolTaskHandle<?>>[] taskBuckets;
 
     private volatile long completedCount;
     private volatile PoolTaskHandle<?> processingHandle;
 
     public TaskExecutionWorker(TaskPoolThreadFactory threadFactory,
                                long keepAliveTimeNanos, boolean useTimePark, int defaultSpins,
-
-                               ConcurrentLinkedQueue<PoolTaskHandle<?>> executionBucket,
-                               ConcurrentLinkedQueue<PoolTaskHandle<?>>[] executionBuckets) {
+                               ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket,
+                               ConcurrentLinkedQueue<PoolTaskHandle<?>>[] taskBuckets) {
 
         super(threadFactory, keepAliveTimeNanos, useTimePark, defaultSpins);
-        this.executionBucket = executionBucket;
-        this.executionBuckets = executionBuckets;
+        this.taskBucket = taskBucket;
+        this.taskBuckets = taskBuckets;
     }
 
     //***************************************************************************************************************//
@@ -85,8 +84,8 @@ final class TaskExecutionWorker extends PoolBaseWorker {
      *
      * @return task queue
      */
-    public ConcurrentLinkedQueue<PoolTaskHandle<?>> getQueue() {
-        return executionBucket;
+    public ConcurrentLinkedQueue<PoolTaskHandle<?>> getTaskBucket() {
+        return taskBucket;
     }
 
     /**
@@ -97,7 +96,7 @@ final class TaskExecutionWorker extends PoolBaseWorker {
     public List<PoolTaskHandle<?>> getUnCompletedTasks() {
         List<PoolTaskHandle<?>> taskList = new LinkedList<>();
         do {
-            PoolTaskHandle<?> handle = executionBucket.poll();
+            PoolTaskHandle<?> handle = taskBucket.poll();
             if (handle == null) break;
             taskList.add(handle);
         } while (true);
@@ -123,10 +122,10 @@ final class TaskExecutionWorker extends PoolBaseWorker {
 
         do {
             //1: poll a task from private queue
-            PoolTaskHandle<?> handle = executionBucket.poll();
+            PoolTaskHandle<?> handle = taskBucket.poll();
             //2: steal a task from other worker when poll a null task
             if (handle == null) {
-                for (ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket : executionBuckets) {
+                for (ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket : taskBuckets) {
                     handle = bucket.poll();
                     if (handle != null) break;
                 }
