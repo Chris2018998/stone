@@ -157,7 +157,7 @@ final class TaskScheduleWorker extends PoolBaseWorker {
             //2: process handle if first handle is not null
             if (firstHandle != null) {
                 if (firstHandle.isWaiting())
-                    pool.pushToExecuteWorker(firstHandle, true);
+                    pool.pushToTaskBucket(firstHandle, true);
                 else {
                     pool.decrementScheduledTaskCount();
                     pool.decrementTaskCount();

@@ -39,7 +39,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     private int maxTaskSize;
     private int maxScheduleTaskSize;
-    private volatile int taskCount;//
+    private volatile int taskCount;
     private volatile int scheduledTaskCount;
 
     private int workerSize;
@@ -104,7 +104,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkSubmittedExecTask(task);
 
         PoolTaskHandle<V> handle = new PoolTaskHandle<>(task, aspect, this, true);
-        this.pushToExecuteWorker(handle, false);
+        this.pushToTaskBucket(handle, false);
         return handle;
     }
 
@@ -117,7 +117,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkSubmittedExecTask(task);
 
         PoolTaskHandle<V> handle = new JoinTaskHandle<>(task, operator, aspect, this);
-        this.pushToExecuteWorker(handle, false);
+        this.pushToTaskBucket(handle, false);
         return handle;
     }
 
@@ -129,7 +129,7 @@ public final class PoolTaskCenter implements TaskPool {
         this.checkSubmittedExecTask(task);
 
         TreeLayerTaskHandle<V> handle = new TreeLayerTaskHandle<>(task, aspect, this);
-        this.pushToExecuteWorker(handle, false);
+        this.pushToTaskBucket(handle, false);
         return handle;
     }
 
@@ -140,7 +140,7 @@ public final class PoolTaskCenter implements TaskPool {
         int curCount;
         do {
             curCount = taskCount;
-            if (curCount == maxTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
+            if (curCount >= maxTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
         } while (!TaskCountUpd.compareAndSet(this, curCount, curCount + 1));
     }
 
@@ -164,7 +164,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     //push a task handle to execution worker
-    void pushToExecuteWorker(PoolTaskHandle<?> taskHandle, boolean isScheduledTask) {
+    void pushToTaskBucket(PoolTaskHandle<?> taskHandle, boolean isScheduledTask) {
         if (isScheduledTask) {
             int arrayIndex = -1;
             for (int i = 0; i < workerSize; i++) {
@@ -292,10 +292,10 @@ public final class PoolTaskCenter implements TaskPool {
 
     public PoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolState(this.poolState);
-        monitorVo.setTaskHoldingCount(taskCount);
-        monitorVo.setWorkerCount(this.workerSize);
+        monitorVo.setTaskCount(taskCount);
         monitorVo.setTaskRunningCount(getRunningCount());
         monitorVo.setTaskCompletedCount(getCompletedCount());
+        monitorVo.setScheduledTaskCount(scheduledTaskCount);
         return monitorVo;
     }
 

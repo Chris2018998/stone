@@ -90,8 +90,8 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            pool.decrementTaskCount();
             execWorker.incrementCompletedCount();
+            pool.decrementTaskCount();
 
             if (pool.incrementTaskCountForInternal(splitChildCount)) {
                 this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];

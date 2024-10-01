@@ -184,8 +184,8 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         } catch (Throwable e) {
             this.fillTaskResult(TASK_FAILED, new TaskExecutionException(e));//set failure exception
         } finally {
-            pool.decrementTaskCount();
             execWorker.incrementCompletedCount();
+            pool.decrementTaskCount();
         }
     }
 

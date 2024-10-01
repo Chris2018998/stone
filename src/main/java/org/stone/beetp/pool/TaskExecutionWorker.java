@@ -62,7 +62,7 @@ final class TaskExecutionWorker extends PoolBaseWorker {
      */
     public long incrementCompletedCount() {
         long count = completedCount;
-        if (++count < 0) {
+        if (++count <= 0) {
             completedCount = 1;//reset to 1 when exceeded
         } else {
             completedCount = count;
