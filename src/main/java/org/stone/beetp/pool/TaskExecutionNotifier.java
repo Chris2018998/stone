@@ -32,25 +32,31 @@ final class TaskExecutionNotifier extends PoolBaseWorker {
     }
 
     public void run() {
+        int spinSize = defaultSpins;
+
         do {
             for (TaskExecutionWorker worker : workers)
                 worker.activate();
 
-            if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
-                int resetState = WORKER_RUNNING;
-                Thread.interrupted();//clear interrupted flag
-                if (useTimePark) {
-                    final long parkStartTime = System.nanoTime();
-                    LockSupport.parkNanos(keepAliveTimeNanos);
-                    if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_PASSIVATED;
-                } else {
-                    LockSupport.park();
-                }
+            if (spinSize > 0) {
+                spinSize--;
+            } else {
+                if (StateUpd.compareAndSet(this, WORKER_RUNNING, WORKER_WAITING)) {
+                    int resetState = WORKER_RUNNING;
+                    Thread.interrupted();//clear interrupted flag
+                    if (useTimePark) {
+                        final long parkStartTime = System.nanoTime();
+                        LockSupport.parkNanos(keepAliveTimeNanos);
+                        if (System.nanoTime() - parkStartTime >= keepAliveTimeNanos) resetState = WORKER_PASSIVATED;
+                    } else {
+                        LockSupport.park();
+                    }
 
-                //reset state
-                if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED) {
-                    break;
+                    //reset state
+                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED)
+                        break;
                 }
+                spinSize = defaultSpins;//reset spin size to default
             }
         } while (state != WORKER_PASSIVATED);
     }

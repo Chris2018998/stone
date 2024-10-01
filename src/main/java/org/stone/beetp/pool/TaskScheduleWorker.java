@@ -160,7 +160,7 @@ final class TaskScheduleWorker extends PoolBaseWorker {
                     pool.pushToExecuteWorker(firstHandle, true);
                 else {
                     pool.decrementScheduledTaskCount();
-                    pool.decrementExecTaskCount();
+                    pool.decrementTaskCount();
                 }
             } else if (parkTimeOnFirstHandle > 0L) {//park work thread with specified time
                 LockSupport.parkNanos(parkTimeOnFirstHandle);

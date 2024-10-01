@@ -79,14 +79,14 @@ public final class PoolTaskCenter implements TaskPool {
         boolean useTimePark = keepAliveTimeNanos > 0L;
         int workerSpins = useTimePark ? maxTimedSpins : maxUntimedSpins;
 
-        TaskPoolThreadFactory threadFactory = config.getThreadFactory();
-        this.scheduleWorker = new TaskScheduleWorker(threadFactory, this);
-        this.notifier = new TaskExecutionNotifier(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
-
         this.workerSize = config.getWorkerSize();
         this.maxNoOfWorkers = workerSize - 1;
         this.workers = new TaskExecutionWorker[workerSize];
         this.taskBuckets = new ConcurrentLinkedQueue[workerSize];
+
+        TaskPoolThreadFactory threadFactory = config.getThreadFactory();
+        this.scheduleWorker = new TaskScheduleWorker(threadFactory, this);
+        this.notifier = new TaskExecutionNotifier(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, workers);
         for (int i = 0; i < workerSize; i++) {
             taskBuckets[i] = new ConcurrentLinkedQueue<>();
             workers[i] = new TaskExecutionWorker(threadFactory, keepAliveTimeNanos, useTimePark, workerSpins, taskBuckets[i], taskBuckets);
@@ -144,7 +144,7 @@ public final class PoolTaskCenter implements TaskPool {
         } while (!TaskCountUpd.compareAndSet(this, curCount, curCount + 1));
     }
 
-    void decrementExecTaskCount() {
+    void decrementTaskCount() {
         int curCount;
         do {
             curCount = taskCount;
@@ -186,7 +186,7 @@ public final class PoolTaskCenter implements TaskPool {
             bucket.offer(taskHandle);
             taskHandle.setTaskBucket(bucket);
 
-            if (taskCount < workerSize) {
+            if (taskCount <= workerSize) {
                 workers[arrayIndex].activate();
             } else {
                 notifier.activate();
@@ -194,8 +194,8 @@ public final class PoolTaskCenter implements TaskPool {
         }
     }
 
-    void activateAllWorkers() {
-        notifier.activate();
+    void attemptActivateAllWorkers() {
+        if (taskCount > workerSize) notifier.activate();
     }
 
     //***************************************************************************************************************//

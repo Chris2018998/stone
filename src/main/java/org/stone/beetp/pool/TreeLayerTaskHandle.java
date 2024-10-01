@@ -90,13 +90,17 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         int splitChildCount = subTasks != null ? subTasks.length : 0;
 
         if (splitChildCount > 0) {
-            if (pool.incrementTaskCountForInternal(subTaskHandleCount)) {
+            pool.decrementTaskCount();
+            execWorker.incrementCompletedCount();
+
+            if (pool.incrementTaskCountForInternal(splitChildCount)) {
                 this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
                 this.subTaskHandleCount = splitChildCount;
                 for (int i = 0; i < splitChildCount; i++)
                     subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, root, pool);
 
                 execWorker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
+                pool.attemptActivateAllWorkers();
             } else {
                 this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));
             }
