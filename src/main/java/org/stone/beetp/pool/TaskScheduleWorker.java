@@ -98,7 +98,7 @@ final class TaskScheduleWorker extends PoolBaseWorker {
         return allTasks;
     }
 
-    public void remove(PoolTaskHandle<?> taskHandle) {
+    public boolean remove(PoolTaskHandle<?> taskHandle) {
         int pos = -1;
         try {
             lockOfHandles.lock();//lock of handles array
@@ -108,6 +108,7 @@ final class TaskScheduleWorker extends PoolBaseWorker {
                     pos = i;
 
                     //move handles forward
+
                     System.arraycopy(handles, pos + 1, handles, pos, maxSeq - pos);
                     handles[maxSeq] = null;
                     this.countOfHandles--;
@@ -119,6 +120,7 @@ final class TaskScheduleWorker extends PoolBaseWorker {
         }
 
         if (pos == 0) LockSupport.unpark(workThread);
+        return pos != -1;
     }
 
 

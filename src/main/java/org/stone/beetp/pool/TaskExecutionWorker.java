@@ -103,17 +103,6 @@ final class TaskExecutionWorker extends PoolBaseWorker {
         return taskList;
     }
 
-    /**
-     * cancel a given task from this worker
-     *
-     * @param taskHandle            to be cancelled
-     * @param mayInterruptIfRunning is true that interrupt blocking in executing if exists
-     * @return true cancel successful
-     */
-    public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
-        return true;//@todo to be implemented
-    }
-
     //***************************************************************************************************************//
     //                                             2: task process method(core)                                      //
     //***************************************************************************************************************//
