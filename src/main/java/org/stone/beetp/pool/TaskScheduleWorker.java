@@ -29,6 +29,7 @@ import static org.stone.beetp.pool.PoolConstants.*;
 final class TaskScheduleWorker extends PoolBaseWorker {
     private final PoolTaskCenter pool;
     private final ReentrantLock lockOfHandles;
+
     private int countOfHandles;
     private ScheduledTaskHandle<?>[] handles;
 
@@ -43,7 +44,6 @@ final class TaskScheduleWorker extends PoolBaseWorker {
     //                                            1: bucket methods(4)                                               //
     //***************************************************************************************************************//
     public void put(ScheduledTaskHandle<?> handle) {
-        int insertPos = -1;
         try {
             //acquire lock of array
             lockOfHandles.lock();
@@ -57,22 +57,22 @@ final class TaskScheduleWorker extends PoolBaseWorker {
             }
 
             //find out index to insert handle
-            final int maxSeq = countOfHandles - 1;
+            int insertPos = 0;//assume insertion index when not match pos
             final long taskNextTime = handle.getNextTime();
-            for (int i = maxSeq; i >= 0; i--) {//from tail to head
-                if (taskNextTime >= handles[i].getNextTime()) {//found pos
+            for (int i = countOfHandles - 1; i >= 0; i--) {//from tail to head
+                if (taskNextTime >= handles[i].getNextTime()) {//insert after the found pos
                     insertPos = i + 1;
                     break;
                 }
             }
+
             //move handles backward
-            if (insertPos == -1) insertPos = 0;
-            if (insertPos <= maxSeq)
+            if (insertPos < countOfHandles)
                 System.arraycopy(handles, insertPos, handles, insertPos + 1, countOfHandles - insertPos);
 
             //put handle to pos of array
             handles[insertPos] = handle;
-            //increase count of tasks
+            //increase count in tasks array
             countOfHandles++;
 
             //if insertion pos is at first,then wake up work thread
@@ -121,9 +121,6 @@ final class TaskScheduleWorker extends PoolBaseWorker {
         if (pos == 0) LockSupport.unpark(workThread);
     }
 
-    public boolean cancel(PoolTaskHandle<?> taskHandle, boolean mayInterruptIfRunning) {
-        return false;
-    }
 
     //***************************************************************************************************************//
     //                                            2: core method to process tasks                                    //
@@ -141,13 +138,11 @@ final class TaskScheduleWorker extends PoolBaseWorker {
                 lockOfHandles.lock();
                 if (countOfHandles > 0) {
                     parkTimeOnFirstHandle = handles[0].getNextTime() - System.nanoTime();
-
                     if (parkTimeOnFirstHandle <= 0L && pool.incrementTaskCountForInternal(1)) {
                         firstHandle = handles[0];
-                        final int maxSeq = countOfHandles - 1;
-                        System.arraycopy(handles, 1, handles, 0, maxSeq);//move forward
-                        handles[maxSeq] = null;
                         this.countOfHandles--;
+                        System.arraycopy(handles, 1, handles, 0, countOfHandles);//move forward
+                        handles[countOfHandles] = null;
                     }
                 }
             } finally {
@@ -156,12 +151,8 @@ final class TaskScheduleWorker extends PoolBaseWorker {
 
             //2: process handle if first handle is not null
             if (firstHandle != null) {
-                if (firstHandle.isWaiting())
+                if (firstHandle.isWaiting())//otherwise is CANCELLED
                     pool.pushToTaskBucket(firstHandle, true);
-                else {
-                    pool.decrementScheduledTaskCount();
-                    pool.decrementTaskCount();
-                }
             } else if (parkTimeOnFirstHandle > 0L) {//park work thread with specified time
                 LockSupport.parkNanos(parkTimeOnFirstHandle);
             } else {//if no timed task,then park
