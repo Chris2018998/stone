@@ -32,7 +32,7 @@ import static org.stone.beetp.pool.PoolConstants.*;
  * @version 1.0
  */
 class PoolTaskHandle<V> implements TaskHandle<V> {
-    private static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
+    protected static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
     protected final Task<V> task;
     protected final PoolTaskCenter pool;
     private final TaskAspect<V> callAspect;
@@ -77,12 +77,12 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
 
     //one of completed states
     public boolean isFailed() {
-        return state == TASK_FAILED;
+        return state == TASK_EXCEPTIONAL;
     }
 
     public boolean isCompleted() {
         Object curState = this.state;
-        return curState == TASK_SUCCEED || curState == TASK_CANCELLED || curState == TASK_FAILED;
+        return curState == TASK_SUCCEED || curState == TASK_CANCELLED || curState == TASK_EXCEPTIONAL;
     }
 
     //***************************************************************************************************************//
@@ -92,19 +92,19 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         //1: try to change state to cancelled
         if (state == TASK_WAITING && StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED)) {
             this.fillTaskResult(TASK_CANCELLED, null);
+            pool.decrementTaskCount();
             this.taskBucket.remove(this);
-            return true;
+            return true;//cancel successful
         }
 
-        //2: if parameter mayInterruptIfRunning is true then interrupt possible blocking
+        //2: interrupt process
         if (mayInterruptIfRunning) {
             Object curState = state;
-            if (curState instanceof TaskExecutionWorker) {
+            if (curState instanceof TaskExecutionWorker) {//in being executed
                 TaskExecutionWorker worker = (TaskExecutionWorker) curState;
-                return worker.cancel(this, true);//need check worker thread state whether in blocking
+                worker.interrupt();//thread interruption can't ensure process exit in time
             }
         }
-
         return false;
     }
 
@@ -158,7 +158,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     private void throwFailureException(final Object state) throws TaskException {
-        if (state == TASK_FAILED) throw (TaskException) this.result;
+        if (state == TASK_EXCEPTIONAL) throw (TaskException) this.result;
         if (state == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
     }
 
@@ -182,7 +182,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
             if (callAspect != null) callAspect.beforeCall(this);
             this.fillTaskResult(TASK_SUCCEED, task.call());//set success result
         } catch (Throwable e) {
-            this.fillTaskResult(TASK_FAILED, new TaskExecutionException(e));//set failure exception
+            this.fillTaskResult(TASK_EXCEPTIONAL, new TaskExecutionException(e));//set failure exception
         } finally {
             execWorker.incrementCompletedCount();
             pool.decrementTaskCount();

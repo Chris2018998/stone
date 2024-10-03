@@ -40,7 +40,7 @@ public class PoolConstants {
     //a task state that task call is executed successful
     public static final Object TASK_SUCCEED = new Object();
     //a task state that task call is executed fail
-    public static final Object TASK_FAILED = new Object();
+    public static final Object TASK_EXCEPTIONAL = new Object();
 }
 
 

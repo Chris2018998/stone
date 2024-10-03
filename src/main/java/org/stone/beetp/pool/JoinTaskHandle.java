@@ -19,7 +19,7 @@ import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
+import static org.stone.beetp.pool.PoolConstants.TASK_EXCEPTIONAL;
 import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
 
 /**
@@ -128,7 +128,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
 
     private void handleSubTaskException(Object result) {
         if (exceptionIndUpd.compareAndSet(root, 0, 1)) {
-            root.fillTaskResult(TASK_FAILED, result);
+            root.fillTaskResult(TASK_EXCEPTIONAL, result);
             new AsynJoinCancelThread<V>(root.subTaskHandles, true).start();
         }
     }

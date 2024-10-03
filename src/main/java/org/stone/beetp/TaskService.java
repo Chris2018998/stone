@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static org.stone.beetp.pool.PoolConstants.TASK_FAILED;
+import static org.stone.beetp.pool.PoolConstants.TASK_EXCEPTIONAL;
 import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
 
 /**
@@ -367,8 +367,8 @@ public final class TaskService extends TaskServiceConfig {
         public void afterCall(boolean isSuccess, Object resultObject, TaskHandle<V> handle) {
             boolean hasWakeup = false;
             try {
-                final Object targetState = isSuccess ? TASK_SUCCEED : TASK_FAILED;
-                if (TASK_FAILED == targetState && resultObject instanceof TaskExecutionException)
+                final Object targetState = isSuccess ? TASK_SUCCEED : TASK_EXCEPTIONAL;
+                if (TASK_EXCEPTIONAL == targetState && resultObject instanceof TaskExecutionException)
                     this.failCause = (TaskExecutionException) resultObject;
                 else if (TASK_SUCCEED == targetState) {
                     this.completedHandle = handle;
