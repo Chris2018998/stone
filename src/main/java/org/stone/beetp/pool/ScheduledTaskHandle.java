@@ -28,6 +28,7 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
     private final TaskScheduleWorker scheduleWorker;
+    private boolean cancelPending;
 
     private long executeTime;//time sortable
     private long lastExecutedTime;
@@ -80,13 +81,38 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
     public V getLastResult() throws TaskException {
         if (lastExecutedState == null) throw new TaskException("Task has not  been executed");
         if (lastExecutedState == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
-        if (lastExecutedState == TASK_FAILED) throw (TaskException) this.result;
+        if (lastExecutedState == TASK_EXCEPTIONAL) throw (TaskException) this.result;
         if (lastExecutedState == TASK_SUCCEED) return (V) this.lastExecutedResult;
         throw new TaskException("unknown last state");
     }
 
     //***************************************************************************************************************//
-    //                              3: execute task                                                                  //
+    //                                  3: cancel(1)                                                                 //
+    //***************************************************************************************************************//
+    public boolean cancel(final boolean mayInterruptIfRunning) {
+        //1: try to change state to cancelled
+        if (state == TASK_WAITING && StateUpd.compareAndSet(this, TASK_WAITING, TASK_CANCELLED)) {
+            this.fillTaskResult(TASK_CANCELLED, null);
+            pool.decrementScheduledTaskCount();
+            if (!this.scheduleWorker.remove(this) && taskBucket != null)
+                taskBucket.remove(this);
+            return true;//cancel successful
+        }
+
+        //2: interrupt process
+        if (mayInterruptIfRunning) {//if set CANCELLED state on periodic task then not be scheduled for next execution
+            Object curState = state;
+            if (curState instanceof TaskExecutionWorker) {//in being executed
+                this.cancelPending = true;//set cancelled state after this execution
+                TaskExecutionWorker worker = (TaskExecutionWorker) curState;
+                worker.interrupt();//thread interruption can't ensure process exit in time
+            }
+        }
+        return false;
+    }
+
+    //***************************************************************************************************************//
+    //                              4: execute task                                                                  //
     //***************************************************************************************************************//
     protected void afterExecute(boolean success, Object result) {
         this.lastExecutedResult = this.result;
@@ -94,10 +120,15 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
         this.lastExecutedState = this.state;
 
         if (this.isPeriodic()) {
-            this.state = TASK_WAITING;
-            this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
-            scheduleWorker.put(this);
-        } else {
+            if (cancelPending) {
+                this.state = TASK_CANCELLED;
+                pool.decrementScheduledTaskCount();
+            } else {
+                this.state = TASK_WAITING;
+                this.executeTime = intervalTime + (fixedDelay ? System.nanoTime() : executeTime);
+                scheduleWorker.put(this);
+            }
+        } else {//once task
             pool.decrementScheduledTaskCount();
         }
     }
