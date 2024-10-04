@@ -49,11 +49,11 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
         this.parent = null;
     }
 
-    private JoinTaskHandle(Task<V> task, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
+    private JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
         super(task, null, pool, false);
+        this.operator = operator;
         this.root = root;
         this.parent = parent;
-        this.operator = null;
     }
 
     //***************************************************************************************************************//
@@ -76,27 +76,27 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    protected void executeTask(TaskExecutionWorker execWorker) {
-        Task<V>[] subTasks = root.operator.split(this.task);
-        int splitChildCount = subTasks != null ? subTasks.length : 0;
+    protected void executeTask(TaskExecutionWorker worker) {
+        Task<V>[] subTasks = operator.split(this.task);
 
-        if (splitChildCount > 0) {
-            execWorker.incrementCompletedCount();
+        if (subTasks != null && subTasks.length > 0) {
+            worker.incrementCompletedCount();
             pool.decrementTaskCount();
 
-            if (pool.incrementTaskCountForInternal(splitChildCount)) {
-                this.subTaskHandles = new JoinTaskHandle[splitChildCount];
-                this.subTaskHandleCount = splitChildCount;
-                for (int i = 0; i < splitChildCount; i++)
-                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], this, root, pool);
+            int subTaskCount = subTasks.length;
+            if (pool.incrementTaskCountForInternal(subTaskCount)) {
+                this.subTaskHandles = new JoinTaskHandle[subTaskCount];
+                this.subTaskHandleCount = subTaskCount;
+                for (int i = 0; i < subTaskCount; i++)
+                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], operator, this, root, pool);
 
-                execWorker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
+                worker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
                 pool.attemptActivateAllWorkers();
             } else {
                 this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));
             }
         } else {
-            super.executeTask(execWorker);
+            super.executeTask(worker);
         }
     }
 
@@ -113,7 +113,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
                 if (unCompletedCountUpd.compareAndSet(parent, currentSize, currentSize - 1)) {
                     if (currentSize == 1) {
                         try {
-                            parent.fillTaskResult(TASK_SUCCEED, root.operator.join(parent.subTaskHandles));
+                            parent.fillTaskResult(TASK_SUCCEED, operator.join(parent.subTaskHandles));
                         } catch (Throwable e) {
                             this.handleSubTaskException(new TaskExecutionException(e));
                         }

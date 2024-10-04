@@ -28,7 +28,7 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
     private final long intervalTime;//nano seconds
     private final boolean fixedDelay;
     private final TaskScheduleWorker scheduleWorker;
-    private boolean cancelPending;
+    private volatile boolean pendingCancel;
 
     private long executeTime;//time sortable
     private long lastExecutedTime;
@@ -39,8 +39,8 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
     //                1: constructor(1)                                                                              //                                                                                  //
     //***************************************************************************************************************//
     ScheduledTaskHandle(Task<V> task, TaskAspect<V> callback,
-                        long firstRunTime, long intervalTime, boolean fixedDelay, final TaskScheduleWorker scheduleWorker,
-                        PoolTaskCenter pool) {
+                        long firstRunTime, long intervalTime, boolean fixedDelay,
+                        TaskScheduleWorker scheduleWorker, PoolTaskCenter pool) {
         super(task, callback, pool, true);
 
         this.executeTime = firstRunTime;
@@ -103,7 +103,7 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
         if (mayInterruptIfRunning) {//if set CANCELLED state on periodic task then not be scheduled for next execution
             Object curState = state;
             if (curState instanceof TaskExecutionWorker) {//in being executed
-                this.cancelPending = true;//set cancelled state after this execution
+                this.pendingCancel = true;//set cancelled state after this execution
                 TaskExecutionWorker worker = (TaskExecutionWorker) curState;
                 worker.interrupt();//thread interruption can't ensure process exit in time
             }
@@ -120,7 +120,7 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
         this.lastExecutedState = this.state;
 
         if (this.isPeriodic()) {
-            if (cancelPending) {
+            if (pendingCancel) {
                 this.state = TASK_CANCELLED;
                 pool.decrementScheduledTaskCount();
             } else {

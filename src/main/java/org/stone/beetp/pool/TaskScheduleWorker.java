@@ -108,7 +108,6 @@ final class TaskScheduleWorker extends PoolBaseWorker {
                     pos = i;
 
                     //move handles forward
-
                     System.arraycopy(handles, pos + 1, handles, pos, maxSeq - pos);
                     handles[maxSeq] = null;
                     this.countOfHandles--;
