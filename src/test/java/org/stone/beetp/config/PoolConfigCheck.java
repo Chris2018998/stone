@@ -23,10 +23,7 @@ public class PoolConfigCheck extends TestCase {
 
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setInitWorkerSize(2);
-        config.setMaxWorkerSize(10);
         config.setMaxTaskSize(50);
-        config.setWorkerInDaemon(true);
         config.setWorkerKeepAliveTime(6000);
 
         TaskServiceConfig config2 = config.check();

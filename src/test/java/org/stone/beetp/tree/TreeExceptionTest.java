@@ -26,8 +26,6 @@ public class TreeExceptionTest extends TestCase {
     public void test() throws Exception {
         //1: create task pool
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(10);
         TaskService service = new TaskService(config);
 
         try {
@@ -41,12 +39,12 @@ public class TreeExceptionTest extends TestCase {
             TestUtil.assertError("Tree exception test failed");
         } catch (Exception e) {
             TaskPoolMonitorVo vo = service.getPoolMonitorVo();
-            if (vo.getTaskCompletedCount() != 1)
-                TestUtil.assertError("tree expect:%s,actual value:%s", 1, vo.getTaskCompletedCount());
-            if (vo.getTaskHoldingCount() != 0)
-                TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getTaskHoldingCount());
-            if (vo.getTaskRunningCount() != 0)
-                TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getTaskRunningCount());
+            if (vo.getCompletedCount() != 1)
+                TestUtil.assertError("tree expect:%s,actual value:%s", 1, vo.getCompletedCount());
+            if (vo.getTaskCount() != 0)
+                TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getTaskCount());
+            if (vo.getRunningCount() != 0)
+                TestUtil.assertError("tree expect:%s,actual value:%s", 0, vo.getRunningCount());
         }
     }
 }

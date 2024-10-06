@@ -10,15 +10,15 @@
 package org.stone.beetp.tree;
 
 import org.stone.beetp.TaskHandle;
-import org.stone.beetp.TreeTask;
+import org.stone.beetp.TreeLayerTask;
 
-public class LevelTask1103 implements TreeTask<Integer> {
+public class LevelTask1103 implements TreeLayerTask<Integer> {
 
-    public TreeTask<Integer>[] getSubTasks() {
+    public TreeLayerTask<Integer>[] getSubTasks() {
         return null;
     }
 
-    public Integer call(TaskHandle<Integer>[] subTaskHandles) throws Exception {
+    public Integer join(TaskHandle<Integer>[] subTaskHandles) throws Exception {
         return new Integer(3);
     }
 }

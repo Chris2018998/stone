@@ -4,12 +4,11 @@
  *
  * Licensed under GNU Lesser General Public License v2.1
  */
-package org.stone.beetp.join;
+package org.stone.beetp.performance;
 
 import org.stone.beetp.Task;
 import org.stone.beetp.TaskHandle;
 import org.stone.beetp.TaskJoinOperator;
-import org.stone.beetp.performance.BeeJoinTask;
 
 /**
  * Join Operator Implement

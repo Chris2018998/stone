@@ -26,8 +26,8 @@ public class CallbackTest extends TestCase {
 
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(1);
+        //config.setWorkerInDaemon(true);
+        //config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
 
         MyCallBack back = new MyCallBack();
@@ -38,7 +38,7 @@ public class CallbackTest extends TestCase {
         if (!"Hello".equals(back.result)) TestUtil.assertError("Call back test Failed");
     }
 
-    private static class MyCallBack implements TaskCallback {
+    private static class MyCallBack implements TaskAspect {
         private boolean beforeInd;
         private boolean onCallDoneInd;
         private Object result;
@@ -47,9 +47,9 @@ public class CallbackTest extends TestCase {
             beforeInd = true;
         }
 
-        public void afterCall(int doneCode, Object doneResp, TaskHandle handle) {
+        public void afterCall(boolean isSuccessful, Object result, TaskHandle handle) {
             onCallDoneInd = true;
-            result = doneResp;
+            this.result = result;
         }
     }
 }

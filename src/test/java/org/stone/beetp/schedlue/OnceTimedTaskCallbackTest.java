@@ -16,8 +16,6 @@ import org.stone.beetp.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.TaskStates.TASK_EXEC_RESULT;
-
 /**
  * OnceTimedTaskTest
  *
@@ -27,8 +25,6 @@ import static org.stone.beetp.TaskStates.TASK_EXEC_RESULT;
 public class OnceTimedTaskCallbackTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
 
         CallBackImpl callback = new CallBackImpl();
@@ -37,12 +33,12 @@ public class OnceTimedTaskCallbackTest extends TestCase {
 
         if (handle.isPeriodic()) TestUtil.assertError("Once Timed Task can't be periodic");
         if (!"Hello".equals(handle.get())) TestUtil.assertError("Once Timed Task test failed");
-        if (handle.getState() != TASK_EXEC_RESULT) TestUtil.assertError("Once Timed Task test failed");
+        if (!handle.isSuccessful()) TestUtil.assertError("Once Timed Task test failed");
         if (!callback.beforeInd || !callback.onCallDoneInd) TestUtil.assertError("Call back test Failed");
         if (!"Hello".equals(callback.result)) TestUtil.assertError("Call back test Failed");
     }
 
-    private static class CallBackImpl implements TaskCallback {
+    private static class CallBackImpl implements TaskAspect {
         private boolean beforeInd;
         private boolean onCallDoneInd;
         private Object result;
@@ -51,9 +47,9 @@ public class OnceTimedTaskCallbackTest extends TestCase {
             beforeInd = true;
         }
 
-        public void afterCall(int doneCode, Object doneResp, TaskHandle handle) {
+        public void afterCall(boolean isSuccessful, Object result, TaskHandle handle) {
             onCallDoneInd = true;
-            result = doneResp;
+            this.result = result;
         }
     }
 }

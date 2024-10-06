@@ -13,8 +13,6 @@ import org.stone.base.TestCase;
 import org.stone.base.TestUtil;
 import org.stone.beetp.*;
 
-import static org.stone.beetp.TaskStates.TASK_CANCELLED;
-
 /**
  * cancel test
  *
@@ -24,13 +22,11 @@ import static org.stone.beetp.TaskStates.TASK_CANCELLED;
 public class TaskCancelTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
 
         service.submit(new BlockTask());//park worker thread
         TaskHandle commonHandle = service.submit(new HelloTask());
         commonHandle.cancel(false);
-        if (commonHandle.getState() != TASK_CANCELLED) TestUtil.assertError("Task not be cancelled");
+        if (!commonHandle.isCancelled()) TestUtil.assertError("Task not be cancelled");
     }
 }

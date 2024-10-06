@@ -28,8 +28,6 @@ import java.util.concurrent.TimeUnit;
 public class GetTimeoutTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
         TaskHandle handle = service.submit(new BlockTask());//park worker thread
 

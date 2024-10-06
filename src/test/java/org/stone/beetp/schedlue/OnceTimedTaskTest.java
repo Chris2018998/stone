@@ -19,8 +19,6 @@ import org.stone.beetp.TaskServiceConfig;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beetp.TaskStates.TASK_EXEC_RESULT;
-
 /**
  * OnceTimedTaskTest
  *
@@ -30,8 +28,6 @@ import static org.stone.beetp.TaskStates.TASK_EXEC_RESULT;
 public class OnceTimedTaskTest extends TestCase {
     public void test() throws Exception {
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(1);
         TaskService service = new TaskService(config);
 
         TaskScheduledHandle handle = service.schedule(new HelloTask(), 0, TimeUnit.SECONDS);
@@ -39,6 +35,6 @@ public class OnceTimedTaskTest extends TestCase {
 
         if (handle.isPeriodic()) TestUtil.assertError("Once Timed Task can't be periodic");
         if (!"Hello".equals(handle.get())) TestUtil.assertError("Once Timed Task test failed");
-        if (handle.getState() != TASK_EXEC_RESULT) TestUtil.assertError("Once Timed Task test failed");
+        if (!handle.isSuccessful()) TestUtil.assertError("Once Timed Task test failed");
     }
 }

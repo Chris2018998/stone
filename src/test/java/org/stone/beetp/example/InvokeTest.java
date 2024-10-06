@@ -15,6 +15,7 @@ import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -30,20 +31,22 @@ public class InvokeTest {
         config.setWorkerKeepAliveTime(TimeUnit.SECONDS.toMillis(10));
         TaskService service = new TaskService(config);
 
-        List<Task> taskList = new ArrayList<>(3);
+        Collection<HelloTask> taskList = new ArrayList<>(3);
         taskList.add(new HelloTask());
         taskList.add(new HelloTask());
         taskList.add(new HelloTask());
         TaskHandle anyHandle = service.invokeAny(taskList);
         System.out.println("[Any]:" + anyHandle.get());
 
-        List<Task> taskList2 = new ArrayList<>(3);
+        List<HelloTask> taskList2 = new ArrayList<>(3);
         taskList2.add(new HelloTask());
         taskList2.add(new HelloTask());
         taskList2.add(new HelloTask());
-        List<TaskHandle> handleList = service.invokeAll(taskList2);
+        List<TaskHandle<Object>> handleList = service.invokeAll(taskList2);
         for (TaskHandle handle : handleList) {
             System.out.println("[One of all]:" + handle.get());
         }
+
+        service.shutdown(false);
     }
 }

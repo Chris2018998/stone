@@ -12,7 +12,10 @@ import org.stone.beetp.TaskServiceConfig;
 import org.stone.beetp.join.ArraySumComputeTask;
 import org.stone.beetp.join.ArraySumJoinOperator;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 @Threads(4)
 @State(Scope.Benchmark)
@@ -39,26 +42,26 @@ public class TaskPoolBenchmark {
         new Runner(opt).run();
     }
 
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    public static void testForkJoinJDK() throws Exception {
-        ForkJoinTask task = forkJoinPool.submit(jdkJoinTask);
-        task.get();
-    }
+//    @Benchmark
+//    @CompilerControl(CompilerControl.Mode.INLINE)
+//    public static void testForkJoinJDK() throws Exception {
+//        ForkJoinTask task = forkJoinPool.submit(jdkJoinTask);
+//        task.get();
+//    }
+//    @Benchmark
+//    @CompilerControl(CompilerControl.Mode.INLINE)
+//    public static void testOnceTaskJDK() throws Exception {
+//        Future future = executor.submit(callTask);
+//        future.get();
+//    }
 
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    public static void testForkJoinBee() throws Exception {
-        TaskHandle<Integer> joinHandle = taskService.submit(beeJoinTask, beeJoinOperator);
-        joinHandle.get();
-    }
 
-    @Benchmark
-    @CompilerControl(CompilerControl.Mode.INLINE)
-    public static void testOnceTaskJDK() throws Exception {
-        Future future = executor.submit(callTask);
-        future.get();
-    }
+//    @Benchmark
+//    @CompilerControl(CompilerControl.Mode.INLINE)
+//    public static void testForkJoinBee() throws Exception {
+//        TaskHandle<Integer> joinHandle = taskService.submit(beeJoinTask, beeJoinOperator);
+//        joinHandle.get();
+//    }
 
     @Benchmark
     @CompilerControl(CompilerControl.Mode.INLINE)
@@ -77,9 +80,7 @@ public class TaskPoolBenchmark {
 
         forkJoinPool = new ForkJoinPool();
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setInitWorkerSize(4);
-        config.setMaxWorkerSize(4);
-        config.setMaxTaskSize(100);
+        config.setMaxTaskSize(1000);
         config.setWorkerKeepAliveTime(TimeUnit.SECONDS.toMillis(15));
         taskService = new TaskService(config);
     }
@@ -88,6 +89,6 @@ public class TaskPoolBenchmark {
     public static void teardown() throws Exception {
         executor.shutdownNow();
         forkJoinPool.shutdownNow();
-        taskService.terminate(true);
+        taskService.shutdown(true);
     }
 }

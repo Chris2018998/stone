@@ -3,7 +3,7 @@ package org.stone.beetp.performance.mock;
 import org.stone.beetp.TaskJoinOperator;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.join.BeeJoinTaskOpr;
+import org.stone.beetp.performance.BeeJoinTaskOpr;
 import org.stone.beetp.performance.BeeOnceTask;
 
 public class BeeOnceTaskSubmitThreadsFactory implements TimeMonitorTaskThreadsFactory {
@@ -11,8 +11,6 @@ public class BeeOnceTaskSubmitThreadsFactory implements TimeMonitorTaskThreadsFa
 
     public TimeMonitorTaskSubmitThread[] create(TimeMonitorTaskPoolInitConfig config) {
         TaskServiceConfig serverConfig = new TaskServiceConfig();
-        serverConfig.setInitWorkerSize(config.getInitWorkerSize());
-        serverConfig.setMaxWorkerSize(config.getMaxWorkerSize());
         serverConfig.setMaxTaskSize(config.getMaxTaskSize());
         serverConfig.setWorkerKeepAliveTime(config.getKeepAliveTimeUnit().toMillis(15));
         this.taskService = new TaskService(serverConfig);
@@ -32,7 +30,7 @@ public class BeeOnceTaskSubmitThreadsFactory implements TimeMonitorTaskThreadsFa
 
     public void shutdownTaskPool() {
         try {
-            taskService.terminate(true);
+            taskService.shutdown(true);
         } catch (Exception e) {
 
         }

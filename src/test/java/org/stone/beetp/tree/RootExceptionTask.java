@@ -10,7 +10,7 @@
 package org.stone.beetp.tree;
 
 import org.stone.beetp.TaskHandle;
-import org.stone.beetp.TreeTask;
+import org.stone.beetp.TreeLayerTask;
 
 /**
  * Root Tree Task
@@ -18,12 +18,12 @@ import org.stone.beetp.TreeTask;
  * @author Chris Liao
  * @version 1.0
  */
-public class RootExceptionTask implements TreeTask<Integer> {
-    public TreeTask<Integer>[] getSubTasks() {
-        return new TreeTask[]{new LevelTask10(), new LevelTask11(), new LevelTask12()};
+public class RootExceptionTask implements TreeLayerTask<Integer> {
+    public TreeLayerTask<Integer>[] getSubTasks() {
+        return new TreeLayerTask[]{new LevelTask10(), new LevelTask11(), new LevelTask12()};
     }
 
-    public Integer call(TaskHandle<Integer>[] subTaskHandles) throws Exception {
+    public Integer join(TaskHandle<Integer>[] subTaskHandles) throws Exception {
         int sum = 0;
         for (TaskHandle<Integer> handle : subTaskHandles) {
             sum += handle.get();

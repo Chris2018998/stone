@@ -28,8 +28,6 @@ public class JoinTaskCountTest extends TestCase {
     public void test() throws Exception {
         //1: create task pool
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(10);
         TaskService service = new TaskService(config);
 
         //2: create an integer array
@@ -54,11 +52,11 @@ public class JoinTaskCountTest extends TestCase {
         //7:test task count about running,holding,completed
         TaskPoolMonitorVo monitorVo = service.getPoolMonitorVo();
 
-        if (monitorVo.getTaskHoldingCount() != 0)
+        if (monitorVo.getTaskCount() != 0)
             TestUtil.assertError("Pool holding count is not equal 0");
-        if (monitorVo.getTaskRunningCount() != 0)
+        if (monitorVo.getRunningCount() != 0)
             TestUtil.assertError("Pool running count is not equal 0");
-        if (monitorVo.getTaskCompletedCount() != 1)
+        if (monitorVo.getCompletedCount() != 1)
             TestUtil.assertError("Pool completed count is not equal 1");
     }
 }

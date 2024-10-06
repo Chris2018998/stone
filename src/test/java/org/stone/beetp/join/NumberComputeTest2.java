@@ -36,8 +36,6 @@ public class NumberComputeTest2 extends TestCase {
 
         ArraySumComputeTask task = new ArraySumComputeTask(numbers);
         TaskServiceConfig config = new TaskServiceConfig();
-        config.setWorkerInDaemon(true);
-        config.setMaxWorkerSize(10);
         TaskService service = new TaskService(config);
 
         TaskHandle<Integer> handle = service.submit(task, new ArraySumJoinOperator() {

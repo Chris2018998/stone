@@ -17,7 +17,7 @@ import org.stone.beetp.Task;
  * @author Chris Liao
  * @version 1.0
  */
-public class HelloTask implements Task {
+public class HelloTask implements Task<Object> {
     public Object call() {
         return "{" + System.nanoTime() + "} - Hello World";
     }
