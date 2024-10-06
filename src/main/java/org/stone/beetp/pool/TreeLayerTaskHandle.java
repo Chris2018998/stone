@@ -54,11 +54,6 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         this.task = task;
         this.root = root;
         this.parent = parent;
-        //this.taskBucket = bucketWorker;
-    }
-
-    TreeLayerTask getTreeLayerTask() {
-        return task;
     }
 
     //***************************************************************************************************************//
@@ -81,31 +76,30 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     //***************************************************************************************************************//
     //                                          4: execute task                                                      //
     //***************************************************************************************************************//
-    private Object invokeTaskCall() throws Exception {
+    protected Object invokeTaskCall() throws Exception {
         return task.join(null);
     }
 
-    protected void executeTask(TaskExecutionWorker execWorker) {
+    protected void executeTask(TaskExecutionWorker worker) {
         TreeLayerTask<V>[] subTasks = this.task.getSubTasks();
-        int splitChildCount = subTasks != null ? subTasks.length : 0;
 
-        if (splitChildCount > 0) {
-            execWorker.incrementCompletedCount();
-            pool.decrementTaskCount();
-
-            if (pool.incrementTaskCountForInternal(splitChildCount)) {
-                this.subTaskHandles = new TreeLayerTaskHandle[splitChildCount];
-                this.subTaskHandleCount = splitChildCount;
-                for (int i = 0; i < splitChildCount; i++)
+        if (subTasks != null && subTasks.length > 0) {
+            worker.incrementCompletedCount();
+            int subTaskCount = subTasks.length;
+            if (pool.incrementTaskCountForInternal(subTaskCount - 1)) {
+                this.subTaskHandles = new TreeLayerTaskHandle[subTaskCount];
+                this.subTaskHandleCount = subTaskCount;
+                for (int i = 0; i < subTaskCount; i++)
                     subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, root, pool);
 
-                execWorker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
+                worker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
                 pool.attemptActivateAllWorkers();
             } else {
+                pool.decrementTaskCount();
                 this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));
             }
         } else {//4: execute leaf task
-            super.executeTask(execWorker);
+            super.executeTask(worker);
         }
     }
 
@@ -113,26 +107,27 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
     //                              4: task result                                                                   //                                                                                  //
     //***************************************************************************************************************//
     protected void afterExecute(boolean successful, Object result) {
-        if (parent == null) return;
-
         if (successful) {
-            do {
-                int currentSize = parent.subTaskHandleCount;
-                if (currentSize == 0) break;
-                if (unCompletedCountUpd.compareAndSet(parent, currentSize, currentSize - 1)) {
-                    if (currentSize == 1) {
-                        try {
-                            parent.fillTaskResult(TASK_SUCCEED, parent.task.join(parent.subTaskHandles));//join children
-                        } catch (Throwable e) {
-                            this.handleSubTaskException(new TaskExecutionException(e));
-                        }
-                    }
-                    break;
-                }
-            } while (true);
+            if (parent != null) parent.joinSubTasks();
         } else {
             this.handleSubTaskException(result);
         }
+    }
+
+    private void joinSubTasks() {
+        do {
+            int currentSize = subTaskHandleCount;
+            if (unCompletedCountUpd.compareAndSet(this, currentSize, currentSize - 1)) {
+                if (currentSize == 1) {
+                    try {
+                        fillTaskResult(TASK_SUCCEED, task.join(subTaskHandles));
+                    } catch (Throwable e) {
+                        this.handleSubTaskException(new TaskExecutionException(e));
+                    }
+                }
+                break;
+            }
+        } while (true);
     }
 
     private void handleSubTaskException(Object result) {

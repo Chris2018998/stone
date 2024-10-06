@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -33,16 +32,15 @@ import static org.stone.tools.CommonUtil.maxUntimedSpins;
  */
 public final class PoolTaskCenter implements TaskPool {
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> TaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "taskCount");
+    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> TaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "submitTaskCount");
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> ScheduledTaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "scheduledTaskCount");
     private volatile int poolState;
     private PoolMonitorVo monitorVo;
 
-    private int maxTaskSize;//new submission check: submitTaskCount + 1 + internalTaskCount <= maxTaskSize
+    private int maxTaskSize;
     private int maxScheduleTaskSize;
-    private volatile int submitTaskCount;
+    private volatile int taskCount;
     private volatile int scheduledTaskCount;
-    private LongAdder internalTaskCount;//count of sub join tasks + count of subtree tasks + count of expired scheduled tasks
 
     private int workerSize;
     private int maxNoOfWorkers;
@@ -81,7 +79,6 @@ public final class PoolTaskCenter implements TaskPool {
         boolean useTimePark = keepAliveTimeNanos > 0L;
         int workerSpins = useTimePark ? maxTimedSpins : maxUntimedSpins;
 
-        this.internalTaskCount = new LongAdder();
         this.workerSize = config.getWorkerSize();
         this.maxNoOfWorkers = workerSize - 1;
         this.workers = new TaskExecutionWorker[workerSize];
@@ -142,7 +139,7 @@ public final class PoolTaskCenter implements TaskPool {
 
         int curCount;
         do {
-            curCount = submitTaskCount;
+            curCount = taskCount;
             if (curCount >= maxTaskSize) throw new TaskRejectedException("Pool task count has reach max size");
         } while (!TaskCountUpd.compareAndSet(this, curCount, curCount + 1));
     }
@@ -150,7 +147,7 @@ public final class PoolTaskCenter implements TaskPool {
     void decrementTaskCount() {
         int curCount;
         do {
-            curCount = submitTaskCount;
+            curCount = taskCount;
             if (curCount == 0) return;
         } while (!TaskCountUpd.compareAndSet(this, curCount, curCount - 1));
     }
@@ -158,7 +155,7 @@ public final class PoolTaskCenter implements TaskPool {
     boolean incrementTaskCountForInternal(int addCount) {//call for join task,tree tasks and schedule tasks
         int curCount, newCount;
         do {
-            curCount = submitTaskCount;
+            curCount = taskCount;
             newCount = curCount + addCount;
 
             if (newCount <= 0) return false;//Task count exceeded
@@ -189,7 +186,7 @@ public final class PoolTaskCenter implements TaskPool {
             bucket.offer(taskHandle);
             taskHandle.setTaskBucket(bucket);
 
-            if (submitTaskCount <= workerSize) {
+            if (taskCount <= workerSize) {
                 workers[arrayIndex].activate();
             } else {
                 notifier.activate();
@@ -198,7 +195,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     void attemptActivateAllWorkers() {
-        if (submitTaskCount > workerSize) notifier.activate();
+        if (taskCount > workerSize) notifier.activate();
     }
 
     //***************************************************************************************************************//
@@ -295,7 +292,7 @@ public final class PoolTaskCenter implements TaskPool {
 
     public PoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolState(this.poolState);
-        monitorVo.setTaskCount(submitTaskCount);
+        monitorVo.setTaskCount(taskCount);
         monitorVo.setTaskRunningCount(getRunningCount());
         monitorVo.setTaskCompletedCount(getCompletedCount());
         monitorVo.setScheduledTaskCount(scheduledTaskCount);

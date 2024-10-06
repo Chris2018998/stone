@@ -54,6 +54,14 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         this.state = TASK_WAITING;
     }
 
+
+    //***************************************************************************************************************//
+    //                                  1: task bucket(1)                                                            //
+    //**************************************************e************************************************************//
+    void setTaskBucket(ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket) {
+        this.taskBucket = taskBucket;
+    }
+
     //***************************************************************************************************************//
     //                                  2: task states(6)                                                            //
     //**************************************************e************************************************************//
@@ -76,7 +84,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //one of completed states
-    public boolean isFailed() {
+    public boolean isExceptional() {
         return state == TASK_EXCEPTIONAL;
     }
 
@@ -86,7 +94,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //***************************************************************************************************************//
-    //                                  3: cancel(1)                                                                 //
+    //                                  3: task cancel(1)                                                            //
     //***************************************************************************************************************//
     public boolean cancel(final boolean mayInterruptIfRunning) {
         //1: try to change state to cancelled
@@ -106,6 +114,59 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
             }
         }
         return false;
+    }
+
+    //***************************************************************************************************************//
+    //                              4: task call(5)                                                                  //
+    //***************************************************************************************************************//
+    boolean setExecutionWorker(TaskExecutionWorker worker) {
+        return StateUpd.compareAndSet(this, TASK_WAITING, worker);
+    }
+
+    protected void executeTask(TaskExecutionWorker execWorker) {
+        try {
+            if (callAspect != null) callAspect.beforeCall(this);
+            this.fillTaskResult(TASK_SUCCEED, invokeTaskCall());//set success result
+        } catch (Throwable e) {
+            this.fillTaskResult(TASK_EXCEPTIONAL, new TaskExecutionException(e));//set failure exception
+        } finally {
+            execWorker.incrementCompletedCount();
+            pool.decrementTaskCount();
+        }
+    }
+
+    protected Object invokeTaskCall() throws Exception {
+        return task.call();
+    }
+
+    void fillTaskResult(Object state, Object result) {
+        //1: update result and state
+        this.result = result;
+        this.state = state;
+        //2: wakeup waiters to get result
+        if (waitQueue != null) {
+            Thread waitThread;
+            while ((waitThread = waitQueue.poll()) != null)
+                LockSupport.unpark(waitThread);
+        }
+
+        final boolean success = state == TASK_SUCCEED;
+        try {
+            this.afterExecute(success, result);
+        } catch (Throwable e) {
+            //e.printStackTrace();
+        }
+
+        if (callAspect != null)
+            try {
+                callAspect.afterCall(success, result, this);
+            } catch (Throwable e) {
+                //e.printStackTrace();
+            }
+    }
+
+    protected void afterExecute(boolean success, Object result) {
+
     }
 
     //***************************************************************************************************************//
@@ -162,56 +223,5 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         if (state == TASK_CANCELLED) throw new TaskCancelledException("Task has been cancelled");
     }
 
-    //***************************************************************************************************************//
-    //                              5: task execution(5)                                                             //
-    //***************************************************************************************************************//
-    void setTaskBucket(ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket) {
-        this.taskBucket = taskBucket;
-    }
 
-    boolean setExecutionWorker(TaskExecutionWorker worker) {
-        return StateUpd.compareAndSet(this, TASK_WAITING, worker);
-    }
-
-    protected void afterExecute(boolean success, Object result) {
-
-    }
-
-    protected void executeTask(TaskExecutionWorker execWorker) {
-        try {
-            if (callAspect != null) callAspect.beforeCall(this);
-            this.fillTaskResult(TASK_SUCCEED, task.call());//set success result
-        } catch (Throwable e) {
-            this.fillTaskResult(TASK_EXCEPTIONAL, new TaskExecutionException(e));//set failure exception
-        } finally {
-            execWorker.incrementCompletedCount();
-            pool.decrementTaskCount();
-        }
-    }
-
-    void fillTaskResult(Object state, Object result) {
-        //1: update result and state
-        this.result = result;
-        this.state = state;
-        //2: wakeup waiters to get result
-        if (waitQueue != null) {
-            Thread waitThread;
-            while ((waitThread = waitQueue.poll()) != null)
-                LockSupport.unpark(waitThread);
-        }
-
-        final boolean success = state == TASK_SUCCEED;
-        try {
-            this.afterExecute(success, result);
-        } catch (Throwable e) {
-            //e.printStackTrace();
-        }
-
-        if (callAspect != null)
-            try {
-                callAspect.afterCall(success, result, this);
-            } catch (Throwable e) {
-                //e.printStackTrace();
-            }
-    }
 }

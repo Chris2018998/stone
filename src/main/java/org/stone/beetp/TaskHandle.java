@@ -65,7 +65,7 @@ public interface TaskHandle<V> {
      *
      * @return true that task execution failed
      */
-    boolean isFailed();
+    boolean isExceptional();
 
     /**
      * Attempts to cancel task of this handle from pool.

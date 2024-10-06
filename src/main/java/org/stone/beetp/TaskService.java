@@ -202,7 +202,7 @@ public final class TaskService extends TaskServiceConfig {
         return pool.getCompletedCount();
     }
 
-    public void terminate(boolean cancelRunningTask) throws TaskPoolException {
+    public void shutdown(boolean cancelRunningTask) throws TaskPoolException {
         this.checkPool();
         pool.terminate(cancelRunningTask);
     }

@@ -81,10 +81,8 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
 
         if (subTasks != null && subTasks.length > 0) {
             worker.incrementCompletedCount();
-            pool.decrementTaskCount();
-
             int subTaskCount = subTasks.length;
-            if (pool.incrementTaskCountForInternal(subTaskCount)) {
+            if (pool.incrementTaskCountForInternal(subTaskCount - 1)) {
                 this.subTaskHandles = new JoinTaskHandle[subTaskCount];
                 this.subTaskHandleCount = subTaskCount;
                 for (int i = 0; i < subTaskCount; i++)
@@ -93,6 +91,7 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
                 worker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
                 pool.attemptActivateAllWorkers();
             } else {
+                pool.decrementTaskCount();
                 this.handleSubTaskException(new TaskExecutionException(new TaskCountExceededException("Task count exceeded")));
             }
         } else {
@@ -104,26 +103,27 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
     //                                  5: result method                                                             //
     //***************************************************************************************************************//
     protected void afterExecute(boolean successful, Object result) {
-        if (parent == null) return;
-
         if (successful) {
-            do {
-                int currentSize = parent.subTaskHandleCount;
-                if (currentSize == 0) break;
-                if (unCompletedCountUpd.compareAndSet(parent, currentSize, currentSize - 1)) {
-                    if (currentSize == 1) {
-                        try {
-                            parent.fillTaskResult(TASK_SUCCEED, operator.join(parent.subTaskHandles));
-                        } catch (Throwable e) {
-                            this.handleSubTaskException(new TaskExecutionException(e));
-                        }
-                    }
-                    break;
-                }
-            } while (true);
+            if (parent != null) parent.joinSubTasks();
         } else {
             this.handleSubTaskException(result);
         }
+    }
+
+    private void joinSubTasks() {
+        do {
+            int currentSize = subTaskHandleCount;
+            if (unCompletedCountUpd.compareAndSet(this, currentSize, currentSize - 1)) {
+                if (currentSize == 1) {
+                    try {
+                        fillTaskResult(TASK_SUCCEED, operator.join(subTaskHandles));
+                    } catch (Throwable e) {
+                        this.handleSubTaskException(new TaskExecutionException(e));
+                    }
+                }
+                break;
+            }
+        } while (true);
     }
 
     private void handleSubTaskException(Object result) {

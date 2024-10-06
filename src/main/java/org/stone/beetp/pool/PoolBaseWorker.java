@@ -26,6 +26,7 @@ import static org.stone.beetp.pool.PoolConstants.*;
 
 abstract class PoolBaseWorker implements Runnable {
     protected static final AtomicIntegerFieldUpdater<PoolBaseWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolBaseWorker.class, "state");
+
     protected final int defaultSpins;
     protected final boolean useTimePark;
     protected final long keepAliveTimeNanos;
@@ -37,6 +38,7 @@ abstract class PoolBaseWorker implements Runnable {
     public PoolBaseWorker(TaskPoolThreadFactory threadFactory,
                           long keepAliveTimeNanos, boolean useTimePark, int defaultSpins) {
         this.state = WORKER_PASSIVATED;
+
         this.threadFactory = threadFactory;
         this.useTimePark = useTimePark;
         this.defaultSpins = defaultSpins;

@@ -93,7 +93,7 @@ final class TaskExecutionWorker extends PoolBaseWorker {
      *
      * @return a list of polled tasks
      */
-    public List<PoolTaskHandle<?>> getUnCompletedTasks() {
+    public List<PoolTaskHandle<?>> getQueuedTasks() {
         List<PoolTaskHandle<?>> taskList = new LinkedList<>();
         do {
             PoolTaskHandle<?> handle = taskBucket.poll();
