@@ -311,7 +311,7 @@ public final class PoolTaskCenter implements TaskPool {
     }
 
     private TaskPoolTerminatedVo removeAll(boolean mayInterruptIfRunning) {
-        List<PoolTaskHandle<?>> unCompletedHandleList = scheduleWorker.getUnCompletedTasks();
+        List<PoolTaskHandle<?>> unCompletedHandleList = scheduleWorker.getQueuedTasks();
         for (TaskExecutionWorker worker : workers) {
             worker.passivate(mayInterruptIfRunning);
         }

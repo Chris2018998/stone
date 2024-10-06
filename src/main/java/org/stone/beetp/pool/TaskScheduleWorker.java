@@ -90,7 +90,7 @@ final class TaskScheduleWorker extends PoolBaseWorker {
         }
     }
 
-    public List<PoolTaskHandle<?>> getUnCompletedTasks() {
+    public List<PoolTaskHandle<?>> getQueuedTasks() {
         List<PoolTaskHandle<?>> allTasks = new LinkedList<>(Arrays.asList(handles));
         this.handles = new ScheduledTaskHandle[0];
         this.countOfHandles = 0;
