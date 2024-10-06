@@ -16,6 +16,7 @@ import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.stone.beetp.pool.PoolConstants.TASK_EXCEPTIONAL;
@@ -49,11 +50,13 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
         this.parent = null;
     }
 
-    private TreeLayerTaskHandle(TreeLayerTask<V> task, TreeLayerTaskHandle<V> parent, TreeLayerTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
+    private TreeLayerTaskHandle(TreeLayerTask<V> task, TreeLayerTaskHandle<V> parent, TreeLayerTaskHandle<V> root,
+                                PoolTaskCenter pool, ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket) {//for sub tasks
         super(null, null, pool, false);
         this.task = task;
         this.root = root;
         this.parent = parent;
+        this.taskBucket = taskBucket;
     }
 
     //***************************************************************************************************************//
@@ -89,10 +92,12 @@ final class TreeLayerTaskHandle<V> extends PoolTaskHandle<V> {
             if (pool.incrementTaskCountForInternal(subTaskCount - 1)) {
                 this.subTaskHandles = new TreeLayerTaskHandle[subTaskCount];
                 this.subTaskHandleCount = subTaskCount;
-                for (int i = 0; i < subTaskCount; i++)
-                    subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, root, pool);
 
-                worker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
+                ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket = worker.getTaskBucket();
+                for (int i = 0; i < subTaskCount; i++)
+                    subTaskHandles[i] = new TreeLayerTaskHandle<V>(subTasks[i], this, root, pool, bucket);
+
+                bucket.addAll(Arrays.asList(subTaskHandles));
                 pool.attemptActivateAllWorkers();
             } else {
                 pool.decrementTaskCount();

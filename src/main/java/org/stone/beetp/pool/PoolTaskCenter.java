@@ -32,7 +32,7 @@ import static org.stone.tools.CommonUtil.maxUntimedSpins;
  */
 public final class PoolTaskCenter implements TaskPool {
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> TaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "submitTaskCount");
+    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> TaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "taskCount");
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> ScheduledTaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "scheduledTaskCount");
     private volatile int poolState;
     private PoolMonitorVo monitorVo;

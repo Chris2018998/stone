@@ -17,6 +17,7 @@ import org.stone.beetp.pool.exception.TaskExecutionException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.stone.beetp.pool.PoolConstants.TASK_EXCEPTIONAL;
@@ -49,11 +50,13 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
         this.parent = null;
     }
 
-    private JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, JoinTaskHandle<V> parent, JoinTaskHandle<V> root, PoolTaskCenter pool) {//for sub tasks
+    private JoinTaskHandle(Task<V> task, TaskJoinOperator<V> operator, JoinTaskHandle<V> parent, JoinTaskHandle<V> root,
+                           PoolTaskCenter pool, ConcurrentLinkedQueue<PoolTaskHandle<?>> taskBucket) {//for sub tasks
         super(task, null, pool, false);
         this.operator = operator;
         this.root = root;
         this.parent = parent;
+        this.taskBucket = taskBucket;
     }
 
     //***************************************************************************************************************//
@@ -85,10 +88,12 @@ final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
             if (pool.incrementTaskCountForInternal(subTaskCount - 1)) {
                 this.subTaskHandles = new JoinTaskHandle[subTaskCount];
                 this.subTaskHandleCount = subTaskCount;
-                for (int i = 0; i < subTaskCount; i++)
-                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], operator, this, root, pool);
 
-                worker.getTaskBucket().addAll(Arrays.asList(subTaskHandles));
+                ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket = worker.getTaskBucket();
+                for (int i = 0; i < subTaskCount; i++)
+                    subTaskHandles[i] = new JoinTaskHandle<>(subTasks[i], operator, this, root, pool, bucket);
+
+                bucket.addAll(Arrays.asList(subTaskHandles));
                 pool.attemptActivateAllWorkers();
             } else {
                 pool.decrementTaskCount();
