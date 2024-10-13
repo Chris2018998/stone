@@ -78,20 +78,20 @@ public interface BeeConnectionPool {
      * @return monitor object of pool
      */
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
-
-    /**
-     * Get start time of connection creation,if return value is not equal to zero,means that some thread is creating a connection.
-     *
-     * @return a nanoseconds time;if not exists a creating thread,then return 0
-     */
-    long getCreatingTime();
-
-    /**
-     * Query elapsed time of connection creation whether is timeout.
-     *
-     * @return true that creation is timeout
-     */
-    boolean isCreatingTimeout();
+//
+//    /**
+//     * Get start time of connection creation,if return value is not equal to zero,means that some thread is creating a connection.
+//     *
+//     * @return a nanoseconds time;if not exists a creating thread,then return 0
+//     */
+//    long getCreatingTime();
+//
+//    /**
+//     * Query elapsed time of connection creation whether is timeout.
+//     *
+//     * @return true that creation is timeout
+//     */
+//    boolean isCreatingTimeout();
 
     /**
      * Interrupts a thread creating a connection and threads waiting to create connections.

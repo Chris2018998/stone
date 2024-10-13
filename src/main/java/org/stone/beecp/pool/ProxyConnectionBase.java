@@ -35,7 +35,7 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
     //                                             self-define methods(5)                                            //
     //***************************************************************************************************************//
     public final long getCreationTime() {
-        return p.creationTime;
+        return p.creatingStartTime;
     }
 
     public final long getLassAccessTime() {
