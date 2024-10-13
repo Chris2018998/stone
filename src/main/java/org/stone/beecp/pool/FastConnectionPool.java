@@ -75,7 +75,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     private int connectionArrayLen;
     private PooledConnection[] connectionArray;//fixed len
-    private boolean connectionArrayNotInitialize = true;
+    private boolean connectionArrayInitialized;
     private InterruptionReentrantLock connectionArrayInitLock;
     private PooledConnectionTransferPolicy transferPolicy;
 
@@ -141,6 +141,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //step2: create a connection array with fixed len
+        this.connectionArrayInitialized = false;
         this.connectionArrayLen = poolConfig.getMaxActive();
         this.connectionArray = new PooledConnection[connectionArrayLen];
         this.connectionArrayInitLock = new InterruptionReentrantLock();
@@ -219,7 +220,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             driverClassNameOrFactoryName = rawFactory.getClass().getName();
             poolInitInfo = "BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,factory:{}}";
         }
-        Log.info(poolInitInfo, poolName, poolMode, connectionArray.length, poolConfig.getMaxActive(), semaphoreSize, poolConfig.getMaxWait(), driverClassNameOrFactoryName);
+        Log.info(poolInitInfo, poolName, poolMode, poolConfig.getInitialSize(), connectionArrayLen, semaphoreSize, poolConfig.getMaxWait(), driverClassNameOrFactoryName);
     }
 
     //Method-1.3: creates initial connections
@@ -228,8 +229,11 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             for (int i = 0; i < initSize; i++)
                 this.createPooledConn(CON_IDLE, i);
         } catch (SQLException e) {
-            for (PooledConnection p : this.connectionArray)
-                this.removePooledConn(p, DESC_RM_INIT);
+            for (int i = 0; i < initSize; i++) {
+                PooledConnection p = connectionArray[i];
+                if (p != null) this.removePooledConn(p, DESC_RM_INIT);
+            }
+
             if (syn) {//throw the caught exception if under sync mode
                 throw e;
             } else {//print log of the exception if under async mode
@@ -240,16 +244,20 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-1.4: creates a pooled connection under pool lock
     private PooledConnection createPooledConn(int state, int index) throws SQLException {
+        boolean locked =false;
+
         //1:try to acquire lock if connection array
-        if (connectionArrayNotInitialize) {
+        if (!connectionArrayInitialized) {
             try {
                 if (!this.connectionArrayInitLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
                     throw new ConnectionCreateException("Waited timeout on pool lock");
+                locked=true;
             } catch (InterruptedException e) {
                 throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool lock");
             }
         }
 
+        try {
         //2: print runtime log of connection creation
         if (this.printRuntimeLog)
             Log.info("BeeCP({}))begin to create a pooled connection with state:{}", this.poolName, state);
@@ -280,14 +288,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 }
             }
 
-            //4: initialized pooled connection array
-            if (connectionArrayNotInitialize) {
+            //4: initialize pooled connection array
+            if (connectionArrayInitialized) {
+                p.setRawConnection(state, rawConn, rawXaRes);
+            } else {
                 this.initPooledConnectionArray(rawConn);
                 p.setRawConnection2(state, rawConn, rawXaRes);
-                connectionArrayNotInitialize = false;
-                connectionArrayInitLock.unlock();
-            } else {
-                p.setRawConnection(state, rawConn, rawXaRes);
+                connectionArrayInitialized = true;
             }
 
             //5: print runtime log of creation
@@ -304,13 +311,15 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             else if (rawXaConn != null) oclose(rawXaConn);
             throw e instanceof SQLException ? (SQLException) e : new ConnectionCreateException(e);
         }
+        } finally {
+          if(locked)connectionArrayInitLock.unlock();
+        }
     }
 
     //Method-1.5: remove a pooled connection under lock(logical removal)
     private void removePooledConn(PooledConnection p, String cause) {
         if (this.printRuntimeLog)
             Log.info("BeeCP({}))begin to remove a pooled connection:{} for cause:{}", this.poolName, p, cause);
-
         p.onRemove();
     }
 
@@ -572,14 +581,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             b = this.threadLocal.get().get();
             if (b != null) {
                 p = b.lastUsed;
-                if (p != null) {
-                    if (p.state == CON_IDLE) {
-                        if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING) && this.testOnBorrow(p))
-                            return p;
-                    } else if (p.state == CON_CLOSED) {
-                        if (ConStUpd.compareAndSet(p, CON_IDLE, CON_CREATE))
-                            return p = this.createPooledConn(CON_USING, p.pooledConnectionIndex);
-                    }
+                if (p != null && p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
+                    if (this.testOnBorrow(p)) return b.lastUsed = p;
+                    b.lastUsed = null;
                 }
             }
         }
@@ -675,13 +679,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private PooledConnection searchOrCreate() throws SQLException {
         PooledConnection[] array = this.connectionArray;
         for (PooledConnection p : array) {
-            if (p.state == CON_IDLE) {
-                if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING) && this.testOnBorrow(p))
-                    return p;
-            } else if (p.state == CON_CLOSED) {
-                if (ConStUpd.compareAndSet(p, CON_IDLE, CON_CREATE))
-                    return p = this.createPooledConn(CON_USING, p.pooledConnectionIndex);
-            }
+            if (p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING) && this.testOnBorrow(p))
+                return p;
+            if (p.state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATE))
+                return this.createPooledConn(CON_USING, p.pooledConnectionIndex);
         }
         return null;
     }
@@ -989,7 +990,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-5.2: the length of array stores pooled connections
     public int getTotalSize() {
-        return this.connectionArray.length;
+        return getIdleSize() + getUsingSize();
     }
 
     //Method-5.3: size of idle pooled connections
@@ -1005,7 +1006,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-5.4: size of using pooled connections
     public int getUsingSize() {
-        return Math.max(this.connectionArray.length - this.getIdleSize(), 0);
+        int usingSize = 0;
+        PooledConnection[] array = this.connectionArray;
+        //for (int i = 0, l = array.length; i < l; i++) {
+        for (PooledConnection p : array) {
+            if (p.state == CON_USING) usingSize++;
+        }
+        return usingSize;
     }
 
     //Method-5.5: return pool name
@@ -1109,12 +1116,17 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         monitorVo.setThreadId(poolThreadId);
         monitorVo.setThreadName(poolThreadName);
         monitorVo.setHostIP(poolHostIP);
-
-        int totSize = this.getTotalSize();
-        int idleSize = this.getIdleSize();
         monitorVo.setPoolState(poolState);
+
+        int usingSize = 0, idleSize = 0;
+        PooledConnection[] array = this.connectionArray;
+        for (PooledConnection p : array) {
+            if (p.state == CON_USING) usingSize++;
+            if (p.state == CON_IDLE) idleSize++;
+        }
+
         monitorVo.setIdleSize(idleSize);
-        monitorVo.setUsingSize(totSize - idleSize);
+        monitorVo.setUsingSize(usingSize);
         monitorVo.setSemaphoreWaitingSize(this.getSemaphoreWaitingSize());
         monitorVo.setTransferWaitingSize(this.getTransferWaitingSize());
 //        monitorVo.setCreatingTime(this.startTimeOfCurrentCreation);
