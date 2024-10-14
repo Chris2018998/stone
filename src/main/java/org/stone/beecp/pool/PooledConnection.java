@@ -32,25 +32,9 @@ final class PooledConnection {
     private static final boolean[] FALSE = new boolean[6];
     final int pooledConnectionIndex;
     private final FastConnectionPool pool;
-    //***************************************************************************************************************//
-    //                                      section-B: dynamic fields                                                //                                                                                  //
-    //***************************************************************************************************************//
-    Thread creatingThread;
-    long creatingStartTime;//milliseconds
-    Connection rawConn;//maybe from XAConnection
-    XAResource rawXaRes;//from XAConnection
-    volatile int state;
-    volatile long lastAccessTime;//milliseconds
-    int openStmSize;
-    boolean curAutoCommit;
-    boolean commitDirtyInd;
-    ProxyConnectionBase proxyInUsing;//default is null
-    private int resetCnt;//reset count
-    private boolean[] resetFlags;
-    private ProxyStatementBase[] openStatements;
 
     //***************************************************************************************************************//
-    //                                     section-A: default values (no changeable)                                 //                                                                                  //
+    //                                      section-A: fields of default value                                       //                                                                                  //
     //***************************************************************************************************************//
     boolean defaultAutoCommit;
     int defaultTransactionIsolation;
@@ -60,9 +44,25 @@ final class PooledConnection {
     int defaultNetworkTimeout;
     boolean forceDirtyOnSchemaAfterSet;
     boolean forceDirtyOnCatalogAfterSet;
-
     //***************************************************************************************************************//
-    //                                     section-A: default values (no changeable)                                 //                                                                                  //
+    //                                     section-B: runtime change fields                                          //                                                                                  //
+    //***************************************************************************************************************//
+    Thread creatingThread;
+    long creatingStartTime;//milliseconds
+    Connection rawConn;//maybe from XAConnection
+    XAResource rawXaRes;//from XAConnection
+    volatile int state;
+    volatile long lastAccessTime;//milliseconds
+
+    int openStmSize;
+    boolean curAutoCommit;
+    boolean commitDirtyInd;
+    ProxyConnectionBase proxyInUsing;//default is null
+    private int resetCnt;//reset count
+    private boolean[] resetFlags;
+    private ProxyStatementBase[] openStatements;
+    //***************************************************************************************************************//
+    //                                     section-C: some switch fields and others                                  //                                                                                  //
     //***************************************************************************************************************//
     private boolean enableDefaultOnCatalog;
     private boolean enableDefaultOnSchema;
