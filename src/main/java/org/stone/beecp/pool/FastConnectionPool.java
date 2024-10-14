@@ -268,6 +268,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } catch (InterruptedException e) {
                 throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool lock");
             }
+
+            if (!connectionArrayInitialized)
+                throw new ConnectionCreateException("Initialize failed on first connection");
         }
 
         //2: search one or create one
