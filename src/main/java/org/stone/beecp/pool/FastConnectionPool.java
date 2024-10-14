@@ -75,8 +75,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private int stateCodeOnRelease;
 
     private int connectionArrayLen;
-    private PooledConnection[] connectionArray;//fixed len
     private boolean connectionArrayInitialized;
+    private PooledConnection[] connectionArray;//fixed len
     private InterruptionReentrantReadWriteLock connectionArrayInitLock;
     private PooledConnectionTransferPolicy transferPolicy;
 
@@ -228,11 +228,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private void createInitConnections(int initSize, boolean syn) throws SQLException {
         try {
             for (int i = 0; i < initSize; i++)
-                this.createRawConnection(CON_IDLE, i);
+                this.createRawConnection(CON_IDLE, connectionArray[i]);
         } catch (SQLException e) {
             for (int i = 0; i < initSize; i++) {
-                PooledConnection p = connectionArray[i];
-                if (p != null) this.removePooledConn(p, DESC_RM_INIT);
+                this.removePooledConn(connectionArray[i], DESC_RM_INIT);
             }
 
             if (syn) {//throw the caught exception if under sync mode
@@ -244,7 +243,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-1.4: creates a pooled connection under pool lock
-    private PooledConnection createRawConnection(int state, int index) throws SQLException {
+    private PooledConnection createRawConnection(int state, PooledConnection p) throws SQLException {
+        boolean useLock = false;
         boolean readlocked = false;
         boolean writelocked = false;
         ReentrantReadWriteLock.ReadLock readLock = null;
@@ -252,6 +252,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //1:try to acquire lock if connection array
         if (!connectionArrayInitialized) {
+            useLock = true;
             readLock = connectionArrayInitLock.readLock();
             writeLock = connectionArrayInitLock.writeLock();
 
@@ -277,7 +278,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             Connection rawConn = null;
             XAConnection rawXaConn = null;
             XAResource rawXaRes = null;
-            PooledConnection p = connectionArray[index];
 
             try {
                 if (this.isRawXaConnFactory) {
@@ -323,8 +323,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 throw e instanceof SQLException ? (SQLException) e : new ConnectionCreateException(e);
             }
         } finally {
-            if (readlocked) readLock.unlock();
-            if (writelocked) writeLock.unlock();
+            if (useLock) {
+                if (readlocked) readLock.unlock();
+                if (writelocked) writeLock.unlock();
+            }
         }
     }
 
@@ -689,12 +691,16 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-2.5: Search one or create one
     private PooledConnection searchOrCreate() throws SQLException {
-        PooledConnection[] array = this.connectionArray;
-        for (PooledConnection p : array) {
-            if (p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING) && this.testOnBorrow(p))
-                return p;
-            if (p.state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATE))
-                return this.createRawConnection(CON_USING, p.pooledConnectionIndex);
+        int state;
+        for (PooledConnection p : connectionArray) {
+            state = p.state;
+            if (state == CON_IDLE) {
+                if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING) && this.testOnBorrow(p))
+                    return p;
+            } else if (state == CON_CLOSED) {
+                if (ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATE))
+                    return this.createRawConnection(CON_USING, p);
+            }
         }
         return null;
     }
