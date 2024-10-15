@@ -148,7 +148,7 @@ final class PooledConnection {
     //***************************************************************************************************************//
     //                                      3: set a created connection and set default on it                        //                                                                                  //
     //***************************************************************************************************************//
-    void setRawConnection(int state, Connection rawConn, XAResource rawXaRes) throws SQLException {
+    void setRawConnection(Connection rawConn, XAResource rawXaRes) throws SQLException {
         if (enableDefaultOnAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
             rawConn.setAutoCommit(defaultAutoCommit);
         if (enableDefaultOnTransactionIsolation && defaultTransactionIsolation != rawConn.getTransactionIsolation())
@@ -160,13 +160,13 @@ final class PooledConnection {
         if (enableDefaultOnSchema && defaultSchemaIsNotBlank && !defaultSchema.equals(rawConn.getSchema()))
             rawConn.setSchema(defaultSchema);
 
-        setRawConnection2(state, rawConn, rawXaRes);
+        setRawConnection2(rawConn, rawXaRes);
     }
 
     //***************************************************************************************************************//
     //                                      4: set a created connection without setting default                      //                                                                                  //
     //***************************************************************************************************************//
-    void setRawConnection2(int state, Connection rawConn, XAResource rawXaRes) {
+    void setRawConnection2(Connection rawConn, XAResource rawXaRes) {
         this.rawConn = rawConn;
         this.rawXaRes = rawXaRes;
         this.resetFlags = FALSE.clone();
@@ -178,7 +178,6 @@ final class PooledConnection {
 
         this.creatingThread = null;
         this.creatingStartTime = 0L;
-        this.state = state;
     }
 
     //***************************************************************************************************************//

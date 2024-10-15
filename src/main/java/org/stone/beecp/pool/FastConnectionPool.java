@@ -218,23 +218,20 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-1.3: creates initial connections
     private void createInitConnections(int initSize, boolean syn) throws SQLException {
-        boolean isWriteLocked = false;
         ReentrantReadWriteLock.WriteLock writeLock = connectionArrayInitLock.writeLock();
-        if (!syn) {
-            if (!connectionArrayInitialized) {
-                if (!connectionArrayInitLock.isWriteLocked() && writeLock.tryLock()) {
-                    isWriteLocked = true;
-                }
-            }
-        }
+        boolean isWriteLocked = !syn && !connectionArrayInitialized && !connectionArrayInitLock.isWriteLocked() && writeLock.tryLock();
 
         if (syn || isWriteLocked) {
             try {
-                for (int i = 0; i < initSize; i++)
-                    this.fillRawConnection(CON_IDLE, connectionArray[i]);
+                for (int i = 0; i < initSize; i++) {
+                    PooledConnection p = connectionArray[0];
+                    p.state = CON_IDLE;
+                    this.fillRawConnection(p);
+                }
             } catch (SQLException e) {
-                for (int i = 0; i < initSize; i++)
+                for (int i = 0; i < initSize; i++) {
                     this.removePooledConn(connectionArray[i], DESC_RM_INIT);
+                }
 
                 if (syn) {//throw the caught exception if under sync mode
                     throw e;
@@ -256,7 +253,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             try {
                 if (!connectionArrayInitLock.isWriteLocked() && writeLock.tryLock()) {
                     try {
-                        return this.fillRawConnection(CON_USING, connectionArray[0]);
+                        PooledConnection p = connectionArray[0];
+                        p.state = CON_USING;
+                        return this.fillRawConnection(p);
                     } finally {
                         writeLock.unlock();
                     }
@@ -277,23 +276,22 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         int state;
         for (PooledConnection p : connectionArray) {
             state = p.state;
-            if (state == CON_IDLE) {
-                if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING) && this.testOnBorrow(p))
-                    return p;
-            } else if (state == CON_CLOSED) {
-                if (ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATE))
-                    return this.fillRawConnection(CON_USING, p);
+            if (state != CON_USING && ConStUpd.compareAndSet(p, state, CON_USING)) {
+                if (state == CON_IDLE) {
+                    if (this.testOnBorrow(p)) return p;
+                } else {
+                    return this.fillRawConnection(p);
+                }
             }
         }
-
         return null;
     }
 
     //Method-1.5: creates a pooled connection and fill it into given pooled connection
-    private PooledConnection fillRawConnection(int state, PooledConnection p) throws SQLException {
+    private PooledConnection fillRawConnection(PooledConnection p) throws SQLException {
         //1: print runtime log of connection creation
         if (this.printRuntimeLog)
-            Log.info("BeeCP({}))begin to create a pooled connection with state:{}", this.poolName, state);
+            Log.info("BeeCP({}))begin to create a raw connection", this.poolName);
 
         //2: create a connection by factory
         Connection rawConn = null;
@@ -322,16 +320,16 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
             //3: initialize pooled connection array
             if (connectionArrayInitialized) {
-                p.setRawConnection(state, rawConn, rawXaRes);
+                p.setRawConnection(rawConn, rawXaRes);
             } else {
                 this.initPooledConnectionArray(rawConn);
-                p.setRawConnection2(state, rawConn, rawXaRes);
+                p.setRawConnection2(rawConn, rawXaRes);
                 connectionArrayInitialized = true;
             }
 
             //4: print runtime log of creation
             if (this.printRuntimeLog)
-                Log.info("BeeCP({}))created a new connection:{} to fill pooled connection:{} with state:{}", this.poolName, rawConn, p, state);
+                Log.info("BeeCP({}))created a new connection:{} to fill pooled connection:{}", this.poolName, rawConn, p);
 
             //5: return result
             return p;
