@@ -49,18 +49,23 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public final class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMBean, PooledConnectionAliveTest, PooledConnectionTransferPolicy {
+    static final Logger Log = LoggerFactory.getLogger(FastConnectionPool.class);
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
-    private static final Logger Log = LoggerFactory.getLogger(FastConnectionPool.class);
 
-    private String poolName;
+    String poolName;
+    volatile int poolState;
+    PooledConnection[] connectionArray;//fixed len
+    AtomicInteger servantState;
+    AtomicInteger idleScanState;
+    ConcurrentLinkedQueue<Borrower> waitQueue;
+    BeeDataSourceConfig poolConfig;
+
     private String poolMode;
     private String poolHostIP;
     private long poolThreadId;
     private String poolThreadName;
-
-    private volatile int poolState;
     private boolean isFairMode;
     private boolean isCompeteMode;
     private int semaphoreSize;
@@ -73,26 +78,19 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private int aliveTestTimeout;//seconds
     private long delayTimeForNextClearNs;//nanoseconds
     private int stateCodeOnRelease;
-
     private int connectionArrayLen;
     private boolean connectionArrayInitialized;
-    private PooledConnection[] connectionArray;//fixed len
     private InterruptionReentrantReadWriteLock connectionArrayInitLock;
     private PooledConnectionTransferPolicy transferPolicy;
-
     private boolean isRawXaConnFactory;
     private BeeConnectionFactory rawConnFactory;
     private BeeXaConnectionFactory rawXaConnFactory;
     private PooledConnectionAliveTest conValidTest;
     private ThreadPoolExecutor networkTimeoutExecutor;
-    private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
-    private AtomicInteger idleScanState;
     private IdleTimeoutScanThread idleScanThread;
-    private ConcurrentLinkedQueue<Borrower> waitQueue;
     private boolean enableThreadLocal;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
-    private BeeDataSourceConfig poolConfig;
     private FastConnectionPoolMonitorVo monitorVo;
     private ConnectionPoolHook exitHook;
     private boolean printRuntimeLog;
@@ -217,7 +215,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-1.3: creates initial connections
-    private void createInitConnections(int initSize, boolean syn) throws SQLException {
+    void createInitConnections(int initSize, boolean syn) throws SQLException {
         ReentrantReadWriteLock.WriteLock writeLock = connectionArrayInitLock.writeLock();
         boolean isWriteLocked = !syn && !connectionArrayInitialized && !connectionArrayInitLock.isWriteLocked() && writeLock.tryLock();
 
@@ -261,21 +259,19 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     }
                 } else if (readLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS)) {
                     readLock.unlock();
+                    if (!connectionArrayInitialized)
+                        throw new ConnectionCreateException("Initialize failed on first connection");
                 } else {
                     throw new ConnectionCreateException("Waited timeout on pool lock");
                 }
             } catch (InterruptedException e) {
                 throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool lock");
             }
-
-            if (!connectionArrayInitialized)
-                throw new ConnectionCreateException("Initialize failed on first connection");
         }
 
         //2: search one or create one
-        int state;
         for (PooledConnection p : connectionArray) {
-            state = p.state;
+            int state = p.state;
             if (state != CON_USING && ConStUpd.compareAndSet(p, state, CON_USING)) {
                 if (state == CON_IDLE) {
                     if (this.testOnBorrow(p)) return p;
@@ -415,7 +411,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     Log.warn("BeeCP({})failed to set default value({}) of transaction-isolation property on first connection object", this.poolName, defaultTransactionIsolation, e);
             }
         } else if (defaultTransactionIsolation == null) {
-            defaultTransactionIsolation = 0;
+            defaultTransactionIsolation = Integer.valueOf(0);
         }
 
         //step3:get default value of property read-only from config or from first connection
@@ -424,7 +420,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (poolConfig.isEnableDefaultOnReadOnly()) {
             if (defaultReadOnly == null) {
                 try {
-                    defaultReadOnly = firstConn.isReadOnly();
+                    defaultReadOnly = Boolean.valueOf(firstConn.isReadOnly());
                 } catch (Throwable e) {
                     if (this.printRuntimeLog)
                         Log.warn("BeeCP({})failed to get value of read-only property from first connection object", this.poolName);
@@ -801,7 +797,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-3.3: clean timeout connections(idle timeout and hold timeout)
-    private void closeIdleTimeoutConnection() {
+    void closeIdleTimeoutConnection() {
         //step1:print pool info before clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
@@ -1214,6 +1210,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //class-6.5:Fair transfer
     private static final class FairTransferPolicy implements PooledConnectionTransferPolicy {
+        FairTransferPolicy() {
+        }
+
         public int getStateCodeOnRelease() {
             return CON_USING;
         }
@@ -1225,6 +1224,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //class-6.6: threadLocal caches the last used connections of borrowers(only cache one per borrower)
     private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<Borrower>> {
+        BorrowerThreadLocal() {
+        }
+
         protected WeakReference<Borrower> initialValue() {
             return new WeakReference<>(new Borrower());
         }
@@ -1239,8 +1241,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         private final boolean isDefaultAutoCommit;
         private final boolean supportQueryTimeout;
 
-        private PooledConnectionAliveTestBySql(String poolName, String testSql, int validTestTimeout,
-                                               boolean isDefaultAutoCommit, boolean supportQueryTimeout, boolean printRuntimeLog) {
+        PooledConnectionAliveTestBySql(String poolName, String testSql, int validTestTimeout,
+                                       boolean isDefaultAutoCommit, boolean supportQueryTimeout, boolean printRuntimeLog) {
             this.poolName = poolName;
             this.testSql = testSql;
             this.printRuntimeLog = printRuntimeLog;
