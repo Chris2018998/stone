@@ -222,7 +222,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (syn || isWriteLocked) {
             try {
                 for (int i = 0; i < initSize; i++) {
-                    PooledConnection p = connectionArray[0];
+                    PooledConnection p = connectionArray[i];
                     p.state = CON_CREATING;
                     this.fillRawConnection(p, CON_IDLE);
                 }
