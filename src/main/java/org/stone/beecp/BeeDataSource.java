@@ -216,7 +216,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
     public Thread[] interruptConnectionCreating(boolean interruptTimeout) throws SQLException {
         this.checkPool();
-        return this.pool.interruptOnCreation();
+        return this.pool.interruptConnectionCreating(interruptTimeout);
     }
 
     public void clear(boolean forceCloseUsing) throws SQLException {
