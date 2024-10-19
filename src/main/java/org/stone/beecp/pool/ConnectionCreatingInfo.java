@@ -17,7 +17,7 @@ package org.stone.beecp.pool;
  */
 final class ConnectionCreatingInfo {
     private final Thread creatingThread;
-    private final long creatingStartTime;//milliseconds
+    private final long creatingStartTime;
 
     ConnectionCreatingInfo() {
         this.creatingThread = Thread.currentThread();
