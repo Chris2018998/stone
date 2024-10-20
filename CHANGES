@@ -3,9 +3,14 @@ stone changes
 Changes in 1.3.8
 [beecp]
 1: change pool connection array to a fixed length array
+2: re-implement interruption on connection creation
+3: not remove created connections when failed during async initialization
+[beeop]
+1: change pool object array to a fixed length array
+2: re-implement interruption on object creation
+3: not remove created objects when failed during async initialization
 [beetp]
 1: support thread factory
-
 
 Changes in 1.3.7
 [beetp]
