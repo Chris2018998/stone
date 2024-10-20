@@ -688,7 +688,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             ObjectCreatingInfo creatingInfo = p.creatingInfo;
             if (creatingInfo != null) {
                 creatingCount++;
-                if (System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+                if (System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
                     creatingTimeoutCount++;
             }
         }
@@ -715,7 +715,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         int count = 0;
         for (PooledObject p : objectArray) {
             ObjectCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+            if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
                 count++;
         }
         return count;
@@ -726,7 +726,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         if (interruptTimeout) {
             for (PooledObject p : objectArray) {
                 ObjectCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
+                if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
                     creatingInfo.getCreatingThread().interrupt();
                     threads.add(creatingInfo.getCreatingThread());
                 }

@@ -1030,7 +1030,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         int count = 0;
         for (PooledConnection p : connectionArray) {
             ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+            if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
                 count++;
         }
         return count;
@@ -1042,7 +1042,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (interruptTimeout) {
             for (PooledConnection p : connectionArray) {
                 ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
+                if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
                     creatingInfo.getCreatingThread().interrupt();
                     threads.add(creatingInfo.getCreatingThread());
                 }
@@ -1150,7 +1150,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             ConnectionCreatingInfo creatingInfo = p.creatingInfo;
             if (creatingInfo != null) {
                 creatingCount++;
-                if (System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+                if (System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
                     creatingTimeoutCount++;
             }
         }
