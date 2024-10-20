@@ -11,12 +11,11 @@ package org.stone.beeop.pool;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
-import org.stone.tools.extension.InterruptionReentrantLock;
+import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.lang.ref.WeakReference;
@@ -34,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
@@ -85,9 +85,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private InterruptionSemaphore semaphore;
     private AtomicInteger servantState;
     private AtomicInteger servantTryCount;
-    private InterruptionReentrantLock pooledArrayLock;
-    private volatile long pooledArrayLockedTimePoint;//nanoseconds
-    private volatile PooledObject[] pooledArray;
+    private volatile PooledObject[] objectArray;
+    private InterruptionReentrantReadWriteLock objectArrayInitLock;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
     private ObjectPoolMonitorVo monitorVo;
@@ -154,8 +153,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     void startup(String ownerName, Object key, int initSize, boolean async) throws Exception {
         this.key = key;
         this.poolName = ownerName + "-[" + key + "]";
-        this.pooledArray = new PooledObject[0];
-        this.pooledArrayLock = new InterruptionReentrantLock();
+
+        this.objectArray = new PooledObject[maxActiveSize];
+        for (int i = 0; i < maxActiveSize; i++)
+            objectArray[i] = new PooledObject(key, objectFactory, methodMap, this.methodFilter, this);
+
+        this.objectArrayInitLock = new InterruptionReentrantReadWriteLock();
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
 
         if (this.enableThreadLocal) this.threadLocal = new BorrowerThreadLocal();
@@ -170,7 +173,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
                 this.poolName,
                 this.poolMode,
-                this.pooledArray.length,
+                initSize,
                 this.maxActiveSize,
                 this.semaphoreSize,
                 this.maxWaitMs);
@@ -181,69 +184,76 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //***************************************************************************************************************//
     //Method-2.1: create specified size objects to pool,if zero,then try to create one
     private void createInitObjects(int initSize, boolean syn) throws Exception {
-        pooledArrayLock.lock();
-        try {
-            for (int i = 0; i < initSize; i++)
-                this.createPooledEntry(OBJECT_IDLE);
-        } catch (Exception e) {
-            for (PooledObject pooledEntry : this.pooledArray)
-                this.removePooledEntry(pooledEntry, DESC_RM_INIT);
+        ReentrantReadWriteLock.WriteLock writeLock = objectArrayInitLock.writeLock();
+        boolean isWriteLocked = !syn && !objectArrayInitLock.isWriteLocked() && writeLock.tryLock();
 
-            if (syn) {//throw exception on syn mode
-                throw e;
-            } else {
-                Log.warn("BeeOP({})failed to create initialization objects", poolName, e);
+        if (syn || isWriteLocked) {
+            try {
+                for (int i = 0; i < initSize; i++) {
+                    PooledObject p = objectArray[i];
+                    p.state = OBJECT_CREATING;
+                    this.fillRawObject(p, OBJECT_IDLE);
+                }
+            } catch (Throwable e) {
+                for (int i = 0; i < initSize; i++) {
+                    this.removePooledEntry(objectArray[i], DESC_RM_INIT);
+                }
+
+                if (syn) {//throw the caught exception if under sync mode
+                    throw e;
+                } else {//print log of the exception if under async mode
+                    Log.warn("Failed to create initial objects by async mode", e);
+                }
+            } finally {
+                if (isWriteLocked) writeLock.unlock();
             }
-        } finally {
-            pooledArrayLock.unlock();
         }
     }
 
-    //Method-2.2: create one pooled object
-    private PooledObject createPooledEntry(int state) throws Exception {
-        //1:try to acquire lock
-        try {
-            if (!this.pooledArrayLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectCreateException("Waited timeout on pool lock");
-        } catch (InterruptedException e) {
-            throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool lock");
-        }
-
-        //2:try to create a pooled object
-        try {
-            this.pooledArrayLockedTimePoint = System.nanoTime();
-            int l = this.pooledArray.length;
-            if (l < this.maxActiveSize) {
-                if (this.printRuntimeLog)
-                    Log.info("BeeOP({}))begin to create a new pooled object with state:{}", this.poolName, state);
-
-                Object rawObj = null;
-                try {
-                    rawObj = this.objectFactory.create(this.key);
-                    if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
-                        if (Thread.interrupted())
-                            throw new ObjectGetInterruptedException("Interrupted on creating a raw object by factory");
-                        throw new ObjectCreateException("Internal error occurred in object factory");
-                    }
-
-                    objectFactory.setDefault(key, rawObj);
-                    PooledObject p = new PooledObject(key, rawObj, objectFactory, methodMap, this.methodFilter, this);
-                    if (this.printRuntimeLog)
-                        Log.info("BeeOP({}))has created a new pooled object:{} with state:{}", this.poolName, p, state);
-                    PooledObject[] arrayNew = new PooledObject[l + 1];
-                    System.arraycopy(this.pooledArray, 0, arrayNew, 0, l);
-                    arrayNew[l] = p;//tail
-                    this.pooledArray = arrayNew;
-                    return p;
-                } catch (Throwable e) {
-                    if (rawObj != null) this.objectFactory.destroy(key, rawObj);
-                    throw e instanceof Exception ? (Exception) e : new ObjectCreateException(e);
+    //Method-2.2: search one idle Object,if not found,then try to create one
+    private PooledObject searchOrCreate() throws Exception {
+        for (PooledObject p : objectArray) {
+            int state = p.state;
+            if (state == OBJECT_IDLE) {
+                if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
+                    if (this.testOnBorrow(p)) return p;
+                } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
+                    return this.fillRawObject(p, OBJECT_USING);
                 }
+            } else if (state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
+                return this.fillRawObject(p, OBJECT_USING);
             }
-            return null;
-        } finally {
-            this.pooledArrayLockedTimePoint = 0L;
-            pooledArrayLock.unlock();
+        }
+        return null;
+    }
+
+    //Method-2.3: create one pooled object
+    private PooledObject fillRawObject(PooledObject p, int state) throws Exception {
+        //1: print runtime log of object creation
+        if (this.printRuntimeLog)
+            Log.info("BeeCP({}))begin to create a raw object", this.poolName);
+
+        Object rawObj = null;
+        p.creatingInfo = new ObjectCreatingInfo();
+        try {
+            rawObj = this.objectFactory.create(this.key);
+            if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
+                if (Thread.interrupted())
+                    throw new ObjectGetInterruptedException("Interrupted on creating a raw object by factory");
+                throw new ObjectCreateException("Internal error occurred in object factory");
+            }
+
+            objectFactory.setDefault(key, rawObj);
+            p.setRawObject(state, rawObj);
+            if (this.printRuntimeLog)
+                Log.info("BeeOP({}))has created a new pooled object:{} with state:{}", this.poolName, p, state);
+
+            return p;
+        } catch (Throwable e) {
+            p.creatingInfo = null;
+            p.state = OBJECT_CLOSED;//reset to closed state
+            if (rawObj != null) this.objectFactory.destroy(key, rawObj);
+            throw e instanceof Exception ? (Exception) e : new ObjectCreateException(e);
         }
     }
 
@@ -252,45 +262,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         if (this.printRuntimeLog)
             Log.info("BeeOP({}))begin to remove a pooled object:{} for cause:{}", this.poolName, p, cause);
         p.onBeforeRemove();
-
-        this.pooledArrayLock.lock();
-        try {
-            for (int l = this.pooledArray.length, i = l - 1; i >= 0; i--) {
-                if (this.pooledArray[i] == p) {
-                    PooledObject[] arrayNew = new PooledObject[l - 1];
-                    System.arraycopy(this.pooledArray, 0, arrayNew, 0, i);
-                    int m = l - i - 1;
-                    if (m > 0) System.arraycopy(this.pooledArray, i + 1, arrayNew, i, m);
-                    this.pooledArray = arrayNew;
-                    if (this.printRuntimeLog)
-                        Log.info("BeeOP({}))has removed pooled object:{} for cause:{}", this.poolName, p, cause);
-                    break;
-                }
-            }
-        } finally {
-            pooledArrayLock.unlock();
-        }
-    }
-
-    //Method-2.4: Gets owner hold time point(nanoseconds) on pool lock.
-    public long getCreatingTime() {
-        return this.pooledArrayLockedTimePoint;
-    }
-
-    //Method-2.5: return check result of pool lock hold timeout
-    public boolean isCreatingTimeout() {
-        final long lockHoldTime = pooledArrayLockedTimePoint;
-        return lockHoldTime != 0L && System.nanoTime() - lockHoldTime > maxWaitNs;
-    }
-
-    //Method-2.6: interrupt queued waiters on creation lock and acquired thread,which may be stuck in driver
-    public Thread[] interruptOnCreation() {
-        List<Thread> interrupedList = new LinkedList<>(this.pooledArrayLock.interruptQueuedWaitThreads());
-        Thread ownerThread = this.pooledArrayLock.interruptOwnerThread();
-        if (ownerThread != null) interrupedList.add(ownerThread);
-
-        Thread[] interruptThreads = new Thread[interrupedList.size()];
-        return interrupedList.toArray(interruptThreads);
     }
 
     //***************************************************************************************************************//
@@ -410,17 +381,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
     }
 
-    //Method-3.3: search one idle Object,if not found,then try to create one
-    private PooledObject searchOrCreate() throws Exception {
-        PooledObject[] array = this.pooledArray;
-        for (PooledObject p : array) {
-            if (p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING) && this.testOnBorrow(p))
-                return p;
-        }
-        if (this.pooledArray.length < this.maxActiveSize)
-            return this.createPooledEntry(OBJECT_USING);
-        return null;
-    }
 
     //Method-3.4: return object to pool after borrower end of use object
     void recycle(PooledObject p) {
@@ -530,14 +490,11 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         //step2:interrupt lock owner and all waiters on lock
-        if (isCreatingTimeout()) {
-            Log.info("BeeOP({})pool lock has been hold timeout and an interruption will be executed on lock", this.poolName);
-            this.interruptOnCreation();
-        }
+        Log.info("BeeOP({})pool lock has been hold timeout and an interruption will be executed on lock", this.poolName);
+        this.interruptObjectCreating(false);
 
         //step3: remove idle timeout and hold timeout
-        PooledObject[] array = this.pooledArray;
-        for (PooledObject p : array) {
+        for (PooledObject p : this.objectArray) {
             int state = p.state;
             if (state == OBJECT_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
@@ -595,32 +552,39 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         //2:interrupt waiters on lock(maybe stuck on socket)
-        this.interruptOnCreation();
+        this.interruptObjectCreating(false);
+
         //3:clear all connections
+        int closedCount;
         while (true) {
-            PooledObject[] array = this.pooledArray;
-            for (PooledObject p : array) {
+            closedCount = 0;
+            for (PooledObject p : this.objectArray) {
                 final int state = p.state;
                 if (state == OBJECT_IDLE) {
-                    if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED))
+                    if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED)) {
+                        closedCount++;
                         this.removePooledEntry(p, removeReason);
+                    }
                 } else if (state == OBJECT_USING) {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
                         if (forceCloseUsing || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L)) {
                             tryCloseObjectHandle(handleInUsing);
-                            if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED))
+                            if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED)) {
+                                closedCount++;
                                 this.removePooledEntry(p, removeReason);
+                            }
                         }
                     } else {
                         this.removePooledEntry(p, removeReason);
                     }
                 } else if (state == OBJECT_CLOSED) {
+                    closedCount++;
                     this.removePooledEntry(p, removeReason);
                 }
             } // for
 
-            if (this.pooledArray.length == 0) break;
+            if (closedCount == this.maxActiveSize) break;
             LockSupport.parkNanos(this.delayTimeForNextClearNs);
         } // while
 
@@ -695,12 +659,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     private int getTotalSize() {
-        return this.pooledArray.length;
+        return this.objectArray.length;
     }
 
     private int getIdleSize() {
         int idleSize = 0;
-        PooledObject[] array = this.pooledArray;
+        PooledObject[] array = this.objectArray;
         for (PooledObject p : array)
             if (p.state == OBJECT_IDLE) idleSize++;
         return idleSize;
@@ -715,17 +679,72 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     BeeObjectPoolMonitorVo getPoolMonitorVo() {
-        int totSize = this.getTotalSize();
-        int idleSize = this.getIdleSize();
+        int usingSize = 0, idleSize = 0;
+        int creatingCount = 0, creatingTimeoutCount = 0;
+        for (PooledObject p : objectArray) {
+            if (p.state == OBJECT_USING) usingSize++;
+            if (p.state == OBJECT_IDLE) idleSize++;
+            ObjectCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null) {
+                creatingCount++;
+                if (System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+                    creatingTimeoutCount++;
+            }
+        }
         monitorVo.setPoolState(poolState);
         monitorVo.setIdleSize(idleSize);
-        monitorVo.setUsingSize(totSize - idleSize);
+        monitorVo.setUsingSize(usingSize);
+        monitorVo.setCreatingCount(creatingCount);
+        monitorVo.setCreatingTimeoutCount(creatingTimeoutCount);
         monitorVo.setSemaphoreWaitingSize(this.semaphore.getQueueLength());
         monitorVo.setTransferWaitingSize(getTransferWaitingSize());
-        monitorVo.setCreatingTime(this.pooledArrayLockedTimePoint);
-        monitorVo.setCreatingTimeout(this.isCreatingTimeout());
+
         return this.monitorVo;
     }
+
+    public int getObjectCreatingCount() {
+        int count = 0;
+        for (PooledObject p : objectArray) {
+            ObjectCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null) count++;
+        }
+        return count;
+    }
+
+    public int getObjectCreatingTimeoutCount() {
+        int count = 0;
+        for (PooledObject p : objectArray) {
+            ObjectCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+                count++;
+        }
+        return count;
+    }
+
+    public Thread[] interruptObjectCreating(boolean interruptTimeout) {
+        List<Thread> threads = new LinkedList<>();
+        if (interruptTimeout) {
+            for (PooledObject p : objectArray) {
+                ObjectCreatingInfo creatingInfo = p.creatingInfo;
+                if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
+                    creatingInfo.getCreatingThread().interrupt();
+                    threads.add(creatingInfo.getCreatingThread());
+                }
+            }
+        } else {
+            for (PooledObject p : objectArray) {
+                ObjectCreatingInfo creatingInfo = p.creatingInfo;
+                if (creatingInfo != null) {
+                    creatingInfo.getCreatingThread().interrupt();
+                    threads.add(creatingInfo.getCreatingThread());
+                }
+            }
+        }
+
+        Thread[] interruptThreads = new Thread[threads.size()];
+        return threads.toArray(interruptThreads);
+    }
+
 
     //***************************************************************************************************************//
     //                                       9: Inner Classes(6)                                                     //                                                                                  //
@@ -797,7 +816,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         public void run() {
             try {
                 pool.createInitObjects(initialSize, false);
-                pool.servantTryCount.set(pool.pooledArray.length);
+                pool.servantTryCount.set(pool.objectArray.length);
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
                     pool.ownerPool.submitServantTask(pool);
                 }

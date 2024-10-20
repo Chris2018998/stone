@@ -148,20 +148,19 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                          4: operation with key                                                //
     //***************************************************************************************************************//
-
-    public long getCreatingTime(Object key) throws Exception {
+    public int getObjectCreatingCount(Object key) throws Exception {
         checkPool();
-        return createPoolByLock().getCreatingTime(key);
+        return createPoolByLock().getObjectCreatingCount(key);
     }
 
-    public boolean isCreatingTimeout(Object key) throws Exception {
+    public int getObjectCreatingTimeoutCount(Object key) throws Exception {
         checkPool();
-        return createPoolByLock().isCreatingTimeout(key);
+        return createPoolByLock().getObjectCreatingTimeoutCount(key);
     }
 
-    public Thread[] interruptOnCreation(Object key) throws Exception {
+    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
         checkPool();
-        return createPoolByLock().interruptOnCreation(key);
+        return createPoolByLock().interruptObjectCreating(key, interruptTimeout);
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
@@ -173,7 +172,6 @@ public final class BeeObjectSource extends BeeObjectSourceConfig {
         checkPool();
         createPoolByLock().setPrintRuntimeLog(key, indicator);
     }
-
 
     public void deleteKey(Object key) throws Exception {
         checkPool();

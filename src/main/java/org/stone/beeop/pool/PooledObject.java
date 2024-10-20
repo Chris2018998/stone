@@ -29,37 +29,45 @@ import static org.stone.tools.BeanUtil.CommonLog;
  */
 final class PooledObject {
     final Object key;
-    final Object raw;
-    private final Class<?> rawType;
     private final BeeObjectFactory factory;
     private final ObjectInstancePool ownerPool;
     private final BeeObjectMethodFilter methodFilter;
     private final Map<MethodCacheKey, Method> methodMap;
 
+    Object raw;
     volatile int state;
+    volatile ObjectCreatingInfo creatingInfo;
     PooledObjectPlainHandle handleInUsing;
     volatile long lastAccessTime;//milliseconds
+    private Class<?> rawType;
 
     //***************************************************************************************************************//
-    //                                  1: Pooled entry create/clone methods(1)                                      //                                                                                  //
+    //                                  1: constructor                                                               //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(Object key, Object raw, BeeObjectFactory factory,
+    PooledObject(Object key, BeeObjectFactory factory,
                  Map<MethodCacheKey, Method> methodMap, BeeObjectMethodFilter methodFilter,
                  ObjectInstancePool ownerPool) {
 
         this.key = key;
-        this.raw = raw;
-        this.rawType = raw.getClass();
         this.factory = factory;
         this.methodMap = methodMap;
         this.methodFilter = methodFilter;
         this.ownerPool = ownerPool;
-
-        this.lastAccessTime = currentTimeMillis();
     }
 
     //***************************************************************************************************************//
-    //                               2: Pooled entry business methods(4)                                             //                                                                                  //
+    //                                  2: set raw object                                                            //                                                                                  //
+    //***************************************************************************************************************//
+    void setRawObject(int state, Object raw) {
+        this.raw = raw;
+        this.rawType = raw.getClass();
+        this.lastAccessTime = currentTimeMillis();
+        this.creatingInfo = null;
+        this.state = state;
+    }
+
+    //***************************************************************************************************************//
+    //                               3: Pooled entry business methods(3)                                             //                                                                                  //
     //***************************************************************************************************************//
     public Object getObjectKey() {
         return key;
@@ -73,19 +81,9 @@ final class PooledObject {
         this.lastAccessTime = currentTimeMillis();
     }
 
-    //handle call this method to get a method of object by parameter info
-    Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
-        if (methodFilter != null) methodFilter.doFilter(key, name, types, params);
-        MethodCacheKey key = new MethodCacheKey(name, types);
-        Method method = methodMap.get(key);
-
-        if (method == null) {
-            method = rawType.getMethod(name, types);
-            methodMap.put(key, method);
-        }
-        return method;
-    }
-
+    //***************************************************************************************************************//
+    //                               4: Pooled entry business methods(4)                                             //                                                                                  //
+    //***************************************************************************************************************//
     //handle call this method to abort this object
     void abortSelf(String reason) {
         ownerPool.abort(this, reason);
@@ -115,6 +113,7 @@ final class PooledObject {
             if (ownerPool.isPrintRuntimeLog())
                 CommonLog.warn("BeeOP({})reset object failed", ownerPool.getPoolName(), e);
         } finally {
+
             try {
                 this.factory.destroy(key, raw);
             } catch (Throwable e) {
@@ -122,5 +121,18 @@ final class PooledObject {
                     CommonLog.warn("BeeOP({})An error occurred when destroyed object", ownerPool.getPoolName(), e);
             }
         }
+    }
+
+    //handle call this method to get a method of object by parameter info
+    Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
+        if (methodFilter != null) methodFilter.doFilter(key, name, types, params);
+        MethodCacheKey key = new MethodCacheKey(name, types);
+        Method method = methodMap.get(key);
+
+        if (method == null) {
+            method = rawType.getMethod(name, types);
+            methodMap.put(key, method);
+        }
+        return method;
     }
 }

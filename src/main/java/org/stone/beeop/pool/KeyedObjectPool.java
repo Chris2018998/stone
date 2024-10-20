@@ -300,25 +300,25 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //***************************************************************************************************************//
     //                                    3: Methods to maintain pooed keys(5)                                       //
     //***************************************************************************************************************//
-    public long getCreatingTime(Object key) throws Exception {
+    public int getObjectCreatingCount(Object key) throws Exception {
         this.checkParameterKey(key);
 
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null ? pool.getCreatingTime() : 0L;
+        return pool != null ? pool.getObjectCreatingCount() : 0;
     }
 
-    public boolean isCreatingTimeout(Object key) throws Exception {
+    public int getObjectCreatingTimeoutCount(Object key) throws Exception {
         this.checkParameterKey(key);
 
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null && pool.isCreatingTimeout();
+        return pool != null ? pool.getObjectCreatingTimeoutCount() : 0;
     }
 
-    public Thread[] interruptOnCreation(Object key) throws Exception {
+    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
         this.checkParameterKey(key);
 
         ObjectInstancePool pool = instancePoolMap.get(key);
-        return pool != null ? pool.interruptOnCreation() : null;
+        return pool != null ? pool.interruptObjectCreating(interruptTimeout) : null;
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
@@ -335,7 +335,6 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (pool != null) pool.getPoolMonitorVo();
         throw new ObjectKeyNotExistsException("Not found object key:" + key);
     }
-
 
     //***************************************************************************************************************//
     //                                    4: Methods to maintain pooed keys(3)                                        //

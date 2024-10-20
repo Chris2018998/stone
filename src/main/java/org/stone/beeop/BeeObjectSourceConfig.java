@@ -526,7 +526,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             //5:try to find 'objectInterfaceNames' config value
             String objectInterfaceNames = getPropertyValue(setValueMap, "objectInterfaceNames");
             if (isNotBlank(objectInterfaceNames))
-                setObjectInterfaceNames(objectInterfaceNames.split(","));
+                this.objectInterfaceNames = objectInterfaceNames.split(",");
 
             //6:try to find 'objectInterfaces' config value
             String objectInterfaceNames2 = getPropertyValue(setValueMap, "objectInterfaces");
@@ -540,7 +540,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                         throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
                     }
                 }
-                setObjectInterfaces(objectInterfaces);
+                this.objectInterfaces = objectInterfaces;
             }
         }
     }
@@ -608,7 +608,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             for (int i = 0, l = interfaces.length; i < l; i++)
                 if (this.printConfigInfo)
                     CommonLog.info("{}.objectInterfaces[{}]={}", this.poolName, i, interfaces[i]);
-            config.setObjectInterfaces(interfaces);
+            config.objectInterfaces = interfaces;
         }
 
         //3:copy 'objectInterfaceNames'
@@ -618,7 +618,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             for (int i = 0, l = this.objectInterfaceNames.length; i < l; i++)
                 if (this.printConfigInfo)
                     CommonLog.info("{}.objectInterfaceNames[{}]={}", this.poolName, i, this.objectInterfaceNames[i]);
-            config.setObjectInterfaceNames(interfaceNames);
+            config.objectInterfaceNames = interfaceNames;
         }
     }
 

@@ -29,12 +29,12 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
 
     private int idleSize;
     private int usingSize;
+    private int creatingCount;
+    private int creatingTimeoutCount;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
     private String osId;
     private String osUUID;
-    private long creatingTime;
-    private boolean isCreatingTimeout;
 
     ObjectPoolMonitorVo(
             String poolName, String hostIP, long threadId,
@@ -73,6 +73,22 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
 
     void setUsingSize(int usingSize) {
         this.usingSize = usingSize;
+    }
+
+    public int getCreatingCount() {
+        return creatingCount;
+    }
+
+    void setCreatingCount(int creatingCount) {
+        this.creatingCount = creatingCount;
+    }
+
+    public int getCreatingTimeoutCount() {
+        return creatingTimeoutCount;
+    }
+
+    void setCreatingTimeoutCount(int creatingTimeoutCount) {
+        this.creatingTimeoutCount = creatingTimeoutCount;
     }
 
     public int getSemaphoreWaitingSize() {
@@ -129,22 +145,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
 
     public int getPoolMaxSize() {
         return maxSize;
-    }
-
-    public long getCreatingTime() {
-        return creatingTime;
-    }
-
-    void setCreatingTime(long creatingTime) {
-        this.creatingTime = creatingTime;
-    }
-
-    public boolean isCreatingTimeout() {
-        return this.isCreatingTimeout;
-    }
-
-    void setCreatingTimeout(boolean creatingTimeout) {
-        this.isCreatingTimeout = creatingTimeout;
     }
 }
 
