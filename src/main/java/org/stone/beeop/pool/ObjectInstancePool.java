@@ -15,7 +15,6 @@ import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
-import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.lang.ref.WeakReference;
@@ -33,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
@@ -45,10 +43,11 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  * @version 1.0
  */
 final class ObjectInstancePool implements Runnable, Cloneable {
-    private static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
+    static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "poolState");
     private static final Logger Log = LoggerFactory.getLogger(ObjectInstancePool.class);
+    final KeyedObjectPool ownerPool;
 
     //clone begin
     private final int maxActiveSize;
@@ -68,27 +67,25 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final BeeObjectFactory objectFactory;
     private final ObjectPlainHandleFactory handleFactory;
     private final ObjectTransferPolicy transferPolicy;
-
-    private final KeyedObjectPool ownerPool;
     private final String poolHostIP;
     private final long poolThreadId;
     private final String poolThreadName;
     private final boolean enableThreadLocal;
     private final BeeObjectMethodFilter methodFilter;
     private final Map<MethodCacheKey, Method> methodMap;
-    private boolean printRuntimeLog;
     //clone end
 
+    AtomicInteger servantState;
+    AtomicInteger servantTryCount;
+    volatile PooledObject[] objectArray;
+    ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
+
+    private boolean printRuntimeLog;
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
     private InterruptionSemaphore semaphore;
-    private AtomicInteger servantState;
-    private AtomicInteger servantTryCount;
-    private volatile PooledObject[] objectArray;
-    private InterruptionReentrantReadWriteLock objectArrayInitLock;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
-    private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
     private ObjectPoolMonitorVo monitorVo;
 
     //***************************************************************************************************************//
@@ -120,7 +117,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         Class<?>[] objectInterfaces = config.getObjectInterfaces();
         BeeObjectPredicate predicate = config.getObjectPredicate();
         this.methodFilter = config.getObjectMethodFilter();
-        this.methodMap = new ConcurrentHashMap<>();
+        this.methodMap = new ConcurrentHashMap<>(1);
 
         this.transferPolicy = isFairMode ? new FairTransferPolicy() : new CompeteTransferPolicy();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
@@ -158,7 +155,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         for (int i = 0; i < maxActiveSize; i++)
             objectArray[i] = new PooledObject(key, objectFactory, methodMap, this.methodFilter, this);
 
-        this.objectArrayInitLock = new InterruptionReentrantReadWriteLock();
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
 
         if (this.enableThreadLocal) this.threadLocal = new BorrowerThreadLocal();
@@ -183,29 +179,30 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //                2: Pooled object create/remove methods(5)                                                      //                                                                                  //
     //***************************************************************************************************************//
     //Method-2.1: create specified size objects to pool,if zero,then try to create one
-    private void createInitObjects(int initSize, boolean syn) throws Exception {
-        ReentrantReadWriteLock.WriteLock writeLock = objectArrayInitLock.writeLock();
-        boolean isWriteLocked = !syn && !objectArrayInitLock.isWriteLocked() && writeLock.tryLock();
-
-        if (syn || isWriteLocked) {
+    void createInitObjects(int initSize, boolean syn) throws Exception {
+        if (syn) {
+            int index = 0;
+            try {
+                while (index < initSize) {
+                    PooledObject p = objectArray[index];
+                    p.state = OBJECT_CREATING;
+                    this.fillRawObject(p, OBJECT_IDLE);
+                    index++;
+                }
+            } catch (Throwable e) {
+                for (int i = 0; i < index; i++)
+                    this.removePooledEntry(objectArray[i], DESC_RM_INIT);
+                throw e;
+            }
+        } else {//async creation
             try {
                 for (int i = 0; i < initSize; i++) {
                     PooledObject p = objectArray[i];
-                    p.state = OBJECT_CREATING;
-                    this.fillRawObject(p, OBJECT_IDLE);
+                    if (ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING))
+                        this.fillRawObject(p, OBJECT_USING);
                 }
             } catch (Throwable e) {
-                for (int i = 0; i < initSize; i++) {
-                    this.removePooledEntry(objectArray[i], DESC_RM_INIT);
-                }
-
-                if (syn) {//throw the caught exception if under sync mode
-                    throw e;
-                } else {//print log of the exception if under async mode
-                    Log.warn("Failed to create initial objects by async mode", e);
-                }
-            } finally {
-                if (isWriteLocked) writeLock.unlock();
+                Log.warn("Failed to create initial objects by async mode", e);
             }
         }
     }
@@ -659,13 +656,17 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     private int getTotalSize() {
-        return this.objectArray.length;
+        int size = 0;
+        for (PooledObject p : objectArray) {
+            int state = p.state;
+            if (state == OBJECT_IDLE || state == OBJECT_USING) size++;
+        }
+        return size;
     }
 
     private int getIdleSize() {
         int idleSize = 0;
-        PooledObject[] array = this.objectArray;
-        for (PooledObject p : array)
+        for (PooledObject p : this.objectArray)
             if (p.state == OBJECT_IDLE) idleSize++;
         return idleSize;
     }
@@ -698,7 +699,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         monitorVo.setCreatingTimeoutCount(creatingTimeoutCount);
         monitorVo.setSemaphoreWaitingSize(this.semaphore.getQueueLength());
         monitorVo.setTransferWaitingSize(getTransferWaitingSize());
-
         return this.monitorVo;
     }
 
@@ -779,12 +779,15 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<ObjectBorrower>> {
+        BorrowerThreadLocal() {
+        }
+
         protected WeakReference<ObjectBorrower> initialValue() {
             return new WeakReference<ObjectBorrower>(new ObjectBorrower());
         }
     }
 
-    private static final class FairTransferPolicy implements ObjectTransferPolicy {
+    static final class FairTransferPolicy implements ObjectTransferPolicy {
         public int getStateCodeOnRelease() {
             return OBJECT_USING;
         }
@@ -794,7 +797,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
     }
 
-    private static final class CompeteTransferPolicy implements ObjectTransferPolicy {
+    static final class CompeteTransferPolicy implements ObjectTransferPolicy {
         public int getStateCodeOnRelease() {
             return OBJECT_IDLE;
         }
