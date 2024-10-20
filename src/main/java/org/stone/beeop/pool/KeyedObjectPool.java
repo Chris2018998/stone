@@ -32,11 +32,11 @@ import static org.stone.tools.CommonUtil.getArrayIndex;
  * @version 1.0
  */
 public final class KeyedObjectPool implements BeeKeyedObjectPool {
-    private static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
+    static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final ConcurrentHashMap<Object, ObjectInstancePool> instancePoolMap = new ConcurrentHashMap<>(1);
 
-    private String poolName;
+    String poolName;
     private volatile int poolState;
 
     //key size of sub pools
