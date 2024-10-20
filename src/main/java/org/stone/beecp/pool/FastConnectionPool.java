@@ -220,20 +220,20 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         boolean isWriteLocked = !syn && !connectionArrayInitialized && !connectionArrayInitLock.isWriteLocked() && writeLock.tryLock();
 
         if (syn || isWriteLocked) {
+            int index = 0;
             try {
-                for (int i = 0; i < initSize; i++) {
-                    PooledConnection p = connectionArray[i];
+                while (index < initSize) {
+                    PooledConnection p = connectionArray[index];
                     p.state = CON_CREATING;
                     this.fillRawConnection(p, CON_IDLE);
+                    index++;
                 }
             } catch (SQLException e) {
-                for (int i = 0; i < initSize; i++) {
-                    this.removePooledConn(connectionArray[i], DESC_RM_INIT);
-                }
-
-                if (syn) {//throw the caught exception if under sync mode
+                if (syn) {
+                    for (int i = 0; i < index; i++)
+                        this.removePooledConn(connectionArray[i], DESC_RM_INIT);
                     throw e;
-                } else {//print log of the exception if under async mode
+                } else {//print log under async mode
                     Log.warn("Failed to create initial connections by async mode", e);
                 }
             } finally {
@@ -882,6 +882,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //2:interrupt waiters on lock(maybe stuck on socket)
         this.interruptConnectionCreating(false);
+
         //3:clear all connections
         int closedCount;
         while (true) {
@@ -1142,8 +1143,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         int usingSize = 0, idleSize = 0;
         int creatingCount = 0, creatingTimeoutCount = 0;
-        PooledConnection[] array = this.connectionArray;
-        for (PooledConnection p : array) {
+        for (PooledConnection p : connectionArray) {
             if (p.state == CON_USING) usingSize++;
             if (p.state == CON_IDLE) idleSize++;
 
