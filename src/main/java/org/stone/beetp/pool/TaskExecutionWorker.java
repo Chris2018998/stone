@@ -110,9 +110,11 @@ final class TaskExecutionWorker extends PoolBaseWorker {
         int spinSize = defaultSpins;
 
         do {
-            //1: poll a task from private queue
+            //1: check state
+            if (state == WORKER_PASSIVATED) break;
+            //2: poll a task from private queue
             PoolTaskHandle<?> handle = taskBucket.poll();
-            //2: steal a task from other worker when poll a null task
+            //3: steal a task from other worker when poll a null task
             if (handle == null) {
                 for (ConcurrentLinkedQueue<PoolTaskHandle<?>> bucket : taskBuckets) {
                     handle = bucket.poll();
@@ -120,14 +122,14 @@ final class TaskExecutionWorker extends PoolBaseWorker {
                 }
             }
 
-            //3: process the polled task
+            //4: process the polled task
             if (handle != null) {
-                this.processingHandle = handle;
                 if (handle.setExecutionWorker(this)) {
+                    this.processingHandle = handle;
                     Thread.interrupted();//clear interrupted flag
                     handle.executeTask(this);
+                    this.processingHandle = null;
                 }
-                this.processingHandle = null;
                 spinSize = defaultSpins;
             } else if (spinSize > 0) {
                 spinSize--;
@@ -145,11 +147,10 @@ final class TaskExecutionWorker extends PoolBaseWorker {
                     }
 
                     //reset state
-                    if (state == WORKER_WAITING && StateUpd.compareAndSet(this, WORKER_WAITING, resetState) && resetState == WORKER_PASSIVATED)
-                        break;
+                    if (state == WORKER_WAITING) StateUpd.compareAndSet(this, WORKER_WAITING, resetState);
                 }
                 spinSize = defaultSpins;//reset spin size to default
             }
-        } while (state != WORKER_PASSIVATED);
+        } while (true);
     }
 }
