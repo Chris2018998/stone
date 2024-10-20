@@ -104,14 +104,14 @@ public interface BeeKeyedObjectPool {
     /**
      * Get count of object in creating
      *
-     * @return count in creating,if not exists a creating thread,then return 0
+     * @return count in creating,if no creation return 0
      */
     int getObjectCreatingCount(Object key) throws Exception;
 
     /**
      * Get count of object in creating timeout
      *
-     * @return count in creating,if not exists a creating thread,then return 0
+     * @return count of creation timeout,if no timeout return 0
      */
     int getObjectCreatingTimeoutCount(Object key) throws Exception;
 
