@@ -142,7 +142,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step3: creates initial connections
         this.printRuntimeLog = poolConfig.isPrintRuntimeLog();
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getMaxWait());
-        if (poolConfig.getInitialSize() > 0 && !poolConfig.isAsyncCreateInitConnection())
+        int initialSize = poolConfig.getInitialSize();
+        if (initialSize > 0 && !poolConfig.isAsyncCreateInitConnection())
             createInitConnections(poolConfig.getInitialSize(), true);
 
         //step4: creates a transfer to transfer released connections to waiters
@@ -198,7 +199,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //step8: creates initial connections with an async thread
-        if (poolConfig.getInitialSize() > 0 && poolConfig.isAsyncCreateInitConnection())
+        if (initialSize > 0 && poolConfig.isAsyncCreateInitConnection())
             new PoolInitAsyncCreateThread(this).start();
 
         //step9: print pool info after completion of pool initialization
@@ -211,7 +212,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             driverClassNameOrFactoryName = rawFactory.getClass().getName();
             poolInitInfo = "BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,factory:{}}";
         }
-        Log.info(poolInitInfo, poolName, poolMode, poolConfig.getInitialSize(), connectionArrayLen, semaphoreSize, poolConfig.getMaxWait(), driverClassNameOrFactoryName);
+        Log.info(poolInitInfo, poolName, poolMode, initialSize, connectionArrayLen, semaphoreSize, poolConfig.getMaxWait(), driverClassNameOrFactoryName);
     }
 
     //Method-1.3: creates initial connections
@@ -251,7 +252,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             try {
                 if (!connectionArrayInitLock.isWriteLocked() && writeLock.tryLock()) {
                     try {
-                        return this.fillRawConnection(connectionArray[0], CON_USING);
+                        PooledConnection p = connectionArray[0];
+                        p.state = CON_CREATING;
+                        return this.fillRawConnection(p, CON_USING);
                     } finally {
                         writeLock.unlock();
                     }
@@ -1030,29 +1033,29 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         int count = 0;
         for (PooledConnection p : connectionArray) {
             ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+            if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
                 count++;
         }
         return count;
     }
 
     //Method-5.12: interrupt some threads creating connections
-    public Thread[] interruptConnectionCreating(boolean interruptTimeout) {
+    public Thread[] interruptConnectionCreating(boolean onlyInterruptTimeout) {
         List<Thread> threads = new LinkedList<>();
-        if (interruptTimeout) {
+        if (onlyInterruptTimeout) {
             for (PooledConnection p : connectionArray) {
                 ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
-                    creatingInfo.getCreatingThread().interrupt();
-                    threads.add(creatingInfo.getCreatingThread());
+                if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs) {
+                    creatingInfo.creatingThread.interrupt();
+                    threads.add(creatingInfo.creatingThread);
                 }
             }
         } else {
             for (PooledConnection p : connectionArray) {
                 ConnectionCreatingInfo creatingInfo = p.creatingInfo;
                 if (creatingInfo != null) {
-                    creatingInfo.getCreatingThread().interrupt();
-                    threads.add(creatingInfo.getCreatingThread());
+                    creatingInfo.creatingThread.interrupt();
+                    threads.add(creatingInfo.creatingThread);
                 }
             }
         }
@@ -1133,6 +1136,21 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-5.19: pool monitor vo
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
+        int usingSize = 0, idleSize = 0;
+        int creatingCount = 0, creatingTimeoutCount = 0;
+        for (PooledConnection p : connectionArray) {
+            int state = p.state;
+            if (state == CON_USING) usingSize++;
+            if (state == CON_IDLE) idleSize++;
+
+            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null) {
+                creatingCount++;
+                if (System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
+                    creatingTimeoutCount++;
+            }
+        }
+
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
         monitorVo.setPoolMaxSize(connectionArrayLen);
@@ -1141,26 +1159,12 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         monitorVo.setHostIP(poolHostIP);
         monitorVo.setPoolState(poolState);
 
-        int usingSize = 0, idleSize = 0;
-        int creatingCount = 0, creatingTimeoutCount = 0;
-        for (PooledConnection p : connectionArray) {
-            if (p.state == CON_USING) usingSize++;
-            if (p.state == CON_IDLE) idleSize++;
-
-            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null) {
-                creatingCount++;
-                if (System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
-                    creatingTimeoutCount++;
-            }
-        }
-
         monitorVo.setIdleSize(idleSize);
         monitorVo.setUsingSize(usingSize);
-        monitorVo.setSemaphoreWaitingSize(this.getSemaphoreWaitingSize());
-        monitorVo.setTransferWaitingSize(this.getTransferWaitingSize());
         monitorVo.setCreatingCount(creatingCount);
         monitorVo.setCreatingTimeoutCount(creatingTimeoutCount);
+        monitorVo.setSemaphoreWaitingSize(this.getSemaphoreWaitingSize());
+        monitorVo.setTransferWaitingSize(this.getTransferWaitingSize());
         return this.monitorVo;
     }
 

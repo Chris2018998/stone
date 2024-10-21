@@ -683,12 +683,13 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         int usingSize = 0, idleSize = 0;
         int creatingCount = 0, creatingTimeoutCount = 0;
         for (PooledObject p : objectArray) {
-            if (p.state == OBJECT_USING) usingSize++;
-            if (p.state == OBJECT_IDLE) idleSize++;
+            int state = p.state;
+            if (state == OBJECT_USING) usingSize++;
+            if (state == OBJECT_IDLE) idleSize++;
             ObjectCreatingInfo creatingInfo = p.creatingInfo;
             if (creatingInfo != null) {
                 creatingCount++;
-                if (System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+                if (System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
                     creatingTimeoutCount++;
             }
         }
@@ -715,7 +716,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         int count = 0;
         for (PooledObject p : objectArray) {
             ObjectCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs)
+            if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
                 count++;
         }
         return count;
@@ -726,17 +727,17 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         if (interruptTimeout) {
             for (PooledObject p : objectArray) {
                 ObjectCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.nanoTime() - creatingInfo.getCreatingStartTime() >= maxWaitNs) {
-                    creatingInfo.getCreatingThread().interrupt();
-                    threads.add(creatingInfo.getCreatingThread());
+                if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs) {
+                    creatingInfo.creatingThread.interrupt();
+                    threads.add(creatingInfo.creatingThread);
                 }
             }
         } else {
             for (PooledObject p : objectArray) {
                 ObjectCreatingInfo creatingInfo = p.creatingInfo;
                 if (creatingInfo != null) {
-                    creatingInfo.getCreatingThread().interrupt();
-                    threads.add(creatingInfo.getCreatingThread());
+                    creatingInfo.creatingThread.interrupt();
+                    threads.add(creatingInfo.creatingThread);
                 }
             }
         }
