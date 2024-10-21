@@ -104,6 +104,7 @@ public interface BeeKeyedObjectPool {
     /**
      * Get count of object in creating
      *
+     * @param key may be mapping to a set of pooled objects
      * @return count in creating,if no creation return 0
      */
     int getObjectCreatingCount(Object key) throws Exception;
@@ -111,6 +112,7 @@ public interface BeeKeyedObjectPool {
     /**
      * Get count of object in creating timeout
      *
+     * @param key may be mapping to a set of pooled objects
      * @return count of creation timeout,if no timeout return 0
      */
     int getObjectCreatingTimeoutCount(Object key) throws Exception;
@@ -118,9 +120,11 @@ public interface BeeKeyedObjectPool {
     /**
      * attempt to interrupt threads creating object
      *
+     * @param key                  may be mapping to a set of pooled objects
+     * @param onlyInterruptTimeout is true,attempt to interrupt creation timeout threads
      * @return interrupted threads
      */
-    Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception;
+    Thread[] interruptObjectCreating(Object key, boolean onlyInterruptTimeout) throws Exception;
 
     /**
      * operation on log switch to disable log print or enable print

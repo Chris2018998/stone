@@ -94,11 +94,12 @@ public interface BeeConnectionPool {
     int getConnectionCreatingTimeoutCount();
 
     /**
-     * interrupt some threads creating connections
+     * interrupt threads creating connections
      *
+     * @param onlyInterruptTimeout is true,attempt to interrupt creation timeout threads
      * @return interrupted threads,if no threads,then return null
      */
-    Thread[] interruptConnectionCreating(boolean interruptTimeout);
+    Thread[] interruptConnectionCreating(boolean onlyInterruptTimeout);
 
     /**
      * Closes all connections and removes them from pool.

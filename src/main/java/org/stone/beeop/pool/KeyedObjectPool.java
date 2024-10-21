@@ -35,10 +35,9 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     static final Logger Log = LoggerFactory.getLogger(KeyedObjectPool.class);
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final ConcurrentHashMap<Object, ObjectInstancePool> instancePoolMap = new ConcurrentHashMap<>(1);
-
     String poolName;
-    private volatile int poolState;
 
+    private volatile int poolState;
     //key size of sub pools
     private int maxSubPoolSize;
     //a pooled key map to default sub pool
