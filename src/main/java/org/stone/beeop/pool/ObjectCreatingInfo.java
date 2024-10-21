@@ -16,19 +16,11 @@ package org.stone.beeop.pool;
  * @version 1.0
  */
 final class ObjectCreatingInfo {
-    private final Thread creatingThread;
-    private final long creatingStartTime;
+    final Thread creatingThread;
+    final long creatingStartTime;
 
     ObjectCreatingInfo() {
         this.creatingThread = Thread.currentThread();
         this.creatingStartTime = System.nanoTime();
-    }
-
-    public Thread getCreatingThread() {
-        return creatingThread;
-    }
-
-    public long getCreatingStartTime() {
-        return creatingStartTime;
     }
 }
