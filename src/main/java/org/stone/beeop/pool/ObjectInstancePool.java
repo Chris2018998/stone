@@ -21,9 +21,8 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -486,9 +485,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             Log.info("BeeOP({})-before idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
-        //step2:interrupt lock owner and all waiters on lock
-        Log.info("BeeOP({})pool lock has been hold timeout and an interruption will be executed on lock", this.poolName);
-        this.interruptObjectCreating(false);
+        //step2: attempt to interrupt timeout creation
+        Log.info("BeeOP({})pool start to interrupt timeout creation", this.poolName);
+        this.interruptObjectCreating(true);
 
         //step3: remove idle timeout and hold timeout
         for (PooledObject p : this.objectArray) {
@@ -548,7 +547,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             while (!this.waitQueue.isEmpty()) this.transferException(clearException);
         }
 
-        //2:interrupt waiters on lock(maybe stuck on socket)
+        //2: interrupt all threads of object creation
         this.interruptObjectCreating(false);
 
         //3:clear all connections
@@ -723,7 +722,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     public Thread[] interruptObjectCreating(boolean interruptTimeout) {
-        List<Thread> threads = new LinkedList<>();
+        ArrayList<Thread> threads = new ArrayList<>(this.semaphoreSize);
         if (interruptTimeout) {
             for (PooledObject p : objectArray) {
                 ObjectCreatingInfo creatingInfo = p.creatingInfo;
