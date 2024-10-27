@@ -501,12 +501,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             } else if (state == OBJECT_USING && supportHoldTimeout) {
                 if (System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
                     BeeObjectHandle handleInUsing = p.handleInUsing;
-                    if (handleInUsing != null) {
-                        tryCloseObjectHandle(handleInUsing);
-                    } else {
-                        this.removePooledEntry(p, DESC_RM_BAD);
-                        this.tryWakeupServantThread();
-                    }
+                    if (handleInUsing != null) tryCloseObjectHandle(handleInUsing);
                 }
             } else if (state == OBJECT_CLOSED) {
                 this.removePooledEntry(p, DESC_RM_CLOSED);
@@ -564,13 +559,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 } else if (state == OBJECT_USING) {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
-                        if (forceCloseUsing || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L)) {
+                        if (forceCloseUsing || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
                             tryCloseObjectHandle(handleInUsing);
-                            if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED)) {
-                                closedCount++;
-                                this.removePooledEntry(p, removeReason);
-                            }
-                        }
                     } else {
                         this.removePooledEntry(p, removeReason);
                     }
