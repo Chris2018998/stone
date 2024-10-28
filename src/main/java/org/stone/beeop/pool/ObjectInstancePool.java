@@ -486,7 +486,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         //step2: attempt to interrupt timeout creation
-        Log.info("BeeOP({})pool start to interrupt timeout creation", this.poolName);
         this.interruptObjectCreating(true);
 
         //step3: remove idle timeout and hold timeout
@@ -711,9 +710,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         return count;
     }
 
-    public Thread[] interruptObjectCreating(boolean interruptTimeout) {
+    public Thread[] interruptObjectCreating(boolean onlyInterruptTimeout) {
+        if (this.printRuntimeLog)
+            Log.info("BeeCP({})attempt to interrupt object creation,only for timeout:{}", this.poolName, onlyInterruptTimeout);
+
         ArrayList<Thread> threads = new ArrayList<>(this.semaphoreSize);
-        if (interruptTimeout) {
+        if (onlyInterruptTimeout) {
             for (PooledObject p : objectArray) {
                 ObjectCreatingInfo creatingInfo = p.creatingInfo;
                 if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs) {
