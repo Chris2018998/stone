@@ -428,7 +428,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //Method-3.7: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject p) {
         try {
-            if (System.currentTimeMillis() - p.lastAccessTime > this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
+            if (System.currentTimeMillis() - p.lastAccessTime >= this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
                 this.removePooledEntry(p, DESC_RM_BAD);
                 this.tryWakeupServantThread();
                 return false;
