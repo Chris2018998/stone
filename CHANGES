@@ -1,5 +1,15 @@
 stone changes
 
+Changes in 1.3.9
+[beecp]
+1: fix using-connection close issue
+2: change interruption log to runtime log
+3: add equal symbol to alive test expression
+[beeop]
+1: fix using-connection close issue
+2: change interruption log to runtime log
+3: add equal symbol to alive test expression
+
 Changes in 1.3.8
 [beecp]
 1: change pool connection array to a fixed length array
