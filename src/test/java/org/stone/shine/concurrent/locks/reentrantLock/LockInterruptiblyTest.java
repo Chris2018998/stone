@@ -30,7 +30,7 @@ public class LockInterruptiblyTest extends TestCase {
             LockAcquireThread mockThread = new LockAcquireThread(lock, "lockInterruptibly");
             mockThread.start();
 
-            if (TestUtil.joinUtilWaiting(mockThread)) {
+            if (TestUtil.waitUtilWaiting(mockThread)) {
                 mockThread.interrupt();
             }
 

@@ -34,7 +34,7 @@ public class AcquireQueuedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 2 second
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             //4:mock interrupt
             TestUtil.assertError("test fail,expect value:%s,actual value:%s", true, semaphore.hasQueuedThreads());
             TestUtil.assertError("test fail,expect value:%s,actual value:%s", 1, semaphore.getQueueLength());

@@ -33,7 +33,7 @@ public class ReentrantLockConditionAwaitInterruptedTest extends ReentrantLockCon
         awaitThread.start();
 
         //2:interrupt waiting thread in main thread
-        if (TestUtil.joinUtilWaiting(awaitThread)) {
+        if (TestUtil.waitUtilWaiting(awaitThread)) {
             awaitThread.interrupt();
         }
 

@@ -33,7 +33,7 @@ public class AcquireInterruptedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 5 seconds and check mock thread state
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             mockThread.interrupt();
             return;
         }

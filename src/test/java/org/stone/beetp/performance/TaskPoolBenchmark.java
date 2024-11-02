@@ -48,12 +48,6 @@ public class TaskPoolBenchmark {
 //        ForkJoinTask task = forkJoinPool.submit(jdkJoinTask);
 //        task.get();
 //    }
-//    @Benchmark
-//    @CompilerControl(CompilerControl.Mode.INLINE)
-//    public static void testOnceTaskJDK() throws Exception {
-//        Future future = executor.submit(callTask);
-//        future.get();
-//    }
 
 
 //    @Benchmark
@@ -61,6 +55,13 @@ public class TaskPoolBenchmark {
 //    public static void testForkJoinBee() throws Exception {
 //        TaskHandle<Integer> joinHandle = taskService.submit(beeJoinTask, beeJoinOperator);
 //        joinHandle.get();
+//    }
+
+//    @Benchmark
+//    @CompilerControl(CompilerControl.Mode.INLINE)
+//    public static void testOnceTaskJDK() throws Exception {
+//        Future future = executor.submit(callTask);
+//        future.get();
 //    }
 
     @Benchmark

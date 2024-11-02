@@ -15,19 +15,19 @@ public class ReadWriteLockAlternateTest {
         int i = 1;
         Thread thread1 = new ReadThread("读线程[" + (i++) + "]");
         thread1.start();
-        if (!TestUtil.joinUtilWaiting(thread1)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.waitUtilWaiting(thread1)) throw new java.lang.IllegalStateException();
 
         Thread thread2 = new WriteThread("写线程[" + (i++) + "]");
         thread2.start();
-        if (!TestUtil.joinUtilWaiting(thread2)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.waitUtilWaiting(thread2)) throw new java.lang.IllegalStateException();
 
         Thread thread13 = new ReadThread("读线程[" + (i++) + "]");
         thread13.start();
-        if (!TestUtil.joinUtilWaiting(thread13)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.waitUtilWaiting(thread13)) throw new java.lang.IllegalStateException();
 
         Thread thread4 = new WriteThread("写线程[" + (i++) + "]");
         thread4.start();
-        if (!TestUtil.joinUtilWaiting(thread4)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.waitUtilWaiting(thread4)) throw new java.lang.IllegalStateException();
 
         writeLock.unlock();
     }

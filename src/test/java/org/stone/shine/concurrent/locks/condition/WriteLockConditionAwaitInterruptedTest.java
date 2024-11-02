@@ -31,7 +31,7 @@ public class WriteLockConditionAwaitInterruptedTest extends WriteLockConditionTe
         ReentrantWriteLockConditionAwaitThread awaitThread = new ReentrantWriteLockConditionAwaitThread(lock, lockCondition, "await");
         awaitThread.start();
 
-        if (TestUtil.joinUtilWaiting(awaitThread)) {
+        if (TestUtil.waitUtilWaiting(awaitThread)) {
             awaitThread.interrupt();
         }
 

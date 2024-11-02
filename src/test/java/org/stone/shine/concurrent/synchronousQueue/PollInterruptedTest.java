@@ -31,7 +31,7 @@ public class PollInterruptedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 1 seconds and check mock thread result
-        if (TestUtil.joinUtilWaiting(mockThread))
+        if (TestUtil.waitUtilWaiting(mockThread))
             mockThread.interrupt();
 
         mockThread.join();

@@ -34,7 +34,7 @@ public class ReentrantLockConditionAwaitUninterruptiblyTest extends ReentrantLoc
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition, "awaitUninterruptibly");
         awaitThread.start();
 
-        if (TestUtil.joinUtilWaiting(awaitThread)) {
+        if (TestUtil.waitUtilWaiting(awaitThread)) {
             awaitThread.interrupt();
             LockSupport.parkNanos(100L);
             if (awaitThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");

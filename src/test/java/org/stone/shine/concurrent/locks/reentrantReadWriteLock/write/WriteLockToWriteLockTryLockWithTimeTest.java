@@ -35,7 +35,7 @@ public class WriteLockToWriteLockTryLockWithTimeTest extends ReentrantReadWriteL
         mockThread.start();
 
         try {
-            if (TestUtil.joinUtilWaiting(mockThread)) {
+            if (TestUtil.waitUtilWaiting(mockThread)) {
                 writeLock.unlock();
                 lockByMock = true;
             }

@@ -34,7 +34,7 @@ public class AwaitInterruptededTest extends TestCase {
         waitThread.start();
 
         //2: detect wait thread
-        if (TestUtil.joinUtilWaiting(waitThread))
+        if (TestUtil.waitUtilWaiting(waitThread))
             waitThread.interrupt();
 
         //3:get timeout indicator from await thread

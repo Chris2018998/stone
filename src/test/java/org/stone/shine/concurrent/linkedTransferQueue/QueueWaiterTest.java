@@ -33,8 +33,8 @@ public class QueueWaiterTest extends BaseTestCase {
         PollThread mockThread2 = new PollThread(queue, "take");
         mockThread2.start();
 
-        TestUtil.joinUtilWaiting(mockThread1);
-        TestUtil.joinUtilWaiting(mockThread2);
+        TestUtil.waitUtilWaiting(mockThread1);
+        TestUtil.waitUtilWaiting(mockThread2);
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.hasWaitingConsumer());
         TestUtil.assertError("Test failed,expect value:%s,actual value:%s", 2, queue.getWaitingConsumerCount());
         mockThread1.interrupt();

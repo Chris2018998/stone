@@ -29,7 +29,7 @@ public class TryTransferTimeInterruptTest extends BaseTestCase {
         TransferThread mockThread = new TransferThread(queue, "tryTransfer", transferObj, Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (TestUtil.joinUtilWaiting(mockThread))
+        if (TestUtil.waitUtilWaiting(mockThread))
             mockThread.interrupt();
 
         mockThread.join();

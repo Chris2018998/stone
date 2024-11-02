@@ -34,7 +34,7 @@ public class AwaitWithoutTimeTest extends TestCase {
         waitThread.start();
 
         //2: detect wait thread
-        if (TestUtil.joinUtilWaiting(waitThread))
+        if (TestUtil.waitUtilWaiting(waitThread))
             latch.countDown();
 
         //3: get timeout indicator from await thread

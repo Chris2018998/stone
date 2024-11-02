@@ -36,7 +36,7 @@ public class TryTransferWithTimeTest extends BaseTestCase {
         mockThread.start();
 
         Object transferObj2 = null;
-        if (TestUtil.joinUtilWaiting(mockThread))
+        if (TestUtil.waitUtilWaiting(mockThread))
             transferObj2 = queue.poll();
 
         mockThread.join();

@@ -32,7 +32,7 @@ public class WriteLockToReadLockTryLockWithTimeTest extends ReentrantReadWriteLo
         ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(readLock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (TestUtil.joinUtilWaiting(mockThread))
+        if (TestUtil.waitUtilWaiting(mockThread))
             writeLock.unlock();
 
         mockThread.join();

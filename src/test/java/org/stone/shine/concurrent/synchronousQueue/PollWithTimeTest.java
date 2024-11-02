@@ -35,7 +35,7 @@ public class PollWithTimeTest extends TestCase {
 
 
         Object offerObject = new Object();
-        if (TestUtil.joinUtilWaiting(mockThread)) ;
+        if (TestUtil.waitUtilWaiting(mockThread)) ;
         queue.offer(offerObject);
 
         //5:poll object from queue

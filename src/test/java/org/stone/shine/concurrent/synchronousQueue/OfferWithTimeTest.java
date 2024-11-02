@@ -36,7 +36,7 @@ public class OfferWithTimeTest extends TestCase {
 
         //3:park main thread 1 seconds and check mock thread result
         Object pollObject = null;
-        if (TestUtil.joinUtilWaiting(mockThread))
+        if (TestUtil.waitUtilWaiting(mockThread))
             pollObject = queue.poll();
 
         //4:poll object from queue

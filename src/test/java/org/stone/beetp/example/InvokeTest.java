@@ -9,7 +9,6 @@
  */
 package org.stone.beetp.example;
 
-import org.stone.beetp.Task;
 import org.stone.beetp.TaskHandle;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;

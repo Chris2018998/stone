@@ -34,7 +34,7 @@ public class PollOneTest extends TestCase {
 
         //2: crate a poll thread
         PollThread pollThread = new PollThread(queue, "poll");
-        if (TestUtil.joinUtilWaiting(offerThread))
+        if (TestUtil.waitUtilWaiting(offerThread))
             pollThread.start();
 
         //3: check result

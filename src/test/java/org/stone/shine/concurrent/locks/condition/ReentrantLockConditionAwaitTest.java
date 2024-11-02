@@ -32,7 +32,7 @@ public class ReentrantLockConditionAwaitTest extends ReentrantLockConditionTestC
         awaitThread.start();
 
         //2:writeLock in main thread
-        if (TestUtil.joinUtilWaiting(awaitThread)) {
+        if (TestUtil.waitUtilWaiting(awaitThread)) {
             lock.lock();
             try {
                 lockCondition.signal();

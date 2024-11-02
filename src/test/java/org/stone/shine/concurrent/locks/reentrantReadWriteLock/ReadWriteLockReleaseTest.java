@@ -19,13 +19,13 @@ public class ReadWriteLockReleaseTest {
         //2: launch an another thread to acquire write-lock(it will being blocked in AQS wait chain)
         WriteAcquireThread writeThread = new WriteAcquireThread();
         writeThread.start();
-        if (!TestUtil.joinUtilWaiting(writeThread)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.waitUtilWaiting(writeThread)) throw new java.lang.IllegalStateException();
         System.out.println("<INFO>:A thread has blocking in AQS wait queue(acquiring write lock)");
 
         //3:Block main thread util the write-lock thread to be WAITING state
         ReadAcquireThread readThead = new ReadAcquireThread();
         readThead.start();
-        if (!TestUtil.joinUtilWaiting(readThead)) throw new java.lang.IllegalStateException();
+        if (!TestUtil.waitUtilWaiting(readThead)) throw new java.lang.IllegalStateException();
         //4:Block main thread util these read-lock threads to be WAITING state(Position of these read threads should be after the write thread)
         System.out.println("<INFO>:one thread have blocking in AQS wait queue(acquiring read lock)");
 

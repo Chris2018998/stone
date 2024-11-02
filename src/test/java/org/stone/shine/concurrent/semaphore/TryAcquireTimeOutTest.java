@@ -37,7 +37,7 @@ public class TryAcquireTimeOutTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 3 seconds and check mock thread state
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             mockThread.interrupt();
             return;
         }

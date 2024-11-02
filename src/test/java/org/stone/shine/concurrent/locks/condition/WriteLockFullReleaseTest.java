@@ -27,7 +27,7 @@ public class WriteLockFullReleaseTest extends WriteLockConditionTestCase {
         //1:create wait thread
         ReentrantLockConditionAwaitThread awaitThread = new ReentrantLockConditionAwaitThread(lock, lockCondition);
         awaitThread.start();
-        if (TestUtil.joinUtilWaiting(awaitThread)) {
+        if (TestUtil.waitUtilWaiting(awaitThread)) {
             lock.lock();
             try {
                 lockCondition.signal();

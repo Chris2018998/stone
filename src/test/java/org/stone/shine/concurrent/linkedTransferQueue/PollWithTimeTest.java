@@ -30,7 +30,7 @@ public class PollWithTimeTest extends BaseTestCase {
         mockThread.start();
 
         //3:park main thread 1 seconds and check mock thread result
-        if (!TestUtil.joinUtilWaiting(mockThread))
+        if (!TestUtil.waitUtilWaiting(mockThread))
             TestUtil.assertError("Test failed,put thread not in waiting");
 
         //4:poll object from queue

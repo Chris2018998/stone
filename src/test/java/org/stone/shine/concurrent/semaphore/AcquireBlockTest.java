@@ -33,7 +33,7 @@ public class AcquireBlockTest extends TestCase {
         mockThread.start();
 
         //park main thread 2 seconds and check mock thread state
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             mockThread.interrupt();
             return;
         }

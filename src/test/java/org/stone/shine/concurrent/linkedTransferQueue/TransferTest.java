@@ -35,7 +35,7 @@ public class TransferTest extends BaseTestCase {
 
         //2: detect wait thread
         Object transferObj2 = null;
-        if (TestUtil.joinUtilWaiting(mockThread))
+        if (TestUtil.waitUtilWaiting(mockThread))
             transferObj2 = queue.poll();
 
         mockThread.join();

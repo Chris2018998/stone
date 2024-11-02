@@ -29,7 +29,7 @@ public class ReadLockToWriteLockInterruptiblyTest extends ReentrantReadWriteLock
             ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(writeLock, "lockInterruptibly");
             mockThread.start();
 
-            if (TestUtil.joinUtilWaiting(mockThread)) {
+            if (TestUtil.waitUtilWaiting(mockThread)) {
                 mockThread.interrupt();
             }
 

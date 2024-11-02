@@ -26,7 +26,7 @@ public class TryTransferSuccessTest extends BaseTestCase {
         mockThread.start();
 
         Object transferObj = new Object();
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             TestUtil.assertError("Test failed,expect value:%s,actual value:%s", true, queue.tryTransfer(transferObj));
         }
 

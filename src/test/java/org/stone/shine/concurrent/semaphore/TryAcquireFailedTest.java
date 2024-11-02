@@ -34,7 +34,7 @@ public class TryAcquireFailedTest extends TestCase {
         mockThread.start();
 
         //3:park main thread 2 seconds and check mock thread state
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             mockThread.interrupt();
             return;
         }

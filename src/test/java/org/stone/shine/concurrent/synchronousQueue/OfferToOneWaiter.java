@@ -34,7 +34,7 @@ public class OfferToOneWaiter extends TestCase {
 
         boolean offerResult = false;
         Object offerObject = new Object();
-        if (TestUtil.joinUtilWaiting(pollThread))
+        if (TestUtil.waitUtilWaiting(pollThread))
             offerResult = queue.offer(offerObject);
 
         //3: check result

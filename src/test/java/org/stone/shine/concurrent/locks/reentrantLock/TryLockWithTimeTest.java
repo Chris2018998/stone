@@ -34,7 +34,7 @@ public class TryLockWithTimeTest extends TestCase {
         LockAcquireThread mockThread = new LockAcquireThread(lock, "tryLock", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             lock.unlock();
         }
 

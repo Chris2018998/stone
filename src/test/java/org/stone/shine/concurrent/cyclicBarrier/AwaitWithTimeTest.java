@@ -36,7 +36,7 @@ public class AwaitWithTimeTest extends TestCase {
         BarrierAwaitThread waitThread = new BarrierAwaitThread(barrier, "await", Wait_Time, Wait_TimeUnit);
         waitThread.start();
 
-        if (TestUtil.joinUtilWaiting(waitThread))
+        if (TestUtil.waitUtilWaiting(waitThread))
             barrier.await();
 
         //3:get timeout indicator from await thread

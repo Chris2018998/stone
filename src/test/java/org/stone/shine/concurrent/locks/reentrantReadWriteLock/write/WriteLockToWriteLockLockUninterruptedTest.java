@@ -40,7 +40,7 @@ public class WriteLockToWriteLockLockUninterruptedTest extends ReentrantReadWrit
             ReadWriteLockAcquireThread mockThread = new ReadWriteLockAcquireThread(writeLock, "lock");
             mockThread.start();
 
-            if (TestUtil.joinUtilWaiting(mockThread)) {
+            if (TestUtil.waitUtilWaiting(mockThread)) {
                 mockThread.interrupt();
                 LockSupport.parkNanos(100L);
                 if (mockThread.getState() != Thread.State.WAITING) TestUtil.assertError("mock thread not in waiting");

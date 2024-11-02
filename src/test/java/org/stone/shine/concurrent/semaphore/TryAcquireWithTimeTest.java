@@ -38,7 +38,7 @@ public class TryAcquireWithTimeTest extends TestCase {
         AcquireMockThread mockThread = new AcquireMockThread(semaphore, "tryAcquire", Wait_Time, Wait_TimeUnit);
         mockThread.start();
 
-        if (TestUtil.joinUtilWaiting(mockThread)) {
+        if (TestUtil.waitUtilWaiting(mockThread)) {
             semaphore.release();
             LockSupport.parkNanos(100L);
         }
