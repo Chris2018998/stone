@@ -1,5 +1,12 @@
 stone changes
 
+Changes in 1.4.0(not release)
+[beecp]
+1: enhance exception
+[beeop]
+1: enhance exception
+
+
 Changes in 1.3.9
 [beecp]
 1: fix using-connection close issue
