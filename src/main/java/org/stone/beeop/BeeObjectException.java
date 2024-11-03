@@ -23,4 +23,9 @@ public class BeeObjectException extends Exception {
     public BeeObjectException(Throwable cause) {
         super(cause);
     }
+
+    public BeeObjectException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
 }
