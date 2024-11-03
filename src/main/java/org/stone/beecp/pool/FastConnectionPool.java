@@ -414,7 +414,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (poolConfig.isEnableDefaultOnReadOnly()) {
             if (defaultReadOnly == null) {
                 try {
-                    defaultReadOnly = Boolean.valueOf(firstConn.isReadOnly());
+                    defaultReadOnly = firstConn.isReadOnly();
                 } catch (Throwable e) {
                     if (this.printRuntimeLog)
                         Log.warn("BeeCP({})failed to get value of read-only property from first connection object", this.poolName);
@@ -704,7 +704,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-2.6: recycle a Pooled Connection,may transfer it to one waiter
-    public void recycle(PooledConnection p) {
+    void recycle(PooledConnection p) {
         if (isCompeteMode) p.state = CON_IDLE;
         for (Borrower b : this.waitQueue) {
             if (p.state != stateCodeOnRelease) return;
