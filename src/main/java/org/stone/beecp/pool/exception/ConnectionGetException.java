@@ -19,7 +19,7 @@ import org.stone.beecp.BeeSQLException;
  */
 public class ConnectionGetException extends BeeSQLException {
 
-    ConnectionGetException(String message) {
+    public ConnectionGetException(String message) {
         super(message);
     }
 

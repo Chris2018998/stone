@@ -262,9 +262,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 } else if (readLock.tryLock(this.maxWaitNs, TimeUnit.NANOSECONDS)) {
                     readLock.unlock();
                     if (!connectionArrayInitialized)
-                        throw new ConnectionCreateException("Pool initialized failed on first created connection or failed to create it");
+                        throw new ConnectionGetException("Waited failed on pool lock for initialization ready on first connection by another");
                 } else {
-                    throw new ConnectionCreateException("Waited timeout on pool lock");
+                    throw new ConnectionGetTimeoutException("Waited timeout on pool lock");
                 }
             } catch (InterruptedException e) {
                 throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool lock");
