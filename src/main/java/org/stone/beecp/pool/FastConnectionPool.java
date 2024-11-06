@@ -1197,7 +1197,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         public void run() {
             try {
                 pool.createInitConnections(pool.poolConfig.getInitialSize(), false);
-                pool.servantState.getAndSet(pool.connectionArray.length);
+                pool.servantTryCount.set(pool.connectionArray.length);
+
                 if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
                     LockSupport.unpark(pool);
             } catch (Throwable e) {
