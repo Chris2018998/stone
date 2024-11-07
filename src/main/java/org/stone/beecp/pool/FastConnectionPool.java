@@ -33,7 +33,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
@@ -54,14 +53,17 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
+    private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
+    private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
 
     String poolName;
     volatile int poolState;
-    PooledConnection[] connectionArray;//fixed len
-    AtomicInteger servantState;
-    AtomicInteger idleScanState;
-    ConcurrentLinkedQueue<Borrower> waitQueue;
+    volatile int idleScanState;
+    volatile int servantState;
+    volatile int servantTryCount;
     BeeDataSourceConfig poolConfig;
+    PooledConnection[] connectionArray;//fixed len
+    ConcurrentLinkedQueue<Borrower> waitQueue;
 
     private String poolMode;
     private String poolHostIP;
@@ -88,7 +90,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private BeeXaConnectionFactory rawXaConnFactory;
     private PooledConnectionAliveTest conValidTest;
     private ThreadPoolExecutor networkTimeoutExecutor;
-    private AtomicInteger servantTryCount;
     private IdleTimeoutScanThread idleScanThread;
     private boolean enableThreadLocal;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
@@ -178,10 +179,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (POOL_STARTING == poolWorkState) {
             this.waitQueue = new ConcurrentLinkedQueue<>();
             //count of retry to search idles or create news in servant thread of pool
-            this.servantTryCount = new AtomicInteger(0);
-            this.servantState = new AtomicInteger(THREAD_WORKING);
-
-            this.idleScanState = new AtomicInteger(THREAD_WORKING);
+            this.servantTryCount = 0;
+            this.servantState = THREAD_WORKING;
+            this.idleScanState = THREAD_WORKING;
             this.idleScanThread = new IdleTimeoutScanThread(this);
 
             this.monitorVo = this.createPoolMonitorVo();//pool monitor object
@@ -194,7 +194,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             start();
 
             this.idleScanThread.setDaemon(true);
-            this.idleScanThread.setPriority(3);
             this.idleScanThread.setName("BeeCP(" + poolName + ")" + "-idleScanner");
             this.idleScanThread.start();
         }
@@ -598,7 +597,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             b = this.threadLocal.get().get();
             if (b != null) {
                 p = b.lastUsed;
-                if (p != null && p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
+                if (p != null && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
                     if (this.testOnBorrow(p)) return b.lastUsed = p;
                     b.lastUsed = null;
                 }
@@ -668,7 +667,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } else {//here:(s == null)
                 long t = deadline - System.nanoTime();
                 if (t > spinForTimeoutThreshold) {//notify pool servant thread to get one before parking
-                    if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
+                    if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
                         LockSupport.unpark(this);
 
                     LockSupport.parkNanos(t);//park end (1: a transfer arrived 2: park timeout 3: an interruption occurred)
@@ -696,10 +695,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private void tryWakeupServantThread() {
         int c;
         do {
-            c = this.servantTryCount.get();
+            c = this.servantTryCount;
             if (c >= this.connectionArrayLen) return;
-        } while (!this.servantTryCount.compareAndSet(c, c + 1));
-        if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
+        } while (!ServantTryCountUpd.compareAndSet(this, c, c + 1));
+        if (!this.waitQueue.isEmpty() && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
             LockSupport.unpark(this);
     }
 
@@ -708,7 +707,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (isCompeteMode) p.state = CON_IDLE;
         for (Borrower b : this.waitQueue) {
             if (p.state != stateCodeOnRelease) return;
-            if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
+            if (BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -727,7 +726,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-2.8: transfer an exception to a waiter
     private void transferException(Throwable e) {
         for (Borrower b : waitQueue) {
-            if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
+            if (BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -750,7 +749,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     public boolean tryCatch(PooledConnection p) {
-        return p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING);
+        //return p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING);
+        return ConStUpd.compareAndSet(p, CON_IDLE, CON_USING);
     }
 
     //***************************************************************************************************************//
@@ -758,22 +758,22 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //***************************************************************************************************************//
     //Method-3.1: shutdown pool inner threads
     private void shutdownPoolThreads() {
-        int curState = this.servantState.get();
-        this.servantState.set(THREAD_EXIT);
+        int curState = this.servantState;
+        this.servantState = THREAD_EXIT;
         if (curState == THREAD_WAITING) LockSupport.unpark(this);
 
-        curState = this.idleScanState.get();
-        this.idleScanState.set(THREAD_EXIT);
+        curState = this.idleScanState;
+        this.idleScanState = THREAD_EXIT;
         if (curState == THREAD_WAITING) LockSupport.unpark(this.idleScanThread);
     }
 
     //Method-3.2: run method of pool servant
     public void run() {
         while (poolState != POOL_CLOSED) {
-            while (servantState.get() == THREAD_WORKING) {
-                int c = servantTryCount.get();
-                if (c <= 0 || (waitQueue.isEmpty() && servantTryCount.compareAndSet(c, 0))) break;
-                servantTryCount.decrementAndGet();
+            while (servantState == THREAD_WORKING) {
+                int c = servantTryCount;
+                if (c <= 0 || (waitQueue.isEmpty() && ServantTryCountUpd.compareAndSet(this, c, 0))) break;
+                ServantTryCountUpd.decrementAndGet(this);
 
                 try {
                     PooledConnection p = searchOrCreate();
@@ -783,9 +783,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 }
             }
 
-            if (servantState.get() == THREAD_EXIT)
+            if (servantState == THREAD_EXIT)
                 break;
-            if (servantTryCount.get() == 0 && servantState.compareAndSet(THREAD_WORKING, THREAD_WAITING))
+            if (servantTryCount == 0 && ServantStateUpd.compareAndSet(this, THREAD_WORKING, THREAD_WAITING))
                 LockSupport.park();
         }
     }
@@ -1060,8 +1060,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
         }
 
-        Thread[] interruptThreads = new Thread[threads.size()];
-        return threads.toArray(interruptThreads);
+        return threads.toArray(new Thread[0]);
     }
 
     //Method-5.13: register jmx
@@ -1197,9 +1196,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         public void run() {
             try {
                 pool.createInitConnections(pool.poolConfig.getInitialSize(), false);
-                pool.servantTryCount.set(pool.connectionArray.length);
+                pool.servantTryCount = pool.connectionArray.length;
 
-                if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING))
+                if (!pool.waitQueue.isEmpty() && pool.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(pool, THREAD_WAITING, THREAD_WORKING))
                     LockSupport.unpark(pool);
             } catch (Throwable e) {
                 //do nothing
@@ -1216,9 +1215,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         public void run() {
-            final AtomicInteger idleScanState = pool.idleScanState;
             final long checkTimeIntervalNanos = TimeUnit.MILLISECONDS.toNanos(this.pool.poolConfig.getTimerCheckInterval());
-            while (idleScanState.get() == THREAD_WORKING) {
+            while (pool.idleScanState == THREAD_WORKING) {
                 LockSupport.parkNanos(checkTimeIntervalNanos);
                 try {
                     if (pool.poolState == POOL_READY)

@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
@@ -43,9 +42,11 @@ import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
  */
 final class ObjectInstancePool implements Runnable, Cloneable {
     static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
+    private static final Logger Log = LoggerFactory.getLogger(ObjectInstancePool.class);
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "poolState");
-    private static final Logger Log = LoggerFactory.getLogger(ObjectInstancePool.class);
+    private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantState");
+    private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantTryCount");
     final KeyedObjectPool ownerPool;
 
     //clone begin
@@ -74,18 +75,17 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final Map<MethodCacheKey, Method> methodMap;
     //clone end
 
-    AtomicInteger servantState;
-    AtomicInteger servantTryCount;
-    volatile PooledObject[] objectArray;
-    ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
-
-    private boolean printRuntimeLog;
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
+    private volatile int servantState;
+    private volatile int servantTryCount;
+    private PooledObject[] objectArray;
     private InterruptionSemaphore semaphore;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ObjectPoolMonitorVo monitorVo;
+    private boolean printRuntimeLog;
+    private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
 
     //***************************************************************************************************************//
     //                1: Pool Creation/clone(2)                                                                      //
@@ -149,18 +149,18 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     void startup(String ownerName, Object key, int initSize, boolean async) throws Exception {
         this.key = key;
         this.poolName = ownerName + "-[" + key + "]";
-
         this.objectArray = new PooledObject[maxActiveSize];
         for (int i = 0; i < maxActiveSize; i++)
             objectArray[i] = new PooledObject(key, objectFactory, methodMap, this.methodFilter, this);
 
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
-
         if (this.enableThreadLocal) this.threadLocal = new BorrowerThreadLocal();
         this.semaphore = new InterruptionSemaphore(semaphoreSize, isFairMode);
         this.waitQueue = new ConcurrentLinkedQueue<ObjectBorrower>();
-        this.servantState = new AtomicInteger(THREAD_WAITING);
-        this.servantTryCount = new AtomicInteger(0);
+
+        this.servantTryCount = 0;
+        this.servantState = THREAD_WAITING;
+
         if (initSize > 0 && async) new PoolInitAsyncCreateThread(initSize, this).start();
         this.monitorVo = new ObjectPoolMonitorVo(this.poolName, poolHostIP, poolThreadId, poolThreadName, poolMode, maxActiveSize);
 
@@ -282,7 +282,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             b = this.threadLocal.get().get();
             if (b != null) {
                 p = b.lastUsed;
-                if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
+                if (p != null && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
                     if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
                     b.lastUsed = null;
                 }
@@ -352,7 +352,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             } else {//here:(state == null)
                 long t = deadline - System.nanoTime();
                 if (t > spinForTimeoutThreshold) {
-                    if (this.servantTryCount.get() > 0 && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+                    if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING)) {
                         ownerPool.submitServantTask(this);
                     }
 
@@ -386,7 +386,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         while (iterator.hasNext()) {
             ObjectBorrower b = iterator.next();
             if (p.state != stateCodeOnRelease) return;
-            if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
+            if (BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -418,7 +418,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         while (iterator.hasNext()) {
             ObjectBorrower b = iterator.next();
-            if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
+            if (BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -449,20 +449,20 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private void tryWakeupServantThread() {
         int c;
         do {
-            c = this.servantTryCount.get();
+            c = this.servantTryCount;
             if (c >= this.maxActiveSize) return;
-        } while (!this.servantTryCount.compareAndSet(c, c + 1));
-        if (!this.waitQueue.isEmpty() && this.servantState.get() == THREAD_WAITING && this.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+        } while (!ServantTryCountUpd.compareAndSet(this, c, c + 1));
+        if (!this.waitQueue.isEmpty() && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING)) {
             ownerPool.submitServantTask(this);
         }
     }
 
     //Method-4.2: servant method driven by executor in key pool
     public void run() {
-        while (servantState.get() == THREAD_WORKING) {
-            int c = servantTryCount.get();
-            if (c <= 0 || (waitQueue.isEmpty() && servantTryCount.compareAndSet(c, 0))) break;
-            servantTryCount.decrementAndGet();
+        while (servantState == THREAD_WORKING) {
+            int c = servantTryCount;
+            if (c <= 0 || (waitQueue.isEmpty() && ServantTryCountUpd.compareAndSet(this, c, 0))) break;
+            ServantTryCountUpd.decrementAndGet(this);
 
             try {
                 PooledObject p = searchOrCreate();
@@ -471,7 +471,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 this.transferException(e);
             }
         }
-        servantState.set(THREAD_WAITING);
+
+        this.servantState = THREAD_WAITING;
     }
 
     //***************************************************************************************************************//
@@ -733,11 +734,9 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             }
         }
 
-        Thread[] interruptThreads = new Thread[threads.size()];
-        return threads.toArray(interruptThreads);
+        return threads.toArray(new Thread[0]);
     }
-
-
+    
     //***************************************************************************************************************//
     //                                       9: Inner Classes(6)                                                     //                                                                                  //
     //***************************************************************************************************************//
@@ -811,8 +810,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         public void run() {
             try {
                 pool.createInitObjects(initialSize, false);
-                pool.servantTryCount.set(pool.objectArray.length);
-                if (!pool.waitQueue.isEmpty() && pool.servantState.get() == THREAD_WAITING && pool.servantState.compareAndSet(THREAD_WAITING, THREAD_WORKING)) {
+                pool.servantTryCount = pool.objectArray.length;
+                if (!pool.waitQueue.isEmpty() && pool.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(pool, THREAD_WAITING, THREAD_WORKING)) {
                     pool.ownerPool.submitServantTask(pool);
                 }
             } catch (Throwable e) {
