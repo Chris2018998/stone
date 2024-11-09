@@ -643,8 +643,24 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //5: self-spin to get transferred connection
         do {
-            Object s = b.state;//one of possible values: PooledConnection,Throwable,null
-            if (s instanceof PooledConnection) {
+            Object s = b.state;//possible values: PooledConnection,Throwable,null
+            if (s == null) {
+                if (cause != null) {
+                    BorrowStUpd.compareAndSet(b, s, cause);
+                } else {
+                    long t = deadline - System.nanoTime();
+                    if (t > spinForTimeoutThreshold) {//notify pool servant thread to get one before parking
+                        if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
+                            LockSupport.unpark(this);
+
+                        LockSupport.parkNanos(t);//park end (1: a transfer arrived 2: park timeout 3: an interruption occurred)
+                        if (Thread.interrupted())
+                            cause = new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
+                    } else if (t <= 0L) {//timeout
+                        cause = new ConnectionGetTimeoutException("Waited timeout for a released connection");
+                    }
+                }//end
+            } else if (s instanceof PooledConnection) {
                 p = (PooledConnection) s;
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                     this.semaphore.release();
@@ -653,30 +669,14 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     if (this.enableThreadLocal)//put to thread local
                         putToThreadLocal(p, b, hasCached);
                     return p;
+                } else {
+                    b.state = null;//wait for next transfer
                 }
-            } else if (s instanceof Throwable) {
+            } else {//here: s must be throwable object
                 this.semaphore.release();
                 this.waitQueue.remove(b);
                 throw s instanceof SQLException ? (SQLException) s : new ConnectionGetException((Throwable) s);
             }
-
-            if (cause != null) {
-                BorrowStUpd.compareAndSet(b, s, cause);
-            } else if (s != null) {//here:variable s must be a PooledConnection
-                b.state = null;
-            } else {//here:(s == null)
-                long t = deadline - System.nanoTime();
-                if (t > spinForTimeoutThreshold) {//notify pool servant thread to get one before parking
-                    if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
-                        LockSupport.unpark(this);
-
-                    LockSupport.parkNanos(t);//park end (1: a transfer arrived 2: park timeout 3: an interruption occurred)
-                    if (Thread.interrupted())
-                        cause = new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
-                } else if (t <= 0L) {//timeout
-                    cause = new ConnectionGetTimeoutException("Waited timeout for a released connection");
-                }
-            }//end
         } while (true);//while
     }
 

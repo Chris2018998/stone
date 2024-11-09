@@ -328,8 +328,25 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         //5: self-spin to get transferred object
         do {
-            Object s = b.state;//one of possible values: PooledObject,Throwable,null
-            if (s instanceof PooledObject) {
+            Object s = b.state;//possible values: PooledObject,Throwable,null
+            if (s == null) {
+                if (cause != null) {
+                    BorrowStUpd.compareAndSet(b, s, cause);
+                } else {//here:(state == null)
+                    long t = deadline - System.nanoTime();
+                    if (t > spinForTimeoutThreshold) {
+                        if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING)) {
+                            ownerPool.submitServantTask(this);
+                        }
+
+                        LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
+                        if (Thread.interrupted())
+                            cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
+                    } else if (t <= 0L) {//timeout
+                        cause = new ObjectGetTimeoutException("Waited timeout for a released object");
+                    }
+                }//end (state == BOWER_NORMAL)
+            } else if (s instanceof PooledObject) {
                 p = (PooledObject) s;
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                     semaphore.release();
@@ -338,31 +355,14 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                         putToThreadLocal(p, b, hasCached);
 
                     return handleFactory.createHandle(p);
+                } else {
+                    b.state = null;//wait for next transfer
                 }
-            } else if (s instanceof Throwable) {
+            } else {//here: s must be throwable object
                 semaphore.release();
                 waitQueue.remove(b);
                 throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
             }
-
-            if (cause != null) {
-                BorrowStUpd.compareAndSet(b, s, cause);
-            } else if (s != null) {//here:s must be a PooledObject
-                b.state = null;
-            } else {//here:(state == null)
-                long t = deadline - System.nanoTime();
-                if (t > spinForTimeoutThreshold) {
-                    if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING)) {
-                        ownerPool.submitServantTask(this);
-                    }
-
-                    LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
-                    if (Thread.interrupted())
-                        cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
-                } else if (t <= 0L) {//timeout
-                    cause = new ObjectGetTimeoutException("Waited timeout for a released object");
-                }
-            }//end (state == BOWER_NORMAL)
         } while (true);//while
     }
 
@@ -736,7 +736,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         return threads.toArray(new Thread[0]);
     }
-    
+
     //***************************************************************************************************************//
     //                                       9: Inner Classes(6)                                                     //                                                                                  //
     //***************************************************************************************************************//
