@@ -3,8 +3,12 @@ stone changes
 Changes in 1.4.0(not release)
 [beecp]
 1: enhance exception
+2: change type declaration of some fields of pool
+3: improve pool self-loop
 [beeop]
 1: enhance exception
+2: change type declaration of some fields of pool
+3: improve pool self-loop
 
 
 Changes in 1.3.9
