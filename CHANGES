@@ -1,6 +1,6 @@
 stone changes
 
-Changes in 1.4.0(not release)
+Changes in 1.4.0
 [beecp]
 1: enhance exception
 2: change type declaration of some fields of pool
