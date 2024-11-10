@@ -275,7 +275,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             b = this.threadLocal.get().get();
             if (b != null) {
                 p = b.lastUsed;
-                if (p != null && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
+                if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
                     if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
                     b.lastUsed = null;
                 }
@@ -379,7 +379,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         while (iterator.hasNext()) {
             ObjectBorrower b = iterator.next();
             if (p.state != stateCodeOnRelease) return;
-            if (BorrowStUpd.compareAndSet(b, null, p)) {
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -411,7 +411,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         while (iterator.hasNext()) {
             ObjectBorrower b = iterator.next();
-            if (BorrowStUpd.compareAndSet(b, null, e)) {
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -787,7 +787,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         public boolean tryCatch(PooledObject p) {
-            return ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
+            return p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING);
         }
     }
 

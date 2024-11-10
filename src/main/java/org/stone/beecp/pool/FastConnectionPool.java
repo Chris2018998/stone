@@ -272,13 +272,14 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //2: search one or create one
         for (PooledConnection p : connectionArray) {
-            if (p.state == CON_IDLE) {
+            int state = p.state;
+            if (state == CON_IDLE) {
                 if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
                     if (this.testOnBorrow(p)) return p;
                 } else if (p.state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
                     return this.fillRawConnection(p, CON_USING);
                 }
-            } else if (p.state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
+            } else if (state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
                 return this.fillRawConnection(p, CON_USING);
             }
         }
@@ -589,7 +590,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             b = this.threadLocal.get().get();
             if (b != null) {
                 p = b.lastUsed;
-                if (p != null && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
+                if (p != null && p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
                     if (this.testOnBorrow(p)) return b.lastUsed = p;
                     b.lastUsed = null;
                 }
@@ -699,7 +700,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (isCompeteMode) p.state = CON_IDLE;
         for (Borrower b : this.waitQueue) {
             if (p.state != stateCodeOnRelease) return;
-            if (BorrowStUpd.compareAndSet(b, null, p)) {
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -718,7 +719,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-2.8: transfer an exception to a waiter
     private void transferException(Throwable e) {
         for (Borrower b : waitQueue) {
-            if (BorrowStUpd.compareAndSet(b, null, e)) {
+            if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
             }
@@ -741,8 +742,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     public boolean tryCatch(PooledConnection p) {
-        //return p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING);
-        return ConStUpd.compareAndSet(p, CON_IDLE, CON_USING);
+        return p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_USING);
     }
 
     //***************************************************************************************************************//
