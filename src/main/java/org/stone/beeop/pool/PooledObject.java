@@ -105,21 +105,24 @@ final class PooledObject {
     }
 
     //pool call this method before this object removed
-    void onBeforeRemove() {
+    void onBeforeRemove(String cause) {
+        if (ownerPool.isPrintRuntimeLog())
+            CommonLog.info("BeeOP({}))begin to remove a pooled object:{} for cause:{}", ownerPool.getPoolName(), this, cause);
+
         try {
-            this.state = OBJECT_CLOSED;
             this.factory.reset(key, raw);
         } catch (Throwable e) {
             if (ownerPool.isPrintRuntimeLog())
                 CommonLog.warn("BeeOP({})reset object failed", ownerPool.getPoolName(), e);
         } finally {
-
             try {
                 this.factory.destroy(key, raw);
             } catch (Throwable e) {
                 if (ownerPool.isPrintRuntimeLog())
                     CommonLog.warn("BeeOP({})An error occurred when destroyed object", ownerPool.getPoolName(), e);
             }
+
+            this.state = OBJECT_CLOSED;
         }
     }
 

@@ -22,8 +22,8 @@ public class ObjectPoolStatics {
     public static final String[] EMPTY_CLASS_NAMES = new String[0];
     //pool object state
     static final int OBJECT_CLOSED = 0;
-    static final int OBJECT_CREATING = 1;
-    static final int OBJECT_IDLE = 2;
+    static final int OBJECT_IDLE = 1;
+    static final int OBJECT_CREATING = 2;
     static final int OBJECT_USING = 3;
 
     //pool state

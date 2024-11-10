@@ -98,7 +98,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean printRuntimeLog;
 
     //***************************************************************************************************************//
-    //               1: Pool initializes and maintenance on pooled connections(8)                                    //                                                                                  //
+    //               1: Pool initializes and maintenance on pooled connections(6)                                    //                                                                                  //
     //***************************************************************************************************************//
     //Method-1.1: pool initializes.
     public void init(BeeDataSourceConfig config) throws SQLException {
@@ -232,7 +232,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } catch (SQLException e) {
                 if (syn) {
                     for (int i = 0; i < index; i++)
-                        this.removePooledConn(connectionArray[i], DESC_RM_INIT);
+                        connectionArray[i].onRemove(DESC_RM_INIT);
                     throw e;
                 } else {//print log under async mode
                     Log.warn("Failed to create initial connections by async mode", e);
@@ -272,14 +272,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //2: search one or create one
         for (PooledConnection p : connectionArray) {
-            int state = p.state;
-            if (state == CON_IDLE) {
+            if (p.state == CON_IDLE) {
                 if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
                     if (this.testOnBorrow(p)) return p;
                 } else if (p.state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
                     return this.fillRawConnection(p, CON_USING);
                 }
-            } else if (state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
+            } else if (p.state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
                 return this.fillRawConnection(p, CON_USING);
             }
         }
@@ -342,14 +341,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-1.6: remove a pooled connection under lock(logical removal)
-    private void removePooledConn(PooledConnection p, String cause) {
-        if (this.printRuntimeLog)
-            Log.info("BeeCP({}))begin to remove a pooled connection:{} for cause:{}", this.poolName, p, cause);
-        p.onRemove();
-    }
-
-    //Method-1.8: create a pooled connection array with first connection
+    //Method-1.6: create a pooled connection array with first connection
     private void initPooledConnectionArray(Connection firstConn) throws SQLException {
         //step1:set default value of property auto-commit on first connection
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
@@ -643,12 +635,12 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //5: self-spin to get transferred connection
         do {
-            Object s = b.state;//possible values: PooledConnection,Throwable,null
+            final Object s = b.state;//possible values: PooledConnection,Throwable,null
             if (s == null) {
                 if (cause != null) {
-                    BorrowStUpd.compareAndSet(b, s, cause);
+                    BorrowStUpd.compareAndSet(b, null, cause);
                 } else {
-                    long t = deadline - System.nanoTime();
+                    final long t = deadline - System.nanoTime();
                     if (t > spinForTimeoutThreshold) {//notify pool servant thread to get one before parking
                         if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
                             LockSupport.unpark(this);
@@ -659,7 +651,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     } else if (t <= 0L) {//timeout
                         cause = new ConnectionGetTimeoutException("Waited timeout for a released connection");
                     }
-                }//end
+                }
             } else if (s instanceof PooledConnection) {
                 p = (PooledConnection) s;
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
@@ -719,7 +711,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-2.7: terminate a Pooled Connection
     void abort(PooledConnection p, String reason) {
-        this.removePooledConn(p, reason);
+        p.onRemove(reason);
         this.tryWakeupServantThread();
     }
 
@@ -736,7 +728,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-2.9: alive test on a borrowed connection
     private boolean testOnBorrow(PooledConnection p) {
         if (System.currentTimeMillis() - p.lastAccessTime >= this.aliveAssumeTimeMs && !this.conValidTest.isAlive(p)) {
-            this.removePooledConn(p, DESC_RM_BAD);
+            p.onRemove(DESC_RM_BAD);
             this.tryWakeupServantThread();
             return false;
         } else {
@@ -807,7 +799,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             if (state == CON_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime >= this.idleTimeoutMs;
                 if (isTimeoutInIdle && ConStUpd.compareAndSet(p, state, CON_CLOSED)) {//need close idle
-                    this.removePooledConn(p, DESC_RM_IDLE);
+                    p.onRemove(DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
             } else if (state == CON_USING && supportHoldTimeout) {
@@ -816,7 +808,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     if (proxyInUsing != null) oclose(proxyInUsing);
                 }
             } else if (state == CON_CLOSED) {
-                this.removePooledConn(p, DESC_RM_CLOSED);
+                p.onRemove(DESC_RM_CLOSED);
                 this.tryWakeupServantThread();
             }
         }
@@ -890,7 +882,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 if (state == CON_IDLE) {
                     if (ConStUpd.compareAndSet(p, CON_IDLE, CON_CLOSED)) {
                         closedCount++;
-                        this.removePooledConn(p, source);
+                        p.onRemove(source);
                     }
                 } else if (state == CON_USING) {
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
@@ -900,7 +892,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                     }
                 } else if (state == CON_CLOSED) {
                     closedCount++;
-                    this.removePooledConn(p, source);
+                    p.onRemove(source);
                 }
             }
 
