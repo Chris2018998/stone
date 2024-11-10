@@ -37,16 +37,20 @@ public final class PoolTaskCenter implements TaskPool {
     private volatile int poolState;
     private PoolMonitorVo monitorVo;
 
+    //max allowable size of tasks in execution section
     private int maxTaskSize;
+    //max allowable size of tasks in schedule section
     private int maxScheduleTaskSize;
+    //current count of tasks in execution section
     private volatile int taskCount;
+    //current count of tasks in schedule section
     private volatile int scheduledTaskCount;
 
     private int workerSize;
     private int maxNoOfWorkers;
     private TaskExecutionWorker[] workers;
     private TaskExecutionNotifier notifier;
-    private ConcurrentLinkedQueue<PoolTaskHandle<?>>[] taskBuckets;
+    private ConcurrentLinkedQueue[] taskBuckets;
 
     private TaskScheduleWorker scheduleWorker;
     private ConcurrentLinkedQueue<Thread> poolTerminateWaitQueue;
