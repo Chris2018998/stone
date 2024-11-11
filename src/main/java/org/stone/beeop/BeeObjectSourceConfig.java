@@ -496,52 +496,54 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1:load configuration item values from outside properties
+        Map<String, String> setValueMap;
         synchronized (configProperties) {//synchronization mode
-            Map<String, String> setValueMap = new HashMap<>(configProperties.size());
-            for (String propertyName : configProperties.stringPropertyNames()) {
-                setValueMap.put(propertyName, configProperties.getProperty(propertyName));
+            Set<Map.Entry<Object, Object>> entrySet = configProperties.entrySet();
+            setValueMap = new HashMap<>(entrySet.size());
+            for (Map.Entry<Object, Object> entry : entrySet) {
+                setValueMap.put((String) entry.getKey(), (String) entry.getValue());
             }
+        }
 
-            //2:inject item value from map to this dataSource config object
+        //2:inject item value from map to this dataSource config object
+        try {
+            setPropertiesValue(this, setValueMap);
+        } catch (BeanException e) {
+            throw new BeeObjectSourceConfigException(e.getMessage(), e);
+        }
+
+        //3:try to find 'factoryProperties' config value
+        this.addFactoryProperty(getPropertyValue(setValueMap, "factoryProperties"));
+        String factoryPropertiesSize = getPropertyValue(setValueMap, "factoryProperties.size");
+        if (isNotBlank(factoryPropertiesSize)) {
+            int size = 0;
             try {
-                setPropertiesValue(this, setValueMap);
-            } catch (BeanException e) {
-                throw new BeeObjectSourceConfigException(e.getMessage(), e);
+                size = Integer.parseInt(factoryPropertiesSize.trim());
+            } catch (Throwable e) {
+                //do nothing
             }
+            for (int i = 1; i <= size; i++)
+                this.addFactoryProperty(getPropertyValue(setValueMap, "factoryProperties." + i));
+        }
 
-            //3:try to find 'factoryProperties' config value
-            this.addFactoryProperty(getPropertyValue(setValueMap, "factoryProperties"));
-            String factoryPropertiesSize = getPropertyValue(setValueMap, "factoryProperties.size");
-            if (isNotBlank(factoryPropertiesSize)) {
-                int size = 0;
+        //5:try to find 'objectInterfaceNames' config value
+        String objectInterfaceNames = getPropertyValue(setValueMap, "objectInterfaceNames");
+        if (isNotBlank(objectInterfaceNames))
+            this.objectInterfaceNames = objectInterfaceNames.split(",");
+
+        //6:try to find 'objectInterfaces' config value
+        String objectInterfaceNames2 = getPropertyValue(setValueMap, "objectInterfaces");
+        if (isNotBlank(objectInterfaceNames2)) {
+            String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
+            Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
+            for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
                 try {
-                    size = Integer.parseInt(factoryPropertiesSize.trim());
-                } catch (Throwable e) {
-                    //do nothing
+                    objectInterfaces[i] = Class.forName(objectInterfaceNameArray[i]);
+                } catch (ClassNotFoundException e) {
+                    throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
                 }
-                for (int i = 1; i <= size; i++)
-                    this.addFactoryProperty(getPropertyValue(setValueMap, "factoryProperties." + i));
             }
-
-            //5:try to find 'objectInterfaceNames' config value
-            String objectInterfaceNames = getPropertyValue(setValueMap, "objectInterfaceNames");
-            if (isNotBlank(objectInterfaceNames))
-                this.objectInterfaceNames = objectInterfaceNames.split(",");
-
-            //6:try to find 'objectInterfaces' config value
-            String objectInterfaceNames2 = getPropertyValue(setValueMap, "objectInterfaces");
-            if (isNotBlank(objectInterfaceNames2)) {
-                String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
-                Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
-                for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
-                    try {
-                        objectInterfaces[i] = Class.forName(objectInterfaceNameArray[i]);
-                    } catch (ClassNotFoundException e) {
-                        throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
-                    }
-                }
-                this.objectInterfaces = objectInterfaces;
-            }
+            this.objectInterfaces = objectInterfaces;
         }
     }
 
