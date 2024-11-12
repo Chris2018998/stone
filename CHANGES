@@ -1,5 +1,11 @@
 stone changes
 
+Changes in 1.4.1(not released）
+[beecp]
+1: simplify source code
+[beeop]
+1: simplify source code
+
 Changes in 1.4.0
 [beecp]
 1: enhance exception
