@@ -622,14 +622,12 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //4: add the borrower to wait queue
-        boolean hasCached;
-        if (b == null) {
-            hasCached = false;
-            b = new Borrower();
-        } else {
+        boolean hasCached = b != null;
+        if (hasCached)
             b.state = null;
-            hasCached = true;
-        }
+        else
+            b = new Borrower();
+
         this.waitQueue.offer(b);
         SQLException cause = null;
         deadline += this.maxWaitNs;

@@ -307,14 +307,11 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         //4: add the borrower to wait queue
-        boolean hasCached;
-        if (b == null) {
-            hasCached = false;
-            b = new ObjectBorrower();
-        } else {
+        boolean hasCached = b != null;
+        if (hasCached)
             b.state = null;
-            hasCached = true;
-        }
+        else
+            b = new ObjectBorrower();
         this.waitQueue.offer(b);
         BeeObjectException cause = null;
         deadline += this.maxWaitNs;
