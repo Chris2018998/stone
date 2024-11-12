@@ -294,20 +294,20 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //3: try to search idle one or create new one
         try {
             p = this.searchOrCreate();
-            if (p != null) {
-                semaphore.release();
-                if (this.enableThreadLocal)
-                    putToThreadLocal(p, b, b != null);
-
-                return handleFactory.createHandle(p);
-            }
         } catch (Exception e) {
             semaphore.release();
             throw e;
         }
+        //3.1: check searched result
+        final boolean hasCached = b != null;
+        if (p != null) {
+            semaphore.release();
+            if (this.enableThreadLocal)
+                putToThreadLocal(p, b, hasCached);
+            return handleFactory.createHandle(p);
+        }
 
         //4: add the borrower to wait queue
-        boolean hasCached = b != null;
         if (hasCached)
             b.state = null;
         else
