@@ -1,6 +1,6 @@
 stone changes
 
-Changes in 1.4.1(not released）
+Changes in 1.4.1
 [beecp]
 1: simplify source code
 2: fix issue that disable default set when set fail on first connection
