@@ -71,9 +71,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
 
     //milliseconds: max wait time to get a connection for a borrower in pool,default is 8000 milliseconds(8 seconds)
-    private long maxWait = SECONDS.toMillis(8);
+    private long maxWait = SECONDS.toMillis(8L);
     //milliseconds: max idle time of un-borrowed connections,default is 18000 milliseconds(3 minutes)
-    private long idleTimeout = MINUTES.toMillis(3);
+    private long idleTimeout = MINUTES.toMillis(3L);
     //milliseconds: max inactive time of borrowed connections,which can be recycled by force,default is zero
     private long holdTimeout;
 
@@ -84,7 +84,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //milliseconds: a threshold time of alive test when borrowed success,if time gap value since last access is less than it,no test on connections,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
     //milliseconds: an interval time that pool scans out timeout connections(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
-    private long timerCheckInterval = MINUTES.toMillis(3);
+    private long timerCheckInterval = MINUTES.toMillis(3L);
     //an indicator that close borrowed connections immediately,or that close them when them return to pool when clean pool and close pool,default is false.
     private boolean forceCloseUsingOnClear;
     //milliseconds: a park time for waiting borrowed connections return to pool when clean pool and close pool,default is 3000 milliseconds
@@ -137,7 +137,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //connection factory instance
     private Object connectionFactory;
     //connection factory class
-    private Class connectionFactoryClass;
+    private Class<?> connectionFactoryClass;
     //connection factory class name
     private String connectionFactoryClassName;
 
@@ -592,11 +592,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = factory;
     }
 
-    public Class getConnectionFactoryClass() {
+    public Class<?> getConnectionFactoryClass() {
         return this.connectionFactoryClass;
     }
 
-    public void setConnectionFactoryClass(Class connectionFactoryClass) {
+    public void setConnectionFactoryClass(Class<?> connectionFactoryClass) {
         this.connectionFactoryClass = connectionFactoryClass;
     }
 
@@ -856,8 +856,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                         config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
                         break;
                     case "connectProperties": //copy 'connectProperties'
-                        for (Map.Entry<String, Object> entry : this.connectProperties.entrySet())
-                            config.addConnectProperty(entry.getKey(), entry.getValue());
+                        config.connectProperties.putAll(connectProperties);
                         break;
                     case "sqlExceptionCodeList": //copy 'sqlExceptionCodeList'
                         if (this.sqlExceptionCodeList != null && !sqlExceptionCodeList.isEmpty())
@@ -952,7 +951,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 conFactClass = this.connectionFactoryClass != null ? this.connectionFactoryClass : Class.forName(this.connectionFactoryClassName);
 
                 //3.2: check connection factory class
-                Class[] parentClasses = {BeeConnectionFactory.class, BeeXaConnectionFactory.class, DataSource.class, XADataSource.class};
+                Class<?>[] parentClasses = {BeeConnectionFactory.class, BeeXaConnectionFactory.class, DataSource.class, XADataSource.class};
 
                 //3.3: create connection factory instance
                 Object factory = createClassInstance(conFactClass, parentClasses, "connection factory");

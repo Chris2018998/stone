@@ -14,10 +14,10 @@ import org.stone.tools.CommonUtil;
 import org.stone.tools.exception.BeanException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -53,10 +53,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //max permit size of pool semaphore,its original value is calculated with an expression
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
     //milliseconds: max wait time to get an object instance for a borrower in pool,default is 8000 milliseconds(8 seconds)
-    private long maxWait = SECONDS.toMillis(8);
+    private long maxWait = SECONDS.toMillis(8L);
 
     //milliseconds: max idle time of un-borrowed object,default is 18000 milliseconds(3 minutes)
-    private long idleTimeout = MINUTES.toMillis(3);
+    private long idleTimeout = MINUTES.toMillis(3L);
     //milliseconds: max inactive time of borrowed object,which can be recycled by force,default is zero
     private long holdTimeout;
 
@@ -65,7 +65,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //milliseconds: a threshold time of alive test when borrowed success,if time gap value since last access is less than it,no test on objects,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
     //milliseconds: an interval time that pool scans out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
-    private long timerCheckInterval = MINUTES.toMillis(3);
+    private long timerCheckInterval = MINUTES.toMillis(3L);
     //an indicator that close borrowed objects immediately,or that close them when them return to pool when clean pool and close pool,default is false.
     private boolean forceCloseUsingOnClear;
     //milliseconds: a park time for waiting borrowed objects return to pool when clean pool and close pool,default is 3000 milliseconds
@@ -83,7 +83,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     private List<String> configPrintExclusionList;
 
     //an array of interfaces implemented by pooled object class
-    private Class[] objectInterfaces;
+    private Class<?>[] objectInterfaces;
     //an array of interface names of pooled object class
     private String[] objectInterfaceNames;
 
@@ -311,11 +311,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //***************************************************************************************************************//
     //                                     3: creation configuration(20)                                             //
     //***************************************************************************************************************//
-    public Class[] getObjectInterfaces() {
+    public Class<?>[] getObjectInterfaces() {
         return objectInterfaces;
     }
 
-    public void setObjectInterfaces(Class[] interfaces) {
+    public void setObjectInterfaces(Class<?>[] interfaces) {
         this.objectInterfaces = interfaces;
     }
 
@@ -335,11 +335,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectFactory = factory;
     }
 
-    public Class getObjectFactoryClass() {
+    public Class<?> getObjectFactoryClass() {
         return this.objectFactoryClass;
     }
 
-    public void setObjectFactoryClass(Class objectFactoryClass) {
+    public void setObjectFactoryClass(Class<? extends BeeObjectFactory> objectFactoryClass) {
         this.objectFactoryClass = objectFactoryClass;
     }
 
@@ -351,7 +351,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
-    public Class getObjectMethodFilterClass() {
+    public Class<? extends BeeObjectMethodFilter> getObjectMethodFilterClass() {
         return objectMethodFilterClass;
     }
 
@@ -474,7 +474,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         InputStream stream = null;
         try {
-            stream = new FileInputStream(file);
+            stream = Files.newInputStream(file.toPath());
             Properties configProperties = new Properties();
             configProperties.load(stream);
             this.loadFromProperties(configProperties);
@@ -535,7 +535,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         String objectInterfaceNames2 = getPropertyValue(setValueMap, "objectInterfaces");
         if (isNotBlank(objectInterfaceNames2)) {
             String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
-            Class[] objectInterfaces = new Class[objectInterfaceNameArray.length];
+            Class<?>[] objectInterfaces = new Class[objectInterfaceNameArray.length];
             for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
                 try {
                     objectInterfaces[i] = Class.forName(objectInterfaceNameArray[i]);
@@ -561,7 +561,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             throw new BeeObjectSourceConfigException("Object factory must provide a non null default pooled key");
 
         //2: try to load interfaces
-        Class[] objectInterfaces = this.loadObjectInterfaces();
+        Class<?>[] objectInterfaces = this.loadObjectInterfaces();
 
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
@@ -581,7 +581,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     void copyTo(BeeObjectSourceConfig config) {
-        List<String> excludeFieldList = new ArrayList<String>(3);
+        List<String> excludeFieldList = new ArrayList<>(3);
         excludeFieldList.add("factoryProperties");
         excludeFieldList.add("objectInterfaces");
         excludeFieldList.add("objectInterfaceNames");
@@ -604,7 +604,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         }
 
         //2:copy 'objectInterfaces'
-        Class[] interfaces = this.objectInterfaces == null ? null : new Class[this.objectInterfaces.length];
+        Class<?>[] interfaces = this.objectInterfaces == null ? null : new Class[this.objectInterfaces.length];
         if (interfaces != null) {
             System.arraycopy(this.objectInterfaces, 0, interfaces, 0, interfaces.length);
             for (int i = 0, l = interfaces.length; i < l; i++)
@@ -624,7 +624,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         }
     }
 
-    private Class[] loadObjectInterfaces() throws BeeObjectSourceConfigException {
+    private Class<?>[] loadObjectInterfaces() throws BeeObjectSourceConfigException {
         //1: if objectInterfaces field value is not null,then check it and return it
         if (objectInterfaces != null) {
             for (int i = 0, l = objectInterfaces.length; i < l; i++) {
@@ -638,7 +638,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         //2: try to load interfaces by names
         if (this.objectInterfaceNames != null) {
-            Class[] objectInterfaces = new Class[this.objectInterfaceNames.length];
+            Class<?>[] objectInterfaces = new Class[this.objectInterfaceNames.length];
             for (int i = 0; i < this.objectInterfaceNames.length; i++) {
                 try {
                     if (isBlank(this.objectInterfaceNames[i]))
@@ -659,7 +659,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         //2: create method filter
         if (objectMethodFilterClass != null || isNotBlank(objectMethodFilterClassName)) {
-            Class filterClass = null;
+            Class<?> filterClass = null;
             try {
                 filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : Class.forName(objectMethodFilterClassName);
                 return (BeeObjectMethodFilter) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
@@ -681,7 +681,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         //2: create factory instance
         if (rawObjectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
-            Class factoryClass = null;
+            Class<?> factoryClass = null;
             try {
                 factoryClass = objectFactoryClass != null ? objectFactoryClass : Class.forName(objectFactoryClassName);
                 rawObjectFactory = (BeeObjectFactory) createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
