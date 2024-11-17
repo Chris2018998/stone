@@ -1,5 +1,13 @@
 stone changes
 
+Changes in 1.4.2
+[beecp]
+1: fix some code inspection issues scanned by IDEA
+2: restore self-spin source code with history code
+[beeop]
+1: fix some code inspection issues scanned by IDEA
+2: restore self-spin source code with history code
+
 Changes in 1.4.1
 [beecp]
 1: simplify source code
