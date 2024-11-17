@@ -8,13 +8,13 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 
 ![图片](https://github.com/Chris2018998/stone/assets/32663325/25f3cf51-c479-4218-9e02-bbe96ea1ab4f)
 
-## :arrow_down: Maven坐标 (Java7或更高)
+## :arrow_down: Maven坐标 (Java8或更高)
 
 ```xml
 <dependency>
    <groupId>io.github.chris2018998</groupId>
    <artifactId>stone</artifactId>
-   <version>1.4.1</version>
+   <version>1.4.2</version>
 </dependency>
 ```
 
