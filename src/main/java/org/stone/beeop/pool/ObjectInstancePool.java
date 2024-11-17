@@ -32,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
-import static org.stone.tools.CommonUtil.spinForTimeoutThreshold;
 
 /**
  * Object instance Pool Implementation
@@ -254,7 +253,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                  3: Pooled object borrow and release methods(8)                                               //                                                                                  //
+    //                  3: Pooled object borrow and release methods(5)                                               //                                                                                  //
     //***************************************************************************************************************//
 
     /**
@@ -302,8 +301,12 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         final boolean hasCached = b != null;
         if (p != null) {
             semaphore.release();
-            if (this.enableThreadLocal)
-                putToThreadLocal(p, b, hasCached);
+            if (this.enableThreadLocal) {
+                if (hasCached)
+                    b.lastUsed = p;
+                else
+                    this.threadLocal.set(new WeakReference<>(new ObjectBorrower(p)));
+            }
             return handleFactory.createHandle(p);
         }
 
@@ -319,56 +322,44 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //5: self-spin to get transferred object
         do {
             final Object s = b.state;//possible values: PooledObject,Throwable,null
-            if (s == null) {
-                if (cause != null) {
-                    BorrowStUpd.compareAndSet(b, null, cause);
-                } else {
-                    final long t = deadline - System.nanoTime();
-                    if (t > spinForTimeoutThreshold) {
-                        if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING)) {
-                            ownerPool.submitServantTask(this);
-                        }
-
-                        LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
-                        if (Thread.interrupted())
-                            cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
-                    } else if (t <= 0L) {//timeout
-                        cause = new ObjectGetTimeoutException("Waited timeout for a released object");
-                    }
-                }
-            } else if (s instanceof PooledObject) {
+            if (s instanceof PooledObject) {
                 p = (PooledObject) s;
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                     semaphore.release();
                     waitQueue.remove(b);
-                    if (this.enableThreadLocal)
-                        putToThreadLocal(p, b, hasCached);
-
+                    if (this.enableThreadLocal) {
+                        b.lastUsed = p;
+                        if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+                    }
                     return handleFactory.createHandle(p);
-                } else {
-                    b.state = null;//wait for next transfer
                 }
-            } else {//here: s must be throwable object
+            } else if (s instanceof Throwable) {//here: s must be throwable object
                 semaphore.release();
                 waitQueue.remove(b);
                 throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
             }
+
+            //reach here:s==null or s is a PooledObject
+            if (cause != null) {
+                BorrowStUpd.compareAndSet(b, s, cause);
+            } else {
+                if (s != null) b.state = null;
+                final long t = deadline - System.nanoTime();
+                if (t > 0L) {
+                    if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
+                        ownerPool.submitServantTask(this);
+
+                    LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
+                    if (Thread.interrupted())
+                        cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
+                } else {//timeout
+                    cause = new ObjectGetTimeoutException("Waited timeout for a released object");
+                }
+            }
         } while (true);//while
     }
 
-    //Method-3.2: put borrowed pooled connection to thread local
-    private void putToThreadLocal(PooledObject p, ObjectBorrower b, boolean hasCached) {
-        if (hasCached) {
-            b.lastUsed = p;
-        } else {
-            if (b == null) b = new ObjectBorrower();
-            b.lastUsed = p;
-            this.threadLocal.set(new WeakReference<>(b));
-        }
-    }
-
-
-    //Method-3.4: return object to pool after borrower end of use object
+    //Method-3.2: return object to pool after borrower end of use object
     void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
         Iterator<ObjectBorrower> iterator = waitQueue.iterator();
@@ -387,7 +378,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     /**
-     * Method-3.5: terminate a Pooled object
+     * Method-3.3: terminate a Pooled object
      *
      * @param p      to be closed and removed
      * @param reason is a cause for be aborted
@@ -398,7 +389,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     /**
-     * Method-3.6: when object create failed,creator thread will transfer caused exception to one waiting borrower,
+     * Method-3.4: when object create failed,creator thread will transfer caused exception to one waiting borrower,
      * which will exit wait and throw this exception.
      *
      * @param e: transfer Exception to waiter
@@ -415,7 +406,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
     }
 
-    //Method-3.7: check object alive state,if not alive then remove it from pool
+    //Method-3.5: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject p) {
         try {
             if (System.currentTimeMillis() - p.lastAccessTime >= this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
