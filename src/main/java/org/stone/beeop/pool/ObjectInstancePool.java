@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -362,10 +361,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //Method-3.2: return object to pool after borrower end of use object
     void recycle(PooledObject p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
-        Iterator<ObjectBorrower> iterator = waitQueue.iterator();
 
-        while (iterator.hasNext()) {
-            ObjectBorrower b = iterator.next();
+        for (ObjectBorrower b : waitQueue) {
             if (p.state != stateCodeOnRelease) return;
             if (b.state == null && BorrowStUpd.compareAndSet(b, null, p)) {
                 LockSupport.unpark(b.thread);
@@ -395,10 +392,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
      * @param e: transfer Exception to waiter
      */
     private void transferException(Throwable e) {
-        Iterator<ObjectBorrower> iterator = waitQueue.iterator();
-
-        while (iterator.hasNext()) {
-            ObjectBorrower b = iterator.next();
+        for (ObjectBorrower b : waitQueue) {
             if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
                 LockSupport.unpark(b.thread);
                 return;
@@ -755,7 +749,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         }
 
         protected WeakReference<ObjectBorrower> initialValue() {
-            return new WeakReference<ObjectBorrower>(new ObjectBorrower());
+            return new WeakReference<>(new ObjectBorrower());
         }
     }
 
