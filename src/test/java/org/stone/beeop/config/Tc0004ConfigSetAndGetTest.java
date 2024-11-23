@@ -38,51 +38,51 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
 
         //borrowSemaphoreSize
         config.setBorrowSemaphoreSize(0);
-        Assert.assertNotEquals(config.getBorrowSemaphoreSize(), 0);
+        Assert.assertNotEquals(0, config.getBorrowSemaphoreSize());
         config.setBorrowSemaphoreSize(5);
-        Assert.assertEquals(config.getBorrowSemaphoreSize(), 5);
+        Assert.assertEquals(5, config.getBorrowSemaphoreSize());
 
         //maxWait
         config.setMaxWait(0L);
-        Assert.assertNotEquals(config.getMaxWait(), 0);
+        Assert.assertNotEquals(0, config.getMaxWait());
         config.setMaxWait(5000L);
-        Assert.assertEquals(config.getMaxWait(), 5000L);
+        Assert.assertEquals(5000L, config.getMaxWait());
 
         //idleTimeout
         config.setIdleTimeout(0);
-        Assert.assertNotEquals(config.getIdleTimeout(), 0);
+        Assert.assertNotEquals(0, config.getIdleTimeout());
         config.setIdleTimeout(3000);
-        Assert.assertEquals(config.getIdleTimeout(), 3000);
+        Assert.assertEquals(3000, config.getIdleTimeout());
 
         //holdTimeout
         config.setHoldTimeout(-1);
-        Assert.assertNotEquals(config.getHoldTimeout(), -1);
+        Assert.assertNotEquals(-1, config.getHoldTimeout());
         config.setHoldTimeout(0);
-        Assert.assertEquals(config.getHoldTimeout(), 0);
+        Assert.assertEquals(0, config.getHoldTimeout());
         config.setHoldTimeout(3000L);
-        Assert.assertEquals(config.getHoldTimeout(), 3000L);
+        Assert.assertEquals(3000L, config.getHoldTimeout());
 
         //aliveTestTimeout
         config.setAliveTestTimeout(-1);
-        Assert.assertNotEquals(config.getAliveTestTimeout(), -1);
+        Assert.assertNotEquals(-1, config.getAliveTestTimeout());
         config.setAliveTestTimeout(0);
-        Assert.assertEquals(config.getAliveTestTimeout(), 0);
+        Assert.assertEquals(0, config.getAliveTestTimeout());
         config.setAliveTestTimeout(3);
-        Assert.assertEquals(config.getAliveTestTimeout(), 3);
+        Assert.assertEquals(3, config.getAliveTestTimeout());
 
         //aliveAssumeTime
         config.setAliveAssumeTime(-1);
-        Assert.assertNotEquals(config.getAliveAssumeTime(), -1);
+        Assert.assertNotEquals(-1, config.getAliveAssumeTime());
         config.setAliveAssumeTime(0);
-        Assert.assertEquals(config.getAliveAssumeTime(), 0);
+        Assert.assertEquals(0, config.getAliveAssumeTime());
         config.setAliveAssumeTime(3000L);
-        Assert.assertEquals(config.getAliveAssumeTime(), 3000L);
+        Assert.assertEquals(3000L, config.getAliveAssumeTime());
 
         //timerCheckInterval
         config.setTimerCheckInterval(0);
-        Assert.assertNotEquals(config.getTimerCheckInterval(), 0);
+        Assert.assertNotEquals(0, config.getTimerCheckInterval());
         config.setTimerCheckInterval(3000);
-        Assert.assertEquals(config.getTimerCheckInterval(), 3000);
+        Assert.assertEquals(3000, config.getTimerCheckInterval());
 
         //forceCloseUsingOnClear
         config.setForceCloseUsingOnClear(true);
@@ -90,19 +90,19 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
 
         //delayTimeForNextClear
         config.setParkTimeForRetry(-1);
-        Assert.assertNotEquals(config.getParkTimeForRetry(), -1);
+        Assert.assertNotEquals(-1, config.getParkTimeForRetry());
         config.setParkTimeForRetry(0);
-        Assert.assertEquals(config.getParkTimeForRetry(), 0L);
+        Assert.assertEquals(0L, config.getParkTimeForRetry());
         config.setParkTimeForRetry(3000L);
-        Assert.assertEquals(config.getParkTimeForRetry(), 3000L);
+        Assert.assertEquals(3000L, config.getParkTimeForRetry());
 
         //MaxObjectKeySize
         int maxObjectKeySize = config.getMaxObjectKeySize();
-        Assert.assertEquals(maxObjectKeySize, 50);
+        Assert.assertEquals(50, maxObjectKeySize);
         config.setMaxObjectKeySize(0);
         Assert.assertEquals(config.getMaxObjectKeySize(), maxObjectKeySize);
         config.setMaxObjectKeySize(1);
-        Assert.assertEquals(config.getMaxObjectKeySize(), 1);
+        Assert.assertEquals(1, config.getMaxObjectKeySize());
 
         //object factory
         config.setObjectFactoryClassName(JavaBookFactory.class.getName());
@@ -140,7 +140,7 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         for (String name : config.getObjectInterfaceNames())
             Assert.assertEquals(name, Book.class.getName());
         for (Class<?> oInterface : config.getObjectInterfaces())
-            Assert.assertEquals(oInterface, Book.class);
+            Assert.assertEquals(Book.class, oInterface);
 
         //enableJmx
         config.setEnableJmx(true);
@@ -161,8 +161,8 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         //poolImplementClassName
         config.setPoolImplementClassName(null);
         Assert.assertNotNull(config.getPoolImplementClassName());
-        Assert.assertEquals(config.getPoolImplementClassName(), "org.stone.beeop.pool.KeyedObjectPool");
+        Assert.assertEquals("org.stone.beeop.pool.KeyedObjectPool", config.getPoolImplementClassName());
         config.setPoolImplementClassName("org.stone.beeop.pool.KeyedObjectPool");
-        Assert.assertEquals(config.getPoolImplementClassName(), "org.stone.beeop.pool.KeyedObjectPool");
+        Assert.assertEquals("org.stone.beeop.pool.KeyedObjectPool", config.getPoolImplementClassName());
     }
 }

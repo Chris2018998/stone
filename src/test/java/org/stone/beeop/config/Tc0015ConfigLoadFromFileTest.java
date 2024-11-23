@@ -84,29 +84,13 @@ public class Tc0015ConfigLoadFromFileTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Target object is a valid configuration file"));
         }
 
-        try {//load from classpath
-            config1.loadFromPropertiesFile("classpath:" + filename);
-        } catch (Exception e) {
-            String message = e.getMessage();
-            Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
-        }
-    }
+        //success test: load file from class path
+        config1.loadFromPropertiesFile("classpath:" + filename);
+        Assert.assertTrue(check(config1));
 
-    public void testOnLoadProperties() {
-        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
-        try {
-            config1.loadFromProperties(null);
-        } catch (Exception e) {
-            String message = e.getMessage();
-            Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
-        }
-
-        try {
-            config1.loadFromProperties(new Properties());
-        } catch (Exception e) {
-            String message = e.getMessage();
-            Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
-        }
+        //success test: load file from file folder
+        config1.loadFromPropertiesFile(Objects.requireNonNull(getClassPathFileAbsolutePath(filename)).getPath());
+        Assert.assertTrue(check(config1));
     }
 
     public void testOnLoadByFile() {
@@ -159,19 +143,36 @@ public class Tc0015ConfigLoadFromFileTest extends TestCase {
         }
     }
 
+    public void testOnLoadProperties() {
+        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
+        try {
+            config1.loadFromProperties(null);
+        } catch (Exception e) {
+            String message = e.getMessage();
+            Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
+        }
+
+        try {
+            config1.loadFromProperties(new Properties());
+        } catch (Exception e) {
+            String message = e.getMessage();
+            Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
+        }
+    }
+
     private Boolean check(BeeObjectSourceConfig config) {
-        Assert.assertEquals(config.getPoolName(), "Pool1");
+        Assert.assertEquals("Pool1", config.getPoolName());
         Assert.assertTrue(config.isFairMode());
-        Assert.assertEquals(config.getInitialSize(), 1);
-        Assert.assertEquals(config.getMaxActive(), 10);
-        Assert.assertEquals(config.getMaxWait(), 8000L);
-        Assert.assertEquals(config.getIdleTimeout(), 18000L);
-        Assert.assertEquals(config.getHoldTimeout(), 30000L);
-        Assert.assertEquals(config.getAliveTestTimeout(), 3);
-        Assert.assertEquals(config.getAliveAssumeTime(), 500);
-        Assert.assertEquals(config.getTimerCheckInterval(), 30000);
+        Assert.assertEquals(1, config.getInitialSize());
+        Assert.assertEquals(10, config.getMaxActive());
+        Assert.assertEquals(8000L, config.getMaxWait());
+        Assert.assertEquals(18000L, config.getIdleTimeout());
+        Assert.assertEquals(30000L, config.getHoldTimeout());
+        Assert.assertEquals(3, config.getAliveTestTimeout());
+        Assert.assertEquals(500, config.getAliveAssumeTime());
+        Assert.assertEquals(30000, config.getTimerCheckInterval());
         Assert.assertTrue(config.isForceCloseUsingOnClear());
-        Assert.assertEquals(config.getParkTimeForRetry(), 3000);
+        Assert.assertEquals(3000, config.getParkTimeForRetry());
 //        Assert.assertEquals(config.getEvictPredicateClassName(), "com.myProject.TestPredication");
 //
 //        List<Integer> sqlExceptionCodeList = config.getSqlExceptionCodeList();
