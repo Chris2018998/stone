@@ -444,6 +444,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //                                     4: configuration file load(3)                                             //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
+        if (isBlank(filename))
+            throw new IllegalArgumentException("Configuration file name can't be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
         if (!fileLowerCaseName.endsWith(".properties"))
             throw new IllegalArgumentException("Configuration file name file must be end with '.properties'");
