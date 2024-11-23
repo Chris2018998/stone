@@ -80,7 +80,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean supportHoldTimeout;
     private long aliveAssumeTimeMs;//milliseconds
     private int aliveTestTimeout;//seconds
-    private long delayTimeForNextClearNs;//nanoseconds
+    private long parkTimeForRetryNs;//nanoseconds
     private int stateCodeOnRelease;
     private int connectionArrayLen;
     private boolean connectionArrayInitialized;
@@ -167,7 +167,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         this.supportHoldTimeout = holdTimeoutMs > 0L;
         this.aliveAssumeTimeMs = poolConfig.getAliveAssumeTime();
         this.aliveTestTimeout = poolConfig.getAliveTestTimeout();
-        this.delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getDelayTimeForNextClear());
+        this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getParkTimeForRetry());
         this.semaphoreSize = poolConfig.getBorrowSemaphoreSize();
 
         //step6: creates pool semaphore and pool threadLocal
@@ -297,9 +297,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         Connection rawConn = null;
         XAConnection rawXaConn = null;
         XAResource rawXaRes = null;
-        p.creatingInfo = new ConnectionCreatingInfo();
 
         try {
+            p.creatingInfo = new ConnectionCreatingInfo();
             if (this.isRawXaConnFactory) {
                 //maybe blocked in factory method,if true,call{@code BeeDataSource.interruptThreadsOnCreationLock()} to interrupt blocking
                 rawXaConn = this.rawXaConnFactory.create();
@@ -891,7 +891,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             }
 
             if (closedCount == this.connectionArrayLen) break;
-            LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay to clear remained pooled connections
+            LockSupport.parkNanos(this.parkTimeForRetryNs);//delay to clear remained pooled connections
         } // while
 
         if (printRuntimeLog) {
@@ -912,7 +912,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
             if (poolStateCode == POOL_NEW && PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
-                LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
+                LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeCP({})begin to shutdown pool", this.poolName);
                 this.unregisterJmx();

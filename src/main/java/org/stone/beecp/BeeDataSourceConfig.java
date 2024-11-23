@@ -88,7 +88,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //an indicator that close borrowed connections immediately,or that close them when them return to pool when clean pool and close pool,default is false.
     private boolean forceCloseUsingOnClear;
     //milliseconds: a park time for waiting borrowed connections return to pool when clean pool and close pool,default is 3000 milliseconds
-    private long delayTimeForNextClear = 3000L;
+    private long parkTimeForRetry = 3000L;
     //a code list for eviction check on sql exceptions
     private List<Integer> sqlExceptionCodeList;
     //a state list for eviction check on sql exceptions
@@ -368,12 +368,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.forceCloseUsingOnClear = forceCloseUsingOnClear;
     }
 
-    public long getDelayTimeForNextClear() {
-        return this.delayTimeForNextClear;
+    public long getParkTimeForRetry() {
+        return this.parkTimeForRetry;
     }
 
-    public void setDelayTimeForNextClear(long delayTimeForNextClear) {
-        if (delayTimeForNextClear >= 0L) this.delayTimeForNextClear = delayTimeForNextClear;
+    public void setParkTimeForRetry(long parkTimeForRetry) {
+        if (parkTimeForRetry >= 0L) this.parkTimeForRetry = parkTimeForRetry;
     }
 
     public List<Integer> getSqlExceptionCodeList() {

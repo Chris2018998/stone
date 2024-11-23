@@ -69,7 +69,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //an indicator that close borrowed objects immediately,or that close them when them return to pool when clean pool and close pool,default is false.
     private boolean forceCloseUsingOnClear;
     //milliseconds: a park time for waiting borrowed objects return to pool when clean pool and close pool,default is 3000 milliseconds
-    private long delayTimeForNextClear = 3000L;
+    private long parkTimeForRetry = 3000L;
 
     //an indicator to use thread local cache or not(set false to support virtual threads)
     private boolean enableThreadLocal = true;
@@ -247,12 +247,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.forceCloseUsingOnClear = forceCloseUsingOnClear;
     }
 
-    public long getDelayTimeForNextClear() {
-        return this.delayTimeForNextClear;
+    public long getParkTimeForRetry() {
+        return this.parkTimeForRetry;
     }
 
-    public void setDelayTimeForNextClear(long delayTimeForNextClear) {
-        if (delayTimeForNextClear >= 0L) this.delayTimeForNextClear = delayTimeForNextClear;
+    public void setParkTimeForRetry(long parkTimeForRetry) {
+        if (parkTimeForRetry >= 0L) this.parkTimeForRetry = parkTimeForRetry;
     }
 
     public boolean isEnableJmx() {

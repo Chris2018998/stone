@@ -47,8 +47,6 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //an array of locks for creating sub pools
     private ReentrantLock[] subPoolsCreationLocks;
 
-    //wait time for borrowed objects return to pool,time unit is nanoseconds
-    private long delayTimeForNextClearNs;
     //close borrowed objects immediately on cleaning pool
     private boolean forceCloseUsingOnClear;
     //a monitor object of this key pool
@@ -97,12 +95,11 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         this.instancePoolMap.put(defaultKey, defaultPool);
 
         //step2: create locks for sub pools creation
+        this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
         this.maxSubPoolSize = config.getMaxObjectKeySize();
         this.subPoolsCreationLocks = new ReentrantLock[maxSubPoolSize];
         for (int i = 0; i < maxSubPoolSize; i++)
             subPoolsCreationLocks[i] = new ReentrantLock();
-        this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
-        this.delayTimeForNextClearNs = MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
 
         //step3: create a common thread pool to service all sub pools(search idle or create new and transfer to waiters)
         int coreThreadSize = Math.min(NCPU, maxSubPoolSize);
@@ -145,11 +142,13 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
 
     //1.4: closes this keyed pool
     public void close() {
+        final long parkTimeForRetryNs = defaultPool.getParkTimeForRetryNs();
+
         do {
             int poolStateCode = this.poolState;
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
-                LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
+                LockSupport.parkNanos(parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeOP({})Begin to shutdown", this.poolName);
                 for (ObjectInstancePool pool : instancePoolMap.values())

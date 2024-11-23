@@ -47,6 +47,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantTryCount");
     final KeyedObjectPool ownerPool;
 
+
     //clone begin
     private final int maxActiveSize;
     private final String poolMode;
@@ -61,7 +62,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final int stateCodeOnRelease;
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
-    private final long delayTimeForNextClearNs;//nanoseconds
+    private final long parkTimeForRetryNs;//nanoseconds
     private final BeeObjectFactory objectFactory;
     private final ObjectPlainHandleFactory handleFactory;
     private final ObjectTransferPolicy transferPolicy;
@@ -103,7 +104,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         this.idleTimeoutMs = config.getIdleTimeout();//milliseconds
         this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
         this.supportHoldTimeout = holdTimeoutMs > 0L;
-        this.delayTimeForNextClearNs = TimeUnit.MILLISECONDS.toNanos(config.getDelayTimeForNextClear());
+        this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(config.getParkTimeForRetry());
         this.validAssumeTime = config.getAliveAssumeTime();
         this.validTestTimeout = config.getAliveTestTimeout();
         this.printRuntimeLog = config.isPrintRuntimeLog();
@@ -228,8 +229,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             Log.info("BeeCP({}))begin to create a raw object", this.poolName);
 
         Object rawObj = null;
-        p.creatingInfo = new ObjectCreatingInfo();
         try {
+            p.creatingInfo = new ObjectCreatingInfo();
             rawObj = this.objectFactory.create(this.key);
             if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
                 if (Thread.interrupted())
@@ -546,7 +547,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             } // for
 
             if (closedCount == this.maxActiveSize) break;
-            LockSupport.parkNanos(this.delayTimeForNextClearNs);
+            LockSupport.parkNanos(this.parkTimeForRetryNs);
         } // while
 
         if (this.printRuntimeLog) {
@@ -570,7 +571,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
             if (poolStateCode == POOL_NEW && PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
-                LockSupport.parkNanos(this.delayTimeForNextClearNs);//delay and retry
+                LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
                 this.clear(forceCloseUsing, DESC_RM_DESTROY);
@@ -609,6 +610,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     String getPoolThreadName() {
         return poolThreadName;
+    }
+
+    long getParkTimeForRetryNs() {
+        return this.parkTimeForRetryNs;
     }
 
     boolean isPrintRuntimeLog() {

@@ -205,7 +205,7 @@ public class Tc0015ConfigLoadFromFileTest extends TestCase {
         Assert.assertEquals(config.getAliveAssumeTime(), 500);
         Assert.assertEquals(config.getTimerCheckInterval(), 30000);
         Assert.assertTrue(config.isForceCloseUsingOnClear());
-        Assert.assertEquals(config.getDelayTimeForNextClear(), 3000);
+        Assert.assertEquals(config.getParkTimeForRetry(), 3000);
         Assert.assertEquals(config.getEvictPredicateClassName(), "com.myProject.TestPredication");
 
         List<Integer> sqlExceptionCodeList = config.getSqlExceptionCodeList();

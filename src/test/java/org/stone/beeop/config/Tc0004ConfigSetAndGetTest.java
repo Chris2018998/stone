@@ -89,12 +89,12 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         Assert.assertTrue(config.isForceCloseUsingOnClear());
 
         //delayTimeForNextClear
-        config.setDelayTimeForNextClear(-1);
-        Assert.assertNotEquals(config.getDelayTimeForNextClear(), -1);
-        config.setDelayTimeForNextClear(0);
-        Assert.assertEquals(config.getDelayTimeForNextClear(), 0L);
-        config.setDelayTimeForNextClear(3000L);
-        Assert.assertEquals(config.getDelayTimeForNextClear(), 3000L);
+        config.setParkTimeForRetry(-1);
+        Assert.assertNotEquals(config.getParkTimeForRetry(), -1);
+        config.setParkTimeForRetry(0);
+        Assert.assertEquals(config.getParkTimeForRetry(), 0L);
+        config.setParkTimeForRetry(3000L);
+        Assert.assertEquals(config.getParkTimeForRetry(), 3000L);
 
         //MaxObjectKeySize
         int maxObjectKeySize = config.getMaxObjectKeySize();
