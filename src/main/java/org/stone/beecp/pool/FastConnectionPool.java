@@ -51,10 +51,10 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  */
 public final class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMBean, PooledConnectionAliveTest, PooledConnectionTransferPolicy {
     static final Logger Log = LoggerFactory.getLogger(FastConnectionPool.class);
+    static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
 
     String poolName;
@@ -140,7 +140,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         this.connectionArray = new PooledConnection[connectionArrayLen];
         this.connectionArrayInitLock = new InterruptionReentrantReadWriteLock();
         for (int i = 0; i < connectionArrayLen; i++)
-            connectionArray[i] = new PooledConnection(this, i);
+            connectionArray[i] = new PooledConnection(this);
 
         //step3: creates initial connections
         this.printRuntimeLog = poolConfig.isPrintRuntimeLog();

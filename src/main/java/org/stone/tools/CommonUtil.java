@@ -23,9 +23,8 @@ import java.util.Properties;
 
 public class CommonUtil {
     public static final int NCPU = Runtime.getRuntime().availableProcessors();
-    public static final long spinForTimeoutThreshold = 1023L;
     public static final int maxTimedSpins = (NCPU < 2) ? 0 : 32;
-    public static final int maxUntimedSpins = maxTimedSpins * 16;
+    public static final int maxUntimedSpins = maxTimedSpins << 4;
 
     public static String trimString(String value) {
         return value == null ? null : value.trim();

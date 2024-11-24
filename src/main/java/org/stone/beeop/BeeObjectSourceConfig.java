@@ -288,12 +288,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void addConfigPrintExclusion(String fieldName) {
-        if (configPrintExclusionList == null) {
-            configPrintExclusionList = new ArrayList<>(1);
-            configPrintExclusionList.add(fieldName);
-        } else if (!configPrintExclusionList.contains(fieldName)) {
-            configPrintExclusionList.add(fieldName);
-        }
+        if (configPrintExclusionList == null)
+            this.configPrintExclusionList = new ArrayList<>(1);
+
+        if (!configPrintExclusionList.contains(fieldName))
+            this.configPrintExclusionList.add(fieldName);
     }
 
     public void clearAllConfigPrintExclusion() {
@@ -594,12 +593,19 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
                 if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers()) || excludeFieldList.contains(field.getName()))
                     continue;
-                Object fieldValue = field.get(this);
-                fieldName = field.getName();
 
-                if (this.printConfigInfo)
-                    CommonLog.info("{}.{}={}", this.poolName, fieldName, fieldValue);
-                field.set(config, fieldValue);
+                fieldName = field.getName();
+                switch (fieldName) {
+                    case "configPrintExclusionList":
+                        if (configPrintExclusionList != null)
+                            config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
+                        break;
+                    case "factoryProperties": //copy 'connectProperties'
+                        config.factoryProperties.putAll(factoryProperties);
+                        break;
+                    default: //other config items
+                        field.set(config, field.get(this));
+                }
             }
         } catch (Throwable e) {
             throw new BeeObjectSourceConfigException("Failed to filled value on field[" + fieldName + "]", e);
