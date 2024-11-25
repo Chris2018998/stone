@@ -473,9 +473,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
             throw new IllegalArgumentException("Target file is not a properties file");
 
-        InputStream stream = null;
-        try {
-            stream = Files.newInputStream(file.toPath());
+        try (InputStream stream = Files.newInputStream(file.toPath())) {
             Properties configProperties = new Properties();
             configProperties.load(stream);
             this.loadFromProperties(configProperties);
@@ -483,12 +481,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             throw e;
         } catch (Throwable e) {
             throw new BeeObjectSourceConfigException("Failed to load configuration properties file:" + file, e);
-        } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (Throwable e) {
-                //do nothing
-            }
         }
     }
 
@@ -582,26 +574,29 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     void copyTo(BeeObjectSourceConfig config) {
-        List<String> excludeFieldList = new ArrayList<>(3);
-        excludeFieldList.add("factoryProperties");
-        excludeFieldList.add("objectInterfaces");
-        excludeFieldList.add("objectInterfaceNames");
-
         //1:copy primitive type fields
         String fieldName = "";
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
-                if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers()) || excludeFieldList.contains(field.getName()))
+                if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers()))
                     continue;
 
                 fieldName = field.getName();
                 switch (fieldName) {
+                    case "objectInterfaces":
+                        if (objectInterfaces != null)
+                            config.objectInterfaces = objectInterfaces.clone();
+                        break;
+                    case "objectInterfaceNames":
+                        if (objectInterfaceNames != null)
+                            config.objectInterfaceNames = objectInterfaceNames.clone();
+                        break;
+                    case "factoryProperties":
+                        config.factoryProperties.putAll(factoryProperties);
+                        break;
                     case "configPrintExclusionList":
                         if (configPrintExclusionList != null)
                             config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
-                        break;
-                    case "factoryProperties": //copy 'connectProperties'
-                        config.factoryProperties.putAll(factoryProperties);
                         break;
                     default: //other config items
                         field.set(config, field.get(this));

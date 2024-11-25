@@ -718,9 +718,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
             throw new IllegalArgumentException("Target file is not a properties file");
 
-        InputStream stream = null;
-        try {
-            stream = Files.newInputStream(file.toPath());
+        try (InputStream stream = Files.newInputStream(file.toPath())) {
             Properties configProperties = new Properties();
             configProperties.load(stream);
 
@@ -729,12 +727,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             throw e;
         } catch (Throwable e) {
             throw new BeeDataSourceConfigException("Failed to load configuration properties file:" + file, e);
-        } finally {
-            if (stream != null) try {
-                stream.close();
-            } catch (Throwable e) {
-                CommonLog.warn("Failed to close inputStream of configuration properties file:{}", file, e);
-            }
         }
     }
 
