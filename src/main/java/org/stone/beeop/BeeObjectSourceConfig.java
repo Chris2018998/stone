@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
 
@@ -110,6 +111,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
     //class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
+
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
@@ -488,7 +490,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         if (configProperties == null || configProperties.isEmpty())
             throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
-        //1:load configuration item values from outside properties
+        //1: load configuration item values from outside properties
         Map<String, String> setValueMap;
         synchronized (configProperties) {//synchronization mode
             Set<Map.Entry<Object, Object>> entrySet = configProperties.entrySet();
@@ -498,36 +500,35 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             }
         }
 
-        //2:inject item value from map to this dataSource config object
+        //2: remove some special keys in setValueMap
+        String factoryPropertiesText = setValueMap.remove(CONFIG_FACTORY_PROP);
+        String factoryPropertiesSizeText = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);
+        String objectInterfacesText = setValueMap.remove(CONFIG_OBJECT_INTERFACES);
+        String objectInterfaceNamesText = setValueMap.remove(CONFIG_OBJECT_INTERFACE_NAMES);
+        String exclusionListText = setValueMap.remove(CONFIG_CONFIG_PRINT_EXCLUSION_LIST);
+
+        //3:inject item value from map to this dataSource config object
         try {
             setPropertiesValue(this, setValueMap);
         } catch (BeanException e) {
             throw new BeeObjectSourceConfigException(e.getMessage(), e);
         }
 
-        //3:try to find 'factoryProperties' config value
-        this.addFactoryProperty(getPropertyValue(setValueMap, "factoryProperties"));
-        String factoryPropertiesSize = getPropertyValue(setValueMap, "factoryProperties.size");
-        if (isNotBlank(factoryPropertiesSize)) {
-            int size = 0;
-            try {
-                size = Integer.parseInt(factoryPropertiesSize.trim());
-            } catch (Throwable e) {
-                //do nothing
-            }
-            for (int i = 1; i <= size; i++)
-                this.addFactoryProperty(getPropertyValue(setValueMap, "factoryProperties." + i));
+        //4:try to find 'factoryProperties' config value
+        this.addFactoryProperty(factoryPropertiesText);
+        if (isNotBlank(factoryPropertiesSizeText)) {
+            int size = Integer.parseInt(factoryPropertiesSizeText.trim());
+            for (int i = 1; i <= size; i++)//properties index begin with 1
+                this.addFactoryProperty(getPropertyValue(setValueMap, CONFIG_FACTORY_PROP_KEY_PREFIX + i));
         }
 
         //5:try to find 'objectInterfaceNames' config value
-        String objectInterfaceNames = getPropertyValue(setValueMap, "objectInterfaceNames");
-        if (isNotBlank(objectInterfaceNames))
-            this.objectInterfaceNames = objectInterfaceNames.split(",");
+        if (isNotBlank(objectInterfaceNamesText))
+            this.objectInterfaceNames = objectInterfaceNamesText.split(",");
 
         //6:try to find 'objectInterfaces' config value
-        String objectInterfaceNames2 = getPropertyValue(setValueMap, "objectInterfaces");
-        if (isNotBlank(objectInterfaceNames2)) {
-            String[] objectInterfaceNameArray = objectInterfaceNames2.split(",");
+        if (isNotBlank(objectInterfacesText)) {
+            String[] objectInterfaceNameArray = objectInterfacesText.split(",");
             Class<?>[] objectInterfaces = new Class[objectInterfaceNameArray.length];
             for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
                 try {
@@ -537,6 +538,14 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                 }
             }
             this.objectInterfaces = objectInterfaces;
+        }
+
+        //7:try to load exclusion list on config print
+        if (isNotBlank(exclusionListText)) {
+            this.clearAllConfigPrintExclusion();//remove existed exclusion
+            for (String exclusion : exclusionListText.trim().split(",")) {
+                this.addConfigPrintExclusion(exclusion);
+            }
         }
     }
 
