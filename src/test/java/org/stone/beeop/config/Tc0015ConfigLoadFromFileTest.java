@@ -12,6 +12,7 @@ package org.stone.beeop.config;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.BeeObjectSourceConfigException;
 
 import java.io.File;
 import java.net.URL;
@@ -32,21 +33,21 @@ public class Tc0015ConfigLoadFromFileTest extends TestCase {
 
     public void testOnCorrectFile() throws Exception {
         String classFilename = "cp:" + filename;
-        Assert.assertTrue(check(new BeeObjectSourceConfig(classFilename)));//classpath
-        Assert.assertTrue(check(new BeeObjectSourceConfig(getClassPathFileAbsolutePath(filename))));//from file
-        Assert.assertTrue(check(new BeeObjectSourceConfig(loadPropertiesFromClassPathFile(filename))));//from properties
+        Assert.assertTrue(check(new BeeObjectSourceConfig(classFilename)).booleanValue());//classpath
+        Assert.assertTrue(check(new BeeObjectSourceConfig(getClassPathFileAbsolutePath(filename))).booleanValue());//from file
+        Assert.assertTrue(check(new BeeObjectSourceConfig(loadPropertiesFromClassPathFile(filename))).booleanValue());//from properties
 
         BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
         config1.loadFromPropertiesFile(classFilename);
-        Assert.assertTrue(check(config1));
+        Assert.assertTrue(check(config1).booleanValue());
 
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.loadFromPropertiesFile(getClassPathFileAbsolutePath(filename));
-        Assert.assertTrue(check(config2));
+        Assert.assertTrue(check(config2).booleanValue());
 
         BeeObjectSourceConfig config3 = new BeeObjectSourceConfig();
         config3.loadFromProperties(loadPropertiesFromClassPathFile(filename));
-        Assert.assertTrue(check(config3));
+        Assert.assertTrue(check(config3).booleanValue());
     }
 
 
@@ -157,6 +158,15 @@ public class Tc0015ConfigLoadFromFileTest extends TestCase {
         } catch (Exception e) {
             String message = e.getMessage();
             Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
+        }
+
+        try {
+            Properties properties = new Properties();
+            properties.put("maxActive", "oooo");
+            config1.loadFromProperties(properties);
+        } catch (BeeObjectSourceConfigException e) {
+            String message = e.getMessage();
+            Assert.assertTrue(message != null && message.contains("Failed to convert value[oooo]to property type(maxActive:int)"));
         }
     }
 

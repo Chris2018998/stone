@@ -12,6 +12,7 @@ package org.stone.beecp.config;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.beecp.BeeDataSourceConfig;
+import org.stone.beecp.BeeDataSourceConfigException;
 
 import java.io.File;
 import java.net.URL;
@@ -127,6 +128,14 @@ public class Tc0015ConfigLoadFromFileTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Configuration properties can't be null or empty"));
         }
 
+        try {
+            Properties properties = new Properties();
+            properties.put("maxActive", "oooo");
+            config1.loadFromProperties(properties);
+        } catch (BeeDataSourceConfigException e) {
+            String message = e.getMessage();
+            Assert.assertTrue(message != null && message.contains("Failed to convert value[oooo]to property type(maxActive:int)"));
+        }
     }
 
     public void testOnLoadByFile() {
