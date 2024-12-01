@@ -716,16 +716,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     //print check passed configuration
-    private void printConfiguration(BeeObjectSourceConfig config) {
-        String poolName = config.poolName;
-        List<String> exclusionList = config.configPrintExclusionList;
+    private void printConfiguration(BeeObjectSourceConfig checkedConfig) {
+        String poolName = checkedConfig.poolName;
+        List<String> exclusionList = checkedConfig.configPrintExclusionList;
         CommonLog.info("................................................BeeOP({})configuration[start]................................................", poolName);
 
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers())) continue;
                 String fieldName = field.getName();
-                boolean infoPrint = exclusionList == null || exclusionList.isEmpty() || !exclusionList.contains(fieldName);
+                boolean infoPrint = exclusionList == null || !exclusionList.contains(fieldName);
 
                 switch (fieldName) {
                     case CONFIG_OBJECT_INTERFACES: {
@@ -759,10 +759,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                     case CONFIG_FACTORY_PROP: {
                         if (!this.factoryProperties.isEmpty()) {
                             if (infoPrint) {
-                                for (Map.Entry<String, Object> entry : config.factoryProperties.entrySet())
+                                for (Map.Entry<String, Object> entry : checkedConfig.factoryProperties.entrySet())
                                     CommonLog.info("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
-                                for (Map.Entry<String, Object> entry : config.factoryProperties.entrySet())
+                                for (Map.Entry<String, Object> entry : checkedConfig.factoryProperties.entrySet())
                                     CommonLog.debug("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
@@ -772,9 +772,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                         break;
                     default:
                         if (infoPrint)
-                            CommonLog.info("BeeOP({}).{}={}", poolName, fieldName, field.get(config));
+                            CommonLog.info("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            CommonLog.debug("BeeOP({}).{}={}", poolName, fieldName, field.get(config));
+                            CommonLog.debug("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
