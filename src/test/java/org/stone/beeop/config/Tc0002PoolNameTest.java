@@ -32,7 +32,6 @@ public class Tc0002PoolNameTest extends TestCase {
     }
 
     public void testOnGeneration() {
-
         BeeObjectSourceConfig config = new BeeObjectSourceConfig();
         config.setObjectFactoryClass(org.stone.beeop.objects.JavaBookFactory.class);
 
