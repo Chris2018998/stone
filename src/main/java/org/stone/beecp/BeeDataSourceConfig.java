@@ -50,6 +50,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
     //a map store value of putted items,which are injected to a connection factory or a datasource when pool initializes,default is empty
     private final Map<String, Object> connectProperties = new HashMap<>();
+    //a skip list on configuration info-print,original items are copied from default skip list,refer to {@code DefaultExclusionList}
+    private final List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
     //jdbc username link to a database,default is null
     private String username;
     //jdbc password link to a database,default is null
@@ -70,14 +72,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
     //max permit size of pool semaphore,its original value is calculated with an expression
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
-
     //milliseconds: max wait time to get a connection for a borrower in pool,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8L);
     //milliseconds: max idle time of un-borrowed connections,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3L);
     //milliseconds: max inactive time of borrowed connections,which can be recycled by force,default is zero
     private long holdTimeout;
-
     //a test sql to validate connection whether alive
     private String aliveTestSql = "SELECT 1";
     //seconds: max wait time to get alive test result from connections,default is 3 seconds.
@@ -94,7 +94,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private List<Integer> sqlExceptionCodeList;
     //a state list for eviction check on sql exceptions
     private List<String> sqlExceptionStateList;
-
     //an initial value of catalog property on new connections,refer to {@code Connection.setCatalog(String)}
     private String defaultCatalog;
     //an initial value of schema property on new connections,refer to {@code Connection.setSchema(String)}
@@ -107,7 +106,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private Integer defaultTransactionIsolationCode;
     //a name of a transaction isolation code,which is set to {@code defaultTransactionIsolationCode} on pool initialization
     private String defaultTransactionIsolationName;
-
     //an indicator to use thread local cache or not(set false to support virtual threads)
     private boolean enableThreadLocal = true;
     //an indicator to set initial value to catalog property after connections are created
@@ -120,14 +118,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private boolean enableDefaultOnAutoCommit = true;
     //an indicator to set initial value to transactionIsolation property after connections are created
     private boolean enableDefaultOnTransactionIsolation = true;
-
     //an indicator that set a dirty flag of schema property to connection and ignore change when call setSchema(String) method on connection
     //this can be used to support some special drivers to recovery schema after transaction end (for example:PG driver)
     private boolean forceDirtyOnSchemaAfterSet;
     //an indicator that set a dirty flag of catalog property to connection and ignore change when call setCatalog(String) method on connection
     //this can be used to support some special drivers to recovery catalog after transaction end (for example:PG driver)
     private boolean forceDirtyOnCatalogAfterSet;
-
     /**
      * connection factory class,which must be implement one of the below four interfaces
      * 1: <class>RawConnectionFactory</class>
@@ -141,7 +137,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private Class<?> connectionFactoryClass;
     //connection factory class name
     private String connectionFactoryClassName;
-
     /**
      * connections eviction check on thrown sql exceptions by customization
      * eviction check priority logic
@@ -154,7 +149,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private Class<? extends BeeConnectionPredicate> evictPredicateClass;
     //eviction predicate class name
     private String evictPredicateClassName;
-
     /**
      * A short lifecycle object and used to decode jdbc link info(url,username,password)in pool initialization check
      */
@@ -164,16 +158,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private Class<? extends BeeJdbcLinkInfoDecoder> jdbcLinkInfoDecoderClass;
     //decoder class name
     private String jdbcLinkInfoDecoderClassName;
-
     //enable indicator to register configuration and pool to Jmx,default is false
     private boolean enableJmx;
     //enable indicator to print pool runtime log,default is false
     private boolean printRuntimeLog;
     //enable indicator to print configuration items on pool initialization,default is false
     private boolean printConfigInfo;
-    //a skip list on configuration info-print,original items are copied from default skip list,refer to {@code DefaultExclusionList}
-    private List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
-
     //pool implementation class name,if not be set,a default implementation applied in bee datasource
     private String poolImplementClassName = FastConnectionPool.class.getName();
 
@@ -844,7 +834,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 fieldName = field.getName();
                 switch (fieldName) {
                     case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
-                        config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
+                        if (configPrintExclusionList.isEmpty())
+                            config.configPrintExclusionList.clear();
+                        else
+                            config.configPrintExclusionList.addAll(configPrintExclusionList);
                         break;
                     case CONFIG_CONNECT_PROP: //copy 'connectProperties'
                         config.connectProperties.putAll(connectProperties);
@@ -1051,35 +1044,34 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //print check passed configuration
-    private void printConfiguration(BeeDataSourceConfig config) {
-        String poolName = config.poolName;
-        List<String> exclusionList = config.configPrintExclusionList;
+    private void printConfiguration(BeeDataSourceConfig checkedConfig) {
+        String poolName = checkedConfig.poolName;
         CommonLog.info("................................................BeeCP({})configuration[start]................................................", poolName);
         try {
             for (Field field : BeeDataSourceConfig.class.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers())) continue;
 
                 String fieldName = field.getName();
-                boolean infoPrint = exclusionList.isEmpty() || !exclusionList.contains(fieldName);
+                boolean infoPrint = !checkedConfig.configPrintExclusionList.contains(fieldName);
                 switch (fieldName) {
                     case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
                         break;
                     case CONFIG_CONNECT_PROP: //copy 'connectProperties'
                         if (!connectProperties.isEmpty()) {
                             if (infoPrint) {
-                                for (Map.Entry<String, Object> entry : config.connectProperties.entrySet())
+                                for (Map.Entry<String, Object> entry : checkedConfig.connectProperties.entrySet())
                                     CommonLog.info("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
-                                for (Map.Entry<String, Object> entry : config.connectProperties.entrySet())
+                                for (Map.Entry<String, Object> entry : checkedConfig.connectProperties.entrySet())
                                     CommonLog.debug("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;
                     default:
                         if (infoPrint)
-                            CommonLog.info("BeeCP({}).{}={}", poolName, fieldName, field.get(config));
+                            CommonLog.info("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            CommonLog.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(config));
+                            CommonLog.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
