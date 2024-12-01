@@ -18,6 +18,7 @@ import org.stone.tools.exception.BeanException;
 import javax.sql.DataSource;
 import javax.sql.XADataSource;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -723,10 +724,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             configProperties.load(stream);
 
             this.loadFromProperties(configProperties);
-        } catch (BeeDataSourceConfigException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new BeeDataSourceConfigException("Failed to load configuration properties file:" + file, e);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to load configuration file:" + file, e);
         }
     }
 

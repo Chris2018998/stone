@@ -14,6 +14,7 @@ import org.stone.tools.CommonUtil;
 import org.stone.tools.exception.BeanException;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -479,10 +480,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             Properties configProperties = new Properties();
             configProperties.load(stream);
             this.loadFromProperties(configProperties);
-        } catch (BeeObjectSourceConfigException e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new BeeObjectSourceConfigException("Failed to load configuration properties file:" + file, e);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to load configuration file:" + file, e);
         }
     }
 
