@@ -9,22 +9,5 @@
  */
 package org.stone.beeop.objects;
 
-/**
- * Book interface
- *
- * @author Chris Liao
- */
-
-public interface Book {
-
-    String getName();
-
-    String getTitle();
-
-    String getAuthor();
-
-    String getLanguage();
-
-    Double getPrice();
-
+public interface BookMarket {
 }

@@ -9,22 +9,7 @@
  */
 package org.stone.beeop.objects;
 
-/**
- * Book interface
- *
- * @author Chris Liao
- */
+import org.stone.beeop.BeeObjectMethodFilter;
 
-public interface Book {
-
-    String getName();
-
-    String getTitle();
-
-    String getAuthor();
-
-    String getLanguage();
-
-    Double getPrice();
-
+public abstract class JavaBookMethodFilter2 implements BeeObjectMethodFilter {
 }

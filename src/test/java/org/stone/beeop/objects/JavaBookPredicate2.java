@@ -9,22 +9,14 @@
  */
 package org.stone.beeop.objects;
 
+import org.stone.beeop.BeeObjectPredicate;
+
 /**
- * Book interface
+ * Java Book Predicate
  *
  * @author Chris Liao
  */
 
-public interface Book {
-
-    String getName();
-
-    String getTitle();
-
-    String getAuthor();
-
-    String getLanguage();
-
-    Double getPrice();
+public abstract class JavaBookPredicate2 implements BeeObjectPredicate {
 
 }

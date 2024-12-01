@@ -10,21 +10,14 @@
 package org.stone.beeop.objects;
 
 /**
- * Book interface
+ * Java Book Factory
  *
  * @author Chris Liao
  */
 
-public interface Book {
+public class JavaBookFactory2 extends JavaBookFactory {
 
-    String getName();
-
-    String getTitle();
-
-    String getAuthor();
-
-    String getLanguage();
-
-    Double getPrice();
-
+    public JavaBookFactory2() {
+        this.defaultKey = null;
+    }
 }

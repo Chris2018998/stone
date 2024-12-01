@@ -9,22 +9,13 @@
  */
 package org.stone.beeop.objects;
 
+import org.stone.beeop.BeeObjectFactory;
+
 /**
- * Book interface
+ * Java Book Factory
  *
  * @author Chris Liao
  */
 
-public interface Book {
-
-    String getName();
-
-    String getTitle();
-
-    String getAuthor();
-
-    String getLanguage();
-
-    Double getPrice();
-
+public abstract class JavaBookFactory3 implements BeeObjectFactory {
 }
