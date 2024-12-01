@@ -578,6 +578,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         if (methodFilter != null) checkedConfig.objectMethodFilter = methodFilter;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
+        if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
         return checkedConfig;
     }
 
@@ -586,24 +587,23 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         String fieldName = "";
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
-                if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers()))
-                    continue;
+                if (Modifier.isStatic(field.getModifiers())) continue;
 
                 fieldName = field.getName();
                 switch (fieldName) {
-                    case "objectInterfaces":
-                        if (objectInterfaces != null)
+                    case CONFIG_OBJECT_INTERFACES:
+                        if (objectInterfaces != null && objectInterfaces.length > 0)
                             config.objectInterfaces = objectInterfaces.clone();
                         break;
-                    case "objectInterfaceNames":
-                        if (objectInterfaceNames != null)
+                    case CONFIG_OBJECT_INTERFACE_NAMES:
+                        if (objectInterfaceNames != null && objectInterfaceNames.length > 0)
                             config.objectInterfaceNames = objectInterfaceNames.clone();
                         break;
-                    case "factoryProperties":
+                    case CONFIG_FACTORY_PROP:
                         config.factoryProperties.putAll(factoryProperties);
                         break;
-                    case "configPrintExclusionList":
-                        if (configPrintExclusionList != null)
+                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST:
+                        if (configPrintExclusionList != null && !configPrintExclusionList.isEmpty())
                             config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
                         break;
                     default: //other config items
@@ -613,50 +613,30 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         } catch (Throwable e) {
             throw new BeeObjectSourceConfigException("Failed to filled value on field[" + fieldName + "]", e);
         }
-
-        //2:copy 'objectInterfaces'
-        Class<?>[] interfaces = this.objectInterfaces == null ? null : new Class[this.objectInterfaces.length];
-        if (interfaces != null) {
-            System.arraycopy(this.objectInterfaces, 0, interfaces, 0, interfaces.length);
-            for (int i = 0, l = interfaces.length; i < l; i++)
-                if (this.printConfigInfo)
-                    CommonLog.info("{}.objectInterfaces[{}]={}", this.poolName, i, interfaces[i]);
-            config.objectInterfaces = interfaces;
-        }
-
-        //3:copy 'objectInterfaceNames'
-        String[] interfaceNames = (this.objectInterfaceNames == null) ? null : new String[this.objectInterfaceNames.length];
-        if (interfaceNames != null) {
-            System.arraycopy(this.objectInterfaceNames, 0, interfaceNames, 0, interfaceNames.length);
-            for (int i = 0, l = this.objectInterfaceNames.length; i < l; i++)
-                if (this.printConfigInfo)
-                    CommonLog.info("{}.objectInterfaceNames[{}]={}", this.poolName, i, this.objectInterfaceNames[i]);
-            config.objectInterfaceNames = interfaceNames;
-        }
     }
 
     private Class<?>[] loadObjectInterfaces() throws BeeObjectSourceConfigException {
         //1: if objectInterfaces field value is not null,then check it and return it
-        if (objectInterfaces != null) {
+        if (objectInterfaces != null && objectInterfaces.length > 0) {
             for (int i = 0, l = objectInterfaces.length; i < l; i++) {
                 if (objectInterfaces[i] == null)
-                    throw new BeeObjectSourceConfigException("interfaces array[" + i + "]is null");
+                    throw new BeeObjectSourceConfigException("Object interfaces[" + i + "]is null");
                 if (!objectInterfaces[i].isInterface())
-                    throw new BeeObjectSourceConfigException("interfaces array[" + i + "]is not valid interface");
+                    throw new BeeObjectSourceConfigException("Object interfaces[" + i + "]is not a valid interface");
             }
             return objectInterfaces.clone();
         }
 
         //2: try to load interfaces by names
-        if (this.objectInterfaceNames != null) {
+        if (this.objectInterfaceNames != null && objectInterfaceNames.length > 0) {
             Class<?>[] objectInterfaces = new Class[this.objectInterfaceNames.length];
             for (int i = 0; i < this.objectInterfaceNames.length; i++) {
                 try {
                     if (isBlank(this.objectInterfaceNames[i]))
-                        throw new BeeObjectSourceConfigException("objectInterfaceNames[" + i + "]is empty or null");
+                        throw new BeeObjectSourceConfigException("Object interface class names[" + i + "]is empty or null");
                     objectInterfaces[i] = Class.forName(this.objectInterfaceNames[i]);
                 } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Not found objectInterfaceNames[" + i + "]:" + this.objectInterfaceNames[i], e);
+                    throw new BeeObjectSourceConfigException("Not found interface class with class names[" + i + "]", e);
                 }
             }
             return objectInterfaces;
@@ -676,8 +656,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                 return (BeeObjectMethodFilter) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object filter class:" + objectMethodFilterClassName);
-            } catch (BeeObjectSourceConfigException e) {
-                throw e;
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + filterClass, e);
             }
@@ -698,8 +676,6 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                 rawObjectFactory = (BeeObjectFactory) createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object factory class:" + objectFactoryClassName, e);
-            } catch (BeeObjectSourceConfigException e) {
-                throw e;
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Failed to create object factory by class:" + factoryClass, e);
             }
@@ -731,14 +707,80 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
                 predicationClass = objectPredicateClass != null ? objectPredicateClass : Class.forName(objectPredicateClassName);
                 return (BeeObjectPredicate) createClassInstance(predicationClass, BeeObjectPredicate.class, "object predicate");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found predicate class[" + objectPredicateClassName + "]", e);
-            } catch (BeeObjectSourceConfigException e) {
-                throw e;
+                throw new BeeObjectSourceConfigException("Not found predicate class:" + objectPredicateClassName, e);
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create predicate instance with class[" + predicationClass + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create predicate instance with class:" + predicationClass, e);
             }
         }
         return null;
+    }
+
+    //print check passed configuration
+    private void printConfiguration(BeeObjectSourceConfig config) {
+        String poolName = config.poolName;
+        List<String> exclusionList = config.configPrintExclusionList;
+        CommonLog.info("................................................BeeOP({})configuration[start]................................................", poolName);
+
+        try {
+            for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
+                if (Modifier.isStatic(field.getModifiers())) continue;
+                String fieldName = field.getName();
+                boolean infoPrint = exclusionList == null || exclusionList.isEmpty() || !exclusionList.contains(fieldName);
+
+                switch (fieldName) {
+                    case CONFIG_OBJECT_INTERFACES: {
+                        if (objectInterfaces != null && objectInterfaces.length > 0) {
+                            StringBuilder interfacesClassBuf = new StringBuilder(20);
+                            for (Class<?> clazz : objectInterfaces) {
+                                if (interfacesClassBuf.length() > 0) interfacesClassBuf.append(",");
+                                interfacesClassBuf.append(clazz);
+                            }
+                            if (infoPrint)
+                                CommonLog.info("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
+                            else
+                                CommonLog.debug("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
+                        }
+                        break;
+                    }
+                    case CONFIG_OBJECT_INTERFACE_NAMES: {
+                        if (objectInterfaceNames != null && objectInterfaceNames.length > 0) {
+                            StringBuilder interfaceNameBuf = new StringBuilder(20);
+                            for (String name : objectInterfaceNames) {
+                                if (interfaceNameBuf.length() > 0) interfaceNameBuf.append(",");
+                                interfaceNameBuf.append(name);
+                            }
+                            if (infoPrint)
+                                CommonLog.info("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
+                            else
+                                CommonLog.debug("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
+                        }
+                        break;
+                    }
+                    case CONFIG_FACTORY_PROP: {
+                        if (!this.factoryProperties.isEmpty()) {
+                            if (infoPrint) {
+                                for (Map.Entry<String, Object> entry : config.factoryProperties.entrySet())
+                                    CommonLog.info("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                            } else {
+                                for (Map.Entry<String, Object> entry : config.factoryProperties.entrySet())
+                                    CommonLog.debug("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                            }
+                        }
+                        break;
+                    }
+                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST:
+                        break;
+                    default:
+                        if (infoPrint)
+                            CommonLog.info("BeeOP({}).{}={}", poolName, fieldName, field.get(config));
+                        else
+                            CommonLog.debug("BeeOP({}).{}={}", poolName, fieldName, field.get(config));
+                }
+            }
+        } catch (Throwable e) {
+            CommonLog.warn("BeeOP({})failed to print configuration", poolName, e);
+        }
+        CommonLog.info("................................................BeeOP({})configuration[end]................................................", poolName);
     }
 }
 
