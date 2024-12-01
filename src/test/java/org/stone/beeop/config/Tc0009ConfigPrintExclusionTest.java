@@ -13,7 +13,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.base.TestUtil;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.objects.JavaBookFactory;
 
 import java.util.Properties;
 
@@ -23,7 +22,7 @@ import java.util.Properties;
 public class Tc0009ConfigPrintExclusionTest extends TestCase {
 
     public void testOnSetAndGet() throws Exception {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         Assert.assertNull(TestUtil.getFieldValue(config, "configPrintExclusionList"));
         Assert.assertFalse(config.existConfigPrintExclusion("initialSize"));
         Assert.assertFalse(config.removeConfigPrintExclusion("initialSize"));
@@ -47,7 +46,7 @@ public class Tc0009ConfigPrintExclusionTest extends TestCase {
         Properties prop = new Properties();
         prop.put("configPrintExclusionList", "username,password,poolName");
 
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         config.loadFromProperties(prop);
         Assert.assertTrue(config.existConfigPrintExclusion("username"));
         Assert.assertTrue(config.existConfigPrintExclusion("password"));
@@ -55,13 +54,11 @@ public class Tc0009ConfigPrintExclusionTest extends TestCase {
     }
 
     public void testOnConfigCopy() throws Exception {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig config2 = config.check();
         Assert.assertNull(TestUtil.getFieldValue(config2, "configPrintExclusionList"));
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.addConfigPrintExclusion("poolName");
         config2 = config.check();
         Assert.assertNotNull(TestUtil.getFieldValue(config2, "configPrintExclusionList"));

@@ -14,7 +14,7 @@ import org.junit.Assert;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
 import org.stone.beeop.objects.Book;
-import org.stone.beeop.objects.JavaBookFactory;
+import org.stone.beeop.objects.BookMarket;
 
 import java.util.Properties;
 
@@ -24,7 +24,7 @@ import java.util.Properties;
 public class Tc0005ObjectInterfacesTest extends TestCase {
 
     public void testOnSetGet() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         //object interfaces
         Class<?>[] interfaces = new Class[]{Book.class};
         String[] interfaceNames = new String[]{Book.class.getName()};
@@ -40,7 +40,7 @@ public class Tc0005ObjectInterfacesTest extends TestCase {
         Properties prop = new Properties();
         prop.put("objectInterfaces", Book.class.getName());
         prop.put("objectInterfaceNames", Book.class.getName());
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         config.loadFromProperties(prop);
         for (String name : config.getObjectInterfaceNames())
             Assert.assertEquals(name, Book.class.getName());
@@ -58,32 +58,32 @@ public class Tc0005ObjectInterfacesTest extends TestCase {
     }
 
     public void testOnCheck() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig config2 = config.check();
         Assert.assertNull(config2.getObjectInterfaces());
         Assert.assertNull(config2.getObjectInterfaceNames());
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaces(new Class[0]);
         config2 = config.check();
         Assert.assertNull(config2.getObjectInterfaces());
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaceNames(new String[0]);
         config2 = config.check();
         Assert.assertNull(config2.getObjectInterfaces());
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaces(new Class[]{Book.class});
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectInterfaces());
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+
+        config=OsConfigFactory.createDefault();
         config.setObjectInterfaceNames(new String[]{Book.class.getName()});
+        config2 = config.check();
+        Assert.assertNotNull(config2.getObjectInterfaces());
+        config=OsConfigFactory.createDefault();
+        config.setObjectInterfaceNames(new String[]{Book.class.getName(), BookMarket.class.getName()});
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectInterfaces());
 
@@ -96,8 +96,7 @@ public class Tc0005ObjectInterfacesTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Object interfaces[0]is null"));
         }
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaces(new Class[]{String.class});
         try {
             config.check();
@@ -107,8 +106,7 @@ public class Tc0005ObjectInterfacesTest extends TestCase {
         }
 
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaceNames(new String[]{null});
         try {
             config.check();
@@ -117,8 +115,7 @@ public class Tc0005ObjectInterfacesTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Object interface class names[0]is empty or null"));
         }
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaceNames(new String[]{Book.class.getName() + "Test"});
         try {
             config.check();

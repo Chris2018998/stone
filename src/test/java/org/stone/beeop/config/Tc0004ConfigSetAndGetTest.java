@@ -21,8 +21,7 @@ import org.stone.beeop.objects.JavaBookFactory;
 public class Tc0004ConfigSetAndGetTest extends TestCase {
 
     public void testOnSetAndGet() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         //fairMode
         Assert.assertFalse(config.isFairMode());
         config.setFairMode(true);

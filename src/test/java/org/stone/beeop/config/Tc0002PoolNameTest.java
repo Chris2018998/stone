@@ -22,7 +22,7 @@ import java.util.Properties;
 public class Tc0002PoolNameTest extends TestCase {
 
     public void testOnSetGet() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
 
         config.setPoolName(null);
         Assert.assertNull(config.getPoolName());
@@ -32,9 +32,7 @@ public class Tc0002PoolNameTest extends TestCase {
     }
 
     public void testOnGeneration() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactoryClass(org.stone.beeop.objects.JavaBookFactory.class);
-
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig checkConfig = config.check();
         Assert.assertTrue(checkConfig.getPoolName().contains("KeyPool-"));
 
@@ -44,7 +42,7 @@ public class Tc0002PoolNameTest extends TestCase {
     }
 
     public void testInProperties() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         Properties prop = new Properties();
 
         prop.setProperty("poolName", "pool1");

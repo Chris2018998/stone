@@ -56,21 +56,21 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
         Assert.assertTrue(check(new BeeObjectSourceConfig(getClassPathFileAbsolutePath(filename))).booleanValue());//from file
         Assert.assertTrue(check(new BeeObjectSourceConfig(loadPropertiesFromClassPathFile(filename))).booleanValue());//from properties
 
-        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
         config1.loadFromPropertiesFile(classFilename);
         Assert.assertTrue(check(config1).booleanValue());
 
-        BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config2 = OsConfigFactory.createEmpty();
         config2.loadFromPropertiesFile(getClassPathFileAbsolutePath(filename));
         Assert.assertTrue(check(config2).booleanValue());
 
-        BeeObjectSourceConfig config3 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config3 = OsConfigFactory.createEmpty();
         config3.loadFromProperties(loadPropertiesFromClassPathFile(filename));
         Assert.assertTrue(check(config3).booleanValue());
     }
 
     public void testOnLoadByFileName() throws Exception {
-        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
         try {
             config1.loadFromPropertiesFile("");
         } catch (Exception e) {
@@ -113,7 +113,7 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
     }
 
     public void testOnLoadByFile() {
-        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
 
         try {//null file test
             config1.loadFromPropertiesFile((File) null);
@@ -163,7 +163,7 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
     }
 
     public void testOnLoadProperties() {
-        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
         try {
             config1.loadFromProperties(null);
         } catch (Exception e) {

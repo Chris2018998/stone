@@ -15,7 +15,6 @@ import org.stone.base.StoneLogAppender;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.objects.Book;
 import org.stone.beeop.objects.BookMarket;
-import org.stone.beeop.objects.JavaBookFactory;
 
 import static org.stone.base.TestUtil.getStoneLogAppender;
 
@@ -24,10 +23,9 @@ import static org.stone.base.TestUtil.getStoneLogAppender;
  */
 public class Tc0010ConfigInfoLogPrintTest extends TestCase {
 
-    public void testOnConfigPrintInd() throws Exception {
+    public void testOnConfigPrintInd() {
         StoneLogAppender logAppender = getStoneLogAppender();
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
 
         //situation1: not print config
         config.setPrintConfigInfo(false);//test point
@@ -44,10 +42,9 @@ public class Tc0010ConfigInfoLogPrintTest extends TestCase {
         Assert.assertFalse(logs.isEmpty());
     }
 
-    public void testOnExclusionConfigItems() throws Exception {
+    public void testOnExclusionConfigItems() {
         StoneLogAppender logAppender = getStoneLogAppender();
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         config.setPrintConfigInfo(true);
 
         //situation1:
@@ -56,13 +53,15 @@ public class Tc0010ConfigInfoLogPrintTest extends TestCase {
         String logs = logAppender.endCollectedStoneLog();
         Assert.assertTrue(logs.contains(".initialSize"));
         Assert.assertTrue(logs.contains(".maxObjectKeySize"));
+
         config.addConfigPrintExclusion("aliveTestTimeout");
+        config.clearAllConfigPrintExclusion();
         logAppender.beginCollectStoneLog();
         config.check();
         logs = logAppender.endCollectedStoneLog();
         Assert.assertTrue(logs.contains(".initialSize"));
         Assert.assertTrue(logs.contains(".maxObjectKeySize"));
-        config.clearAllConfigPrintExclusion();
+
         logAppender.beginCollectStoneLog();
         config.check();
         logs = logAppender.endCollectedStoneLog();

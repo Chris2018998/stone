@@ -13,7 +13,6 @@ import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
-import org.stone.beeop.objects.JavaBookFactory;
 
 import static org.stone.tools.CommonUtil.NCPU;
 
@@ -23,7 +22,7 @@ import static org.stone.tools.CommonUtil.NCPU;
 public class Tc0003ObjectSizeTest extends TestCase {
 
     public void testOnSetAndGet() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
 
         config.setInitialSize(-1);
         config.setMaxActive(-1);
@@ -51,8 +50,7 @@ public class Tc0003ObjectSizeTest extends TestCase {
     }
 
     public void testOnErrorInitialSize() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
 
         config.setMaxActive(5);
         config.setInitialSize(10);

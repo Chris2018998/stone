@@ -27,7 +27,7 @@ import java.util.Properties;
 public class Tc0006ObjectFactoryTest extends TestCase {
 
     public void testOnAddProperty() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         config.addFactoryProperty(null, null);
         Assert.assertNull(config.getFactoryProperty(null));
         config.addFactoryProperty(null, "value");
@@ -39,7 +39,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
     }
 
     public void testOnRemoval() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         config.addFactoryProperty("prop1", "value1");
         Assert.assertEquals("value1", config.getFactoryProperty("prop1"));
         Assert.assertEquals("value1", config.removeFactoryProperty("prop1"));
@@ -48,7 +48,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
 
     //prop1=value&prop2=value2&prop3=value3
     public void testOnAddTextProperty1() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         config.addFactoryProperty("prop1=value1&prop2=value2&prop3=value3");
 
         Assert.assertEquals("value1", config.getFactoryProperty("prop1"));
@@ -58,7 +58,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
 
     //prop1:value&prop2:value2&prop3:value3
     public void testOnAddTextProperty2() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
         config.addFactoryProperty("prop1:value1&prop2:value2&prop3:value3&prop4:value4:value5");
 
         Assert.assertEquals("value1", config.getFactoryProperty("prop1"));
@@ -68,7 +68,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
     }
 
     public void testLoadFromProperties() {
-        BeeObjectSourceConfig config1 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
         Properties prop1 = new Properties();
         prop1.setProperty("factoryProperties", "prop1=value1&prop2=value2&prop3=value3");
         config1.loadFromProperties(prop1);
@@ -76,7 +76,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
         Assert.assertEquals("value2", config1.getFactoryProperty("prop2"));
         Assert.assertEquals("value3", config1.getFactoryProperty("prop3"));
 
-        BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config2 = OsConfigFactory.createEmpty();
         Properties prop2 = new Properties();
         prop2.setProperty("factoryProperties", "prop1:value1&prop2:value2&prop3:value3");
         config2.loadFromProperties(prop2);
@@ -84,7 +84,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
         Assert.assertEquals("value2", config2.getFactoryProperty("prop2"));
         Assert.assertEquals("value3", config2.getFactoryProperty("prop3"));
 
-        BeeObjectSourceConfig config3 = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig config3 = OsConfigFactory.createEmpty();
         Properties prop3 = new Properties();
         prop3.setProperty("factoryProperties.size", "3");
         prop3.setProperty("factoryProperties.1", "prop1=value1");
@@ -97,25 +97,23 @@ public class Tc0006ObjectFactoryTest extends TestCase {
     }
 
     public void testFactoryCreation() throws Exception {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+        BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig config2 = config.check();
         Assert.assertNotNull(config2.getObjectFactory());
         Assert.assertTrue(((Map) TestUtil.getFieldValue(config2, "factoryProperties")).isEmpty());
 
-        config = new BeeObjectSourceConfig();
+        config = OsConfigFactory.createDefault();
         config.addFactoryProperty("name", "Java");
-        config.setObjectFactoryClass(JavaBookFactory.class);
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectFactory());
         Assert.assertFalse(((Map) TestUtil.getFieldValue(config2, "factoryProperties")).isEmpty());
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
+        config = OsConfigFactory.createEmpty();
+        config.setObjectFactoryClass(JavaBookFactory.class);
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectFactory());
 
-        config = new BeeObjectSourceConfig();
+        config = OsConfigFactory.createEmpty();
         try {
             config.check();
         } catch (BeeObjectSourceConfigException e) {
@@ -123,7 +121,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Must provide one of config items[objectFactory,objectClassName,objectFactoryClassName"));
         }
 
-        config = new BeeObjectSourceConfig();
+        config = OsConfigFactory.createEmpty();
         config.setObjectFactoryClassName(JavaBookFactory2.class.getName());
         try {
             config.check();
@@ -132,7 +130,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Object factory must provide a non null default pooled key"));
         }
 
-        config = new BeeObjectSourceConfig();
+        config = OsConfigFactory.createEmpty();
         config.setObjectFactoryClassName(JavaBookFactory.class.getName() + "Test");
         try {
             config.check();
@@ -141,7 +139,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Not found object factory class:"));
         }
 
-        config = new BeeObjectSourceConfig();
+        config = OsConfigFactory.createEmpty();
         config.setObjectFactoryClassName(JavaBookFactory3.class.getName());
         try {
             config.check();
@@ -150,8 +148,7 @@ public class Tc0006ObjectFactoryTest extends TestCase {
             Assert.assertTrue(message != null && message.contains("Failed to create object factory by class:"));
         }
 
-        config = new BeeObjectSourceConfig();
-        config.setObjectFactoryClassName(JavaBookFactory.class.getName());
+        config = OsConfigFactory.createDefault();
         config.addFactoryProperty("price", "ABC");
         try {
             config.check();
