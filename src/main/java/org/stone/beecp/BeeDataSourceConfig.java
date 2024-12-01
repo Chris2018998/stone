@@ -843,17 +843,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
                 fieldName = field.getName();
                 switch (fieldName) {
-                    case "configPrintExclusionList": //copy 'exclusionConfigPrintList'
+                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
                         config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
                         break;
-                    case "connectProperties": //copy 'connectProperties'
+                    case CONFIG_CONNECT_PROP: //copy 'connectProperties'
                         config.connectProperties.putAll(connectProperties);
                         break;
-                    case "sqlExceptionCodeList": //copy 'sqlExceptionCodeList'
+                    case CONFIG_SQL_EXCEPTION_CODE: //copy 'sqlExceptionCodeList'
                         if (this.sqlExceptionCodeList != null && !sqlExceptionCodeList.isEmpty())
                             config.sqlExceptionCodeList = new ArrayList<>(sqlExceptionCodeList);
                         break;
-                    case "sqlExceptionStateList": //copy 'sqlExceptionStateList'
+                    case CONFIG_SQL_EXCEPTION_STATE: //copy 'sqlExceptionStateList'
                         if (this.sqlExceptionStateList != null && !sqlExceptionStateList.isEmpty())
                             config.sqlExceptionStateList = new ArrayList<>(sqlExceptionStateList);
                         break;
@@ -878,8 +878,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 return (BeeJdbcLinkInfoDecoder) createClassInstance(decoderClass, BeeJdbcLinkInfoDecoder.class, "jdbc link info decoder");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Failed to create jdbc link info decoder with class[" + jdbcLinkInfoDecoderClassName + "]", e);
-            } catch (BeeDataSourceConfigException e) {
-                throw e;
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create sql exception predication with class[" + decoderClass + "]", e);
             }
@@ -1044,8 +1042,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 return (BeeConnectionPredicate) createClassInstance(predicationClass, BeeConnectionPredicate.class, "sql exception predicate");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Not found sql exception predicate class[" + evictPredicateClassName + "]", e);
-            } catch (BeeDataSourceConfigException e) {
-                throw e;
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create sql exception predicate with class[" + predicationClass + "]", e);
             }
@@ -1061,25 +1057,29 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         CommonLog.info("................................................BeeCP({})configuration[start]................................................", poolName);
         try {
             for (Field field : BeeDataSourceConfig.class.getDeclaredFields()) {
-                String fieldName = field.getName();
                 if (Modifier.isStatic(field.getModifiers())) continue;
 
-                if (exclusionList.contains(fieldName)) {//debug print
-                    if ("connectProperties".equals(fieldName)) {
-                        for (Map.Entry<String, Object> entry : config.connectProperties.entrySet())
-                            CommonLog.debug("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
-                    } else {//other config items
-                        CommonLog.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(config));
-                    }
-                } else {//info print
-                    if ("connectProperties".equals(fieldName)) {
-                        for (Map.Entry<String, Object> entry : config.connectProperties.entrySet()) {
-                            if (!exclusionList.contains(entry.getKey()))
-                                CommonLog.info("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                String fieldName = field.getName();
+                boolean infoPrint = exclusionList.isEmpty() || !exclusionList.contains(fieldName);
+                switch (fieldName) {
+                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
+                        break;
+                    case CONFIG_CONNECT_PROP: //copy 'connectProperties'
+                        if (!connectProperties.isEmpty()) {
+                            if (infoPrint) {
+                                for (Map.Entry<String, Object> entry : config.connectProperties.entrySet())
+                                    CommonLog.info("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                            } else {
+                                for (Map.Entry<String, Object> entry : config.connectProperties.entrySet())
+                                    CommonLog.debug("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                            }
                         }
-                    } else {//other config items
-                        CommonLog.info("BeeCP({}).{}={}", poolName, fieldName, field.get(config));
-                    }
+                        break;
+                    default:
+                        if (infoPrint)
+                            CommonLog.info("BeeCP({}).{}={}", poolName, fieldName, field.get(config));
+                        else
+                            CommonLog.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(config));
                 }
             }
         } catch (Throwable e) {
