@@ -1,5 +1,17 @@
 stone changes
 
+Changes in 1.4.3
+[beecp]
+1: rename a configuration item(delayTimeForNextClear --> parkTimeForRetry)
+2: use try-with-resources on configuration file load
+3: remove some unnecessary exception catch
+4: improve structure of source code
+[beeop]
+1: rename a configuration item(delayTimeForNextClear --> parkTimeForRetry)
+2: use try-with-resources on configuration file load
+3: remove some unnecessary exception catch
+4: improve structure of source code
+
 Changes in 1.4.2
 [beecp]
 1: fix some code inspection issues scanned by IDEA
