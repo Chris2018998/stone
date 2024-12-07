@@ -56,6 +56,7 @@ public class Tc0091ConnectionTimeoutTest extends TestCase {
         BeeDataSourceConfig config = createDefault();
         config.setHoldTimeout(100L);// hold and not using connection;
         config.setTimerCheckInterval(500L);// two seconds interval
+        config.setParkTimeForRetry(0L);
 
         Connection con = null;
         FastConnectionPool pool = new FastConnectionPool();

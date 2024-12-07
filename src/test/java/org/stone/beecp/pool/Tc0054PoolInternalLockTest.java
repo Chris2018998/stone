@@ -31,6 +31,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         config.setInitialSize(0);
         config.setMaxActive(1);
         config.setBorrowSemaphoreSize(2);
+        config.setParkTimeForRetry(0L);
         config.setForceCloseUsingOnClear(true);
         config.setMaxWait(TimeUnit.SECONDS.toMillis(1L));
 
