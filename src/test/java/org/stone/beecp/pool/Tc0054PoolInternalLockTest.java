@@ -11,12 +11,14 @@ package org.stone.beecp.pool;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.objects.BorrowThread;
 import org.stone.beecp.objects.InterruptionAction;
 import org.stone.beecp.objects.MockNetBlockConnectionFactory;
 import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
+import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
@@ -104,17 +106,28 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         //1: create first borrow thread to get connection
         BorrowThread first = new BorrowThread(pool);
         first.start();
-        factory.getArrivalLatch().await();
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500L));
+        factory.getArrivalLatch().await();//first thread has entered <method>factory.create</method>
 
+        //2: create second thread to acquire read-lock of initialization
         BorrowThread second = new BorrowThread(pool);
         second.start();
 
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500L));
+        //3: loop to get locked count of read-lock util 1
+        InterruptionReentrantReadWriteLock initLock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
+        for (; ; ) {
+            if (initLock.getQueueLength() != 1) {//second thread in lock wait queue
+                LockSupport.parkNanos(5L);
+            } else {
+                break;
+            }
+        }
+
+        //4: create a mock thread to interrupt first thread in blocking
         new InterruptionAction(first).start();
+        //5: attempt to get connection in current thread
         second.join();
 
-        //2: attempt to get connection in current thread
+        //6: get failure exception from
         try {
             SQLException e = second.getFailureCause();
             Assert.assertTrue(e != null && e.getMessage().contains("Waited failed on pool lock for initialization ready on first connection by another"));
