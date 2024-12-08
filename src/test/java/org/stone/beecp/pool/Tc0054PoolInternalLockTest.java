@@ -17,25 +17,14 @@ import org.stone.beecp.objects.BorrowThread;
 import org.stone.beecp.objects.InterruptionAction;
 import org.stone.beecp.objects.MockNetBlockConnectionFactory;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
-import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 
 import java.sql.SQLException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
 public class Tc0054PoolInternalLockTest extends TestCase {
-    private static void blockingUtilExistWaiter(FastConnectionPool pool) throws Exception {
-        InterruptionReentrantReadWriteLock initLock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
-        for (; ; ) {
-            if (initLock.getQueueLength() != 1) {//second thread in lock wait queue
-                LockSupport.parkNanos(5L);
-            } else {
-                break;
-            }
-        }
-    }
 
     public void testWaitTimeout() throws Exception {
         BeeDataSourceConfig config = createDefault();
@@ -89,7 +78,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         second.start();
 
         //3: loop to wait util second thread has existed in lock wait queue
-        blockingUtilExistWaiter(pool);
+        TestUtil.blockUtilWaiter((ReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock"));
 
         //4: create a mock thread to interrupt first thread in blocking
         new InterruptionAction(second).start();
@@ -130,7 +119,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         second.start();
 
         //3: loop to wait util second thread has existed in lock wait queue
-        blockingUtilExistWaiter(pool);
+        TestUtil.blockUtilWaiter((ReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock"));
 
         //4: create a mock thread to interrupt first thread in blocking
         new InterruptionAction(first).start();

@@ -17,11 +17,10 @@ import org.stone.beecp.objects.BorrowThread;
 import org.stone.beecp.objects.InterruptionAction;
 import org.stone.beecp.objects.MockNetBlockConnectionFactory;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
-import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.sql.SQLException;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
@@ -75,14 +74,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
         second.start();
 
         //3: block current thread util second thread in wait queue of semaphore
-        InterruptionSemaphore semaphore = (InterruptionSemaphore) TestUtil.getFieldValue(pool, "semaphore");
-        for (; ; ) {
-            if (semaphore.getQueueLength() != 1) {//second thread in lock wait queue
-                LockSupport.parkNanos(5L);
-            } else {
-                break;
-            }
-        }
+        TestUtil.blockUtilWaiter((Semaphore) TestUtil.getFieldValue(pool, "semaphore"));
 
         //4: create a mock thread to interrupt first thread in blocking
         new InterruptionAction(second).start();

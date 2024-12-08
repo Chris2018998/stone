@@ -21,7 +21,6 @@ import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
@@ -94,14 +93,7 @@ public class Tc0055PoolWaitQueueTest extends TestCase {
         second.start();
 
         //3: attempt to get connection in current thread
-        ConcurrentLinkedQueue<?> waitQueue = (ConcurrentLinkedQueue) TestUtil.getFieldValue(pool, "waitQueue");
-        for (; ; ) {
-            if (waitQueue.isEmpty()) {//second thread in lock wait queue
-                LockSupport.parkNanos(5L);
-            } else {
-                break;
-            }
-        }
+        TestUtil.blockUtilWaiter((ConcurrentLinkedQueue) TestUtil.getFieldValue(pool, "waitQueue"));
 
         //4: create a mock thread to interrupt first thread in blocking
         new InterruptionAction(second).start();
