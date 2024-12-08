@@ -53,7 +53,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
 
         //1: create first borrow thread to get connection
         new BorrowThread(pool).start();
-        factory.getArrivalLatch().await();
+        factory.waitOnArrivalLatch();
 
         //2: attempt to get connection in current thread
         try {
@@ -82,7 +82,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
 
         //1: create first borrow thread to get connection
         new BorrowThread(pool).start();
-        factory.getArrivalLatch().await();
+        factory.waitOnArrivalLatch();
 
         //2: create second thread to acquire read-lock of initialization
         BorrowThread second = new BorrowThread(pool);
@@ -123,7 +123,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         //1: create first borrow thread to get connection
         BorrowThread first = new BorrowThread(pool);
         first.start();
-        factory.getArrivalLatch().await();//first thread has entered <method>factory.create</method>
+        factory.waitOnArrivalLatch();//first thread has entered <method>factory.create</method>
 
         //2: create second thread to acquire read-lock of initialization
         BorrowThread second = new BorrowThread(pool);

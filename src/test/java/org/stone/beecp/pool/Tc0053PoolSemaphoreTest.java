@@ -41,7 +41,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
 
         //1: create first borrow thread to get connection
         new BorrowThread(pool).start();
-        factory.getArrivalLatch().await();
+        factory.waitOnArrivalLatch();
 
         //2: attempt to get connection in current thread
         try {
@@ -68,7 +68,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
 
         //1: create first borrow thread to get connection
         new BorrowThread(pool).start();
-        factory.getArrivalLatch().await();
+        factory.waitOnArrivalLatch();
 
         //2: create second thread to acquire read-lock of initialization
         BorrowThread second = new BorrowThread(pool);
