@@ -112,7 +112,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         BorrowThread second = new BorrowThread(pool);
         second.start();
 
-        //3: loop to get locked count of read-lock util 1
+        //3: loop to wait util second thread has existed in lock wait queue
         InterruptionReentrantReadWriteLock initLock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
         for (; ; ) {
             if (initLock.getQueueLength() != 1) {//second thread in lock wait queue
