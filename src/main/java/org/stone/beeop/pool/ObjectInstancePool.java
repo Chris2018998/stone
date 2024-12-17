@@ -479,9 +479,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) tryCloseObjectHandle(handleInUsing);
                 }
-            } else if (state == OBJECT_CLOSED) {
-                p.onBeforeRemove(DESC_RM_CLOSED);
-                this.tryWakeupServantThread();
             }
         }
 
@@ -542,7 +539,6 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                     }
                 } else if (state == OBJECT_CLOSED) {
                     closedCount++;
-                    p.onBeforeRemove(removeReason);
                 }
             } // for
 
