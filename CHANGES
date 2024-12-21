@@ -1,5 +1,11 @@
 stone changes
 
+Changes in 1.4.4
+[beecp]
+1: fix null point exception when idle timeout scan
+[beeop]
+1: fix null point exception when idle timeout scan
+
 Changes in 1.4.3
 [beecp]
 1: rename a configuration item(delayTimeForNextClear --> parkTimeForRetry)

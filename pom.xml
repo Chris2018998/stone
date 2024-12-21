@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>1.4.3</version>
+    <version>1.4.4</version>
     <name>stone</name>
     <url>https://www.github.com/Chris2018998/stone</url>
     <description>Java Tools Suite</description>
@@ -132,7 +132,7 @@
                     <skipTests>false</skipTests>
                     <runOrder>alphabetical</runOrder>
                     <testFailureIgnore>true</testFailureIgnore>
-                    <skipAfterFailureCount>1</skipAfterFailureCount>
+                    <skipAfterFailureCount>0</skipAfterFailureCount>
                     <includes>
                         <!-- beecp cases -->
                         <include>org/stone/beecp/config/*Test.java</include>
@@ -142,6 +142,7 @@
 
                         <!-- beeop cases -->
                         <include>org/stone/beeop/config/*Test.java</include>
+                        <include>org/stone/beeop/objectsource/*Test.java</include>
 
                     </includes>
                 </configuration>
