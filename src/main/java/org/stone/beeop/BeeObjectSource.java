@@ -32,7 +32,7 @@ import static org.stone.tools.BeanUtil.createClassInstance;
 public final class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private long maxWaitNanos = SECONDS.toNanos(8);//default vale equals same item in config
+    private long maxWaitNanos = SECONDS.toNanos(8L);//default vale equals same item in config
     private BeeKeyedObjectPool pool;
     private boolean ready;
     private Exception cause;
