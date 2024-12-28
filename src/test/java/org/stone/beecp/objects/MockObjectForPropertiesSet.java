@@ -48,6 +48,7 @@ public class MockObjectForPropertiesSet {
 
     private String[]hosts;
     private int[]ports;
+    private char[]passwordChars;
 
     public Number getNullTxt() {
         return nullTxt;
@@ -280,5 +281,13 @@ public class MockObjectForPropertiesSet {
 
     public void setPorts(int[] ports) {
         this.ports = ports;
+    }
+
+    public char[] getPasswordChars() {
+        return passwordChars;
+    }
+
+    public void setPasswordChars(char[] passwordChars) {
+        this.passwordChars = passwordChars;
     }
 }
