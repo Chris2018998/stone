@@ -46,6 +46,9 @@ public class MockObjectForPropertiesSet {
     private Map<?, ?> map;
     private String URL;
 
+    private String[]hosts;
+    private int[]ports;
+
     public Number getNullTxt() {
         return nullTxt;
     }
@@ -53,7 +56,6 @@ public class MockObjectForPropertiesSet {
     public void setNullTxt(Number nullTxt) {
         this.nullTxt = nullTxt;
     }
-
 
     public String getString() {
         return string;
@@ -262,5 +264,21 @@ public class MockObjectForPropertiesSet {
 
     public void setURL(String URL) {
         this.URL = URL;
+    }
+
+    public String[] getHosts() {
+        return hosts;
+    }
+
+    public void setHosts(String[] hosts) {
+        this.hosts = hosts;
+    }
+
+    public int[] getPorts() {
+        return ports;
+    }
+
+    public void setPorts(int[] ports) {
+        this.ports = ports;
     }
 }
