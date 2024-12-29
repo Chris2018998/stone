@@ -17,7 +17,7 @@ Stone is a small Java toolkit that integrates four lightweight independent pools
 
 ## 🌸BeeCP
 
-A lightweight JDBC connection pool,its Jar file only 133KB and its techology highlights: caching single connection, non moving waiting, fixed length array 
+A lightweight JDBC connection pool,its techology highlights: caching single connection, non moving waiting, fixed length array 
 
 [More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md)
  
