@@ -2,13 +2,9 @@
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 <a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
 
-## 🍑 简 介
+Stone is a small Java toolkit that integrates four lightweight independent pools
 
-Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它们彼此独立，互不依赖。
-
-![图片](https://github.com/Chris2018998/stone/assets/32663325/25f3cf51-c479-4218-9e02-bbe96ea1ab4f)
-
-## :arrow_down: Maven坐标 (Java8或更高)
+## :arrow_down: Maven artifact (Java8 and Higher)
 
 ```xml
 
@@ -19,30 +15,29 @@ Stone, 一款小型Java工具包，它整合了4个轻量级J2ee组件池，它�
 </dependency>
 ```
 
-## 🐝beecp连接池🌸
+## 🐝BeeCP
 
-一款简单易用的JDBC连接池，具有性能高，代码轻，稳定好的特点；它支持多种参数灵活设置，适置多种主流据库驱动；健壮性好以及良好接口扩展性;
-产品亮点：无锁应用，单点缓存，非移动等待，Transfer队列复用
+A lightweight JDBC connection pool,its Jar file only 133KB and its techology highlights: caching single connection, non moving waiting, fixed length array 
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_cn.md">点击了解更多详情</a>
+[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md)
+ 
+## 🐝BeeOP
 
-## 🐝beeop对象池🌷
+A lightweight Java object pool, it has same techology highlights to BeeCP
 
-一款小型Java对象池组件，具有连接池同等优势和技术特点
+[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md)
+ 
+## 🐝BeeTP
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_cn.md">点击了解更多详情</a>
-
-## 🐝beetp任务池🪷
-
-一款小型任务调度组件，同时支持三种任务类型：单次任务，定时任务，聚合任务，整体功能类似：ThreadPoolExecutor +
+A small task scheduling component that supports three types of tasks simultaneously: single task, scheduled task, and aggregated task, with similar overall functionality：ThreadPoolExecutor +
 ScheduledThreadPoolExecutor + ForkJoinPool
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beetp_readme_cn.md">点击了解更多详情</a>
+[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beetp_readme_eng.md)
 
-## ☀️shine等待池🌻
+## ☀️shine
 
-一款小型线程同步池组件，功效类似JUC包中的AQS微框架
+A small thread synchronization pool component with similar functionality to the AQS microframet in the JUC package
 
-<a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_cn.md">点击了解更多详情</a>
+[More Detail](a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md)
 
 
