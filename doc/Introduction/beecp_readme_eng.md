@@ -33,9 +33,9 @@ Java6(deprecated)
 ---
 **Highlight Features**
 
-* Provide interruption for blocking in pool
-* Support Pool clean and pool reinitalize
-* Support configuration properties file
+* Provide interruption mehods for blocking
+* Support Pool clean and pool reinitalization
+* Support properties file configuration
 * Provide interfaces for customization
 * Support virtual thread applications
 * [Provide web monitor](https://github.com/Chris2018998/beecp-starter)
@@ -65,7 +65,7 @@ you._
 | Connection creation by concurrency             | Not Support          | Support               |
 | Pool clean and pool reinitialize               | Not Support          | Support               |
 | Provide interruption methods for blocking      | Not Provide          | Provide               |
-| Provide connection factory interface           | Not Support          | Not Support           |
+| Provide connection factory interface           | Not Support          | Support               |
 | Disable threadLocal to support virtual thread  | Not Support          | Support               |
 | Support XADataSource                           | Not Support          | Support               |
 
@@ -156,6 +156,7 @@ connectionFactoryClassName=org.stone.beecp.objects.MockCommonConnectionFactory
 jdbcLinkInfoDecoderClassName=org.stone.beecp.objects.SampleMockJdbcLinkInfoDecoder
 
 ```
+Reminder: The configuration format of properties name currently supports camel hump, middle line, underline
 
 --- 
 **Driver parameters**
@@ -164,10 +165,10 @@ BeeCP internally uses drivers or connection factories to create connection objec
 
 * ``` addConnectProperty(String,Object);// Add a parameter ```
 
-* ``` addConnectProperty(String);// Add multiple parameters, character format reference: cachePrepStmts=true&prepStmtCacheSize=250  ```
+* ``` addConnectProperty(String);// Add multiple parameters,for example: cachePrepStmts=true&prepStmtCacheSize=250  ```
 
 
-Example for this
+An example
 
 ```java
  BeeDataSourceConfig config = new BeeDataSourceConfig();
@@ -182,20 +183,72 @@ Example for this
  config.addConnectProperty("cachePrepStmts:true&prepStmtCacheSize:250&prepStmtCacheSqlLimit:2048");
 ```
 
+* _Refrence poperites file1_
+```properties
+
+connectProperties=cachePrepStmts=true&prepStmtCacheSize=50
+
+```
+
+* _Refrence Poperites file2(recommended it when multiple parameters)_
+
+```properties
+connectProperties.size=2
+connectProperties.1=prepStmtCacheSize=50
+connectProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
+```
+
+--- 
+**Connection Eviction**
+
+ BeeCP provides two ways
+
+1. Manual eviction, call the abort method of connections (connect. abort (null)), pool immediately physically closes them and removes them
+
+2. Eviction by configuration，which is used to help pool identify connections thrown SQLException, there are three configuration way for it
+
+ * A. configuration of exception code：``` addSqlExceptionCode(int code)；//related to SQLException.vendorCode ```
+ * B. configuration of exception state：``` addSqlExceptionState(String state)；/related to SQLException.SQLState```
+ * C. configuration of predicate：``` setEvictPredicate(BeeConnectionPredicate p);setEvictPredicateClass(Clas c); setEvictPredicateClassName(String n);```
+ 
+<br/>
+
+_**Properties File(example)**_
+```properties
+
+sqlExceptionCodeList=500150,2399,1105
+sqlExceptionStateList=0A000,57P01,57P02,57P03,01002,JZ0C0,JZ0C1
+
+//or
+evictPredicateClassName=org.stone.beecp.objects.MockEvictConnectionPredicate
+
+```
+
+_**Additional info**_
+
+1：If predicate set, then ignore the other two configurations;evict connection from pool where check reuslt of sql exception is not null/empty</br>
+2：If predicate not configured,exception code check is priority to exception state check, if matched,then evict connections</br>
+3：Force eviction,call abort method of connection(connect.abort (null))</br>
+4：After eviction,if exist waiter for connection transfer,then create a new conenction and transfer it to waiter 
+
+
 ---
-**Blocking and interruption**
+**Interruption when blocking**
 
-Due to network, server, or other reasons, the client is unable to establish a connection with the database, resulting in the connection creator thread of the client being blocked, which affects the use of the connection pool. BeeCP provides two methods on the data source object (BeeDataSource)
-
-* ``` getPoolMonitorVo();//Query method, the result object constains that number of idle connections, borrowed connections, creating connections, creating timeouts, etc ```
-
-* ``` interruptConnectionCreating(boolean);//If thread is blocked during creation a connection,calling this method can be used to end the blocking;If method parameter is true,only interrupt timeout creation ```
+Connection creation is an important activity in pool, but due to server, network, or other reasons, the creation process may be blocked. To address this issue, BeeCP provides two ways to solve it
 
 
-<sup>**additional description**</sup></br>
-1：The creation timeout is same to maxWait.For example:if this value is 8 seconds,and no connection returned from driver or connection factory,this called as creation timeout</br>
-2：After creation timeout and not be interrupted, BeeCP timed thread will scan out them and interrupted them</br>
-3：Connecton Creation info of pool also display on BeeCP monitor page and provide interruption button on page
+1. External approach, providing two methods,query method： **BeeDataSource.getPoolMonitorVo()** ；Interruption method： **BeeDataSource.interruptConnectionCreating(boolean)** ；
+
+2. Internal approach，internal worker thread scan and find out all blocking and interrupt them
+
+<br/>
+
+_**Additional info**_
+
+* 1：If elapsed time of conneciton creation is greater than maxwait value,pool regards it as blocking 
+* 2: If borrower thread is interrupted,then an interrupt exception will be thrown from  **getConnection ** method
+* 3: Creation info and blocking info is also display on monitor page
 
 
 --- 
@@ -209,22 +262,7 @@ BeeCP provides two clear methods on the data source (BeeDataSource) to clean up 
 
 *_Interrupt them if connection creation exist druing clean process;let waiters to exit waiting for ending request of connection getting_
 
---- 
-**Connection Eviction**
-
-During the use of connections, SQL exceptions may occur, some of which are normal exceptions, while others are more serious issues that need to be removed (evicted) from the pool; How to identify exceptions that need to be expelled, BeeCP provides three configuration methods
-
-* A. configuration of exception code：``` addSqlExceptionCode(int code)；//related to SQLException.vendorCode ```
-
-* B. configuration of exception state：``` addSqlExceptionState(String state)；/related to SQLException.SQLState```
-
-* C. configuration of predicate：``` setEvictPredicate(BeeConnectionPredicate p);setEvictPredicateClass(Clas c); setEvictPredicateClassName(String n);```
-    
-<sup>**additional description**</sup></br>
-1：If predicate set, then ignore the other two configurations;evict connection from pool where check reuslt of sql exception is not null/empty</br>
-2：If predicate not configured,exception code check is priority to exception state check, if matched,then evict connections</br>
-3：Force eviction,call abort method of connection(connect.abort (null))</br>
-4：After eviction,if exist waiter for connection transfer,then create a new conenction and transfer it to waiter  
+ 
 
 --- 
 **Factory customization**
