@@ -15,29 +15,29 @@ Stone is a small Java toolkit that integrates four lightweight independent pools
 </dependency>
 ```
 
-## 🐝BeeCP
+## 🌸BeeCP
 
 A lightweight JDBC connection pool,its Jar file only 133KB and its techology highlights: caching single connection, non moving waiting, fixed length array 
 
 [More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md)
  
-## 🐝BeeOP
+## 🌷BeeOP
 
 A lightweight Java object pool, it has same techology highlights to BeeCP
 
 [More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md)
  
-## 🐝BeeTP
+## 🪷BeeTP
 
 A small task scheduling component that supports three types of tasks simultaneously: single task, scheduled task, and aggregated task, with similar overall functionality：ThreadPoolExecutor +
 ScheduledThreadPoolExecutor + ForkJoinPool
 
 [More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beetp_readme_eng.md)
 
-## ☀️shine
+## 🌻shine
 
-A small thread synchronization pool component with similar functionality to the AQS microframet in the JUC package
+A small thread synchronization pool
 
-[More Detail](a href="https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md)
+[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md)
 
 
