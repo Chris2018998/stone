@@ -46,9 +46,9 @@ public class MockObjectForPropertiesSet {
     private Map<?, ?> map;
     private String URL;
 
-    private String[]hosts;
-    private int[]ports;
-    private char[]passwordChars;
+    private String[] hosts;
+    private int[] ports;
+    private char[] passwordChars;
 
     public Number getNullTxt() {
         return nullTxt;

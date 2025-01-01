@@ -327,6 +327,7 @@ public class Tc0050PoolStaticsTest extends TestCase {
         Assert.assertEquals('C', bean.getPasswordChars()[2]);
 
     }
+
     private static class SetTestBean2 {
     }
 

@@ -78,11 +78,11 @@ public class Tc0005ObjectInterfacesTest extends TestCase {
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectInterfaces());
 
-        config=OsConfigFactory.createDefault();
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaceNames(new String[]{Book.class.getName()});
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectInterfaces());
-        config=OsConfigFactory.createDefault();
+        config = OsConfigFactory.createDefault();
         config.setObjectInterfaceNames(new String[]{Book.class.getName(), BookMarket.class.getName()});
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectInterfaces());
