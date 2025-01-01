@@ -245,10 +245,11 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
             return p;
         } catch (Throwable e) {
-            p.creatingInfo = null;
             p.state = OBJECT_CLOSED;//reset to closed state
             if (rawObj != null) this.objectFactory.destroy(key, rawObj);
             throw e instanceof Exception ? (Exception) e : new ObjectCreateException(e);
+        } finally {
+            p.creatingInfo = null;
         }
     }
 

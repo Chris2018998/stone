@@ -62,7 +62,6 @@ final class PooledObject {
         this.raw = raw;
         this.rawType = raw.getClass();
         this.lastAccessTime = currentTimeMillis();
-        this.creatingInfo = null;
         this.state = state;
     }
 
