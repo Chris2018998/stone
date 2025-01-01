@@ -2,10 +2,9 @@
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 <a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
 
-Stone is a small Java toolkit that integrates four lightweight independent pools
-
-## :arrow_down: Maven artifact (Java8 and Higher)
-
+Stone is a small Java toolkit suite that integrates four lightweight independent pools
+## 
+:arrow_down: Maven artifact
 ```xml
 
 <dependency>
@@ -14,30 +13,21 @@ Stone is a small Java toolkit that integrates four lightweight independent pools
     <version>1.4.4</version>
 </dependency>
 ```
-
-## 🌸BeeCP
+## 
+🌸[**BeeCP**](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md)
 
 A lightweight JDBC connection pool,its techology highlights: caching single connection, non moving waiting, fixed length array 
+## 
+🌷[BeeOP](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md)
 
-[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beecp_readme_eng.md)
- 
-## 🌷BeeOP
-
-A lightweight Java object pool, it has same techology highlights to BeeCP
-
-[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beeop_readme_eng.md)
- 
-## 🪷BeeTP
+A lightweight Java object pool and has same techology highlights to BeeCP
+## 
+🪷[**BeeTP**](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beetp_readme_eng.md)
 
 A small task scheduling component that supports three types of tasks simultaneously: single task, scheduled task, and aggregated task, with similar overall functionality：ThreadPoolExecutor +
 ScheduledThreadPoolExecutor + ForkJoinPool
 
-[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/beetp_readme_eng.md)
-
-## 🌻shine
+## 
+🌻[**shine**](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md)
 
 A small thread synchronization pool
-
-[More Detail](https://github.com/Chris2018998/stone/tree/main/doc/Introduction/shine_readme_eng.md)
-
-

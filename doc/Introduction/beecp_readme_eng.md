@@ -3,27 +3,6 @@
 BeeCP is a lightweight JDBC connection pool, its techology highlights: caching single connection, non moving waiting, fixed length array
 
 ---
-Java7+
-
-```xml
-<dependency>
-   <groupId>com.github.chris2018998</groupId>
-   <artifactId>beecp</artifactId>
-   <version>4.1.5</version>
-</dependency>
-```
-
-Java6(deprecated)
-
-```xml
-<dependency>
-   <groupId>com.github.chris2018998</groupId>
-   <artifactId>beecp</artifactId>
-   <version>1.6.10</version>
-</dependency>
-```                                
-
----
 **Highlight Features**
 
 * Provide interruption mehods for blocking
