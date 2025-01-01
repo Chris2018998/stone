@@ -38,7 +38,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //an int sequence for pool names generation,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //a map store value of putted items,which are injected to an object factory,default is empty
-    private final Map<String, Object> factoryProperties = new HashMap<>();
+    private final Map<String, Object> factoryProperties = new HashMap<>(0);
 
     //if not set,a generation name assigned to it,default is null
     private String poolName;
