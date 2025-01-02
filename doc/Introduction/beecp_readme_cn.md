@@ -46,8 +46,48 @@ _[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优�
 --- 
 **如何使用**
 
-在使用方式上与主流连接池产品大体相似，也可参照随后一些代码片段
+与当前流行的一些连接池产品相似，大体为三种，也可参照随后一些代码片段
 
+* _方式一：直接使用_，类似传统的DBC方式
+
+```java
+
+//step1: 设置参数和创建数据源
+BeeDataSourceConfig config = new BeeDataSourceConfig();
+config.setDriverClassName("com.mysql.cj.jdbc.Driver");//驱动类
+config.setJdbcUrl("jdbc:mysql://localhost/test");//设置url，也可这样：setUrl("jdbc:mysql://localhost/test");
+config.setUsername("root");//用户名
+config.setPassword("root");//密码
+BeeDataSource ds = new BeeDataSource(config);//new数据源对象
+
+//step2：获取连接并使用
+try(Connection con = ds.getConnection()){
+  //......省略具体代码
+}
+```
+
+* _方式二：间接方式_，注册为Spring Bean，供持久化框架使用
+
+```java
+@Configuration
+public class DataSourceConfiguration{
+
+  @Bean
+  @ConfigurationProperties(prefix="spring.datasource")
+  public DataSource ds1(){
+     return new BeeDataSource();
+  }
+
+  @Bean
+  public DataSource ds2(){
+    BeeDataSourceConfig config = new BeeDataSourceConfig();
+    //.......设置各种参数,参照方式一
+    return new BeeDataSource(config);
+  }
+}
+```
+
+* _方式三：[beecp-starter](https://github.com/Chris2018998/beecp-starter)_，文件配置，支持多源
 
 --- 
 **参数配置**
