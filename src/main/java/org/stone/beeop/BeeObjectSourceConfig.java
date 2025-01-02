@@ -628,9 +628,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         }
 
         //2: try to load interfaces by names
-        if (this.objectInterfaceNames != null && objectInterfaceNames.length > 0) {
-            Class<?>[] objectInterfaces = new Class[this.objectInterfaceNames.length];
-            for (int i = 0; i < this.objectInterfaceNames.length; i++) {
+        final int objectInterfaceNameSize = this.objectInterfaceNames != null ? objectInterfaceNames.length : 0;
+        if (objectInterfaceNameSize > 0) {
+            Class<?>[] objectInterfaces = new Class[objectInterfaceNameSize];
+            for (int i = 0; i < objectInterfaceNameSize; i++) {
                 try {
                     if (isBlank(this.objectInterfaceNames[i]))
                         throw new BeeObjectSourceConfigException("Object interface class names[" + i + "]is empty or null");
