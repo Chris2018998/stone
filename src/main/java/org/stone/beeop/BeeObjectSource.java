@@ -29,7 +29,7 @@ import static org.stone.tools.BeanUtil.createClassInstance;
  * @author Chris Liao
  * @version 1.0
  */
-public final class BeeObjectSource extends BeeObjectSourceConfig {
+public class BeeObjectSource extends BeeObjectSourceConfig {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8L);//default vale equals same item in config
