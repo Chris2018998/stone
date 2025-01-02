@@ -100,13 +100,13 @@ public class Tc0006ObjectFactoryTest extends TestCase {
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig config2 = config.check();
         Assert.assertNotNull(config2.getObjectFactory());
-        Assert.assertTrue(((Map) TestUtil.getFieldValue(config2, "factoryProperties")).isEmpty());
+        Assert.assertTrue(((Map<?, ?>) TestUtil.getFieldValue(config2, "factoryProperties")).isEmpty());
 
         config = OsConfigFactory.createDefault();
         config.addFactoryProperty("name", "Java");
         config2 = config.check();
         Assert.assertNotNull(config2.getObjectFactory());
-        Assert.assertFalse(((Map) TestUtil.getFieldValue(config2, "factoryProperties")).isEmpty());
+        Assert.assertFalse(((Map<?, ?>) TestUtil.getFieldValue(config2, "factoryProperties")).isEmpty());
 
         config = OsConfigFactory.createEmpty();
         config.setObjectFactoryClass(JavaBookFactory.class);

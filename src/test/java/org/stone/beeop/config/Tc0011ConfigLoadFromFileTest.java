@@ -32,7 +32,7 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
     private static final String filename = "beeop/config2.properties";
     private static final Pattern PATTERN = Pattern.compile("/", Pattern.LITERAL);
 
-    private static Boolean check(BeeObjectSourceConfig config) {
+    private static boolean check(BeeObjectSourceConfig config) {
         Assert.assertEquals("Pool1", config.getPoolName());
         Assert.assertTrue(config.isFairMode());
         Assert.assertEquals(1, config.getInitialSize());
@@ -45,28 +45,28 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
         Assert.assertEquals(30000, config.getTimerCheckInterval());
         Assert.assertTrue(config.isForceCloseUsingOnClear());
         Assert.assertEquals(3000, config.getParkTimeForRetry());
-        return Boolean.TRUE;
+        return true;
     }
 
     /********************************************Constructor**************************************************/
 
     public void testOnCorrectFile() throws Exception {
         String classFilename = "cp:" + filename;
-        Assert.assertTrue(check(new BeeObjectSourceConfig(classFilename)).booleanValue());//classpath
-        Assert.assertTrue(check(new BeeObjectSourceConfig(getClassPathFileAbsolutePath(filename))).booleanValue());//from file
-        Assert.assertTrue(check(new BeeObjectSourceConfig(loadPropertiesFromClassPathFile(filename))).booleanValue());//from properties
+        Assert.assertTrue(check(new BeeObjectSourceConfig(classFilename)));//classpath
+        Assert.assertTrue(check(new BeeObjectSourceConfig(getClassPathFileAbsolutePath(filename))));//from file
+        Assert.assertTrue(check(new BeeObjectSourceConfig(loadPropertiesFromClassPathFile(filename))));//from properties
 
         BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
         config1.loadFromPropertiesFile(classFilename);
-        Assert.assertTrue(check(config1).booleanValue());
+        Assert.assertTrue(check(config1));
 
         BeeObjectSourceConfig config2 = OsConfigFactory.createEmpty();
         config2.loadFromPropertiesFile(getClassPathFileAbsolutePath(filename));
-        Assert.assertTrue(check(config2).booleanValue());
+        Assert.assertTrue(check(config2));
 
         BeeObjectSourceConfig config3 = OsConfigFactory.createEmpty();
         config3.loadFromProperties(loadPropertiesFromClassPathFile(filename));
-        Assert.assertTrue(check(config3).booleanValue());
+        Assert.assertTrue(check(config3));
     }
 
     public void testOnLoadByFileName() throws Exception {
