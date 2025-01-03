@@ -2,8 +2,8 @@
 
 BeeCP is a lightweight JDBC connection pool, its techology highlights: caching single connection, non moving waiting, fixed length array
 
----
-**Highlight Features**
+##
+✨**Highlight Features**
 
 * Provide interruption mehods for blocking
 * Support Pool clean and pool reinitalization
@@ -18,7 +18,7 @@ BeeCP is a lightweight JDBC connection pool, its techology highlights: caching s
 _Reminder: If your project is built on springboot framework and also you are interested at beecp or already using it,we recommend [beecp starter](https://github.com/Chris2018998/beecp-starter) to
 you._
 
-**JMH Performance**
+📊**JMH Performance**
 
 ![image](https://github.com/user-attachments/assets/65260ea7-a27a-412d-a3c4-62fc50d6070a)
 
@@ -26,7 +26,7 @@ you._
 </sup>
 
 
-***Compare to HikariCP***
+🍒***Compare to HikariCP***
 
 | item                                           | HikariCP             | BeeCP                 |
 |------------------------------------------------|----------------------|-----------------------|
@@ -43,13 +43,13 @@ you._
 
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent open source project and widely used in the Java world,it is developed by Brettwooldridge,a senior JDBC expert of United States_
 
---- 
-**How to use it**
+## 
+👉**How to use it**
 
 Its usage is generally similar to popular connection pools,and some reference source codes in followed chapters 
 
---- 
-**Configuration properties**
+##
+🔡**Configuration properties**
 
 BeeCP woring parameters are from its configuration object(BeeDataSourceConfig),below is a list of properites,which can be confiured by their set methods
 
@@ -100,8 +100,8 @@ BeeCP woring parameters are from its configuration object(BeeDataSourceConfig),b
 
 ***Five defaultxxx properties**(defaultAutoCommit,defaultTransactionIsolationCode,defaultCatalog,defaultSchema,defaultReadOnly), if them not be set,then read value as default from first success creation connection
 
---- 
-**Properties file of configuration**
+##
+📝**Properties file of configuration**
 
 BeeCP supports loading configuration from properties type files and properties objects(java.util.Properties),a referrence example is blow
 
@@ -130,8 +130,8 @@ jdbcLinkInfoDecoderClassName=org.stone.beecp.objects.SampleMockJdbcLinkInfoDecod
 ```
 Reminder: The configuration format of properties name currently supports camel hump, middle line, underline
 
---- 
-**Driver parameters**
+##
+⚙**Driver parameters**
 
 BeeCP internally uses drivers or connection factories to create connection objects, and factories may depend on some parameters. Two methods are provided in the configuration object (BeeDataSourceConfig) to for it
 
@@ -170,8 +170,8 @@ connectProperties.1=prepStmtCacheSize=50
 connectProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
 ```
 
---- 
-**Connection Eviction**
+##
+🔚**Connection Eviction**
 
  BeeCP provides two ways
 
@@ -204,8 +204,8 @@ _**Additional info**_
 4：After eviction,if exist waiter for connection transfer,then create a new conenction and transfer it to waiter 
 
 
----
-**Interruption when blocking**
+##
+✂**Interruption when blocking**
 
 Connection creation is an important activity in pool, but due to server, network, or other reasons, the creation process may be blocked. To address this issue, BeeCP provides two ways to solve it
 
@@ -223,8 +223,8 @@ _**Additional info**_
 * 3: Creation info and blocking info is also display on monitor page
 
 
---- 
-**Clean and Reinitialization**
+##
+🛒**Clean and Reinitialization**
 
 BeeCP provides two clear methods on the data source (BeeDataSource) to clean up the connections created in the pool and restore the pool to its initial state,not accept external requests during clean
 
@@ -234,10 +234,9 @@ BeeCP provides two clear methods on the data source (BeeDataSource) to clean up 
 
 *_Interrupt them if connection creation exist druing clean process;let waiters to exit waiting for ending request of connection getting_
 
- 
 
---- 
-**Factory customization**
+##
+🏭**Factory customization**
 
 Beecp provides factory interfaces (BeeConnectFactory, BeeXaConnectFactory) for custom implementation of connection
 creation, and there are four methods on the BeeDataSourceConfig object (setConnectFactory, setXaConnectFactory,

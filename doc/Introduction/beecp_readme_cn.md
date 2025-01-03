@@ -2,8 +2,8 @@
 
 BeeCP是一款轻量级JDBC连接池，其技术亮点：单连接缓存，非移动等待，固定长度数组
 
-------
-**亮点feature**
+##
+✨**亮点feature**
 
 * 提供中断处理
 * 支持清理与重启
@@ -17,8 +17,8 @@ BeeCP是一款轻量级JDBC连接池，其技术亮点：单连接缓存，非�
 
 _温馨提示：如果您的项目是基于springboot框架构建，且有兴趣应用BeeCP或已在使用它，那么推荐[beecp-starter](https://github.com/Chris2018998/beecp-starter)(个人的另一个项目)_
 
-------
-***性能对比***
+##
+📊***性能对比***
 
 ![image](https://github.com/user-attachments/assets/65260ea7-a27a-412d-a3c4-62fc50d6070a)
 
@@ -26,7 +26,7 @@ _温馨提示：如果您的项目是基于springboot框架构建，且有兴趣
 </sup>
 
 
-***对比HikariCP***
+🍒***对比HikariCP***
 
 | 对比项               | HikariCP                | BeeCP                   |
 |---------------------|-------------------------|-------------------------|
@@ -43,8 +43,8 @@ _温馨提示：如果您的项目是基于springboot框架构建，且有兴趣
 
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优秀的开源作品，在Java领域广泛使用，它由美国资深专家brettwooldridge开发_
 
---- 
-**如何使用**
+##
+👉**如何使用**
 
 与当前流行的一些连接池产品相似，大体为三种，也可参照随后一些代码片段
 
@@ -89,8 +89,8 @@ public class DataSourceConfiguration{
 
 * _方式三：[beecp-starter](https://github.com/Chris2018998/beecp-starter)_，文件配置，支持多源
 
---- 
-**参数配置**
+##
+🔡**参数配置**
 
 BeeCP使用的参数信息来自其配置对象（BeeDataSourceConfig），下面列表为主要的参数属性名
 | 属性                              | 描述                                                                  | 默认值                    |
@@ -140,8 +140,8 @@ BeeCP使用的参数信息来自其配置对象（BeeDataSourceConfig），下�
 
 *_**五个defaultxxx属性**(defaultAutoCommit,defaultTransactionIsolationCode,defaultCatalog,defaultSchema,defaultReadOnly)的默认值若未设置，则从第一个成功创建的连接上读取_
 
---- 
-**文件配置**
+##
+📝**文件配置**
 
 BeeCP支持从属性文件（*.properities）或属性对象（java.util.properities）中读取参数信息到配置对象上，参考例子如下
 
@@ -169,8 +169,8 @@ jdbcLinkInfoDecoderClassName=org.stone.beecp.objects.SampleMockJdbcLinkInfoDecod
 ```
 _温馨提示：属性名配置方式目前支持：驼峰，中划线，下划线_
 
----
-**驱动参数**
+##
+⚙**驱动参数**
 
 BeeCP内部是使用驱动或连接工厂创建连接对象，它们可能依赖一些参数，在配置对象(BeeDataSourceConfig)提供了两个方法
 
@@ -209,8 +209,8 @@ connectProperties.1=prepStmtCacheSize=50
 connectProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
 ```
 
---- 
-**连接驱逐**
+## 
+🔚**连接驱逐**
 
 BeeCP提供了两种方式
 
@@ -244,8 +244,8 @@ _补充说明_
 * 3：异常代码检查优先于异常状态检查
 * 4：驱逐后，若池种存在等待者，自动候补一个新连接
 
----
-**中断处理**
+##
+✂**中断处理**
 
 连接创建是连接池内一项目重要活动，但是由于服务器或网络或其他原因，可能导致创建过程处于阻塞状态，为解决这一问题，BeeCP提供了两种方式
 
@@ -261,8 +261,8 @@ _补充说明_
 * 2：中断的是借用者线程，getConnection上会抛出中断异常；若是候补线程，它会尝试将异常传递给等待者
 * 3: BeeCP监控页面上也可查看到相关信息，如创建数，创建超时数，如超时则显示出中断按钮
 
---- 
-**清理与重启**
+##
+🛒**清理与重启**
 
 BeeCP支持重置操作，让连接池恢复到初始状态，清理过程中不接受外部请求，它主要完成两个事项
 
@@ -278,8 +278,8 @@ _主要有两个方法_
 * ```BeeDataSource.clear(boolean forceCloseUsing, BeeDataSourceConfig newConfig);//使用新配置重新初始化```
 
 
---- 
-**连接工厂接口**
+##
+🏭**连接工厂接口**
 
 在BeeCP内部定义了连接工厂接口，并内置两种基本实现（对驱动和数据源的封装），工厂接口是允许外部自定义实现，有4个相关配置方法（etConnectionFactory，setXaConnectionFactory，setConnectionFactoryClass，setConnectionFactoryClassName）分别设置工厂实例，工厂类，工厂类名，下面是一个参考例子
 
