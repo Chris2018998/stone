@@ -1,5 +1,14 @@
 stone changes
 
+Changes in 1.4.5
+support array properties injection in util 
+[beecp]
+1: remove some keywords
+[beeop]
+1: remove some keywords
+
+
+
 Changes in 1.4.4
 [beecp]
 1: fix null point exception when idle timeout scan
