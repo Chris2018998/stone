@@ -5,15 +5,16 @@ BeeCP is a lightweight JDBC connection pool, its techology highlights: caching s
 ##
 ✨**Highlight Features**
 
-* Provide interruption mehods for blocking
+* Provide interruption mehod to broke blocking
 * Support Pool clean and pool reinitalization
 * Support properties file configuration
 * Provide interfaces for customization
 * Support virtual thread applications
 * [Provide web monitor](https://github.com/Chris2018998/beecp-starter)
 
-![图片](https://user-images.githubusercontent.com/32663325/154832186-be2b2c34-8765-4be8-8435-b97c6c1771df.png)
-![图片](https://user-images.githubusercontent.com/32663325/154832193-62b71ade-84cc-41db-894f-9b012995d619.png)
+<img width="1280" alt="image" src="https://github.com/user-attachments/assets/dcff61d5-d5e5-4b21-bbed-b53ef919e17f" /><br/>
+
+<img width="1280" alt="image" src="https://github.com/user-attachments/assets/03937fe0-c559-49a8-b3c2-debcbb8f76b9" />
 
 _Reminder: If your project is built on springboot framework and also you are interested at beecp or already using it,we recommend [beecp starter](https://github.com/Chris2018998/beecp-starter) to
 you._
@@ -25,20 +26,19 @@ you._
 <sup>**PC:** Windows11,Intel-i7-14650HX,32G Memory **Java:** 1.8.0_171  **Pool:** init size 32,max size 32 **Source code:** [HikariCP-benchmark-master.zip](https://github.com/Chris2018998/stone/blob/main/doc/temp/HikariCP-benchmark-master.zip)
 </sup>
 
-
 🍒***Compare to HikariCP***
 
 | item                                           | HikariCP             | BeeCP                 |
 |------------------------------------------------|----------------------|-----------------------|
-| Connection caching size in threadlocal         | Multiple             | Single                |
-| Container type to store pooled connections     | CopyOnWriteArrayList | A fixed length array  |
+| Size of connection in threadlocal              | One or more          | Single                |
+| Type of container store connections            | CopyOnWriteArrayList | A fixed length array  |
 | Transfer queue/wait queue                      | SynchronousQueue     | ConcurrentLinkedQueue |
-| Way to add connection to pool                  | Thread pool          | Single thread         |
-| Connection creation by concurrency             | Not Support          | Support               |
-| Pool clean and pool reinitialize               | Not Support          | Support               |
-| Provide interruption methods for blocking      | Not Provide          | Provide               |
+| Asyn way of thread to create connections       | Thread pool          | Single thread         |
+| Support concurrency cretion of connections     | Not Support          | Support               |
+| Support clean and reinitialization in pool     | Not Support          | Support               |
+| Provide interruption method to broke blocking  | Not Provide          | Provide               |
 | Provide connection factory interface           | Not Support          | Support               |
-| Disable threadLocal to support virtual thread  | Not Support          | Support               |
+| Support threadLocal-cache disable              | Not Support          | Support               |
 | Support XADataSource                           | Not Support          | Support               |
 
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent open source project and widely used in the Java world,it is developed by Brettwooldridge,a senior JDBC expert of United States_
@@ -47,6 +47,47 @@ _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent ope
 👉**How to use it**
 
 Its usage is generally similar to popular connection pools,and some reference source codes in followed chapters 
+
+*_One: Directly use_, similar to the traditional DBC operation
+
+```java
+
+//step1: set parameters and create datasource
+BeeDataSourceConfig config = new BeeDataSourceConfig();
+config.setDriverClassName("com.mysql.cj.jdbc.Driver");//driver class names
+config.setJdbcUrl("jdbc:mysql://localhost/test");//or like it：setUrl("jdbc:mysql://localhost/test");
+config.setUsername("root");//user name
+config.setPassword("root");//password
+BeeDataSource ds = new BeeDataSource(config);
+
+//step2：get connection and use it
+try(Connection con = ds.getConnection()){
+  //......
+}
+```
+
+* _Second：Indirect approach_,Register as a Spring Bean and used by persistence frameworks
+
+```java
+@Configuration
+public class DataSourceConfiguration{
+
+  @Bean
+  @ConfigurationProperties(prefix="spring.datasource")
+  public DataSource ds1(){
+     return new BeeDataSource();
+  }
+
+  @Bean
+  public DataSource ds2(){
+    BeeDataSourceConfig config = new BeeDataSourceConfig();
+    //.......set parameters
+    return new BeeDataSource(config);
+  }
+}
+```
+
+* _Third：[beecp-starter](https://github.com/Chris2018998/beecp-starter)_，File configuration, supporting multiple sources
 
 ##
 🔡**Configuration properties**
