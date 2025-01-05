@@ -58,6 +58,10 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return null;
     }
 
+    public boolean isPrintRuntimeLog(Object key) {
+        return false;
+    }
+
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
     }
 
