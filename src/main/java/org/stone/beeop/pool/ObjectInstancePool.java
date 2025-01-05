@@ -40,10 +40,10 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  */
 final class ObjectInstancePool implements Runnable, Cloneable {
     static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
+    static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantState");
     private static final Logger Log = LoggerFactory.getLogger(ObjectInstancePool.class);
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantTryCount");
     final KeyedObjectPool ownerPool;
 
@@ -73,18 +73,17 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private final BeeObjectMethodFilter methodFilter;
     private final Map<MethodCacheKey, Method> methodMap;
     //clone end
-
+    volatile int servantState;
+    volatile int servantTryCount;
+    PooledObject[] objectArray;
+    ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
     private Object key;
     private String poolName;//owner's poolName + [key.toString()]
     private volatile int poolState;
-    private volatile int servantState;
-    private volatile int servantTryCount;
-    private PooledObject[] objectArray;
     private InterruptionSemaphore semaphore;
     private ThreadLocal<WeakReference<ObjectBorrower>> threadLocal;
     private ObjectPoolMonitorVo monitorVo;
     private boolean printRuntimeLog;
-    private ConcurrentLinkedQueue<ObjectBorrower> waitQueue;
 
     //***************************************************************************************************************//
     //                1: Pool Creation/clone(2)                                                                      //
