@@ -92,9 +92,9 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         } else {
             try {
                 if (!readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
-                    throw new ObjectGetTimeoutException("Object get timeout at lock of pool creation");
+                    throw new ObjectGetTimeoutException("Timeout on waiting for pool ready");
             } catch (InterruptedException e) {
-                throw new ObjectGetInterruptedException("Object get request interrupted at lock of pool creation");
+                throw new ObjectGetInterruptedException("An interruption occurred while waiting for pool ready");
             }
             readLock.unlock();
         }
