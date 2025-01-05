@@ -11,6 +11,8 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 
+import static org.stone.tools.BeanUtil.CommonLog;
+
 /**
  * Pool Static Center
  *
@@ -69,6 +71,14 @@ public class ObjectPoolStatics {
             handle.close();
         } catch (Throwable e) {
             //do nothing
+        }
+    }
+
+    public static void oclose(BeeObjectHandle h) {
+        try {
+            h.close();
+        } catch (Throwable e) {
+            CommonLog.debug("Warning:Error at closing object handle", e);
         }
     }
 }
