@@ -76,7 +76,7 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Attempts to get an object from pool
+     * Attempts to get an object from pool with default key
      *
      * @return handle of borrowed object
      * @throws ObjectCreateException         when fail to create a pooled object
@@ -86,7 +86,7 @@ public interface BeeKeyedObjectPool {
     BeeObjectHandle getObjectHandle() throws Exception;
 
     /**
-     * Attempts to get an object from pool with a specified key
+     * Attempts to get an object from pool with a specified key,if object category of key pool not full,then attempt to build one by key
      *
      * @param key may be mapping to a set of pooled objects
      * @return handle of a borrowed object
