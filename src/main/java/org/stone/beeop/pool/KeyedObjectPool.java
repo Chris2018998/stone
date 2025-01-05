@@ -257,11 +257,9 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //2.2: gets an object from sub pool map to given key
     public BeeObjectHandle getObjectHandle(Object key) throws Exception {
         this.checkParameterKey(key);
-        //1:if key is equal to default key,then get object from default sub pool
-        if (isDefaultKey(key)) return defaultPool.getObjectHandle();
 
         //2: get sub pool from ConcurrentHashMap with given key
-        ObjectInstancePool pool = instancePoolMap.get(key);
+        ObjectInstancePool pool = getObjectInstancePool(key);
         if (pool != null) return pool.getObjectHandle();
 
         //3: create a sub pool under lock
@@ -301,36 +299,36 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     public int getObjectCreatingCount(Object key) throws Exception {
         this.checkParameterKey(key);
 
-        ObjectInstancePool pool = instancePoolMap.get(key);
+        ObjectInstancePool pool = getObjectInstancePool(key);
         return pool != null ? pool.getObjectCreatingCount() : 0;
     }
 
     public int getObjectCreatingTimeoutCount(Object key) throws Exception {
         this.checkParameterKey(key);
 
-        ObjectInstancePool pool = instancePoolMap.get(key);
+        ObjectInstancePool pool = getObjectInstancePool(key);
         return pool != null ? pool.getObjectCreatingTimeoutCount() : 0;
     }
 
     public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
         this.checkParameterKey(key);
 
-        ObjectInstancePool pool = instancePoolMap.get(key);
+        ObjectInstancePool pool = getObjectInstancePool(key);
         return pool != null ? pool.interruptObjectCreating(interruptTimeout) : null;
     }
 
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         this.checkParameterKey(key);
 
-        ObjectInstancePool pool = instancePoolMap.get(key);
+        ObjectInstancePool pool = getObjectInstancePool(key);
         if (pool != null) pool.setPrintRuntimeLog(indicator);
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
         this.checkParameterKey(key);
 
-        ObjectInstancePool pool = instancePoolMap.get(key);
-        if (pool != null) pool.getPoolMonitorVo();
+        ObjectInstancePool pool = getObjectInstancePool(key);
+        if (pool != null) return pool.getPoolMonitorVo();
         throw new ObjectKeyNotExistsException("Not found object key:" + key);
     }
 
@@ -362,6 +360,10 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
 
     private boolean isDefaultKey(Object key) {
         return defaultKey == key || defaultKey.equals(key);
+    }
+
+    private ObjectInstancePool getObjectInstancePool(Object key) {
+        return isDefaultKey(key) ? defaultPool : instancePoolMap.get(key);
     }
 
     private void checkParameterKey(Object key) throws Exception {
