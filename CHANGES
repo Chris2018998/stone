@@ -1,5 +1,13 @@
 stone changes
 
+
+Changes in 1.4.6(not released)
+
+[beeop]
+1: add new method to keyed pool interface to query indicator of runtime print
+2: 
+
+
 Changes in 1.4.5
 support array properties injection in util 
 [beecp]
