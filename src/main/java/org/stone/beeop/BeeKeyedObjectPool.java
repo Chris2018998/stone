@@ -127,6 +127,15 @@ public interface BeeKeyedObjectPool {
     Thread[] interruptObjectCreating(Object key, boolean onlyInterruptTimeout) throws Exception;
 
     /**
+     * query indicator of runtime log print
+     *
+     * @param key pooled key
+     * @return boolean value,true,keyed pool print runtime logs,otherwise not print
+     * @throws Exception when key is null or not exist key in pool
+     */
+    boolean isPrintRuntimeLog(Object key) throws Exception;
+
+    /**
      * operation on log switch to disable log print or enable print
      *
      * @param key       pooled key

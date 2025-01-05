@@ -168,6 +168,11 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         return createPoolByLock().getMonitorVo(key);
     }
 
+    public boolean isPrintRuntimeLog(Object key) throws Exception {
+        checkPool();
+        return createPoolByLock().isPrintRuntimeLog(key);
+    }
+
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         checkPool();
         createPoolByLock().setPrintRuntimeLog(key, indicator);

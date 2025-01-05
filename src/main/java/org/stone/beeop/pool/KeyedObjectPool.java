@@ -317,6 +317,12 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return pool != null ? pool.interruptObjectCreating(interruptTimeout) : null;
     }
 
+    public boolean isPrintRuntimeLog(Object key) throws Exception {
+        this.checkParameterKey(key);
+        ObjectInstancePool pool = getObjectInstancePool(key);
+        return pool != null && pool.isPrintRuntimeLog();
+    }
+
     public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
         this.checkParameterKey(key);
 
