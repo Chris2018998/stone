@@ -68,6 +68,13 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         } catch (Exception e) {
             Assert.assertEquals("Pool not be created", e.getMessage());
         }
+
+        try {
+            os.getPoolMonitorVo();
+        } catch (Exception e) {
+            Assert.assertEquals("Pool not be created", e.getMessage());
+        }
+
         try {
             os.getMonitorVo(null);
         } catch (Exception e) {
@@ -97,6 +104,12 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         } catch (Exception e) {
             Assert.assertEquals("Pool not be created", e.getMessage());
         }
+
+        try {
+            os.clear(true, null);
+        } catch (Exception e) {
+            Assert.assertEquals("Pool not be created", e.getMessage());
+        }
     }
 
     public void testPoolReady() throws Exception {
@@ -110,10 +123,36 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         os.getObjectCreatingCount(key);
         os.getObjectCreatingTimeoutCount(key);
         os.interruptObjectCreating(key, true);
+        os.getPoolMonitorVo();
         os.getMonitorVo(key);
         os.setPrintRuntimeLog(key, false);
         os.deleteKey(key);
         os.deleteKey(key, true);
         os.clear(true);
+    }
+
+    public void testPoolLazyCreation() throws Exception {
+        BeeObjectSource os = new BeeObjectSource();
+        BeeObjectFactory factory = new JavaBookFactory();
+
+        //1:before setting factory
+        try {
+            os.getObjectHandle();
+        } catch (Exception e) {
+            Assert.assertEquals("Must provide one of config items[objectFactory,objectClassName,objectFactoryClassName]", e.getMessage());
+        }
+
+        try {
+            os.getObjectHandle(factory.getDefaultKey());
+        } catch (Exception e) {
+            Assert.assertEquals("Must provide one of config items[objectFactory,objectClassName,objectFactoryClassName]", e.getMessage());
+        }
+
+        //1:after setting factory
+        os.setObjectFactory(factory);
+        os.setForceCloseUsingOnClear(true);
+        os.setMaxActive(2);
+        Assert.assertNotNull(os.getObjectHandle());
+        Assert.assertNotNull(os.getObjectHandle(factory.getDefaultKey()));
     }
 }
