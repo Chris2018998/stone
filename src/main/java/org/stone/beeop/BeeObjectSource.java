@@ -37,9 +37,6 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     private boolean ready;
     private Exception cause;
 
-    //***************************************************************************************************************//
-    //                                             1:constructors(2)                                                 //
-    //***************************************************************************************************************//
     public BeeObjectSource() {
     }
 
@@ -65,7 +62,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                        2: object take methods(3)                                              //
+    //                                        1: Object Getting(pool lazy creation if null)                          //
     //***************************************************************************************************************//
     public BeeObjectHandle getObjectHandle() throws Exception {
         if (this.ready) return pool.getObjectHandle();
@@ -105,7 +102,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                          3: pool other methods(7)                                             //
+    //                                          2: dataSource close(2)                                               //
     //***************************************************************************************************************//
     public void close() {
         if (pool != null) pool.close();
@@ -115,6 +112,9 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         return pool == null || pool.isClosed();
     }
 
+    //***************************************************************************************************************//
+    //                                          3: override configuration(2)                                         //
+    //***************************************************************************************************************//
     //override method
     public void setMaxWait(long maxWait) {
         if (maxWait > 0) {
@@ -123,72 +123,70 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         }
     }
 
+    //override method
     public void setPrintRuntimeLog(boolean printRuntimeLog) {
-        if (pool != null) pool.setPrintRuntimeLog(printRuntimeLog);
+        if (pool == null) {
+            super.setPrintRuntimeLog(printRuntimeLog);//as configuration item
+        } else {
+            pool.setPrintRuntimeLog(printRuntimeLog);//set to pool
+        }
     }
 
+    //***************************************************************************************************************//
+    //                                          4: operation on existed pool                                         //
+    //***************************************************************************************************************//
     public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
-        checkPool();
-        return pool.getPoolMonitorVo();
+        return getPool().getPoolMonitorVo();
     }
 
     public void clear(boolean forceCloseUsing) throws Exception {
-        checkPool();
-        pool.clear(forceCloseUsing);
+        getPool().clear(forceCloseUsing);
     }
 
     public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        checkPool();
         if (config == null) throw new BeeObjectSourceConfigException("Pool configuration can't be null");
-        pool.clear(forceCloseUsing, config);
+        getPool().clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
 
     //***************************************************************************************************************//
-    //                                          4: operation with key                                                //
+    //                                          5: key operation (pool must already exist)                           //
     //***************************************************************************************************************//
-    public int getObjectCreatingCount(Object key) throws Exception {
-        checkPool();
-        return createPoolByLock().getObjectCreatingCount(key);
-    }
-
-    public int getObjectCreatingTimeoutCount(Object key) throws Exception {
-        checkPool();
-        return createPoolByLock().getObjectCreatingTimeoutCount(key);
-    }
-
-    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
-        checkPool();
-        return createPoolByLock().interruptObjectCreating(key, interruptTimeout);
-    }
-
-    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
-        checkPool();
-        return createPoolByLock().getMonitorVo(key);
-    }
-
-    public boolean isPrintRuntimeLog(Object key) throws Exception {
-        checkPool();
-        return createPoolByLock().isPrintRuntimeLog(key);
-    }
-
-    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
-        checkPool();
-        createPoolByLock().setPrintRuntimeLog(key, indicator);
-    }
-
     public void deleteKey(Object key) throws Exception {
-        checkPool();
-        createPoolByLock().deleteKey(key);
+        getPool().deleteKey(key);
     }
 
     public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        checkPool();
-        createPoolByLock().deleteKey(key, forceCloseUsing);
+        getPool().deleteKey(key, forceCloseUsing);
     }
 
-    private void checkPool() throws Exception {
+    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
+        return getPool().getMonitorVo(key);
+    }
+
+    public boolean isPrintRuntimeLog(Object key) throws Exception {
+        return getPool().isPrintRuntimeLog(key);
+    }
+
+    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
+        getPool().setPrintRuntimeLog(key, indicator);
+    }
+
+    public int getObjectCreatingCount(Object key) throws Exception {
+        return getPool().getObjectCreatingCount(key);
+    }
+
+    public int getObjectCreatingTimeoutCount(Object key) throws Exception {
+        return getPool().getObjectCreatingTimeoutCount(key);
+    }
+
+    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
+        return getPool().interruptObjectCreating(key, interruptTimeout);
+    }
+
+    private BeeKeyedObjectPool getPool() throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return this.pool;
     }
 }
