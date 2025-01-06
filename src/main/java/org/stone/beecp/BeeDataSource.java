@@ -91,7 +91,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                          2: below are override methods(11)                                    //
+    //                                          2: Connection Getting(pool lazy creation if null)                    //
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
         if (this.ready) return pool.getConnection();
@@ -140,6 +140,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         CommonLog.warn("getXAConnection (user,password) ignores authentication - returning default XAConnection");
         return getXAConnection();
     }
+
 
     //***************************************************************************************************************//
     //                                      Override methods from CommonDataSource                                   //
@@ -196,44 +197,42 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void setPrintRuntimeLog(boolean printRuntimeLog) {
-        if (this.pool != null) this.pool.setPrintRuntimeLog(printRuntimeLog);
+        if (pool == null) {
+            super.setPrintRuntimeLog(printRuntimeLog);//as configuration item
+        } else {
+            pool.setPrintRuntimeLog(printRuntimeLog);//set to pool
+        }
     }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
-        this.checkPool();
-        return this.pool.getPoolMonitorVo();
+        return this.getPool().getPoolMonitorVo();
     }
 
     public int getConnectionCreatingCount() throws SQLException {
-        this.checkPool();
-        return this.pool.getConnectionCreatingCount();
+        return this.getPool().getConnectionCreatingCount();
     }
 
     public int getConnectionCreatingTimeoutCount() throws SQLException {
-        this.checkPool();
-        return this.pool.getConnectionCreatingTimeoutCount();
+        return this.getPool().getConnectionCreatingTimeoutCount();
     }
 
     public Thread[] interruptConnectionCreating(boolean interruptTimeout) throws SQLException {
-        this.checkPool();
-        return this.pool.interruptConnectionCreating(interruptTimeout);
+        return this.getPool().interruptConnectionCreating(interruptTimeout);
     }
 
     public void clear(boolean forceCloseUsing) throws SQLException {
-        this.checkPool();
-        this.pool.clear(forceCloseUsing);
+        this.getPool().clear(forceCloseUsing);
     }
 
     public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
-        this.checkPool();
         if (config == null) throw new BeeDataSourceConfigException("Pool configuration object can't be null");
-        this.pool.clear(forceCloseUsing, config);
+        this.getPool().clear(forceCloseUsing, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
 
-    private void checkPool() throws SQLException {
+    private BeeConnectionPool getPool() throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return this.pool;
     }
-
 }
