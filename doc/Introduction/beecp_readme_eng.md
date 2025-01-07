@@ -96,20 +96,20 @@ BeeCP woring parameters are from its configuration object(BeeDataSourceConfig),b
 
 | property name                   | description                                                            | default value             |
 |---------------------------------|------------------------------------------------------------------------|---------------------------|
-| username                        | user name of db                                                        | blank                     |
-| password                        | user password of db                                                    | blank                     |
-| jdbcUrl                         | link url to db                                                         | blank                     |
-| driverClassName                 | jdbc driver class name                                                 | blank                     |
-| poolName	                  | pool name,if not set,a generated name will be assigned to it           | blank                     |
+| username                        | user name of db                                                        | none                     |
+| password                        | user password of db                                                    | none                     |
+| jdbcUrl                         | link url to db                                                         | none                     |
+| driverClassName                 | jdbc driver class name                                                 | none                     |
+| poolName	                  | pool name,if not set,a generated name will be assigned to it               | none                     |
 | fairMode                        | a mode to get connections from pool                                    | false（unfair mode）       | 
 | initialSize                     | creation size of connecitons during pool initialization                | 0                         |
 | maxActive                       | max size of connections in pool                                        | 10                        | 
 | borrowSemaphoreSize             | max permit size of semaphore for conneciton getting                    | min(maxActive/2,CPU size） |
-| defaultAutoCommit               | Connection.setAutoComit(defaultAutoCommit)                             | blank                     |
-| defaultTransactionIsolationCode | Connection.setTransactionIsolation(defaultTransactionIsolationCode)    | blank                     |
-| defaultCatalog                  | Connection.setCatalog(defaultCatalog)                                  | blank                     |
-| defaultSchema                   | Connection.setSchema(defaultSchema)                                    | blank                     |
-| defaultReadOnly                 | Connection.setReadOnly(defaultReadOnly)                                | blank                     |
+| defaultAutoCommit               | Connection.setAutoComit(defaultAutoCommit)                             | none                     |
+| defaultTransactionIsolationCode | Connection.setTransactionIsolation(defaultTransactionIsolationCode)    | none                     |
+| defaultCatalog                  | Connection.setCatalog(defaultCatalog)                                  | none                     |
+| defaultSchema                   | Connection.setSchema(defaultSchema)                                    | none                     |
+| defaultReadOnly                 | Connection.setReadOnly(defaultReadOnly)                                | none                     |
 | maxWait                         | max wait time in pool to get connection(ms)                            | 8000                      |
 | idleTimeout                     | max idle time of connecitons in pool (ms)                              | 18000                     |  
 | holdTimeout                     | max inactive time of borrowed connections(ms)                          | 0                         |  
@@ -125,15 +125,15 @@ BeeCP woring parameters are from its configuration object(BeeDataSourceConfig),b
 | enableJmx                       | enable indicator to support Jmx                                        | false                     | 
 | printConfigInfo                 | indicator to print configuration items by log when pool initialize     | false                     | 
 | printRuntimeLog                 | indicator to print runtime logs of pool                                | false                     | 
-| **connectionFactory**               | connection factory instance                                            | blank                     |
-| **connectionFactoryClass**          | connection factory class                                               | blank                     |
-| **connectionFactoryClassName**      | connection factory class name                                          | blank                     |
-| **evictPredicate**                  | predicate instance                                                     | blank                     |
-| **evictPredicateClass**             | predicate class                                                        | blank                     |
-| **evictPredicateClassName**         | predicate class name                                                   | blank                     |
-| **jdbcLinkInfoDecoder**             | decoder instance of jdbc link info                                     | blank                     |
-| **jdbcLinkInfoDecoderClass**        | decoder class of jdbc link info                                        | blank                     |
-| **jdbcLinkInfoDecoderClassName**    | decoder class name of jdbc link info                                   | blank                     |
+| **connectionFactory**               | connection factory instance                                            | none                     |
+| **connectionFactoryClass**          | connection factory class                                               | none                     |
+| **connectionFactoryClassName**      | connection factory class name                                          | none                     |
+| **evictPredicate**                  | predicate instance                                                     | none                     |
+| **evictPredicateClass**             | predicate class                                                        | none                     |
+| **evictPredicateClassName**         | predicate class name                                                   | none                     |
+| **jdbcLinkInfoDecoder**             | decoder instance of jdbc link info                                     | none                     |
+| **jdbcLinkInfoDecoderClass**        | decoder class of jdbc link info                                        | none                     |
+| **jdbcLinkInfoDecoderClassName**    | decoder class name of jdbc link info                                   | none                     |
 
 ***Object type properties**，choosed priority order：instance > class > class name
 
