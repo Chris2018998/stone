@@ -43,44 +43,45 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
-    //an int sequence for pool names generation,its value starts with 1
+    //An atomic integer to generate index appended to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //a default name list of items to be skipped over log print when pool initializes
+    //An ignored list of default items during print configuration
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
 
-    //a map store value of putted items,which are injected to a connection factory or a datasource when pool initializes,default is empty
+    //a map of parameters set to connection factory during pool initialization
     private final Map<String, Object> connectProperties = new HashMap<>(0);
-    //a skip list on configuration info-print,original items are copied from default skip list,refer to {@code DefaultExclusionList}
+    //a list of items not be print during pool initialization
     private final List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
-    //jdbc username link to a database,default is null
+    //jdbc username link to database,default is none
     private String username;
-    //jdbc password link to a database,default is null
+    //jdbc password link to database,default is none
     private String password;
-    //jdbc url link to a database,default is null
+    //jdbc url link to database,default is none
     private String jdbcUrl;
-    //jdbc driver class name,default is null;if not set,pool try to search a matched driver with non {@code dbcUrl}
+    //jdbc driver class name,default is none; if none and url is set, pool try to search a matched driver with url
     private String driverClassName;
-    //if not set,a generation name assigned to it,default is null
+    //if not set,a generation name assigned to it after configuration check passed,default is none
     private String poolName;
-    //an indicator of pool work mode,default is false(unfair)
+    //use fair mode to get connection from pool,or use unfair mode
     private boolean fairMode;
-    //creation size of initial connections,default is zero
+    //creation size of connections when pool initialize,default is zero
     private int initialSize;
-    //an indicator of creation way of initial connections,default is false(synchronization)
+    //an indicator to create initial connections by async mode,default is false(synchronization)
     private boolean asyncCreateInitConnection;
-    //maximum of connections in pool,its original value is calculated with an expression
+    //maximum of connections in pool,default value is calculated by an expression
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
-    //max permit size of pool semaphore,its original value is calculated with an expression
+    //max permit size of pool semaphore,default value is calculated by an expression
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
-    //milliseconds: max wait time to get a connection for a borrower in pool,default is 8000 milliseconds(8 seconds)
+    //milliseconds: max wait time in pool to get a connection for borrower,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8L);
-    //milliseconds: max idle time of un-borrowed connections,default is 18000 milliseconds(3 minutes)
+    //milliseconds: max idle time of connections not borrowed, default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3L);
     //milliseconds: max inactive time of borrowed connections,which can be recycled by force,default is zero
     private long holdTimeout;
-    //a test sql to validate connection whether alive
+    //an alive test sql executed on borrowed connections
     private String aliveTestSql = "SELECT 1";
-    //seconds: max wait time to get alive test result from connections,default is 3 seconds.
+    //seconds: max wait time to get alive test result of
+    //connections,default is 3 seconds.
     private int aliveTestTimeout = 3;
     //milliseconds: a threshold time of alive test when borrowed success,if time gap value since last access is less than it,no test on connections,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
@@ -90,9 +91,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private boolean forceCloseUsingOnClear;
     //milliseconds: a park time for waiting borrowed connections return to pool when clean pool and close pool,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
-    //a code list for eviction check on sql exceptions
+    //a code list to eviction check vendorCode of Sql exception thrown from borrowed connections
     private List<Integer> sqlExceptionCodeList;
-    //a state list for eviction check on sql exceptions
+    //a status list to eviction check SQLState of Sql exception thrown from borrowed connections
     private List<String> sqlExceptionStateList;
     //an initial value of catalog property on new connections,refer to {@code Connection.setCatalog(String)}
     private String defaultCatalog;
