@@ -272,6 +272,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //2: attempt to get an idle connection from head to tail by cas way or create one when in NOT Created state
+        //@todo: int startIndex;//generate a start index to search
         for (PooledConnection p : connectionArray) {
             int state = p.state;
             if (state == CON_IDLE) {
