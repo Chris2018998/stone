@@ -31,7 +31,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -57,7 +56,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
-    private static final Random searchIndexRandom = new Random();
 
     String poolName;
     volatile int poolState;
@@ -274,10 +272,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //2: attempt to get an idle connection from head to tail by cas way or create one when in NOT Created state
-        final int startIndex = searchIndexRandom.nextInt(this.connectionArrayLen);
-        int searchIndex = startIndex;
-        do {
-            PooledConnection p = this.connectionArray[searchIndex];
+        for (PooledConnection p : connectionArray) {
             int state = p.state;
             if (state == CON_IDLE) {
                 if (ConStUpd.compareAndSet(p, CON_IDLE, CON_USING)) {
@@ -288,9 +283,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             } else if (state == CON_CLOSED && ConStUpd.compareAndSet(p, CON_CLOSED, CON_CREATING)) {
                 return this.fillRawConnection(p, CON_USING);
             }
-
-            if (++searchIndex == connectionArrayLen) searchIndex = 0;
-        } while (searchIndex != startIndex);
+        }
         return null;
     }
 
