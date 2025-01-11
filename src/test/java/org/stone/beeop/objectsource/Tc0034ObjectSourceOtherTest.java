@@ -60,9 +60,9 @@ public class Tc0034ObjectSourceOtherTest extends TestCase {
 
         //3: lazy initialization
         os.getObjectHandle(objectFactory.getDefaultKey());
-        Assert.assertFalse(os.isPrintRuntimeLog(objectFactory.getDefaultKey()));
-
-        os.setPrintRuntimeLog(true);
         Assert.assertTrue(os.isPrintRuntimeLog(objectFactory.getDefaultKey()));
+
+        os.setPrintRuntimeLog(false);
+        Assert.assertFalse(os.isPrintRuntimeLog(objectFactory.getDefaultKey()));
     }
 }

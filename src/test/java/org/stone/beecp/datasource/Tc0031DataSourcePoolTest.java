@@ -165,7 +165,7 @@ public class Tc0031DataSourcePoolTest extends TestCase {
         }
 
         try {
-            ds.clear(true, null);
+            ds.clear(true, new BeeDataSourceConfig());
         } catch (PoolNotCreatedException e) {
             Assert.assertTrue(e.getMessage().contains("Pool not be created"));
         }

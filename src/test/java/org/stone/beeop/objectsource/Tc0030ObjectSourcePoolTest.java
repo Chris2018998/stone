@@ -106,7 +106,7 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         }
 
         try {
-            os.clear(true, null);
+            os.clear(true, new BeeObjectSourceConfig());
         } catch (Exception e) {
             Assert.assertEquals("Pool not be created", e.getMessage());
         }
