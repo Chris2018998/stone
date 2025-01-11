@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +46,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantTryCount");
+    private static final Random searchIndexRandom = new Random();
     final KeyedObjectPool ownerPool;
-
 
     //clone begin
     private final int maxActiveSize;
@@ -206,7 +207,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
     //Method-2.2: search one idle Object,if not found,then try to create one
     private PooledObject searchOrCreate() throws Exception {
-        for (PooledObject p : objectArray) {
+        final int startIndex = searchIndexRandom.nextInt(this.maxActiveSize);
+        int searchIndex = startIndex;
+        do {
+            PooledObject p = this.objectArray[searchIndex];
             int state = p.state;
             if (state == OBJECT_IDLE) {
                 if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_USING)) {
@@ -217,7 +221,8 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             } else if (state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
                 return this.fillRawObject(p, OBJECT_USING);
             }
-        }
+            if (++searchIndex == maxActiveSize) searchIndex = 0;
+        } while (searchIndex != startIndex);
         return null;
     }
 
