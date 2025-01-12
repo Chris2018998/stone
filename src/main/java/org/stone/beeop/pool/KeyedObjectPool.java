@@ -100,20 +100,14 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         for (int i = 0; i < maxSubPoolSize; i++)
             subPoolsCreationLocks[i] = new ReentrantLock();
 
-        //step3: create a common thread pool to service all sub pools(search idle or create new and transfer to waiters)
-        int coreThreadSize = Math.min(NCPU, maxSubPoolSize);
+        //step3: create thread pool and schedule pool
+        if (this.servantService != null) servantService.shutdownNow();
+        if (this.scheduledService != null) scheduledService.shutdownNow();
+        int coreThreadSize = Math.min(NCPU, maxSubPoolSize + 1);//1 is for default key
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
-        if (this.servantService == null)
-            this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15L,
-                    TimeUnit.SECONDS, new LinkedBlockingQueue<>(maxSubPoolSize), poolThreadFactory);
-        if (servantService.getCorePoolSize() != coreThreadSize)
-            this.servantService.setCorePoolSize(coreThreadSize);
-
-        //step4: create a common scheduled thread pool to service all sub pools(scan out idle timeout and hold timeout)
-        if (this.scheduledService == null)
-            this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
-        if (scheduledService.getCorePoolSize() != coreThreadSize)
-            this.scheduledService.setCorePoolSize(coreThreadSize);
+        this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(maxSubPoolSize), poolThreadFactory);
+        this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
         this.timerCheckInterval = config.getTimerCheckInterval();
         this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask(defaultPool), timerCheckInterval,
                 timerCheckInterval, MILLISECONDS);
@@ -302,24 +296,6 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         }
     }
 
-    //***************************************************************************************************************//
-    //                                    3: Methods to maintain pooed keys(5)                                       //
-    //***************************************************************************************************************//
-    public boolean isPrintRuntimeLog(Object key) throws Exception {
-        return getObjectInstancePool(key).isPrintRuntimeLog();
-    }
-
-    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
-        getObjectInstancePool(key).setPrintRuntimeLog(indicator);
-    }
-
-    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
-        return getObjectInstancePool(key).getPoolMonitorVo();
-    }
-
-    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
-        return getObjectInstancePool(key).interruptObjectCreating(interruptTimeout);
-    }
 
     //***************************************************************************************************************//
     //                                    4: Methods to maintain pooed keys(3)                                        //
@@ -349,6 +325,27 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         if (!removeObjectInstancePool(key).clear(forceCloseUsing))
             throw new PoolInClearingException("Keyed sub pool was closed or in cleaning");
     }
+
+
+    //***************************************************************************************************************//
+    //                                    3: Methods to maintain pooed keys(5)                                       //
+    //***************************************************************************************************************//
+    public boolean isPrintRuntimeLog(Object key) throws Exception {
+        return getObjectInstancePool(key).isPrintRuntimeLog();
+    }
+
+    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
+        getObjectInstancePool(key).setPrintRuntimeLog(indicator);
+    }
+
+    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
+        return getObjectInstancePool(key).getPoolMonitorVo();
+    }
+
+    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
+        return getObjectInstancePool(key).interruptObjectCreating(interruptTimeout);
+    }
+
 
     //***************************************************************************************************************//
     //                5: private methods and friendly methods (4)                                                    //                                                                                  //
