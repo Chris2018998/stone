@@ -3,9 +3,12 @@ stone changes
 
 Changes in 1.4.6(not released)
 
+[beecp]
+1: remove two monitoring methods[getConnectionCreatingCount(),getConnectionCreatingTimeoutCount()]
 [beeop]
-1: add new method to keyed pool interface to query indicator of runtime print
-2: 
+1: remove two monitoring methods[getObjectCreatingCount(),getObjectCreatingTimeoutCount()]
+2: add a method to query print state of runtime logs[isPrintRuntimeLog(key)]
+3: add two key methods[Object[] keys(),boolean exists(key)]
 
 
 Changes in 1.4.5
