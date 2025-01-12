@@ -149,7 +149,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     }
 
     //***************************************************************************************************************//
-    //                                          5: keys maintenance(8)                                               //
+    //                                          5: keys maintenance(10)                                               //
     //***************************************************************************************************************//
     public Object[] keys() throws Exception {
         return getPool().keys();
@@ -157,6 +157,14 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
 
     public boolean exists(Object key) throws Exception {
         return getPool().exists(key);
+    }
+
+    public void clear(Object key) throws Exception {
+        getPool().clear(key);
+    }
+
+    public void clear(Object key, boolean forceCloseUsing) throws Exception {
+        getPool().clear(key, forceCloseUsing);
     }
 
     public void deleteKey(Object key) throws Exception {

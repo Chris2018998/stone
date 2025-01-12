@@ -67,7 +67,6 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //***************************************************************************************************************//
     //1.1: initializes pool with a parameter configuration
     public void init(BeeObjectSourceConfig config) throws Exception {
-        //step1: config check
         if (config == null) throw new PoolInitializeFailedException("Object pool configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
@@ -225,10 +224,12 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 Log.info("BeeOP({})begin to remove all connections", this.poolName);
                 for (ObjectInstancePool pool : instancePoolMap.values())
                     pool.clear(forceCloseUsing);
-                instancePoolMap.clear();
                 Log.info("BeeOP({})completed to remove all connections", this.poolName);
 
                 if (reinit) {
+                    this.defaultKey = null;
+                    this.defaultPool = null;
+                    instancePoolMap.clear();
                     this.poolConfig = checkedConfig;
                     Log.info("BeeOP({})start to reinitialize keyed pool", this.poolName);
                     this.startup(checkedConfig);//throws Exception only fail to create initial objects for default pool or fail to set default values
@@ -331,6 +332,15 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return instancePoolMap.containsKey(key);
     }
 
+    public void clear(Object key) throws Exception {
+        clear(key, false);
+    }
+
+    public void clear(Object key, boolean forceCloseUsing) throws Exception {
+        if (!getObjectInstancePool(key).clear(forceCloseUsing))
+            throw new PoolInClearingException("Keyed sub pool was closed or in cleaning");
+    }
+
     public void deleteKey(Object key) throws Exception {
         deleteKey(key, false);
     }
@@ -360,7 +370,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     private ObjectInstancePool removeObjectInstancePool(Object key) throws Exception {
         checkParameterKey(key);
 
-        if (isDefaultKey(key)) return defaultPool;
+        if (isDefaultKey(key)) throw new ObjectKeyException("Default key is forbidden to delete");
         ObjectInstancePool categoryPool = instancePoolMap.remove(key);
         if (categoryPool == null)
             throw new ObjectKeyNotExistsException("Object category key not exists or has been removed");

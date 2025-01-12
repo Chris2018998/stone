@@ -89,7 +89,7 @@ public interface BeeKeyedObjectPool {
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Closes all pooled objects and remove them from pool;after completion of clean,pool reinitialize with used configuration
+     * Only Closes all pooled objects and remove them from pool,**remain keys**
      *
      * @param forceCloseUsing is that close borrowed objects immediately or wait them return to pool,then close them
      * @throws PoolInClearingException       when pool already in clearing
@@ -98,7 +98,7 @@ public interface BeeKeyedObjectPool {
     void clear(boolean forceCloseUsing) throws Exception;
 
     /**
-     * Closes all pooled objects and remove them from pool; after completion of clean,pool reinitialize with given configuration
+     * Closes all pooled objects and remove them from pool; after completion of clean,pool reinitialize with given configuration,**delete keys**
      *
      * @param forceCloseUsing is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
      * @param config          is a configuration object for pool reinitialize
@@ -126,6 +126,23 @@ public interface BeeKeyedObjectPool {
      * @return a keys array
      */
     boolean exists(Object key);
+
+    /**
+     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)})
+     *
+     * @param key to locate related pooled objects
+     * @throws ObjectKeyException if key is null
+     */
+    void clear(Object key) throws Exception;
+
+    /**
+     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)})
+     *
+     * @param key             to locate related pooled objects
+     * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
+     */
+    void clear(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
      * Delete a pooled key

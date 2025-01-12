@@ -66,6 +66,18 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         }
 
         try {
+            os.keys();
+        } catch (Exception e) {
+            Assert.assertEquals("Pool not be created", e.getMessage());
+        }
+
+        try {
+            os.exists(null);
+        } catch (Exception e) {
+            Assert.assertEquals("Pool not be created", e.getMessage());
+        }
+
+        try {
             os.getMonitorVo(null);
         } catch (Exception e) {
             Assert.assertEquals("Pool not be created", e.getMessage());
@@ -73,6 +85,18 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
 
         try {
             os.setPrintRuntimeLog(null, false);
+        } catch (Exception e) {
+            Assert.assertEquals("Pool not be created", e.getMessage());
+        }
+
+        try {
+            os.clear(null);
+        } catch (Exception e) {
+            Assert.assertEquals("Pool not be created", e.getMessage());
+        }
+
+        try {
+            os.clear(null, true);
         } catch (Exception e) {
             Assert.assertEquals("Pool not be created", e.getMessage());
         }
@@ -110,13 +134,31 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         BeeObjectSource os = new BeeObjectSource(config2);
         Object key = factory.getDefaultKey();
 
+        Assert.assertTrue(os.exists(key));
+        Assert.assertEquals(1, os.keys().length);
         os.interruptObjectCreating(key, true);
         os.getPoolMonitorVo();
         os.getMonitorVo(key);
         os.setPrintRuntimeLog(key, false);
-        os.deleteKey(key);
-        os.deleteKey(key, true);
         os.clear(true);
+        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
+        os.clear(key);
+        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
+        os.clear(key, true);
+        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
+
+        try {
+            os.deleteKey(key);
+        } catch (Exception e) {
+            Assert.assertEquals("Default key is forbidden to delete", e.getMessage());
+        }
+        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
+        try {
+            os.deleteKey(key, true);
+        } catch (Exception e) {
+            Assert.assertEquals("Default key is forbidden to delete", e.getMessage());
+        }
+        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
     }
 
     public void testPoolLazyCreation() throws Exception {

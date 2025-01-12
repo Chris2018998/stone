@@ -77,6 +77,12 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return true;
     }
 
+    public void clear(Object key) {
+    }
+
+    public void clear(Object key, boolean forceCloseUsing) {
+    }
+
     public void deleteKey(Object key) {
     }
 
