@@ -146,19 +146,6 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
         os.clear(key, true);
         Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
-
-        try {
-            os.deleteKey(key);
-        } catch (Exception e) {
-            Assert.assertEquals("Default key is forbidden to delete", e.getMessage());
-        }
-        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
-        try {
-            os.deleteKey(key, true);
-        } catch (Exception e) {
-            Assert.assertEquals("Default key is forbidden to delete", e.getMessage());
-        }
-        Assert.assertTrue(os.exists(key));//<--default key forbidden to delete
     }
 
     public void testPoolLazyCreation() throws Exception {
@@ -184,5 +171,38 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         os.setMaxActive(2);
         Assert.assertNotNull(os.getObjectHandle());
         Assert.assertNotNull(os.getObjectHandle(factory.getDefaultKey()));
+    }
+
+    public void testKeyDelete() throws Exception {
+        BeeObjectSource os = new BeeObjectSource();
+        BeeObjectFactory factory = new JavaBookFactory();
+        os.setParkTimeForRetry(0L);
+        os.setObjectFactory(factory);
+        os.setForceCloseUsingOnClear(true);
+        os.setMaxActive(2);
+
+        Object defaultKey = factory.getDefaultKey();
+        Object key1 = new Object();
+        Assert.assertNotNull(os.getObjectHandle());
+        Assert.assertNotNull(os.getObjectHandle(key1));
+
+        Assert.assertTrue(os.exists(defaultKey));
+        Assert.assertTrue(os.exists(key1));
+
+        os.deleteKey(key1, true);
+        Assert.assertFalse(os.exists(key1));
+
+        try {
+            os.deleteKey(defaultKey);
+        } catch (Exception e) {
+            Assert.assertEquals("Default key is forbidden to delete", e.getMessage());
+        }
+        Assert.assertTrue(os.exists(defaultKey));//<--default key forbidden to delete
+        try {
+            os.deleteKey(defaultKey, true);
+        } catch (Exception e) {
+            Assert.assertEquals("Default key is forbidden to delete", e.getMessage());
+        }
+        Assert.assertTrue(os.exists(defaultKey));//<--default key forbidden to delete
     }
 }
