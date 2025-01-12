@@ -188,7 +188,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 }
             } catch (Throwable e) {
                 for (int i = 0; i < index; i++)
-                    objectArray[i].onBeforeRemove(DESC_RM_INIT);
+                    objectArray[i].onRemove(DESC_RM_INIT);
                 throw e;
             }
         } else {//async creation
@@ -382,7 +382,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
      * @param reason is a cause for be aborted
      */
     void abort(PooledObject p, String reason) {
-        p.onBeforeRemove(reason);
+        p.onRemove(reason);
         this.tryWakeupServantThread();
     }
 
@@ -405,7 +405,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     private boolean testOnBorrow(PooledObject p) {
         try {
             if (System.currentTimeMillis() - p.lastAccessTime >= this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
-                p.onBeforeRemove(DESC_RM_BAD);
+                p.onRemove(DESC_RM_BAD);
                 this.tryWakeupServantThread();
                 return false;
             } else {
@@ -471,7 +471,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
             if (state == OBJECT_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
                 if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
-                    p.onBeforeRemove(DESC_RM_IDLE);
+                    p.onRemove(DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
             } else if (state == OBJECT_USING && supportHoldTimeout) {
@@ -527,20 +527,18 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 if (state == OBJECT_IDLE) {
                     if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED)) {
                         closedCount++;
-                        p.onBeforeRemove(removeReason);
+                        p.onRemove(removeReason);
                     }
                 } else if (state == OBJECT_USING) {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
                         if (forceCloseUsing || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
                             tryCloseObjectHandle(handleInUsing);
-                    } else {
-                        p.onBeforeRemove(removeReason);
                     }
                 } else if (state == OBJECT_CLOSED) {
                     closedCount++;
                 }
-            } // for
+            }
 
             if (closedCount == this.maxActiveSize) break;
             LockSupport.parkNanos(this.parkTimeForRetryNs);

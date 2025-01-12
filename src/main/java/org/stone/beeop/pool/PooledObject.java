@@ -104,7 +104,7 @@ final class PooledObject {
     }
 
     //pool call this method before this object removed
-    void onBeforeRemove(String cause) {
+    void onRemove(String cause) {
         if (ownerPool.isPrintRuntimeLog())
             CommonLog.info("BeeOP({}))begin to remove a pooled object:{} for cause:{}", ownerPool.getPoolName(), this, cause);
 
