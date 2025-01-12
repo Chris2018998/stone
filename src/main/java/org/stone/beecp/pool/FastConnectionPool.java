@@ -988,26 +988,26 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         return size;
     }
 
-    //Method-5.10: Get connection count in creating
-    public int getConnectionCreatingCount() {
-        int count = 0;
-        for (PooledConnection p : connectionArray) {
-            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null) count++;
-        }
-        return count;
-    }
-
-    //Method-5.11: Get connection count in creating
-    public int getConnectionCreatingTimeoutCount() {
-        int count = 0;
-        for (PooledConnection p : connectionArray) {
-            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
-                count++;
-        }
-        return count;
-    }
+//    //Method-5.10: Get connection count in creating
+//    public int getConnectionCreatingCount() {
+//        int count = 0;
+//        for (PooledConnection p : connectionArray) {
+//            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
+//            if (creatingInfo != null) count++;
+//        }
+//        return count;
+//    }
+//
+//    //Method-5.11: Get connection count in creating
+//    public int getConnectionCreatingTimeoutCount() {
+//        int count = 0;
+//        for (PooledConnection p : connectionArray) {
+//            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
+//            if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
+//                count++;
+//        }
+//        return count;
+//    }
 
     //Method-5.12: interrupt some threads creating connections
     public Thread[] interruptConnectionCreating(boolean onlyInterruptTimeout) {

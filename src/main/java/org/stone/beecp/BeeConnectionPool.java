@@ -52,6 +52,7 @@ public interface BeeConnectionPool {
      */
     XAConnection getXAConnection() throws SQLException;
 
+
     /**
      * Closes all connections in pool and shutdown all work threads in pool,then pool state change to closed from working,
      * disable all operation on pool.
@@ -66,32 +67,32 @@ public interface BeeConnectionPool {
     boolean isClosed();
 
     /**
-     * Changes switch of log print.
+     * Enable runtime log print or disable
      *
-     * @param indicator is true that prints logs of pool work,false that disable print
+     * @param enable is true that print, false not print
      */
-    void setPrintRuntimeLog(boolean indicator);
+    void setPrintRuntimeLog(boolean enable);
 
     /**
-     * Gets monitor object of pool runtime info.
+     * Get pool monitoring object contains some runtime info,for example:count of idle,using,creating,timeout and so on.
      *
-     * @return monitor object of pool
+     * @return monitor of pool
      */
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
-    /**
-     * Get connection count in creating
-     *
-     * @return a nanoseconds time;if not exists a creating thread,then return 0
-     */
-    int getConnectionCreatingCount();
-
-    /**
-     * Get connection count in creating timeout
-     *
-     * @return true that creation is timeout
-     */
-    int getConnectionCreatingTimeoutCount();
+//    /**
+//     * Get connection count in creating
+//     *
+//     * @return a nanoseconds time;if not exists a creating thread,then return 0
+//     */
+//    int getConnectionCreatingCount();
+//
+//    /**
+//     * Get connection count in creating timeout
+//     *
+//     * @return true that creation is timeout
+//     */
+//    int getConnectionCreatingTimeoutCount();
 
     /**
      * interrupt threads creating connections

@@ -208,14 +208,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.getPool().getPoolMonitorVo();
     }
 
-    public int getConnectionCreatingCount() throws SQLException {
-        return this.getPool().getConnectionCreatingCount();
-    }
-
-    public int getConnectionCreatingTimeoutCount() throws SQLException {
-        return this.getPool().getConnectionCreatingTimeoutCount();
-    }
-
     public Thread[] interruptConnectionCreating(boolean interruptTimeout) throws SQLException {
         return this.getPool().interruptConnectionCreating(interruptTimeout);
     }
