@@ -9,7 +9,7 @@ Changes in 1.4.6(not released)
 1: remove two monitoring methods[getObjectCreatingCount(),getObjectCreatingTimeoutCount()]
 2: add a method to query print state of runtime logs[isPrintRuntimeLog(key)]
 3: add two key methods[Object[] keys(),boolean exists(key)]
-
+4: add two key methods[clear(boolean),clear(boolean,BeeObjectSourceConfig)]
 
 Changes in 1.4.5
 support array properties injection in util 
