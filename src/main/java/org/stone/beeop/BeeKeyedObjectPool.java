@@ -12,7 +12,7 @@ package org.stone.beeop;
 import org.stone.beeop.pool.exception.*;
 
 /**
- * Bee Object Pool interface
+ * Keyed object pool
  *
  * @author Chris Liao
  * @version 1.0
@@ -20,114 +20,132 @@ import org.stone.beeop.pool.exception.*;
 public interface BeeKeyedObjectPool {
 
     /**
-     * Pool initializes with a configuration object
+     * Pool initialize with a configuration object
      *
-     * @param config is a configuration object for pool initialization
-     * @throws Exception while configuration checks failed or pool initializes failed
+     * @param config is a configuration object contains some parameter applied in pool
+     * @throws Exception when pool initialize fail
      */
     void init(BeeObjectSourceConfig config) throws Exception;
 
+    //***************************************************************************************************************//
+    //                                    Object getting(2)                                                          //
+    //***************************************************************************************************************//
+
     /**
-     * Closes pool
+     * Attempts to get an object instance from pool
+     *
+     * @return handle of borrowed object
+     * @throws ObjectCreateException         when fail to create object instance
+     * @throws ObjectGetTimeoutException     when wait timeout for a released object instance,see{@link BeeObjectSourceConfig#getMaxWait()}
+     * @throws ObjectGetInterruptedException while an interruption occurs on waiting for a released object instance
+     */
+    BeeObjectHandle getObjectHandle() throws Exception;
+
+    /**
+     * Attempts to get an object instance from pool with a category key
+     *
+     * @param key to get pooled object
+     * @return handle of borrowed object
+     * @throws ObjectCreateException         when fail to create object instance
+     * @throws ObjectGetTimeoutException     when wait timeout for a released object instance,see{@link BeeObjectSourceConfig#getMaxWait()}
+     * @throws ObjectGetInterruptedException while an interruption occurs on waiting for a released object instance
+     * @throws ObjectKeyException            when given key not exists in pool and count of pool category keys reach configured maximum
+     */
+    BeeObjectHandle getObjectHandle(Object key) throws Exception;
+
+    //***************************************************************************************************************//
+    //                                   Pool close(2)                                                               //
+    //***************************************************************************************************************//
+
+    /**
+     * Shut down pool,all pooled objects are closed and removed from pool;pool can't be reactivated after closed,
+     * and rejects requests from borrowers.
      */
     void close();
 
     /**
-     * Query pool state whether is closed.
+     * Query pool state is closed
      *
      * @return a boolean value of pool close status
      */
     boolean isClosed();
 
-    /**
-     * Turns on switch of print runtime logs of pool,or turns off
-     *
-     * @param indicator is true that print logs,false not print
-     */
-    void setPrintRuntimeLog(boolean indicator);
+    //***************************************************************************************************************//
+    //                                         Pool Clean and monitoring                                             //
+    //***************************************************************************************************************//
 
     /**
-     * Gets runtime monitor object of pool.
+     * Enable runtime log print or disable
+     *
+     * @param enable is true that print, false not print
+     */
+    void setPrintRuntimeLog(boolean enable);
+
+    /**
+     * Get pool monitoring object contains some runtime info,for example:count of idle,using,creating,timeout and so on.
      *
      * @return monitor of pool
      */
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Removes all pooled objects.
+     * Closes all pooled objects and remove them from pool;after completion of clean,pool reinitialize with used configuration
      *
-     * @param forceCloseUsing is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
+     * @param forceCloseUsing is that close borrowed objects immediately or wait them return to pool,then close them
+     * @throws PoolInClearingException       when pool already in clearing
+     * @throws PoolInitializeFailedException when fail to reinitialize
      */
     void clear(boolean forceCloseUsing) throws Exception;
 
     /**
-     * Removes all pooled objects,and re-initializes pool with a new configuration object.
+     * Closes all pooled objects and remove them from pool; after completion of clean,pool reinitialize with given configuration
      *
      * @param forceCloseUsing is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
      * @param config          is a configuration object for pool reinitialize
      * @throws BeeObjectSourceConfigException when config is null
+     * @throws PoolInClearingException        when pool already in clearing
      * @throws PoolInitializeFailedException  when reinitialize failed
      */
     void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
 
 
     //***************************************************************************************************************//
-    //                                    Methods to borrow pooled objects                                           //
+    //                                        keys maintenance                                                       //
     //***************************************************************************************************************//
 
     /**
-     * Attempts to get an object from pool with default key
+     * gets pooled keys
      *
-     * @return handle of borrowed object
-     * @throws ObjectCreateException         when fail to create a pooled object
-     * @throws ObjectGetTimeoutException     when wait timeout for an object released from other borrower
-     * @throws ObjectGetInterruptedException that an interruption occurs while borrower waits for a released object
+     * @return a keys array
      */
-    BeeObjectHandle getObjectHandle() throws Exception;
+    Object[] keys();
 
     /**
-     * Attempts to get an object from pool with a specified key,if object category of key pool not full,then attempt to build one by key
+     * query given key is in pool
      *
-     * @param key may be mapping to a set of pooled objects
-     * @return handle of a borrowed object
-     * @throws ObjectCreateException         when failed to create a new object
-     * @throws ObjectGetTimeoutException     when timeout on wait
-     * @throws ObjectGetInterruptedException when interruption on wait
+     * @return a keys array
      */
-    BeeObjectHandle getObjectHandle(Object key) throws Exception;
-
-
-    //***************************************************************************************************************//
-    //                                  Methods to monitor runtime pool                                              //
-    //***************************************************************************************************************//
+    boolean exists(Object key);
 
     /**
-     * Get count of object in creating
+     * Delete a pooled key
      *
-     * @param key may be mapping to a set of pooled objects
-     * @return count in creating,if no creation return 0
+     * @param key is a key to remove
+     * @throws ObjectKeyException if key is null or default
      */
-    int getObjectCreatingCount(Object key) throws Exception;
+    void deleteKey(Object key) throws Exception;
 
     /**
-     * Get count of object in creating timeout
+     * Delete a pooled key
      *
-     * @param key may be mapping to a set of pooled objects
-     * @return count of creation timeout,if no timeout return 0
+     * @param key             is a key may map to a sub pool
+     * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
      */
-    int getObjectCreatingTimeoutCount(Object key) throws Exception;
+    void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
 
     /**
-     * attempt to interrupt threads creating object
-     *
-     * @param key                  may be mapping to a set of pooled objects
-     * @param onlyInterruptTimeout is true,attempt to interrupt creation timeout threads
-     * @return interrupted threads
-     */
-    Thread[] interruptObjectCreating(Object key, boolean onlyInterruptTimeout) throws Exception;
-
-    /**
-     * query indicator of runtime log print
+     * Query print state of runtime logs
      *
      * @param key pooled key
      * @return boolean value,true,keyed pool print runtime logs,otherwise not print
@@ -136,16 +154,16 @@ public interface BeeKeyedObjectPool {
     boolean isPrintRuntimeLog(Object key) throws Exception;
 
     /**
-     * operation on log switch to disable log print or enable print
+     * Enable runtime log print or disable
      *
-     * @param key       pooled key
-     * @param indicator is true,print logs;false,not print
+     * @param key    pooled key
+     * @param enable is true,print logs;false,not print
      * @throws Exception when key is null or not exist key in pool
      */
-    void setPrintRuntimeLog(Object key, boolean indicator) throws Exception;
+    void setPrintRuntimeLog(Object key, boolean enable) throws Exception;
 
     /**
-     * Get monitor object of sub pool by key.
+     * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.
      *
      * @param key may be mapping to a set of pooled objects
      * @return monitor of an object group
@@ -153,35 +171,12 @@ public interface BeeKeyedObjectPool {
      */
     BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception;
 
-
-    //***************************************************************************************************************//
-    //                                     Methods to maintain pooled keys                                           //
-    //***************************************************************************************************************//
-
     /**
-     * gets keys maintained in pool
+     * Interrupt activity of object creation in processing
      *
-     * @return a keys array
+     * @param key                  may be mapping to a set of pooled objects
+     * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
+     * @return interrupted threads
      */
-    Object[] keys();
-
-    /**
-     * Deletes sub pool map to a given parameter key.
-     *
-     * @param key is a key to remove
-     * @throws ObjectKeyException if key is null
-     * @throws ObjectKeyException if key is default key
-     */
-    void deleteKey(Object key) throws Exception;
-
-    /**
-     * Deletes sub pool map to a given parameter key.
-     *
-     * @param key             is a key may map to a sub pool
-     * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null
-     * @throws ObjectKeyException if key is default key
-     */
-    void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
-
+    Thread[] interruptObjectCreating(Object key, boolean onlyInterruptTimeout) throws Exception;
 }

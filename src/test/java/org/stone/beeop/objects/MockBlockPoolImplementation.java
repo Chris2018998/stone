@@ -73,6 +73,10 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return null;
     }
 
+    public boolean exists(Object key) {
+        return true;
+    }
+
     public void deleteKey(Object key) {
     }
 

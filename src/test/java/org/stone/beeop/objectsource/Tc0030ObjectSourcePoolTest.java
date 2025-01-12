@@ -54,16 +54,6 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
     public void testPoolNotReady() {
         BeeObjectSource os = new BeeObjectSource();
         try {
-            os.getObjectCreatingCount(null);
-        } catch (Exception e) {
-            Assert.assertEquals("Pool not be created", e.getMessage());
-        }
-        try {
-            os.getObjectCreatingTimeoutCount(null);
-        } catch (Exception e) {
-            Assert.assertEquals("Pool not be created", e.getMessage());
-        }
-        try {
             os.interruptObjectCreating(null, true);
         } catch (Exception e) {
             Assert.assertEquals("Pool not be created", e.getMessage());
@@ -120,8 +110,6 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         BeeObjectSource os = new BeeObjectSource(config2);
         Object key = factory.getDefaultKey();
 
-        os.getObjectCreatingCount(key);
-        os.getObjectCreatingTimeoutCount(key);
         os.interruptObjectCreating(key, true);
         os.getPoolMonitorVo();
         os.getMonitorVo(key);

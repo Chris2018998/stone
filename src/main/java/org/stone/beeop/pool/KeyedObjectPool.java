@@ -79,7 +79,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                 throw e;
             }
         } else {
-            throw new PoolInitializeFailedException("Object keyed pool has initialized or in starting");
+            throw new PoolInitializeFailedException("Object keyed pool has initialized or in initializing");
         }
     }
 
@@ -105,7 +105,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         int coreThreadSize = Math.min(NCPU, maxSubPoolSize);
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
         if (this.servantService == null)
-            this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15,
+            this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 15L,
                     TimeUnit.SECONDS, new LinkedBlockingQueue<>(maxSubPoolSize), poolThreadFactory);
         if (servantService.getCorePoolSize() != coreThreadSize)
             this.servantService.setCorePoolSize(coreThreadSize);
@@ -304,18 +304,6 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //***************************************************************************************************************//
     //                                    3: Methods to maintain pooed keys(5)                                       //
     //***************************************************************************************************************//
-    public int getObjectCreatingCount(Object key) throws Exception {
-        return getObjectInstancePool(key).getObjectCreatingCount();
-    }
-
-    public int getObjectCreatingTimeoutCount(Object key) throws Exception {
-        return getObjectInstancePool(key).getObjectCreatingTimeoutCount();
-    }
-
-    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
-        return getObjectInstancePool(key).interruptObjectCreating(interruptTimeout);
-    }
-
     public boolean isPrintRuntimeLog(Object key) throws Exception {
         return getObjectInstancePool(key).isPrintRuntimeLog();
     }
@@ -328,11 +316,19 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return getObjectInstancePool(key).getPoolMonitorVo();
     }
 
+    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
+        return getObjectInstancePool(key).interruptObjectCreating(interruptTimeout);
+    }
+
     //***************************************************************************************************************//
     //                                    4: Methods to maintain pooed keys(3)                                        //
     //***************************************************************************************************************//
     public Object[] keys() {
         return this.instancePoolMap.keySet().toArray();
+    }
+
+    public boolean exists(Object key) {
+        return instancePoolMap.containsKey(key);
     }
 
     public void deleteKey(Object key) throws Exception {
