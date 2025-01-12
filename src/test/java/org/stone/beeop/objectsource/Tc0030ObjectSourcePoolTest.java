@@ -12,6 +12,7 @@ package org.stone.beeop.objectsource;
 import junit.framework.TestCase;
 import org.junit.Assert;
 import org.stone.beeop.BeeObjectFactory;
+import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.objects.JavaBookFactory;
@@ -190,6 +191,13 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         Assert.assertTrue(os.exists(key1));
 
         os.deleteKey(key1, true);
+        Assert.assertFalse(os.exists(key1));
+
+        BeeObjectHandle handle = os.getObjectHandle(key1);
+        Assert.assertNotNull(handle);
+        handle.close();
+        Assert.assertTrue(os.exists(key1));
+        os.deleteKey(key1);
         Assert.assertFalse(os.exists(key1));
 
         try {
