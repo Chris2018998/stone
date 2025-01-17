@@ -44,7 +44,7 @@ public class Tc0051KeyPoolInitTest extends TestCase {
             Assert.assertEquals("Object keyed pool has initialized or in initializing", thread1.getFailureException().getMessage());
         }
 
-        if (thread1.getFailureException() != null) {
+        if (thread2.getFailureException() != null) {
             Assert.assertEquals("Object keyed pool has initialized or in initializing", thread2.getFailureException().getMessage());
         }
     }

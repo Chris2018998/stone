@@ -129,7 +129,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         //6: get failure exception from second
         try {
             SQLException e = second.getFailureCause();
-            Assert.assertTrue(e != null && e.getMessage().contains("Waited failed on pool lock for initialization ready on first connection by another"));
+            Assert.assertTrue(e != null && e.getMessage().contains("Pool first connection created fail or first connection initialized fail"));
         } finally {
             pool.close();
         }
