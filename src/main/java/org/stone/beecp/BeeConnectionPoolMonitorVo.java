@@ -10,7 +10,7 @@
 package org.stone.beecp;
 
 /**
- * Monitor interface,call its methods to get pool run time info
+ * Pool monitor interface
  *
  * @author Chris Liao
  * @version 1.0

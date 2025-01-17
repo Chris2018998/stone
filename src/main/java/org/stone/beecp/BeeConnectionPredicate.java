@@ -21,7 +21,7 @@ import java.sql.SQLException;
 public interface BeeConnectionPredicate {
 
     /**
-     * Does a test on a sql exception for connection eviction.
+     * Test a SQLException thrown from a connection,result determine connection evicted from pool
      *
      * @param e is a sql exception
      * @return a string as eviction cause,if null or empty,not be evicted

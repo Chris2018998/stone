@@ -21,7 +21,7 @@ import java.sql.SQLException;
 public interface BeeConnectionFactory {
 
     /**
-     * Creates a connection object to be pooled
+     * Creates a connection.
      *
      * @return created connection
      * @throws SQLException when creates failed.
