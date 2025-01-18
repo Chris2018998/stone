@@ -106,7 +106,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private Integer defaultTransactionIsolationCode;
     //Name of transactionIsolation,a mapping value of{@code defaultTransactionIsolationCode} retrieved by it when pool initialization
     private String defaultTransactionIsolationName;
-    //An indicator to enable or disable pool thread local to cache last borrowed connection(false can be used support virtual threads)
+    //An indicator to enable or disable pool thread local to cache last borrowed connection(false can be used to support virtual threads)
     private boolean enableThreadLocal = true;
     //An indicator to enable catalog default setting on new connections,default is true
     private boolean enableDefaultOnCatalog = true;
@@ -143,11 +143,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //Class name of predicate,third priority to be chosen
     private String evictPredicateClassName;
 
-    //Jdbc info decoder(url,user password),default is none
+    //Jdbc info decoder(url,username password),default is none
     private BeeJdbcLinkInfoDecoder jdbcLinkInfoDecoder;
-    //Class of Jdbc info decoder(url,user password),default is none
+    //Class of Jdbc info decoder(url,username password),default is none
     private Class<? extends BeeJdbcLinkInfoDecoder> jdbcLinkInfoDecoderClass;
-    //Class name of Jdbc info decoder(url,user password),default is none
+    //Class name of Jdbc info decoder(url,username password),default is none
     private String jdbcLinkInfoDecoderClassName;
 
     //An indicator to enable Jmx registration,default is false
