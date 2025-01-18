@@ -35,58 +35,58 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
-    //An atomic integer to generate index appended to pool name as suffix,its value starts with 1
+    //An atomic integer for generating index appended to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //a map store value of fields which injected to object factory during pool initialization
+    //A properties map whose entries set to object factory during pool initialization
     private final Map<String, Object> factoryProperties = new HashMap<>(0);
 
-    //pool name for log print and monitor,if not set,a generation name be assigned to it
+    //Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
     private String poolName;
-    //an indicator that pool use fair mode to get object instances for borrowers,default is false(unfair mode)
+    //Object getting mode applied on semaphore and transfer,default is false,unfair mode
     private boolean fairMode;
-    //creation size of object instances when pool initialize,default is zero
+    //Creation size of object when pool initialize,default is zero
     private int initialSize;
-    //Create initial instances of objects by async thread during pool initializing,default is false
+    //An indicator to create initial object by async mode,default is false(synchronization mode)
     private boolean asyncCreateInitObject;
-    //Max size of object varieties,default is 50,this value exclude default variety
+    //Maximum of object varieties,default is 50
     private int maxObjectKeySize = 50;
-    //Maximum of instances per variety object in pool,capacity = (maxObjectKeySize+1)*maxActive
+    //Maximum of object per variety,capacity = maxObjectKeySize*maxActive
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //Max permit size to access per variety object
+    //Maximum of semaphore permit per variety object
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //milliseconds: max wait time in pool to get an object instance,default is 8 seconds
+    //Milliseconds: max wait time in pool to get an object for borrower,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8L);
 
-    //milliseconds: idle-timeout of object instances not borrowed in pool,default is 18000 milliseconds(3 minutes)
+    //Milliseconds: max idle time on object not borrowed, default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3L);
-    //milliseconds: max inactive time of borrowed object instances,pool recycle them when timeout,default is zero
+    //Milliseconds: max inactive time on borrowed objects,timeout objects are recycled to pool by force;default is zero,no timeout,no force recycle for it
     private long holdTimeout;
 
-    //seconds: max wait time for test thread to get alive test result from borrowed instances,default is 3 seconds.
+    //Seconds: max wait time to get alive test result on borrowed objects,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //milliseconds: a threshold time to do alive test on borrowed instances,elapsed time = borrowed time - last active time,if time is less than it,no test on objects,default is 500 milliseconds
+    //Milliseconds: a threshold time of alive test when borrowed success,if time gap value since last access is less than it,no test on object,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //milliseconds: an interval time for a pool inside thread to scan timeout object instances,default is 18000 milliseconds(3 minutes)
+    //Milliseconds: an interval time that pool scans out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3L);
-    //an indicator that recycle borrowed objects instances immediately or wait them return to pool and close them,default is false.
+    //A boolean control argument for borrowed object on pool clean,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
     private boolean forceCloseUsingOnClear;
-    //milliseconds: a wait time for borrowed objects instances return to pool to be closed,it works when the forceCloseUsingOnClear is false,default is 3000 milliseconds
+    //Milliseconds: park time for wait borrowed objects return to pool during pool clean,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
 
-    //an indicator that enable thread-local or disable it in pool
+    //An indicator to enable or disable pool thread local to cache last borrowed object(false can be used to support virtual threads)
     private boolean enableThreadLocal = true;
-    //an indicator that register pool to MBean server or not
+    //An indicator to enable Jmx registration,default is false
     private boolean enableJmx;
-    //an indicator that print pool runtime log or not,default is false
+    //An indicator to enable runtime log print in pool,default is false
     private boolean printRuntimeLog;
-    //an indicator that print pool configuration items during pool initializing or not,default is false
+    //An indicator to enable configuration log print during pool initializes,default is false
     private boolean printConfigInfo;
-    //an excluded list of configuration items,which not be printed when pool initializing
+    //A list of configuration items ignore print when pool initialization,default is none
     private List<String> configPrintExclusionList;
 
-    //an array of interfaces implemented by object class
+    //An array of interfaces implemented by object class
     private Class<?>[] objectInterfaces;
-    //a class name array of interface implemented by object class
+    //A class name array of interface implemented by object class
     private String[] objectInterfaceNames;
 
     //Factory to create object instances to pool,first priority for selected if exists
@@ -98,19 +98,19 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
     //Filter on method call of object instances,first priority for selected if exists
     private BeeObjectMethodFilter objectMethodFilter;
-    //class of filter on method call of object instances,first priority for selected if exists
+    //Class of filter on method call of object instances,first priority for selected if exists
     private Class<? extends BeeObjectMethodFilter> objectMethodFilterClass;
-    //class name of filter on method call of object instances,third priority for selected if exists
+    //Class name of filter on method call of object instances,third priority for selected if exists
     private String objectMethodFilterClassName;
 
     //Predicate to do eviction test on exception object instances,first priority for selected if exists
     private BeeObjectPredicate objectPredicate;
-    //class of predicate to do eviction test on exception object instances,second priority for selected if exists
+    //Class of predicate to do eviction test on exception object instances,second priority for selected if exists
     private Class<? extends BeeObjectPredicate> objectPredicateClass;
-    //class name of predicate to do eviction test on exception object instances,third priority for selected if exists
+    //Class name of predicate to do eviction test on exception object instances,third priority for selected if exists
     private String objectPredicateClassName;
 
-    //class name of pool implementation,default is {@code KeyedObjectPool}
+    //Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
 
 
