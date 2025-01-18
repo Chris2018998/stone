@@ -7,7 +7,7 @@
     <version>1.4.6</version>
     <name>stone</name>
     <url>https://www.github.com/Chris2018998/stone</url>
-    <description>Java Tools Suite</description>
+    <description>Java Pools</description>
 
     <properties>
         <gpg.skip>false</gpg.skip>
