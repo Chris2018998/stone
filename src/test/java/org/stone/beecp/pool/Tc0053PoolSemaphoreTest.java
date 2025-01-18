@@ -31,7 +31,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
         config.setMaxActive(1);
         config.setBorrowSemaphoreSize(1);
         config.setParkTimeForRetry(0L);
-        config.setForceCloseUsingOnClear(true);
+        config.set(true);
         config.setMaxWait(1L);
         MockNetBlockConnectionFactory factory = new MockNetBlockConnectionFactory();
         config.setConnectionFactory(factory);
@@ -58,7 +58,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
         config.setMaxActive(1);
         config.setBorrowSemaphoreSize(1);
         config.setParkTimeForRetry(0L);
-        config.setForceCloseUsingOnClear(true);
+        config.set(true);
         config.setMaxWait(TimeUnit.SECONDS.toMillis(10L));
         MockNetBlockConnectionFactory factory = new MockNetBlockConnectionFactory();
         config.setConnectionFactory(factory);

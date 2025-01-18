@@ -90,21 +90,21 @@ public interface BeeConnectionPool {
     /**
      * Closes all connections and removes them from pool.
      *
-     * @param forceCloseUsing is an indicator that close borrowed connections immediately,or that close them when them return to pool
+     * @param forceRecycleBorrowed is an indicator that close borrowed connections immediately,or that close them when them return to pool
      * @throws SQLException when pool closed or in cleaning
      */
-    void clear(boolean forceCloseUsing) throws SQLException;
+    void clear(boolean forceRecycleBorrowed) throws SQLException;
 
     /**
      * Closes all connections and removes them from pool,then re-initialize pool with new configuration.
      *
-     * @param forceCloseUsing is an indicator that close borrowed connections immediately,or that close them when them return to pool
-     * @param config          is a new configuration object
+     * @param forceRecycleBorrowed is an indicator that close borrowed connections immediately,or that close them when them return to pool
+     * @param config               is a new configuration object
      * @throws BeeDataSourceConfigException when check failed on this new configuration
      * @throws SQLException                 when pool closed or in cleaning
      * @throws SQLException                 when pool reinitialize failed
      */
-    void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException;
+    void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
 
 }
 	

@@ -781,7 +781,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step1:print pool info before clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})before timed scan,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})before timed scan,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2: interrupt current creation of a connection when this operation is timeout
@@ -807,24 +807,24 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step4: print pool info after clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})after timed scan,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})after timed scan,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
     //***************************************************************************************************************//
     //                                  4: pool clean and pool close  (6)                                            //                                                                                  //
     //***************************************************************************************************************//
-    public void clear(boolean forceCloseUsing) throws SQLException {
-        clear(forceCloseUsing, false, null);
+    public void clear(boolean forceRecycleBorrowed) throws SQLException {
+        clear(forceRecycleBorrowed, false, null);
     }
 
     //Method-4.2: close all connections in pool and removes them from pool,then re-initializes pool with new configuration
-    public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
-        clear(forceCloseUsing, true, config);
+    public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
+        clear(forceRecycleBorrowed, true, config);
     }
 
     //Method-4.3: close all connections in pool and removes them from pool,then re-initializes pool with new configuration
-    private void clear(boolean forceCloseUsing, boolean reinit, BeeDataSourceConfig config) throws SQLException {
+    private void clear(boolean forceRecycleBorrowed, boolean reinit, BeeDataSourceConfig config) throws SQLException {
         if (reinit && config == null)
             throw new BeeDataSourceConfigException("Configuration for pool reinitialization can' be null");
 
@@ -834,7 +834,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 if (reinit) checkedConfig = config.check();
 
                 Log.info("BeeCP({})begin to remove all connections", this.poolName);
-                this.removeAllConnections(forceCloseUsing, DESC_RM_CLEAR);
+                this.removeAllConnections(forceRecycleBorrowed, DESC_RM_CLEAR);
                 Log.info("BeeCP({})completed to remove all connections", this.poolName);
 
                 if (reinit) {
@@ -892,7 +892,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})after clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})after clean,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -913,7 +913,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 Log.info("BeeCP({})begin to shutdown pool", this.poolName);
                 this.unregisterJmx();
                 this.shutdownPoolThreads();
-                this.removeAllConnections(this.poolConfig.isForceCloseUsingOnClear(), DESC_RM_DESTROY);
+                this.removeAllConnections(this.poolConfig.isForceRecycleBorrowedOnClose(), DESC_RM_DESTROY);
                 if (networkTimeoutExecutor != null) this.networkTimeoutExecutor.shutdownNow();
 
                 try {

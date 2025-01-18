@@ -57,7 +57,7 @@ public interface BeeDataSourceConfigMBean {
 
     long getAliveAssumeTime();
 
-    boolean isForceCloseUsingOnClear();
+    boolean isForceRecycleBorrowedOnClose();
 
     long getParkTimeForRetry();
 

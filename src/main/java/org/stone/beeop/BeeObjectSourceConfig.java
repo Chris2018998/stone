@@ -69,7 +69,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //Milliseconds: an interval time that pool scans out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3L);
     //A boolean control argument for borrowed object on pool clean,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
-    private boolean forceCloseUsingOnClear;
+    private boolean forceRecycleBorrowedOnClose;
     //Milliseconds: park time for wait borrowed objects return to pool during pool clean,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
 
@@ -242,12 +242,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         if (timerCheckInterval > 0L) this.timerCheckInterval = timerCheckInterval;
     }
 
-    public boolean isForceCloseUsingOnClear() {
-        return this.forceCloseUsingOnClear;
+    public boolean isForceRecycleBorrowedOnClose() {
+        return this.forceRecycleBorrowedOnClose;
     }
 
-    public void setForceCloseUsingOnClear(boolean forceCloseUsingOnClear) {
-        this.forceCloseUsingOnClear = forceCloseUsingOnClear;
+    public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
+        this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
     }
 
     public long getParkTimeForRetry() {

@@ -212,13 +212,13 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.getPool().interruptConnectionCreating(interruptTimeout);
     }
 
-    public void clear(boolean forceCloseUsing) throws SQLException {
-        this.getPool().clear(forceCloseUsing);
+    public void clear(boolean forceRecycleBorrowed) throws SQLException {
+        this.getPool().clear(forceRecycleBorrowed);
     }
 
-    public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) throws SQLException {
+    public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
         if (config == null) throw new BeeDataSourceConfigException("Pool configuration object can't be null");
-        this.getPool().clear(forceCloseUsing, config);
+        this.getPool().clear(forceRecycleBorrowed, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }

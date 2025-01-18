@@ -94,7 +94,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         this.instancePoolMap.put(defaultKey, defaultPool);
 
         //step2: create locks for sub pools creation
-        this.forceCloseUsingOnClear = config.isForceCloseUsingOnClear();
+        this.forceCloseUsingOnClear = config.isForceRecycleBorrowedOnClose();
         this.maxSubPoolSize = config.getMaxObjectKeySize();
         this.subPoolsCreationLocks = new ReentrantLock[maxSubPoolSize];
         for (int i = 0; i < maxSubPoolSize; i++)
@@ -235,7 +235,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         for (ObjectInstancePool pool : instancePoolMap.values()) {
             BeeObjectPoolMonitorVo monitorVo = pool.getPoolMonitorVo();
             idleSize += monitorVo.getIdleSize();
-            usingSize += monitorVo.getUsingSize();
+            usingSize += monitorVo.getBorrowedSize();
             semaphoreWaitingSize += monitorVo.getSemaphoreWaitingSize();
             transferWaitingSize += monitorVo.getTransferWaitingSize();
         }
@@ -320,8 +320,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         clear(key, false);
     }
 
-    public void clear(Object key, boolean forceCloseUsing) throws Exception {
-        if (!getObjectInstancePool(key).clear(forceCloseUsing))
+    public void clear(Object key, boolean forceRecycleBorrowed) throws Exception {
+        if (!getObjectInstancePool(key).clear(forceRecycleBorrowed))
             throw new PoolInClearingException("Keyed sub pool was closed or in cleaning");
     }
 
@@ -329,8 +329,8 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         deleteKey(key, false);
     }
 
-    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        if (!removeObjectInstancePool(key).clear(forceCloseUsing))
+    public void deleteKey(Object key, boolean forceRecycleBorrowed) throws Exception {
+        if (!removeObjectInstancePool(key).clear(forceRecycleBorrowed))
             throw new PoolInClearingException("Keyed sub pool was closed or in cleaning");
     }
 

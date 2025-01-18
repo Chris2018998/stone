@@ -63,7 +63,7 @@ public class Tc0059PoolClearTest extends TestCase {
         config.setInitialSize(1);
         config.setMaxActive(1);
         config.setParkTimeForRetry(0L);
-        config.setForceCloseUsingOnClear(true);
+        config.set(true);
         FastConnectionPool pool = new FastConnectionPool();
         pool.init(config);
 

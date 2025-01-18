@@ -91,22 +91,22 @@ public interface BeeKeyedObjectPool {
     /**
      * Only Closes all pooled objects and remove them from pool,**remain keys**
      *
-     * @param forceCloseUsing is that close borrowed objects immediately or wait them return to pool,then close them
+     * @param forceRecycleBorrowed is that close borrowed objects immediately or wait them return to pool,then close them
      * @throws PoolInClearingException       when pool already in clearing
      * @throws PoolInitializeFailedException when fail to reinitialize
      */
-    void clear(boolean forceCloseUsing) throws Exception;
+    void clear(boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Closes all pooled objects and remove them from pool; after completion of clean,pool reinitialize with given configuration,**delete keys**
      *
-     * @param forceCloseUsing is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
-     * @param config          is a configuration object for pool reinitialize
+     * @param forceRecycleBorrowed is true that close borrowed objects immediately;false that close borrowed objects when them return to pool
+     * @param config               is a configuration object for pool reinitialize
      * @throws BeeObjectSourceConfigException when config is null
      * @throws PoolInClearingException        when pool already in clearing
      * @throws PoolInitializeFailedException  when reinitialize failed
      */
-    void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception;
+    void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig config) throws Exception;
 
 
     //***************************************************************************************************************//
@@ -138,11 +138,11 @@ public interface BeeKeyedObjectPool {
     /**
      * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)})
      *
-     * @param key             to locate related pooled objects
-     * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @param key                  to locate related pooled objects
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
      * @throws ObjectKeyException if key is null or default
      */
-    void clear(Object key, boolean forceCloseUsing) throws Exception;
+    void clear(Object key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Delete a pooled key
@@ -155,11 +155,11 @@ public interface BeeKeyedObjectPool {
     /**
      * Delete a pooled key
      *
-     * @param key             is a key may map to a sub pool
-     * @param forceCloseUsing is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @param key                  is a key may map to a sub pool
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
      * @throws ObjectKeyException if key is null or default
      */
-    void deleteKey(Object key, boolean forceCloseUsing) throws Exception;
+    void deleteKey(Object key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Query print state of runtime logs
