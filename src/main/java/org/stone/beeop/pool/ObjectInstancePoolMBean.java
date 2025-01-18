@@ -27,7 +27,7 @@ public interface ObjectInstancePoolMBean {
     int getIdleSize();
 
     //return using size
-    int getUsingSize();
+    int getBorrowedSize();
 
     //return semaphore acquired success size from pool
     int getSemaphoreAcquiredSize();
