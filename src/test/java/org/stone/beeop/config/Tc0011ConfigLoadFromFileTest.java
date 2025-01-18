@@ -43,7 +43,7 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
         Assert.assertEquals(3, config.getAliveTestTimeout());
         Assert.assertEquals(500, config.getAliveAssumeTime());
         Assert.assertEquals(30000, config.getTimerCheckInterval());
-        Assert.assertTrue(config.isForceCloseUsingOnClear());
+        Assert.assertTrue(config.isForceRecycleBorrowedOnClose());
         Assert.assertEquals(3000, config.getParkTimeForRetry());
         return true;
     }

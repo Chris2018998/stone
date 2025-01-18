@@ -81,8 +81,8 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         Assert.assertEquals(3000, config.getTimerCheckInterval());
 
         //forceCloseUsingOnClear
-        config.setForceCloseUsingOnClear(true);
-        Assert.assertTrue(config.isForceCloseUsingOnClear());
+        config.setForceRecycleBorrowedOnClose(true);
+        Assert.assertTrue(config.isForceRecycleBorrowedOnClose());
 
         //delayTimeForNextClear
         config.setParkTimeForRetry(-1);

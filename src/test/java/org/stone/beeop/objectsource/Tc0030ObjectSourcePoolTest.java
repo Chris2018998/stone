@@ -131,7 +131,7 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         BeeObjectFactory factory = new JavaBookFactory();
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.setObjectFactory(factory);
-        config2.setForceCloseUsingOnClear(true);
+        config2.setForceRecycleBorrowedOnClose(true);
         BeeObjectSource os = new BeeObjectSource(config2);
         Object key = factory.getDefaultKey();
 
@@ -168,7 +168,7 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
 
         //1:after setting factory
         os.setObjectFactory(factory);
-        os.setForceCloseUsingOnClear(true);
+        os.setForceRecycleBorrowedOnClose(true);
         os.setMaxActive(2);
         Assert.assertNotNull(os.getObjectHandle());
         Assert.assertNotNull(os.getObjectHandle(factory.getDefaultKey()));
@@ -179,7 +179,7 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         BeeObjectFactory factory = new JavaBookFactory();
         os.setParkTimeForRetry(0L);
         os.setObjectFactory(factory);
-        os.setForceCloseUsingOnClear(true);
+        os.setForceRecycleBorrowedOnClose(true);
         os.setMaxActive(2);
 
         Object defaultKey = factory.getDefaultKey();

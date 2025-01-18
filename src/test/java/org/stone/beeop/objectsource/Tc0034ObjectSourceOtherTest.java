@@ -37,7 +37,7 @@ public class Tc0034ObjectSourceOtherTest extends TestCase {
         os.close();
         Assert.assertTrue(os.isClosed());
 
-        os.setForceCloseUsingOnClear(true);
+        os.setForceRecycleBorrowedOnClose(true);
         Assert.assertTrue(os.isClosed());
         os.setObjectFactory(new JavaBookFactory());
         os.getObjectHandle();
@@ -48,7 +48,7 @@ public class Tc0034ObjectSourceOtherTest extends TestCase {
 
     public void testSetPrintRuntimeLog() throws Exception {
         BeeObjectSource os = new BeeObjectSource();
-        os.setForceCloseUsingOnClear(true);
+        os.setForceRecycleBorrowedOnClose(true);
         JavaBookFactory objectFactory = new JavaBookFactory();
         os.setObjectFactory(new JavaBookFactory());
         os.setPrintRuntimeLog(true);
