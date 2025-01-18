@@ -68,9 +68,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     private long aliveAssumeTime = 500L;
     //Milliseconds: an interval time that pool scans out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3L);
-    //A boolean control argument for borrowed object on pool clean,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
+    //A boolean control argument for borrowed object on pool close,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
     private boolean forceRecycleBorrowedOnClose;
-    //Milliseconds: park time for wait borrowed objects return to pool during pool clean,default is 3000 milliseconds
+    //Milliseconds: park time for wait borrowed objects return to pool when pool close or pool clear,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
 
     //An indicator to enable or disable pool thread local to cache last borrowed object(false can be used to support virtual threads)

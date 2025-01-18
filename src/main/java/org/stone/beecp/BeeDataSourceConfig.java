@@ -86,9 +86,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private long aliveAssumeTime = 500L;
     //Milliseconds: an interval time that pool scans out timeout connections(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3L);
-    //A boolean control argument for borrowed connection on pool clean,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
+    //A boolean control argument for borrowed connection on pool close,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
     private boolean forceRecycleBorrowedOnClose;
-    //Milliseconds: park time for wait borrowed connections return to pool during pool clean,default is 3000 milliseconds
+    //Milliseconds: park time for wait borrowed connections return to pool when pool close or pool clear,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
     //A {@code SQLException.vendorCode} list to check sql-exceptions thrown from connections, if code matched in list,then evicts connections from pool
     private List<Integer> sqlExceptionCodeList;
