@@ -459,7 +459,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})-before idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})-before idle clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2: attempt to interrupt timeout creation
@@ -485,7 +485,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //step4: print pool info after idle clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})-after idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})-after idle clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 

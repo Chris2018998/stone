@@ -32,7 +32,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         config.setMaxActive(1);
         config.setBorrowSemaphoreSize(2);
         config.setParkTimeForRetry(0L);
-        config.set(true);
+        config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(TimeUnit.MILLISECONDS.toMillis(1L));
 
         MockNetBlockConnectionFactory factory = new MockNetBlockConnectionFactory();
@@ -61,7 +61,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         config.setMaxActive(2);
         config.setBorrowSemaphoreSize(2);
         config.setParkTimeForRetry(0L);
-        config.set(true);
+        config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(TimeUnit.SECONDS.toMillis(10L));
 
         MockNetBlockConnectionFactory factory = new MockNetBlockConnectionFactory();
@@ -101,7 +101,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         config.setMaxActive(2);
         config.setBorrowSemaphoreSize(2);
         config.setParkTimeForRetry(0L);
-        config.set(true);
+        config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(TimeUnit.SECONDS.toMillis(10L));
 
         MockNetBlockConnectionFactory factory = new MockNetBlockConnectionFactory();

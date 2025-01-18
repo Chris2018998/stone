@@ -347,7 +347,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         return this.forceRecycleBorrowedOnClose;
     }
 
-    public void set(boolean forceRecycleBorrowedOnClose) {
+    public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
         this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
     }
 

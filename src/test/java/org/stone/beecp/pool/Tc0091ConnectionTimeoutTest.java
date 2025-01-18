@@ -68,10 +68,10 @@ public class Tc0091ConnectionTimeoutTest extends TestCase {
         try {
             con = pool.getConnection();
             Assert.assertEquals(1, pool.getTotalSize());
-            Assert.assertEquals(1, pool.getUsingSize());
+            Assert.assertEquals(1, pool.getBorrowedSize());
 
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
-            Assert.assertEquals(0, pool.getUsingSize());
+            Assert.assertEquals(0, pool.getBorrowedSize());
 
             try {
                 con.getCatalog();
@@ -102,12 +102,12 @@ public class Tc0091ConnectionTimeoutTest extends TestCase {
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));//first sleeping
 
             Assert.assertEquals(1, pool.getTotalSize());
-            Assert.assertEquals(1, pool.getUsingSize());
+            Assert.assertEquals(1, pool.getBorrowedSize());
 
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));//second sleeping
 
             Assert.assertEquals(1, pool.getTotalSize());
-            Assert.assertEquals(1, pool.getUsingSize());
+            Assert.assertEquals(1, pool.getBorrowedSize());
 
             try {
                 con.getCatalog();

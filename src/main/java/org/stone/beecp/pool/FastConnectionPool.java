@@ -781,7 +781,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step1:print pool info before clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})before timed scan,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})before timed scan,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2: interrupt current creation of a connection when this operation is timeout
@@ -807,7 +807,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step4: print pool info after clean
         if (printRuntimeLog) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})after timed scan,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeCP({})after timed scan,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -944,7 +944,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-5.3: the length of array stores pooled connections
     public int getTotalSize() {
-        return getIdleSize() + getUsingSize();
+        return getIdleSize() + getBorrowedSize();
     }
 
     //Method-5.4: size of idle pooled connections
@@ -957,7 +957,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-5.5: size of using pooled connections
-    public int getUsingSize() {
+    public int getBorrowedSize() {
         int usingSize = 0;
         for (PooledConnection p : connectionArray) {
             if (p.state == CON_USING) usingSize++;

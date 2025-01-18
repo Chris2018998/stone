@@ -33,7 +33,7 @@ public class Tc0055PoolWaitQueueTest extends TestCase {
         config.setParkTimeForRetry(0L);
         config.setBorrowSemaphoreSize(2);
         config.setEnableThreadLocal(true);
-        config.set(true);
+        config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(1L);
         config.setConnectionFactory(new MockDriverConnectionFactory());
         FastConnectionPool pool = new FastConnectionPool();
@@ -56,7 +56,7 @@ public class Tc0055PoolWaitQueueTest extends TestCase {
         config.setParkTimeForRetry(0L);
         config.setEnableThreadLocal(false);
         config.setBorrowSemaphoreSize(2);
-        config.set(true);
+        config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(1L);
         config.setConnectionFactory(new MockDriverConnectionFactory());
         pool = new FastConnectionPool();
@@ -79,7 +79,7 @@ public class Tc0055PoolWaitQueueTest extends TestCase {
         config.setMaxActive(1);
         config.setBorrowSemaphoreSize(2);
         config.setParkTimeForRetry(0L);
-        config.set(true);
+        config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(TimeUnit.SECONDS.toMillis(10L));
         config.setConnectionFactory(new MockDriverConnectionFactory());
         FastConnectionPool pool = new FastConnectionPool();
