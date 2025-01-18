@@ -5,11 +5,15 @@ Changes in 1.4.6(not released)
 
 [beecp]
 1: remove two monitoring methods[getConnectionCreatingCount(),getConnectionCreatingTimeoutCount()]
+2: change name of a configuration item[forceCloseUsingOnClear --> forceRecycleBorrowedOnClose]
+3: change a method name of MonitorVo[getUsingSize()  ---->  getBorrowedSize()]
 [beeop]
 1: remove two monitoring methods[getObjectCreatingCount(),getObjectCreatingTimeoutCount()]
 2: add a method to query print state of runtime logs[isPrintRuntimeLog(key)]
 3: add two key methods[Object[] keys(),boolean exists(key)]
 4: add two key methods[clear(boolean),clear(boolean,BeeObjectSourceConfig)]
+5: change name of a configuration item[forceCloseUsingOnClear --> forceRecycleBorrowedOnClose]
+6: change a method name of MonitorVo[getUsingSize() ---->  getBorrowedSize()]
 
 Changes in 1.4.5
 support array properties injection in util 
