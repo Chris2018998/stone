@@ -37,7 +37,7 @@ public interface BeeObjectPoolMonitorVo {
 
     int getIdleSize();
 
-    int getUsingSize();
+    int getBorrowedSize();
 
     int getCreatingCount();
 

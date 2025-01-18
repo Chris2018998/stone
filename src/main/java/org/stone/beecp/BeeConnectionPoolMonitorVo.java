@@ -37,7 +37,7 @@ public interface BeeConnectionPoolMonitorVo {
 
     int getIdleSize();
 
-    int getUsingSize();
+    int getBorrowedSize();
 
     int getSemaphoreWaitingSize();
 

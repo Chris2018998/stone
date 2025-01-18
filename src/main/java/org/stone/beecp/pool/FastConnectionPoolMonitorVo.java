@@ -116,7 +116,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         this.idleSize = idleSize;
     }
 
-    public int getUsingSize() {
+    public int getBorrowedSize() {
         return usingSize;
     }
 

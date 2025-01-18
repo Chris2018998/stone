@@ -67,7 +67,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.idleSize = idleSize;
     }
 
-    public int getUsingSize() {
+    public int getBorrowedSize() {
         return usingSize;
     }
 

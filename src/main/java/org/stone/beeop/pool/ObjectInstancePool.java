@@ -459,7 +459,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //step1: print pool info before clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})-before idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})-before idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2: attempt to interrupt timeout creation
@@ -485,7 +485,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         //step4: print pool info after idle clean
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})-after idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})-after idle clear,idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -493,10 +493,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     //                                      6: Pooled objects clear(2)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-6.1: remove all object from pool
-    boolean clear(boolean forceCloseUsing) {
+    boolean clear(boolean forceRecycleBorrowed) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
             Log.info("BeeOP({})begin to clear all objects", this.poolName);
-            this.clear(forceCloseUsing, DESC_RM_CLEAR);
+            this.clear(forceRecycleBorrowed, DESC_RM_CLEAR);
             Log.info("BeeOP({})has clear all objects", this.poolName);
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})pool has cleared all objects", this.poolName);
@@ -507,7 +507,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-6.2: remove all connections from pool
-    private void clear(boolean forceCloseUsing, String removeReason) {
+    private void clear(boolean forceRecycleBorrowed, String removeReason) {
         //1:interrupt waiters on semaphore
         this.semaphore.interruptQueuedWaitThreads();
         if (!this.waitQueue.isEmpty()) {
@@ -532,7 +532,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 } else if (state == OBJECT_USING) {
                     BeeObjectHandle handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
-                        if (forceCloseUsing || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
+                        if (forceRecycleBorrowed || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
                             tryCloseObjectHandle(handleInUsing);
                     }
                 } else if (state == OBJECT_CLOSED) {
@@ -546,7 +546,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
 
         if (this.printRuntimeLog) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeOP({})idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getUsingSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            Log.info("BeeOP({})idle:{},using:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -559,7 +559,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
     }
 
     //Method-7.2: close pool
-    public void close(boolean forceCloseUsing) {
+    public void close(boolean forceRecycleBorrowed) {
         do {
             int poolStateCode = this.poolState;
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
@@ -568,7 +568,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                 LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
-                this.clear(forceCloseUsing, DESC_RM_DESTROY);
+                this.clear(forceRecycleBorrowed, DESC_RM_DESTROY);
 
                 this.poolState = POOL_CLOSED;
                 Log.info("BeeOP({})has shutdown", this.poolName);
