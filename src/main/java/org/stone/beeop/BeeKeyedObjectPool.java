@@ -189,7 +189,7 @@ public interface BeeKeyedObjectPool {
     BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception;
 
     /**
-     * Interrupt activity of object creation in processing
+     * Interrupts processing of object creation.
      *
      * @param key                  may be mapping to a set of pooled objects
      * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
