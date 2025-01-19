@@ -25,7 +25,7 @@ public class Tc0051KeyPoolInitTest extends TestCase {
         try {
             pool.init(null);
         } catch (Exception e) {
-            Assert.assertEquals("Object pool configuration can't be null", e.getMessage());
+            Assert.assertEquals("Configuration can't be null", e.getMessage());
         }
     }
 
