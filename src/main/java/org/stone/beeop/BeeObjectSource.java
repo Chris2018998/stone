@@ -21,7 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.tools.BeanUtil.createClassInstance;
 
 /**
- * Bee Object Pool wrapper a keyed object pool
+ * Bee object source wrap a keyed object pool.
  * <p>
  * Email:  Chris2018998@tom.com
  * Project: <a href="https://github.com/Chris2018998/stone">...</a>
@@ -133,13 +133,12 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                          4: clear and monitoring(3)                                           //
     //***************************************************************************************************************//
-    public void clear(boolean forceCloseUsing) throws Exception {
-        getPool().clear(forceCloseUsing);
+    public void clear(boolean forceRecycleBorrowed) throws Exception {
+        getPool().clear(forceRecycleBorrowed);
     }
 
-    public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-        if (config == null) throw new BeeObjectSourceConfigException("Pool configuration can't be null");
-        getPool().clear(forceCloseUsing, config);
+    public void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig config) throws Exception {
+        getPool().clear(forceRecycleBorrowed, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
@@ -163,16 +162,16 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         getPool().clear(key);
     }
 
-    public void clear(Object key, boolean forceCloseUsing) throws Exception {
-        getPool().clear(key, forceCloseUsing);
+    public void clear(Object key, boolean forceRecycleBorrowed) throws Exception {
+        getPool().clear(key, forceRecycleBorrowed);
     }
 
     public void deleteKey(Object key) throws Exception {
         getPool().deleteKey(key);
     }
 
-    public void deleteKey(Object key, boolean forceCloseUsing) throws Exception {
-        getPool().deleteKey(key, forceCloseUsing);
+    public void deleteKey(Object key, boolean forceRecycleBorrowed) throws Exception {
+        getPool().deleteKey(key, forceRecycleBorrowed);
     }
 
     public boolean isPrintRuntimeLog(Object key) throws Exception {
