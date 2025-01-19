@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * configuration exception
+ * configuration exception.
  *
  * @author Chris Liao
  * @version 1.0

@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * Bee Object SourceConfig JMX Bean interface
+ * Bee Object SourceConfig JMX Bean interface.
  *
  * @author Chris Liao
  * @version 1.0

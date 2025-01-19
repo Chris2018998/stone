@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * A predicate interface for pooled object
+ * Object predicate interface.
  *
  * @author Chris Liao
  * @version 1.0
@@ -19,10 +19,10 @@ package org.stone.beeop;
 public interface BeeObjectPredicate {
 
     /**
-     * do test on an exception thrown from an object
+     * Test a Exception thrown from an object,test result determine object whether evicted from pool.
      *
-     * @param e is an exception thrown from a method invocation
-     * @return return a string represents eviction cause,if it is not null and not empty,pool removes target object
+     * @param e thrown from a working object
+     * @return a string as eviction reason,but it is null or empty,not evict target object
      */
     String evictTest(Exception e);
 

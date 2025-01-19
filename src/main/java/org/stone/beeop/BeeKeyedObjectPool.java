@@ -58,12 +58,12 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Shutdown pool and make ti to be in closed state,all pooled objects are physically closed and removed from pool.
+     * Shutdown pool and make it to be in closed state,all pooled objects are physically closed and removed from pool.
      */
     void close();
 
     /**
-     * Query pool state is closed
+     * Query pool state is closed.
      *
      * @return a boolean value of pool close status
      */
@@ -74,14 +74,14 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Enable runtime log print or disable
+     * Enable runtime log print or disable.
      *
      * @param enable is true that print, false not print
      */
     void setPrintRuntimeLog(boolean enable);
 
     /**
-     * Get monitoring object bring out some runtime info of pool,detail refer to {@link BeeObjectPoolMonitorVo}
+     * Get monitoring object bring out some runtime info of pool,detail refer to {@link BeeObjectPoolMonitorVo}.
      *
      * @return monitor of pool
      */
@@ -114,21 +114,21 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * gets pooled keys
+     * Gets pooled keys.
      *
      * @return a keys array
      */
     Object[] keys();
 
     /**
-     * query given key is in pool
+     * Query given key whether in pool.
      *
      * @return a keys array
      */
     boolean exists(Object key);
 
     /**
-     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)})
+     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
      *
      * @param key to locate related pooled objects
      * @throws ObjectKeyException if key is null
@@ -136,7 +136,7 @@ public interface BeeKeyedObjectPool {
     void clear(Object key) throws Exception;
 
     /**
-     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)})
+     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
      *
      * @param key                  to locate related pooled objects
      * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
@@ -145,7 +145,7 @@ public interface BeeKeyedObjectPool {
     void clear(Object key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
-     * Delete a pooled key
+     * Delete a pooled key.
      *
      * @param key is a key to remove
      * @throws ObjectKeyException if key is null or default
@@ -153,7 +153,7 @@ public interface BeeKeyedObjectPool {
     void deleteKey(Object key) throws Exception;
 
     /**
-     * Delete a pooled key
+     * Delete a pooled key.
      *
      * @param key                  is a key may map to a sub pool
      * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
@@ -162,7 +162,7 @@ public interface BeeKeyedObjectPool {
     void deleteKey(Object key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
-     * Query print state of runtime logs
+     * Query print state of runtime logs.
      *
      * @param key pooled key
      * @return boolean value,true,keyed pool print runtime logs,otherwise not print
@@ -171,7 +171,7 @@ public interface BeeKeyedObjectPool {
     boolean isPrintRuntimeLog(Object key) throws Exception;
 
     /**
-     * Enable runtime log print or disable
+     * Enable runtime log print or disable.
      *
      * @param key    pooled key
      * @param enable is true,print logs;false,not print

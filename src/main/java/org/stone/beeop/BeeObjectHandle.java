@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * A handle interface of borrowed object
+ * Handle interface represents wrapper of borrowed object.
  *
  * @author Chris Liao
  * @version 1.0
@@ -20,22 +20,22 @@ public interface BeeObjectHandle {
     /**
      * Query handle state whether is closed.
      *
-     * @return true that handle is closed
+     * @return true that is closed
      */
     boolean isClosed();
 
     /**
-     * Closes this handle object
+     * Closes this handle.
      */
     void close() throws Exception;
 
     /**
-     * Abort pooled object related with this handle
+     * Physically close pooled object and remove it from pool.
      */
     void abort() throws Exception;
 
     /**
-     * Gets pooled key associated with the handle
+     * Get category key of object.
      *
      * @return associated pooled key
      * @throws Exception if handle is closed
@@ -43,7 +43,7 @@ public interface BeeObjectHandle {
     Object getObjectKey() throws Exception;
 
     /**
-     * Gets last accessed time on this handle
+     * Gets last accessed time of object.
      *
      * @return a milliseconds time value
      * @throws Exception if handle is closed
@@ -51,30 +51,30 @@ public interface BeeObjectHandle {
     long getLastAccessedTime() throws Exception;
 
     /**
-     * Gets proxy of borrowed object
+     * Get reflection proxy of pooled object.
      *
-     * @return proxy if exists,otherwise return null
+     * @return null when not configured interfaces in {@link BeeObjectSourceConfig}
      * @throws Exception if handle is closed
      */
     Object getObjectProxy() throws Exception;
 
     /**
-     * call a parameterless method of borrowed object.
+     * Call a method of object without parameter.
      *
-     * @param methodName is name of target method
-     * @return an object as result of method call
-     * @throws Exception when failed to call
+     * @param methodName is name of invocation method
+     * @return result object of call
+     * @throws Exception when call fail
      */
     Object call(String methodName) throws Exception;
 
     /**
-     * call a method of borrowed object with a parameter array.
+     * Call a method of object with array of parameters.
      *
-     * @param methodName  is name of target method
-     * @param paramTypes  is signed parameter type array of method
-     * @param paramValues is parameters value array
-     * @return an object as result of method call
-     * @throws Exception when failed to call
+     * @param methodName  is name of invocation method
+     * @param paramTypes  is array of parameter types
+     * @param paramValues is array of parameter values
+     * @return result object of call
+     * @throws Exception when call fail
      */
     Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
 }

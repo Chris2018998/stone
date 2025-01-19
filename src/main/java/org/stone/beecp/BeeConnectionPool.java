@@ -54,7 +54,7 @@ public interface BeeConnectionPool {
 
 
     /**
-     * Shutdown pool and make ti to be in closed state,all pooled connections are physically closed and removed from pool.
+     * Shutdown pool and make it to be in closed state,all pooled connections are physically closed and removed from pool.
      */
     void close();
 

@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * pool exception
+ * pool object exception.
  *
  * @author Chris Liao
  * @version 1.0

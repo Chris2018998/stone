@@ -10,28 +10,28 @@
 package org.stone.beeop;
 
 /**
- * Object factory interface
+ * Object factory interface.
  *
  * @author Chris
  * @version 1.0
  */
 public interface BeeObjectFactory {
 
-    //returns default key to be pooled
+    //Returns default key
     Object getDefaultKey();
 
-    //creates an object to pool with specified key
+    //Creates an object with given key
     Object create(Object key) throws Exception;
 
-    //set default to a pooled object
+    //Set default on a new object.
     void setDefault(Object key, Object obj) throws Exception;
 
-    //reset dirty properties of given object to default
+    //Reset default on a released object
     void reset(Object key, Object obj) throws Exception;
 
-    //executes alive test on an object
+    //Alive test on borrowed object
     boolean isValid(Object key, Object obj, int timeout) throws Exception;
 
-    //destroy an object
+    //Destroy object
     void destroy(Object key, Object obj) throws Exception;
 }

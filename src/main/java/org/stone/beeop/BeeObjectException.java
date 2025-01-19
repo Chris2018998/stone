@@ -10,7 +10,7 @@
 package org.stone.beeop;
 
 /**
- * pooled object exception
+ * pooled object exception.
  *
  * @author Chris Liao
  * @version 1.0
