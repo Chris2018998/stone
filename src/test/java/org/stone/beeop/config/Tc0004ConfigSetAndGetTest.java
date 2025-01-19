@@ -93,12 +93,12 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         Assert.assertEquals(3000L, config.getParkTimeForRetry());
 
         //MaxObjectKeySize
-        int maxObjectKeySize = config.getMaxObjectKeySize();
+        int maxObjectKeySize = config.getMaxKeySize();
         Assert.assertEquals(50, maxObjectKeySize);
-        config.setMaxObjectKeySize(0);
-        Assert.assertEquals(config.getMaxObjectKeySize(), maxObjectKeySize);
-        config.setMaxObjectKeySize(1);
-        Assert.assertEquals(1, config.getMaxObjectKeySize());
+        config.setMaxKeySize(0);
+        Assert.assertEquals(config.getMaxKeySize(), maxObjectKeySize);
+        config.setMaxKeySize(1);
+        Assert.assertEquals(1, config.getMaxKeySize());
 
         //object factory
         config.setObjectFactoryClassName(JavaBookFactory.class.getName());

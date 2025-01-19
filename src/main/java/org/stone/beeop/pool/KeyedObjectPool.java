@@ -97,7 +97,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
 
         //step2: Create locks
         this.forceRecycleBorrowedOnClose = config.isForceRecycleBorrowedOnClose();
-        this.categoryMaxSize = config.getMaxObjectKeySize();
+        this.categoryMaxSize = config.getMaxKeySize();
         this.categoryLocks = new ReentrantLock[categoryMaxSize];
         for (int i = 0; i < categoryMaxSize; i++)
             categoryLocks[i] = new ReentrantLock();
@@ -270,7 +270,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     //2.2: gets an object from sub pool map to given key
     public BeeObjectHandle getObjectHandle(Object key) throws Exception {
         //1: Check inputted key
-        this.checkParameterKey(key);
+        this.checkKey(key);
 
         //2: Acquire an object from default category pool if is default key
         if (isDefaultKey(key)) return defaultPool.getObjectHandle();
@@ -292,12 +292,12 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
                     categoryPool = categoryPoolMap.get(key);
                     if (categoryPool == null) {
                         if (categoryPoolMap.size() == categoryMaxSize)
-                            throw new ObjectGetException("Object category capacity of pool has reach max size:" + categoryMaxSize);
+                            throw new ObjectKeyException("Object category capacity of pool has reach max size:" + categoryMaxSize);
 
                         //Create a category pool by clone
                         categoryPool = defaultPool.createByClone();
                         //Run category pool by async mode
-                        categoryPool.startup(poolName, key, 0, true);
+                        categoryPool.startup(poolName, key, poolConfig.getInitialSize(), poolConfig.isAsyncCreateInitObject());
                         categoryPoolMap.put(key, categoryPool);
                         //Create time task to do timeout check on category pool
                         this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask(categoryPool), timerCheckInterval,
@@ -373,16 +373,16 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
         return defaultKey == key || defaultKey.equals(key);
     }
 
-    private void checkParameterKey(Object key) throws Exception {
+    private void checkKey(Object key) throws Exception {
         if (key == null) throw new ObjectKeyException("Key can't be null or empty");
         if (this.poolState != POOL_READY)
             throw new ObjectGetForbiddenException("Object pool was not ready or closed");
     }
 
     private ObjectInstancePool removeObjectInstancePool(Object key) throws Exception {
-        checkParameterKey(key);
-
+        checkKey(key);
         if (isDefaultKey(key)) throw new ObjectKeyException("Default key is forbidden to delete");
+
         ObjectInstancePool categoryPool = categoryPoolMap.remove(key);
         if (categoryPool == null)
             throw new ObjectKeyNotExistsException("Not found category pool with key(" + key + ")");
@@ -390,7 +390,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
     }
 
     private ObjectInstancePool getObjectInstancePool(Object key) throws Exception {
-        checkParameterKey(key);
+        checkKey(key);
 
         if (isDefaultKey(key)) return defaultPool;
         ObjectInstancePool categoryPool = categoryPoolMap.get(key);
