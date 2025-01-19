@@ -52,7 +52,7 @@ public class Tc0010ConfigInfoLogPrintTest extends TestCase {
         config.check();
         String logs = logAppender.endCollectedStoneLog();
         Assert.assertTrue(logs.contains(".initialSize"));
-        Assert.assertTrue(logs.contains(".maxObjectKeySize"));
+        Assert.assertTrue(logs.contains(".maxKeySize"));
 
         config.addConfigPrintExclusion("aliveTestTimeout");
         config.clearAllConfigPrintExclusion();
@@ -60,22 +60,22 @@ public class Tc0010ConfigInfoLogPrintTest extends TestCase {
         config.check();
         logs = logAppender.endCollectedStoneLog();
         Assert.assertTrue(logs.contains(".initialSize"));
-        Assert.assertTrue(logs.contains(".maxObjectKeySize"));
+        Assert.assertTrue(logs.contains(".maxKeySize"));
 
         logAppender.beginCollectStoneLog();
         config.check();
         logs = logAppender.endCollectedStoneLog();
         Assert.assertTrue(logs.contains(".initialSize"));
-        Assert.assertTrue(logs.contains(".maxObjectKeySize"));
+        Assert.assertTrue(logs.contains(".maxKeySize"));
 
         //situation2:
         config.addConfigPrintExclusion("initialSize");
-        config.addConfigPrintExclusion("maxObjectKeySize");
+        config.addConfigPrintExclusion("maxKeySize");
         logAppender.beginCollectStoneLog();
         config.check();
         logs = logAppender.endCollectedStoneLog();
         Assert.assertFalse(logs.contains(".initialSize"));
-        Assert.assertFalse(logs.contains(".maxObjectKeySize"));
+        Assert.assertFalse(logs.contains(".maxKeySize"));
 
 
         config.setObjectInterfaces(new Class[]{Book.class});
