@@ -37,7 +37,7 @@ import static org.stone.tools.CommonUtil.*;
 public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //An atomic integer for generating index appended to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //A properties map whose entries set to object factory during pool initialization
+    //A properties map whose entries set to object factory during pool initializes
     private final Map<String, Object> factoryProperties = new HashMap<>(0);
 
     //Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it

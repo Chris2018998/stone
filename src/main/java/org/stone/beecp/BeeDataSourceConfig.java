@@ -45,12 +45,12 @@ import static org.stone.tools.CommonUtil.*;
 public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //An atomic integer for generating sequence appended to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //A default list of configuration items ignore print when pool initialization
+    //A default list of configuration items ignore print when pool initializes
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
 
-    //A properties map whose entries set to connection factory during pool initialization
+    //A properties map whose entries set to connection factory during pool initializes
     private final Map<String, Object> connectProperties = new HashMap<>(0);
-    //A list of configuration items ignore print when pool initialization,default is copies from {@code DefaultExclusionList}
+    //A list of configuration items ignore print when pool initializes,default is copies from {@code DefaultExclusionList}
     private final List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
     //jdbc username link to database,default is none
     private String username;
