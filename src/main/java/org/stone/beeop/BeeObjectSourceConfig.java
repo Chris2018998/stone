@@ -46,16 +46,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     private boolean fairMode;
     //Creation size of object when pool initialize,default is zero
     private int initialSize;
-    //An indicator to create initial object by async mode,default is false(synchronization mode)
-    private boolean asyncCreateInitObject;
-    //Maximum of object varieties,default is 50
-    private int maxObjectKeySize = 50;
+    //Maximum of object category,default is 50
+    private int maxKeySize = 50;
     //Maximum of object per variety,capacity = maxObjectKeySize*maxActive
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
     //Maximum of semaphore permit per variety object
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
     //Milliseconds: max wait time in pool to get an object for borrower,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8L);
+    //An indicator to create initial object by async mode,default is false(synchronization mode)
+    private boolean asyncCreateInitObject;
 
     //Milliseconds: max idle time on object not borrowed, default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3L);
@@ -178,12 +178,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         }
     }
 
-    public int getMaxObjectKeySize() {
-        return maxObjectKeySize;
+    public int getMaxKeySize() {
+        return maxKeySize;
     }
 
-    public void setMaxObjectKeySize(int maxObjectKeySize) {
-        if (maxObjectKeySize > 0) this.maxObjectKeySize = maxObjectKeySize;
+    public void setMaxKeySize(int maxKeySize) {
+        if (maxKeySize > 0) this.maxKeySize = maxKeySize;
     }
 
     public int getBorrowSemaphoreSize() {
