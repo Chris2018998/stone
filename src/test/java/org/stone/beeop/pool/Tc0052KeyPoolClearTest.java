@@ -84,7 +84,7 @@ public class Tc0052KeyPoolClearTest extends TestCase {
         if (errorMessage == null && thread2.getfailureException() != null)
             errorMessage = thread2.getfailureException().getMessage();
 
-        if (errorMessage != null) Assert.assertEquals("Object keyed pool was closed or in cleaning", errorMessage);
+        if (errorMessage != null) Assert.assertEquals("Object pool was closed or in cleaning", errorMessage);
     }
 
     private static class ClearThread extends Thread {
