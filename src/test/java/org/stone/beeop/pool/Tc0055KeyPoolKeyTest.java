@@ -22,7 +22,7 @@ import static org.stone.beeop.config.OsConfigFactory.createDefault;
 /**
  * @author Chris Liao
  */
-public class Tc0053KeyPoolKeyTest extends TestCase {
+public class Tc0055KeyPoolKeyTest extends TestCase {
 
     public void testNullKey() throws Exception {
         BeeObjectSourceConfig config = createDefault();
