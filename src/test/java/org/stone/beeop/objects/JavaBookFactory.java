@@ -18,7 +18,7 @@ import org.stone.beeop.BeeObjectFactory;
  */
 
 public class JavaBookFactory implements BeeObjectFactory {
-    protected String defaultKey = "JavaWorld";
+    protected Object defaultKey;
     private String name;
     private String title;
     private String author;
@@ -85,7 +85,7 @@ public class JavaBookFactory implements BeeObjectFactory {
         return defaultKey;
     }
 
-    public void setDefaultKey(String defaultKey) {
+    public void setDefaultKey(Object defaultKey) {
         this.defaultKey = defaultKey;
     }
 
