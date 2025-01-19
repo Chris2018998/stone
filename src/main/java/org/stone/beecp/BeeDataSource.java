@@ -33,7 +33,7 @@ import static org.stone.tools.BeanUtil.CommonLog;
 import static org.stone.tools.BeanUtil.createClassInstance;
 
 /**
- * Bee DataSource impl.
+ * Bee DataSource wrap implementation of {@link BeeConnectionPool}.
  *
  * @author Chris Liao
  * @version 1.0

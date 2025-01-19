@@ -23,8 +23,8 @@ public interface BeeXaConnectionFactory {
     /**
      * Creates a xa connection.
      *
-     * @return a xa connection
-     * @throws SQLException when creates failed(maybe invalid url,error username and password and so on)
+     * @return a created xa-connection
+     * @throws SQLException when creates fail
      */
     XAConnection create() throws SQLException;
 }

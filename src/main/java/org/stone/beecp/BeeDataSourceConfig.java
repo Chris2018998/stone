@@ -37,7 +37,7 @@ import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
 
 /**
- * Bee data source configuration object
+ * Bee data source configuration object.
  *
  * @author Chris Liao
  * @version 1.0

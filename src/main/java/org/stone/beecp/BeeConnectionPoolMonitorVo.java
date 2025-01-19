@@ -10,7 +10,7 @@
 package org.stone.beecp;
 
 /**
- * Pool monitor interface
+ * Pool monitor interface.
  *
  * @author Chris Liao
  * @version 1.0

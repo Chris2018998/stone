@@ -17,7 +17,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Connection pool interface
+ * Connection pool interface.
  *
  * @author Chris Liao
  * @version 1.0
