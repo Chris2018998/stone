@@ -39,7 +39,7 @@ public class Tc0032ObjectSourceClearTest extends TestCase {
         try {
             os.clear(true, null);
         } catch (Exception e) {
-            Assert.assertTrue(e.getMessage().contains("Pool configuration can't be null"));
+            Assert.assertTrue(e.getMessage().contains("Configuration can't be null"));
         }
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.setObjectFactory(new JavaBookFactory());
