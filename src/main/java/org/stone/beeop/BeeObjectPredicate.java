@@ -19,7 +19,7 @@ package org.stone.beeop;
 public interface BeeObjectPredicate {
 
     /**
-     * Test a Exception thrown from an object,test result determine object whether evicted from pool.
+     * Test an Exception thrown from an object,test result determine object whether evicted from pool.
      *
      * @param e thrown from a working object
      * @return a string as eviction reason,but it is null or empty,not evict target object

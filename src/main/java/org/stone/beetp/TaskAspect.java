@@ -10,7 +10,7 @@
 package org.stone.beetp;
 
 /**
- * Aspect interface of task call
+ * Aspect interface of task call.
  *
  * @author Chris Liao
  * @version 1.0
@@ -18,14 +18,14 @@ package org.stone.beetp;
 public interface TaskAspect<V> {
 
     /**
-     * method to execute some computation before task call
+     * method to execute some computation before task call.
      *
      * @param handle of a task
      */
     void beforeCall(TaskHandle<V> handle);
 
     /**
-     * method to execute some computation after task Successful
+     * method to execute some computation after task call.
      *
      * @param isSuccessful is true that task call successful
      * @param result       is result of call or an TaskExecutionException
