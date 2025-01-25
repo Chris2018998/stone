@@ -30,7 +30,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
 
     private int poolState;
     private int idleSize;
-    private int usingSize;
+    private int borrowedSize;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
     private int creatingCount;
@@ -117,11 +117,11 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
     }
 
     public int getBorrowedSize() {
-        return usingSize;
+        return borrowedSize;
     }
 
-    void setBorrowedSize(int usingSize) {
-        this.usingSize = usingSize;
+    void setBorrowedSize(int borrowedSize) {
+        this.borrowedSize = borrowedSize;
     }
 
     public int getSemaphoreWaitingSize() {

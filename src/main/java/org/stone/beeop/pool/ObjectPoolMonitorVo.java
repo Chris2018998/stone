@@ -28,7 +28,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private int poolState;
 
     private int idleSize;
-    private int usingSize;
+    private int borrowedSize;
     private int creatingCount;
     private int creatingTimeoutCount;
     private int semaphoreWaitingSize;
@@ -68,11 +68,11 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     }
 
     public int getBorrowedSize() {
-        return usingSize;
+        return borrowedSize;
     }
 
-    void setUsingSize(int usingSize) {
-        this.usingSize = usingSize;
+    void setBorrowedSize(int borrowedSize) {
+        this.borrowedSize = borrowedSize;
     }
 
     public int getCreatingCount() {

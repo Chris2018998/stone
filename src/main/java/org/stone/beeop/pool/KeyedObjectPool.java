@@ -249,7 +249,7 @@ public final class KeyedObjectPool implements BeeKeyedObjectPool {
             transferWaitingSize += monitorVo.getTransferWaitingSize();
         }
         poolMonitorVo.setIdleSize(idleSize);
-        poolMonitorVo.setUsingSize(usingSize);
+        poolMonitorVo.setBorrowedSize(usingSize);
         poolMonitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
         poolMonitorVo.setTransferWaitingSize(transferWaitingSize);
         poolMonitorVo.setPoolState(poolState);
