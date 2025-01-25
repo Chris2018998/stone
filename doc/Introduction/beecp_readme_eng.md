@@ -1,7 +1,7 @@
 [🏠](../../README.md) [English](beecp_readme_eng.md)|[中文](beecp_readme_cn.md)
 
-<a><img src="https://img.shields.io/badge/Java-8+-green.svg"></a>
-<a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
+![](https://img.shields.io/badge/Java-8+-green.svg)
+![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 
 BeeCP is a lightweight JDBC connection pool, its techology highlights: caching single connection, non moving waiting, fixed length array
@@ -98,46 +98,46 @@ public class DataSourceConfiguration{
 
 BeeCP woring parameters are from its configuration object(BeeDataSourceConfig),below is a list of properites,which can be confiured by their set methods
 
-| property name                   | description                                                                                        | default value             |
-|---------------------------------|----------------------------------------------------------------------------------------------------|---------------------------|
-| username                        | user name of db                                                                                    | blank                     |
-| password                        | user password of db                                                                                | blank                     |
-| jdbcUrl                         | link url to db                                                                                     | blank                     |
-| driverClassName                 | jdbc driver class name                                                                             | blank                     |
-| poolName	                  | pool name,if not set,a generated name will be assigned to it                                       | blank                     |
-| fairMode                        | a mode to get connections from pool                                                                | false（unfair mode）       | 
-| initialSize                     | creation size of connecitons during pool initialization                                            | 0                         |
-| maxActive                       | max size of connections in pool                                                                    | 10                        | 
-| borrowSemaphoreSize             | max permit size of semaphore for conneciton getting                                                | min(maxActive/2,CPU size） |
-| defaultAutoCommit               | Connection.setAutoComit(defaultAutoCommit)                                                         | blank                     |
-| defaultTransactionIsolationCode | Connection.setTransactionIsolation(defaultTransactionIsolationCode)                                | blank                     |
-| defaultCatalog                  | Connection.setCatalog(defaultCatalog)                                                              | blank                     |
-| defaultSchema                   | Connection.setSchema(defaultSchema)                                                                | blank                     |
-| defaultReadOnly                 | Connection.setReadOnly(defaultReadOnly)                                                            | blank                     |
-| maxWait                         | max wait time in pool to get connection(ms)                                                        | 8000                      |
-| idleTimeout                     | max idle time of connecitons in pool (ms)                                                          | 18000                     |  
-| holdTimeout                     | max inactive time of borrowed connections(ms)                                                      | 0                         |  
-| aliveTestSql                    | alive test sql                                                                                     | SELECT 1                  |  
-| aliveTestTimeout                | max wait time to get alive check result(seconds)                                                   | 3                         |  
-| aliveAssumeTime                 | a hreshold time to do alive check on borrowed connections,assume alive if less,otherwise check(ms) | 500                       |  
-| forceRecycleBorrowedOnClose     | indicator to recyle borrowed connecton by force when pool close                                    | false                     |
-| parkTimeForRetry                | timed wait for borrowed connections to return to pool and close them(ms)                           | 3000                      |             
-| timerCheckInterval              | a iterval time for pool to scan idle-timeout conencitons (ms)                                      | 18000                     |
-| forceDirtyOnSchemaAfterSet      | force reset flag for schema property when conneciton close(can used in app of PG)                  | false                     |
-| forceDirtyOnCatalogAfterSet     | force reset flag for catlog property when conneciton close(can used in app of PG)                  | false                     |
-| enableThreadLocal               | an indicator to enable/disable threadlocal in pool（false to support VT)                            |  true                      | 
-| enableJmx                       | enable indicator to support Jmx                                                                    | false                     | 
-| printConfigInfo                 | indicator to print configuration items by log when pool initialize                                 | false                     | 
-| printRuntimeLog                 | indicator to print runtime logs of pool                                                            | false                     | 
-| **connectionFactory**           | connection factory instance                                                                        | blank                     |
-| **connectionFactoryClass**      | connection factory class                                                                           | blank                     |
-| **connectionFactoryClassName**  | connection factory class name                                                                      | blank                     |
-| **evictPredicate**              | predicate instance                                                                                 | blank                     |
-| **evictPredicateClass**         | predicate class                                                                                    | blank                     |
-| **evictPredicateClassName**     | predicate class name                                                                               | blank                     |
-| **jdbcLinkInfoDecoder**         | decoder instance of jdbc link info                                                                 | blank                     |
-| **jdbcLinkInfoDecoderClass**    | decoder class of jdbc link info                                                                    | blank                     |
-| **jdbcLinkInfoDecoderClassName** | decoder class name of jdbc link info                                                               | blank                     |
+| property name                   | description                                                            | default value             |
+|---------------------------------|------------------------------------------------------------------------|---------------------------|
+| username                        | user name of db                                                        | blank                     |
+| password                        | user password of db                                                    | blank                     |
+| jdbcUrl                         | link url to db                                                         | blank                     |
+| driverClassName                 | jdbc driver class name                                                 | blank                     |
+| poolName	                  | pool name,if not set,a generated name will be assigned to it           | blank                     |
+| fairMode                        | a mode to get connections from pool                                    | false（unfair mode）       | 
+| initialSize                     | creation size of connecitons during pool initialization                | 0                         |
+| maxActive                       | max size of connections in pool                                        | 10                        | 
+| borrowSemaphoreSize             | max permit size of semaphore for conneciton getting                    | min(maxActive/2,CPU size） |
+| defaultAutoCommit               | Connection.setAutoComit(defaultAutoCommit)                             | blank                     |
+| defaultTransactionIsolationCode | Connection.setTransactionIsolation(defaultTransactionIsolationCode)    | blank                     |
+| defaultCatalog                  | Connection.setCatalog(defaultCatalog)                                  | blank                     |
+| defaultSchema                   | Connection.setSchema(defaultSchema)                                    | blank                     |
+| defaultReadOnly                 | Connection.setReadOnly(defaultReadOnly)                                | blank                     |
+| maxWait                         | max wait time in pool to get connection(ms)                            | 8000                      |
+| idleTimeout                     | max idle time of connecitons in pool (ms)                              | 18000                     |  
+| holdTimeout                     | max inactive time of borrowed connections(ms)                          | 0                         |  
+| aliveTestSql                    | alive test sql                                                         | SELECT 1                  |  
+| aliveTestTimeout                | max wait time to get alive check result(seconds)                       | 3                         |  
+| aliveAssumeTime                 | a hreshold time to do alive check on borrowed connections,assume alive if less,otherwise check(ms)| 500                       |  
+| forceCloseUsingOnClear          | indicator to recyle borrowed connecton by force when pool clean       | false                     |
+| parkTimeForRetry                | timed wait for borrowed connections to return to pool and close them(ms)   | 3000                      |             
+| timerCheckInterval              | a iterval time for pool to scan idle-timeout conencitons (ms)              | 18000                     |
+| forceDirtyOnSchemaAfterSet      | force reset flag for schema property when conneciton close(can used in app of PG) | false                     |
+| forceDirtyOnCatalogAfterSet     | force reset flag for catlog property when conneciton close(can used in app of PG) | false                     |
+| enableThreadLocal               | an indicator to enable/disable threadlocal in pool（false to support VT)    |  true                      | 
+| enableJmx                       | enable indicator to support Jmx                                        | false                     | 
+| printConfigInfo                 | indicator to print configuration items by log when pool initialize     | false                     | 
+| printRuntimeLog                 | indicator to print runtime logs of pool                                | false                     | 
+| **connectionFactory**               | connection factory instance                                            | blank                     |
+| **connectionFactoryClass**          | connection factory class                                               | blank                     |
+| **connectionFactoryClassName**      | connection factory class name                                          | blank                     |
+| **evictPredicate**                  | predicate instance                                                     | blank                     |
+| **evictPredicateClass**             | predicate class                                                        | blank                     |
+| **evictPredicateClassName**         | predicate class name                                                   | blank                     |
+| **jdbcLinkInfoDecoder**             | decoder instance of jdbc link info                                     | blank                     |
+| **jdbcLinkInfoDecoderClass**        | decoder class of jdbc link info                                        | blank                     |
+| **jdbcLinkInfoDecoderClassName**    | decoder class name of jdbc link info                                   | blank                     |
 
 ***Object type properties**，choosed priority order：instance > class > class name
 

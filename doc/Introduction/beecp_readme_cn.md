@@ -1,7 +1,7 @@
 [🏠](../../README.md) [English](beecp_readme_eng.md)|[中文](beecp_readme_cn.md)
 
-<a><img src="https://img.shields.io/badge/Java-8+-green.svg"></a>
-<a><img src="https://maven-badges.herokuapp.com/maven-central/io.github.chris2018998/stone/badge.svg"></a>
+![](https://img.shields.io/badge/Java-8+-green.svg)
+![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 
 BeeCP是一款轻量级JDBC连接池，其技术亮点：单连接缓存，非移动等待，固定长度数组
@@ -99,44 +99,44 @@ public class DataSourceConfiguration{
 BeeCP使用的参数信息来自其配置对象（BeeDataSourceConfig），下面列表为主要的参数属性名
 | 属性                              | 描述                                                                  | 默认值                    |
 |----------------------------------|----------------------------------------------------------------------|--------------------------|
-| username                         | 连接数据库的用户名                                                       |空                         |
-| password                         | 连接数据库的密码                                                        |空                         |
+| username                         | 连接数据库的用户名                                                     |空                         |
+| password                         | 连接数据库的密码                                                       |空                         |
 | jdbcUrl                          | 连接数据库的url                                                        |空                        |
 | driverClassName                  | 数据库的Jdbc驱动类名                                                    |空                        |
-| poolName	                       | 连接池名                                                               |空                        |
-| fairMode                         | 是否使用公平模式                                                         |false（非公平模式）         | 
-| initialSize                      | 连接池初始化时创建连接的数量                                               |0                         |
-| maxActive                        | 池内最大连接数                                                           |10                        | 
-| borrowSemaphoreSize              | 池内信号量最大许可数(借用线程最大并发数）                                    |min(最大连接数/2,CPU核心数） |
+| poolName	                   | 连接池名                                                               |空                        |
+| fairMode                         | 是否使用公平模式                                                        |false（非公平模式）         | 
+| initialSize                      | 连接池初始化时创建连接的数量                                             |0                         |
+| maxActive                        | 池内最大连接数                                                         |10                        | 
+| borrowSemaphoreSize              | 池内信号量最大许可数(借用线程最大并发数）                                 |min(最大连接数/2,CPU核心数） |
 | defaultAutoCommit                | Connection.setAutoComit(defaultAutoCommit)                          |空                          |
 | defaultTransactionIsolationCode  | Connection.setTransactionIsolation(defaultTransactionIsolationCode) |空                          |
 | defaultCatalog                   | Connection.setCatalog(defaultCatalog)                               |空                          |
 | defaultSchema                    | Connection.setSchema(defaultSchema)                                 |空                          |
 | defaultReadOnly                  | Connection.setReadOnly(defaultReadOnly)                             |空                          |
-| maxWait                          | 借用连接时的最大等待时间(毫秒)                                            |8000                |
-| idleTimeout                      | 未借连接闲置超时时间(毫秒)，不可大于数据库最大闲置时间                         |18000               |  
-| holdTimeout                      | 已借连接闲置超时时间(毫秒)，不可大于数据库最大闲置时间                         |0                   |  
-| aliveTestSql                     | 连接存活检查sql                                                       |SELECT 1            |  
-| aliveTestTimeout                 | 连接存活检测结果的等待最大时间(秒)                                         |3                   |  
-| aliveAssumeTime                  | 存活检测阈值时间差，小于则假定为活动连接，大于则检测                           |500                 |  
-| forceRecycleBorrowedOnClose      | 池关闭时，是否强制回收已借连接                                            |false               |
-| parkTimeForRetry                 | 清理时，等待已借连接返回池中的时间(毫秒)                                    |3000                |             
-| timerCheckInterval               | 池内定时线程工作隔时间(毫秒)                                             |18000               |
-| forceDirtyOnSchemaAfterSet       | 连接归还时，Schema属性是否强制重置标记(PG可设置）                           |false               |
-| forceDirtyOnCatalogAfterSet      | 连接归还时，Catalog属性是否强制重置标记(PG可设置）                          |false               |
+| maxWait                          | 借用连接时的最大等待时间(毫秒)                                         |8000                |
+| idleTimeout                      | 未借连接闲置超时时间(毫秒)，不可大于数据库最大闲置时间                    |18000               |  
+| holdTimeout                      | 已借连接闲置超时时间(毫秒)，不可大于数据库最大闲置时间                    |0                   |  
+| aliveTestSql                     | 连接存活检查sql                                                      |SELECT 1            |  
+| aliveTestTimeout                 | 连接存活检测结果的等待最大时间(秒)                                      |3                   |  
+| aliveAssumeTime                  | 存活检测阈值时间差，小于则假定为活动连接，大于则检测                       |500                 |  
+| forceCloseUsingOnClear           | 清理时，是否强制回收已借连接                                            |false               |
+| parkTimeForRetry                 | 清理时，等待已借连接返回池中的时间(毫秒)                                 |3000                |             
+| timerCheckInterval               | 池内定时线程工作隔时间(毫秒)                                            |18000               |
+| forceDirtyOnSchemaAfterSet       | 连接归还时，Schema属性是否强制重置标记(PG可设置）                         |false               |
+| forceDirtyOnCatalogAfterSet      | 连接归还时，Catalog属性是否强制重置标记(PG可设置）                        |false               |
 | enableThreadLocal                | ThreadLocal是否启用（false时可支持虚拟线程）                             |true                | 
-| enableJmx                        | JMX监控支持开关                                                       |false            | 
-| printConfigInfo                  | 是否打印配置信息                                                       |false               | 
-| printRuntimeLog                  | 是否打印运行时日志                                                      |false               | 
-| **connectionFactory**            | 连接工厂实例                                                           |空                   |
-| **connectionFactoryClass**       | 连接工厂类                                                             |空                   |
-| **connectionFactoryClassName**   | 连接工厂类名                                                            |空                   |
-| **evictPredicate**               | 异常断言实例                                                            |空                   |
-| **evictPredicateClass**          | 异常断言类                                                              |空                   |
-| **evictPredicateClassName**      | 异常断言类名                                                            |空                   |
-| **jdbcLinkInfoDecoder**          | 连接信息解码器                                                           |空                   |
-| **jdbcLinkInfoDecoderClass**     | 连接信息解码器类                                                          |空                   |
-| **jdbcLinkInfoDecoderClassName** | 连接信息解码器类名                                                         |空                   |
+| enableJmx                        | JMX监控支持开关                                                           |false            | 
+| printConfigInfo                  | 是否打印配置信息                                                           |false               | 
+| printRuntimeLog                  | 是否打印运行时日志                                                         |false               | 
+| **connectionFactory**            | 连接工厂实例                                                              |空                   |
+| **connectionFactoryClass**       | 连接工厂类                                                               |空                   |
+| **connectionFactoryClassName**   | 连接工厂类名                                                              |空                   |
+| **evictPredicate**               | 异常断言实例                                                              |空                   |
+| **evictPredicateClass**          | 异常断言类                                                                |空                   |
+| **evictPredicateClassName**      | 异常断言类名                                                              |空                   |
+| **jdbcLinkInfoDecoder**          | 连接信息解码器                                                             |空                   |
+| **jdbcLinkInfoDecoderClass**     | 连接信息解码器类                                                            |空                   |
+| **jdbcLinkInfoDecoderClassName** | 连接信息解码器类名                                                           |空                   |
 
 *_**对象级属性**，生效选择次序：实例 > 类 > 类名_
 
