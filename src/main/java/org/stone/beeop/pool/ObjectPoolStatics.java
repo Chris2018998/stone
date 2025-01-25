@@ -39,7 +39,7 @@ public class ObjectPoolStatics {
     static final int OBJECT_CLOSED = 0;
     static final int OBJECT_IDLE = 1;
     static final int OBJECT_CREATING = 2;
-    static final int OBJECT_USING = 3;
+    static final int OBJECT_BORROWED = 3;
 
     //pool state
     static final int POOL_NEW = 0;
