@@ -120,7 +120,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return usingSize;
     }
 
-    void setUsingSize(int usingSize) {
+    void setBorrowedSize(int usingSize) {
         this.usingSize = usingSize;
     }
 
