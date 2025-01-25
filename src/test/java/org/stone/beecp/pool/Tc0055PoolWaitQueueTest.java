@@ -14,13 +14,13 @@ import org.junit.Assert;
 import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.objects.BorrowThread;
-import org.stone.beecp.objects.InterruptionAction;
 import org.stone.beecp.objects.MockDriverConnectionFactory;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
@@ -89,20 +89,23 @@ public class Tc0055PoolWaitQueueTest extends TestCase {
         pool.getConnection();
 
         //2: create a thread to get connection
-        BorrowThread second = new BorrowThread(pool);
-        second.start();
+        BorrowThread borrowerThread = new BorrowThread(pool);
+        borrowerThread.start();
 
         //3: attempt to get connection in current thread
-        TestUtil.blockUtilWaiter((ConcurrentLinkedQueue) TestUtil.getFieldValue(pool, "waitQueue"));
+        ConcurrentLinkedQueue<?> waitQueue = (ConcurrentLinkedQueue) TestUtil.getFieldValue(pool, "waitQueue");
+        while (true) {
+            if (!waitQueue.isEmpty()) {
+                break;
+            } else {
+                LockSupport.parkNanos(100L);
+            }
+        }
 
-        //4: create a mock thread to interrupt first thread in blocking
-        new InterruptionAction(second).start();
-        //5: attempt to get connection in current thread
-        second.join();
-
-        //6: get failure exception from second
+        borrowerThread.interrupt();
+        borrowerThread.join();
         try {
-            SQLException e = second.getFailureCause();
+            SQLException e = borrowerThread.getFailureCause();
             Assert.assertTrue(e != null && e.getMessage().contains("An interruption occurred while waiting for a released connection"));
         } finally {
             pool.close();

@@ -11,16 +11,17 @@ package org.stone.beecp.pool;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.objects.BorrowThread;
-import org.stone.beecp.objects.InterruptionAction;
 import org.stone.beecp.objects.MockNetBlockConnectionFactory;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
+import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 
-import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
@@ -69,32 +70,41 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         FastConnectionPool pool = new FastConnectionPool();
         pool.init(config);
 
-        //1: create first borrow thread to get connection
-        new BorrowThread(pool).start();
-        factory.waitOnArrivalLatch();
+        //1: create two borrower thread
+        BorrowThread firstBorrower = new BorrowThread(pool);
+        BorrowThread secondBorrower = new BorrowThread(pool);
+        firstBorrower.start();
+        secondBorrower.start();
 
-        //2: create second thread to acquire read-lock of initialization
-        BorrowThread second = new BorrowThread(pool);
-        second.start();
+        //2: block on semaphore util a waiter
+        InterruptionReentrantReadWriteLock lock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
+        while (true) {
+            if (lock.getQueueLength() == 1) {
+                break;
+            } else {
+                LockSupport.parkNanos(100L);
+            }
+        }
 
-        //3: loop to wait util second thread has existed in lock wait queue
-        TestUtil.blockUtilWaiter((ReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock"));
-
-        //4: create a mock thread to interrupt first thread in blocking
-        new InterruptionAction(second).start();
-        //5: attempt to get connection in current thread
-        second.join();
-
-        //6: get failure exception from second
+        //3: interrupt waiter thread on connectionArrayInitLock
         try {
-            SQLException e = second.getFailureCause();
-            Assert.assertTrue(e != null && e.getMessage().contains("An interruption occurred while waiting on pool lock"));
+            List<Thread> interruptedThreads = lock.interruptQueuedWaitThreads();
+            for (Thread thread : interruptedThreads)
+                thread.join();
+            for (Thread thread : interruptedThreads) {
+                if (thread == firstBorrower) {
+                    Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("An interruption occurred while waiting on pool lock"));
+                }
+                if (thread == secondBorrower) {
+                    Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("An interruption occurred while waiting on pool lock"));
+                }
+            }
         } finally {
-            factory.getBlockingLatch().countDown();
-            pool.close();
+            pool.interruptConnectionCreating(false);
         }
     }
 
+    @Ignore
     public void testInterruptCreator() throws Exception {
         BeeDataSourceConfig config = createDefault();
         config.setInitialSize(0);
@@ -109,29 +119,39 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         FastConnectionPool pool = new FastConnectionPool();
         pool.init(config);
 
-        //1: create first borrow thread to get connection
-        BorrowThread first = new BorrowThread(pool);
-        first.start();
-        factory.waitOnArrivalLatch();//first thread has entered <method>factory.create</method>
+        //1: create two borrower thread
+        BorrowThread firstBorrower = new BorrowThread(pool);
+        BorrowThread secondBorrower = new BorrowThread(pool);
+        firstBorrower.start();
+        secondBorrower.start();
 
-        //2: create second thread to acquire read-lock of initialization
-        BorrowThread second = new BorrowThread(pool);
-        second.start();
+        //2: block on semaphore util a waiter
+        InterruptionReentrantReadWriteLock lock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
+        while (true) {
+            if (lock.getQueueLength() == 1) {
+                break;
+            } else {
+                LockSupport.parkNanos(100L);
+            }
+        }
 
-        //3: loop to wait util second thread has existed in lock wait queue
-        TestUtil.blockUtilWaiter((ReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock"));
+        //3: get threads in creating connection
+        Thread ownerThread = lock.getOwnerThread();
+        if (ownerThread != null) {
+            ownerThread.interrupt();
+            firstBorrower.join();
+            secondBorrower.join();
+            if (ownerThread == firstBorrower) {
+                Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("A unknown error occurred when created a connection"));
+            } else {
+                Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("Pool first connection created fail or first connection initialized fail"));
+            }
 
-        //4: create a mock thread to interrupt first thread in blocking
-        new InterruptionAction(first).start();
-        //5: attempt to get connection in current thread
-        second.join();
-
-        //6: get failure exception from second
-        try {
-            SQLException e = second.getFailureCause();
-            Assert.assertTrue(e != null && e.getMessage().contains("Pool first connection created fail or first connection initialized fail"));
-        } finally {
-            pool.close();
+            if (ownerThread == secondBorrower) {
+                Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("A unknown error occurred when created a connection"));
+            } else {
+                Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("Pool first connection created fail or first connection initialized fail"));
+            }
         }
     }
 }

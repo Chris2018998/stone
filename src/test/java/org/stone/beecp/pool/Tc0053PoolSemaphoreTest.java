@@ -14,13 +14,13 @@ import org.junit.Assert;
 import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.objects.BorrowThread;
-import org.stone.beecp.objects.InterruptionAction;
 import org.stone.beecp.objects.MockNetBlockConnectionFactory;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
+import org.stone.tools.extension.InterruptionSemaphore;
 
-import java.sql.SQLException;
-import java.util.concurrent.Semaphore;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
@@ -65,29 +65,39 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
         FastConnectionPool pool = new FastConnectionPool();
         pool.init(config);
 
-        //1: create first borrow thread to get connection
-        new BorrowThread(pool).start();
-        factory.waitOnArrivalLatch();
+        //1: create two borrower thread
+        BorrowThread firstBorrower = new BorrowThread(pool);
+        BorrowThread secondBorrower = new BorrowThread(pool);
+        firstBorrower.start();
+        secondBorrower.start();
 
-        //2: create second thread to acquire read-lock of initialization
-        BorrowThread second = new BorrowThread(pool);
-        second.start();
+        //2: block on semaphore util a waiter
+        InterruptionSemaphore semaphore = (InterruptionSemaphore) TestUtil.getFieldValue(pool, "semaphore");
+        while (true) {
+            if (semaphore.getQueueLength() == 1) {
+                break;
+            } else {
+                LockSupport.parkNanos(100L);
+            }
+        }
 
-        //3: block current thread util second thread in wait queue of semaphore
-        TestUtil.blockUtilWaiter((Semaphore) TestUtil.getFieldValue(pool, "semaphore"));
-
-        //4: create a mock thread to interrupt first thread in blocking
-        new InterruptionAction(second).start();
-        //5: attempt to get connection in current thread
-        second.join();
-
-        //6: get failure exception from second
+        //3: interrupt waiter thread on semaphore
         try {
-            SQLException e = second.getFailureCause();
-            Assert.assertTrue(e != null && e.getMessage().contains("An interruption occurred while waiting on pool semaphore"));
+            List<Thread> interruptedThreads = semaphore.interruptQueuedWaitThreads();
+            for (Thread thread : interruptedThreads)
+                thread.join();
+            for (Thread thread : interruptedThreads) {
+                if (thread == firstBorrower) {
+                    Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("An interruption occurred while waiting on pool semaphore"));
+                }
+                if (thread == secondBorrower) {
+                    Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("An interruption occurred while waiting on pool semaphore"));
+                }
+            }
         } finally {
-            factory.getBlockingLatch().countDown();
-            pool.close();
+            pool.interruptConnectionCreating(false);
+            if (Thread.interrupted()) {
+            }
         }
     }
 }
