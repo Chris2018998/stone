@@ -134,7 +134,7 @@ public class Tc0091ConnectionTimeoutTest extends TestCase {
 
         BorrowThread first = new BorrowThread(pool);
         first.start();
-        factory.getArrivalLatch().await();
+        factory.waitUtilCreationArrival();
 
         BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
         Assert.assertEquals(1, vo.getCreatingCount());

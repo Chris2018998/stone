@@ -11,7 +11,6 @@ package org.stone.beecp.pool;
 
 import junit.framework.TestCase;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.stone.base.TestUtil;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.objects.BorrowThread;
@@ -43,7 +42,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
 
         //1: create first borrow thread to get connection
         new BorrowThread(pool).start();
-        factory.waitOnArrivalLatch();
+        factory.waitUtilCreationArrival();
 
         //2: attempt to get connection in current thread
         try {
@@ -51,7 +50,7 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         } catch (ConnectionGetTimeoutException e) {
             Assert.assertTrue(e.getMessage().contains("Waited timeout on pool lock"));
         } finally {
-            factory.getBlockingLatch().countDown();
+            factory.interruptAll();
             pool.close();
         }
     }
@@ -76,17 +75,11 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         firstBorrower.start();
         secondBorrower.start();
 
-        //2: block on semaphore util a waiter
-        InterruptionReentrantReadWriteLock lock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
-        while (true) {
-            if (lock.getQueueLength() == 1) {
-                break;
-            } else {
-                LockSupport.parkNanos(100L);
-            }
-        }
+        //2: block the current thread
+        factory.waitUtilCreationArrival();
 
-        //3: interrupt waiter thread on connectionArrayInitLock
+        //3: interrupt waiter thread on lock
+        InterruptionReentrantReadWriteLock lock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
         try {
             List<Thread> interruptedThreads = lock.interruptQueuedWaitThreads();
             for (Thread thread : interruptedThreads)
@@ -100,11 +93,11 @@ public class Tc0054PoolInternalLockTest extends TestCase {
                 }
             }
         } finally {
+            factory.interruptAll();
             pool.interruptConnectionCreating(false);
         }
     }
 
-    @Ignore
     public void testInterruptCreator() throws Exception {
         BeeDataSourceConfig config = createDefault();
         config.setInitialSize(0);
@@ -125,33 +118,48 @@ public class Tc0054PoolInternalLockTest extends TestCase {
         firstBorrower.start();
         secondBorrower.start();
 
-        //2: block on semaphore util a waiter
+        //2: block the current thread
+        System.out.println("block the current thread on waitUtilCreationArrival111");
+        factory.waitUtilCreationArrival();
+        System.out.println("block the current thread on waitUtilCreationArrival222");
+
+        //3: block the current thread
+        Thread.interrupted();//just clean interruption flag
         InterruptionReentrantReadWriteLock lock = (InterruptionReentrantReadWriteLock) TestUtil.getFieldValue(pool, "connectionArrayInitLock");
-        while (true) {
-            if (lock.getQueueLength() == 1) {
+        do {
+            if (lock.getQueueLength()==0)
+                LockSupport.parkNanos(50L);
+            else
                 break;
-            } else {
-                LockSupport.parkNanos(100L);
-            }
-        }
+        } while (true);
 
-        //3: get threads in creating connection
-        Thread ownerThread = lock.getOwnerThread();
-        if (ownerThread != null) {
-            ownerThread.interrupt();
-            firstBorrower.join();
-            secondBorrower.join();
-            if (ownerThread == firstBorrower) {
-                Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("A unknown error occurred when created a connection"));
-            } else {
-                Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("Pool first connection created fail or first connection initialized fail"));
-            }
+        System.out.println("block the current thread on InterruptionReentrantReadWriteLock");
 
-            if (ownerThread == secondBorrower) {
-                Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("A unknown error occurred when created a connection"));
+        try {
+            //3: interrupt lock owner
+            Thread ownerThread = lock.getOwnerThread();
+            if (ownerThread != null) {
+                factory.interrupt(ownerThread);
+
+                firstBorrower.join();
+                secondBorrower.join();
+                if (ownerThread == firstBorrower) {
+                    Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("A unknown error occurred when created a connection"));
+                } else {
+                    Assert.assertTrue(firstBorrower.getFailureCause().getMessage().contains("Pool first connection created fail or first connection initialized fail"));
+                }
+
+                if (ownerThread == secondBorrower) {
+                    Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("A unknown error occurred when created a connection"));
+                } else {
+                    Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("Pool first connection created fail or first connection initialized fail"));
+                }
             } else {
-                Assert.assertTrue(secondBorrower.getFailureCause().getMessage().contains("Pool first connection created fail or first connection initialized fail"));
+                System.out.println("lock owner thread is null");
             }
+        } finally {
+            factory.interruptAll();
+            pool.interruptConnectionCreating(false);
         }
     }
 }

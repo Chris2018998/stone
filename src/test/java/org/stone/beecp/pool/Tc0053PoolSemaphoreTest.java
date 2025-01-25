@@ -20,7 +20,6 @@ import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 
@@ -40,7 +39,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
 
         //1: create first borrow thread to get connection
         new BorrowThread(pool).start();
-        factory.waitOnArrivalLatch();
+        factory.waitUtilCreationArrival();
 
         //2: attempt to get connection in current thread
         try {
@@ -48,7 +47,7 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
         } catch (ConnectionGetTimeoutException e) {
             Assert.assertTrue(e.getMessage().contains("Waited timeout on pool semaphore"));
         } finally {
-            factory.getBlockingLatch().countDown();
+            factory.interruptAll();
             pool.close();
         }
     }
@@ -71,17 +70,11 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
         firstBorrower.start();
         secondBorrower.start();
 
-        //2: block on semaphore util a waiter
-        InterruptionSemaphore semaphore = (InterruptionSemaphore) TestUtil.getFieldValue(pool, "semaphore");
-        while (true) {
-            if (semaphore.getQueueLength() == 1) {
-                break;
-            } else {
-                LockSupport.parkNanos(100L);
-            }
-        }
+        //2: block the current thread
+        factory.waitUtilCreationArrival();
 
         //3: interrupt waiter thread on semaphore
+        InterruptionSemaphore semaphore = (InterruptionSemaphore) TestUtil.getFieldValue(pool, "semaphore");
         try {
             List<Thread> interruptedThreads = semaphore.interruptQueuedWaitThreads();
             for (Thread thread : interruptedThreads)
@@ -95,9 +88,8 @@ public class Tc0053PoolSemaphoreTest extends TestCase {
                 }
             }
         } finally {
+            factory.interruptAll();
             pool.interruptConnectionCreating(false);
-            if (Thread.interrupted()) {
-            }
         }
     }
 }
