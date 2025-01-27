@@ -1,5 +1,12 @@
 stone changes
 
+
+Changes in 1.4.7(Pending)
+[beecp]
+1: add interruption double check on borrower thread
+[beeop]
+1: add interruption double check on borrower thread
+
 Changes in 1.4.6
 [beecp]
 1: remove two monitoring methods[getConnectionCreatingCount(),getConnectionCreatingTimeoutCount()]

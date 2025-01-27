@@ -316,8 +316,10 @@ final class ObjectInstancePool implements Runnable, Cloneable {
         else
             b = new ObjectBorrower();
         this.waitQueue.offer(b);
+        Thread borrowThread = b.thread;
         BeeObjectException cause = null;
         deadline += this.maxWaitNs;
+
 
         //5: self-spin to get transferred object
         do {
@@ -350,7 +352,7 @@ final class ObjectInstancePool implements Runnable, Cloneable {
                         ownerPool.submitServantTask(this);
 
                     LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
-                    if (Thread.interrupted())
+                    if (borrowThread.isInterrupted() && Thread.interrupted())
                         cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
                 } else {//timeout
                     cause = new ObjectGetTimeoutException("Waited timeout for a released object");
