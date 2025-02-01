@@ -2,7 +2,8 @@
 ![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 
-Stone is a set of Java container that integrates four lightweight independent pools.
+Stone is a Java toolkit package integrates four lightweight independent pools.
+
 ## 
 :arrow_down: Maven artifact
 ```xml
