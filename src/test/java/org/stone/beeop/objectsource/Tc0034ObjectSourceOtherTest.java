@@ -29,15 +29,15 @@ public class Tc0034ObjectSourceOtherTest extends TestCase {
         Assert.assertEquals(maxWait, os.getMaxWait());
         try {
             os.setMaxWait(-1L);
-            fail("Max wait time test failed");
+            fail("Setting test failed on configuration item[max-wait]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Max wait time must be greater than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[max-wait] must be greater than zero", e.getMessage());
         }
         try {
             os.setMaxWait(0L);
-            fail("Max wait time test failed");
+            fail("Setting test failed on configuration item[max-wait]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Max wait time must be greater than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[max-wait] must be greater than zero", e.getMessage());
         }
         os.setMaxWait(10L);
         Assert.assertEquals(10L, os.getMaxWait());

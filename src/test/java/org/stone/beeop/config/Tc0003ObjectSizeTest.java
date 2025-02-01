@@ -29,15 +29,15 @@ public class Tc0003ObjectSizeTest extends TestCase {
         //MaxKeySize
         try {
             config.setMaxKeySize(-1);
-            fail("MaxKeySize test failed");
+            fail("Setting test failed on configuration item[max-key-size]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Key size must be greater than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[max-key-size] must be greater than zero", e.getMessage());
         }
         try {
             config.setMaxKeySize(0);
-            fail("MaxKeySize test failed");
+            fail("Setting test failed on configuration item[max-key-size]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Key size must be greater than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[max-key-size] must be greater than zero", e.getMessage());
         }
         config.setMaxKeySize(10);
         Assert.assertEquals(10, config.getMaxKeySize());
@@ -45,9 +45,9 @@ public class Tc0003ObjectSizeTest extends TestCase {
         //InitialSize
         try {
             config.setInitialSize(-1);
-            fail("setInitialSize test failed");
+            fail("Setting test failed on configuration item[initial-size]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Initialization size can't be less than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[initial-size] can't be less than zero", e.getMessage());
         }
         config.setInitialSize(0);
         Assert.assertEquals(0, config.getInitialSize());
@@ -57,15 +57,15 @@ public class Tc0003ObjectSizeTest extends TestCase {
         //MaxActive
         try {
             config.setMaxActive(-1);
-            fail("setInitialSize test failed");
+            fail("Setting test failed on configuration item[max-active]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Max active size must be greater than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[max-active] must be greater than zero", e.getMessage());
         }
         try {
             config.setMaxActive(0);
-            fail("setInitialSize test failed");
+            fail("Setting test failed on configuration item[max-active]");
         } catch (InvalidParameterException e) {
-            Assert.assertEquals("Max active size must be greater than zero", e.getMessage());
+            Assert.assertEquals("The given value to configuration item[max-active] must be greater than zero", e.getMessage());
         }
         config.setMaxActive(1);
         Assert.assertEquals(1, config.getMaxActive());
@@ -86,7 +86,7 @@ public class Tc0003ObjectSizeTest extends TestCase {
             config.check();
         } catch (BeeObjectSourceConfigException e) {
             String message = e.getMessage();
-            Assert.assertTrue(message != null && message.contains("initial-size must not be greater than max-active"));
+            Assert.assertTrue(message != null && message.contains("The configured value of item[initial-size] can't be greater than the configured value of item[max-active]"));
         }
     }
 }
