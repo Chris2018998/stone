@@ -76,10 +76,8 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     //                                          2: Override(2)                                                       //
     //***************************************************************************************************************//
     public void setMaxWait(long maxWait) {
-        if (maxWait > 0L) {
-            super.setMaxWait(maxWait);
-            this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
-        }
+        super.setMaxWait(maxWait);
+        this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
     }
 
     public void setPrintRuntimeLog(boolean printRuntimeLog) {

@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
+import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -156,7 +157,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setInitialSize(int initialSize) {
-        if (initialSize >= 0) this.initialSize = initialSize;
+        if (initialSize < 0) throw new InvalidParameterException("Initialization size can't be less than zero");
+        this.initialSize = initialSize;
     }
 
     public boolean isAsyncCreateInitObject() {
@@ -172,10 +174,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setMaxActive(int maxActive) {
-        if (maxActive > 0) {
-            this.maxActive = maxActive;
-            borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
-        }
+        if (maxActive <= 0) throw new InvalidParameterException("Max active size must be greater than zero");
+
+        this.maxActive = maxActive;
+        borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
+
     }
 
     public int getMaxKeySize() {
@@ -183,7 +186,8 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setMaxKeySize(int maxKeySize) {
-        if (maxKeySize > 0) this.maxKeySize = maxKeySize;
+        if (maxKeySize <= 0) throw new InvalidParameterException("Key size must be greater than zero");
+        this.maxKeySize = maxKeySize;
     }
 
     public int getBorrowSemaphoreSize() {
@@ -191,7 +195,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setBorrowSemaphoreSize(int borrowSemaphoreSize) {
-        if (borrowSemaphoreSize > 0) this.borrowSemaphoreSize = borrowSemaphoreSize;
+        if (borrowSemaphoreSize <= 0)
+            throw new InvalidParameterException("Max permit size of semaphore must be greater than zero");
+
+        this.borrowSemaphoreSize = borrowSemaphoreSize;
     }
 
     public long getMaxWait() {
@@ -199,7 +206,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setMaxWait(long maxWait) {
-        if (maxWait > 0L) this.maxWait = maxWait;
+        if (maxWait <= 0L)
+            throw new InvalidParameterException("Max wait time must be greater than zero");
+
+        this.maxWait = maxWait;
     }
 
     public long getIdleTimeout() {
@@ -207,7 +217,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setIdleTimeout(long idleTimeout) {
-        if (idleTimeout > 0L) this.idleTimeout = idleTimeout;
+        if (idleTimeout <= 0L)
+            throw new InvalidParameterException("Idle timeout must be greater than zero");
+
+        this.idleTimeout = idleTimeout;
     }
 
     public long getHoldTimeout() {
@@ -215,7 +228,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setHoldTimeout(long holdTimeout) {
-        if (holdTimeout >= 0L) this.holdTimeout = holdTimeout;
+        if (holdTimeout < 0L)
+            throw new InvalidParameterException("Max hold time can't be less than zero");
+
+        this.holdTimeout = holdTimeout;
     }
 
     public int getAliveTestTimeout() {
@@ -223,7 +239,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setAliveTestTimeout(int aliveTestTimeout) {
-        if (aliveTestTimeout >= 0) this.aliveTestTimeout = aliveTestTimeout;
+        if (aliveTestTimeout < 0L)
+            throw new InvalidParameterException("Timeout of alive test can't be less than zero");
+        this.aliveTestTimeout = aliveTestTimeout;
     }
 
     public long getAliveAssumeTime() {
@@ -231,7 +249,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setAliveAssumeTime(long aliveAssumeTime) {
-        if (aliveAssumeTime >= 0L) this.aliveAssumeTime = aliveAssumeTime;
+        if (aliveAssumeTime < 0L)
+            throw new InvalidParameterException("Alive assume time can't be less than zero");
+        this.aliveAssumeTime = aliveAssumeTime;
     }
 
     public long getTimerCheckInterval() {
@@ -239,7 +259,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setTimerCheckInterval(long timerCheckInterval) {
-        if (timerCheckInterval > 0L) this.timerCheckInterval = timerCheckInterval;
+        if (timerCheckInterval <= 0L)
+            throw new InvalidParameterException("Interval Time of pool worker must be greater than zero");
+
+        this.timerCheckInterval = timerCheckInterval;
     }
 
     public boolean isForceRecycleBorrowedOnClose() {
@@ -255,7 +278,9 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     public void setParkTimeForRetry(long parkTimeForRetry) {
-        if (parkTimeForRetry >= 0L) this.parkTimeForRetry = parkTimeForRetry;
+        if (parkTimeForRetry < 0L) throw new InvalidParameterException("Park time can't be less than zero");
+
+        this.parkTimeForRetry = parkTimeForRetry;
     }
 
     public boolean isEnableJmx() {
