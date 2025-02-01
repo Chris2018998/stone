@@ -14,6 +14,8 @@ import org.junit.Assert;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.objects.JavaBookFactory;
 
+import java.security.InvalidParameterException;
+
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -25,8 +27,18 @@ public class Tc0034ObjectSourceOtherTest extends TestCase {
         long maxWait = SECONDS.toMillis(8L);
         BeeObjectSource os = new BeeObjectSource();
         Assert.assertEquals(maxWait, os.getMaxWait());
-        os.setMaxWait(0L);
-        Assert.assertEquals(maxWait, os.getMaxWait());
+        try {
+            os.setMaxWait(-1L);
+            fail("Max wait time test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max wait time must be greater than zero", e.getMessage());
+        }
+        try {
+            os.setMaxWait(0L);
+            fail("Max wait time test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max wait time must be greater than zero", e.getMessage());
+        }
         os.setMaxWait(10L);
         Assert.assertEquals(10L, os.getMaxWait());
     }

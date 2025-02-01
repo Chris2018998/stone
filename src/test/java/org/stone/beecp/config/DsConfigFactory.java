@@ -13,7 +13,6 @@ import org.stone.beecp.BeeDataSourceConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
 import java.util.Properties;
 
 import static org.stone.tools.CommonUtil.isBlank;
@@ -62,12 +61,8 @@ public class DsConfigFactory {
 
     static void clearBeeCPInfoFromSystemProperties() {
         Properties properties = System.getProperties();
-        Iterator<Object> iterator = properties.keySet().iterator();
 
-        while (iterator.hasNext()) {
-            Object key = iterator.next();
-            if (key.toString().startsWith("beecp.")) iterator.remove();
-        }
+        properties.keySet().removeIf(key -> key.toString().startsWith("beecp."));
     }
 
     private static void loadConfig() throws Exception {
@@ -93,6 +88,7 @@ public class DsConfigFactory {
             try {
                 REQUEST_TIMEOUT = Integer.parseInt(prop.getProperty("REQUEST_TIMEOUT"));
             } catch (Exception e) {
+                //noting
             }
 
             if (isBlank(JDBC_USER))
@@ -117,6 +113,7 @@ public class DsConfigFactory {
                 try {
                     fileStream.close();
                 } catch (Exception e) {
+                    //nothing
                 }
             }
         }

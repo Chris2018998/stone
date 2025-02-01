@@ -14,6 +14,8 @@ import org.junit.Assert;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.BeeObjectSourceConfigException;
 
+import java.security.InvalidParameterException;
+
 import static org.stone.tools.CommonUtil.NCPU;
 
 /**
@@ -24,27 +26,52 @@ public class Tc0003ObjectSizeTest extends TestCase {
     public void testOnSetAndGet() {
         BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
 
-        config.setInitialSize(-1);
-        config.setMaxActive(-1);
-        Assert.assertNotEquals(-1, config.getInitialSize());
-        Assert.assertNotEquals(-1, config.getMaxActive());
+        //MaxKeySize
+        try {
+            config.setMaxKeySize(-1);
+            fail("MaxKeySize test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Key size must be greater than zero", e.getMessage());
+        }
+        try {
+            config.setMaxKeySize(0);
+            fail("MaxKeySize test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Key size must be greater than zero", e.getMessage());
+        }
+        config.setMaxKeySize(10);
+        Assert.assertEquals(10, config.getMaxKeySize());
 
+        //InitialSize
+        try {
+            config.setInitialSize(-1);
+            fail("setInitialSize test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Initialization size can't be less than zero", e.getMessage());
+        }
         config.setInitialSize(0);
-        config.setMaxActive(0);
         Assert.assertEquals(0, config.getInitialSize());
-        Assert.assertNotEquals(0, config.getMaxActive());
-
         config.setInitialSize(1);
-        config.setMaxActive(1);
         Assert.assertEquals(1, config.getInitialSize());
+
+        //MaxActive
+        try {
+            config.setMaxActive(-1);
+            fail("setInitialSize test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max active size must be greater than zero", e.getMessage());
+        }
+        try {
+            config.setMaxActive(0);
+            fail("setInitialSize test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max active size must be greater than zero", e.getMessage());
+        }
+        config.setMaxActive(1);
         Assert.assertEquals(1, config.getMaxActive());
         Assert.assertEquals(1, config.getBorrowSemaphoreSize());
-
-        config.setInitialSize(10);
         config.setMaxActive(20);
-        Assert.assertEquals(10, config.getInitialSize());
         Assert.assertEquals(20, config.getMaxActive());
-
         int borrowSemaphoreExpectSize = Math.min(20 / 2, NCPU);
         Assert.assertEquals(config.getBorrowSemaphoreSize(), borrowSemaphoreExpectSize);
     }

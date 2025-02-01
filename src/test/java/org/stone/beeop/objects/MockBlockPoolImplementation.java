@@ -39,11 +39,11 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
     }
 
     public BeeObjectHandle getObjectHandle() {
-        return null;
+        return new MockObjectHandleImpl();
     }
 
     public BeeObjectHandle getObjectHandle(Object key) {
-        return null;
+        return new MockObjectHandleImpl();
     }
 
     public int getObjectCreatingCount(Object key) {

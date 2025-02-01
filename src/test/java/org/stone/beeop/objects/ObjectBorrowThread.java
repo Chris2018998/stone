@@ -22,20 +22,22 @@ import org.stone.beeop.BeeObjectSource;
 public class ObjectBorrowThread extends Thread {
     private final BeeObjectSource os;
     private final BeeKeyedObjectPool pool;
+    private final Object objectKey;
     private BeeObjectHandle objectHale;
     private Exception failureCause;
 
     public ObjectBorrowThread(BeeObjectSource os) {
-        this(os, null);
+        this(os, null, null);
     }
 
     public ObjectBorrowThread(BeeKeyedObjectPool pool) {
-        this(null, pool);
+        this(null, pool, null);
     }
 
-    private ObjectBorrowThread(BeeObjectSource os, BeeKeyedObjectPool pool) {
+    public ObjectBorrowThread(BeeObjectSource os, BeeKeyedObjectPool pool, Object objectKey) {
         this.os = os;
         this.pool = pool;
+        this.objectKey = objectKey;
         this.setDaemon(true);
     }
 
@@ -50,9 +52,18 @@ public class ObjectBorrowThread extends Thread {
     public void run() {
         try {
             if (os != null) {
-                objectHale = os.getObjectHandle();
+                if (objectKey != null) {
+                    objectHale = os.getObjectHandle(objectKey);
+                } else {
+                    objectHale = os.getObjectHandle();
+                }
+
             } else {
-                objectHale = pool.getObjectHandle();
+                if (objectKey != null) {
+                    objectHale = pool.getObjectHandle(objectKey);
+                } else {
+                    objectHale = pool.getObjectHandle();
+                }
             }
         } catch (Exception e) {
             this.failureCause = e;

@@ -14,6 +14,8 @@ import org.junit.Assert;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.objects.JavaBookFactory;
 
+import java.security.InvalidParameterException;
+
 /**
  * @author Chris Liao
  */
@@ -33,72 +35,118 @@ public class Tc0004ConfigSetAndGetTest extends TestCase {
         Assert.assertTrue(config.isAsyncCreateInitObject());
 
         //borrowSemaphoreSize
-        config.setBorrowSemaphoreSize(0);
-        Assert.assertNotEquals(0, config.getBorrowSemaphoreSize());
-        config.setBorrowSemaphoreSize(5);
-        Assert.assertEquals(5, config.getBorrowSemaphoreSize());
+        try {
+            config.setBorrowSemaphoreSize(-1);
+            fail("semaphore size test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max permit size of semaphore must be greater than zero", e.getMessage());
+        }
+        try {
+            config.setBorrowSemaphoreSize(0);
+            fail("semaphore size test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max permit size of semaphore must be greater than zero", e.getMessage());
+        }
+        config.setBorrowSemaphoreSize(1);
+        Assert.assertEquals(1, config.getBorrowSemaphoreSize());
 
         //maxWait
-        config.setMaxWait(0L);
-        Assert.assertNotEquals(0, config.getMaxWait());
+        try {
+            config.setMaxWait(-1L);
+            fail("max wait test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max wait time must be greater than zero", e.getMessage());
+        }
+        try {
+            config.setMaxWait(0L);
+            fail("max wait test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max wait time must be greater than zero", e.getMessage());
+        }
         config.setMaxWait(5000L);
         Assert.assertEquals(5000L, config.getMaxWait());
 
         //idleTimeout
-        config.setIdleTimeout(0);
-        Assert.assertNotEquals(0, config.getIdleTimeout());
-        config.setIdleTimeout(3000);
-        Assert.assertEquals(3000, config.getIdleTimeout());
+        try {
+            config.setIdleTimeout(-1L);
+            fail("Idle-Timeout test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Idle timeout must be greater than zero", e.getMessage());
+        }
+        try {
+            config.setIdleTimeout(0L);
+            fail("Idle-Timeout test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Idle timeout must be greater than zero", e.getMessage());
+        }
+        config.setIdleTimeout(3000L);
+        Assert.assertEquals(3000L, config.getIdleTimeout());
 
         //holdTimeout
-        config.setHoldTimeout(-1);
-        Assert.assertNotEquals(-1, config.getHoldTimeout());
+        try {
+            config.setHoldTimeout(-1L);
+            fail("Hold-Timeout test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Max hold time can't be less than zero", e.getMessage());
+        }
         config.setHoldTimeout(0);
         Assert.assertEquals(0, config.getHoldTimeout());
         config.setHoldTimeout(3000L);
         Assert.assertEquals(3000L, config.getHoldTimeout());
 
         //aliveTestTimeout
-        config.setAliveTestTimeout(-1);
-        Assert.assertNotEquals(-1, config.getAliveTestTimeout());
+        try {
+            config.setAliveTestTimeout(-1);
+            fail("Alive-test-timeout test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Timeout of alive test can't be less than zero", e.getMessage());
+        }
         config.setAliveTestTimeout(0);
         Assert.assertEquals(0, config.getAliveTestTimeout());
         config.setAliveTestTimeout(3);
         Assert.assertEquals(3, config.getAliveTestTimeout());
 
         //aliveAssumeTime
-        config.setAliveAssumeTime(-1);
-        Assert.assertNotEquals(-1, config.getAliveAssumeTime());
-        config.setAliveAssumeTime(0);
-        Assert.assertEquals(0, config.getAliveAssumeTime());
+        try {
+            config.setAliveAssumeTime(-1L);
+            fail("Alive-test-timeout test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Alive assume time can't be less than zero", e.getMessage());
+        }
+        config.setAliveAssumeTime(0L);
+        Assert.assertEquals(0L, config.getAliveAssumeTime());
         config.setAliveAssumeTime(3000L);
         Assert.assertEquals(3000L, config.getAliveAssumeTime());
 
         //timerCheckInterval
-        config.setTimerCheckInterval(0);
-        Assert.assertNotEquals(0, config.getTimerCheckInterval());
-        config.setTimerCheckInterval(3000);
-        Assert.assertEquals(3000, config.getTimerCheckInterval());
+        try {
+            config.setTimerCheckInterval(-1L);
+            fail("Timer-check-interval test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Interval Time of pool worker must be greater than zero", e.getMessage());
+        }
+        try {
+            config.setTimerCheckInterval(0L);
+            fail("Timer-check-interval test failed");
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Interval Time of pool worker must be greater than zero", e.getMessage());
+        }
+        config.setTimerCheckInterval(3000L);
+        Assert.assertEquals(3000L, config.getTimerCheckInterval());
 
         //forceCloseUsingOnClose
         config.setForceRecycleBorrowedOnClose(true);
         Assert.assertTrue(config.isForceRecycleBorrowedOnClose());
 
         //delayTimeForNextClear
-        config.setParkTimeForRetry(-1);
-        Assert.assertNotEquals(-1, config.getParkTimeForRetry());
-        config.setParkTimeForRetry(0);
-        Assert.assertEquals(0L, config.getParkTimeForRetry());
+        try {
+            config.setParkTimeForRetry(-1L);
+        } catch (InvalidParameterException e) {
+            Assert.assertEquals("Park time can't be less than zero", e.getMessage());
+        }
         config.setParkTimeForRetry(3000L);
         Assert.assertEquals(3000L, config.getParkTimeForRetry());
 
-        //MaxObjectKeySize
-        int maxObjectKeySize = config.getMaxKeySize();
-        Assert.assertEquals(50, maxObjectKeySize);
-        config.setMaxKeySize(0);
-        Assert.assertEquals(config.getMaxKeySize(), maxObjectKeySize);
-        config.setMaxKeySize(1);
-        Assert.assertEquals(1, config.getMaxKeySize());
 
         //object factory
         config.setObjectFactoryClassName(JavaBookFactory.class.getName());
