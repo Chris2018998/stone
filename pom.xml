@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>1.4.6</version>
+    <version>1.4.7</version>
     <name>stone</name>
     <url>https://www.github.com/Chris2018998/stone</url>
     <description>Java Pools</description>
