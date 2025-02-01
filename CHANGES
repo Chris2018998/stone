@@ -4,8 +4,10 @@ stone changes
 Changes in 1.4.7(Pending)
 [beecp]
 1: add interruption double check on borrower thread
+2: throw exceptions when check fail in configuration set methods
 [beeop]
 1: add interruption double check on borrower thread
+2: throw exceptions when check fail in configuration set methods
 
 Changes in 1.4.6
 [beecp]
