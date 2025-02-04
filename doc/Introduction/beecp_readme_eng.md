@@ -16,9 +16,9 @@ BeeCP is a fast JDBC connection pool has techology features: caching single conn
 * Provide interfaces to be customizated
 * [Provide starter and web monitor](https://github.com/Chris2018998/beecp-starter)
 
-<img width="1280" alt="image" src="https://github.com/user-attachments/assets/dcff61d5-d5e5-4b21-bbed-b53ef919e17f" /><br/>
+![image](https://github.com/user-attachments/assets/d2753c33-e671-4d79-92e5-cfb4cae281e0)<br/>
 
-<img width="1280" alt="image" src="https://github.com/user-attachments/assets/03937fe0-c559-49a8-b3c2-debcbb8f76b9" />
+![image](https://github.com/user-attachments/assets/31c37580-9cec-42fa-b56f-3421052ab3b8)
 
 ##
 <br/>
@@ -66,13 +66,13 @@ As famous [5-seconds pools timeout test](https://github.com/brettwooldridge/Hika
 | url                                            | jdbc:mysql://hostIP/test?connectTimeout=100&socketTimeout=100                  | 
 | timeout(connection getting)                    | 20 seconds                                                                     |
 
-![image](https://github.com/user-attachments/assets/24ecde27-a2b8-4726-9dee-5768ce9a0233)
+![image](https://github.com/user-attachments/assets/169413f6-a792-4d8c-b6a3-2b9d583a6c86)
 
 **Retest with smaller connectTimeout(50 millseconds)**
 
 *URL: jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100*
 
-![image](https://github.com/user-attachments/assets/560780cf-0a90-4efd-ac13-e73b909207ff)
+![image](https://github.com/user-attachments/assets/853d64ee-6a95-4cdc-921c-3ed13edbbb8d)
 
 
 **Pool Grading**
