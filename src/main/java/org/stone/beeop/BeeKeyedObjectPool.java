@@ -22,8 +22,8 @@ public interface BeeKeyedObjectPool {
     /**
      * Pool initialize with a configuration object.
      *
-     * @param config is a configuration object defines some items applied in pool
-     * @throws Exception when pool initializes fail
+     * @param config is a configuration object defines some items can be applied in pool
+     * @throws Exception when fail to initialize
      */
     void init(BeeObjectSourceConfig config) throws Exception;
 
@@ -32,12 +32,12 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Attempts to get an object from pool with default category key.
+     * Attempts to get an object from pool
      *
      * @return handle of borrowed object
-     * @throws ObjectCreateException         when fail to create object instance
-     * @throws ObjectGetTimeoutException     when wait timeout in pool,see{@link BeeObjectSourceConfig#getMaxWait()}
-     * @throws ObjectGetInterruptedException while waiting interrupted
+     * @throws ObjectCreateException         when fail to create an object instance
+     * @throws ObjectGetTimeoutException     when wait timeout in pool
+     * @throws ObjectGetInterruptedException while waiting is interrupted
      */
     BeeObjectHandle getObjectHandle() throws Exception;
 
@@ -47,9 +47,9 @@ public interface BeeKeyedObjectPool {
      * @param key is a category key which maybe mapping to a pooled objects or a group of objects
      * @return handle of borrowed object
      * @throws ObjectKeyException            when key is null or invalid, or category capacity is full
-     * @throws ObjectCreateException         when fail to create object instance
-     * @throws ObjectGetTimeoutException     when wait timeout in pool,see{@link BeeObjectSourceConfig#getMaxWait()}
-     * @throws ObjectGetInterruptedException while waiting interrupted
+     * @throws ObjectCreateException         when fail to create an object instance
+     * @throws ObjectGetTimeoutException     when wait timeout in pool
+     * @throws ObjectGetInterruptedException while waiting is interrupted
      */
     BeeObjectHandle getObjectHandle(Object key) throws Exception;
 
@@ -58,12 +58,12 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Shutdown pool and make it to be in closed state,all pooled objects are physically closed and removed from pool.
+     * Shutdown pool to not work(closed state),closes all maintained connections and removes them from pool.
      */
     void close();
 
     /**
-     * Query pool state is closed.
+     * Queries pool whether is closed.
      *
      * @return a boolean value of pool close status
      */
@@ -74,25 +74,25 @@ public interface BeeKeyedObjectPool {
     //***************************************************************************************************************//
 
     /**
-     * Enable runtime log print or disable.
+     * A switch call to enable or disable logs print in pool.
      *
      * @param enable is true that print, false not print
      */
     void setPrintRuntimeLog(boolean enable);
 
     /**
-     * Get monitoring object bring out some runtime info of pool,detail refer to {@link BeeObjectPoolMonitorVo}.
+     * Gets runtime monitoring object of pool,refer to {@link BeeObjectPoolMonitorVo}.
      *
      * @return monitor of pool
      */
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Physically close all pooled objects and remove them from pool,not accept requests before completion of this operation call.
+     * Physically closes all connections and removes them from pool which not accepts borrow requests before completion.
      *
-     * @param forceRecycleBorrowed is that recycle borrowed connections immediately,false that wait borrowed connections released by callers
-     * @throws PoolInClearingException       when pool already in clearing
-     * @throws PoolInitializeFailedException when fail to reinitialize
+     * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
+     *                             false that wait them return to pool
+     * @throws PoolInClearingException when pool is closed or in clearing
      */
     void clear(boolean forceRecycleBorrowed) throws Exception;
 
@@ -100,11 +100,12 @@ public interface BeeKeyedObjectPool {
      * Physically close all pooled objects and remove them from pool,then pool reinitialize with new configuration,not accept
      * requests before completion of this operation call.
      *
-     * @param forceRecycleBorrowed is that recycle borrowed connections immediately,false that wait borrowed connections released by callers
+     * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
+     *                             false that wait them return to pool
      * @param config               is a configuration object for pool reinitialize
      * @throws BeeObjectSourceConfigException when config is null
-     * @throws PoolInClearingException        when pool already in clearing
-     * @throws PoolInitializeFailedException  when reinitialize failed
+     * @throws PoolInClearingException        when pool is closed or in clearing
+     * @throws PoolInitializeFailedException  when fail to reinitialize
      */
     void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig config) throws Exception;
 
