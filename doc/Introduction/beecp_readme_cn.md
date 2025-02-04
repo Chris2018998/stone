@@ -16,8 +16,9 @@ BeeCP是一款轻量级JDBC连接池，其技术亮点：单连接缓存，非�
 * 支持虚拟线程应用
 * [提供Web监控页面](https://github.com/Chris2018998/beecp-starter)
 
-<img width="1280" alt="image" src="https://github.com/user-attachments/assets/565565bc-c511-4f09-a79b-78012f815c0f" /><br/>
-<img width="1280" alt="image" src="https://github.com/user-attachments/assets/ebd52f23-8acc-45e6-bea8-387a12fc1bee" />
+![image](https://github.com/user-attachments/assets/e0684ff2-8a7e-4a20-ab68-69c7b2f30bfa)<br/>
+
+![image](https://github.com/user-attachments/assets/b59dbac9-a3b3-4173-9ff5-845783691e0d)
 
 _温馨提示：如果您的项目是基于springboot框架构建，且有兴趣应用BeeCP或已在使用它，那么推荐[beecp-starter](https://github.com/Chris2018998/beecp-starter)(个人的另一个项目)_
 
