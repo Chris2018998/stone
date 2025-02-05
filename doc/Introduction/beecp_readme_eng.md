@@ -21,8 +21,6 @@ BeeCP is a fast JDBC connection pool has techology features: caching single conn
 ![image](https://github.com/user-attachments/assets/31c37580-9cec-42fa-b56f-3421052ab3b8)
 
 ##
-<br/>
-
 📊**Performance of Pools**
 
 JMH Performance tested with HikariCP-benchmark.
@@ -33,8 +31,6 @@ JMH Performance tested with HikariCP-benchmark.
 </sup>
 
 ##
-<br/>
-
 🍒***Compare to HikariCP***
 
 | Item                                                         | HikariCP             | BeeCP                    |
@@ -57,14 +53,14 @@ _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent ope
 ## 
 ⏰**DB Down Test**
 
-As famous [5-seconds pools timeout test](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down), Brettwooldridge(the author of HikariCP) did a test with four pools to verify timeout reactivity on scenario of database down, but only HikariCP pool could respond within five seconds, so we do the same test with BeeCP and configured 20 seconds timeout to pool, [view the test source code](https://github.com/Chris2018998/BeeCP/blob/master/doc/performance/dbDownTest/DbDownTest.java).
+As famous [5-seconds pools timeout test](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down), Brettwooldridge(the author of HikariCP) did a test with four pools to verify timeout reactivity on scenario of database down, but only HikariCP pool could respond within five seconds, so we do the same test with BeeCP. [View the test source code](https://github.com/Chris2018998/BeeCP/blob/master/doc/performance/dbDownTest/DbDownTest.java).
 
-|   DB and JDBC	                                 |Test Settig                                                                     |
-|------------------------------------------------|--------------------------------------------------------------------------------| 
-| database                                       | mysql-5.6                                                                      | 
-| driver                                         | mysql-connector-java-5.1.49                                                    |                                                               
-| url                                            | jdbc:mysql://hostIP/test?connectTimeout=100&socketTimeout=100                  | 
-| timeout(connection getting)                    | 20 seconds                                                                     |
+|   DB and JDBC	           |Test Settig                                                     |  Remark                                                                            |
+|--------------------------|----------------------------------------------------------------|----------------------------------------------------------------------------------- |
+| database                 | mysql-5.6                                                      |                                                                                    |
+| driver                   | mysql-connector-java-5.1.49                                    |                                                                                    |
+| url                      | jdbc:mysql://hostIP/test?connectTimeout=100&socketTimeout=100  |                                                                                    |
+| timeout                  | 20 seconds                                                     |HikariConfig.setConnectionTimeout(20000); BeeDataSourceConfig.setMaxWait(20000);    |
 
 ![image](https://github.com/user-attachments/assets/169413f6-a792-4d8c-b6a3-2b9d583a6c86)
 
@@ -101,7 +97,7 @@ BeeDataSource ds = new BeeDataSource(config);
 
 //step2：get connection
 try(Connection con = ds.getConnection()){
-  //......
+  //...... your code
 }
 ```
 
@@ -124,7 +120,7 @@ public class DataSourceConfiguration{
     config.setDriverClassName("com.mysql.cj.jdbc.Driver");
     config.setUsername("root");
     config.setPassword("root");
-    //......
+    //......you can set more properties 
     return new BeeDataSource(config);
   }
 }
@@ -142,9 +138,8 @@ spring.datasource.maxWait=30000
 ......
 ```
 
-
 ##
-🔡**Configuration List**
+🔡**List Of Configuration Properties**
 
 BeeCP provide a configuration object, which defines some properties to be set.
 
@@ -192,19 +187,13 @@ BeeCP provide a configuration object, which defines some properties to be set.
 ***Object type properties**，effective order：instance > class > class name
 
 ##
-📝**Properties file of configuration**
+📝**Configuration Loading**
 
-BeeCP supports loading configuration from properties files and properties objects(java.util.Properties), a reference example is below
+BeeCP supports loading configuration properties from properties files and properties object(java.util.Properties), a reference example is below
 
-```java
-BeeDataSourceConfig config = new BeeDataSourceConfig();
-config.loadFromPropertiesFile("d:\beecp\config.properties");
-```
-
-config.properties
+*_config.properties_*
 
 ```properties
-
 username=root
 password=root
 jdbcUrl=jdbc:mysql://localhost/test
@@ -212,14 +201,24 @@ driverClassName=com.mysql.cj.jdbc.Driver
 
 initial-size=1
 max-active=10
-
-#implemention class name of connection factory 
-connectionFactoryClassName=org.stone.beecp.objects.MockCommonConnectionFactory
-#implemention class name of link info decoder
-jdbcLinkInfoDecoderClassName=org.stone.beecp.objects.SampleMockJdbcLinkInfoDecoder
-
+.......
 ```
-Reminder: Properties name supports three format:camel hump, middle line, underline
+*_*Reminder: Property name supports three format: camel hump, middle line, underline_*
+
+```java
+BeeDataSourceConfig config = new BeeDataSourceConfig();
+config.loadFromPropertiesFile("d:\beecp\config.properties");
+
+// load from Properties
+// Properties configProperties = new Properties();
+// configProperties.setProperty("username","root");
+// configProperties.setProperty("password","password");
+// configProperties.setProperty("jdbcUrl","jdbc:mysql://localhost/test");
+// configProperties.setProperty("driverClassName","com.mysql.cj.jdbc.Driver");
+// configProperties.setProperty("initial-size","1");
+// configProperties.setProperty("max-active","10");
+// config.loadFromProperties(configProperties);
+```
 
 ##
 ⚙**Driver parameters**
@@ -230,7 +229,7 @@ BeeCP uses a driver or a connection factory to create connections, and theirs wo
 
 * ``` addConnectProperty(String);//Add multiple parameters, for example: cachePrepStmts=true&prepStmtCacheSize=250  ```
 
-An example
+*reference 1(add by method)*
 
 ```java
  BeeDataSourceConfig config = new BeeDataSourceConfig();
@@ -245,15 +244,12 @@ An example
  config.addConnectProperty("cachePrepStmts:true&prepStmtCacheSize:250&prepStmtCacheSqlLimit:2048");
 ```
 
-*reference 1*
+*reference 2(properties file)*
 
 ```properties
-
 connectProperties=cachePrepStmts=true&prepStmtCacheSize=50
-
 ```
-
-*reference 2* (Recommand this way when exists multiple parameters)
+*reference 3(properties file)*
 
 ```properties
 connectProperties.size=2

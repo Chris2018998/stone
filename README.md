@@ -40,11 +40,12 @@ A small thread synchronization pool
 
 **Protect nature, Protect bees!**
 
-Einstein predicted: If bees go extinct, humans will not survive for more than 4 years!
+Some articles about bees.
 
-some links
+1：What would happen if bees disappeared from the world</br>
+https://baijiahao.baidu.com/s?id=1789027203812401026&wfr=spider&for=pc
 
-1: https://www.163.com/dy/article/JNB848IA05566SHJ.html
-
+2：Why are bees gradually disappearing and what are the impacts of their disappearance</br>
+https://baijiahao.baidu.com/s?id=1811412964672821848&wfr=spider&for=pc
 
 
