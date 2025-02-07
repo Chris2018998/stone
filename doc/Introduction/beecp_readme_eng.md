@@ -4,7 +4,7 @@
 ![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
 [![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
 
-BeeCP is a fast JDBC connection pool has techology features: caching single connection, non moving waiting, fixed length array.
+BeeCP is a fast JDBC connection pool has techology features: caching single connection, not-moving waiting, fixed length array.
 
 ##
 ✨**Highlight Features**
@@ -33,43 +33,54 @@ JMH Performance tested with HikariCP-benchmark.
 ##
 🍒***Compare to HikariCP***
 
-| Item                                                         | HikariCP             | BeeCP                    |
-|--------------------------------------------------------------|----------------------|--------------------------|
-| Number of connection in threadlocal                          | >=1                  | =1                       |
-| Type of container store connections                          | CopyOnWriteArrayList | An array of fixed length |
-| Transfer queue/wait queue                                    | SynchronousQueue     | ConcurrentLinkedQueue    |
-| Asyn way to create connections                               | Thread pool          | Single thread            |
-| Support concurrency creation of connections                  | Not Support          | Support                  |
-| Support clearing and reinitialization                        | Not Support          | Support                  |
-| Provide method to interrupt blocking                         | Not Provide          | Provide                  |
-| Provide interfaces to be customizated                        | Not Provide          | Provide                  |
-| Provide configuration for exception code and sql state       | Not Provide          | Provide                  |
-| Support threadLocal-cache disable                            | Not Support          | Support                  |
-| Support XADataSource                                         | Not Support          | Support                  |
-| Minimum idle of connections in pool                          | Configurable         | 0 (UnConfigurable)       |
+| Item                                                                | HikariCP                | BeeCP                    |
+|-------------------------------------------------------------------  |-------------------------|--------------------------|
+| Number of connection in threadlocal                                 | >=1                     | =1                       |
+| Type of container store connections                                 | CopyOnWriteArrayList    | An array of fixed length |
+| Transfer queue/wait queue                                           | SynchronousQueue        | ConcurrentLinkedQueue    |
+| Asyn way to create connections                                      | Thread pool             | Single thread            |
+| Support concurrency creation of connections                         | Not Support             | Support                  |
+| Support clearing and reinitialization                               | Not Support             | Support                  |
+| Provide method to interrupt blocking                                | Not Provide             | Provide                  |
+| Provide interfaces to be customizated                               | Only exceptionOverride | Provide                  |
+| Provide configuration for exception code and sql state              |  Not Support            | Provide                  |
+| Support threadLocal-cache disable                                   | Not Support             | Support                  |
+| Support XADataSource                                                | Not Support             | Support                  |
+| Support switch between log print and not print                      | Not Support             | Support                  |
+| Support force reset on schema,catalog (transaction)                 | Not Support             | Support                  |
+| Support reading default from first connection if not configuered(5) | Not Support             | Support                  |
+| Minimum idle of connections in pool                                 | Configurable            | 0 (UnConfigurable)       |
+| Statement Cache                                                     | Depends driver          | Depends driver           |
 
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent open source project and widely used in the Java world, it is developed by Brettwooldridge, a senior JDBC expert of United States_
 
 ## 
 ⏰**DB Down Test**
 
-As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down), Brettwooldridge(the author of HikariCP) did a test with four pools to verify timeout reactivity on scenario of database down, but only HikariCP pool could respond within five seconds, so we do the same test with BeeCP. [View the test source code](https://github.com/Chris2018998/BeeCP/blob/master/doc/performance/dbDownTest/DbDownTest.java).
+As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down), Brettwooldridge(the author of HikariCP) did a test with four pools to verify timeout reactivity on scenario of database down, but only HikariCP pool could respond within five seconds, so we do the same test with BeeCP. [View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/DbDownTest.java).
 
-|     JDBC	Info           |Test Settig                                                     |  Remark                                                                            |
-|--------------------------|----------------------------------------------------------------|----------------------------------------------------------------------------------- |
-| database                 | mysql-5.6                                                      |                                                                                    |
-| driver                   | mysql-connector-java-5.1.49                                    |                                                                                    |
-| url                      | jdbc:mysql://hostIP/test?connectTimeout=100&socketTimeout=100  |                                                                                    |
-| timeout                  | 20 seconds                                                     |HikariConfig.setConnectionTimeout(20000); BeeDataSourceConfig.setMaxWait(20000);    |
 
-![image](https://github.com/user-attachments/assets/169413f6-a792-4d8c-b6a3-2b9d583a6c86)
+|     Test Env              |Test Settig                                                    |  Remark                                                                                             |
+|--------------------------|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------- |
+| database                 | mysql-8.4.3                                                    |                                                                                                      |
+| driver                   | mysql-connector-j-8.3.0.jar                                    |                                                                                                      |
+| url                      | jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100   |the connectTimeout is socket level parameter of mysql jdbc driver                                     |
+| timeout                  | **5000** milliseconds                                          |HikariConfig.setConnectionTimeout(5000); BeeDataSourceConfig.setMaxWait(5000);                        |
+| Pool version             | HikariCP-6.2.1,stone-1.4.6                                     |                                                                                                      |
+| Java version             | Java-22.0.2                                                    |                                                                                                      |
 
-**Retest with smaller connectTimeout(50 millseconds)**
+![image](https://github.com/user-attachments/assets/18b1d5df-1d45-4506-9d6f-a7222da8ca77)
 
-*URL: jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100*
+**Retest with larger value(18000ms)**
+|     Test Env             |Test Settig                                                     |  Remark                                                                                             |
+|--------------------------|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------- |
+| timeout                  | **18000** milliseconds                                         |HikariConfig.setConnectionTimeout(18000); BeeDataSourceConfig.setMaxWait(18000);                     |
+| Others                   | No Change                                                      |                                                                                                     |
+ 
 
-![image](https://github.com/user-attachments/assets/853d64ee-6a95-4cdc-921c-3ed13edbbb8d)
+![image](https://github.com/user-attachments/assets/d86b9bed-b3c2-4ffb-a036-87276e8094d9)
 
+*^-^ if set to **Long.MAX_VALUE**, what will be happen?*
 
 **Pool Grading**
 
@@ -78,8 +89,18 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 | HikariCP     | A      |Properly handles connection timeouts.        |
 | BeeCP        | A+     |Socket level response.                       |
 
+
 ## 
-👉**How to use**
+✈️**Operation on closed Statement**
+
+I believe many people have known that there is a dependency relationship between JDBC Connection, PreparedStatement, and ResultSet. If owner object closed, its child object will automatically be closed, hower,  there are an exception to this, let us to do a test for it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
+
+![image](https://github.com/user-attachments/assets/d81c89dd-70f2-4762-8a0d-43197589c185)
+
+*^-^ It is a issue? how to resolve it?*
+
+## 
+👉**How To Use It**
 
 BeeCP provide datasource implementation wrap pool instance and its use is like other pools.
 
@@ -172,10 +193,10 @@ BeeCP provide a configuration object, which defines some properties to be set.
 | timerCheckInterval              | An interval time to scans out timeout connections(idle timeout and hold timeout) (ms)   | 18000                                            |
 | forceDirtyOnSchemaAfterSet      | An indicator of force dirty on schema property to support to be reset under transaction, for example:PG driver  | false                     |
 | forceDirtyOnCatalogAfterSet     | An indicator of force dirty on catalog property to support to be reset under transaction, for example:PG driver | false                     |
-| enableThreadLocal               | A switch indicator to enable or disable threadlocal in pool（false to support virtual threads)| true                                       | 
-| enableJmx                       | A switch indicator to enable or disable pool registeration to JMX                       | false                                            | 
+| enableThreadLocal               | A indicator to enable or disable threadlocal in pool（false to support virtual threads) | true                                              | 
+| enableJmx                       | A indicator to enable or disable pool registeration to JMX                              | false                                            | 
 | printConfigInfo                 | A indicator to print configuration info by log when pool initializes                    | false                                            | 
-| printRuntimeLog                 | A indicator to print pool working logs                                                  | false                                            | 
+| printRuntimeLog                 | A indicator to print pool working logs, also pool provide method to support switch between print or not print| false                            | 
 | **connectionFactory**               | Connection factory instance                                                         | none                                              |
 | **connectionFactoryClass**          | Connection factory class, a constructor without parameters is required              | none                                              |
 | **connectionFactoryClassName**      | Connection factory class name, a constructor without parameters is required         | none                                              |
@@ -294,7 +315,7 @@ evictPredicateClassName=org.stone.beecp.objects.MockEvictConnectionPredicate
 ##
 🛤️**Interrupt blocking**
 
-Maybe database overhead too heavy, or maybe network issues, or other reasons, sometime the creation of connections blocking in JDBC Pools, BeeDatasource has provide a method to attempt to interrupt blocking.
+Maybe database overhead too heavy, or maybe network issues, or other reasons, sometime the creation of connections blocking in JDBC Pools, BeeDatasource provides a method to attempt to interrupt blocking.
 
 ```java
 BeeConnectionPoolMonitorVo vo = beeDs.getPoolMonitorVo();

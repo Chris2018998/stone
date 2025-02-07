@@ -17,7 +17,7 @@ Stone is a Java toolkit package integrates four pools.
 ## 
 🌸[BeeCP](doc/Introduction/beecp_readme_eng.md)
 
-A fast JDBC connection pool has techology features: caching single connection, non moving waiting, fixed length array.
+A fast JDBC connection pool has techology features: caching single connection, not-moving waiting, fixed length array.
 
 ## 
 🌷[BeeOP](doc/Introduction/beeop_readme_eng.md)
