@@ -69,7 +69,7 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 | Pool version             | HikariCP-6.2.1,stone-1.4.6                                     |                                                                                                      |
 | Java version             | Java-22.0.2                                                    |                                                                                                      |
 
-![image](https://github.com/user-attachments/assets/18b1d5df-1d45-4506-9d6f-a7222da8ca77)
+![image](https://github.com/user-attachments/assets/4cca47e0-04d2-4792-a070-1bf9f1bd0306)
 
 **Retest with larger value(18000ms)**
 |     Test Env             |Test Settig                                                     |  Remark                                                                                             |
@@ -77,8 +77,8 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 | timeout                  | **18000** milliseconds                                         |HikariConfig.setConnectionTimeout(18000); BeeDataSourceConfig.setMaxWait(18000);                     |
 | Others                   | No Change                                                      |                                                                                                     |
  
+![image](https://github.com/user-attachments/assets/4e0d70b4-e68a-4b28-b1c8-bfb0a949e401)
 
-![image](https://github.com/user-attachments/assets/d86b9bed-b3c2-4ffb-a036-87276e8094d9)
 
 *^-^ if set to **Long.MAX_VALUE**, what will be happen?*
 
@@ -93,11 +93,12 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 ## 
 ✈️**Operation on closed Statement**
 
-I believe many people have known that there is a dependency relationship between JDBC Connection, PreparedStatement, and ResultSet. If owner object closed, its child object will automatically be closed, hower,  there are an exception to this, let us to do a test for it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
+I believe many people have known that there is a dependency relationship between JDBC Connection, PreparedStatement, and ResultSet. If close owner object, its children objects will automatically be closed, hower,  there are an exception to this, let us to do a test for it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
 
-![image](https://github.com/user-attachments/assets/d81c89dd-70f2-4762-8a0d-43197589c185)
+ ![image](https://github.com/user-attachments/assets/621d2419-f718-4eb5-b68a-7bba73655e78)
 
-*^-^ It is a issue? how to resolve it?*
+
+*^-^ It is an issue? how to resolve it?*
 
 ## 
 👉**How To Use It**
