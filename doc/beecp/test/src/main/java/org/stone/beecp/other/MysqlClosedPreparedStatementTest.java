@@ -62,10 +62,10 @@ public class MysqlClosedPreparedStatementTest {
             con = ds.getConnection();
             PreparedStatement pst = con.prepareStatement("select * from TEST_USER");
             rs = pst.executeQuery();
-            pst.close();
+            pst.close();//<---close the statement
 
             try {
-                if (rs.next())
+                if (rs.next())//should throw an exception from next operation,because its owner has been closed;if not means that leak from pool
                     System.err.println("(" + dsName + ")Operation Could be continued on a closed PreparedStatement");
             } catch (Exception e) {
                 System.out.println("(" + dsName + ")An error occurred when operation on a closed PreparedStatement");

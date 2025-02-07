@@ -25,14 +25,14 @@ import java.util.concurrent.locks.LockSupport;
  */
 
 public class DbDownTest {
-    private static final long maxWait = Long.MAX_VALUE;
+    private static final long maxWait = 5000;
     public static String driver = "com.mysql.cj.jdbc.Driver";
     public static String url = "jdbc:mysql://localhost/test?connectTimeout=50&socketTimeout=100";
     public static String user = "root";
     public static String password = "root";
     public static int size = 5;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         DataSource beeDs = createBeeCP();
         DataSource hikariDs = createHikari();
         long delay = 5000L;
