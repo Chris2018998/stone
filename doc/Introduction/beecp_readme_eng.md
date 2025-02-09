@@ -35,22 +35,30 @@ JMH Performance tested with HikariCP-benchmark.
 
 | Item                                                                | HikariCP                | BeeCP                    |
 |-------------------------------------------------------------------  |-------------------------|--------------------------|
-| Number of connection in threadlocal                                 | >=1                     | =1                       |
-| Type of container store connections                                 | CopyOnWriteArrayList    | An array of fixed length |
-| Transfer queue/wait queue                                           | SynchronousQueue        | ConcurrentLinkedQueue    |
-| Asyn way to create connections                                      | Thread pool             | Single thread            |
-| Support concurrency creation of connections                         | Not Support             | Support                  |
-| Support clearing and reinitialization                               | Not Support             | Support                  |
-| Provide method to interrupt blocking                                | Not Provide             | Provide                  |
-| Provide interfaces to be customizated                               | Only exceptionOverride | Provide                  |
-| Provide configuration for exception code and sql state              |  Not Support            | Provide                  |
-| Support threadLocal-cache disable                                   | Not Support             | Support                  |
-| Support XADataSource                                                | Not Support             | Support                  |
-| Support switch between log print and not print                      | Not Support             | Support                  |
-| Support force reset on schema,catalog (transaction)                 | Not Support             | Support                  |
-| Support reading default from first connection if not configuered(5) | Not Support             | Support                  |
-| Minimum idle of connections in pool                                 | Configurable            | 0 (UnConfigurable)       |
-| Statement Cache                                                     | Depends driver          | Depends driver           |
+| Number of connection in threadlocal                                 | >=1                                      | =1                                          |
+| Type of container store connections                                 | CopyOnWriteArrayList                     | An array of fixed length                    |
+| Transfer queue/wait queue                                           | SynchronousQueue                         | ConcurrentLinkedQueue                       |
+| Asyn way to create connections                                      | Thread pool                              | Single thread                               |
+| Support concurrency creation of connections                         | Not Support                              | Support                                     |
+| Support clearing and reinitialization                               | Not Support                              | Support                                     |
+| Provide method to interrupt blocking                                | Not Provide                              | Provide                                     |
+| Provide interfaces to be customizated                               | Only exceptionOverride                   | Provide                                     |
+| Provide configuration for exception code and sql state              | Not Support                              | Provide                                     |
+| Support threadLocal-cache disable                                   | Not Support                              | Support                                     |
+| Support XADataSource                                                | Not Support                              | Support                                     |
+| Support switch between log print and not print                      | Not Support                              | Support                                     |
+| Support force reset on schema,catalog (transaction)                 | Not Support                              | Support                                     |
+| Support reading default from first connection if not configuered(5) | Not Support                              | Support                                     |
+| Properties of data source                                           | java.util.Properties                     | java.util.Map<String,Object>                |
+| Statement Cache                                                     | Depends driver                           | Depends driver                              |
+| minimumIdle of HikariCP                                             | setMinimumIdle(int)                      | Not Provide(can be regarded as zero)        |
+| maximumPoolSize of HikariCP                                         | setMaximumPoolSize(int)                  | setMaxActive(int)                           |
+| connectionTimeout of HikariCP                                       | setConnectionTimeout(long)               | setMaxWait(long)                            |
+| idleTimeout of HikariCP                                             | setIdleTimeout(long)                     | setIdleTimeout(long)                        |
+| keepaliveTime of HikariCP                                           | setKeepaliveTime(long)                   | setTimerCheckInterval(long)                 |
+| maxLifetime of HikariCP                                             | setMaxLifetime(long)                     | Not Provide(idleTimeout and holdTimeout)    |
+| connectionTestQuery of HikariCP                                     | setConnectionTestQuery(String)           | setAliveTestSql(String)                     |
+| validationTimeout of HikariCP                                       | setValidationTimeout(long)               | setAliveTestTimeout(long)                   |
 
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent open source project and widely used in the Java world, it is developed by Brettwooldridge, a senior JDBC expert of United States_
 
