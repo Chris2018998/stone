@@ -95,8 +95,7 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 
 I believe many people have known that there exists dependency relationship between JDBC connection, preparedStatement, and resultSet. If close owner object, its opened objects will automatically be closed, however, there is an exception to this, let us do a test to verify it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
 
- ![image](https://github.com/user-attachments/assets/621d2419-f718-4eb5-b68a-7bba73655e78)
-
+![image](https://github.com/user-attachments/assets/f75d5684-ff4f-4ad9-b88e-f453e833ea69)
 
 *^-^ It is an issue? how to resolve it?*
 
