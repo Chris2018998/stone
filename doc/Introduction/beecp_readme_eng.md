@@ -60,19 +60,19 @@ _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent ope
 As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down), Brettwooldridge(the author of HikariCP) did a test with four pools to verify timeout reactivity on scenario of database down, but only HikariCP pool could respond within five seconds, so we do the same test with BeeCP. [View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/DbDownTest.java).
 
 
-|     Test Env              |Test Settig                                                    |  Remark                                                                                             |
+|     Requirement          | Settig                                                    |  Remark                                                                                             |
 |--------------------------|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------- |
 | database                 | mysql-8.4.3                                                    |                                                                                                      |
 | driver                   | mysql-connector-j-8.3.0.jar                                    |                                                                                                      |
 | url                      | jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100   |the connectTimeout is socket level parameter of mysql jdbc driver                                     |
 | timeout                  | **5000** milliseconds                                          |HikariConfig.setConnectionTimeout(5000); BeeDataSourceConfig.setMaxWait(5000);                        |
-| Pool version             | HikariCP-6.2.1,stone-1.4.6                                     |                                                                                                      |
+| Pool version             | HikariCP-6.2.1, stone-1.4.6                                    |                                                                                                      |
 | Java version             | Java-22.0.2                                                    |                                                                                                      |
 
 ![image](https://github.com/user-attachments/assets/4cca47e0-04d2-4792-a070-1bf9f1bd0306)
 
 **Retest with larger value(18000ms)**
-|     Test Env             |Test Settig                                                     |  Remark                                                                                             |
+|     Requirement          | Settig                                                         |  Remark                                                                                             |
 |--------------------------|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------- |
 | timeout                  | **18000** milliseconds                                         |HikariConfig.setConnectionTimeout(18000); BeeDataSourceConfig.setMaxWait(18000);                     |
 | Others                   | No Change                                                      |                                                                                                     |
@@ -80,11 +80,11 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 ![image](https://github.com/user-attachments/assets/4e0d70b4-e68a-4b28-b1c8-bfb0a949e401)
 
 
-*^-^ if set to **Long.MAX_VALUE**, what will be happen?*
+*^-^ if set **Long.MAX_VALUE** to timeout, what will be happen?*
 
 **Pool Grading**
 
-| Pool	       |Grade   | Reason                                      |
+| Pool	        |Grade   | Reason                                      |
 |--------------|--------|---------------------------------------------|
 | HikariCP     | A      |Properly handles connection timeouts.        |
 | BeeCP        | A+     |Socket level response.                       |
@@ -93,7 +93,7 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 ## 
 ✈️**Operation on closed Statement**
 
-I believe many people have known that there is a dependency relationship between JDBC Connection, PreparedStatement, and ResultSet. If close owner object, its children objects will automatically be closed, hower,  there are an exception to this, let us to do a test for it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
+I believe many people have known that there exists dependency relationship between JDBC connection, preparedStatement, and resultSet. If close owner object, its opened objects will automatically be closed, however, there is an exception to this, let us do a test to verify it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
 
  ![image](https://github.com/user-attachments/assets/621d2419-f718-4eb5-b68a-7bba73655e78)
 
@@ -248,7 +248,7 @@ config.loadFromPropertiesFile("d:\beecp\config.properties");
 ##
 ⚙**Driver Parameters Setting**
 
-BeeCP pool uses a driver, a datasource or a connection factory to create connections,whose work may depend some parameters need be set from outside. BeeCP has defined two methods[*addConnectProperty(String,Object); addConnectProperty(String)*] in its configuration object(*org.stone.beecp.BeeDataSourceConfig*) to add those parameters injected to 
+BeeCP pool uses a driver, a datasource or a connection factory to create connections,whose work may depend some parameters need be set from outside. BeeCP has defined two methods[**addConnectProperty(String,Object); addConnectProperty(String)**] in its configuration object(*org.stone.beecp.BeeDataSourceConfig*) to add those parameters injected to 
 driver/datasource/connection factory during pool initializing. Three segment blocks are blow for reference.
 
 ***Reference 1**(java code to set them)*
