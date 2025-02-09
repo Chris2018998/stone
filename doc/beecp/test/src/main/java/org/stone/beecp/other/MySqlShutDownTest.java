@@ -12,7 +12,6 @@ package org.stone.beecp.other;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.util.TestUtil;
 
 import java.sql.Connection;
 import java.sql.SQLException;
