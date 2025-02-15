@@ -67,6 +67,11 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
     //***************************************************************************************************************//
     //                                 2: raw methods call methods(2)                                                //                                                                                  //
     //***************************************************************************************************************//
+    public V getObject() throws Exception {
+        checkClosed();
+        return p.raw;
+    }
+
     public K getObjectKey() throws Exception {
         checkClosed();
         return p.key;

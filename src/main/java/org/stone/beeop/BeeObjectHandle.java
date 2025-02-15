@@ -18,21 +18,12 @@ package org.stone.beeop;
 public interface BeeObjectHandle<K, V> {
 
     /**
-     * Query handle state whether is closed.
+     * Get object
      *
-     * @return true that is closed
+     * @return associated pooled key
+     * @throws Exception if handle is closed
      */
-    boolean isClosed();
-
-    /**
-     * Closes this handle.
-     */
-    void close() throws Exception;
-
-    /**
-     * Physically close pooled object and remove it from pool.
-     */
-    void abort() throws Exception;
+    V getObject() throws Exception;
 
     /**
      * Get category key of object.
@@ -43,20 +34,20 @@ public interface BeeObjectHandle<K, V> {
     K getObjectKey() throws Exception;
 
     /**
-     * Gets last accessed time of object.
-     *
-     * @return a milliseconds time value
-     * @throws Exception if handle is closed
-     */
-    long getLastAccessedTime() throws Exception;
-
-    /**
      * Get reflection proxy of pooled object.
      *
      * @return null when not configured interfaces in {@link BeeObjectSourceConfig}
      * @throws Exception if handle is closed
      */
     V getObjectProxy() throws Exception;
+
+    /**
+     * Gets last accessed time of object.
+     *
+     * @return a milliseconds time value
+     * @throws Exception if handle is closed
+     */
+    long getLastAccessedTime() throws Exception;
 
     /**
      * Call a method of object without parameter.
@@ -77,4 +68,21 @@ public interface BeeObjectHandle<K, V> {
      * @throws Exception when call fail
      */
     Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
+
+    /**
+     * Query handle state whether is closed.
+     *
+     * @return true that is closed
+     */
+    boolean isClosed();
+
+    /**
+     * Closes this handle.
+     */
+    void close() throws Exception;
+
+    /**
+     * Physically close pooled object and remove it from pool.
+     */
+    void abort() throws Exception;
 }

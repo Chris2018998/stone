@@ -4,10 +4,7 @@ stone-1.4.8
 -----------------------------------------------------
 [beeop]
 1: Support generic type
-
-
-
-
+2: Add a method to handle to get pooled object
 
 
 Changes in 1.4.7

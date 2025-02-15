@@ -19,27 +19,15 @@ import org.stone.beeop.BeeObjectSourceConfig;
  */
 
 public class MockObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
+
     /**
-     * Query handle state whether is closed.
+     * Get object
      *
-     * @return true that is closed
+     * @return associated pooled key
+     * @throws Exception if handle is closed
      */
-    public boolean isClosed() {
-        return false;
-    }
-
-    /**
-     * Closes this handle.
-     */
-    public void close() throws Exception {
-
-    }
-
-    /**
-     * Physically close pooled object and remove it from pool.
-     */
-    public void abort() throws Exception {
-
+    public V getObject() throws Exception {
+        return null;
     }
 
     /**
@@ -94,5 +82,29 @@ public class MockObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
      */
     public Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception {
         return null;
+    }
+
+
+    /**
+     * Query handle state whether is closed.
+     *
+     * @return true that is closed
+     */
+    public boolean isClosed() {
+        return false;
+    }
+
+    /**
+     * Closes this handle.
+     */
+    public void close() throws Exception {
+
+    }
+
+    /**
+     * Physically close pooled object and remove it from pool.
+     */
+    public void abort() throws Exception {
+
     }
 }
