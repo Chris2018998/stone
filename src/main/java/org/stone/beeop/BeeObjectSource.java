@@ -29,18 +29,18 @@ import static org.stone.tools.BeanUtil.createClassInstance;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSource extends BeeObjectSourceConfig {
+public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8L);//default vale equals same item in config
-    private BeeKeyedObjectPool pool;
+    private BeeKeyedObjectPool<K, V> pool;
     private boolean ready;
     private Exception cause;
 
     public BeeObjectSource() {
     }
 
-    public BeeObjectSource(BeeObjectSourceConfig config) {
+    public BeeObjectSource(BeeObjectSourceConfig<K, V> config) {
         try {
             config.copyTo(this);
             createPool(this);
@@ -52,9 +52,9 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         }
     }
 
-    private static void createPool(BeeObjectSource os) throws Exception {
+    private void createPool(BeeObjectSource<K, V> os) throws Exception {
         Class<?> poolClass = Class.forName(os.getPoolImplementClassName());
-        BeeKeyedObjectPool pool = (BeeKeyedObjectPool) createClassInstance(poolClass, BeeKeyedObjectPool.class, "pool");
+        BeeKeyedObjectPool<K, V> pool = (BeeKeyedObjectPool<K, V>) createClassInstance(poolClass, BeeKeyedObjectPool.class, "pool");
 
         pool.init(os);
         os.pool = pool;
@@ -91,17 +91,17 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                        3: Object Getting(pool lazy creation if null)                          //
     //***************************************************************************************************************//
-    public BeeObjectHandle getObjectHandle() throws Exception {
+    public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
         if (this.ready) return pool.getObjectHandle();
         return createPoolByLock().getObjectHandle();
     }
 
-    public BeeObjectHandle getObjectHandle(Object key) throws Exception {
+    public BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception {
         if (this.ready) return pool.getObjectHandle(key);
         return createPoolByLock().getObjectHandle(key);
     }
 
-    private BeeKeyedObjectPool createPoolByLock() throws Exception {
+    private BeeKeyedObjectPool<K, V> createPoolByLock() throws Exception {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!ready) {
@@ -135,7 +135,7 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
         getPool().clear(forceRecycleBorrowed);
     }
 
-    public void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig config) throws Exception {
+    public void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
         getPool().clear(forceRecycleBorrowed, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
@@ -148,47 +148,47 @@ public class BeeObjectSource extends BeeObjectSourceConfig {
     //***************************************************************************************************************//
     //                                          5: keys maintenance(10)                                               //
     //***************************************************************************************************************//
-    public Object[] keys() throws Exception {
+    public K[] keys() throws Exception {
         return getPool().keys();
     }
 
-    public boolean exists(Object key) throws Exception {
+    public boolean exists(K key) throws Exception {
         return getPool().exists(key);
     }
 
-    public void clear(Object key) throws Exception {
+    public void clear(K key) throws Exception {
         getPool().clear(key);
     }
 
-    public void clear(Object key, boolean forceRecycleBorrowed) throws Exception {
+    public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
         getPool().clear(key, forceRecycleBorrowed);
     }
 
-    public void deleteKey(Object key) throws Exception {
+    public void deleteKey(K key) throws Exception {
         getPool().deleteKey(key);
     }
 
-    public void deleteKey(Object key, boolean forceRecycleBorrowed) throws Exception {
+    public void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
         getPool().deleteKey(key, forceRecycleBorrowed);
     }
 
-    public boolean isPrintRuntimeLog(Object key) throws Exception {
+    public boolean isPrintRuntimeLog(K key) throws Exception {
         return getPool().isPrintRuntimeLog(key);
     }
 
-    public void setPrintRuntimeLog(Object key, boolean enable) throws Exception {
+    public void setPrintRuntimeLog(K key, boolean enable) throws Exception {
         getPool().setPrintRuntimeLog(key, enable);
     }
 
-    public BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception {
+    public BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception {
         return getPool().getMonitorVo(key);
     }
 
-    public Thread[] interruptObjectCreating(Object key, boolean interruptTimeout) throws Exception {
+    public Thread[] interruptObjectCreating(K key, boolean interruptTimeout) throws Exception {
         return getPool().interruptObjectCreating(key, interruptTimeout);
     }
 
-    private BeeKeyedObjectPool getPool() throws Exception {
+    private BeeKeyedObjectPool<K, V> getPool() throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         return this.pool;
     }

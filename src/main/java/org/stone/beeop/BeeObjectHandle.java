@@ -15,7 +15,7 @@ package org.stone.beeop;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectHandle {
+public interface BeeObjectHandle<K, V> {
 
     /**
      * Query handle state whether is closed.
@@ -40,7 +40,7 @@ public interface BeeObjectHandle {
      * @return associated pooled key
      * @throws Exception if handle is closed
      */
-    Object getObjectKey() throws Exception;
+    K getObjectKey() throws Exception;
 
     /**
      * Gets last accessed time of object.
@@ -56,7 +56,7 @@ public interface BeeObjectHandle {
      * @return null when not configured interfaces in {@link BeeObjectSourceConfig}
      * @throws Exception if handle is closed
      */
-    Object getObjectProxy() throws Exception;
+    V getObjectProxy() throws Exception;
 
     /**
      * Call a method of object without parameter.

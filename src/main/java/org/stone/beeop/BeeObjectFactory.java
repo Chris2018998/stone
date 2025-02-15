@@ -15,23 +15,23 @@ package org.stone.beeop;
  * @author Chris
  * @version 1.0
  */
-public interface BeeObjectFactory {
+public interface BeeObjectFactory<K, V> {
 
     //Returns default key
-    Object getDefaultKey();
+    K getDefaultKey();
 
     //Creates an object with given key
-    Object create(Object key) throws Exception;
+    V create(K key) throws Exception;
 
     //Set default on a new object.
-    void setDefault(Object key, Object obj) throws Exception;
+    void setDefault(K key, V obj) throws Exception;
 
     //Reset default on a released object
-    void reset(Object key, Object obj) throws Exception;
+    void reset(K key, V obj) throws Exception;
 
     //Alive test on borrowed object
-    boolean isValid(Object key, Object obj, int timeout) throws Exception;
+    boolean isValid(K key, V obj, int timeout) throws Exception;
 
     //Destroy object
-    void destroy(Object key, Object obj) throws Exception;
+    void destroy(K key, V obj) throws Exception;
 }

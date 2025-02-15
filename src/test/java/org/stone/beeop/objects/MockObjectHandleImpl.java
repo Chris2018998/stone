@@ -18,7 +18,7 @@ import org.stone.beeop.BeeObjectSourceConfig;
  * @author Chris Liao
  */
 
-public class MockObjectHandleImpl implements BeeObjectHandle {
+public class MockObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     /**
      * Query handle state whether is closed.
      *
@@ -48,7 +48,7 @@ public class MockObjectHandleImpl implements BeeObjectHandle {
      * @return associated pooled key
      * @throws Exception if handle is closed
      */
-    public Object getObjectKey() throws Exception {
+    public K getObjectKey() throws Exception {
         return null;
     }
 
@@ -68,7 +68,7 @@ public class MockObjectHandleImpl implements BeeObjectHandle {
      * @return null when not configured interfaces in {@link BeeObjectSourceConfig}
      * @throws Exception if handle is closed
      */
-    public Object getObjectProxy() throws Exception {
+    public V getObjectProxy() throws Exception {
         return null;
     }
 

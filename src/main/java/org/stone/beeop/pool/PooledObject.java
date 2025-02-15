@@ -27,26 +27,26 @@ import static org.stone.tools.BeanUtil.CommonLog;
  * @author Chris Liao
  * @version 1.0
  */
-final class PooledObject {
-    final Object key;
-    private final BeeObjectFactory factory;
-    private final ObjectInstancePool ownerPool;
-    private final BeeObjectMethodFilter methodFilter;
+final class PooledObject<K, V> {
+    final K key;
+    private final BeeObjectFactory<K, V> factory;
+    private final ObjectInstancePool<K, V> ownerPool;
+    private final BeeObjectMethodFilter<K> methodFilter;
     private final Map<MethodCacheKey, Method> methodMap;
 
-    Object raw;
+    V raw;
     volatile int state;
     volatile ObjectCreatingInfo creatingInfo;
-    PooledObjectPlainHandle handleInUsing;
+    PooledObjectPlainHandle<K, V> handleInUsing;
     volatile long lastAccessTime;//milliseconds
-    private Class<?> rawType;
+    private Class<V> rawType;
 
     //***************************************************************************************************************//
     //                                  1: constructor                                                               //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(Object key, BeeObjectFactory factory,
-                 Map<MethodCacheKey, Method> methodMap, BeeObjectMethodFilter methodFilter,
-                 ObjectInstancePool ownerPool) {
+    PooledObject(K key, BeeObjectFactory<K, V> factory,
+                 Map<MethodCacheKey, Method> methodMap, BeeObjectMethodFilter<K> methodFilter,
+                 ObjectInstancePool<K, V> ownerPool) {
 
         this.key = key;
         this.factory = factory;
@@ -58,9 +58,9 @@ final class PooledObject {
     //***************************************************************************************************************//
     //                                  2: set raw object                                                            //                                                                                  //
     //***************************************************************************************************************//
-    void setRawObject(int state, Object raw) {
+    void setRawObject(int state, V raw) {
         this.raw = raw;
-        this.rawType = raw.getClass();
+        this.rawType = (Class<V>) raw.getClass();
         this.lastAccessTime = currentTimeMillis();
         this.state = state;
     }
@@ -68,10 +68,6 @@ final class PooledObject {
     //***************************************************************************************************************//
     //                               3: Pooled entry business methods(3)                                             //                                                                                  //
     //***************************************************************************************************************//
-    public Object getObjectKey() {
-        return key;
-    }
-
     public String toString() {
         return this.raw.toString();
     }

@@ -13,11 +13,13 @@ import org.stone.beeop.pool.exception.*;
 
 /**
  * Keyed object pool interface.
+ * <p>
+ * Important Note: keys object are required to override three methods(equals, hashCode, toString).
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeKeyedObjectPool {
+public interface BeeKeyedObjectPool<K, V> {
 
     /**
      * Pool initialize with a configuration object.
@@ -25,7 +27,7 @@ public interface BeeKeyedObjectPool {
      * @param config is a configuration object defines some items can be applied in pool
      * @throws Exception when fail to initialize
      */
-    void init(BeeObjectSourceConfig config) throws Exception;
+    void init(BeeObjectSourceConfig<K, V> config) throws Exception;
 
     //***************************************************************************************************************//
     //                                    Object getting(2)                                                          //
@@ -39,7 +41,7 @@ public interface BeeKeyedObjectPool {
      * @throws ObjectGetTimeoutException     when wait timeout in pool
      * @throws ObjectGetInterruptedException while waiting is interrupted
      */
-    BeeObjectHandle getObjectHandle() throws Exception;
+    BeeObjectHandle<K, V> getObjectHandle() throws Exception;
 
     /**
      * Attempts to get an object from pool with a given category key.
@@ -51,7 +53,7 @@ public interface BeeKeyedObjectPool {
      * @throws ObjectGetTimeoutException     when wait timeout in pool
      * @throws ObjectGetInterruptedException while waiting is interrupted
      */
-    BeeObjectHandle getObjectHandle(Object key) throws Exception;
+    BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
 
     //***************************************************************************************************************//
     //                                   Pool close(2)                                                               //
@@ -107,7 +109,7 @@ public interface BeeKeyedObjectPool {
      * @throws PoolInClearingException        when pool is closed or in clearing
      * @throws PoolInitializeFailedException  when fail to reinitialize
      */
-    void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig config) throws Exception;
+    void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
 
 
     //***************************************************************************************************************//
@@ -119,14 +121,14 @@ public interface BeeKeyedObjectPool {
      *
      * @return a keys array
      */
-    Object[] keys();
+    K[] keys();
 
     /**
      * Query given key whether in pool.
      *
      * @return a keys array
      */
-    boolean exists(Object key);
+    boolean exists(K key);
 
     /**
      * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
@@ -134,7 +136,7 @@ public interface BeeKeyedObjectPool {
      * @param key to locate related pooled objects
      * @throws ObjectKeyException if key is null
      */
-    void clear(Object key) throws Exception;
+    void clear(K key) throws Exception;
 
     /**
      * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
@@ -143,7 +145,7 @@ public interface BeeKeyedObjectPool {
      * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
      * @throws ObjectKeyException if key is null or default
      */
-    void clear(Object key, boolean forceRecycleBorrowed) throws Exception;
+    void clear(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Delete a pooled key.
@@ -151,7 +153,7 @@ public interface BeeKeyedObjectPool {
      * @param key is a key to remove
      * @throws ObjectKeyException if key is null or default
      */
-    void deleteKey(Object key) throws Exception;
+    void deleteKey(K key) throws Exception;
 
     /**
      * Delete a pooled key.
@@ -160,7 +162,7 @@ public interface BeeKeyedObjectPool {
      * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
      * @throws ObjectKeyException if key is null or default
      */
-    void deleteKey(Object key, boolean forceRecycleBorrowed) throws Exception;
+    void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Query print state of runtime logs.
@@ -169,7 +171,7 @@ public interface BeeKeyedObjectPool {
      * @return boolean value,true,keyed pool print runtime logs,otherwise not print
      * @throws Exception when key is null or not exist key in pool
      */
-    boolean isPrintRuntimeLog(Object key) throws Exception;
+    boolean isPrintRuntimeLog(K key) throws Exception;
 
     /**
      * Enable runtime log print or disable.
@@ -178,7 +180,7 @@ public interface BeeKeyedObjectPool {
      * @param enable is true,print logs;false,not print
      * @throws Exception when key is null or not exist key in pool
      */
-    void setPrintRuntimeLog(Object key, boolean enable) throws Exception;
+    void setPrintRuntimeLog(K key, boolean enable) throws Exception;
 
     /**
      * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.
@@ -187,7 +189,7 @@ public interface BeeKeyedObjectPool {
      * @return monitor of an object group
      * @throws Exception when key is null or not exist key in pool
      */
-    BeeObjectPoolMonitorVo getMonitorVo(Object key) throws Exception;
+    BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception;
 
     /**
      * Interrupts processing of object creation.
@@ -196,5 +198,5 @@ public interface BeeKeyedObjectPool {
      * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
      * @return interrupted threads
      */
-    Thread[] interruptObjectCreating(Object key, boolean onlyInterruptTimeout) throws Exception;
+    Thread[] interruptObjectCreating(K key, boolean onlyInterruptTimeout) throws Exception;
 }

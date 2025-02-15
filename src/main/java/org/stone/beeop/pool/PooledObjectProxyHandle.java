@@ -25,32 +25,32 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @author Chris Liao
  * @version 1.0
  */
-public final class PooledObjectProxyHandle extends PooledObjectPlainHandle {
-    private final Object objectProxy;
+public final class PooledObjectProxyHandle<K, V> extends PooledObjectPlainHandle<K, V> {
+    private final V objectProxy;
 
-    PooledObjectProxyHandle(PooledObject p, BeeObjectPredicate predicate, ClassLoader poolClassLoader,
-                            Class<?>[] objectInterfaces, BeeObjectMethodFilter methodFilter) {
+    PooledObjectProxyHandle(PooledObject<K, V> p, BeeObjectPredicate predicate, ClassLoader poolClassLoader,
+                            Class<?>[] objectInterfaces, BeeObjectMethodFilter<K> methodFilter) {
         super(p, predicate);
-        this.objectProxy = Proxy.newProxyInstance(
+        this.objectProxy = (V) Proxy.newProxyInstance(
                 poolClassLoader,
                 objectInterfaces,
                 new ObjectReflectHandler(p, this, predicate, methodFilter));
     }
 
     @Override
-    public Object getObjectProxy() throws Exception {
+    public V getObjectProxy() throws Exception {
         this.checkClosed();
         return objectProxy;
     }
 
-    private static final class ObjectReflectHandler implements InvocationHandler {
+    private static final class ObjectReflectHandler<K, V> implements InvocationHandler {
         private final Object raw;
-        private final PooledObject p;
-        private final PooledObjectProxyHandle handle;
+        private final PooledObject<K, V> p;
+        private final PooledObjectProxyHandle<K, V> handle;
         private final BeeObjectPredicate predicate;
-        private final BeeObjectMethodFilter methodFilter;
+        private final BeeObjectMethodFilter<K> methodFilter;
 
-        ObjectReflectHandler(PooledObject p, PooledObjectProxyHandle handle, BeeObjectPredicate predicate, BeeObjectMethodFilter methodFilter) {
+        ObjectReflectHandler(PooledObject<K, V> p, PooledObjectProxyHandle<K, V> handle, BeeObjectPredicate predicate, BeeObjectMethodFilter<K> methodFilter) {
             this.p = p;
             this.raw = p.raw;
             this.handle = handle;

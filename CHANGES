@@ -1,5 +1,15 @@
 stone changes
 
+stone-1.4.8
+-----------------------------------------------------
+[beeop]
+1: Support generic type
+
+
+
+
+
+
 Changes in 1.4.7
 [beecp]
 1: add interruption double check on borrower thread

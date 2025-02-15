@@ -16,7 +16,7 @@ package org.stone.beeop;
  * @version 1.0
  */
 
-public interface BeeObjectMethodFilter {
+public interface BeeObjectMethodFilter<K> {
 
-    void doFilter(Object key, String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
+    void doFilter(K key, String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
 }

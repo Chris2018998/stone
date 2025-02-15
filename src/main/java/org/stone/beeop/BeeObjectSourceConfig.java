@@ -35,7 +35,7 @@ import static org.stone.tools.CommonUtil.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
+public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //An atomic integer for generating index appended to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //A properties map whose entries set to object factory during pool initializes
@@ -91,16 +91,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     private String[] objectInterfaceNames;
 
     //Factory to create object instances to pool,first priority for selected if exists
-    private BeeObjectFactory objectFactory;
+    private BeeObjectFactory<K, V> objectFactory;
     //Class of factory to create object instances to pool,second priority for selected if exists
-    private Class<? extends BeeObjectFactory> objectFactoryClass;
+    private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
     //Class name of factory to create object instances to pool,third priority for selected if exists
     private String objectFactoryClassName;
 
     //Filter on method call of object instances,first priority for selected if exists
-    private BeeObjectMethodFilter objectMethodFilter;
+    private BeeObjectMethodFilter<K> objectMethodFilter;
     //Class of filter on method call of object instances,first priority for selected if exists
-    private Class<? extends BeeObjectMethodFilter> objectMethodFilterClass;
+    private Class<? extends BeeObjectMethodFilter<K>> objectMethodFilterClass;
     //Class name of filter on method call of object instances,third priority for selected if exists
     private String objectMethodFilterClassName;
 
@@ -353,11 +353,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectInterfaceNames = interfaceNames;
     }
 
-    public BeeObjectFactory getObjectFactory() {
+    public BeeObjectFactory<K, V> getObjectFactory() {
         return this.objectFactory;
     }
 
-    public void setObjectFactory(BeeObjectFactory factory) {
+    public void setObjectFactory(BeeObjectFactory<K, V> factory) {
         this.objectFactory = factory;
     }
 
@@ -365,7 +365,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return this.objectFactoryClass;
     }
 
-    public void setObjectFactoryClass(Class<? extends BeeObjectFactory> objectFactoryClass) {
+    public void setObjectFactoryClass(Class<? extends BeeObjectFactory<K, V>> objectFactoryClass) {
         this.objectFactoryClass = objectFactoryClass;
     }
 
@@ -377,11 +377,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
-    public Class<? extends BeeObjectMethodFilter> getObjectMethodFilterClass() {
+    public Class<? extends BeeObjectMethodFilter<K>> getObjectMethodFilterClass() {
         return objectMethodFilterClass;
     }
 
-    public void setObjectMethodFilterClass(Class<? extends BeeObjectMethodFilter> filterClass) {
+    public void setObjectMethodFilterClass(Class<? extends BeeObjectMethodFilter<K>> filterClass) {
         this.objectMethodFilterClass = filterClass;
     }
 
@@ -393,11 +393,11 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         this.objectMethodFilterClassName = objectMethodFilterClassName;
     }
 
-    public BeeObjectMethodFilter getObjectMethodFilter() {
+    public BeeObjectMethodFilter<K> getObjectMethodFilter() {
         return objectMethodFilter;
     }
 
-    public void setObjectMethodFilter(BeeObjectMethodFilter objectMethodFilter) {
+    public void setObjectMethodFilter(BeeObjectMethodFilter<K> objectMethodFilter) {
         this.objectMethodFilter = objectMethodFilter;
     }
 
@@ -576,12 +576,12 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     //                                     5: configuration check and object factory create methods(4)               //
     //***************************************************************************************************************//
     //check pool configuration
-    public BeeObjectSourceConfig check() {
+    public BeeObjectSourceConfig<K, V> check() {
         if (initialSize > this.maxActive)
             throw new BeeObjectSourceConfigException("The configured value of item[initial-size] can't be greater than the configured value of item[max-active]");
 
         //1: try to create object factory
-        BeeObjectFactory objectFactory = this.createObjectFactory();
+        BeeObjectFactory<K, V> objectFactory = this.createObjectFactory();
         if (objectFactory.getDefaultKey() == null)
             throw new BeeObjectSourceConfigException("Object factory must provide a non null default pooled key");
 
@@ -590,10 +590,10 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
 
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
-        BeeObjectMethodFilter methodFilter = this.tryCreateMethodFilter();
+        BeeObjectMethodFilter<K> methodFilter = this.tryCreateMethodFilter();
 
         //4: create a copy from this current configuration object
-        BeeObjectSourceConfig checkedConfig = new BeeObjectSourceConfig();
+        BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
 
         //5: assign above objects to the checked configuration object(such as factory,filter,predicate)
@@ -606,7 +606,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return checkedConfig;
     }
 
-    void copyTo(BeeObjectSourceConfig config) {
+    void copyTo(BeeObjectSourceConfig<K, V> config) {
         //1:copy primitive type fields
         String fieldName = "";
         try {
@@ -669,7 +669,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return null;
     }
 
-    private BeeObjectMethodFilter tryCreateMethodFilter() {
+    private BeeObjectMethodFilter<K> tryCreateMethodFilter() {
         //1:if exists method filter then return it directly
         if (this.objectMethodFilter != null) return objectMethodFilter;
 
@@ -678,7 +678,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
             Class<?> filterClass = null;
             try {
                 filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : Class.forName(objectMethodFilterClassName);
-                return (BeeObjectMethodFilter) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
+                return (BeeObjectMethodFilter<K>) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object filter class:" + objectMethodFilterClassName);
             } catch (Throwable e) {
@@ -689,16 +689,16 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
         return null;
     }
 
-    private BeeObjectFactory createObjectFactory() {
+    private BeeObjectFactory<K, V> createObjectFactory() {
         //1: copy from member field of configuration
-        BeeObjectFactory rawObjectFactory = this.objectFactory;
+        BeeObjectFactory<K, V> rawObjectFactory = this.objectFactory;
 
         //2: create factory instance
         if (rawObjectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
             Class<?> factoryClass = null;
             try {
                 factoryClass = objectFactoryClass != null ? objectFactoryClass : Class.forName(objectFactoryClassName);
-                rawObjectFactory = (BeeObjectFactory) createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
+                rawObjectFactory = (BeeObjectFactory<K, V>) createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object factory class:" + objectFactoryClassName, e);
             } catch (Throwable e) {
@@ -741,7 +741,7 @@ public class BeeObjectSourceConfig implements BeeObjectSourceConfigMBean {
     }
 
     //print check passed configuration
-    private void printConfiguration(BeeObjectSourceConfig checkedConfig) {
+    private void printConfiguration(BeeObjectSourceConfig<K, V> checkedConfig) {
         String poolName = checkedConfig.poolName;
         List<String> exclusionList = checkedConfig.configPrintExclusionList;
         CommonLog.info("................................................BeeOP({})configuration[start]................................................", poolName);

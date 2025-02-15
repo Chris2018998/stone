@@ -15,9 +15,9 @@ package org.stone.beeop.pool;
  * @author Chris Liao
  * @version 1.0
  */
-interface ObjectTransferPolicy {
+interface ObjectTransferPolicy<K, V> {
 
     int getStateCodeOnRelease();
 
-    boolean tryCatch(PooledObject p);
+    boolean tryCatch(PooledObject<K, V> p);
 }

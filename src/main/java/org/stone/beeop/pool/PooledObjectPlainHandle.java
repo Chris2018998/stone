@@ -22,13 +22,13 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @author Chris Liao
  * @version 1.0
  */
-public class PooledObjectPlainHandle implements BeeObjectHandle {
+public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
     private final Object raw;
-    private final PooledObject p;
+    private final PooledObject<K, V> p;
     private final BeeObjectPredicate predicate;
     private boolean isClosed;
 
-    PooledObjectPlainHandle(PooledObject p, BeeObjectPredicate predicate) {
+    PooledObjectPlainHandle(PooledObject<K, V> p, BeeObjectPredicate predicate) {
         this.p = p;
         this.raw = p.raw;
         p.handleInUsing = this;
@@ -67,12 +67,12 @@ public class PooledObjectPlainHandle implements BeeObjectHandle {
     //***************************************************************************************************************//
     //                                 2: raw methods call methods(2)                                                //                                                                                  //
     //***************************************************************************************************************//
-    public Object getObjectKey() throws Exception {
+    public K getObjectKey() throws Exception {
         checkClosed();
         return p.key;
     }
 
-    public Object getObjectProxy() throws Exception {
+    public V getObjectProxy() throws Exception {
         checkClosed();
         return null;
     }

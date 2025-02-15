@@ -17,9 +17,9 @@ import org.stone.beeop.BeeObjectMethodFilter;
  * @author Chris Liao
  */
 
-public class JavaBookMethodFilter implements BeeObjectMethodFilter {
+public class JavaBookMethodFilter<K> implements BeeObjectMethodFilter<K> {
 
-    public void doFilter(Object key, String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception {
+    public void doFilter(K key, String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception {
 
     }
 }
