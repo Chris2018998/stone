@@ -658,6 +658,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                     creatingTimeoutCount++;
             }
         }
+        monitorVo.setKeySize(1);
         monitorVo.setPoolState(poolState);
         monitorVo.setIdleSize(idleSize);
         monitorVo.setBorrowedSize(borrowedSize);

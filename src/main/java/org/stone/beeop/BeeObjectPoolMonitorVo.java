@@ -31,6 +31,8 @@ public interface BeeObjectPoolMonitorVo {
 
     String getPoolMode();
 
+    int getKeySize();
+
     int getPoolMaxSize();
 
     int getPoolState();

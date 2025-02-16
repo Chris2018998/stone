@@ -27,6 +27,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private final int maxSize;
     private int poolState;
 
+    private int keySize;
     private int idleSize;
     private int borrowedSize;
     private int creatingCount;
@@ -53,6 +54,14 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
 
     void setPoolState(int poolState) {
         this.poolState = poolState;
+    }
+
+    public int getKeySize() {
+        return keySize;
+    }
+
+    public void setKeySize(int keySize) {
+        this.keySize = keySize;
     }
 
     public int getMaxSize() {

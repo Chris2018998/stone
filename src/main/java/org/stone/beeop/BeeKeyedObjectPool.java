@@ -117,6 +117,13 @@ public interface BeeKeyedObjectPool<K, V> {
     //***************************************************************************************************************//
 
     /**
+     * Query key size in pool.
+     *
+     * @return an integer number
+     */
+    int keySize();
+
+    /**
      * Gets pooled keys.
      *
      * @return a keys array

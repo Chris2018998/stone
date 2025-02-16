@@ -238,16 +238,20 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
 
     //4.2: get monitor object of this keyed pool
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
+        int keySize = 0;
         int semaphoreWaitingSize = 0;
         int transferWaitingSize = 0;
         int idleSize = 0, usingSize = 0;
         for (ObjectInstancePool<K, V> pool : categoryPoolMap.values()) {
             BeeObjectPoolMonitorVo monitorVo = pool.getPoolMonitorVo();
+            keySize++;
+
             idleSize += monitorVo.getIdleSize();
             usingSize += monitorVo.getBorrowedSize();
             semaphoreWaitingSize += monitorVo.getSemaphoreWaitingSize();
             transferWaitingSize += monitorVo.getTransferWaitingSize();
         }
+        poolMonitorVo.setKeySize(keySize);
         poolMonitorVo.setIdleSize(idleSize);
         poolMonitorVo.setBorrowedSize(usingSize);
         poolMonitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
@@ -320,6 +324,10 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //***************************************************************************************************************//
     //                                    6:Operation with Variety Key(10)                                           //
     //***************************************************************************************************************//
+    public int keySize() {
+        return categoryPoolMap.size();
+    }
+
     public K[] keys() {
         return (K[]) this.categoryPoolMap.keySet().toArray();
     }
