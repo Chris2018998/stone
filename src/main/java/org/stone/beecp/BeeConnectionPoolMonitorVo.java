@@ -19,8 +19,6 @@ public interface BeeConnectionPoolMonitorVo {
 
     String getDsId();
 
-    String getDsUUID();
-
     String getHostIP();
 
     long getThreadId();

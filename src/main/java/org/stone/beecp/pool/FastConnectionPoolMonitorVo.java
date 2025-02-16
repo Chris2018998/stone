@@ -20,7 +20,6 @@ import org.stone.beecp.BeeConnectionPoolMonitorVo;
 
 public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
     private String dsId;
-    private String dsUUID;
     private String hostIP;
     private long threadId;
     private String threadName;
@@ -42,14 +41,6 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
 
     void setDsId(String dsId) {
         this.dsId = dsId;
-    }
-
-    public String getDsUUID() {
-        return dsUUID;
-    }
-
-    void setDsUUID(String dsUUID) {
-        this.dsUUID = dsUUID;
     }
 
     public String getHostIP() {

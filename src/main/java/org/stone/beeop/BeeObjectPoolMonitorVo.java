@@ -19,8 +19,6 @@ public interface BeeObjectPoolMonitorVo {
 
     String getOsId();
 
-    String getOsUUID();
-
     String getHostIP();
 
     long getThreadId();

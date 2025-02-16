@@ -35,7 +35,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
     private String osId;
-    private String osUUID;
 
     ObjectPoolMonitorVo(
             String poolName, String hostIP, long threadId,
@@ -122,14 +121,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
 
     void setOsId(String osId) {
         this.osId = osId;
-    }
-
-    public String getOsUUID() {
-        return osUUID;
-    }
-
-    void setOsUUID(String osUUID) {
-        this.osUUID = osUUID;
     }
 
     public String getHostIP() {
