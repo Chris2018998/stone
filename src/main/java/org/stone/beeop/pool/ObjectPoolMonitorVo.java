@@ -19,9 +19,6 @@ import org.stone.beeop.BeeObjectPoolMonitorVo;
  */
 
 public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
-    private final String hostIP;
-    private final long threadId;
-    private final String threadName;
     private final String poolName;
     private final String poolMode;
     private final int maxSize;
@@ -34,17 +31,25 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private int creatingTimeoutCount;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
-    private String osId;
 
     ObjectPoolMonitorVo(
             String poolName, String hostIP, long threadId,
             String threadName, String poolMode, int poolMaxSize) {
         this.poolName = poolName;
-        this.hostIP = hostIP;
-        this.threadId = threadId;
-        this.threadName = threadName;
         this.poolMode = poolMode;
         this.maxSize = poolMaxSize;
+    }
+
+    public String getPoolName() {
+        return poolName;
+    }
+
+    public String getPoolMode() {
+        return poolMode;
+    }
+
+    public int getPoolMaxSize() {
+        return maxSize;
     }
 
     public int getPoolState() {
@@ -115,36 +120,6 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.transferWaitingSize = transferWaitingSize;
     }
 
-    public String getOsId() {
-        return osId;
-    }
 
-    void setOsId(String osId) {
-        this.osId = osId;
-    }
-
-    public String getHostIP() {
-        return hostIP;
-    }
-
-    public long getThreadId() {
-        return threadId;
-    }
-
-    public String getThreadName() {
-        return threadName;
-    }
-
-    public String getPoolName() {
-        return poolName;
-    }
-
-    public String getPoolMode() {
-        return poolMode;
-    }
-
-    public int getPoolMaxSize() {
-        return maxSize;
-    }
 }
 

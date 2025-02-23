@@ -17,14 +17,6 @@ package org.stone.beeop;
  */
 public interface BeeObjectPoolMonitorVo {
 
-    String getOsId();
-
-    String getHostIP();
-
-    long getThreadId();
-
-    String getThreadName();
-
     String getPoolName();
 
     String getPoolMode();

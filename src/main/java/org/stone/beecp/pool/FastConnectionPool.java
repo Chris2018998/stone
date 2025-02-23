@@ -24,8 +24,6 @@ import javax.sql.XAConnection;
 import javax.transaction.xa.XAResource;
 import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -67,9 +65,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     ConcurrentLinkedQueue<Borrower> waitQueue;
 
     private String poolMode;
-    private String poolHostIP;
-    private long poolThreadId;
-    private String poolThreadName;
     private boolean isFairMode;
     private boolean isCompeteMode;
     private int semaphoreSize;
@@ -185,7 +180,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             this.idleScanState = THREAD_WORKING;
             this.idleScanThread = new IdleTimeoutScanThread(this);
 
-            this.monitorVo = this.createPoolMonitorVo();//pool monitor object
+            this.monitorVo = new FastConnectionPoolMonitorVo();//pool monitor object
             this.exitHook = new ConnectionPoolHook(this);//a hook works when JVM exit
             Runtime.getRuntime().addShutdownHook(this.exitHook);
             this.registerJmx();
@@ -1081,20 +1076,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         return false;
     }
 
-    //Method-5.18: creates monitor view object,some runtime info of pool may fill into this object
-    private FastConnectionPoolMonitorVo createPoolMonitorVo() {
-        Thread currentThread = Thread.currentThread();
-        this.poolThreadId = currentThread.getId();
-        this.poolThreadName = currentThread.getName();
-
-        try {
-            this.poolHostIP = (InetAddress.getLocalHost().getHostAddress());
-        } catch (UnknownHostException e) {
-            Log.info("BeeCP({})failed to resolve host IP", this.poolName);
-        }
-        return new FastConnectionPoolMonitorVo();
-    }
-
     //Method-5.19: pool monitor vo
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         int borrowedSize = 0, idleSize = 0;
@@ -1115,9 +1096,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         monitorVo.setPoolName(poolName);
         monitorVo.setPoolMode(poolMode);
         monitorVo.setPoolMaxSize(connectionArrayLen);
-        monitorVo.setThreadId(poolThreadId);
-        monitorVo.setThreadName(poolThreadName);
-        monitorVo.setHostIP(poolHostIP);
         monitorVo.setPoolState(poolState);
 
         monitorVo.setIdleSize(idleSize);
