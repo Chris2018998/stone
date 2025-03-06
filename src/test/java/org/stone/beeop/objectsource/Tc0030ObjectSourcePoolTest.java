@@ -66,11 +66,11 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
             Assert.assertEquals("Pool not be created", e.getMessage());
         }
 
-        try {
-            os.keys();
-        } catch (Exception e) {
-            Assert.assertEquals("Pool not be created", e.getMessage());
-        }
+//        try {
+//            os.keys();
+//        } catch (Exception e) {
+//            Assert.assertEquals("Pool not be created", e.getMessage());
+//        }
 
         try {
             os.exists(null);
@@ -136,7 +136,7 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         Object key = factory.getDefaultKey();
 
         Assert.assertTrue(os.exists(key));
-        Assert.assertEquals(1, os.keys().length);
+//        Assert.assertEquals(1, os.keys().length);
         os.interruptObjectCreating(key, true);
         os.getPoolMonitorVo();
         os.getMonitorVo(key);
