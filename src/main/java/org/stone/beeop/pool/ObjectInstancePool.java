@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -56,8 +57,8 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     private final int semaphoreSize;
     private final long maxWaitMs;//milliseconds
     private final long maxWaitNs;//nanoseconds
-    private final long idleTimeoutMs;//milliseconds
-    private final long holdTimeoutMs;//milliseconds
+    private final long idleTimeoutNs;//milliseconds
+    private final long holdTimeoutNs;//milliseconds
     private final boolean supportHoldTimeout;
     private final int stateCodeOnRelease;
     private final long validAssumeTime;//milliseconds
@@ -99,10 +100,12 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.enableThreadLocal = config.isEnableThreadLocal();
         this.semaphoreSize = config.getBorrowSemaphoreSize();
         this.maxWaitMs = config.getMaxWait();
+
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
-        this.idleTimeoutMs = config.getIdleTimeout();//milliseconds
-        this.holdTimeoutMs = config.getHoldTimeout();//milliseconds
-        this.supportHoldTimeout = holdTimeoutMs > 0L;
+        this.idleTimeoutNs = MILLISECONDS.toNanos(config.getIdleTimeout());
+        this.holdTimeoutNs = MILLISECONDS.toNanos(config.getHoldTimeout());
+
+        this.supportHoldTimeout = holdTimeoutNs > 0L;
         this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(config.getParkTimeForRetry());
         this.validAssumeTime = config.getAliveAssumeTime();
         this.validTestTimeout = config.getAliveTestTimeout();
@@ -265,7 +268,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
      */
     public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
         if (this.poolState != POOL_READY)
-            throw new ObjectGetForbiddenException("Access rejected,cause:pool closed or in clearing");
+            throw new ObjectGetForbiddenException("Pool has been closed or in clearing");
 
         //1: try to reuse object in thread local
         ObjectBorrower<K, V> b = null;
@@ -406,7 +409,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     //Method-3.5: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject<K, V> p) {
         try {
-            if (System.currentTimeMillis() - p.lastAccessTime >= this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
+            if (System.nanoTime() - p.lastAccessTime >= this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
                 p.onRemove(DESC_RM_BAD);
                 this.tryWakeupServantThread();
                 return false;
@@ -471,13 +474,13 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         for (PooledObject<K, V> p : this.objectArray) {
             int state = p.state;
             if (state == OBJECT_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
-                boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
+                boolean isTimeoutInIdle = System.nanoTime() - p.lastAccessTime - this.idleTimeoutNs >= 0L;
                 if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
                     p.onRemove(DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
             } else if (state == OBJECT_BORROWED && supportHoldTimeout) {
-                if (System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
+                if (System.nanoTime() - p.lastAccessTime - holdTimeoutNs >= 0L) {//hold timeout
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) tryCloseObjectHandle(handleInUsing);
                 }
@@ -533,7 +536,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                 } else if (state == OBJECT_BORROWED) {
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
-                        if (forceRecycleBorrowed || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
+                        if (forceRecycleBorrowed || (supportHoldTimeout && System.nanoTime() - p.lastAccessTime - holdTimeoutNs >= 0L))
                             tryCloseObjectHandle(handleInUsing);
                     }
                 } else if (state == OBJECT_CLOSED) {

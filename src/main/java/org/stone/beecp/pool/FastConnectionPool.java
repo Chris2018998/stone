@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.CommonUtil.isBlank;
@@ -70,8 +71,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private int semaphoreSize;
     private InterruptionSemaphore semaphore;
     private long maxWaitNs;//nanoseconds
-    private long idleTimeoutMs;//milliseconds
-    private long holdTimeoutMs;//milliseconds
+    private long idleTimeoutNs;//milliseconds
+    private long holdTimeoutNs;//milliseconds
     private boolean supportHoldTimeout;
     private long aliveAssumeTimeMs;//milliseconds
     private int aliveTestTimeout;//seconds
@@ -139,7 +140,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //step3: fill initial connections to array by syn mode
         this.printRuntimeLog = poolConfig.isPrintRuntimeLog();
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getMaxWait());
+        this.maxWaitNs = MILLISECONDS.toNanos(poolConfig.getMaxWait());
         int initialSize = poolConfig.getInitialSize();
         if (initialSize > 0 && !poolConfig.isAsyncCreateInitConnection())
             createInitConnections(poolConfig.getInitialSize(), true);
@@ -157,12 +158,12 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         this.stateCodeOnRelease = this.transferPolicy.getStateCodeOnRelease();
 
         //step5: copy some time type parameters to local
-        this.idleTimeoutMs = poolConfig.getIdleTimeout();
-        this.holdTimeoutMs = poolConfig.getHoldTimeout();
-        this.supportHoldTimeout = holdTimeoutMs > 0L;
-        this.aliveAssumeTimeMs = poolConfig.getAliveAssumeTime();
+        this.idleTimeoutNs = MILLISECONDS.toNanos(poolConfig.getIdleTimeout());
+        this.holdTimeoutNs = MILLISECONDS.toNanos(poolConfig.getHoldTimeout());
+        this.supportHoldTimeout = holdTimeoutNs > 0L;
+        this.aliveAssumeTimeMs = MILLISECONDS.toNanos(poolConfig.getAliveAssumeTime());
         this.aliveTestTimeout = poolConfig.getAliveTestTimeout();
-        this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getParkTimeForRetry());
+        this.parkTimeForRetryNs = MILLISECONDS.toNanos(poolConfig.getParkTimeForRetry());
 
         //step6: creates pool semaphore and create threadLocal by configured indicator
         this.semaphoreSize = poolConfig.getBorrowSemaphoreSize();
@@ -577,7 +578,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-2.3: attempt to get pooled connection(key method)
     private PooledConnection getPooledConnection() throws SQLException {
         if (this.poolState != POOL_READY)
-            throw new ConnectionGetForbiddenException("Pool was closed or in cleaning");
+            throw new ConnectionGetForbiddenException("Pool has been closed or in clearing");
 
         //1: firstly, get last used connection from threadLocal if threadLocal is supported
         Borrower b = null;
@@ -718,7 +719,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-2.8: do alive test on a borrowed pooled connection
     private boolean testOnBorrow(PooledConnection p) {
-        if (System.currentTimeMillis() - p.lastAccessTime >= this.aliveAssumeTimeMs && !this.conValidTest.isAlive(p)) {
+        if (System.nanoTime() - p.lastAccessTime - this.aliveAssumeTimeMs >= 0L && !this.conValidTest.isAlive(p)) {
             p.onRemove(DESC_RM_BAD);
             this.tryWakeupServantThread();
             return false;
@@ -787,13 +788,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         for (PooledConnection p : this.connectionArray) {
             final int state = p.state;
             if (state == CON_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
-                boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime >= this.idleTimeoutMs;
+                boolean isTimeoutInIdle = System.nanoTime() - p.lastAccessTime - this.idleTimeoutNs >= 0L;
                 if (isTimeoutInIdle && ConStUpd.compareAndSet(p, state, CON_CLOSED)) {//need close idle
                     p.onRemove(DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
             } else if (state == CON_BORROWED && supportHoldTimeout) {
-                if (System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
+                if (System.nanoTime() - p.lastAccessTime - holdTimeoutNs >= 0L) {//hold timeout
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) oclose(proxyInUsing);
                 }
@@ -873,7 +874,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 } else if (state == CON_BORROWED) {
                     ProxyConnectionBase proxyInUsing = p.proxyInUsing;
                     if (proxyInUsing != null) {
-                        if (force || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime >= holdTimeoutMs)) //force close or hold timeout
+                        if (force || (supportHoldTimeout && System.nanoTime() - p.lastAccessTime - holdTimeoutNs >= 0L))//force close or hold timeout
                             oclose(proxyInUsing);
                     }
                 } else if (state == CON_CLOSED) {
@@ -1066,7 +1067,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     public boolean isAlive(final PooledConnection p) {
         try {
             if (p.rawConn.isValid(this.aliveTestTimeout)) {
-                p.lastAccessTime = System.currentTimeMillis();
+                p.lastAccessTime = System.nanoTime();
                 return true;
             }
         } catch (Throwable e) {
@@ -1155,7 +1156,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         public void run() {
-            final long checkTimeIntervalNanos = TimeUnit.MILLISECONDS.toNanos(this.pool.poolConfig.getTimerCheckInterval());
+            final long checkTimeIntervalNanos = MILLISECONDS.toNanos(this.pool.poolConfig.getTimerCheckInterval());
             while (pool.idleScanState == THREAD_WORKING) {
                 LockSupport.parkNanos(checkTimeIntervalNanos);
                 try {
@@ -1257,7 +1258,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 //step3: execute test sql
                 try {
                     st.execute(this.testSql);//alive test sql executed under condition that value of autoCommit property must be false
-                    p.lastAccessTime = System.currentTimeMillis();
+                    p.lastAccessTime = System.nanoTime();
                 } finally {
                     rawConn.rollback();//avoid data generated during test saving to db
                 }

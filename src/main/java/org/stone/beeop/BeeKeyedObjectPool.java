@@ -124,35 +124,11 @@ public interface BeeKeyedObjectPool<K, V> {
     int keySize();
 
     /**
-     * Gets pooled keys.
-     *
-     * @return a keys array
-     */
-    K[] keys();
-
-    /**
      * Query given key whether in pool.
      *
      * @return a keys array
      */
     boolean exists(K key);
-
-    /**
-     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
-     *
-     * @param key to locate related pooled objects
-     * @throws ObjectKeyException if key is null
-     */
-    void clear(K key) throws Exception;
-
-    /**
-     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
-     *
-     * @param key                  to locate related pooled objects
-     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
-     */
-    void clear(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Delete a pooled key.

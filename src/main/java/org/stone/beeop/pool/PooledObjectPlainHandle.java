@@ -36,7 +36,7 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
     }
 
     //***************************************************************************************************************//
-    //                                  1: override methods(5)                                                       //                                                                                  //
+    //                                  1: override methods(6)                                                       //                                                                                  //
     //***************************************************************************************************************//
     public boolean isClosed() {
         return isClosed;
@@ -49,6 +49,11 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
     public final long getLastAccessedTime() throws Exception {
         checkClosed();
         return p.lastAccessTime;
+    }
+
+    public final void setLastAccessedTime() throws Exception {
+        checkClosed();
+        p.lastAccessTime = System.nanoTime();
     }
 
     public void abort() throws Exception {

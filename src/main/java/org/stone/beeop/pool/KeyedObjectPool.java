@@ -322,27 +322,14 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     }
 
     //***************************************************************************************************************//
-    //                                    6:Operation with Variety Key(10)                                           //
+    //                                    6:Operation with Variety Key(8)                                            //
     //***************************************************************************************************************//
     public int keySize() {
         return categoryPoolMap.size();
     }
 
-    public K[] keys() {
-        return (K[]) this.categoryPoolMap.keySet().toArray();
-    }
-
     public boolean exists(K key) {
         return categoryPoolMap.containsKey(key);
-    }
-
-    public void clear(K key) throws Exception {
-        clear(key, false);
-    }
-
-    public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
-        if (!getObjectInstancePool(key).clear(forceRecycleBorrowed))
-            throw new PoolInClearingException("Target category(" + key + ") pool was closed or in cleaning");
     }
 
     public void deleteKey(K key) throws Exception {

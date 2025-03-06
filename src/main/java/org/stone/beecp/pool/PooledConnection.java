@@ -51,7 +51,7 @@ final class PooledConnection {
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
     volatile int state;
-    volatile long lastAccessTime;//milliseconds
+    volatile long lastAccessTime;//Nanoseconds
 
     int openStmSize;
     boolean curAutoCommit;
@@ -173,7 +173,7 @@ final class PooledConnection {
 
         this.openStmSize = 0;
         this.openStatements = new ProxyStatementBase[10];
-        this.lastAccessTime = System.currentTimeMillis();
+        this.lastAccessTime = System.nanoTime();
         this.state = state;
     }
 
@@ -271,7 +271,7 @@ final class PooledConnection {
     //***************************************************************************************************************//
     void updateAccessTime() {//for update,insert.select,delete and so on DML
         this.commitDirtyInd = !this.curAutoCommit;
-        this.lastAccessTime = System.currentTimeMillis();
+        this.lastAccessTime = System.nanoTime();
     }
 
     void checkSQLException(SQLException e) {//Fatal error code check

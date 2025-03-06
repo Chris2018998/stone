@@ -148,20 +148,8 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     //***************************************************************************************************************//
     //                                          5: keys maintenance(10)                                               //
     //***************************************************************************************************************//
-    public K[] keys() throws Exception {
-        return getPool().keys();
-    }
-
     public boolean exists(K key) throws Exception {
         return getPool().exists(key);
-    }
-
-    public void clear(K key) throws Exception {
-        getPool().clear(key);
-    }
-
-    public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
-        getPool().clear(key, forceRecycleBorrowed);
     }
 
     public void deleteKey(K key) throws Exception {

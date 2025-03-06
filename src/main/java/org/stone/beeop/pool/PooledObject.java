@@ -16,7 +16,6 @@ import org.stone.beeop.pool.exception.ObjectRecycleException;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static java.lang.System.currentTimeMillis;
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
 import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
 import static org.stone.tools.BeanUtil.CommonLog;
@@ -38,7 +37,7 @@ final class PooledObject<K, V> {
     volatile int state;
     volatile ObjectCreatingInfo creatingInfo;
     PooledObjectPlainHandle<K, V> handleInUsing;
-    volatile long lastAccessTime;//milliseconds
+    volatile long lastAccessTime;//nanoSeconds;
     private Class<V> rawType;
 
     //***************************************************************************************************************//
@@ -61,7 +60,7 @@ final class PooledObject<K, V> {
     void setRawObject(int state, V raw) {
         this.raw = raw;
         this.rawType = (Class<V>) raw.getClass();
-        this.lastAccessTime = currentTimeMillis();
+        this.lastAccessTime = System.nanoTime();
         this.state = state;
     }
 
@@ -73,7 +72,7 @@ final class PooledObject<K, V> {
     }
 
     void updateAccessTime() {
-        this.lastAccessTime = currentTimeMillis();
+        this.lastAccessTime = System.nanoTime();
     }
 
     //***************************************************************************************************************//

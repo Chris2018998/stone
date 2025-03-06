@@ -44,10 +44,17 @@ public interface BeeObjectHandle<K, V> {
     /**
      * Gets last accessed time of object.
      *
-     * @return a milliseconds time value
+     * @return a nanoseconds time value
      * @throws Exception if handle is closed
      */
     long getLastAccessedTime() throws Exception;
+
+    /**
+     * Sets last accessed time of object.
+     *
+     * @throws Exception if handle is closed
+     */
+    void setLastAccessedTime() throws Exception;
 
     /**
      * Call a method of object without parameter.
