@@ -102,6 +102,16 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return createPoolByLock().getXAConnection();
     }
 
+    public Connection getConnection(String username, String password) throws SQLException {
+        if (this.ready) return pool.getConnection(username, password);
+        return createPoolByLock().getConnection(username, password);
+    }
+
+    public XAConnection getXAConnection(String username, String password) throws SQLException {
+        if (this.ready) return pool.getXAConnection(username, password);
+        return createPoolByLock().getXAConnection(username, password);
+    }
+
     private BeeConnectionPool createPoolByLock() throws SQLException {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
@@ -126,16 +136,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
         if (cause != null) throw cause;
         return pool;
-    }
-
-    public Connection getConnection(String username, String password) throws SQLException {
-        if (this.ready) return pool.getConnection(username, password);
-        return createPoolByLock().getConnection(username, password);
-    }
-
-    public XAConnection getXAConnection(String username, String password) throws SQLException {
-        if (this.ready) return pool.getXAConnection(username, password);
-        return createPoolByLock().getXAConnection(username, password);
     }
 
     //***************************************************************************************************************//

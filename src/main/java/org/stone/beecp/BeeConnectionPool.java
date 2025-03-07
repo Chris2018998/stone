@@ -45,7 +45,7 @@ public interface BeeConnectionPool {
     /**
      * Attempts to get a connection from pool.
      *
-     * @param username the database user on whose behalf the connection is being made
+     * @param username link to database
      * @param password the user's password
      * @return a borrowed connection
      * @throws SQLException                      when fail to create a connection
@@ -67,7 +67,7 @@ public interface BeeConnectionPool {
     /**
      * Attempts to get a XAConnection from pool.
      *
-     * @param username the database user on whose behalf the connection is being made
+     * @param username link to database
      * @param password the user's password
      * @return a borrowed XAConnection
      * @throws SQLException                      when fail to create a xa connection

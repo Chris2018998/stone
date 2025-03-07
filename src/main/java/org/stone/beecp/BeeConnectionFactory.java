@@ -31,7 +31,7 @@ public interface BeeConnectionFactory {
     /**
      * Creates a connection.
      *
-     * @param username the database user on whose behalf the connection is being made
+     * @param username link to database
      * @param password the user's password
      * @throws SQLException when fail to create a connection
      */

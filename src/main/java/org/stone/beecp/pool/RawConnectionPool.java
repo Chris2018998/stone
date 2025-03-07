@@ -246,7 +246,7 @@ public final class RawConnectionPool implements BeeConnectionPool {
         return 0;
     }
 
-    public int getUsingSize() {
+    public int getBorrowedSize() {
         return 0;
     }
 
