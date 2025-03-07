@@ -39,6 +39,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+import static org.stone.tools.BeanUtil.CommonLog;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
@@ -566,13 +567,25 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         return createProxyConnection(this.getPooledConnection());
     }
 
-    //Method-2.2: Attempts to get a XAConnection from pool
+    //Method-2.2: Attempts to get a connection from pool
+    public Connection getConnection(String username, String password) throws SQLException {
+        CommonLog.warn("getConnection (user,password) ignores authentication - returning default connection");
+        return createProxyConnection(this.getPooledConnection());
+    }
+
+    //Method-2.3: Attempts to get a XAConnection from pool
     public XAConnection getXAConnection() throws SQLException {
         PooledConnection p = this.getPooledConnection();
         ProxyConnectionBase proxyConn = createProxyConnection(p);
 
         XAResource proxyResource = this.isRawXaConnFactory ? new XaProxyResource(p.rawXaRes, proxyConn) : new XaResourceLocalImpl(proxyConn, p.defaultAutoCommit);
         return new XaProxyConnection(proxyConn, proxyResource);
+    }
+
+    //Method-2.4: Attempts to get a XAConnection from pool
+    public XAConnection getXAConnection(String username, String password) throws SQLException {
+        CommonLog.warn("getXAConnection (user,password) ignores authentication - returning default XAConnection");
+        return getXAConnection();
     }
 
     //Method-2.3: attempt to get pooled connection(key method)

@@ -43,6 +43,14 @@ public final class ConnectionFactoryByDriver implements BeeConnectionFactory, Co
         return this.driver.connect(this.url, this.properties);
     }
 
+    //return a connection if link successful to db,otherwise,throws a failure exception
+    public Connection create(String username, String password) throws SQLException {
+        Properties info = new Properties();
+        info.setProperty("user", username);
+        info.setProperty("password", password);
+        return this.driver.connect(url, info);
+    }
+
     //***************************************************************************************************************//
     //                                      Override methods from CommonDataSource                                   //
     //***************************************************************************************************************//

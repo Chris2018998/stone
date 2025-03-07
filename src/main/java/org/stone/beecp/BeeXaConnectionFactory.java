@@ -27,4 +27,14 @@ public interface BeeXaConnectionFactory {
      * @throws SQLException when creates fail
      */
     XAConnection create() throws SQLException;
+
+    /**
+     * Creates a xa connection.
+     *
+     * @param username the database user on whose behalf the connection is being made
+     * @param password the user's password
+     * @throws SQLException when fail to create a connection
+     */
+    XAConnection create(String username, String password) throws SQLException;
+
 }
