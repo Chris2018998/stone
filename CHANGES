@@ -1,7 +1,11 @@
 stone changes
 
-stone-1.4.8
+stone-1.4.8(pending)
 -----------------------------------------------------
+[beecp]
+1: Add back a pool implementation which can provide raw connction to borrower
+2: Add a new method to connnection factory interface【create(username,password)】
+
 [beeop]
 1: Support generic type
 2: Add a method to handle to get pooled object
