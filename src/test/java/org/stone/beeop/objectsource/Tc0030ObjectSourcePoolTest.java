@@ -39,7 +39,7 @@ public class Tc0030ObjectSourcePoolTest extends TestCase {
         try {
             new BeeObjectSource(config);//check fail
         } catch (RuntimeException e) {
-            Assert.assertEquals("The configured value of item[initial-size] can't be greater than the configured value of item[max-active]", e.getMessage());
+            Assert.assertEquals("The configured value of item 'initial-size' cannot be greater than the configured value of item 'max-active'", e.getMessage());
         }
 
         try {

@@ -158,7 +158,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize < 0)
-            throw new InvalidParameterException("The given value to configuration item[initial-size] can't be less than zero");
+            throw new InvalidParameterException("The given value for the configuration item 'initial-size' cannot be less than zero");
         this.initialSize = initialSize;
     }
 
@@ -176,7 +176,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMaxActive(int maxActive) {
         if (maxActive <= 0)
-            throw new InvalidParameterException("The given value to configuration item[max-active] must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'max-active' must be greater than zero");
 
         this.maxActive = maxActive;
         borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
@@ -189,7 +189,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMaxKeySize(int maxKeySize) {
         if (maxKeySize <= 0)
-            throw new InvalidParameterException("The given value to configuration item[max-key-size] must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'max-key-size' must be greater than zero");
         this.maxKeySize = maxKeySize;
     }
 
@@ -199,7 +199,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setBorrowSemaphoreSize(int borrowSemaphoreSize) {
         if (borrowSemaphoreSize <= 0)
-            throw new InvalidParameterException("The given value to configuration item[borrow-semaphore-size] must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'borrow-semaphore-size' must be greater than zero");
         this.borrowSemaphoreSize = borrowSemaphoreSize;
     }
 
@@ -209,7 +209,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMaxWait(long maxWait) {
         if (maxWait <= 0L)
-            throw new InvalidParameterException("The given value to configuration item[max-wait] must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'max-wait' must be greater than zero");
         this.maxWait = maxWait;
     }
 
@@ -219,7 +219,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setIdleTimeout(long idleTimeout) {
         if (idleTimeout <= 0L)
-            throw new InvalidParameterException("The given value to configuration item[idle-timeout] must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'idle-timeout' must be greater than zero");
         this.idleTimeout = idleTimeout;
     }
 
@@ -229,7 +229,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setHoldTimeout(long holdTimeout) {
         if (holdTimeout < 0L)
-            throw new InvalidParameterException("The given value to configuration item[hold-timeout] can't be less than zero");
+            throw new InvalidParameterException("The given value for configuration item 'hold-timeout' cannot be less than zero");
 
         this.holdTimeout = holdTimeout;
     }
@@ -240,7 +240,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setAliveTestTimeout(int aliveTestTimeout) {
         if (aliveTestTimeout < 0L)
-            throw new InvalidParameterException("The given value to configuration item[alive-test-timeout] can't be less than zero");
+            throw new InvalidParameterException("The given value for configuration item 'alive-test-timeout' cannot  be less than zero");
         this.aliveTestTimeout = aliveTestTimeout;
     }
 
@@ -250,7 +250,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setAliveAssumeTime(long aliveAssumeTime) {
         if (aliveAssumeTime < 0L)
-            throw new InvalidParameterException("The given value to configuration item[alive-assume-time] can't be less than zero");
+            throw new InvalidParameterException("The given value for configuration item 'alive-assume-time' cannot be less than zero");
         this.aliveAssumeTime = aliveAssumeTime;
     }
 
@@ -260,7 +260,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setTimerCheckInterval(long timerCheckInterval) {
         if (timerCheckInterval <= 0L)
-            throw new InvalidParameterException("The given value to configuration item[timer-check-interval] must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'timer-check-interval' must be greater than zero");
         this.timerCheckInterval = timerCheckInterval;
     }
 
@@ -278,7 +278,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setParkTimeForRetry(long parkTimeForRetry) {
         if (parkTimeForRetry < 0L)
-            throw new InvalidParameterException("The given value to configuration item[park-time-for-retry] can't be less than zero");
+            throw new InvalidParameterException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
         this.parkTimeForRetry = parkTimeForRetry;
     }
 
@@ -578,7 +578,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //check pool configuration
     public BeeObjectSourceConfig<K, V> check() {
         if (initialSize > this.maxActive)
-            throw new BeeObjectSourceConfigException("The configured value of item[initial-size] can't be greater than the configured value of item[max-active]");
+            throw new BeeObjectSourceConfigException("The configured value of item 'initial-size' cannot be greater than the configured value of item 'max-active'");
 
         //1: try to create object factory
         BeeObjectFactory<K, V> objectFactory = this.createObjectFactory();

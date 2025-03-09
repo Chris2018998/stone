@@ -222,7 +222,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
                 this.poolState = POOL_READY;//reset pool state to ready
             }
         } else {
-            throw new PoolInClearingException("Object pool was closed or in cleaning");
+            throw new PoolInClearingException("Object Pool has been closed or is being cleared");
         }
     }
 
@@ -338,7 +338,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
 
     public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
         if (!getObjectInstancePool(key).clear(forceRecycleBorrowed))
-            throw new PoolInClearingException("Target category(" + key + ") pool was closed or in cleaning");
+            throw new PoolInClearingException("Target category(" + key + ") Pool has been closed or is being cleared");
     }
 
     public void deleteKey(K key) throws Exception {
@@ -347,7 +347,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
 
     public void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
         if (!removeObjectInstancePool(key).clear(forceRecycleBorrowed))
-            throw new PoolInClearingException("Target category(" + key + ") pool was closed or in cleaning");
+            throw new PoolInClearingException("Target category(" + key + ") Pool has been closed or is being cleared");
     }
 
     public boolean isPrintRuntimeLog(K key) throws Exception {

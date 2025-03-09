@@ -153,11 +153,11 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     }
 
     public void clear(K key) throws Exception {
-        getPool().deleteKey(key);
+        getPool().clear(key);
     }
 
     public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
-        getPool().deleteKey(key, forceRecycleBorrowed);
+        getPool().clear(key, forceRecycleBorrowed);
     }
 
     public void deleteKey(K key) throws Exception {

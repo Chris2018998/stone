@@ -591,7 +591,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     //Method-2.3: attempt to get pooled connection(key method)
     private PooledConnection getPooledConnection() throws SQLException {
         if (this.poolState != POOL_READY)
-            throw new ConnectionGetForbiddenException("Pool has been closed or in clearing");
+            throw new ConnectionGetForbiddenException("Pool has been closed or is being cleared");
 
         //1: firstly, get last used connection from threadLocal if threadLocal is supported
         Borrower b = null;
@@ -858,7 +858,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 this.poolState = POOL_READY;
             }
         } else {
-            throw new PoolInClearingException("Pool was closed or in cleaning");
+            throw new PoolInClearingException("Pool has been closed or is being cleared");
         }
     }
 
@@ -870,7 +870,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         this.interruptConnectionCreating(false);
         //3: transfer exception to waiter in queue
         if (!this.waitQueue.isEmpty()) {
-            PoolInClearingException exception = new PoolInClearingException("Pool was closed or in cleaning");
+            PoolInClearingException exception = new PoolInClearingException("Pool has been closed or is being cleared");
             while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 
