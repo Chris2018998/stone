@@ -334,7 +334,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             p.state = CON_CLOSED;//reset to closed state
             if (rawConn != null) oclose(rawConn);
             else if (rawXaConn != null) oclose(rawXaConn);
-            throw e instanceof SQLException ? (SQLException) e : new ConnectionCreateException(e);
+            throw new ConnectionCreateException(e);
         } finally {
             p.creatingInfo = null;//clear filling of pooled connection
         }
