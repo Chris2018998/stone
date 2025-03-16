@@ -49,7 +49,7 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @author Chris Liao
  * @version 1.0
  */
-public final class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMBean, PooledConnectionAliveTest, PooledConnectionTransferPolicy {
+public final class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMBean, BeeConnectionValidator, PooledConnectionTransferPolicy {
     static final Logger Log = LoggerFactory.getLogger(FastConnectionPool.class);
     static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
@@ -86,7 +86,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean isRawXaConnFactory;
     private BeeConnectionFactory rawConnFactory;
     private BeeXaConnectionFactory rawXaConnFactory;
-    private PooledConnectionAliveTest conValidTest;
+    private BeeConnectionValidator connectionAliveTest;
     private ThreadPoolExecutor networkTimeoutExecutor;
     private IdleTimeoutScanThread idleScanThread;
     private boolean enableThreadLocal;
@@ -476,7 +476,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         boolean supportIsValid = true;//assume support
         try {
             if (firstConn.isValid(this.aliveTestTimeout)) {
-                conValidTest = this;
+                connectionAliveTest = this;
             } else {
                 supportIsValid = false;
                 if (this.printRuntimeLog) {
@@ -493,7 +493,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (!supportIsValid) {
             String conTestSql = this.poolConfig.getAliveTestSql();
             boolean supportQueryTimeout = validateTestSql(poolName, firstConn, conTestSql, aliveTestTimeout, defaultAutoCommit);//check test sql
-            conValidTest = new PooledConnectionAliveTestBySql(poolName, conTestSql, aliveTestTimeout, defaultAutoCommit, supportQueryTimeout, printRuntimeLog);
+            connectionAliveTest = new PooledConnectionAliveTestBySql(poolName, conTestSql, aliveTestTimeout, defaultAutoCommit, supportQueryTimeout, printRuntimeLog);
         }
 
         //step8: network timeout check supported in driver or factory
@@ -732,7 +732,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     //Method-2.8: do alive test on a borrowed pooled connection
     private boolean testOnBorrow(PooledConnection p) {
-        if (System.nanoTime() - p.lastAccessTime - this.aliveAssumeTimeMs >= 0L && !this.conValidTest.isAlive(p)) {
+        if (System.nanoTime() - p.lastAccessTime - this.aliveAssumeTimeMs >= 0L && !this.aliveTest(p)) {
             p.onRemove(DESC_RM_BAD);
             this.tryWakeupServantThread();
             return false;
@@ -1076,10 +1076,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-5.17: do alive test on a pooed connection
-    public boolean isAlive(final PooledConnection p) {
+    private boolean aliveTest(PooledConnection p) {
         try {
-            if (p.rawConn.isValid(this.aliveTestTimeout)) {
+            if (connectionAliveTest.isAlive(p.rawConn, aliveTestTimeout)) {
                 p.lastAccessTime = System.nanoTime();
                 return true;
             }
@@ -1088,6 +1087,11 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 Log.warn("BeeCP({})alive test failed on a borrowed connection", this.poolName, e);
         }
         return false;
+    }
+
+    //Method-5.17: do alive test on a pooed connection
+    public boolean isAlive(final Connection con, int timeout) throws SQLException {
+        return con.isValid(timeout);
     }
 
     //Method-5.19: pool monitor vo
@@ -1225,7 +1229,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //class-6.7: alive test on borrowed connections by executing a SQL
-    private static final class PooledConnectionAliveTestBySql implements PooledConnectionAliveTest {
+    private static final class PooledConnectionAliveTestBySql implements BeeConnectionValidator {
         private final String testSql;
         private final String poolName;
         private final boolean printRuntimeLog;
@@ -1244,10 +1248,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //method must work in transaction and rollback final to avoid testing dirty data into db
-        public boolean isAlive(PooledConnection p) {//
+        public boolean isAlive(Connection rawConn, int timeout) {//
             Statement st = null;
             boolean changed = false;
-            Connection rawConn = p.rawConn;
             boolean checkPassed = true;
 
             try {
@@ -1261,7 +1264,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 st = rawConn.createStatement();
                 if (this.supportQueryTimeout) {
                     try {
-                        st.setQueryTimeout(validTestTimeout);
+                        st.setQueryTimeout(timeout);
                     } catch (Throwable e) {
                         if (printRuntimeLog)
                             Log.warn("BeeCP({})failed to set query timeout value on statement of a borrowed connection", poolName, e);
@@ -1271,7 +1274,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 //step3: execute test sql
                 try {
                     st.execute(this.testSql);//alive test sql executed under condition that value of autoCommit property must be false
-                    p.lastAccessTime = System.nanoTime();
                 } finally {
                     rawConn.rollback();//avoid data generated during test saving to db
                 }
