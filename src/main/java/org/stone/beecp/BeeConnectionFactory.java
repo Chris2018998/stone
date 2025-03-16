@@ -36,4 +36,22 @@ public interface BeeConnectionFactory {
      * @throws SQLException when fail to create a connection
      */
     Connection create(String username, String password) throws SQLException;
+
+//    /**
+//     * Alive test on a borrowed connection.
+//     * @param con     to be checked
+//     * @param timeout the time in seconds to wait for check result
+//     * @return true if connection is alive,otherwise return false
+//     * @throws SQLException when error occur during checking
+//     */
+//    boolean isAlive(Connection con, int timeout) throws SQLException;
+//
+//    /**
+//     * Validate SQLException thrown from a working connection,test result determine connection whether evicted from pool.
+//     *
+//     * @param e is thrown from a borrowed connection in working
+//     * @return eviction reason;connection not be evicted if the test reason is null or empty
+//     */
+//    String evictTest(SQLException e);
+
 }
