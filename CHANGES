@@ -4,6 +4,7 @@ stone-1.4.8(pending)
 -----------------------------------------------------
 [beecp]
 1: Change time read methods in pool
+2: Provide connection alive validator interface for customization
 [beeop]
 1: Support generic type
 2: Add a method to handle to get pooled object
