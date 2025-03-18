@@ -137,6 +137,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //Class name of Connection factory,third priority to be chosen
     private String connectionFactoryClassName;
 
+    //Connection alive validator
+    private BeeConnectionValidator aliveValidator;
+    //Class of predicate,second priority to be chosen
+    private Class<? extends BeeConnectionValidator> aliveValidatorClass;
+    //Class name of predicate,third priority to be chosen
+    private String aliveValidatorClassName;
+
     //Connection Predicate to do eviction test,first priority to be chosen
     private BeeConnectionPredicate evictPredicate;
     //Class of predicate,second priority to be chosen
@@ -618,6 +625,30 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactoryClassName = trimString(connectionFactoryClassName);
     }
 
+    public String getAliveValidatorClassName() {
+        return aliveValidatorClassName;
+    }
+
+    public void setAliveValidatorClassName(String aliveValidatorClassName) {
+        this.aliveValidatorClassName = aliveValidatorClassName;
+    }
+
+    public Class<? extends BeeConnectionValidator> getAliveValidatorClass() {
+        return aliveValidatorClass;
+    }
+
+    public void setAliveValidatorClass(Class<? extends BeeConnectionValidator> aliveValidatorClass) {
+        this.aliveValidatorClass = aliveValidatorClass;
+    }
+
+    public BeeConnectionValidator getAliveValidator() {
+        return aliveValidator;
+    }
+
+    public void setAliveValidator(BeeConnectionValidator aliveValidator) {
+        this.aliveValidator = aliveValidator;
+    }
+
     public Class<? extends BeeConnectionPredicate> getEvictPredicateClass() {
         return evictPredicateClass;
     }
@@ -816,6 +847,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
+        BeeConnectionValidator validator = this.createConnectionValidator();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -833,6 +865,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.evictPredicate = predicate;
+        checkedConfig.aliveValidator = validator;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
 
@@ -1052,6 +1085,27 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 throw new BeeDataSourceConfigException("Not found sql exception predicate class[" + evictPredicateClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create sql exception predicate with class[" + predicationClass + "]", e);
+            }
+        }
+
+        return null;
+    }
+
+    //create Validator
+    private BeeConnectionValidator createConnectionValidator() throws BeeDataSourceConfigException {
+        //step1:if exists validator,then return it
+        if (this.aliveValidator != null) return this.aliveValidator;
+
+        //step2: create validator
+        if (aliveValidatorClass != null || isNotBlank(aliveValidatorClassName)) {
+            Class<?> aliveValidatorClass = null;
+            try {
+                aliveValidatorClass = aliveValidatorClass != null ? aliveValidatorClass : Class.forName(aliveValidatorClassName);
+                return (BeeConnectionValidator) createClassInstance(aliveValidatorClass, BeeConnectionPredicate.class, "alive validator");
+            } catch (ClassNotFoundException e) {
+                throw new BeeDataSourceConfigException("Not found alive validator class[" + aliveValidatorClassName + "]", e);
+            } catch (Throwable e) {
+                throw new BeeDataSourceConfigException("Failed to create validator with class[" + aliveValidatorClass + "]", e);
             }
         }
 

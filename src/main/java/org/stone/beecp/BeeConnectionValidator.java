@@ -20,5 +20,20 @@ import java.sql.SQLException;
  */
 public interface BeeConnectionValidator {
 
+    /**
+     * attach a base validator
+     *
+     * @param baseValidator base validator
+     */
+    void attach(BeeConnectionValidator baseValidator);
+
+    /**
+     * Validates a connection at moment on successful borrowed.
+     *
+     * @param con     to be tested
+     * @param timeout is seconds time wait for test result
+     * @return true if alive,otherwise return false
+     * @throws SQLException if error occur during testing
+     */
     boolean isAlive(Connection con, int timeout) throws SQLException;
 }

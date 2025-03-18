@@ -86,7 +86,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean isRawXaConnFactory;
     private BeeConnectionFactory rawConnFactory;
     private BeeXaConnectionFactory rawXaConnFactory;
-    private BeeConnectionValidator connectionAliveTest;
+    private BeeConnectionValidator connectionAliveValidator;
     private ThreadPoolExecutor networkTimeoutExecutor;
     private IdleTimeoutScanThread idleScanThread;
     private boolean enableThreadLocal;
@@ -474,9 +474,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         //step6: check isValid method of connection,if passed,then use this method to do alive check on borrowed connections
         boolean supportIsValid = true;//assume support
+        BeeConnectionValidator defaultAliveValidator = null;
         try {
             if (firstConn.isValid(this.aliveTestTimeout)) {
-                connectionAliveTest = this;
+                defaultAliveValidator = this;
             } else {
                 supportIsValid = false;
                 if (this.printRuntimeLog) {
@@ -493,7 +494,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         if (!supportIsValid) {
             String conTestSql = this.poolConfig.getAliveTestSql();
             boolean supportQueryTimeout = validateTestSql(poolName, firstConn, conTestSql, aliveTestTimeout, defaultAutoCommit);//check test sql
-            connectionAliveTest = new PooledConnectionAliveTestBySql(poolName, conTestSql, aliveTestTimeout, defaultAutoCommit, supportQueryTimeout, printRuntimeLog);
+            defaultAliveValidator = new PooledConnectionAliveTestBySql(poolName, conTestSql, defaultAutoCommit, supportQueryTimeout, printRuntimeLog);
+        }
+        if (poolConfig.getAliveValidator() != null) {
+            this.connectionAliveValidator = poolConfig.getAliveValidator();
+            this.connectionAliveValidator.attach(defaultAliveValidator);
+        } else {
+            this.connectionAliveValidator = defaultAliveValidator;
         }
 
         //step8: network timeout check supported in driver or factory
@@ -1078,7 +1085,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
     private boolean aliveTest(PooledConnection p) {
         try {
-            if (connectionAliveTest.isAlive(p.rawConn, aliveTestTimeout)) {
+            if (connectionAliveValidator.isAlive(p.rawConn, aliveTestTimeout)) {
                 p.lastAccessTime = System.nanoTime();
                 return true;
             }
@@ -1090,6 +1097,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-5.17: do alive test on a pooed connection
+    public void attach(BeeConnectionValidator baseValidator) {
+    }
+
     public boolean isAlive(final Connection con, int timeout) throws SQLException {
         return con.isValid(timeout);
     }
@@ -1233,18 +1243,19 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         private final String testSql;
         private final String poolName;
         private final boolean printRuntimeLog;
-        private final int validTestTimeout;
         private final boolean isDefaultAutoCommit;
         private final boolean supportQueryTimeout;
 
-        PooledConnectionAliveTestBySql(String poolName, String testSql, int validTestTimeout,
+        PooledConnectionAliveTestBySql(String poolName, String testSql,
                                        boolean isDefaultAutoCommit, boolean supportQueryTimeout, boolean printRuntimeLog) {
             this.poolName = poolName;
             this.testSql = testSql;
             this.printRuntimeLog = printRuntimeLog;
-            this.validTestTimeout = validTestTimeout;
             this.isDefaultAutoCommit = isDefaultAutoCommit;//default
             this.supportQueryTimeout = supportQueryTimeout;
+        }
+
+        public void attach(BeeConnectionValidator baseValidator) {
         }
 
         //method must work in transaction and rollback final to avoid testing dirty data into db
