@@ -31,10 +31,12 @@ import static org.stone.tools.CommonUtil.isBlank;
  * @version 1.0
  */
 public class BeanUtil {
+    public static final String Separator_Comma = ",";
     //middle-line:separator symbol in configuration properties name
     public static final String Separator_MiddleLine = "-";
     //under-line:separator symbol in configuration properties name
     public static final String Separator_UnderLine = "_";
+
     //a SLF4 logger used in stone project
     public static final Logger CommonLog = LoggerFactory.getLogger(BeanUtil.class);
 
@@ -338,7 +340,7 @@ public class BeanUtil {
         } else if (targetType == Class.class) {
             return Class.forName(text);
         } else if (targetType.isArray()) {
-            String[] textArray = text.split(",");
+            String[] textArray = text.split(Separator_Comma);
             int elementSize = textArray.length;
             Class<?> elementType = targetType.getComponentType();
             Object elementArray = Array.newInstance(elementType, elementSize);
@@ -362,11 +364,11 @@ public class BeanUtil {
             if (genericParameterType instanceof ParameterizedType) {
                 ParameterizedType parameterizedType = (ParameterizedType) genericParameterType;
                 Class<?> elementType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
-                for (String s : text.split(",")) {
+                for (String s : text.split(Separator_Comma)) {
                     collection.add(convert(s, elementType, null));
                 }
             } else {
-                Collections.addAll(collection, text.split(","));
+                Collections.addAll(collection, text.split(Separator_Comma));
             }
             return collection;
         } else {
