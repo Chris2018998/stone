@@ -69,7 +69,9 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return null;
     }
 
-    public int keySize(){return 1;}
+    public int keySize() {
+        return 1;
+    }
 
     public Object[] keys() {
         return null;
