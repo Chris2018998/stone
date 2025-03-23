@@ -35,20 +35,18 @@ public class ObjectPoolStatics {
 
     public static final Class[] EMPTY_CLASSES = new Class[0];
     public static final String[] EMPTY_CLASS_NAMES = new String[0];
+    //pool state
+    public static final int POOL_NEW = 0;
+    public static final int POOL_STARTING = 1;
+    public static final int POOL_READY = 2;
+    public static final int POOL_CLOSING = 3;
+    public static final int POOL_CLOSED = 4;
+    public static final int POOL_CLEARING = 5;
     //pool object state
     static final int OBJECT_CLOSED = 0;
     static final int OBJECT_IDLE = 1;
     static final int OBJECT_CREATING = 2;
     static final int OBJECT_BORROWED = 3;
-
-    //pool state
-    static final int POOL_NEW = 0;
-    static final int POOL_STARTING = 1;
-    static final int POOL_READY = 2;
-    static final int POOL_CLOSING = 3;
-    static final int POOL_CLOSED = 4;
-    static final int POOL_CLEARING = 5;
-
     //pool thread state
     static final int THREAD_WORKING = 0;
     static final int THREAD_WAITING = 1;
