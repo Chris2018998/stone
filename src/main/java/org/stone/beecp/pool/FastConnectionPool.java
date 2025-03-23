@@ -288,7 +288,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private PooledConnection fillRawConnection(PooledConnection p, int state) throws SQLException {
         //1: print info of creation starting
         if (this.printRuntimeLog)
-            Log.info("BeeCP({}))start to create a connection", this.poolName);
+            Log.info("BeeCP({})start to create a connection", this.poolName);
 
         //2: use factory to create connection
         Connection rawConn = null;
@@ -326,7 +326,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
             //4: print log of creation ending
             if (this.printRuntimeLog)
-                Log.info("BeeCP({}))created a new connection:{} to fill pooled connection:{}", this.poolName, rawConn, p);
+                Log.info("BeeCP({})created a new connection:{} to fill pooled connection:{}", this.poolName, rawConn, p);
 
             //5: return result
             return p;

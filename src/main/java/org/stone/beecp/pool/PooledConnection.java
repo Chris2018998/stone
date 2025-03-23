@@ -213,7 +213,7 @@ final class PooledConnection {
      */
     void onRemove(String msg) {
         if (pool.isPrintRuntimeLog())
-            CommonLog.info("BeeCP({}))begin to remove a pooled connection:{} for cause:{}", pool.getPoolName(), this, msg);
+            CommonLog.info("BeeCP({})begin to remove a pooled connection:{} for cause:{}", pool.getPoolName(), this, msg);
 
         try {
             this.resetRawConn();

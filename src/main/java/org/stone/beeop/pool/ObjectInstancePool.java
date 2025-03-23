@@ -243,7 +243,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             objectFactory.setDefault(key, rawObj);
             p.setRawObject(state, rawObj);
             if (this.printRuntimeLog)
-                Log.info("BeeOP({}))has created a new pooled object:{} with state:{}", this.poolName, p, state);
+                Log.info("BeeOP({})has created a new pooled object:{} with state:{}", this.poolName, p, state);
 
             return p;
         } catch (Throwable e) {
