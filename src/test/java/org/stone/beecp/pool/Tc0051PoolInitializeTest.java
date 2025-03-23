@@ -252,7 +252,8 @@ public class Tc0051PoolInitializeTest extends TestCase {
             new FastConnectionPool().init(config1);
             fail("Failed to test exception from factory");
         } catch (SQLException e) {
-            Assert.assertEquals("the count of created connections has reached max", e.getMessage());
+            Assert.assertTrue(e instanceof ConnectionCreateException);
+            Assert.assertEquals("java.sql.SQLException: the count of created connections has reached max", e.getMessage());
         }
 
         try {
@@ -265,7 +266,8 @@ public class Tc0051PoolInitializeTest extends TestCase {
             new FastConnectionPool().init(config2);
             fail("Failed to test exception from factory");
         } catch (SQLException e) {
-            Assert.assertEquals("the count of created connections has reached max", e.getMessage());
+            Assert.assertTrue(e instanceof ConnectionCreateException);
+            Assert.assertEquals("java.sql.SQLException: the count of created connections has reached max", e.getMessage());
         }
     }
 

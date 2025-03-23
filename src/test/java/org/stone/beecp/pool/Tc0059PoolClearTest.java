@@ -160,7 +160,7 @@ public class Tc0059PoolClearTest extends TestCase {
             pool.clear(false, config3);
             fail("failed test clear");
         } catch (SQLException e) {
-            Assert.assertEquals("Network communications error", e.getMessage());
+            Assert.assertEquals("java.sql.SQLException: Network communications error", e.getMessage());
             config3.setConnectionFactory(null);
 
             pool.clear(false, config3);

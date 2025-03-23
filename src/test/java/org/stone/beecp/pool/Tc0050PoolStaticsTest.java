@@ -228,7 +228,6 @@ public class Tc0050PoolStaticsTest extends TestCase {
         valueMap.remove("max-active");
         setPropertiesValue(bean, valueMap);
         Assert.assertEquals(30, bean.getMaxActive());
-
     }
 
     public void testClassInstanceCreation() throws Exception {
