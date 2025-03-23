@@ -78,7 +78,7 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
     }
 
     //one of completed states
-    public boolean isSuccessful() {
+    public boolean isSucceed() {
         return state == TASK_SUCCEED;
     }
 

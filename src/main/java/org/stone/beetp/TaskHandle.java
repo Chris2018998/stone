@@ -58,7 +58,7 @@ public interface TaskHandle<V> {
      *
      * @return true that task is cancelled
      */
-    boolean isSuccessful();
+    boolean isSucceed();
 
     /**
      * Query task state is whether failed

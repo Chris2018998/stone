@@ -33,7 +33,7 @@ public class OnceTimedTaskCallbackTest extends TestCase {
 
         if (handle.isPeriodic()) TestUtil.assertError("Once Timed Task can't be periodic");
         if (!"Hello".equals(handle.get())) TestUtil.assertError("Once Timed Task test failed");
-        if (!handle.isSuccessful()) TestUtil.assertError("Once Timed Task test failed");
+        if (!handle.isSucceed()) TestUtil.assertError("Once Timed Task test failed");
         if (!callback.beforeInd || !callback.onCallDoneInd) TestUtil.assertError("Call back test Failed");
         if (!"Hello".equals(callback.result)) TestUtil.assertError("Call back test Failed");
     }
