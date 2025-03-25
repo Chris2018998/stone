@@ -84,13 +84,12 @@ public class BeanUtil {
         for (Method method : methods) {
             String methodName = method.getName();
             if (method.getParameterTypes().length == 1 && methodName.startsWith("set") && methodName.length() > 3) {
-                String propertyName = methodName.substring(3);
-                propertyName = propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1);
-                methodMap.put(propertyName, method);
+                methodMap.put(methodName.substring(3, 4).toLowerCase() + methodName.substring(4), method);
             }
         }
         return methodMap;
     }
+
 
     /**
      * gets property value(a string) from a properties map with property name.Three kinds of format conversion are supported on
