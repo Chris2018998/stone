@@ -43,15 +43,15 @@ import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
- * JDBC Connection Pool Implementation
+ * A base JDBC Connection Pool Implementation to support virtual threads
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMBean, BeeConnectionValidator, PooledConnectionTransferPolicy {
+public class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMBean, BeeConnectionValidator, PooledConnectionTransferPolicy {
     static final Logger Log = LoggerFactory.getLogger(FastConnectionPool.class);
     static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
-    private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
+    static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
@@ -88,7 +88,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private BeeConnectionValidator connectionAliveValidator;
     private ThreadPoolExecutor networkTimeoutExecutor;
     private IdleTimeoutScanThread idleScanThread;
-    private boolean enableThreadLocal;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
     private FastConnectionPoolMonitorVo monitorVo;
     private ConnectionPoolHook exitHook;
@@ -168,10 +167,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         //step6: creates pool semaphore and create threadLocal by configured indicator
         this.semaphoreSize = poolConfig.getBorrowSemaphoreSize();
         this.semaphore = new InterruptionSemaphore(this.semaphoreSize, isFairMode);
-        this.enableThreadLocal = poolConfig.isEnableThreadLocal();
-        if (this.threadLocal != null) this.threadLocal = null;//set null if not null
-        if (enableThreadLocal) this.threadLocal = new BorrowerThreadLocal();
-
         //step7: create wait queue,scanning thread,servant thread(an async thread to get connections and transfer to waiters)
         if (POOL_STARTING == poolWorkState) {
             this.waitQueue = new ConcurrentLinkedQueue<>();
@@ -597,26 +592,16 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         return new XaProxyConnection(proxyConn, proxyResource);
     }
 
-    //Method-2.3: attempt to get pooled connection(key method)
     private PooledConnection getPooledConnection(boolean useInputted, String username, String password) throws SQLException {
         if (this.poolState != POOL_READY)
             throw new ConnectionGetForbiddenException("Pool has been closed or is being cleared");
 
-        //1: firstly, get last used connection from threadLocal if threadLocal is supported
-        Borrower b = null;
-        PooledConnection p;
-        if (this.enableThreadLocal) {
-            b = this.threadLocal.get().get();
-            if (b != null) {
-                p = b.lastUsed;
-                if (p != null && p.state == CON_IDLE && ConStUpd.compareAndSet(p, CON_IDLE, CON_BORROWED)) {
-                    if (this.testOnBorrow(p)) return b.lastUsed = p;
-                    b.lastUsed = null;
-                }
-            }
-        }
+        return getPooledConnection(useInputted, username, password, null);
+    }
 
-        //2: get a permit from pool semaphore(reduce concurrency to get connections)
+    //Method-2.3: attempt to get pooled connection(key method)
+    PooledConnection getPooledConnection(boolean useInputted, String username, String password, Borrower b) throws SQLException {
+        //1: get a permit from pool semaphore(reduce concurrency to get connections)
         long deadline = System.nanoTime();
         try {
             if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
@@ -625,28 +610,21 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool semaphore");
         }
 
-        //3: search an idle connection or create a connection on NOT filled pooled connection
+        //2: search an idle connection or create a connection on NOT filled pooled connection
+        PooledConnection p;
         try {
             p = this.searchOrCreate(useInputted, username, password);
+            if (p != null) {//release permit of semaphore and put the get connection to threadLocal if cache supportable
+                semaphore.release();
+                return p;
+            }
         } catch (SQLException e) {
             semaphore.release();
             throw e;
         }
-        //3.1: check searched result
-        final boolean hasCached = b != null;
-        if (p != null) {//release permit of semaphore and put the get connection to threadLocal if cache supportable
-            semaphore.release();
-            if (this.enableThreadLocal) {
-                if (hasCached)
-                    b.lastUsed = p;
-                else
-                    this.threadLocal.set(new WeakReference<>(new Borrower(p)));
-            }
-            return p;
-        }
 
-        //4: join into wait queue for transferred connection released from another borrower
-        if (hasCached)
+        //3: join into wait queue for transferred connection released from another borrower
+        if (b != null)
             b.state = null;
         else
             b = new Borrower();
@@ -655,7 +633,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         Thread borrowThread = b.thread;
         deadline += this.maxWaitNs;
 
-        //5: spin in a loop
+        //4: spin in a loop
         do {
             final Object s = b.state;//acceptable types: PooledConnection,Throwable,null
             if (s instanceof PooledConnection) {
@@ -663,11 +641,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                     this.semaphore.release();
                     this.waitQueue.remove(b);
-
-                    if (this.enableThreadLocal) {//put to thread local
-                        b.lastUsed = p;
-                        if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
-                    }
                     return p;
                 }
             } else if (s instanceof Throwable) {//here: s must be throwable object
@@ -740,7 +713,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     }
 
     //Method-2.8: do alive test on a borrowed pooled connection
-    private boolean testOnBorrow(PooledConnection p) {
+    boolean testOnBorrow(PooledConnection p) {
         if (System.nanoTime() - p.lastAccessTime - this.aliveAssumeTimeMs >= 0L && !this.aliveTest(p)) {
             p.onRemove(DESC_RM_BAD);
             this.tryWakeupServantThread();
@@ -1227,16 +1200,6 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
         public boolean tryCatch(PooledConnection p) {
             return p.state == CON_BORROWED;
-        }
-    }
-
-    //class-6.6: threadLocal caches the last used connections of borrowers(only cache one per borrower)
-    private static final class BorrowerThreadLocal extends ThreadLocal<WeakReference<Borrower>> {
-        BorrowerThreadLocal() {
-        }
-
-        protected WeakReference<Borrower> initialValue() {
-            return new WeakReference<>(new Borrower());
         }
     }
 
