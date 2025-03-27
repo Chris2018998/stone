@@ -11,6 +11,7 @@ package org.stone.beecp;
 
 import org.stone.beecp.pool.ConnectionFactoryByDriver;
 import org.stone.beecp.pool.ConnectionFactoryByDriverDs;
+import org.stone.beecp.pool.FastConnectionPool;
 import org.stone.beecp.pool.XaConnectionFactoryByDriverDs;
 import org.stone.tools.exception.BeanException;
 
@@ -164,7 +165,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //An indicator to enable configuration log print during pool initializes,default is false
     private boolean printConfigInfo;
     //Class name of pool implementation,default is {@code FastConnectionPool}
-    private String poolImplementClassName;
+    private String poolImplementClassName = FastConnectionPool.class.getName();
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                                         //

@@ -30,7 +30,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.Dummy_CommonDataSource;
 import static org.stone.tools.BeanUtil.createClassInstance;
-import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * Bee DataSource wrap implementation of {@link BeeConnectionPool}.
@@ -71,15 +70,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
     private static void createPool(BeeDataSource ds) throws SQLException {
         try {
-            String poolImplementClassName = ds.getPoolImplementClassName();
-            if (isBlank(poolImplementClassName)) {
-                if (ds.isEnableThreadLocal())
-                    poolImplementClassName = org.stone.beecp.pool.FastConnectionPool2.class.getName();
-                else
-                    poolImplementClassName = org.stone.beecp.pool.FastConnectionPool.class.getName();
-            }
-
-            Class<?> poolClass = Class.forName(poolImplementClassName);
+            Class<?> poolClass = Class.forName(ds.getPoolImplementClassName());
             BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolClass, BeeConnectionPool.class, "pool");
             pool.init(ds);
             ds.pool = pool;

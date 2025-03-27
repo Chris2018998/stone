@@ -36,7 +36,7 @@ public interface BeeConnectionPool {
      * Attempts to get a connection from pool.
      *
      * @return a borrowed connection
-     * @throws SQLException                      when fail to create a connectionR
+     * @throws SQLException                      when fail to create a connection
      * @throws ConnectionGetTimeoutException     when wait timeout in pool
      * @throws ConnectionGetInterruptedException while waiting is interrupted
      */
