@@ -95,7 +95,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
     private boolean printRuntimeLog;
 
     //***************************************************************************************************************//
-    //               1: Pool initializes and maintenance on pooled connections(6)                                    //                                                                                  //
+    //               1: Pool initializes and maintenance on pooled connections(6)                                    //
     //***************************************************************************************************************//
     //Method-1.1: pool initializes.
     public void init(BeeDataSourceConfig config) throws SQLException {
@@ -626,7 +626,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //3: search an idle connection or create a connection on NOT filled pooled connection
-        int resultCode = 0;
+        int spinCode = 0;
         try {
             final boolean hasCached = b != null;
             p = this.searchOrCreate(useInputted, username, password);
@@ -646,7 +646,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             else
                 b = new Borrower();
             this.waitQueue.offer(b);
-            resultCode = 1;
+            spinCode = SPIN_IN_WAIT_QUEUE;
             Thread borrowThread = b.thread;
             deadline += this.maxWaitNs;
 
@@ -656,7 +656,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 if (s instanceof PooledConnection) {
                     p = (PooledConnection) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        resultCode = 2;
+                        spinCode = SPIN_CONNECTION_GET;
                         break;
                     }
                 } else if (s instanceof Throwable) {//here: s must be throwable object
@@ -672,34 +672,34 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
                     LockSupport.parkNanos(t);//park over,a transferred connection maybe arrived or an exception,or an interruption occurred while waiting
                     if (borrowThread.isInterrupted() && Thread.interrupted()) {
-                        resultCode = 3;
+                        spinCode = SPIN_INTERRUPTED;
                         break;
                     }
                 } else {//throw a timeout exception
-                    resultCode = 4;
+                    spinCode = SPIN_TIMEOUT;
                     break;
                 }
             } while (true);//while
 
-            if (resultCode == 2) {
+            //6: after spin
+            if (spinCode == SPIN_CONNECTION_GET) {
                 if (this.enableThreadLocal) //put to thread local
                     if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
                 return p;
             } else {
-                if (!BorrowStUpd.compareAndSet(b, null, this)) {
+                if (!BorrowStUpd.compareAndSet(b, null, PendingRemoval)) {
                     Object s = b.state;
-                    if (s instanceof PooledConnection) {
+                    if (s instanceof PooledConnection)
                         this.recycle((PooledConnection) s);
-                    }
                 }
 
-                if (resultCode == 3)
+                if (spinCode == SPIN_INTERRUPTED)
                     throw new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
                 else
                     throw new ConnectionGetTimeoutException("Waited timeout for a released connection");
             }
         } finally {
-            if (resultCode > 0) this.waitQueue.remove(b);
+            if (spinCode > 0) this.waitQueue.remove(b);
             semaphore.release();
         }
     }
