@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import static org.stone.tools.BeanUtil.loadClass;
+
 public class StoneTestRunner {
 
     public static void main(String[] ags) throws Throwable {
@@ -68,7 +70,7 @@ public class StoneTestRunner {
             for (String className : classNames) {
                 System.out.println("Running:" + className);
                 long startTime = System.currentTimeMillis();
-                Class<?> caseClass = Class.forName(className);
+                Class<?> caseClass = loadClass(className);
 
                 TestResult result = runner.doRun(new TestSuite(caseClass));
                 long endTime = System.currentTimeMillis();

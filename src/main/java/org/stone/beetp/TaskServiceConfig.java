@@ -17,6 +17,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 
 import static org.stone.tools.BeanUtil.createClassInstance;
+import static org.stone.tools.BeanUtil.loadClass;
 import static org.stone.tools.CommonUtil.isNotBlank;
 import static org.stone.tools.CommonUtil.trimString;
 
@@ -139,7 +140,7 @@ public class TaskServiceConfig {
         if (threadFactoryClass != null || isNotBlank(threadFactoryClassName)) {
             Class<?> factoryClass = null;
             try {
-                factoryClass = threadFactoryClass != null ? threadFactoryClass : Class.forName(threadFactoryClassName);
+                factoryClass = threadFactoryClass != null ? threadFactoryClass : loadClass(threadFactoryClassName);
                 return (TaskPoolThreadFactory) createClassInstance(factoryClass, TaskPoolThreadFactory.class, "thread factory");
             } catch (ClassNotFoundException e) {
                 throw new TaskServiceConfigException("Not found thread factory class[" + threadFactoryClassName + "]", e);

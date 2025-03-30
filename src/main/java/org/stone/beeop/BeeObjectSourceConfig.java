@@ -555,7 +555,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             Class<?>[] objectInterfaces = new Class[objectInterfaceNameArray.length];
             for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
                 try {
-                    objectInterfaces[i] = Class.forName(objectInterfaceNameArray[i]);
+                    objectInterfaces[i] = loadClass(objectInterfaceNameArray[i]);
                 } catch (ClassNotFoundException e) {
                     throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
                 }
@@ -659,7 +659,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                 try {
                     if (isBlank(this.objectInterfaceNames[i]))
                         throw new BeeObjectSourceConfigException("Object interface class names[" + i + "]is empty or null");
-                    objectInterfaces[i] = Class.forName(this.objectInterfaceNames[i]);
+                    objectInterfaces[i] = loadClass(this.objectInterfaceNames[i]);
                 } catch (ClassNotFoundException e) {
                     throw new BeeObjectSourceConfigException("Not found interface class with class names[" + i + "]", e);
                 }
@@ -677,7 +677,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         if (objectMethodFilterClass != null || isNotBlank(objectMethodFilterClassName)) {
             Class<?> filterClass = null;
             try {
-                filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : Class.forName(objectMethodFilterClassName);
+                filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : loadClass(objectMethodFilterClassName);
                 return (BeeObjectMethodFilter<K>) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object filter class:" + objectMethodFilterClassName);
@@ -697,7 +697,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         if (rawObjectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
             Class<?> factoryClass = null;
             try {
-                factoryClass = objectFactoryClass != null ? objectFactoryClass : Class.forName(objectFactoryClassName);
+                factoryClass = objectFactoryClass != null ? objectFactoryClass : loadClass(objectFactoryClassName);
                 rawObjectFactory = (BeeObjectFactory<K, V>) createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object factory class:" + objectFactoryClassName, e);
@@ -729,7 +729,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         if (objectPredicateClass != null || isNotBlank(objectPredicateClassName)) {
             Class<?> predicationClass = null;
             try {
-                predicationClass = objectPredicateClass != null ? objectPredicateClass : Class.forName(objectPredicateClassName);
+                predicationClass = objectPredicateClass != null ? objectPredicateClass : loadClass(objectPredicateClassName);
                 return (BeeObjectPredicate) createClassInstance(predicationClass, BeeObjectPredicate.class, "object predicate");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found predicate class:" + objectPredicateClassName, e);

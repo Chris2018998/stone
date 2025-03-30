@@ -20,7 +20,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 
-import static org.stone.tools.BeanUtil.CommonLog;
+import static org.stone.tools.BeanUtil.*;
 
 /**
  * Pool Static Center
@@ -195,7 +195,7 @@ public final class ConnectionPoolStatics {
     //***************************************************************************************************************//
     public static Driver loadDriver(String driverClassName) throws BeeDataSourceConfigException {
         try {
-            return (Driver) Class.forName(driverClassName).newInstance();
+            return (Driver) createClassInstance(driverClassName);
         } catch (Throwable e) {
             throw new BeeDataSourceConfigException("Failed to create jdbc driver by class:" + driverClassName, e);
         }
@@ -212,9 +212,7 @@ public final class ConnectionPoolStatics {
                 "org.stone.beecp.pool.ProxyDatabaseMetaData",
                 "org.stone.beecp.pool.ProxyResultSet"};
 
-        ClassLoader loader = ConnectionPoolStatics.class.getClassLoader();
-        for (String className : classNames)
-            Class.forName(className, true, loader);
+        for (String className : classNames) loadClass(className);
     }
 
     static boolean validateTestSql(String poolName, Connection rawCon, String testSql, int validTestTimeout, boolean isDefaultAutoCommit) throws SQLException {

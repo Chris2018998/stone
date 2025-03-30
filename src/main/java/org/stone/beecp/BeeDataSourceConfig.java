@@ -915,7 +915,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (jdbcLinkInfoDecoderClass != null || isNotBlank(jdbcLinkInfoDecoderClassName)) {
             Class<?> decoderClass = null;
             try {
-                decoderClass = jdbcLinkInfoDecoderClass != null ? jdbcLinkInfoDecoderClass : Class.forName(jdbcLinkInfoDecoderClassName);
+                decoderClass = jdbcLinkInfoDecoderClass != null ? jdbcLinkInfoDecoderClass : loadClass(jdbcLinkInfoDecoderClassName);
                 return (BeeJdbcLinkInfoDecoder) createClassInstance(decoderClass, BeeJdbcLinkInfoDecoder.class, "jdbc link info decoder");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Failed to create jdbc link info decoder with class[" + jdbcLinkInfoDecoderClassName + "]", e);
@@ -978,7 +978,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             Class<?> conFactClass = null;
             try {
                 //3.1: load connection factory class with class name
-                conFactClass = this.connectionFactoryClass != null ? this.connectionFactoryClass : Class.forName(this.connectionFactoryClassName);
+                conFactClass = this.connectionFactoryClass != null ? this.connectionFactoryClass : loadClass(this.connectionFactoryClassName);
 
                 //3.2: check connection factory class
                 Class<?>[] parentClasses = {BeeConnectionFactory.class, BeeXaConnectionFactory.class, DataSource.class, XADataSource.class};
@@ -1079,7 +1079,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (evictPredicateClass != null || isNotBlank(evictPredicateClassName)) {
             Class<?> predicationClass = null;
             try {
-                predicationClass = evictPredicateClass != null ? evictPredicateClass : Class.forName(evictPredicateClassName);
+                predicationClass = evictPredicateClass != null ? evictPredicateClass : loadClass(evictPredicateClassName);
                 return (BeeConnectionPredicate) createClassInstance(predicationClass, BeeConnectionPredicate.class, "sql exception predicate");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Not found sql exception predicate class[" + evictPredicateClassName + "]", e);
@@ -1100,7 +1100,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (aliveValidatorClass != null || isNotBlank(aliveValidatorClassName)) {
             Class<?> aliveValidatorClass = null;
             try {
-                aliveValidatorClass = aliveValidatorClass != null ? aliveValidatorClass : Class.forName(aliveValidatorClassName);
+                aliveValidatorClass = aliveValidatorClass != null ? aliveValidatorClass : loadClass(aliveValidatorClassName);
                 return (BeeConnectionValidator) createClassInstance(aliveValidatorClass, BeeConnectionPredicate.class, "alive validator");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Not found alive validator class[" + aliveValidatorClassName + "]", e);

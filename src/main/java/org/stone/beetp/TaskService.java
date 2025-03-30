@@ -21,6 +21,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static org.stone.beetp.pool.PoolConstants.TASK_EXCEPTIONAL;
 import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
+import static org.stone.tools.BeanUtil.loadClass;
 
 /**
  * Task service
@@ -54,7 +55,7 @@ public final class TaskService extends TaskServiceConfig {
     }
 
     private static void createPool(TaskService service) throws Exception {
-        Class<?> poolClass = Class.forName(service.getPoolImplementClassName());
+        Class<?> poolClass = loadClass(service.getPoolImplementClassName());
         if (!TaskPool.class.isAssignableFrom(poolClass))
             throw new TaskServiceConfigException("Invalid execution execution class name:" + service.getPoolImplementClassName());
 

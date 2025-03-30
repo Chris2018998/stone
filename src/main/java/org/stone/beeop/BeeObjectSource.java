@@ -53,8 +53,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     }
 
     private void createPool(BeeObjectSource<K, V> os) throws Exception {
-        Class<?> poolClass = Class.forName(os.getPoolImplementClassName());
-        BeeKeyedObjectPool<K, V> pool = (BeeKeyedObjectPool<K, V>) createClassInstance(poolClass, BeeKeyedObjectPool.class, "pool");
+        BeeKeyedObjectPool<K, V> pool = (BeeKeyedObjectPool<K, V>) createClassInstance(os.getPoolImplementClassName(), BeeKeyedObjectPool.class, "pool");
 
         pool.init(os);
         os.pool = pool;

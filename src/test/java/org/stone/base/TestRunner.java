@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import static org.stone.tools.BeanUtil.loadClass;
+
 public class TestRunner {
 
     public static void main(String[] ags) throws Throwable {
@@ -44,7 +46,7 @@ public class TestRunner {
                 String key = (String) keys.nextElement();
                 String value = properties.getProperty(key);
                 if (pass1.equalsIgnoreCase(value) || pass2.equalsIgnoreCase(value)) {
-                    Class clazz = Class.forName(key);
+                    Class clazz = loadClass(key);
                     classList.add(clazz);
                 }
             }

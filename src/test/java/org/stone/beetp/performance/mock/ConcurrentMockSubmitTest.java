@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.stone.tools.BeanUtil.createClassInstance;
+
 public class ConcurrentMockSubmitTest {
     private static final LinkedHashMap factoryClassNameMap = new LinkedHashMap(4);
 
@@ -38,7 +40,7 @@ public class ConcurrentMockSubmitTest {
             String className = entry.getValue();
 
             try {
-                TimeMonitorTaskThreadsFactory factory = (TimeMonitorTaskThreadsFactory) Class.forName(className).newInstance();
+                TimeMonitorTaskThreadsFactory factory = (TimeMonitorTaskThreadsFactory) createClassInstance(className);
                 TimeMonitorTaskSubmitThread[] threads = factory.create(config);
                 for (TimeMonitorTaskSubmitThread thread : threads) {
                     thread.start();
