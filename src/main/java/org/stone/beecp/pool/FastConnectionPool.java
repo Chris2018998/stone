@@ -664,9 +664,9 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                 }
 
                 //** if transferred object is not one of[PooledConnection,Throwable,null],set state to null same to a pooled Connection for robustness
-                if (s != null) b.state = null;
                 final long t = deadline - System.nanoTime();
                 if (t > 0L) {//getting time out check,if not,then attempt to wake up servant thread to work to get one for it before parking
+                    if (s != null) b.state = null;
                     if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
                         LockSupport.unpark(this);
 
@@ -683,8 +683,10 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
             //6: after spin
             if (spinCode == SPIN_CONNECTION_GET) {
-                if (this.enableThreadLocal) //put to thread local
+                if (this.enableThreadLocal) { //put to thread local
+                    b.lastUsed = p;
                     if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+                }
                 return p;
             } else {
                 if (!BorrowStUpd.compareAndSet(b, null, PendingRemoval)) {

@@ -294,74 +294,81 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         }
 
         //3: try to search idle one or create new one
+        int spinCode = 0;
         try {
+            final boolean hasCached = b != null;
             p = this.searchOrCreate();
-        } catch (Exception e) {
-            semaphore.release();
-            throw e;
-        }
-        //3.1: check searched result
-        final boolean hasCached = b != null;
-        if (p != null) {
-            semaphore.release();
-            if (this.enableThreadLocal) {
-                if (hasCached)
-                    b.lastUsed = p;
-                else
-                    this.threadLocal.set(new WeakReference<>(new ObjectBorrower<>(p)));
-            }
-            return handleFactory.createHandle(p);
-        }
-
-        //4: add the borrower to wait queue
-        if (hasCached)
-            b.state = null;
-        else
-            b = new ObjectBorrower<>();
-        this.waitQueue.offer(b);
-        Thread borrowThread = b.thread;
-        BeeObjectException cause = null;
-        deadline += this.maxWaitNs;
-
-
-        //5: self-spin to get transferred object
-        do {
-            final Object s = b.state;//possible values: PooledObject,Throwable,null
-            if (s instanceof PooledObject) {
-                p = (PooledObject) s;
-                if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                    semaphore.release();
-                    waitQueue.remove(b);
-                    if (this.enableThreadLocal) {
+            if (p != null) {
+                if (this.enableThreadLocal) {
+                    if (hasCached)
                         b.lastUsed = p;
-                        if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
-                    }
-                    return handleFactory.createHandle(p);
+                    else
+                        this.threadLocal.set(new WeakReference<>(new ObjectBorrower<>(p)));
                 }
-            } else if (s instanceof Throwable) {//here: s must be throwable object
-                semaphore.release();
-                waitQueue.remove(b);
-                throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
+                return handleFactory.createHandle(p);
             }
 
-            //reach here:s==null or s is a PooledObject
-            if (cause != null) {
-                BorrowStUpd.compareAndSet(b, s, cause);
-            } else {
-                if (s != null) b.state = null;
+            //4: add the borrower to wait queue
+            if (hasCached)
+                b.state = null;
+            else
+                b = new ObjectBorrower<>();
+            this.waitQueue.offer(b);
+            spinCode = 1;
+            Thread borrowThread = b.thread;
+            deadline += this.maxWaitNs;
+
+            //5: self-spin to get transferred object
+            do {
+                final Object s = b.state;//possible values: PooledObject,Throwable,null
+                if (s instanceof PooledObject) {
+                    p = (PooledObject) s;
+                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                        spinCode = ObjectPoolStatics.SPIN_OBJECT_GET;
+                        break;
+                    }
+                } else if (s instanceof Throwable) {//here: s must be throwable object
+                    throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
+                }
+
                 final long t = deadline - System.nanoTime();
                 if (t > 0L) {
+                    if (s != null) b.state = null;
                     if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
                         ownerPool.submitServantTask(this);
-
                     LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
-                    if (borrowThread.isInterrupted() && Thread.interrupted())
-                        cause = new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
+                    if (borrowThread.isInterrupted() && Thread.interrupted()) {
+                        spinCode = ObjectPoolStatics.SPIN_INTERRUPTED;
+                        break;
+                    }
                 } else {//timeout
-                    cause = new ObjectGetTimeoutException("Waited timeout for a released object");
+                    spinCode = ObjectPoolStatics.SPIN_TIMEOUT;
+                    break;
                 }
+            } while (true);//while
+
+            //6: after spin
+            if (spinCode == ObjectPoolStatics.SPIN_OBJECT_GET) {
+                if (this.enableThreadLocal) { //put to thread local
+                    b.lastUsed = p;
+                    if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+                }
+                return handleFactory.createHandle(p);
+            } else {
+                if (!BorrowStUpd.compareAndSet(b, null, ObjectPoolStatics.PendingRemoval)) {
+                    Object s = b.state;
+                    if (s instanceof PooledObject) this.recycle((PooledObject) s);
+                }
+
+                if (spinCode == ObjectPoolStatics.SPIN_INTERRUPTED)
+                    throw new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
+                else
+                    throw new ObjectGetTimeoutException("Waited timeout for a released object");
             }
-        } while (true);//while
+        } finally {
+            if (spinCode > 0) this.waitQueue.remove(b);
+            semaphore.release();
+        }
     }
 
     //Method-3.2: return object to pool after borrower end of use object
