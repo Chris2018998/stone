@@ -626,60 +626,43 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
 
         //3: search an idle connection or create a connection on NOT filled pooled connection
+        int resultCode = 0;
         try {
+            final boolean hasCached = b != null;
             p = this.searchOrCreate(useInputted, username, password);
-        } catch (SQLException e) {
-            semaphore.release();
-            throw e;
-        }
-        //3.1: check searched result
-        final boolean hasCached = b != null;
-        if (p != null) {//release permit of semaphore and put the get connection to threadLocal if cache supportable
-            semaphore.release();
-            if (this.enableThreadLocal) {
-                if (hasCached)
-                    b.lastUsed = p;
-                else
-                    this.threadLocal.set(new WeakReference<>(new Borrower(p)));
-            }
-            return p;
-        }
-
-        //4: join into wait queue for transferred connection released from another borrower
-        if (hasCached)
-            b.state = null;
-        else
-            b = new Borrower();
-        this.waitQueue.offer(b);
-        SQLException cause = null;
-        Thread borrowThread = b.thread;
-        deadline += this.maxWaitNs;
-
-        //5: spin in a loop
-        do {
-            final Object s = b.state;//acceptable types: PooledConnection,Throwable,null
-            if (s instanceof PooledConnection) {
-                p = (PooledConnection) s;
-                if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                    this.semaphore.release();
-                    this.waitQueue.remove(b);
-
-                    if (this.enableThreadLocal) {//put to thread local
+            if (p != null) {//release permit of semaphore and put the get connection to threadLocal if cache supportable
+                if (this.enableThreadLocal) {
+                    if (hasCached)
                         b.lastUsed = p;
-                        if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
-                    }
-                    return p;
+                    else
+                        this.threadLocal.set(new WeakReference<>(new Borrower(p)));
                 }
-            } else if (s instanceof Throwable) {//here: s must be throwable object
-                this.semaphore.release();
-                this.waitQueue.remove(b);
-                throw s instanceof SQLException ? (SQLException) s : new ConnectionGetException((Throwable) s);
+                return p;
             }
 
-            //reach here:s==null or s is a PooledConnection
-            if (cause != null) {
-                BorrowStUpd.compareAndSet(b, s, cause);
-            } else {
+            //4: join into wait queue for transferred connection released from another borrower
+            if (hasCached)
+                b.state = null;
+            else
+                b = new Borrower();
+            this.waitQueue.offer(b);
+            resultCode = 1;
+            Thread borrowThread = b.thread;
+            deadline += this.maxWaitNs;
+
+            //5: spin in a loop
+            do {
+                final Object s = b.state;//acceptable types: PooledConnection,Throwable,null
+                if (s instanceof PooledConnection) {
+                    p = (PooledConnection) s;
+                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                        resultCode = 2;
+                        break;
+                    }
+                } else if (s instanceof Throwable) {//here: s must be throwable object
+                    throw s instanceof SQLException ? (SQLException) s : new ConnectionGetException((Throwable) s);
+                }
+
                 //** if transferred object is not one of[PooledConnection,Throwable,null],set state to null same to a pooled Connection for robustness
                 if (s != null) b.state = null;
                 final long t = deadline - System.nanoTime();
@@ -688,13 +671,37 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                         LockSupport.unpark(this);
 
                     LockSupport.parkNanos(t);//park over,a transferred connection maybe arrived or an exception,or an interruption occurred while waiting
-                    if (borrowThread.isInterrupted() && Thread.interrupted())
-                        cause = new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
+                    if (borrowThread.isInterrupted() && Thread.interrupted()) {
+                        resultCode = 3;
+                        break;
+                    }
                 } else {//throw a timeout exception
-                    cause = new ConnectionGetTimeoutException("Waited timeout for a released connection");
+                    resultCode = 4;
+                    break;
                 }
+            } while (true);//while
+
+            if (resultCode == 2) {
+                if (this.enableThreadLocal) //put to thread local
+                    if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+                return p;
+            } else {
+                if (!BorrowStUpd.compareAndSet(b, null, this)) {
+                    Object s = b.state;
+                    if (s instanceof PooledConnection) {
+                        this.recycle((PooledConnection) s);
+                    }
+                }
+
+                if (resultCode == 3)
+                    throw new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
+                else
+                    throw new ConnectionGetTimeoutException("Waited timeout for a released connection");
             }
-        } while (true);//while
+        } finally {
+            if (resultCode > 0) this.waitQueue.remove(b);
+            semaphore.release();
+        }
     }
 
     //Method-2.4: increment servant's count of retry to get connections
