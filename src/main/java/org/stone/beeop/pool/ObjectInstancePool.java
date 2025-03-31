@@ -294,9 +294,9 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         }
 
         //3: try to search idle one or create new one
-        int spinCode = 0;
+        int exceptionType;
+        final boolean hasCached = b != null;
         try {
-            final boolean hasCached = b != null;
             p = this.searchOrCreate();
             if (p != null) {
                 if (this.enableThreadLocal) {
@@ -314,7 +314,6 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             else
                 b = new ObjectBorrower<>();
             this.waitQueue.offer(b);
-            spinCode = 1;
             Thread borrowThread = b.thread;
             deadline += this.maxWaitNs;
 
@@ -324,10 +323,15 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                 if (s instanceof PooledObject) {
                     p = (PooledObject) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        spinCode = ObjectPoolStatics.SPIN_OBJECT_GET;
-                        break;
+                        this.waitQueue.remove(b);
+                        if (this.enableThreadLocal) { //put to thread local
+                            b.lastUsed = p;
+                            if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+                        }
+                        return handleFactory.createHandle(p);
                     }
                 } else if (s instanceof Throwable) {//here: s must be throwable object
+                    this.waitQueue.remove(b);
                     throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
                 }
 
@@ -338,37 +342,31 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                         ownerPool.submitServantTask(this);
                     LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
                     if (borrowThread.isInterrupted() && Thread.interrupted()) {
-                        spinCode = ObjectPoolStatics.SPIN_INTERRUPTED;
+                        this.waitQueue.remove(b);
+                        exceptionType = ObjectPoolStatics.SPIN_INTERRUPTED;
                         break;
                     }
                 } else {//timeout
-                    spinCode = ObjectPoolStatics.SPIN_TIMEOUT;
+                    this.waitQueue.remove(b);
+                    exceptionType = ObjectPoolStatics.SPIN_TIMEOUT;
                     break;
                 }
             } while (true);//while
-
-            //6: after spin
-            if (spinCode == ObjectPoolStatics.SPIN_OBJECT_GET) {
-                if (this.enableThreadLocal) { //put to thread local
-                    b.lastUsed = p;
-                    if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
-                }
-                return handleFactory.createHandle(p);
-            } else {
-                if (!BorrowStUpd.compareAndSet(b, null, ObjectPoolStatics.PendingRemoval)) {
-                    Object s = b.state;
-                    if (s instanceof PooledObject) this.recycle((PooledObject) s);
-                }
-
-                if (spinCode == ObjectPoolStatics.SPIN_INTERRUPTED)
-                    throw new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
-                else
-                    throw new ObjectGetTimeoutException("Waited timeout for a released object");
-            }
         } finally {
-            if (spinCode > 0) this.waitQueue.remove(b);
             semaphore.release();
         }
+
+        //6: after spin(reach here after break)
+        if (!BorrowStUpd.compareAndSet(b, null, ObjectPoolStatics.PendingRemoval)) {
+            Object s = b.state;
+            if (s instanceof PooledObject) this.recycle((PooledObject) s);
+        }
+
+        if (exceptionType == ObjectPoolStatics.SPIN_INTERRUPTED)
+            throw new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
+        else
+            throw new ObjectGetTimeoutException("Waited timeout for a released object");
+
     }
 
     //Method-3.2: return object to pool after borrower end of use object
