@@ -625,9 +625,8 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             throw new ConnectionGetInterruptedException("An interruption occurred while waiting on pool semaphore");
         }
 
-        int exceptionType;
-        final boolean hasCached = b != null;
         try {
+            final boolean hasCached = b != null;
             //3: search an idle connection or create a connection on NOT filled pooled connection
             p = this.searchOrCreate(useInputted, username, password);
             if (p != null) {
@@ -651,7 +650,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
 
             //5: spin in a loop
             do {
-                final Object s = b.state;//acceptable types: PooledConnection,Throwable,null
+                Object s = b.state;//acceptable types: PooledConnection,Throwable,null
                 if (s instanceof PooledConnection) {
                     p = (PooledConnection) s;
                     if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
@@ -674,35 +673,48 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
                         LockSupport.unpark(this);
 
                     LockSupport.parkNanos(t);//park over,a transferred connection maybe arrived or an exception,or an interruption occurred while waiting
-                    if (borrowThread.isInterrupted() && Thread.interrupted()) {
-                        this.waitQueue.remove(b);
-                        exceptionType = SPIN_INTERRUPTED;
-                        break;
-                    }
+                    if (borrowThread.isInterrupted() && Thread.interrupted())
+                        this.handleTimeoutAndInterruption(false, null, b, hasCached);
                 } else {//throw a timeout exception
-                    this.waitQueue.remove(b);
-                    exceptionType = SPIN_TIMEOUT;
-                    break;
+                    return this.handleTimeoutAndInterruption(true, s, b, hasCached);
                 }
             } while (true);//while
         } finally {
             semaphore.release();
         }
-
-        //after spin(reach here after break)
-        if (!BorrowStUpd.compareAndSet(b, null, PendingRemoval)) {
-            Object s = b.state;
-            if (s instanceof PooledConnection)
-                this.recycle((PooledConnection) s);
-        }
-        if (exceptionType == SPIN_INTERRUPTED)
-            throw new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
-        else
-            throw new ConnectionGetTimeoutException("Waited timeout for a released connection");
-
     }
 
-    //Method-2.4: increment servant's count of retry to get connections
+    //Method-2.6: handle timeout and interruption in spin
+    private PooledConnection handleTimeoutAndInterruption(boolean isTimeout, Object s, Borrower b, boolean hasCached) throws SQLException {
+        this.waitQueue.remove(b);
+
+        PooledConnection p = null;
+        if (s == null) {
+            s = b.state;
+            if (s instanceof PooledConnection) {
+                p = (PooledConnection) s;
+                if (!(this.transferPolicy.tryCatch(p) && this.testOnBorrow(p))) {
+                    p = null;
+                }
+            }
+        }
+
+        if (isTimeout) {
+            if (p != null) {
+                if (this.enableThreadLocal) { //put to thread local
+                    b.lastUsed = p;
+                    if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+                }
+                return p;
+            }
+            throw new ConnectionGetTimeoutException("Waited timeout for a released connection");
+        } else {
+            if (p != null) this.recycle(p);
+            throw new ConnectionGetInterruptedException("An interruption occurred while waiting for a released connection");
+        }
+    }
+
+    //Method-2.7: increment servant's count of retry to get connections
     private void tryWakeupServantThread() {
         int c;
         do {
@@ -713,7 +725,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
             LockSupport.unpark(this);
     }
 
-    //Method-2.4: recycle a pooled connection and then transfer it to a waiter if exists
+    //Method-2.8: recycle a pooled connection and then transfer it to a waiter if exists
     void recycle(PooledConnection p) {
         if (isCompeteMode) p.state = CON_IDLE;
         for (Borrower b : this.waitQueue) {
@@ -728,13 +740,13 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         tryWakeupServantThread();
     }
 
-    //Method-2.6: terminate a Pooled Connection
+    //Method-2.9: terminate a Pooled Connection
     void abort(PooledConnection p, String reason) {
         p.onRemove(reason);
         this.tryWakeupServantThread();
     }
 
-    //Method-2.7: transfer an exception occurred in searching,this method called by servant thread
+    //Method-2.10: transfer an exception occurred in searching,this method called by servant thread
     private void transferException(Throwable e) {
         for (Borrower b : waitQueue) {
             if (b.state == null && BorrowStUpd.compareAndSet(b, null, e)) {
@@ -744,7 +756,7 @@ public final class FastConnectionPool extends Thread implements BeeConnectionPoo
         }
     }
 
-    //Method-2.8: do alive test on a borrowed pooled connection
+    //Method-2.11: do alive test on a borrowed pooled connection
     private boolean testOnBorrow(PooledConnection p) {
         if (System.nanoTime() - p.lastAccessTime - this.aliveAssumeTimeMs >= 0L && !this.aliveTest(p)) {
             p.onRemove(DESC_RM_BAD);
