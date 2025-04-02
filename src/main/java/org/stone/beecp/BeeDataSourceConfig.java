@@ -774,14 +774,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1:load configuration item values from outside properties
-        Map<String, String> setValueMap;
-        synchronized (configProperties) {/* synchronization mode */
-            Set<Map.Entry<Object, Object>> entrySet = configProperties.entrySet();
-            setValueMap = new HashMap<>(entrySet.size());
-            for (Map.Entry<Object, Object> entry : entrySet) {
-                setValueMap.put((String) entry.getKey(), (String) entry.getValue());
-            }
-        }
+        Map<String, String> setValueMap = new HashMap(configProperties);
 
         //2: exclude some special keys in setValueMap
         String connectPropertiesText = setValueMap.remove(CONFIG_CONNECT_PROP);//remove item if exists in properties file before injection
