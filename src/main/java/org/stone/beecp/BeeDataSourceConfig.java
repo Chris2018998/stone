@@ -1091,14 +1091,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         //step2: create validator
         if (aliveValidatorClass != null || isNotBlank(aliveValidatorClassName)) {
-            Class<?> aliveValidatorClass = null;
+            Class<?> validatorClass = null;
             try {
-                aliveValidatorClass = aliveValidatorClass != null ? aliveValidatorClass : loadClass(aliveValidatorClassName);
-                return (BeeConnectionValidator) createClassInstance(aliveValidatorClass, BeeConnectionPredicate.class, "alive validator");
+                validatorClass = aliveValidatorClass != null ? aliveValidatorClass : loadClass(aliveValidatorClassName);
+                return (BeeConnectionValidator) createClassInstance(validatorClass, BeeConnectionValidator.class, "alive validator");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Not found alive validator class[" + aliveValidatorClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create validator with class[" + aliveValidatorClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create validator with class[" + validatorClass + "]", e);
             }
         }
 
