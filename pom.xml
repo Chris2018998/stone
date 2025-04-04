@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>1.4.8</version>
+    <version>1.4.9</version>
     <name>stone</name>
     <url>https://www.github.com/Chris2018998/stone</url>
     <description>Java Pools</description>
@@ -64,7 +64,6 @@
             <version>3.29.0-GA</version>
             <scope>provided</scope>
         </dependency>
-
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -141,9 +140,9 @@
                         <include>org/stone/beecp/other/slow/*Test.java</include>
 
                         <!-- beeop cases -->
-                        <include>org/stone/beeop/config/*Test.java</include>
-                        <include>org/stone/beeop/objectsource/*Test.java</include>
-                        <include>org/stone/beeop/pool/*Test.java</include>
+                       <include>org/stone/beeop/config/*Test.java</include>
+                       <include>org/stone/beeop/objectsource/*Test.java</include>
+                       <include>org/stone/beeop/pool/*Test.java</include>
                     </includes>
                 </configuration>
             </plugin>
@@ -203,7 +202,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.11.1</version>
+                <version>3.11.2</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>

@@ -1,5 +1,12 @@
 stone changes
 
+stone-1.4.9
+-----------------------------------------------------
+[beecp]
+1: improve spin for getting connection
+[beeop]
+1: improve spin for getting object
+
 stone-1.4.8
 -----------------------------------------------------
 [beecp]
