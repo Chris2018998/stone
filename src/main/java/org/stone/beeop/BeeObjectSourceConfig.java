@@ -526,19 +526,19 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1: load configuration item values from outside properties
-        Map<String, String> setValueMap = new HashMap(configProperties);
+        Map<String, String> setValueMap;
         if (isNotBlank(keyPrefix)) {
-            final int keyPrefixLen = keyPrefix.length();
             if (!keyPrefix.endsWith(".")) keyPrefix = keyPrefix + ".";
-            Iterator<Map.Entry<String, String>> iterator = setValueMap.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, String> entry = iterator.next();
-                iterator.remove();
-                String key = entry.getKey();
+            final int keyPrefixLen = keyPrefix.length();
+            setValueMap = new HashMap(configProperties.size());
+            for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
+                String key = (String) entry.getKey();
                 if (key.startsWith(keyPrefix)) {
-                    setValueMap.put(key.substring(keyPrefixLen), entry.getValue());
+                    setValueMap.put(key.substring(keyPrefixLen), (String) entry.getValue());
                 }
             }
+        } else {
+            setValueMap = new HashMap(configProperties);
         }
 
         //2: remove some special keys in setValueMap
