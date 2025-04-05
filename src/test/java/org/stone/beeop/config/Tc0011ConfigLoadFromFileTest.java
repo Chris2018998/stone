@@ -186,5 +186,35 @@ public class Tc0011ConfigLoadFromFileTest extends TestCase {
             String message = e.getMessage();
             Assert.assertTrue(message != null && message.contains("Failed to convert value[oooo]to property type(maxActive:int)"));
         }
+
+
+    }
+
+    public void testKeyPrefix() {
+        try {
+            String prefix = "beeop";
+            Properties properties = new Properties();
+            properties.put("beeop.maxActive", "10");
+            BeeObjectSourceConfig config1 = OsConfigFactory.createEmpty();
+            config1.loadFromProperties(properties, prefix);
+            Assert.assertEquals(config1.getMaxActive(), 10);
+        } catch (BeeObjectSourceConfigException e) {
+            String message = e.getMessage();
+            Assert.assertTrue(message != null && message.contains("Failed to convert value[oooo]to property type(maxActive:int)"));
+        }
+
+        try {
+            String prefix = "beeop.";
+            Properties properties = new Properties();
+            properties.put("beeop.maxActive", "10");
+            properties.put("be.initialSize", "5");
+            BeeObjectSourceConfig config2 = OsConfigFactory.createEmpty();
+            config2.loadFromProperties(properties, prefix);
+            Assert.assertEquals(config2.getMaxActive(), 10);
+            Assert.assertEquals(config2.getInitialSize(), 0);
+        } catch (BeeObjectSourceConfigException e) {
+            String message = e.getMessage();
+            Assert.assertTrue(message != null && message.contains("Failed to convert value[oooo]to property type(maxActive:int)"));
+        }
     }
 }
