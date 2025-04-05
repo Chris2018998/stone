@@ -4,8 +4,10 @@ stone-1.4.9
 -----------------------------------------------------
 [beecp]
 1: improve spin for getting connection
+2: support key prefix in properties file and properties object
 [beeop]
 1: improve spin for getting object
+2: support key prefix in properties file and properties object
 
 stone-1.4.8
 -----------------------------------------------------
