@@ -470,6 +470,18 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //                                     4: configuration file load(3)                                             //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
+        loadFromPropertiesFile(filename, null);
+    }
+
+    public void loadFromPropertiesFile(File file) {
+        loadFromPropertiesFile(file, null);
+    }
+
+    public void loadFromProperties(Properties configProperties) {
+        loadFromProperties(configProperties, null);
+    }
+
+    public void loadFromPropertiesFile(String filename, String keyPrefix) {
         if (isBlank(filename))
             throw new IllegalArgumentException("Configuration file name can't be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
@@ -479,21 +491,21 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
-            loadFromProperties(fileProperties);
+            loadFromProperties(fileProperties, keyPrefix);
         } else if (fileLowerCaseName.startsWith("classpath:")) {//2:'classpath:' prefix
             String cpFileName = fileLowerCaseName.substring("classpath:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
-            loadFromProperties(fileProperties);
+            loadFromProperties(fileProperties, keyPrefix);
         } else {//load a real path
             File file = new File(filename);
             if (!file.exists()) throw new IllegalArgumentException("Not found configuration file:" + filename);
             if (!file.isFile())
                 throw new IllegalArgumentException("Target object is a valid configuration file," + filename);
-            loadFromPropertiesFile(file);
+            loadFromPropertiesFile(file, keyPrefix);
         }
     }
 
-    public void loadFromPropertiesFile(File file) {
+    public void loadFromPropertiesFile(File file, String keyPrefix) {
         if (file == null) throw new IllegalArgumentException("Configuration properties file can't be null");
         if (!file.exists()) throw new IllegalArgumentException("Configuration properties file not found:" + file);
         if (!file.isFile()) throw new IllegalArgumentException("Target object is not a valid file");
@@ -503,18 +515,31 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         try (InputStream stream = Files.newInputStream(file.toPath())) {
             Properties configProperties = new Properties();
             configProperties.load(stream);
-            this.loadFromProperties(configProperties);
+            this.loadFromProperties(configProperties, keyPrefix);
         } catch (IOException e) {
             throw new IllegalArgumentException("Failed to load configuration file:" + file, e);
         }
     }
 
-    public void loadFromProperties(Properties configProperties) {
+    public void loadFromProperties(Properties configProperties, String keyPrefix) {
         if (configProperties == null || configProperties.isEmpty())
             throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1: load configuration item values from outside properties
         Map<String, String> setValueMap = new HashMap(configProperties);
+        if (isNotBlank(keyPrefix)) {
+            final int keyPrefixLen = keyPrefix.length();
+            if (!keyPrefix.endsWith(".")) keyPrefix = keyPrefix + ".";
+            Iterator<Map.Entry<String, String>> iterator = setValueMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, String> entry = iterator.next();
+                iterator.remove();
+                String key = entry.getKey();
+                if (key.startsWith(keyPrefix)) {
+                    setValueMap.put(key.substring(keyPrefixLen), entry.getValue());
+                }
+            }
+        }
 
         //2: remove some special keys in setValueMap
         String factoryPropertiesText = setValueMap.remove(CONFIG_FACTORY_PROP);
