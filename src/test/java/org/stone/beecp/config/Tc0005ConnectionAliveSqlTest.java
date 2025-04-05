@@ -54,6 +54,6 @@ public class Tc0005ConnectionAliveSqlTest extends TestCase {
         }
 
         config.setAliveTestSql("SELECT 1");
-        Assert.assertEquals("SELECT 1",config.getAliveTestSql());
+        Assert.assertEquals("SELECT 1", config.getAliveTestSql());
     }
 }
