@@ -12,6 +12,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
 
 public class Tc0092ConnectionEvictTest extends TestCase {
     private final int errorCode = 0b010000;
@@ -90,11 +91,18 @@ public class Tc0092ConnectionEvictTest extends TestCase {
 
     public void testOnAbort() throws SQLException {
         BeeDataSourceConfig config = createDefault();
+        config.setPoolName("test");
         config.setInitialSize(4);
+        config.setMaxActive(4);
         FastConnectionPool pool = new FastConnectionPool();
         pool.init(config);
 
         BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
+        Assert.assertEquals("test", vo.getPoolName());
+        Assert.assertEquals(4, vo.getPoolMaxSize());
+        Assert.assertEquals("compete", vo.getPoolMode());
+        Assert.assertEquals(POOL_READY, vo.getPoolState());
+
         Assert.assertEquals(0, vo.getBorrowedSize());
         Assert.assertEquals(4, vo.getIdleSize());
         Connection con = pool.getConnection();
