@@ -1,3 +1,12 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under Apache License v2.0
+ */
 package org.stone.beecp.pool;
 
 import junit.framework.TestCase;
@@ -14,6 +23,9 @@ import java.sql.SQLException;
 import static org.stone.beecp.config.DsConfigFactory.createDefault;
 import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
 
+/**
+ * @author Chris Liao
+ */
 public class Tc0092ConnectionEvictTest extends TestCase {
     private final int errorCode = 0b010000;
     private final String errorState = "57P02";

@@ -38,6 +38,9 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.loadDriver;
 import static org.stone.beecp.pool.ConnectionPoolStatics.oclose;
 import static org.stone.tools.BeanUtil.*;
 
+/**
+ * @author Chris Liao
+ */
 public class Tc0050PoolStaticsTest extends TestCase {
 
     public void testInvalidDriverClass() {
