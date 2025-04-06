@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
+import static org.stone.tools.BeanUtil.BeeClassLoader;
 import static org.stone.tools.BeanUtil.loadClass;
 
 public class StoneTestRunner {
@@ -38,7 +39,7 @@ public class StoneTestRunner {
         try {
             SortedProperties properties = new SortedProperties();
             propertiesStream = StoneTestRunner.class.getResourceAsStream(caseFile);
-            propertiesStream = StoneTestRunner.class.getClassLoader().getResourceAsStream(caseFile);
+            propertiesStream = BeeClassLoader.getResourceAsStream(caseFile);
             if (propertiesStream == null) propertiesStream = StoneTestRunner.class.getResourceAsStream(caseFile);
             if (propertiesStream == null) throw new IOException("Can't find file:'testCase.properties' in classpath");
 

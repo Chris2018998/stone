@@ -15,6 +15,8 @@ import java.io.InputStream;
 import java.util.Objects;
 import java.util.Properties;
 
+import static org.stone.tools.BeanUtil.BeeClassLoader;
+
 /**
  * common util
  *
@@ -68,7 +70,7 @@ public class CommonUtil {
     }
 
     public static Properties loadPropertiesFromClassPathFile(String filename) {
-        try (InputStream fileStream = CommonUtil.class.getClassLoader().getResourceAsStream(filename)) {
+        try (InputStream fileStream = BeeClassLoader.getResourceAsStream(filename)) {
             if (fileStream == null) throw new FileNotFoundException("Not found file:" + filename);
             Properties properties = new Properties();
             properties.load(fileStream);

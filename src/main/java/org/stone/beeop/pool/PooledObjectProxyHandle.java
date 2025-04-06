@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
+import static org.stone.tools.BeanUtil.BeeClassLoader;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
@@ -28,11 +29,11 @@ import static org.stone.tools.CommonUtil.isNotBlank;
 public final class PooledObjectProxyHandle<K, V> extends PooledObjectPlainHandle<K, V> {
     private final V objectProxy;
 
-    PooledObjectProxyHandle(PooledObject<K, V> p, BeeObjectPredicate predicate, ClassLoader poolClassLoader,
+    PooledObjectProxyHandle(PooledObject<K, V> p, BeeObjectPredicate predicate,
                             Class<?>[] objectInterfaces, BeeObjectMethodFilter<K> methodFilter) {
         super(p, predicate);
         this.objectProxy = (V) Proxy.newProxyInstance(
-                poolClassLoader,
+                BeeClassLoader,
                 objectInterfaces,
                 new ObjectReflectHandler(p, this, predicate, methodFilter));
     }

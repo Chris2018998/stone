@@ -100,19 +100,12 @@ public final class ConnectionPoolStatics {
     static final String DESC_RM_CLOSED = "closed";
     static final String DESC_RM_CLEAR = "clear";
     static final String DESC_RM_DESTROY = "destroy";
-    //Spin Code
-    static final int SPIN_IN_WAIT_QUEUE = 1;
-    static final int SPIN_CONNECTION_GET = 2;
-    static final int SPIN_INTERRUPTED = 3;
-    static final int SPIN_TIMEOUT = 4;
-    //pending removal
-    static final Object PendingRemoval = "Pending Removal";
 
     //***************************************************************************************************************//
     //                                1: jdbc global proxy (3)                                                       //
     //***************************************************************************************************************//
     static final Connection CLOSED_CON = (Connection) Proxy.newProxyInstance(
-            ConnectionPoolStatics.class.getClassLoader(),
+            BeeClassLoader,
             new Class[]{Connection.class},
             new InvocationHandler() {
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -125,7 +118,7 @@ public final class ConnectionPoolStatics {
             }
     );
     static final CallableStatement CLOSED_CSTM = (CallableStatement) Proxy.newProxyInstance(
-            ConnectionPoolStatics.class.getClassLoader(),
+            BeeClassLoader,
             new Class[]{CallableStatement.class},
             new InvocationHandler() {
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -138,7 +131,7 @@ public final class ConnectionPoolStatics {
             }
     );
     static final ResultSet CLOSED_RSLT = (ResultSet) Proxy.newProxyInstance(
-            ConnectionPoolStatics.class.getClassLoader(),
+            BeeClassLoader,
             new Class[]{ResultSet.class},
             new InvocationHandler() {
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

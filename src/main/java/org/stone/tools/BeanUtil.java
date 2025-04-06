@@ -39,7 +39,7 @@ public class BeanUtil {
     //a SLF4 logger used in stone project
     public static final Logger CommonLog = LoggerFactory.getLogger(BeanUtil.class);
     //Class loader
-    private static final ClassLoader classLoader = BeanUtil.class.getClassLoader();
+    public static final ClassLoader BeeClassLoader = BeanUtil.class.getClassLoader();
 
     /**
      * set a field accessible under AccessController
@@ -233,7 +233,7 @@ public class BeanUtil {
      * @throws ClassNotFoundException when class not found
      */
     public static Class<?> loadClass(String className) throws ClassNotFoundException {
-        return Class.forName(className, true, classLoader);
+        return Class.forName(className, true, BeeClassLoader);
     }
 
     /**
@@ -246,7 +246,7 @@ public class BeanUtil {
      * @throws IllegalAccessException when class not found
      */
     public static Object createClassInstance(String className) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        return Class.forName(className, true, classLoader).newInstance();
+        return Class.forName(className, true, BeeClassLoader).newInstance();
     }
 
     /**
@@ -409,7 +409,7 @@ public class BeanUtil {
             }
             return collection;
         } else {
-            Object objInstance = Class.forName(text, true, classLoader).newInstance();
+            Object objInstance = Class.forName(text, true, BeeClassLoader).newInstance();
             if (targetType.isInstance(objInstance)) return objInstance;
             throw new ClassCastException();
         }

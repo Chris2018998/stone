@@ -123,7 +123,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
 
         if (objectInterfaces != null && objectInterfaces.length > 0)
-            this.handleFactory = new ObjectProxyHandleFactory<>(predicate, this.getClass().getClassLoader(), objectInterfaces, methodFilter);
+            this.handleFactory = new ObjectProxyHandleFactory<>(predicate, objectInterfaces, methodFilter);
         else
             this.handleFactory = new ObjectPlainHandleFactory<>(predicate);
 
@@ -749,19 +749,17 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     private static class ObjectProxyHandleFactory<K, V> extends ObjectPlainHandleFactory<K, V> {
-        private final ClassLoader poolClassLoader;
         private final Class<?>[] objectInterfaces;
         private final BeeObjectMethodFilter<K> methodFilter;
 
-        ObjectProxyHandleFactory(BeeObjectPredicate predicate, ClassLoader poolClassLoader, Class<?>[] objectInterfaces, BeeObjectMethodFilter<K> methodFilter) {
+        ObjectProxyHandleFactory(BeeObjectPredicate predicate, Class<?>[] objectInterfaces, BeeObjectMethodFilter<K> methodFilter) {
             super(predicate);
-            this.poolClassLoader = poolClassLoader;
             this.objectInterfaces = objectInterfaces;
             this.methodFilter = methodFilter;
         }
 
         BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) {
-            return new PooledObjectProxyHandle<>(p, predicate, poolClassLoader, objectInterfaces, methodFilter);
+            return new PooledObjectProxyHandle<>(p, predicate, objectInterfaces, methodFilter);
         }
     }
 

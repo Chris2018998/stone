@@ -15,6 +15,7 @@ import java.sql.*;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import static org.stone.tools.BeanUtil.BeeClassLoader;
 import static org.stone.tools.CommonUtil.isBlank;
 
 /**
@@ -89,7 +90,7 @@ final class ProxyClassGenerator {
         ClassPool classPool = ClassPool.getDefault();
         classPool.importPackage("java.sql");
         classPool.importPackage("org.stone.beecp.pool");
-        classPool.appendClassPath(new LoaderClassPath(ProxyClassGenerator.class.getClassLoader()));
+        classPool.appendClassPath(new LoaderClassPath(BeeClassLoader));
 
         //............ProxyConnection Begin...............
         CtClass ctConnectionClass = classPool.get(Connection.class.getName());
