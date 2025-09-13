@@ -1,0 +1,64 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under GNU Lesser General Public License v2.1.
+ */
+package org.stone.test.shine.concurrent.locks.reentrantLock;
+
+import org.stone.study.shine.util.concurrent.locks.ReentrantLock;
+import org.stone.test.shine.concurrent.ConcurrentMockThread;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.stone.tools.CommonUtil.objectEquals;
+
+/**
+ * mock thread
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+public class LockAcquireThread extends ConcurrentMockThread {
+    private final ReentrantLock lock;
+
+    public LockAcquireThread(ReentrantLock lock, String methodName) {
+        super(methodName);
+        this.lock = lock;
+        this.result = false;
+    }
+
+    public LockAcquireThread(ReentrantLock lock, String methodName, long timeout, TimeUnit timeUnit) {
+        super(methodName, timeout, timeUnit);
+        this.lock = lock;
+        this.result = false;
+    }
+
+    public void run() {
+        try {
+            if ("lock".equals(methodName)) {
+                lock.lock();
+                this.result = true;
+            } else if ("lockInterruptibly".equals(methodName)) {
+                lock.lockInterruptibly();
+                this.result = true;
+            } else if ("tryLock".equals(methodName) && timeUnit != null) {
+                this.result = lock.tryLock(timeout, timeUnit);
+            } else if ("tryLock".equals(methodName)) {
+                this.result = lock.tryLock();
+            }
+        } catch (InterruptedException e) {
+            this.interruptedException = e;
+        }
+    }
+
+    public void unlock() {
+        if (objectEquals(result, true)) {
+            lock.unlock();
+            this.result = false;
+        }
+    }
+}

@@ -75,15 +75,15 @@ public final class PoolTaskCenter implements TaskPool {
 
     private void startup(TaskServiceConfig config) {
         this.monitorVo = new PoolMonitorVo();
-        this.maxTaskSize = config.getMaxTaskSize();
-        this.maxScheduleTaskSize = config.getMaxScheduleTaskSize();
+        this.maxTaskSize = config.getMaxOnceTaskSize();
+        this.maxScheduleTaskSize = config.getMaxTimerTaskSize();
         this.poolTerminateWaitQueue = new ConcurrentLinkedQueue<>();
 
-        long keepAliveTimeNanos = MILLISECONDS.toNanos(config.getWorkerKeepAliveTime());
+        long keepAliveTimeNanos = MILLISECONDS.toNanos(config.getOnceWorkerKeepAliveTime());
         boolean useTimePark = keepAliveTimeNanos > 0L;
         int workerSpins = useTimePark ? maxTimedSpins : maxUntimedSpins;
 
-        this.workerSize = config.getWorkerSize();
+        this.workerSize = config.getOnceWorkerCount();
         this.maxNoOfWorkers = workerSize - 1;
         this.workers = new TaskExecutionWorker[workerSize];
         this.taskBuckets = new ConcurrentLinkedQueue[workerSize];

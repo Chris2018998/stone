@@ -9,15 +9,15 @@
  */
 package org.stone.beecp.jta;
 
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.Transaction;
+import jakarta.transaction.TransactionManager;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
 
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
-import javax.transaction.Status;
-import javax.transaction.Synchronization;
-import javax.transaction.Transaction;
-import javax.transaction.TransactionManager;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -29,7 +29,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import static javax.transaction.Status.STATUS_ACTIVE;
+import static jakarta.transaction.Status.STATUS_ACTIVE;
+
 
 /**
  * DataSource implementation for jta

@@ -9,16 +9,20 @@
  */
 package org.stone.beecp;
 
+import org.stone.beecp.pool.FastConnectionPool;
+import org.stone.beecp.pool.FastTraceConnectionPool;
 import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreatedException;
+import org.stone.tools.BeanUtil;
 
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
 import java.io.PrintWriter;
+import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
@@ -29,7 +33,10 @@ import java.util.logging.Logger;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.Dummy_CommonDataSource;
+import static org.stone.tools.BeanUtil.CommonLog;
 import static org.stone.tools.BeanUtil.createClassInstance;
+import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
  * Bee DataSource wrap implementation of {@link BeeConnectionPool}.
@@ -42,6 +49,7 @@ import static org.stone.tools.BeanUtil.createClassInstance;
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    protected BeeConnectionTracker conTracker;
     private long maxWaitNanos = SECONDS.toNanos(8L);//default vale same to config
     private BeeConnectionPool pool;
     private CommonDataSource subDs;//used to set loginTimeout
@@ -69,10 +77,17 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     private static void createPool(BeeDataSource ds) throws SQLException {
+        String poolImplementClassName = ds.getPoolImplementClassName();
         try {
-            BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(ds.getPoolImplementClassName(), BeeConnectionPool.class, "pool");
+            if (isBlank(poolImplementClassName)) {
+                poolImplementClassName = (ds.getConnectionTracker() != null || ds.getConnectionTrackerClass() != null || isNotBlank(ds.getConnectionTrackerClassName())) ?
+                        FastTraceConnectionPool.class.getName() : FastConnectionPool.class.getName();
+            }
+
+            BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
             pool.init(ds);
             ds.pool = pool;
+            ds.conTracker = ds.getConnectionTracker();
 
             Object connectionFactory = ds.getConnectionFactory();
             if (connectionFactory instanceof CommonDataSource)
@@ -84,7 +99,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         } catch (SQLException e) {
             throw e;
         } catch (Throwable e) {
-            throw new PoolCreateFailedException("Failed to create a pool with class:" + ds.getPoolImplementClassName(), e);
+            throw new PoolCreateFailedException("Failed to create a pool with class:" + poolImplementClassName, e);
         }
     }
 
@@ -101,14 +116,14 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return createPoolByLock().getXAConnection();
     }
 
-    public Connection getConnection(String username, String password) throws SQLException {
-        if (this.ready) return pool.getConnection(username, password);
-        return createPoolByLock().getConnection(username, password);
+    public Connection getConnection(String user, String password) throws SQLException {
+        CommonLog.info("getConnection (user,password) ignores authentication - returning default connection");
+        return getConnection();
     }
 
-    public XAConnection getXAConnection(String username, String password) throws SQLException {
-        if (this.ready) return pool.getXAConnection(username, password);
-        return createPoolByLock().getXAConnection(username, password);
+    public XAConnection getXAConnection(String user, String password) throws SQLException {
+        CommonLog.info("getXAConnection (user,password) ignores authentication - returning default XAConnection");
+        return getXAConnection();
     }
 
     private BeeConnectionPool createPoolByLock() throws SQLException {
@@ -219,5 +234,46 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private BeeConnectionPool getPool() throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
         return this.pool;
+    }
+
+    //***************************************************************************************************************//
+    //                                     override methods(3)                                                       //
+    //***************************************************************************************************************//
+    public void setUsername(String username) {
+        if (pool == null) {
+            super.setUsername(username);
+        } else {
+            set(subDs, "setUsername", username);
+        }
+    }
+
+    public void setPassword(String password) {
+        if (pool == null) {
+            super.setPassword(password);
+        } else {
+            set(subDs, "setPassword", password);
+        }
+    }
+
+    public void setUrl(String jdbcUrl) {
+        setJdbcUrl(jdbcUrl);
+    }
+
+    public void setJdbcUrl(String jdbcUrl) {
+        if (pool == null) {
+            super.setJdbcUrl(jdbcUrl);
+        } else {
+            set(subDs, "setJdbcUrl", jdbcUrl);
+        }
+    }
+
+    private void set(Object target, String setMethodName, String value) {
+        try {
+            Method method = target.getClass().getMethod(setMethodName, String.class);
+            BeanUtil.setAccessible(target, method);
+            method.invoke(target, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

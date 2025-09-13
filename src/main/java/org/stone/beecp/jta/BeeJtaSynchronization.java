@@ -9,8 +9,9 @@
  */
 package org.stone.beecp.jta;
 
-import javax.transaction.Synchronization;
-import javax.transaction.Transaction;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.Transaction;
+
 import java.sql.Connection;
 import java.util.concurrent.ConcurrentHashMap;
 

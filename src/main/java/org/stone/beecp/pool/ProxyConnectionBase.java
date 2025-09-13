@@ -9,6 +9,8 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.beecp.BeeConnectionTracker;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.Executor;
@@ -24,11 +26,20 @@ import static org.stone.tools.CommonUtil.objectEquals;
  */
 public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
     protected Connection raw;
+    protected BeeConnectionTracker tracker;
 
     ProxyConnectionBase(PooledConnection p) {
         super(p);
         raw = p.rawConn;
         p.proxyInUsing = this;
+    }
+
+    ProxyConnectionBase(PooledConnection p, BeeConnectionTracker tracker) {
+        super(p);
+        raw = p.rawConn;
+        p.proxyInUsing = this;
+
+        this.tracker = tracker;
     }
 
     //***************************************************************************************************************//
@@ -82,13 +93,13 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
     public final void commit() throws SQLException {
         this.raw.commit();
         this.p.commitDirtyInd = false;
-        this.p.lastAccessTime = System.nanoTime();
+        this.p.lastAccessTime = System.currentTimeMillis();
     }
 
     public final void rollback() throws SQLException {
         this.raw.rollback();
         this.p.commitDirtyInd = false;
-        this.p.lastAccessTime = System.nanoTime();
+        this.p.lastAccessTime = System.currentTimeMillis();
     }
 
     public void setTransactionIsolation(int level) throws SQLException {

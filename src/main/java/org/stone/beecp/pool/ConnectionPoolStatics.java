@@ -15,12 +15,10 @@ import org.stone.beecp.pool.exception.TestSqlExecFailedException;
 import javax.sql.CommonDataSource;
 import javax.sql.XAConnection;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 
-import static org.stone.tools.BeanUtil.*;
+import static org.stone.tools.BeanUtil.CommonLog;
 
 /**
  * Pool Static Center
@@ -67,19 +65,18 @@ public final class ConnectionPoolStatics {
         }
     };
 
+    //connection state
+    public static final int CON_CLOSED = 0;
+    public static final int CON_IDLE = 1;
+    public static final int CON_CREATING = 2;
+    public static final int CON_BORROWED = 3;
     //pool state
     public static final int POOL_NEW = 0;
     public static final int POOL_STARTING = 1;
     public static final int POOL_READY = 2;
-    public static final int POOL_CLEARING = 3;
-    public static final int POOL_CLOSING = 4;
-    public static final int POOL_CLOSED = 5;
-
-    //connection state
-    static final int CON_CLOSED = 0;
-    static final int CON_IDLE = 1;
-    static final int CON_CREATING = 2;
-    static final int CON_BORROWED = 3;
+    public static final int POOL_CLOSING = 3;
+    public static final int POOL_CLOSED = 4;
+    public static final int POOL_CLEARING = 5;
 
     //pool thread state
     static final int THREAD_WORKING = 0;
@@ -97,7 +94,7 @@ public final class ConnectionPoolStatics {
     static final String DESC_RM_BAD = "bad";
     static final String DESC_RM_ABORT = "abort";
     static final String DESC_RM_IDLE = "idle";
-    static final String DESC_RM_CLOSED = "closed";
+    // static final String DESC_RM_CLOSED = "closed";
     static final String DESC_RM_CLEAR = "clear";
     static final String DESC_RM_DESTROY = "destroy";
 
@@ -105,41 +102,35 @@ public final class ConnectionPoolStatics {
     //                                1: jdbc global proxy (3)                                                       //
     //***************************************************************************************************************//
     static final Connection CLOSED_CON = (Connection) Proxy.newProxyInstance(
-            BeeClassLoader,
+            ConnectionPoolStatics.class.getClassLoader(),
             new Class[]{Connection.class},
-            new InvocationHandler() {
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    if ("toString".equals(method.getName())) {
-                        return "Connection has been closed";
-                    } else {
-                        throw new SQLException("No operations allowed after connection closed");
-                    }
+            (proxy, method, args) -> {
+                if ("toString".equals(method.getName())) {
+                    return "Connection has been closed";
+                } else {
+                    throw new SQLException("No operations allowed after connection closed");
                 }
             }
     );
     static final CallableStatement CLOSED_CSTM = (CallableStatement) Proxy.newProxyInstance(
-            BeeClassLoader,
+            ConnectionPoolStatics.class.getClassLoader(),
             new Class[]{CallableStatement.class},
-            new InvocationHandler() {
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    if ("toString".equals(method.getName())) {
-                        return "Statement has been closed";
-                    } else {
-                        throw new SQLException("No operations allowed after statement closed");
-                    }
+            (proxy, method, args) -> {
+                if ("toString".equals(method.getName())) {
+                    return "Statement has been closed";
+                } else {
+                    throw new SQLException("No operations allowed after statement closed");
                 }
             }
     );
     static final ResultSet CLOSED_RSLT = (ResultSet) Proxy.newProxyInstance(
-            BeeClassLoader,
+            ConnectionPoolStatics.class.getClassLoader(),
             new Class[]{ResultSet.class},
-            new InvocationHandler() {
-                public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    if ("toString".equals(method.getName())) {
-                        return "ResultSet has been closed";
-                    } else {
-                        throw new SQLException("No operations allowed after resultSet closed");
-                    }
+            (proxy, method, args) -> {
+                if ("toString".equals(method.getName())) {
+                    return "ResultSet has been closed";
+                } else {
+                    throw new SQLException("No operations allowed after resultSet closed");
                 }
             }
     );
@@ -182,10 +173,6 @@ public final class ConnectionPoolStatics {
     //***************************************************************************************************************//
     //                               3: JDBC body auto fill by javassist methods(2)                                  //
     //***************************************************************************************************************//
-    static ProxyConnectionBase createProxyConnection(PooledConnection p) throws SQLException {
-        throw new SQLException("Proxy classes not be generated,please execute 'ProxyClassGenerator' after compile");
-    }
-
     static ResultSet createProxyResultSet(ResultSet raw, ProxyStatementBase owner, PooledConnection p) throws SQLException {
         throw new SQLException("Proxy classes not be generated,please execute 'ProxyClassGenerator' after compile");
     }
@@ -195,7 +182,7 @@ public final class ConnectionPoolStatics {
     //***************************************************************************************************************//
     public static Driver loadDriver(String driverClassName) throws BeeDataSourceConfigException {
         try {
-            return (Driver) createClassInstance(driverClassName);
+            return (Driver) Class.forName(driverClassName).getDeclaredConstructor().newInstance();
         } catch (Throwable e) {
             throw new BeeDataSourceConfigException("Failed to create jdbc driver by class:" + driverClassName, e);
         }
@@ -212,12 +199,16 @@ public final class ConnectionPoolStatics {
                 "org.stone.beecp.pool.ProxyDatabaseMetaData",
                 "org.stone.beecp.pool.ProxyResultSet"};
 
-        for (String className : classNames) loadClass(className);
+        ClassLoader loader = ConnectionPoolStatics.class.getClassLoader();
+        for (String className : classNames)
+            Class.forName(className, true, loader);
     }
 
-    static boolean validateTestSql(String poolName, Connection rawCon, String testSql, int validTestTimeout, boolean isDefaultAutoCommit) throws SQLException {
-        boolean changed = false;
+    //If driver not support 'isValid' method,this static method is called on first connection to validate test sql and whether supported 'setQueryTimeout' method
+    static boolean validateTestSQL(String poolName, Connection rawCon, String testSql, int validTestTimeout, boolean isDefaultAutoCommit) throws SQLException {
         Statement st = null;
+        boolean changed = false;
+
         try {
             //step1: setAutoCommit to 'false'
             if (isDefaultAutoCommit) {

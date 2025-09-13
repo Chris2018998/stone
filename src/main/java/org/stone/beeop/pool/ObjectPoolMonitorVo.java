@@ -32,9 +32,8 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
 
-    ObjectPoolMonitorVo(
-            String poolName, String hostIP, long threadId,
-            String threadName, String poolMode, int poolMaxSize) {
+    public ObjectPoolMonitorVo(
+            String poolName, String poolMode, int poolMaxSize) {
         this.poolName = poolName;
         this.poolMode = poolMode;
         this.maxSize = poolMaxSize;
@@ -56,7 +55,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return poolState;
     }
 
-    void setPoolState(int poolState) {
+    public void setPoolState(int poolState) {
         this.poolState = poolState;
     }
 
@@ -76,7 +75,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return idleSize;
     }
 
-    void setIdleSize(int idleSize) {
+    public void setIdleSize(int idleSize) {
         this.idleSize = idleSize;
     }
 
@@ -84,7 +83,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return borrowedSize;
     }
 
-    void setBorrowedSize(int borrowedSize) {
+    public void setBorrowedSize(int borrowedSize) {
         this.borrowedSize = borrowedSize;
     }
 
@@ -92,7 +91,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return creatingCount;
     }
 
-    void setCreatingCount(int creatingCount) {
+    public void setCreatingCount(int creatingCount) {
         this.creatingCount = creatingCount;
     }
 
@@ -100,7 +99,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return creatingTimeoutCount;
     }
 
-    void setCreatingTimeoutCount(int creatingTimeoutCount) {
+    public void setCreatingTimeoutCount(int creatingTimeoutCount) {
         this.creatingTimeoutCount = creatingTimeoutCount;
     }
 
@@ -108,7 +107,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return semaphoreWaitingSize;
     }
 
-    void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
+    public void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
     }
 
@@ -116,10 +115,9 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return transferWaitingSize;
     }
 
-    void setTransferWaitingSize(int transferWaitingSize) {
+    public void setTransferWaitingSize(int transferWaitingSize) {
         this.transferWaitingSize = transferWaitingSize;
     }
-
 
 }
 

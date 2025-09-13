@@ -59,7 +59,7 @@ public final class TaskService extends TaskServiceConfig {
         if (!TaskPool.class.isAssignableFrom(poolClass))
             throw new TaskServiceConfigException("Invalid execution execution class name:" + service.getPoolImplementClassName());
 
-        TaskPool pool = (TaskPool) poolClass.newInstance();
+        TaskPool pool = (TaskPool) poolClass.getDeclaredConstructor().newInstance();
         pool.init(service);
         service.pool = pool;
         service.ready = true;

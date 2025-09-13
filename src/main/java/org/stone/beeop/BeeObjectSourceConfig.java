@@ -32,49 +32,53 @@ import static org.stone.tools.CommonUtil.*;
 /**
  * Bee object source configuration object
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */
 public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
-    //An atomic integer for generating index appended to pool name as suffix,its value starts with 1
+    //An atomic integer to generate sequence value as suffix of a pool name,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
-    //A properties map whose entries set to object factory during pool initializes
+    //A map stores some properties of object factory,these properties injected to factory during pool initialization
     private final Map<String, Object> factoryProperties = new HashMap<>(0);
 
     //Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
     private String poolName;
-    //Object getting mode applied on semaphore and transfer,default is false,unfair mode
+    //Object getting mode in pool
     private boolean fairMode;
-    //Creation size of object when pool initialize,default is zero
+    //Object creation size during pool initialization,default is zero
     private int initialSize;
-    //Maximum of object category,default is 50
+    //Max reachable size of object categories in pool,default is 50
     private int maxKeySize = 50;
-    //Maximum of object per variety,capacity = maxObjectKeySize*maxActive
+    //Max reachable size of pooled objects of per category,pool total capacity = maxObjectKeySize * maxActive
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //Maximum of semaphore permit per variety object
+    //Permit size of semaphore for per object category
     private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //Milliseconds: max wait time in pool to get an object for borrower,default is 8000 milliseconds(8 seconds)
+    //Milliseconds: max wait time for a borrower to get a object from pool,default is 8000 milliseconds(8 seconds)
     private long maxWait = SECONDS.toMillis(8L);
-    //An indicator to create initial object by async mode,default is false(synchronization mode)
+    //An indicator of object creation,true that pool use a thread to create initial objects during initialization,default is false
     private boolean asyncCreateInitObject;
 
-    //Milliseconds: max idle time on object not borrowed, default is 18000 milliseconds(3 minutes)
+    //Milliseconds: max idle time of pooled objects stay in pool,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = MINUTES.toMillis(3L);
-    //Milliseconds: max inactive time on borrowed objects,timeout objects are recycled to pool by force;default is zero,no timeout,no force recycle for it
+    //Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
     private long holdTimeout;
 
     //Seconds: max wait time to get alive test result on borrowed objects,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //Milliseconds: a threshold time of alive test when borrowed success,if time gap value since last access is less than it,no test on object,default is 500 milliseconds
+    //Milliseconds: a threshold time of alive since from last test,if gap time is less than it,assume objects are alive,and skip test,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //Milliseconds: an interval time that pool scans out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
+    //Milliseconds: an interval time of pool thread to find out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
     private long timerCheckInterval = MINUTES.toMillis(3L);
-    //A boolean control argument for borrowed object on pool close,true is that force recycle them immediately,otherwise that wait them return to pool,then physical close them,default is false.
+    //An indicator that how to close borrowed objects when pool close or pool clean,true is that pool recycles them immediately,false that pool wait them return to pool,default is false.
     private boolean forceRecycleBorrowedOnClose;
-    //Milliseconds: park time for wait borrowed objects return to pool when pool close or pool clear,default is 3000 milliseconds
+    //An indicator that shutdown thread pool when restart or shutdown object pool.
+    private boolean forceShutdownThreadPoolOnClose;
+    //Milliseconds: wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
 
-    //An indicator to enable or disable pool thread local to cache last borrowed object(false can be used to support virtual threads)
+    //An indicator,true is that pool use a threadLocal to store used object for borrowers(false can be used to support virtual threads)
     private boolean enableThreadLocal = true;
     //An indicator to enable Jmx registration,default is false
     private boolean enableJmx;
@@ -82,7 +86,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private boolean printRuntimeLog;
     //An indicator to enable configuration log print during pool initializes,default is false
     private boolean printConfigInfo;
-    //A list of configuration items ignore print when pool initialization,default is none
+    //A list of field name,not be log print during pool initialization,default is null
     private List<String> configPrintExclusionList;
 
     //An array of interfaces implemented by object class
@@ -90,26 +94,21 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //A class name array of interface implemented by object class
     private String[] objectInterfaceNames;
 
-    //Factory to create object instances to pool,first priority for selected if exists
+
+    //Object factory to create pooled objects to pool,first priority for being used if exists
     private BeeObjectFactory<K, V> objectFactory;
-    //Class of factory to create object instances to pool,second priority for selected if exists
+    //Class of object factory,second priority for being used if exists
     private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
-    //Class name of factory to create object instances to pool,third priority for selected if exists
+    //Class name of object factory,third priority for being used if exists
     private String objectFactoryClassName;
 
-    //Filter on method call of object instances,first priority for selected if exists
-    private BeeObjectMethodFilter<K> objectMethodFilter;
-    //Class of filter on method call of object instances,first priority for selected if exists
-    private Class<? extends BeeObjectMethodFilter<K>> objectMethodFilterClass;
-    //Class name of filter on method call of object instances,third priority for selected if exists
-    private String objectMethodFilterClassName;
-
-    //Predicate to do eviction test on exception object instances,first priority for selected if exists
+    //Predicate to do eviction test on exception objects,first priority for selected if exists
     private BeeObjectPredicate objectPredicate;
-    //Class of predicate to do eviction test on exception object instances,second priority for selected if exists
+    //Class of predicate,second priority for being used if exists
     private Class<? extends BeeObjectPredicate> objectPredicateClass;
-    //Class name of predicate to do eviction test on exception object instances,third priority for selected if exists
+    //Class name of predicate,third priority for being used if exists
     private String objectPredicateClassName;
+
 
     //Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
@@ -177,10 +176,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     public void setMaxActive(int maxActive) {
         if (maxActive <= 0)
             throw new InvalidParameterException("The given value for configuration item 'max-active' must be greater than zero");
-
         this.maxActive = maxActive;
         borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
-
     }
 
     public int getMaxKeySize() {
@@ -270,6 +267,14 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
         this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
+    }
+
+    public boolean isForceShutdownThreadPoolOnClose() {
+        return forceShutdownThreadPoolOnClose;
+    }
+
+    public void setForceShutdownThreadPoolOnClose(boolean forceShutdownThreadPoolOnClose) {
+        this.forceShutdownThreadPoolOnClose = forceShutdownThreadPoolOnClose;
     }
 
     public long getParkTimeForRetry() {
@@ -375,30 +380,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setObjectFactoryClassName(String objectFactoryClassName) {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
-    }
-
-    public Class<? extends BeeObjectMethodFilter<K>> getObjectMethodFilterClass() {
-        return objectMethodFilterClass;
-    }
-
-    public void setObjectMethodFilterClass(Class<? extends BeeObjectMethodFilter<K>> filterClass) {
-        this.objectMethodFilterClass = filterClass;
-    }
-
-    public String getObjectMethodFilterClassName() {
-        return objectMethodFilterClassName;
-    }
-
-    public void setObjectMethodFilterClassName(String objectMethodFilterClassName) {
-        this.objectMethodFilterClassName = objectMethodFilterClassName;
-    }
-
-    public BeeObjectMethodFilter<K> getObjectMethodFilter() {
-        return objectMethodFilter;
-    }
-
-    public void setObjectMethodFilter(BeeObjectMethodFilter<K> objectMethodFilter) {
-        this.objectMethodFilter = objectMethodFilter;
     }
 
     public BeeObjectPredicate getObjectPredicate() {
@@ -526,11 +507,11 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             throw new IllegalArgumentException("Configuration properties can't be null or empty");
 
         //1: load configuration item values from outside properties
-        Map<String, String> setValueMap;
+        HashMap<String, String> setValueMap;
         if (isNotBlank(keyPrefix)) {
-            if (!keyPrefix.endsWith(".")) keyPrefix = keyPrefix + ".";
+            if (keyPrefix.charAt(keyPrefix.length() - 1) != '.') keyPrefix = keyPrefix + ".";
             final int keyPrefixLen = keyPrefix.length();
-            setValueMap = new HashMap(configProperties.size());
+            setValueMap = new HashMap<>(configProperties.size());
             for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
                 String key = (String) entry.getKey();
                 if (key.startsWith(keyPrefix)) {
@@ -605,10 +586,26 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
         //2: try to load interfaces
         Class<?>[] objectInterfaces = this.loadObjectInterfaces();
+        if (objectInterfaces != null) {
+            int superClassCount = 0;
+            for (Class<?> clazz : objectInterfaces) {
+                if (!clazz.isInterface()) {
+                    superClassCount++;
+                    if (Modifier.isFinal(clazz.getModifiers()))
+                        throw new BeeObjectSourceConfigException("Object supper class cannot be final type,class:" + clazz.getName());
+                    try {
+                        clazz.getDeclaredConstructor();
+                    } catch (NoSuchMethodException e) {
+                        throw new BeeObjectSourceConfigException("Not found a constructor without parameters in super class:" + clazz.getName());
+                    }
+                }
+            }
+            if (superClassCount > 1)
+                throw new BeeObjectSourceConfigException("The count of super class cannot be greater than 1");
+        }
 
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
-        BeeObjectMethodFilter<K> methodFilter = this.tryCreateMethodFilter();
 
         //4: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
@@ -617,7 +614,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         //5: assign above objects to the checked configuration object(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
         if (predicate != null) checkedConfig.objectPredicate = predicate;
-        if (methodFilter != null) checkedConfig.objectMethodFilter = methodFilter;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
@@ -663,8 +659,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             for (int i = 0, l = objectInterfaces.length; i < l; i++) {
                 if (objectInterfaces[i] == null)
                     throw new BeeObjectSourceConfigException("Object interfaces[" + i + "]is null");
-                if (!objectInterfaces[i].isInterface())
-                    throw new BeeObjectSourceConfigException("Object interfaces[" + i + "]is not a valid interface");
             }
             return objectInterfaces.clone();
         }
@@ -684,26 +678,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             }
             return objectInterfaces;
         }
-        return null;
-    }
-
-    private BeeObjectMethodFilter<K> tryCreateMethodFilter() {
-        //1:if exists method filter then return it directly
-        if (this.objectMethodFilter != null) return objectMethodFilter;
-
-        //2: create method filter
-        if (objectMethodFilterClass != null || isNotBlank(objectMethodFilterClassName)) {
-            Class<?> filterClass = null;
-            try {
-                filterClass = objectMethodFilterClass != null ? objectMethodFilterClass : loadClass(objectMethodFilterClassName);
-                return (BeeObjectMethodFilter<K>) createClassInstance(filterClass, BeeObjectMethodFilter.class, "object method filter");
-            } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found object filter class:" + objectMethodFilterClassName);
-            } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create object method filter by class:" + filterClass, e);
-            }
-        }
-
         return null;
     }
 
@@ -775,7 +749,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                         if (objectInterfaces != null && objectInterfaces.length > 0) {
                             StringBuilder interfacesClassBuf = new StringBuilder(20);
                             for (Class<?> clazz : objectInterfaces) {
-                                if (interfacesClassBuf.length() > 0) interfacesClassBuf.append(",");
+                                if (!interfacesClassBuf.isEmpty()) interfacesClassBuf.append(",");
                                 interfacesClassBuf.append(clazz);
                             }
                             if (infoPrint)
@@ -789,7 +763,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                         if (objectInterfaceNames != null && objectInterfaceNames.length > 0) {
                             StringBuilder interfaceNameBuf = new StringBuilder(20);
                             for (String name : objectInterfaceNames) {
-                                if (interfaceNameBuf.length() > 0) interfaceNameBuf.append(",");
+                                if (!interfaceNameBuf.isEmpty()) interfaceNameBuf.append(",");
                                 interfaceNameBuf.append(name);
                             }
                             if (infoPrint)

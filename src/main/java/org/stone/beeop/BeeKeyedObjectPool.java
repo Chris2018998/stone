@@ -16,6 +16,8 @@ import org.stone.beeop.pool.exception.*;
  * <p>
  * Important Note: keys object are required to override three methods(equals, hashCode, toString).
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */
@@ -76,7 +78,7 @@ public interface BeeKeyedObjectPool<K, V> {
     //***************************************************************************************************************//
 
     /**
-     * A switch call to enable or disable logs print in pool.
+     * A switch call to enable or disable logs print of pool.
      *
      * @param enable is true that print, false not print
      */
@@ -113,7 +115,7 @@ public interface BeeKeyedObjectPool<K, V> {
 
 
     //***************************************************************************************************************//
-    //                                        keys maintenance                                                       //
+    //                                        keys maintenance(10)                                                   //
     //***************************************************************************************************************//
 
     /**
@@ -126,6 +128,7 @@ public interface BeeKeyedObjectPool<K, V> {
     /**
      * Query given key whether in pool.
      *
+     * @param key to locate related pooled objects
      * @return a keys array
      */
     boolean exists(K key);
@@ -197,6 +200,7 @@ public interface BeeKeyedObjectPool<K, V> {
      * @param key                  may be mapping to a set of pooled objects
      * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
      * @return interrupted threads
+     * @throws Exception when key is null or not exist key in pool
      */
     Thread[] interruptObjectCreating(K key, boolean onlyInterruptTimeout) throws Exception;
 }

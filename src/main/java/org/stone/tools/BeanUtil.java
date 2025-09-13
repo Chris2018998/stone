@@ -18,8 +18,6 @@ import org.stone.tools.exception.PropertyValueSetFailedException;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 import static org.stone.tools.CommonUtil.isBlank;
@@ -46,14 +44,9 @@ public class BeanUtil {
      *
      * @param field reflection access field
      */
-    public static void setAccessible(final Field field) {
-        if (!field.isAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction<Field>() {
-                public Field run() {
-                    field.setAccessible(true);
-                    return field;
-                }
-            });
+    public static void setAccessible(Object object, Field field) {
+        if (!field.canAccess(object)) {
+            field.setAccessible(true);
         }
     }
 
@@ -62,14 +55,9 @@ public class BeanUtil {
      *
      * @param method reflection access method
      */
-    public static void setAccessible(final Method method) {
-        if (!method.isAccessible()) {
-            AccessController.doPrivileged(new PrivilegedAction<Method>() {
-                public Method run() {
-                    method.setAccessible(true);
-                    return method;
-                }
-            });
+    public static void setAccessible(Object object, Method method) {
+        if (!method.canAccess(object)) {
+            method.setAccessible(true);
         }
     }
 
@@ -245,8 +233,10 @@ public class BeanUtil {
      * @throws InstantiationException when class not found
      * @throws IllegalAccessException when class not found
      */
-    public static Object createClassInstance(String className) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        return Class.forName(className, true, BeeClassLoader).newInstance();
+    public static Object createClassInstance(String className) throws ClassNotFoundException,
+            NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException,
+            IllegalArgumentException, InvocationTargetException {
+        return Class.forName(className, true, BeeClassLoader).getDeclaredConstructor().newInstance();
     }
 
     /**
@@ -258,7 +248,8 @@ public class BeanUtil {
      * @return an instance of bean class
      * @throws BeanException when create failed
      */
-    public static Object createClassInstance(String beanClassName, Class<?> parentClass, String objectClassType) throws ClassNotFoundException, BeanException {
+    public static Object createClassInstance(String beanClassName, Class<?> parentClass, String objectClassType)
+            throws ClassNotFoundException, BeanException {
         return createClassInstance(loadClass(beanClassName), parentClass != null ? new Class[]{parentClass} : null, objectClassType);
     }
 
@@ -330,7 +321,7 @@ public class BeanUtil {
         StringBuilder buf = new StringBuilder(classes.length * 10);
         for (Class<?> clazz : classes) {
             if (clazz == null) continue;
-            if (buf.length() > 0) buf.append(",");
+            if (!buf.isEmpty()) buf.append(",");
             buf.append(clazz.getName());
         }
         return buf.toString();
@@ -355,7 +346,7 @@ public class BeanUtil {
         text = text.trim();
 
         if (targetType == char.class || targetType == Character.class) {
-            return Character.valueOf(text.charAt(0));
+            return text.charAt(0);
         } else if (targetType == boolean.class || targetType == Boolean.class) {
             return Boolean.valueOf(text);
         } else if (targetType == byte.class || targetType == Byte.class) {
@@ -388,9 +379,9 @@ public class BeanUtil {
         } else if (Collection.class.isAssignableFrom(targetType)) {
             if (setMethod == null) return null;
 
-            Collection collection;
+            Collection<Object> collection;
             if (!Modifier.isAbstract(targetType.getModifiers())) {
-                collection = (Collection<?>) targetType.newInstance();
+                collection = (Collection) targetType.getDeclaredConstructor().newInstance();
             } else if (Set.class.isAssignableFrom(targetType)) {
                 collection = new HashSet<>(1);
             } else {
@@ -398,8 +389,7 @@ public class BeanUtil {
             }
 
             Type genericParameterType = setMethod.getGenericParameterTypes()[0];
-            if (genericParameterType instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) genericParameterType;
+            if (genericParameterType instanceof ParameterizedType parameterizedType) {
                 Class<?> elementType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
                 for (String s : text.split(Separator_Comma)) {
                     collection.add(convert(s, elementType, null));
@@ -409,7 +399,7 @@ public class BeanUtil {
             }
             return collection;
         } else {
-            Object objInstance = Class.forName(text, true, BeeClassLoader).newInstance();
+            Object objInstance = Class.forName(text, true, BeeClassLoader).getDeclaredConstructor().newInstance();
             if (targetType.isInstance(objInstance)) return objInstance;
             throw new ClassCastException();
         }

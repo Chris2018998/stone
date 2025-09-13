@@ -12,6 +12,8 @@ package org.stone.beeop;
 /**
  * Handle interface represents wrapper of borrowed object.
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */

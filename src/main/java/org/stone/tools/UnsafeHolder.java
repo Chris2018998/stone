@@ -9,12 +9,7 @@
  */
 package org.stone.tools;
 
-import org.stone.tools.exception.ReflectionOperationException;
-import sun.misc.Unsafe;
-
-import java.lang.reflect.Field;
-
-import static org.stone.tools.BeanUtil.setAccessible;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Unsafe adaptor
@@ -23,17 +18,7 @@ import static org.stone.tools.BeanUtil.setAccessible;
  * @version 1.0
  */
 public final class UnsafeHolder {
-    private static final Unsafe U;
-
-    static {
-        try {
-            Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            setAccessible(theUnsafe);
-            U = (Unsafe) theUnsafe.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new ReflectionOperationException(e);
-        }
-    }
+    private static final Unsafe U = Unsafe.getUnsafe();
 
     public static Unsafe getUnsafe() {
         return U;

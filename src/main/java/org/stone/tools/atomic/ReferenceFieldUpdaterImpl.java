@@ -9,9 +9,9 @@
  */
 package org.stone.tools.atomic;
 
+import jdk.internal.misc.Unsafe;
 import org.stone.tools.UnsafeHolder;
 import org.stone.tools.exception.ReflectionOperationException;
-import sun.misc.Unsafe;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -32,35 +32,39 @@ public final class ReferenceFieldUpdaterImpl<T, V> extends AtomicReferenceFieldU
         this.fieldType = fieldType;
     }
 
-    public static <T, V> AtomicReferenceFieldUpdater<T, V> newUpdater(Class<T> beanClass, Class<V> fieldType, String fieldName) {
+    public static <U, W> AtomicReferenceFieldUpdater<U, W> newUpdater(Class<U> tclass, Class<W> vclass, String fieldName) {
         try {
-            return new ReferenceFieldUpdaterImpl<>(unsafe.objectFieldOffset(beanClass.getDeclaredField(fieldName)), fieldType);
+            return new ReferenceFieldUpdaterImpl<>(unsafe.objectFieldOffset(tclass.getDeclaredField(fieldName)), vclass);
         } catch (NoSuchFieldException e) {
             throw new ReflectionOperationException(e);
         } catch (SecurityException e) {
             throw e;
         } catch (Throwable e) {
-            return AtomicReferenceFieldUpdater.newUpdater(beanClass, fieldType, fieldName);
+            return AtomicReferenceFieldUpdater.newUpdater(tclass, vclass, fieldName);
         }
     }
 
+
     public boolean compareAndSet(T bean, V expect, V update) {
-        return unsafe.compareAndSwapObject(bean, this.offset, expect, update);
+        return unsafe.compareAndSetReference(bean, this.offset, expect, update);
     }
 
+    @Override
     public boolean weakCompareAndSet(T bean, V expect, V update) {
-        return unsafe.compareAndSwapObject(bean, this.offset, expect, update);
+        return unsafe.compareAndSetReference(bean, this.offset, expect, update);
     }
 
+    @Override
     public void set(T bean, V newValue) {
-        unsafe.putObjectVolatile(bean, this.offset, newValue);
+        unsafe.putReferenceVolatile(bean, this.offset, newValue);
     }
 
+    @Override
     public void lazySet(T bean, V newValue) {
-        unsafe.putOrderedObject(bean, this.offset, newValue);
+        unsafe.putReferenceRelease(bean, this.offset, newValue);
     }
 
     public V get(T bean) {
-        return fieldType.cast(unsafe.getObjectVolatile(bean, this.offset));
+        return fieldType.cast(unsafe.getReferenceVolatile(bean, this.offset));
     }
 }

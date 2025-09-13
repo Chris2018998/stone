@@ -51,7 +51,7 @@ final class PooledConnection {
     Connection rawConn;//maybe from XAConnection
     XAResource rawXaRes;//from XAConnection
     volatile int state;
-    volatile long lastAccessTime;//Nanoseconds
+    volatile long lastAccessTime;//milliseconds
 
     int openStmSize;
     boolean curAutoCommit;
@@ -60,6 +60,7 @@ final class PooledConnection {
     private int resetCnt;//reset count
     private boolean[] resetFlags;
     private ProxyStatementBase[] openStatements;
+
     //***************************************************************************************************************//
     //                                     section-C: some switch fields and others                                  //                                                                                  //
     //***************************************************************************************************************//
@@ -149,7 +150,7 @@ final class PooledConnection {
     void setRawConnection(int state, Connection rawConn, XAResource rawXaRes) throws SQLException {
         if (enableDefaultOnAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
             rawConn.setAutoCommit(defaultAutoCommit);
-        if (enableDefaultOnTransactionIsolation && defaultTransactionIsolation != rawConn.getTransactionIsolation())
+        if (enableDefaultOnTransactionIsolation && defaultTransactionIsolation - rawConn.getTransactionIsolation() != 0)
             rawConn.setTransactionIsolation(defaultTransactionIsolation);
         if (enableDefaultOnReadOnly && defaultReadOnly != rawConn.isReadOnly())
             rawConn.setReadOnly(defaultReadOnly);
@@ -168,13 +169,11 @@ final class PooledConnection {
         this.rawConn = rawConn;
         this.rawXaRes = rawXaRes;
         this.resetFlags = new boolean[6];
-        this.commitDirtyInd = false;
         this.curAutoCommit = defaultAutoCommit;
 
-        this.openStmSize = 0;
         this.openStatements = new ProxyStatementBase[10];
-        this.lastAccessTime = System.nanoTime();
         this.state = state;
+        this.lastAccessTime = System.currentTimeMillis();
     }
 
     //***************************************************************************************************************//
@@ -213,7 +212,7 @@ final class PooledConnection {
      */
     void onRemove(String msg) {
         if (pool.isPrintRuntimeLog())
-            CommonLog.info("BeeCP({})begin to remove a pooled connection:{} for cause:{}", pool.getPoolName(), this, msg);
+            CommonLog.info("BeeCP({}))begin to remove a pooled connection:{} for cause:{}", pool.getPoolName(), this, msg);
 
         try {
             this.resetRawConn();
@@ -258,7 +257,7 @@ final class PooledConnection {
         for (int i = 0; i < this.openStmSize; i++) {
             ProxyStatementBase s = this.openStatements[i];
             if (s != null) {
-                s.registered = false;
+                s.unregister = true;
                 this.openStatements[i] = null;
                 oclose(s);
             }
@@ -271,7 +270,7 @@ final class PooledConnection {
     //***************************************************************************************************************//
     void updateAccessTime() {//for update,insert.select,delete and so on DML
         this.commitDirtyInd = !this.curAutoCommit;
-        this.lastAccessTime = System.nanoTime();
+        this.lastAccessTime = System.currentTimeMillis();
     }
 
     void checkSQLException(SQLException e) {//Fatal error code check

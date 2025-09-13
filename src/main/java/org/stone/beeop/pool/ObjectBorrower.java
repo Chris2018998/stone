@@ -12,18 +12,23 @@ package org.stone.beeop.pool;
 /**
  * Pooled object borrower
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */
 final class ObjectBorrower<K, V> {
-    final Thread thread = Thread.currentThread();
+    final Thread thread;
     volatile Object state;
     PooledObject<K, V> lastUsed;
 
-    ObjectBorrower() {
+    ObjectBorrower(Thread thread) {
+        this.thread = thread;
     }
 
-    ObjectBorrower(PooledObject<K, V> lastUsed) {
+    ObjectBorrower(Thread thread, PooledObject<K, V> lastUsed) {
+        this.thread = thread;
         this.lastUsed = lastUsed;
     }
+
 }

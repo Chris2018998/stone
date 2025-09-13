@@ -18,9 +18,8 @@ import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 import org.stone.tools.extension.InterruptionSemaphore;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,7 +29,6 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -46,66 +44,84 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantTryCount");
-    final KeyedObjectPool<K, V> ownerPool;
-
+    final KeyedObjectPool<K, V> parentPool;
 
     //clone begin
-    private final int maxActiveSize;
     private final String poolMode;
     private final boolean isFairMode;
     private final boolean isCompeteMode;
+    private final int maxActiveSize;
     private final int semaphoreSize;
     private final long maxWaitMs;//milliseconds
     private final long maxWaitNs;//nanoseconds
-    private final long idleTimeoutNs;//milliseconds
-    private final long holdTimeoutNs;//milliseconds
+
+    private final long idleTimeoutMs;//milliseconds
+    private final long holdTimeoutMs;//milliseconds
     private final boolean supportHoldTimeout;
+
     private final int stateCodeOnRelease;
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
     private final long parkTimeForRetryNs;//nanoseconds
+
+    //* create objects to be managed in pools
     private final BeeObjectFactory<K, V> objectFactory;
+    //* create proxy to wrap pooled objects and return to borrowers as result
     private final ObjectPlainHandleFactory<K, V> handleFactory;
+    //* a tool to transfer released objects to waiters
     private final ObjectTransferPolicy<K, V> transferPolicy;
-    private final String poolHostIP;
-    private final long poolThreadId;
-    private final String poolThreadName;
+    //an indicator to enable or disable pool thread local which can cache last used object for borrowers
     private final boolean enableThreadLocal;
-    private final BeeObjectMethodFilter<K> methodFilter;
+    //a map store methods of pooled objects
     private final Map<MethodCacheKey, Method> methodMap;
     //clone end
+
+    //state of servant thread,which is used to search idle objects or create objects for borrowers in wait queue
     volatile int servantState;
+    //retry count of servant thread to work
     volatile int servantTryCount;
+
+    //an array store pooled objects
     PooledObject<K, V>[] objectArray;
+    //A wait queue,borrowers offer them-self into it when all objects are borrowed out from pool
     ConcurrentLinkedQueue<ObjectBorrower<K, V>> waitQueue;
+
+    //pooled key
     private K key;
+    //pooled name
     private String poolName;//owner's poolName + [key.toString()]
+    //pool state
     private volatile int poolState;
+    //pool semaphore
     private InterruptionSemaphore semaphore;
+    //thread local to cache last borrowed objects for borrowers
     private ThreadLocal<WeakReference<ObjectBorrower<K, V>>> threadLocal;
+    //pool monitor vo
     private ObjectPoolMonitorVo monitorVo;
+    //a
     private boolean printRuntimeLog;
 
     //***************************************************************************************************************//
     //                1: Pool Creation/clone(2)                                                                      //
     //***************************************************************************************************************//
-    //method-1.1: constructor for clone
-    ObjectInstancePool(BeeObjectSourceConfig<K, V> config, KeyedObjectPool<K, V> ownerPool) {
+    //method-1.1: constructor for default sub pool
+    ObjectInstancePool(BeeObjectSourceConfig<K, V> config, KeyedObjectPool<K, V> ownerPool, Constructor<?> objectProxyClassConstructor) {
         //step1: copy  primitive type field
-        this.ownerPool = ownerPool;
+        this.parentPool = ownerPool;
+
         this.maxActiveSize = config.getMaxActive();
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
         this.poolMode = isFairMode ? "fair" : "compete";
         this.enableThreadLocal = config.isEnableThreadLocal();
         this.semaphoreSize = config.getBorrowSemaphoreSize();
+
         this.maxWaitMs = config.getMaxWait();
-
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
-        this.idleTimeoutNs = MILLISECONDS.toNanos(config.getIdleTimeout());
-        this.holdTimeoutNs = MILLISECONDS.toNanos(config.getHoldTimeout());
+        this.idleTimeoutMs = config.getIdleTimeout();
+        this.holdTimeoutMs = config.getHoldTimeout();
 
-        this.supportHoldTimeout = holdTimeoutNs > 0L;
+        this.supportHoldTimeout = holdTimeoutMs > 0L;
         this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(config.getParkTimeForRetry());
         this.validAssumeTime = config.getAliveAssumeTime();
         this.validTestTimeout = config.getAliveTestTimeout();
@@ -114,31 +130,16 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
 
         //step2:object type field setting
         this.objectFactory = config.getObjectFactory();
-        Class<?>[] objectInterfaces = config.getObjectInterfaces();
         BeeObjectPredicate predicate = config.getObjectPredicate();
-        this.methodFilter = config.getObjectMethodFilter();
         this.methodMap = new ConcurrentHashMap<>(1);
 
         this.transferPolicy = isFairMode ? new FairTransferPolicy<>() : new CompeteTransferPolicy<>();
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
 
-        if (objectInterfaces != null && objectInterfaces.length > 0)
-            this.handleFactory = new ObjectProxyHandleFactory<>(predicate, objectInterfaces, methodFilter);
+        if (objectProxyClassConstructor != null)
+            this.handleFactory = new ObjectProxyHandleFactory<>(predicate, objectProxyClassConstructor);
         else
             this.handleFactory = new ObjectPlainHandleFactory<>(predicate);
-
-        //step3:pool monitor setting
-        Thread currentThread = Thread.currentThread();
-        this.poolThreadId = currentThread.getId();
-        this.poolThreadName = currentThread.getName();
-        String localHostIP = "";
-        try {
-            localHostIP = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            Log.info("BeeOP({})failed to resolve pool host ip", config.getPoolName());
-        } finally {
-            this.poolHostIP = localHostIP;
-        }
     }
 
     //method-1.2: create a clone object
@@ -152,7 +153,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.poolName = ownerName + "-[" + key + "]";
         this.objectArray = new PooledObject[maxActiveSize];
         for (int i = 0; i < maxActiveSize; i++)
-            objectArray[i] = new PooledObject(key, objectFactory, methodMap, this.methodFilter, this);
+            objectArray[i] = new PooledObject(key, objectFactory, methodMap, this);
 
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
         if (this.enableThreadLocal) this.threadLocal = new BorrowerThreadLocal<>();
@@ -160,10 +161,10 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.waitQueue = new ConcurrentLinkedQueue<>();
 
         this.servantTryCount = 0;
-        this.servantState = THREAD_WAITING;
+        this.servantState = THREAD_WAITING;//initial state
 
         if (initSize > 0 && async) new PoolInitAsyncCreateThread<>(initSize, this).start();
-        this.monitorVo = new ObjectPoolMonitorVo(this.poolName, poolHostIP, poolThreadId, poolThreadName, poolMode, maxActiveSize);
+        this.monitorVo = new ObjectPoolMonitorVo(this.poolName, poolMode, maxActiveSize);
 
         this.poolState = POOL_READY;
         Log.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
@@ -176,66 +177,58 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                2: Pooled object create/remove methods(3)                                                      //                                                                                  //
+    //                2: Pooled objects creation/remove methods(3)                                                      //                                                                                  //
     //***************************************************************************************************************//
-    //Method-2.1: create specified size objects to pool,if zero,then try to create one
+    //Method-2.1: create specified size objects to pool
     void createInitObjects(int initSize, boolean syn) throws Exception {
-        if (syn) {
-            int index = 0;
-            try {
-                while (index < initSize) {
-                    PooledObject<K, V> p = objectArray[index];
-                    p.state = OBJECT_CREATING;
-                    this.fillRawObject(p, OBJECT_IDLE);
-                    index++;
-                }
-            } catch (Throwable e) {
+        int index = 0;
+        try {
+            Thread creatingThread = Thread.currentThread();
+            while (index < initSize) {
+                PooledObject<K, V> p = objectArray[index++];
+                p.state = OBJECT_CREATING;
+                this.fillRawObject(p, OBJECT_IDLE, creatingThread);
+            }
+        } catch (Throwable e) {
+            if (syn) {
                 for (int i = 0; i < index; i++)
                     objectArray[i].onRemove(DESC_RM_INIT);
                 throw e;
-            }
-        } else {//async creation
-            try {
-                for (int i = 0; i < initSize; i++) {
-                    PooledObject<K, V> p = objectArray[i];
-                    if (ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING))
-                        this.fillRawObject(p, OBJECT_BORROWED);
-                }
-            } catch (Throwable e) {
-                Log.warn("Failed to create initial objects by async mode", e);
+            } else {
+                Log.warn("Failed to create initial objects during async mode", e);
             }
         }
     }
 
     //Method-2.2: search one idle Object,if not found,then try to create one
-    private PooledObject<K, V> searchOrCreate() throws Exception {
+    private PooledObject<K, V> searchOrCreate(Thread creatingThread) throws Exception {
         for (PooledObject<K, V> p : objectArray) {
             int state = p.state;
             if (state == OBJECT_IDLE) {
                 if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
                     if (this.testOnBorrow(p)) return p;
                 } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                    return this.fillRawObject(p, OBJECT_BORROWED);
+                    return this.fillRawObject(p, OBJECT_BORROWED, creatingThread);
                 }
             } else if (state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                return this.fillRawObject(p, OBJECT_BORROWED);
+                return this.fillRawObject(p, OBJECT_BORROWED, creatingThread);
             }
         }
         return null;
     }
 
     //Method-2.3: create one pooled object
-    private PooledObject<K, V> fillRawObject(PooledObject<K, V> p, int state) throws Exception {
+    private PooledObject<K, V> fillRawObject(PooledObject<K, V> p, int state, Thread creatingThread) throws Exception {
         //1: print runtime log of object creation
         if (this.printRuntimeLog)
             Log.info("BeeCP({}))begin to create a raw object", this.poolName);
 
         V rawObj = null;
         try {
-            p.creatingInfo = new ObjectCreatingInfo();
+            p.creatingInfo = new ObjectCreatingInfo(creatingThread);
             rawObj = this.objectFactory.create(this.key);
             if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
-                if (Thread.interrupted())
+                if (creatingThread.isInterrupted() && Thread.interrupted())
                     throw new ObjectGetInterruptedException("Interrupted on creating a raw object by factory");
                 throw new ObjectCreateException("Internal error occurred in object factory");
             }
@@ -279,80 +272,80 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                 p = b.lastUsed;
                 if (p != null && p.state == OBJECT_IDLE && ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
                     if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
-                    b.lastUsed = null;
+                    b.lastUsed = null;//clear cached bad object
                 }
             }
         }
 
-        //2: try to acquire a permit of pool semaphore
-        long deadline = System.nanoTime();
         try {
-            if (!this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS))
-                throw new ObjectGetTimeoutException("Waited timeout on pool semaphore");
-        } catch (InterruptedException e) {
-            throw new ObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
-        }
-
-        //3: try to search idle one or create new one
-        try {
-            final boolean hasCached = b != null;
-            p = this.searchOrCreate();
-            if (p != null) {
-                if (this.enableThreadLocal) {
-                    if (hasCached)
-                        b.lastUsed = p;
-                    else
-                        this.threadLocal.set(new WeakReference<>(new ObjectBorrower<>(p)));
-                }
-                return handleFactory.createHandle(p);
-            }
-
-            //4: add the borrower to wait queue
-            if (hasCached)
-                b.state = null;
-            else
-                b = new ObjectBorrower<>();
-            this.waitQueue.offer(b);
-            Thread borrowThread = b.thread;
-            deadline += this.maxWaitNs;
-
-            //5: self-spin to get transferred object
-            do {
-                final Object s = b.state;//possible values: PooledObject,Throwable,null
-                if (s instanceof PooledObject) {
-                    p = (PooledObject) s;
-                    if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                        this.waitQueue.remove(b);
-                        if (this.enableThreadLocal) { //put to thread local
-                            b.lastUsed = p;
-                            if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
+            //2: try to acquire a permit from pool semaphore
+            long deadline = System.currentTimeMillis();
+            if (this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS)) {
+                try {
+                    //3: try to search idle one or create new one
+                    Thread borrowThread = b != null ? b.thread : Thread.currentThread();
+                    p = this.searchOrCreate(borrowThread);
+                    if (p != null) {
+                        if (this.enableThreadLocal) {
+                            if (b != null)
+                                b.lastUsed = p;
+                            else
+                                this.threadLocal.set(new WeakReference<>(new ObjectBorrower<>(borrowThread, p)));
                         }
                         return handleFactory.createHandle(p);
                     }
-                } else if (s instanceof Throwable) {//here: s must be throwable object
-                    this.waitQueue.remove(b);
-                    throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
-                }
 
-                final long t = deadline - System.nanoTime();
-                if (t > 0L) {
-                    if (s != null) b.state = null;
-                    if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
-                        ownerPool.submitServantTask(this);
-                    LockSupport.parkNanos(t);//park exit:1:get transfer 2:timeout 3:interrupted
-                    if (borrowThread.isInterrupted() && Thread.interrupted())
-                        this.handleTimeoutAndInterruption(false, null, b, hasCached);
-                } else {//timeout
-                    return this.handleTimeoutAndInterruption(true, s, b, hasCached);
+                    //4: add the borrower to wait queue
+                    if (b != null) {
+                        b.state = null;
+                    } else {
+                        b = new ObjectBorrower<>(borrowThread);
+                        if (this.enableThreadLocal) this.threadLocal.set(new WeakReference<>(b));
+                    }
+
+                    this.waitQueue.offer(b);
+                    deadline += this.maxWaitMs;
+
+                    //5: self-spin to get transferred object
+                    do {
+                        final Object s = b.state;//possible values: PooledObject,Throwable,null
+                        if (s instanceof PooledObject) {
+                            p = (PooledObject) s;
+                            if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
+                                this.waitQueue.remove(b);
+                                b.lastUsed = p;
+                                return handleFactory.createHandle(p);
+                            }
+                        } else if (s instanceof Throwable) {//here: s must be throwable object
+                            this.waitQueue.remove(b);
+                            throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
+                        }
+
+                        long t = deadline - System.currentTimeMillis();
+                        if (t > 0L) {
+                            if (s != null) b.state = null;
+                            if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
+                                parentPool.submitServantTask(this);
+                            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(t));//park exit:1:get transfer 2:timeout 3:interrupted
+                            if (borrowThread.isInterrupted() && Thread.interrupted())
+                                this.handleTimeoutAndInterruption(false, null, b);
+                        } else {//timeout
+                            return this.handleTimeoutAndInterruption(true, s, b);
+                        }
+                    } while (true);//while
+                } finally {
+                    semaphore.release();
                 }
-            } while (true);//while
-        } finally {
-            semaphore.release();
+            } else {
+                throw new ObjectGetTimeoutException("Waited timeout on pool semaphore");
+            }
+        } catch (InterruptedException e) {
+            throw new ObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
         }
     }
 
     //Method-3.2: handle timeout and interruption in spin
-    private BeeObjectHandle<K, V> handleTimeoutAndInterruption(boolean isTimeout, Object s, ObjectBorrower<K, V> b, boolean hasCached) throws Exception {
+    private BeeObjectHandle<K, V> handleTimeoutAndInterruption(boolean isTimeout, Object s, ObjectBorrower<K, V> b) throws Exception {
         this.waitQueue.remove(b);
 
         PooledObject<K, V> p = null;
@@ -362,15 +355,14 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                 p = (PooledObject) s;
                 if (!(this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)))
                     p = null;
+            } else if (s instanceof Throwable) {
+                throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
             }
         }
 
         if (isTimeout) {
             if (p != null) {
-                if (this.enableThreadLocal) { //put to thread local
-                    b.lastUsed = p;
-                    if (!hasCached) this.threadLocal.set(new WeakReference<>(b));
-                }
+                b.lastUsed = p;
                 return handleFactory.createHandle(p);
             }
             throw new ObjectGetTimeoutException("Waited timeout for a released object");
@@ -425,7 +417,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     //Method-3.5: check object alive state,if not alive then remove it from pool
     private boolean testOnBorrow(PooledObject<K, V> p) {
         try {
-            if (System.nanoTime() - p.lastAccessTime >= this.validAssumeTime && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
+            if (System.currentTimeMillis() - p.lastAccessTime - this.validAssumeTime >= 0L && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
                 p.onRemove(DESC_RM_BAD);
                 this.tryWakeupServantThread();
                 return false;
@@ -450,19 +442,18 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             if (c >= this.maxActiveSize) return;
         } while (!ServantTryCountUpd.compareAndSet(this, c, c + 1));
         if (!this.waitQueue.isEmpty() && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING)) {
-            ownerPool.submitServantTask(this);
+            parentPool.submitServantTask(this);
         }
     }
 
     //Method-4.2: servant method driven by executor in key pool
     public void run() {
-        while (servantState == THREAD_WORKING) {
-            int c = servantTryCount;
-            if (c <= 0 || (waitQueue.isEmpty() && ServantTryCountUpd.compareAndSet(this, c, 0))) break;
-            ServantTryCountUpd.decrementAndGet(this);
+        Thread currentThread = Thread.currentThread();
 
+        while (servantTryCount > 0 && !waitQueue.isEmpty()) {
+            ServantTryCountUpd.decrementAndGet(this);//only here to decrement
             try {
-                PooledObject<K, V> p = searchOrCreate();
+                PooledObject<K, V> p = searchOrCreate(currentThread);
                 if (p != null) recycle(p);
             } catch (Throwable e) {
                 this.transferException(e);
@@ -490,13 +481,13 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         for (PooledObject<K, V> p : this.objectArray) {
             int state = p.state;
             if (state == OBJECT_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
-                boolean isTimeoutInIdle = System.nanoTime() - p.lastAccessTime - this.idleTimeoutNs >= 0L;
+                boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
                 if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
                     p.onRemove(DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
             } else if (state == OBJECT_BORROWED && supportHoldTimeout) {
-                if (System.nanoTime() - p.lastAccessTime - holdTimeoutNs >= 0L) {//hold timeout
+                if (System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) tryCloseObjectHandle(handleInUsing);
                 }
@@ -552,7 +543,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                 } else if (state == OBJECT_BORROWED) {
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
-                        if (forceRecycleBorrowed || (supportHoldTimeout && System.nanoTime() - p.lastAccessTime - holdTimeoutNs >= 0L))
+                        if (forceRecycleBorrowed || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
                             tryCloseObjectHandle(handleInUsing);
                     }
                 } else if (state == OBJECT_CLOSED) {
@@ -615,18 +606,6 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         return this.maxWaitNs;
     }
 
-    String getPoolHostIP() {
-        return poolHostIP;
-    }
-
-    long getPoolThreadId() {
-        return poolThreadId;
-    }
-
-    String getPoolThreadName() {
-        return poolThreadName;
-    }
-
     long getParkTimeForRetryNs() {
         return this.parkTimeForRetryNs;
     }
@@ -635,8 +614,8 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         return this.printRuntimeLog;
     }
 
-    void setPrintRuntimeLog(boolean indicator) {
-        printRuntimeLog = indicator;
+    void setPrintRuntimeLog(boolean enable) {
+        printRuntimeLog = enable;
     }
 
     private int getTotalSize() {
@@ -666,6 +645,9 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     BeeObjectPoolMonitorVo getPoolMonitorVo() {
         int borrowedSize = 0, idleSize = 0;
         int creatingCount = 0, creatingTimeoutCount = 0;
+        int semaphoreWaitingSize = this.semaphore.getQueueLength();
+        int transferWaitingSize = this.getTransferWaitingSize();
+
         for (PooledObject<K, V> p : objectArray) {
             int state = p.state;
             if (state == OBJECT_BORROWED) borrowedSize++;
@@ -673,7 +655,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             ObjectCreatingInfo creatingInfo = p.creatingInfo;
             if (creatingInfo != null) {
                 creatingCount++;
-                if (System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
+                if (System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L)
                     creatingTimeoutCount++;
             }
         }
@@ -683,8 +665,8 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         monitorVo.setBorrowedSize(borrowedSize);
         monitorVo.setCreatingCount(creatingCount);
         monitorVo.setCreatingTimeoutCount(creatingTimeoutCount);
-        monitorVo.setSemaphoreWaitingSize(this.semaphore.getQueueLength());
-        monitorVo.setTransferWaitingSize(getTransferWaitingSize());
+        monitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
+        monitorVo.setTransferWaitingSize(transferWaitingSize);
         return this.monitorVo;
     }
 
@@ -701,7 +683,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         int count = 0;
         for (PooledObject<K, V> p : objectArray) {
             ObjectCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs)
+            if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L)
                 count++;
         }
         return count;
@@ -715,7 +697,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         if (onlyInterruptTimeout) {
             for (PooledObject<K, V> p : objectArray) {
                 ObjectCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.nanoTime() - creatingInfo.creatingStartTime >= maxWaitNs) {
+                if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L) {
                     creatingInfo.creatingThread.interrupt();
                     threads.add(creatingInfo.creatingThread);
                 }
@@ -743,23 +725,22 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             this.predicate = predicate;
         }
 
-        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) {
+        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
             return new PooledObjectPlainHandle<>(p, predicate);
         }
     }
 
     private static class ObjectProxyHandleFactory<K, V> extends ObjectPlainHandleFactory<K, V> {
-        private final Class<?>[] objectInterfaces;
-        private final BeeObjectMethodFilter<K> methodFilter;
+        private final Constructor<?> objectProxyClassConstructor;
 
-        ObjectProxyHandleFactory(BeeObjectPredicate predicate, Class<?>[] objectInterfaces, BeeObjectMethodFilter<K> methodFilter) {
+        ObjectProxyHandleFactory(BeeObjectPredicate predicate,
+                                 Constructor<?> objectProxyClassConstructor) {
             super(predicate);
-            this.objectInterfaces = objectInterfaces;
-            this.methodFilter = methodFilter;
+            this.objectProxyClassConstructor = objectProxyClassConstructor;
         }
 
-        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) {
-            return new PooledObjectProxyHandle<>(p, predicate, objectInterfaces, methodFilter);
+        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
+            return new PooledObjectProxyHandle<>(p, predicate, objectProxyClassConstructor);
         }
     }
 
@@ -768,7 +749,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         }
 
         protected WeakReference<ObjectBorrower<K, V>> initialValue() {
-            return new WeakReference<>(new ObjectBorrower<>());
+            return new WeakReference<>(new ObjectBorrower<>(Thread.currentThread()));
         }
     }
 
@@ -805,8 +786,9 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             try {
                 pool.createInitObjects(initialSize, false);
                 pool.servantTryCount = pool.objectArray.length;
+
                 if (!pool.waitQueue.isEmpty() && pool.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(pool, THREAD_WAITING, THREAD_WORKING)) {
-                    pool.ownerPool.submitServantTask(pool);
+                    pool.parentPool.submitServantTask(pool);
                 }
             } catch (Throwable e) {
                 //do nothing

@@ -19,6 +19,8 @@ import static org.stone.tools.CommonUtil.isNotBlank;
 /**
  * object Handle implement
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */
@@ -26,6 +28,7 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
     private final Object raw;
     private final PooledObject<K, V> p;
     private final BeeObjectPredicate predicate;
+
     private boolean isClosed;
 
     PooledObjectPlainHandle(PooledObject<K, V> p, BeeObjectPredicate predicate) {
@@ -53,7 +56,7 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
 
     public final void setLastAccessedTime() throws Exception {
         checkClosed();
-        p.lastAccessTime = System.nanoTime();
+        p.lastAccessTime = System.currentTimeMillis();
     }
 
     public void abort() throws Exception {

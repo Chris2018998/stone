@@ -9,11 +9,12 @@
  */
 package org.stone.tools.atomic;
 
+import jdk.internal.misc.Unsafe;
 import org.stone.tools.UnsafeHolder;
 import org.stone.tools.exception.ReflectionOperationException;
-import sun.misc.Unsafe;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
 
 /**
  * Atomic Integer Field Updater Implementation(Don't use in other place)
@@ -42,11 +43,11 @@ public final class IntegerFieldUpdaterImpl<T> extends AtomicIntegerFieldUpdater<
     }
 
     public boolean compareAndSet(T bean, int expect, int update) {
-        return UA.compareAndSwapInt(bean, this.offset, expect, update);
+        return UA.compareAndSetInt(bean, this.offset, expect, update);
     }
 
     public boolean weakCompareAndSet(T bean, int expect, int update) {
-        return UA.compareAndSwapInt(bean, this.offset, expect, update);
+        return UA.compareAndSetInt(bean, this.offset, expect, update);
     }
 
     public void set(T bean, int newValue) {
@@ -54,7 +55,7 @@ public final class IntegerFieldUpdaterImpl<T> extends AtomicIntegerFieldUpdater<
     }
 
     public void lazySet(T bean, int newValue) {
-        UA.putOrderedInt(bean, this.offset, newValue);
+        UA.putIntRelease(bean, this.offset, newValue);
     }
 
     public int get(T bean) {

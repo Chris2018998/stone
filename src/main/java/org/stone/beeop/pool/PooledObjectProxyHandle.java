@@ -9,70 +9,29 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.BeeObjectPredicate;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-
-import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
-import static org.stone.tools.BeanUtil.BeeClassLoader;
-import static org.stone.tools.CommonUtil.isNotBlank;
+import java.lang.reflect.Constructor;
 
 /**
  * Object proxy
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */
 public final class PooledObjectProxyHandle<K, V> extends PooledObjectPlainHandle<K, V> {
     private final V objectProxy;
 
-    PooledObjectProxyHandle(PooledObject<K, V> p, BeeObjectPredicate predicate,
-                            Class<?>[] objectInterfaces, BeeObjectMethodFilter<K> methodFilter) {
+    PooledObjectProxyHandle(PooledObject<K, V> p, BeeObjectPredicate predicate, Constructor<?> proxyClassConstructor) throws Exception {
         super(p, predicate);
-        this.objectProxy = (V) Proxy.newProxyInstance(
-                BeeClassLoader,
-                objectInterfaces,
-                new ObjectReflectHandler(p, this, predicate, methodFilter));
+        this.objectProxy = (V) proxyClassConstructor.newInstance(p, this, predicate);
     }
 
     @Override
     public V getObjectProxy() throws Exception {
         this.checkClosed();
         return objectProxy;
-    }
-
-    private static final class ObjectReflectHandler<K, V> implements InvocationHandler {
-        private final Object raw;
-        private final PooledObject<K, V> p;
-        private final PooledObjectProxyHandle<K, V> handle;
-        private final BeeObjectPredicate predicate;
-        private final BeeObjectMethodFilter<K> methodFilter;
-
-        ObjectReflectHandler(PooledObject<K, V> p, PooledObjectProxyHandle<K, V> handle, BeeObjectPredicate predicate, BeeObjectMethodFilter<K> methodFilter) {
-            this.p = p;
-            this.raw = p.raw;
-            this.handle = handle;
-            this.predicate = predicate;
-            this.methodFilter = methodFilter;
-        }
-
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-            handle.checkClosed();
-            if (methodFilter != null) methodFilter.doFilter(p.key, method.getName(), method.getParameterTypes(), args);
-
-            try {
-                Object v = method.invoke(raw, args);
-                p.updateAccessTime();
-                return v;
-            } catch (Exception e) {
-                if (predicate != null && isNotBlank(predicate.evictTest(e)))
-                    p.abortSelf(DESC_RM_BAD);
-
-                throw e;
-            }
-        }
     }
 }

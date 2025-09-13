@@ -9,6 +9,8 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.beecp.BeeConnectionTracker;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,8 +27,12 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
  */
 abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement {
     private final ProxyConnectionBase owner;
+    protected Object preparedKey;
+    protected String sql;
     protected Statement raw;
-    boolean registered = true;
+    protected BeeConnectionTracker tracker;
+
+    boolean unregister;
     private ProxyResultSetBase curRe;
     private ArrayList<ProxyResultSetBase> results;
     private int resultOpenCode = Statement.CLOSE_CURRENT_RESULT;
@@ -35,7 +41,18 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
         super(p);
         this.raw = raw;
         this.owner = o;
-        owner.registerStatement(this);
+        o.registerStatement(this);
+    }
+
+    ProxyStatementBase(Statement raw, ProxyConnectionBase o, PooledConnection p, Object preparedKey, String sql) {
+        super(p);
+        this.raw = raw;
+        this.owner = o;
+        o.registerStatement(this);
+
+        this.preparedKey = preparedKey;//if subclass is Statement implementation,its value is null
+        this.sql = sql;//if subclass is Statement implementation,the sql is null
+        this.tracker = o.tracker;
     }
 
     //***************************************************************************************************************//
@@ -103,7 +120,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
             this.raw.close();
         } finally {
             this.raw = CLOSED_CSTM;//why? because Mysql's PreparedStatement just only remark as closed with useServerCache mode
-            if (this.registered) this.owner.unregisterStatement(this);
+            if (!this.unregister) this.owner.unregisterStatement(this);
         }
     }
 
@@ -128,6 +145,10 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
         return createProxyResultSet(re, this, this.p);
     }
 
+    public void setPoolable(boolean var1) {
+        //do nothing
+    }
+
     public void closeOnCompletion() {
         //do nothing
     }
@@ -136,7 +157,5 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
         return false;
     }
 
-    public String toString() {
-        return raw.toString();
-    }
+    public String toString() {return raw.toString();}
 }

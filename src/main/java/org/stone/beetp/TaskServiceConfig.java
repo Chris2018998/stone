@@ -15,11 +15,12 @@ import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.security.InvalidParameterException;
+import java.util.concurrent.TimeUnit;
 
 import static org.stone.tools.BeanUtil.createClassInstance;
 import static org.stone.tools.BeanUtil.loadClass;
-import static org.stone.tools.CommonUtil.isNotBlank;
-import static org.stone.tools.CommonUtil.trimString;
+import static org.stone.tools.CommonUtil.*;
 
 /**
  * Task service config object
@@ -28,58 +29,203 @@ import static org.stone.tools.CommonUtil.trimString;
  * @version 1.0
  */
 public class TaskServiceConfig {
-    private int maxTaskSize = 1000;
-    private int maxScheduleTaskSize = 1000;
-    private int workerSize = Runtime.getRuntime().availableProcessors();
-    private long workerKeepAliveTime;//milliseconds
+    //size of once tasks
+    private int maxOnceTaskSize = 1000;
+    private int onceWorkerCount = Runtime.getRuntime().availableProcessors();
+    private long onceWorkerKeepAliveTime = TimeUnit.SECONDS.toMillis(15L);//milliseconds
 
+    //size of timer tasks
+    private int maxTimerTaskSize;
+    private int timerWorkerCount;
+    private long timerWorkerKeepAliveTime;//milliseconds
+
+    //size of joined tasks
+    private int maxJoinTaskSize;
+    private int joinWorkerCount;
+    private long joinWorkerKeepAliveTime;//milliseconds
+
+    //thread factory
     private TaskPoolThreadFactory threadFactory;
     private Class<TaskPoolThreadFactory> threadFactoryClass;
     private String threadFactoryClassName = PoolThreadFactory.class.getName();
+
+    //pool implementation class name
     private String poolImplementClassName = PoolTaskCenter.class.getName();
 
-    public int getWorkerSize() {
-        return workerSize;
+
+    //***************************************************************************************************************//
+    //                                    Constructors (4)                                                           //
+    //***************************************************************************************************************//
+    public TaskServiceConfig() {
     }
 
-    public void setWorkerSize(int workerSize) {
-        if (workerSize > 0) this.workerSize = workerSize;
+    public TaskServiceConfig(int maxOnceTaskSize, int onceWorkerCount, long onceWorkerKeepAliveTime) {
+        this(maxOnceTaskSize, onceWorkerCount, onceWorkerKeepAliveTime,
+                0, 0, 0L,
+                0, 0, 0L);
     }
 
-    public int getMaxTaskSize() {
-        return maxTaskSize;
+    public TaskServiceConfig(int maxOnceTaskSize, int onceWorkerCount, long onceWorkerKeepAliveTime,
+                             int maxTimerTaskSize, int timerWorkerCount, long timerWorkerKeepAliveTime) {
+
+        this(maxOnceTaskSize, onceWorkerCount, onceWorkerKeepAliveTime,
+                maxTimerTaskSize, timerWorkerCount, timerWorkerKeepAliveTime,
+                0, 0, 0L);
     }
 
-    public void setMaxTaskSize(int maxTaskSize) {
-        if (maxTaskSize > 0) {
-            this.maxTaskSize = maxTaskSize;
-            this.workerSize = Math.min(maxTaskSize, Runtime.getRuntime().availableProcessors());
+    public TaskServiceConfig(int maxOnceTaskSize, int onceWorkerCount, long onceWorkerKeepAliveTime,
+                             int maxTimerTaskSize, int timerWorkerCount, long timerWorkerKeepAliveTime,
+                             int maxJoinTaskSize, int joinWorkerCount, long joinWorkerKeepAliveTime) {
+
+        this.setMaxOnceTaskSize(maxOnceTaskSize);
+        this.setOnceWorkerCount(onceWorkerCount);
+        this.setOnceWorkerKeepAliveTime(onceWorkerKeepAliveTime);
+
+        this.setMaxTimerTaskSize(maxTimerTaskSize);
+        this.setTimerWorkerCount(timerWorkerCount);
+        this.setTimerWorkerKeepAliveTime(timerWorkerKeepAliveTime);
+
+        this.setMaxJoinTaskSize(maxJoinTaskSize);
+        this.setJoinWorkerCount(joinWorkerCount);
+        this.setJoinWorkerKeepAliveTime(joinWorkerKeepAliveTime);
+    }
+
+    //***************************************************************************************************************//
+    //                                    Once task (6)                                                              //
+    //***************************************************************************************************************//
+    public int getMaxOnceTaskSize() {
+        return maxOnceTaskSize;
+    }
+
+    public void setMaxOnceTaskSize(int maxOnceTaskSize) {
+        if (maxOnceTaskSize >= 0) {
+            this.maxOnceTaskSize = maxOnceTaskSize;
+            this.onceWorkerCount = Math.min(maxOnceTaskSize, Runtime.getRuntime().availableProcessors());
+        } else {
+            throw new InvalidParameterException("The given value of item 'max-once-task-size' cannot be less than zero");
         }
     }
 
-    public int getMaxScheduleTaskSize() {
-        return maxScheduleTaskSize;
+    public int getOnceWorkerCount() {
+        return onceWorkerCount;
     }
 
-    public void setMaxScheduleTaskSize(int maxScheduleTaskSize) {
-        if (maxScheduleTaskSize > 0)
-            this.maxScheduleTaskSize = maxScheduleTaskSize;
+    public void setOnceWorkerCount(int onceWorkerCount) {
+        if (onceWorkerCount > 0) {
+            this.onceWorkerCount = onceWorkerCount;
+        } else {
+            throw new InvalidParameterException("The given value of item 'once-worker-count' cannot be less than zero");
+        }
     }
 
-    public long getWorkerKeepAliveTime() {
-        return workerKeepAliveTime;
+    public long getOnceWorkerKeepAliveTime() {
+        return onceWorkerKeepAliveTime;
     }
 
-    public void setWorkerKeepAliveTime(long workerKeepAliveTime) {
-        if (workerKeepAliveTime > 0L) this.workerKeepAliveTime = workerKeepAliveTime;
+    public void setOnceWorkerKeepAliveTime(long onceWorkerKeepAliveTime) {
+        if (onceWorkerKeepAliveTime > 0L) {
+            this.onceWorkerKeepAliveTime = onceWorkerKeepAliveTime;
+        } else {
+            throw new InvalidParameterException("The given value of item 'once-worker-keep-alive-time' cannot be less than zero");
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                                    Timer task (6)                                                              //
+    //***************************************************************************************************************//
+    public int getMaxTimerTaskSize() {
+        return maxTimerTaskSize;
+    }
+
+    public void setMaxTimerTaskSize(int maxTimerTaskSize) {
+        if (maxTimerTaskSize >= 0) {
+            this.maxTimerTaskSize = maxTimerTaskSize;
+            if (this.timerWorkerCount == 0)
+                this.timerWorkerCount = Math.min(maxTimerTaskSize, Runtime.getRuntime().availableProcessors());
+            if (this.timerWorkerKeepAliveTime == 0) this.timerWorkerKeepAliveTime = TimeUnit.SECONDS.toMillis(15L);
+        } else {
+            throw new InvalidParameterException("The given value of item 'max-once-task-size' cannot be less than zero");
+        }
     }
 
 
+    public int getTimerWorkerCount() {
+        return timerWorkerCount;
+    }
+
+    public void setTimerWorkerCount(int timerWorkerCount) {
+        if (timerWorkerCount > 0) {
+            this.timerWorkerCount = timerWorkerCount;
+        } else {
+            throw new InvalidParameterException("The given value of item 'timer-worker-count' cannot be less than zero");
+        }
+    }
+
+    public long getTimerWorkerKeepAliveTime() {
+        return timerWorkerKeepAliveTime;
+    }
+
+    public void setTimerWorkerKeepAliveTime(long timerWorkerKeepAliveTime) {
+        if (timerWorkerKeepAliveTime > 0L) {
+            this.timerWorkerKeepAliveTime = timerWorkerKeepAliveTime;
+        } else {
+            throw new InvalidParameterException("The given value of item 'timer-worker-keep-alive-time' cannot be less than zero");
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                                    Join task (6)                                                              //
+    //***************************************************************************************************************//
+    public int getMaxJoinTaskSize() {
+        return maxJoinTaskSize;
+    }
+
+    public void setMaxJoinTaskSize(int maxJoinTaskSize) {
+        if (maxJoinTaskSize >= 0) {
+            this.maxJoinTaskSize = maxJoinTaskSize;
+            if (this.joinWorkerCount == 0)
+                this.joinWorkerCount = Math.min(maxJoinTaskSize, Runtime.getRuntime().availableProcessors());
+            if (this.joinWorkerKeepAliveTime == 0) this.timerWorkerKeepAliveTime = TimeUnit.SECONDS.toMillis(15L);
+
+        } else {
+            throw new InvalidParameterException("The given value of item 'max-join-task-size' cannot be less than zero");
+        }
+    }
+
+    public int getJoinWorkerCount() {
+        return joinWorkerCount;
+    }
+
+    public void setJoinWorkerCount(int joinWorkerCount) {
+        if (joinWorkerCount > 0) {
+            this.joinWorkerCount = joinWorkerCount;
+        } else {
+            throw new InvalidParameterException("The given value of item 'join-worker-count' cannot be less than zero");
+        }
+    }
+
+    public long getJoinWorkerKeepAliveTime() {
+        return joinWorkerKeepAliveTime;
+    }
+
+    public void setJoinWorkerKeepAliveTime(long joinWorkerKeepAliveTime) {
+        if (joinWorkerKeepAliveTime > 0L) {
+            this.joinWorkerKeepAliveTime = joinWorkerKeepAliveTime;
+        } else {
+            throw new InvalidParameterException("The given value of item 'join-worker-keep-alive-time' cannot be less than zero");
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                                    Thread factory (6)                                                         //
+    //***************************************************************************************************************//
     public TaskPoolThreadFactory getThreadFactory() {
         return threadFactory;
     }
 
     public void setThreadFactory(TaskPoolThreadFactory threadFactory) {
+        if (threadFactory == null)
+            throw new InvalidParameterException("The given value of item 'thread-factory' cannot be null");
         this.threadFactory = threadFactory;
     }
 
@@ -88,6 +234,8 @@ public class TaskServiceConfig {
     }
 
     public void setThreadFactoryClass(Class<TaskPoolThreadFactory> threadFactoryClass) {
+        if (threadFactoryClass == null)
+            throw new InvalidParameterException("The given value of item 'thread-factory-class' cannot be null");
         this.threadFactoryClass = threadFactoryClass;
     }
 
@@ -96,21 +244,26 @@ public class TaskServiceConfig {
     }
 
     public void setThreadFactoryClassName(String threadFactoryClassName) {
-        if (isNotBlank(threadFactoryClassName))
-            this.threadFactoryClassName = trimString(threadFactoryClassName);
+        if (isBlank(threadFactoryClassName))
+            throw new InvalidParameterException("The given value of item 'thread-factory-class name' cannot be null and blank");
+        this.threadFactoryClassName = trimString(threadFactoryClassName);
     }
 
+    //***************************************************************************************************************//
+    //                                    pool class (6)                                                         //
+    //***************************************************************************************************************/
     public String getPoolImplementClassName() {
         return poolImplementClassName;
     }
 
     public void setPoolImplementClassName(String poolImplementClassName) {
-        if (isNotBlank(poolImplementClassName))
-            this.poolImplementClassName = trimString(poolImplementClassName);
+        if (isBlank(poolImplementClassName))
+            throw new InvalidParameterException("The given value of item 'pool-implement-class-name' cannot be null and blank");
+        this.poolImplementClassName = poolImplementClassName;
     }
 
     public TaskServiceConfig check() throws TaskServiceConfigException {
-        if (maxScheduleTaskSize > maxTaskSize)
+        if (maxTimerTaskSize > maxOnceTaskSize)
             throw new TaskServiceConfigException("Max schedule task size can't be greater than max task size");
         TaskPoolThreadFactory threadFactory = createTaskPoolThreadFactory();
 

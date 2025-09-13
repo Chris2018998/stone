@@ -10,7 +10,6 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectFactory;
-import org.stone.beeop.BeeObjectMethodFilter;
 import org.stone.beeop.pool.exception.ObjectRecycleException;
 
 import java.lang.reflect.Method;
@@ -30,7 +29,6 @@ final class PooledObject<K, V> {
     final K key;
     private final BeeObjectFactory<K, V> factory;
     private final ObjectInstancePool<K, V> ownerPool;
-    private final BeeObjectMethodFilter<K> methodFilter;
     private final Map<MethodCacheKey, Method> methodMap;
 
     V raw;
@@ -44,13 +42,12 @@ final class PooledObject<K, V> {
     //                                  1: constructor                                                               //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(K key, BeeObjectFactory<K, V> factory,
-                 Map<MethodCacheKey, Method> methodMap, BeeObjectMethodFilter<K> methodFilter,
+                 Map<MethodCacheKey, Method> methodMap,
                  ObjectInstancePool<K, V> ownerPool) {
 
         this.key = key;
         this.factory = factory;
         this.methodMap = methodMap;
-        this.methodFilter = methodFilter;
         this.ownerPool = ownerPool;
     }
 
@@ -60,8 +57,8 @@ final class PooledObject<K, V> {
     void setRawObject(int state, V raw) {
         this.raw = raw;
         this.rawType = (Class<V>) raw.getClass();
-        this.lastAccessTime = System.nanoTime();
         this.state = state;
+        this.lastAccessTime = System.currentTimeMillis();
     }
 
     //***************************************************************************************************************//
@@ -72,7 +69,7 @@ final class PooledObject<K, V> {
     }
 
     void updateAccessTime() {
-        this.lastAccessTime = System.nanoTime();
+        this.lastAccessTime = System.currentTimeMillis();
     }
 
     //***************************************************************************************************************//
@@ -122,7 +119,6 @@ final class PooledObject<K, V> {
 
     //handle call this method to get a method of object by parameter info
     Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
-        if (methodFilter != null) methodFilter.doFilter(key, name, types, params);
         MethodCacheKey key = new MethodCacheKey(name, types);
         Method method = methodMap.get(key);
 

@@ -9,6 +9,7 @@
  */
 package org.stone.beecp;
 
+import jakarta.transaction.TransactionManager;
 import org.stone.beecp.jta.BeeJtaDataSource;
 
 import javax.naming.Context;
@@ -17,7 +18,6 @@ import javax.naming.RefAddr;
 import javax.naming.Reference;
 import javax.naming.spi.NamingManager;
 import javax.naming.spi.ObjectFactory;
-import javax.transaction.TransactionManager;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -68,10 +68,10 @@ public final class BeeDataSourceFactory implements ObjectFactory {
     /**
      * @param obj         The possibly null object containing location or reference
      *                    information that can be used in creating an object.
-     * @param name        The name of this object relative to <code>nameCtx</code>, or
+     * @param name        The name of this object relative to {@code nameCtx}, or
      *                    null if no name is specified.
-     * @param nameCtx     The context relative to which the <code>name</code> parameter
-     *                    is specified, or null if <code>name</code> is relative to the
+     * @param nameCtx     The context relative to which the {@code name} parameter
+     *                    is specified, or null if {@code name} is relative to the
      *                    default initial context.
      * @param environment The possibly null environment that is used in creating the
      *                    object.
@@ -80,8 +80,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
      * @see NamingManager#getURLContext
      */
     public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable<?, ?> environment) throws Exception {
-        if (!(obj instanceof Reference)) return null;
-        Reference ref = (Reference) obj;
+        if (!(obj instanceof Reference ref)) return null;
         if (!"javax.sql.DataSource".equals(ref.getClassName())) return null;
 
         //1:try to lookup transactionManager if configured

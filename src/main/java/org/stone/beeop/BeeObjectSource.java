@@ -26,6 +26,8 @@ import static org.stone.tools.BeanUtil.createClassInstance;
  * Email:  Chris2018998@tom.com
  * Project: <a href="https://github.com/Chris2018998/stone">...</a>
  *
+ * @param <K> is pooled key
+ * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */

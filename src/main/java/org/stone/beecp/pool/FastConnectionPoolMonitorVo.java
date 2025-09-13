@@ -35,7 +35,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return poolName;
     }
 
-    void setPoolName(String poolName) {
+    public void setPoolName(String poolName) {
         this.poolName = poolName;
     }
 
@@ -43,7 +43,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return poolMode;
     }
 
-    void setPoolMode(String poolMode) {
+    public void setPoolMode(String poolMode) {
         this.poolMode = poolMode;
     }
 
@@ -51,7 +51,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return poolMaxSize;
     }
 
-    void setPoolMaxSize(int poolMaxSize) {
+    public void setPoolMaxSize(int poolMaxSize) {
         this.poolMaxSize = poolMaxSize;
     }
 
@@ -59,7 +59,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return poolState;
     }
 
-    void setPoolState(int poolState) {
+    public void setPoolState(int poolState) {
         this.poolState = poolState;
     }
 
@@ -67,7 +67,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return idleSize;
     }
 
-    void setIdleSize(int idleSize) {
+    public void setIdleSize(int idleSize) {
         this.idleSize = idleSize;
     }
 
@@ -75,7 +75,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return borrowedSize;
     }
 
-    void setBorrowedSize(int borrowedSize) {
+    public void setBorrowedSize(int borrowedSize) {
         this.borrowedSize = borrowedSize;
     }
 
@@ -83,7 +83,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return semaphoreWaitingSize;
     }
 
-    void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
+    public void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
     }
 
@@ -91,7 +91,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return transferWaitingSize;
     }
 
-    void setTransferWaitingSize(int transferWaitingSize) {
+    public void setTransferWaitingSize(int transferWaitingSize) {
         this.transferWaitingSize = transferWaitingSize;
     }
 
@@ -99,7 +99,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return creatingTimeoutCount;
     }
 
-    void setCreatingTimeoutCount(int creatingTimeoutCount) {
+    public void setCreatingTimeoutCount(int creatingTimeoutCount) {
         this.creatingTimeoutCount = creatingTimeoutCount;
     }
 
@@ -107,7 +107,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         return creatingCount;
     }
 
-    void setCreatingCount(int creatingCount) {
+    public void setCreatingCount(int creatingCount) {
         this.creatingCount = creatingCount;
     }
 }
