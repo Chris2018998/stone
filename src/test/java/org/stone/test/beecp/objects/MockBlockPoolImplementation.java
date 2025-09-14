@@ -11,6 +11,7 @@ package org.stone.test.beecp.objects;
 
 import org.stone.beecp.BeeConnectionPool;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
+import org.stone.beecp.BeeConnectionTracker;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.test.beecp.driver.MockConnection;
 import org.stone.test.beecp.driver.MockXaConnection;
@@ -56,6 +57,10 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
     }
 
     public void enableConnectionTracker(boolean enable){
+
+    }
+
+    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
 
     }
 
