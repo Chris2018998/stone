@@ -89,7 +89,7 @@ public class Tc0030ObjectSourcePoolTest {
         }
 
         try {
-            os.setPrintRuntimeLog(null, false);
+            os.enableLogPrint(null, false);
         } catch (Exception e) {
             Assertions.assertEquals("Pool not be created", e.getMessage());
         }
@@ -145,7 +145,7 @@ public class Tc0030ObjectSourcePoolTest {
         os.interruptObjectCreating(key, true);
         os.getPoolMonitorVo();
         os.getMonitorVo(key);
-        os.setPrintRuntimeLog(key, false);
+        os.enableLogPrint(key, false);
         os.clear(true);
         Assertions.assertTrue(os.exists(key));//<--default key forbidden to delete
         os.clear(key);

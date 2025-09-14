@@ -74,22 +74,8 @@ public interface BeeKeyedObjectPool<K, V> {
     boolean isClosed();
 
     //***************************************************************************************************************//
-    //                                         Pool Clean and monitoring                                             //
+    //                                        3: clear pool(4)                                                       //
     //***************************************************************************************************************//
-
-    /**
-     * A switch call to enable or disable logs print of pool.
-     *
-     * @param enable is true that print, false not print
-     */
-    void enableLogPrint(boolean enable);
-
-    /**
-     * Gets runtime monitoring object of pool,refer to {@link BeeObjectPoolMonitorVo}.
-     *
-     * @return monitor of pool
-     */
-    BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
      * Physically closes all connections and removes them from pool which not accepts borrow requests before completion.
@@ -113,9 +99,25 @@ public interface BeeKeyedObjectPool<K, V> {
      */
     void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
 
+    /**
+     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
+     *
+     * @param key to locate related pooled objects
+     * @throws ObjectKeyException if key is null
+     */
+    void clear(K key) throws Exception;
+
+    /**
+     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
+     *
+     * @param key                  to locate related pooled objects
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
+     */
+    void clear(K key, boolean forceRecycleBorrowed) throws Exception;
 
     //***************************************************************************************************************//
-    //                                        keys maintenance(10)                                                   //
+    //                                        4: keys maintenance(4)                                                 //
     //***************************************************************************************************************//
 
     /**
@@ -134,23 +136,6 @@ public interface BeeKeyedObjectPool<K, V> {
     boolean exists(K key);
 
     /**
-     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
-     *
-     * @param key to locate related pooled objects
-     * @throws ObjectKeyException if key is null
-     */
-    void clear(K key) throws Exception;
-
-    /**
-     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
-     *
-     * @param key                  to locate related pooled objects
-     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
-     */
-    void clear(K key, boolean forceRecycleBorrowed) throws Exception;
-
-    /**
      * Delete a pooled key.
      *
      * @param key is a key to remove
@@ -167,6 +152,45 @@ public interface BeeKeyedObjectPool<K, V> {
      */
     void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
+    //***************************************************************************************************************//
+    //                                        5: Interrupt blocking of object instance creation                      //
+    //***************************************************************************************************************//
+
+    /**
+     * Interrupts processing of object creation.
+     *
+     * @param key                  may be mapping to a set of pooled objects
+     * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
+     * @return interrupted threads
+     * @throws Exception when key is null or not exist key in pool
+     */
+    Thread[] interruptObjectCreating(K key, boolean onlyInterruptTimeout) throws Exception;
+
+
+    //***************************************************************************************************************//
+    //                                        6: Pool monitor                                                        //
+    //***************************************************************************************************************//
+
+    /**
+     * Gets runtime monitoring object of pool,refer to {@link BeeObjectPoolMonitorVo}.
+     *
+     * @return monitor of pool
+     */
+    BeeObjectPoolMonitorVo getPoolMonitorVo();
+
+    /**
+     * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return monitor of an object group
+     * @throws Exception when key is null or not exist key in pool
+     */
+    BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception;
+
+    //***************************************************************************************************************//
+    //                                        7: Log print                                                           //
+    //***************************************************************************************************************//
+
     /**
      * Query print state of runtime logs.
      *
@@ -174,7 +198,7 @@ public interface BeeKeyedObjectPool<K, V> {
      * @return boolean value,true,keyed pool print runtime logs,otherwise not print
      * @throws Exception when key is null or not exist key in pool
      */
-    boolean isEnableLogPrint(K key) throws Exception;
+    boolean isEnabledLogPrint(K key) throws Exception;
 
     /**
      * Enable runtime log print or disable.
@@ -186,21 +210,11 @@ public interface BeeKeyedObjectPool<K, V> {
     void enableLogPrint(K key, boolean enable) throws Exception;
 
     /**
-     * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.
+     * A switch call to enable or disable logs print of pool.
      *
-     * @param key may be mapping to a set of pooled objects
-     * @return monitor of an object group
-     * @throws Exception when key is null or not exist key in pool
+     * @param enable is true that print, false not print
      */
-    BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception;
+    void enableLogPrint(boolean enable);
 
-    /**
-     * Interrupts processing of object creation.
-     *
-     * @param key                  may be mapping to a set of pooled objects
-     * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
-     * @return interrupted threads
-     * @throws Exception when key is null or not exist key in pool
-     */
-    Thread[] interruptObjectCreating(K key, boolean onlyInterruptTimeout) throws Exception;
+
 }

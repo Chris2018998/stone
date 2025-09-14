@@ -56,7 +56,7 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
         //do nothing
     }
 
-    public boolean isEnableLogPrint() {
+    public boolean isEnabledLogPrint() {
         return false;
     }
 
@@ -68,7 +68,7 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
         //do nothing
     }
 
-    public boolean isEnableConnectionTracker() {
+    public boolean isEnabledConnectionTracker() {
         return false;
     }
 

@@ -388,7 +388,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
             throw new PoolInClearingException("Target category(" + key + ") Pool has been closed or is being cleared");
     }
 
-    public boolean isEnableLogPrint(K key) throws Exception {
+    public boolean isEnabledLogPrint(K key) throws Exception {
         return getObjectInstancePool(key).isPrintRuntimeLog();
     }
 

@@ -234,11 +234,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public boolean isEnableLogPrint() {
+    public boolean isEnabledLogPrint() {
         return false;
     }
 
-    public boolean isEnableConnectionTracker() {
+    public boolean isEnabledConnectionTracker() {
         return false;
     }
 

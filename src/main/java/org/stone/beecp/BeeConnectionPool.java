@@ -76,14 +76,14 @@ public interface BeeConnectionPool {
      *
      * @return boolean true is enabled,false not be
      */
-    boolean isEnableLogPrint();
+    boolean isEnabledLogPrint();
 
     /**
      * query connection tracker is whether enabled in pool
      *
      * @return boolean true is enabled,false not be
      */
-    boolean isEnableConnectionTracker();
+    boolean isEnabledConnectionTracker();
 
     /**
      * A switch to enable tracker or disable tracker

@@ -74,27 +74,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     }
 
     //***************************************************************************************************************//
-    //                                          2: Override(2)                                                       //
-    //***************************************************************************************************************//
-    public void setMaxWait(long maxWait) {
-        super.setMaxWait(maxWait);
-        this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
-    }
-
-    public void setPrintRuntimeLog(boolean printRuntimeLog) {
-        if (pool == null) {
-            super.setPrintRuntimeLog(printRuntimeLog);
-        } else {
-            pool.enableLogPrint(printRuntimeLog);//set to pool
-        }
-    }
-
-    public void enableLogPrint(boolean printRuntimeLog) throws Exception {
-        this.getPool().enableLogPrint(printRuntimeLog);
-    }
-
-    //***************************************************************************************************************//
-    //                                        3: Object Getting(pool lazy creation if null)                          //
+    //                                        2: Pooled objects Get                                                  //
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
         if (this.ready) return pool.getObjectHandle();
@@ -134,8 +114,16 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     }
 
     //***************************************************************************************************************//
-    //                                          4: clear and monitoring(3)                                           //
+    //                                        3: clear pool(4)                                                       //
     //***************************************************************************************************************//
+    public void clear(K key) throws Exception {
+        getPool().clear(key);
+    }
+
+    public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
+        getPool().clear(key, forceRecycleBorrowed);
+    }
+
     public void clear(boolean forceRecycleBorrowed) throws Exception {
         getPool().clear(forceRecycleBorrowed);
     }
@@ -146,23 +134,11 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
 
-    public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
-        return getPool().getPoolMonitorVo();
-    }
-
     //***************************************************************************************************************//
-    //                                          5: keys maintenance(10)                                               //
+    //                                        4: keys maintenance(3)                                                 //
     //***************************************************************************************************************//
     public boolean exists(K key) throws Exception {
         return getPool().exists(key);
-    }
-
-    public void clear(K key) throws Exception {
-        getPool().clear(key);
-    }
-
-    public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
-        getPool().clear(key, forceRecycleBorrowed);
     }
 
     public void deleteKey(K key) throws Exception {
@@ -173,18 +149,9 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
         getPool().deleteKey(key, forceRecycleBorrowed);
     }
 
-    public boolean isEnableLogPrint(K key) throws Exception {
-        return getPool().isEnableLogPrint(key);
-    }
-
-    public void setPrintRuntimeLog(K key, boolean enable) throws Exception {
-        getPool().enableLogPrint(key, enable);
-    }
-
-    public BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception {
-        return getPool().getMonitorVo(key);
-    }
-
+    //***************************************************************************************************************//
+    //                                        5: Interrupt blocking of object instance creation                      //
+    //***************************************************************************************************************//
     public Thread[] interruptObjectCreating(K key, boolean interruptTimeout) throws Exception {
         return getPool().interruptObjectCreating(key, interruptTimeout);
     }
@@ -192,5 +159,47 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
     private BeeKeyedObjectPool<K, V> getPool() throws Exception {
         if (pool == null) throw new PoolNotCreatedException("Pool not be created");
         return this.pool;
+    }
+
+    //***************************************************************************************************************//
+    //                                        6: Pool monitor                                                        //
+    //***************************************************************************************************************//
+    public BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception {
+        return getPool().getMonitorVo(key);
+    }
+
+    public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
+        return getPool().getPoolMonitorVo();
+    }
+
+    //***************************************************************************************************************//
+    //                                        7: Log print                                                           //
+    //***************************************************************************************************************//
+    public boolean isEnabledLogPrint(K key) throws Exception {
+        return getPool().isEnabledLogPrint(key);
+    }
+
+    public void enableLogPrint(K key, boolean enable) throws Exception {
+        getPool().enableLogPrint(key, enable);
+    }
+
+    public void enableLogPrint(boolean printRuntimeLog) throws Exception {
+        this.getPool().enableLogPrint(printRuntimeLog);
+    }
+
+    //***************************************************************************************************************//
+    //                                       8: Override methods                                                     //
+    //***************************************************************************************************************//
+    public void setMaxWait(long maxWait) {
+        super.setMaxWait(maxWait);
+        this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
+    }
+
+    public void setPrintRuntimeLog(boolean printRuntimeLog) {
+        if (pool == null) {
+            super.setPrintRuntimeLog(printRuntimeLog);
+        } else {
+            pool.enableLogPrint(printRuntimeLog);//set to pool
+        }
     }
 }

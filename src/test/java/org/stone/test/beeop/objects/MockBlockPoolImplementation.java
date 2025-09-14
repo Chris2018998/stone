@@ -62,7 +62,7 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
     public void enableLogPrint(boolean indicator) {
     }
 
-    public boolean isEnableLogPrint(Object key) {
+    public boolean isEnabledLogPrint(Object key) {
         return false;
     }
 
