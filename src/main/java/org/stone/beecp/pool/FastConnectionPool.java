@@ -970,6 +970,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         return this.conProxyFactory instanceof ProxyConnectionFactoryT;
     }
 
+    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
+        this.conProxyFactory = new ProxyConnectionFactoryT(connectionTracker);
+    }
+
     public void enableConnectionTracker(boolean enable) {
         if (enable)
             this.conProxyFactory = new ProxyConnectionFactoryT(poolConfig.getConnectionTracker());

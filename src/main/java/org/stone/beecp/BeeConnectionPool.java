@@ -79,6 +79,13 @@ public interface BeeConnectionPool {
     void enableConnectionTracker(boolean enable);
 
     /**
+     * Set a connection Tracker to pool
+     *
+     * @param connectionTracker is a new tracker
+     */
+    void setConnectionTracker(BeeConnectionTracker connectionTracker);
+
+    /**
      * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
      *
      * @return monitoring object of pool
