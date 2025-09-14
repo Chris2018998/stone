@@ -72,6 +72,13 @@ public interface BeeConnectionPool {
     void setPrintRuntimeLog(boolean enable);
 
     /**
+     * A switch to enable tracker or disable tracker
+     *
+     * @param enable is true that enable, false is disabled
+     */
+    void enableConnectionTracker(boolean enable);
+
+    /**
      * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
      *
      * @return monitoring object of pool
@@ -107,6 +114,7 @@ public interface BeeConnectionPool {
      * @throws SQLException                 when pool reinitialize fail
      */
     void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
+
 
 }
 	

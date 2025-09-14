@@ -234,6 +234,17 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.pool;
     }
 
+
+    //***************************************************************************************************************//
+    //                                     add method to for enable or disable trace on runtime                      //
+    //***************************************************************************************************************//
+    public void enableConnectionTracker(boolean enable) throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        if (enable && this.getConnectionTracker() == null)
+            throw new PoolNotCreatedException("Connection tracker not set in configuration");
+        this.pool.enableConnectionTracker(enable);
+    }
+
     //***************************************************************************************************************//
     //                                     override methods(3)                                                       //
     //***************************************************************************************************************//

@@ -55,6 +55,10 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
         //do nothing
     }
 
+    public void enableConnectionTracker(boolean enable){
+
+    }
+
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         return null;
     }

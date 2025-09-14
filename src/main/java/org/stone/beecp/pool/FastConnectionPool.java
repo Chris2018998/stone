@@ -962,6 +962,17 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         printRuntimeLog = indicator;
     }
 
+    public boolean isEnableConnectionTracker() {
+        return this.conProxyFactory instanceof ProxyConnectionFactoryT;
+    }
+
+    public void enableConnectionTracker(boolean enable) {
+        if (enable)
+            this.conProxyFactory = new ProxyConnectionFactoryT(poolConfig.getConnectionTracker());
+        else
+            this.conProxyFactory = new ProxyConnectionFactory();
+    }
+
     //Method-5.3: the length of array stores pooled connections
     public int getTotalSize() {
         int totalSize = 0;
