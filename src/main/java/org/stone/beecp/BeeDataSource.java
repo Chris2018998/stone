@@ -228,19 +228,30 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
 
     //***************************************************************************************************************//
-    //                                     add method to for enable or disable trace on runtime                      //
+    //                                    log print                                                                  //
     //***************************************************************************************************************//
-    public void setPrintRuntimeLog(boolean printRuntimeLog) {
+    public void setPrintRuntimeLog(boolean enable) {
         if (pool == null) {
-            super.setPrintRuntimeLog(printRuntimeLog);//as configuration item
+            super.setPrintRuntimeLog(enable);//as configuration item
         } else {
-            pool.enableLogPrint(printRuntimeLog);//set to pool
+            pool.enableLogPrint(enable);//set to pool
         }
     }
 
-    public void enableLogPrint(boolean printRuntimeLog) throws SQLException {
+    public void enableLogPrint(boolean enable) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        this.pool.enableLogPrint(printRuntimeLog);
+        this.pool.enableLogPrint(enable);
+    }
+
+    //***************************************************************************************************************//
+    //                                                  Connection tracker                                           //
+    //***************************************************************************************************************//
+    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
+        if (pool == null) {
+            super.setConnectionTracker(connectionTracker);//as configuration item
+        } else {
+            pool.setConnectionTracker(connectionTracker);//set to pool
+        }
     }
 
     public void enableConnectionTracker(boolean enable) throws SQLException {
