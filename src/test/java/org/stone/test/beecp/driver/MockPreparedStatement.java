@@ -24,17 +24,26 @@ public class MockPreparedStatement extends MockStatement implements PreparedStat
         super(connection);
     }
 
-    public ResultSet executeQuery() {
-        resultSet = new MockResultSet(this);
-        return resultSet;
-    }
 
     public ResultSetMetaData getMetaData() {
         return new MockResultSetMetaData();
     }
 
-    public int executeUpdate() {
+
+    public boolean execute() throws SQLException {
+        connection.mockThrowExceptionOnMethod("execute");
+        return true;
+    }
+
+    public int executeUpdate() throws SQLException {
+        connection.mockThrowExceptionOnMethod("executeUpdate");
         return 1;
+    }
+
+    public ResultSet executeQuery() throws SQLException {
+        connection.mockThrowExceptionOnMethod("executeQuery");
+        resultSet = new MockResultSet(this);
+        return resultSet;
     }
 
     public void setNull(int parameterIndex, int sqlType) {
@@ -117,9 +126,6 @@ public class MockPreparedStatement extends MockStatement implements PreparedStat
         //do nothing
     }
 
-    public boolean execute() {
-        return true;
-    }
 
     public void addBatch() {
         //do nothing

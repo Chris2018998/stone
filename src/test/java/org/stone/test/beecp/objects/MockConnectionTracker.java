@@ -23,6 +23,63 @@ import java.util.UUID;
 
 public class MockConnectionTracker implements BeeConnectionTracker {
     private final Logger Log = LoggerFactory.getLogger(MockConnectionTracker.class);
+
+    //field value from tracee method end or onException
+    private Object preparedKey;
+    private String methodSignature;
+    private long startTime;
+    private long endTime;
+    private Throwable failCause;
+    private String sql;
+
+    public Object getPreparedKey() {
+        return preparedKey;
+    }
+
+    public void setPreparedKey(Object preparedKey) {
+        this.preparedKey = preparedKey;
+    }
+
+    public String getMethodSignature() {
+        return methodSignature;
+    }
+
+    public void setMethodSignature(String methodSignature) {
+        this.methodSignature = methodSignature;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
+    }
+
+    public Throwable getFailCause() {
+        return failCause;
+    }
+
+    public void setFailCause(Throwable failCause) {
+        this.failCause = failCause;
+    }
+
+    public String getSql() {
+        return sql;
+    }
+
+    public void setSql(String sql) {
+        this.sql = sql;
+    }
+
     //***************************************************************************************************************//
     //                              1: Generates unique trace keys                                                   //
     //***************************************************************************************************************//
@@ -61,6 +118,9 @@ public class MockConnectionTracker implements BeeConnectionTracker {
      */
     public void afterGetConnection(Object traceKey, String methodSignature, long startTime, long endTime) {
         Log.info("afterGetConnection:{}", (endTime - startTime));
+        this.methodSignature = methodSignature;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
 
@@ -91,6 +151,10 @@ public class MockConnectionTracker implements BeeConnectionTracker {
      */
     public void afterPrepareSQL(Object traceKey, String methodSignature, long startTime, long endTime, String sql) {
         Log.info("afterPrepareSQL:{},time:{}", sql, (endTime - startTime));
+        this.methodSignature = methodSignature;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.sql = sql;
     }
 
     //***************************************************************************************************************//
@@ -123,6 +187,11 @@ public class MockConnectionTracker implements BeeConnectionTracker {
      */
     public void afterExecutePreparedSQL(Object traceKey, String methodSignature, long startTime, long endTime, Object preparedKey, String sql) {
         Log.info("afterExecutePreparedSQL:{},time:{}", sql, (endTime - startTime));
+        this.methodSignature = methodSignature;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.preparedKey = preparedKey;
+        this.sql = sql;
     }
 
 
@@ -154,6 +223,11 @@ public class MockConnectionTracker implements BeeConnectionTracker {
      */
     public void afterExecuteSQL(Object traceKey, String methodSignature, long startTime, long endTime, String sql) {
         Log.info("afterExecuteSQL:{},time:{}", sql, (endTime - startTime));
+        this.methodSignature = methodSignature;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.preparedKey = null;
+        this.sql = sql;
     }
 
     //***************************************************************************************************************//
@@ -173,5 +247,12 @@ public class MockConnectionTracker implements BeeConnectionTracker {
      */
     public void onException(Object traceKey, String methodSignature, long startTime, long endTime, Throwable e, Object preparedKey, String sql) {
         Log.info("onException:{},time:{}", sql, (endTime - startTime));
+        this.methodSignature = methodSignature;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.preparedKey = null;
+        this.sql = sql;
+        this.failCause = e;
+
     }
 }
