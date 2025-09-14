@@ -226,12 +226,20 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableConnectionTracker(boolean enable){
+    public void enableConnectionTracker(boolean enable) {
         //do nothing
     }
 
     public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
         //do nothing
+    }
+
+    public boolean isEnableLogPrint() {
+        return false;
+    }
+
+    public boolean isEnableConnectionTracker() {
+        return false;
     }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {

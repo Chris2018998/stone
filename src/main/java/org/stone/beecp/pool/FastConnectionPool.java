@@ -962,6 +962,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         printRuntimeLog = indicator;
     }
 
+    public boolean isEnableLogPrint(){return printRuntimeLog;}
+
     public void enableLogPrint(boolean indicator) {
         printRuntimeLog = indicator;
     }

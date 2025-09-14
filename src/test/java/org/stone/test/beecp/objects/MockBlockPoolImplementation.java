@@ -56,12 +56,20 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableConnectionTracker(boolean enable){
+    public boolean isEnableLogPrint() {
+        return false;
+    }
 
+    public void enableConnectionTracker(boolean enable) {
+        //do nothing
     }
 
     public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
+        //do nothing
+    }
 
+    public boolean isEnableConnectionTracker() {
+        return false;
     }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {

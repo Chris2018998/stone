@@ -67,9 +67,23 @@ public interface BeeConnectionPool {
     /**
      * A switch call to enable or disable runtime log print in pool
      *
-     * @param enable is true that print, false is not print
+     * @param enable is true that log print is enabled, false is not print
      */
     void enableLogPrint(boolean enable);
+
+    /**
+     * query log print is whether enabled in pool
+     *
+     * @return boolean true is enabled,false not be
+     */
+    boolean isEnableLogPrint();
+
+    /**
+     * query connection tracker is whether enabled in pool
+     *
+     * @return boolean true is enabled,false not be
+     */
+    boolean isEnableConnectionTracker();
 
     /**
      * A switch to enable tracker or disable tracker

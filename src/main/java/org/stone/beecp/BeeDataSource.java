@@ -243,6 +243,11 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         this.pool.enableLogPrint(enable);
     }
 
+    public boolean isEnableLogPrint() throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return this.pool.isEnableLogPrint();
+    }
+
     //***************************************************************************************************************//
     //                                         6: Connection tracker                                                 //
     //***************************************************************************************************************//
@@ -252,6 +257,11 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         } else {
             pool.setConnectionTracker(connectionTracker);//set to pool
         }
+    }
+
+    public boolean isEnableConnectionTracker() throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return this.pool.isEnableConnectionTracker();
     }
 
     public void enableConnectionTracker(boolean enable) throws SQLException {
