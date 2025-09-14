@@ -56,7 +56,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private SQLException cause;//inner pool create failed cause
 
     //***************************************************************************************************************//
-    //                                             1:constructors(3)                                                 //
+    //                                         1:constructors(3)                                                     //
     //***************************************************************************************************************//
     public BeeDataSource() {
     }
@@ -102,7 +102,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                          2: Connection Getting(pool lazy creation if null)                    //
+    //                                         2: Connection Getting(pool lazy creation if null)                     //
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
         if (this.ready) return pool.getConnection();
@@ -151,7 +151,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                      Override methods from CommonDataSource                                   //
+    //                                         3: Override methods from CommonDataSource                             //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
         return subDs != null ? subDs.getLogWriter() : null;
@@ -186,7 +186,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                     3: below are self-define methods(7)                                       //
+    //                                         4: below are self-define methods(7)                                   //
     //***************************************************************************************************************//
     public boolean isClosed() {
         return this.pool == null || this.pool.isClosed();
@@ -228,7 +228,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
 
     //***************************************************************************************************************//
-    //                                    log print                                                                  //
+    //                                         5: log print                                                          //
     //***************************************************************************************************************//
     public void setPrintRuntimeLog(boolean enable) {
         if (pool == null) {
@@ -244,7 +244,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                                  Connection tracker                                           //
+    //                                         6: Connection tracker                                                 //
     //***************************************************************************************************************//
     public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
         if (pool == null) {
@@ -262,7 +262,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                     override methods(3)                                                       //
+    //                                     7: JDBC link info change                                                  //
     //***************************************************************************************************************//
     public void setUsername(String username) {
         if (pool == null) {
