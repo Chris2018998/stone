@@ -82,7 +82,7 @@ public interface BeeKeyedObjectPool<K, V> {
      *
      * @param enable is true that print, false not print
      */
-    void setPrintRuntimeLog(boolean enable);
+    void enableLogPrint(boolean enable);
 
     /**
      * Gets runtime monitoring object of pool,refer to {@link BeeObjectPoolMonitorVo}.
@@ -174,7 +174,7 @@ public interface BeeKeyedObjectPool<K, V> {
      * @return boolean value,true,keyed pool print runtime logs,otherwise not print
      * @throws Exception when key is null or not exist key in pool
      */
-    boolean isPrintRuntimeLog(K key) throws Exception;
+    boolean isEnableLogPrint(K key) throws Exception;
 
     /**
      * Enable runtime log print or disable.
@@ -183,7 +183,7 @@ public interface BeeKeyedObjectPool<K, V> {
      * @param enable is true,print logs;false,not print
      * @throws Exception when key is null or not exist key in pool
      */
-    void setPrintRuntimeLog(K key, boolean enable) throws Exception;
+    void enableLogPrint(K key, boolean enable) throws Exception;
 
     /**
      * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.

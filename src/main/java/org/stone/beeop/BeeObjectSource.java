@@ -85,8 +85,12 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
         if (pool == null) {
             super.setPrintRuntimeLog(printRuntimeLog);
         } else {
-            pool.setPrintRuntimeLog(printRuntimeLog);//set to pool
+            pool.enableLogPrint(printRuntimeLog);//set to pool
         }
+    }
+
+    public void enableLogPrint(boolean printRuntimeLog) throws Exception {
+        this.getPool().enableLogPrint(printRuntimeLog);
     }
 
     //***************************************************************************************************************//
@@ -169,12 +173,12 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
         getPool().deleteKey(key, forceRecycleBorrowed);
     }
 
-    public boolean isPrintRuntimeLog(K key) throws Exception {
-        return getPool().isPrintRuntimeLog(key);
+    public boolean isEnableLogPrint(K key) throws Exception {
+        return getPool().isEnableLogPrint(key);
     }
 
     public void setPrintRuntimeLog(K key, boolean enable) throws Exception {
-        getPool().setPrintRuntimeLog(key, enable);
+        getPool().enableLogPrint(key, enable);
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception {

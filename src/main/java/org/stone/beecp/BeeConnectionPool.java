@@ -69,7 +69,7 @@ public interface BeeConnectionPool {
      *
      * @param enable is true that print, false is not print
      */
-    void setPrintRuntimeLog(boolean enable);
+    void enableLogPrint(boolean enable);
 
     /**
      * A switch to enable tracker or disable tracker

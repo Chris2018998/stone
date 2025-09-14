@@ -268,7 +268,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //                              4: Pool Monitoring and switch of log print(2)                                    //                                                                                  //
     //***************************************************************************************************************//
     //4.1: Enable or disable switch of runtime log print
-    public void setPrintRuntimeLog(boolean enable) {
+    public void enableLogPrint(boolean enable) {
         for (ObjectInstancePool<K, V> pool : categoryPoolMap.values()) {
             pool.setPrintRuntimeLog(enable);
         }
@@ -388,13 +388,14 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
             throw new PoolInClearingException("Target category(" + key + ") Pool has been closed or is being cleared");
     }
 
-    public boolean isPrintRuntimeLog(K key) throws Exception {
+    public boolean isEnableLogPrint(K key) throws Exception {
         return getObjectInstancePool(key).isPrintRuntimeLog();
     }
 
-    public void setPrintRuntimeLog(K key, boolean enable) throws Exception {
+    public void enableLogPrint(K key, boolean enable) throws Exception {
         getObjectInstancePool(key).setPrintRuntimeLog(enable);
     }
+
 
     public BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception {
         return getObjectInstancePool(key).getPoolMonitorVo();

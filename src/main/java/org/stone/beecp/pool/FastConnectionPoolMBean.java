@@ -39,7 +39,8 @@ public interface FastConnectionPoolMBean {
     int getTransferWaitingSize();
 
     //set pool info debug switch
-    void setPrintRuntimeLog(boolean indicator);
+    void setPrintRuntimeLog(boolean enable);
+
 
 }
 

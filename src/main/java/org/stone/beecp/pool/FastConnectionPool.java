@@ -962,6 +962,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         printRuntimeLog = indicator;
     }
 
+    public void enableLogPrint(boolean indicator) {
+        printRuntimeLog = indicator;
+    }
+
     public boolean isEnableConnectionTracker() {
         return this.conProxyFactory instanceof ProxyConnectionFactoryT;
     }

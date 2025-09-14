@@ -202,14 +202,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
     }
 
-    public void setPrintRuntimeLog(boolean printRuntimeLog) {
-        if (pool == null) {
-            super.setPrintRuntimeLog(printRuntimeLog);//as configuration item
-        } else {
-            pool.setPrintRuntimeLog(printRuntimeLog);//set to pool
-        }
-    }
-
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
         return this.getPool().getPoolMonitorVo();
     }
@@ -238,6 +230,19 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                     add method to for enable or disable trace on runtime                      //
     //***************************************************************************************************************//
+    public void setPrintRuntimeLog(boolean printRuntimeLog) {
+        if (pool == null) {
+            super.setPrintRuntimeLog(printRuntimeLog);//as configuration item
+        } else {
+            pool.enableLogPrint(printRuntimeLog);//set to pool
+        }
+    }
+
+    public void enableLogPrint(boolean printRuntimeLog) throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        this.pool.enableLogPrint(printRuntimeLog);
+    }
+
     public void enableConnectionTracker(boolean enable) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
         if (enable && this.getConnectionTracker() == null)
