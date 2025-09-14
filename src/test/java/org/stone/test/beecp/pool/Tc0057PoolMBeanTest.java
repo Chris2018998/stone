@@ -83,7 +83,7 @@ public class Tc0057PoolMBeanTest {
 
         //1: not print
         LogCollector logCollector = LogCollector.startLogCollector();
-        pool.setPrintRuntimeLog(false);//not print
+        pool.enableLogPrint(false);//not print
         Connection con = null;
         try {
             con = pool.getConnection();
@@ -97,7 +97,7 @@ public class Tc0057PoolMBeanTest {
         pool.clear(false);//remove all connection
 
         logCollector = LogCollector.startLogCollector();
-        pool.setPrintRuntimeLog(true);//print
+        pool.enableLogPrint(true);//print
         Assertions.assertTrue(pool.isPrintRuntimeLog());
         Connection con2 = null;
         try {

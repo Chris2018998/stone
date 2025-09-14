@@ -222,7 +222,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
     }
 
     //set pool info debug switch
-    public void setPrintRuntimeLog(boolean enabledDebug) {
+    public void enableLogPrint(boolean enabledDebug) {
         //do nothing
     }
 

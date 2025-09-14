@@ -69,16 +69,16 @@ public class Tc0034ObjectSourceOtherTest {
         os.setObjectFactory(new JavaBookFactory());
         os.setPrintRuntimeLog(true);
         try {
-            os.isPrintRuntimeLog(objectFactory.getDefaultKey());
+            os.isEnableLogPrint(objectFactory.getDefaultKey());
         } catch (Exception e) {
             Assertions.assertEquals("Pool not be created", e.getMessage());
         }
 
         //3: lazy initialization
         os.getObjectHandle(objectFactory.getDefaultKey());
-        Assertions.assertTrue(os.isPrintRuntimeLog(objectFactory.getDefaultKey()));
+        Assertions.assertTrue(os.isEnableLogPrint(objectFactory.getDefaultKey()));
 
         os.setPrintRuntimeLog(false);
-        Assertions.assertFalse(os.isPrintRuntimeLog(objectFactory.getDefaultKey()));
+        Assertions.assertFalse(os.isEnableLogPrint(objectFactory.getDefaultKey()));
     }
 }

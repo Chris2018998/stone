@@ -25,8 +25,8 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return false;
     }
 
-    public void setPrintRuntimeLog(boolean indicator) {
-    }
+
+
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
         return null;
@@ -58,11 +58,15 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return null;
     }
 
-    public boolean isPrintRuntimeLog(Object key) {
+
+    public void enableLogPrint(boolean indicator) {
+    }
+
+    public boolean isEnableLogPrint(Object key) {
         return false;
     }
 
-    public void setPrintRuntimeLog(Object key, boolean indicator) throws Exception {
+    public void enableLogPrint(Object key, boolean indicator) throws Exception {
     }
 
     public BeeObjectPoolMonitorVo getMonitorVo(Object key) {

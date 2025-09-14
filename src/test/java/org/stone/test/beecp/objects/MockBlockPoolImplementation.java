@@ -51,7 +51,7 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
         return false;
     }
 
-    public void setPrintRuntimeLog(boolean indicator) {
+    public void enableLogPrint(boolean indicator) {
         //do nothing
     }
 
