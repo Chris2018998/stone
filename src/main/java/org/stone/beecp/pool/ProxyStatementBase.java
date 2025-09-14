@@ -157,5 +157,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
         return false;
     }
 
-    public String toString() {return raw.toString();}
+    public String toString() {
+        return raw.toString();
+    }
 }
