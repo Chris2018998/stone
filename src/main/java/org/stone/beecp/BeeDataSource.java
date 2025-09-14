@@ -49,7 +49,6 @@ import static org.stone.tools.CommonUtil.isNotBlank;
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    protected BeeConnectionTracker conTracker;
     private long maxWaitNanos = SECONDS.toNanos(8L);//default vale same to config
     private BeeConnectionPool pool;
     private CommonDataSource subDs;//used to set loginTimeout
@@ -87,7 +86,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
             pool.init(ds);
             ds.pool = pool;
-            ds.conTracker = ds.getConnectionTracker();
 
             Object connectionFactory = ds.getConnectionFactory();
             if (connectionFactory instanceof CommonDataSource)
