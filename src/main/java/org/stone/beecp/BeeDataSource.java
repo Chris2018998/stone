@@ -151,7 +151,21 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         3: Override methods of CommonDataSource                              //
+    //                                         3: Pool clean(2)                                                      //
+    //***************************************************************************************************************//
+    public void clear(boolean forceRecycleBorrowed) throws SQLException {
+        this.getPool().clear(forceRecycleBorrowed);
+    }
+
+    public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
+        if (config == null) throw new BeeDataSourceConfigException("Pool configuration object can't be null");
+        this.getPool().clear(forceRecycleBorrowed, config);
+        config.copyTo(this);
+        this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
+    }
+
+    //***************************************************************************************************************//
+    //                                         4: Override methods of CommonDataSource                              //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
         return subDs != null ? subDs.getLogWriter() : null;
@@ -172,7 +186,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     public void setLoginTimeout(int seconds) throws SQLException {
         if (subDs != null) subDs.setLoginTimeout(seconds);
     }
-    //******************************************************** Override End ******************************************//
 
     public boolean isWrapperFor(Class<?> clazz) {
         return clazz != null && clazz.isInstance(this);
@@ -184,48 +197,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         else
             throw new SQLException("The wrapper object was not an instance of " + clazz);
     }
-
-    //***************************************************************************************************************//
-    //                                         4: below are self-define methods(7)                                   //
-    //***************************************************************************************************************//
-    public boolean isClosed() {
-        return this.pool == null || this.pool.isClosed();
-    }
-
-    public void close() {
-        if (this.pool != null) this.pool.close();
-    }
-
-    //override method
-    public void setMaxWait(long maxWait) {
-        super.setMaxWait(maxWait);
-        this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
-    }
-
-    public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
-        return this.getPool().getPoolMonitorVo();
-    }
-
-    public Thread[] interruptConnectionCreating(boolean interruptTimeout) throws SQLException {
-        return this.getPool().interruptConnectionCreating(interruptTimeout);
-    }
-
-    public void clear(boolean forceRecycleBorrowed) throws SQLException {
-        this.getPool().clear(forceRecycleBorrowed);
-    }
-
-    public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
-        if (config == null) throw new BeeDataSourceConfigException("Pool configuration object can't be null");
-        this.getPool().clear(forceRecycleBorrowed, config);
-        config.copyTo(this);
-        this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
-    }
-
-    private BeeConnectionPool getPool() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return this.pool;
-    }
-
 
     //***************************************************************************************************************//
     //                                         5: log print                                                          //
@@ -267,7 +238,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     public void enableConnectionTracker(boolean enable) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
         if (enable && this.getConnectionTracker() == null)
-            throw new PoolNotCreatedException("Connection tracker not set in configuration");
+            throw new BeeDataSourceConfigException("Connection tracker not set in configuration");
         this.pool.enableConnectionTracker(enable);
     }
 
@@ -290,16 +261,16 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         }
     }
 
-    public void setUrl(String jdbcUrl) {
-        setJdbcUrl(jdbcUrl);
-    }
-
     public void setJdbcUrl(String jdbcUrl) {
         if (pool == null) {
             super.setJdbcUrl(jdbcUrl);
         } else {
             set(subDs, "setJdbcUrl", jdbcUrl);
         }
+    }
+
+    public void setUrl(String jdbcUrl) {
+        setJdbcUrl(jdbcUrl);
     }
 
     private void set(Object target, String setMethodName, String value) {
@@ -311,4 +282,35 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             throw new RuntimeException(e);
         }
     }
+
+    //***************************************************************************************************************//
+    //                                         8: other methods(7)                                                   //
+    //***************************************************************************************************************//
+    public void close() {
+        if (this.pool != null) this.pool.close();
+    }
+
+    public boolean isClosed() {
+        return this.pool == null || this.pool.isClosed();
+    }
+
+    //override method
+    public void setMaxWait(long maxWait) {
+        super.setMaxWait(maxWait);
+        this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
+    }
+
+    public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
+        return this.getPool().getPoolMonitorVo();
+    }
+
+    public Thread[] interruptConnectionCreating(boolean interruptTimeout) throws SQLException {
+        return this.getPool().interruptConnectionCreating(interruptTimeout);
+    }
+
+    private BeeConnectionPool getPool() throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return this.pool;
+    }
+
 }
