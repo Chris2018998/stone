@@ -79,25 +79,25 @@ public interface BeeConnectionPool {
     boolean isEnabledLogPrint();
 
     /**
-     * query connection tracker is whether enabled in pool
+     * query connection Interceptor is whether enabled in pool
      *
      * @return boolean true is enabled,false not be
      */
-    boolean isEnabledConnectionTracker();
+    boolean isEnabledConnectionInterceptor();
 
     /**
-     * A switch to enable tracker or disable tracker
+     * A switch to enable Interceptor or disable Interceptor
      *
      * @param enable is true that enable, false is disabled
      */
-    void enableConnectionTracker(boolean enable);
+    void enableConnectionInterceptor(boolean enable);
 
     /**
-     * Set a connection Tracker to pool
+     * Set a connection Interceptor to pool
      *
-     * @param connectionTracker is a new tracker
+     * @param connectionInterceptor is a new Interceptor
      */
-    void setConnectionTracker(BeeConnectionInterceptor connectionTracker);
+    void setConnectionInterceptor(BeeConnectionInterceptor connectionInterceptor);
 
     /**
      * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
