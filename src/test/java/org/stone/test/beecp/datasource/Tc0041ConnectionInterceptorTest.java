@@ -16,7 +16,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.test.base.LogCollector;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockConnectionTracker;
+import org.stone.test.beecp.objects.MockConnectionInterceptor;
 
 import java.sql.*;
 
@@ -25,12 +25,12 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 /**
  * @author Chris Liao
  */
-public class Tc0041ConnectionTrackerTest {
+public class Tc0041ConnectionInterceptorTest {
     @Test
     public void testStatement() throws Exception {
         BeeDataSourceConfig config = createEmpty();
         config.setConnectionFactory(new MockCommonConnectionFactory());
-        config.setConnectionTracker(new MockConnectionTracker());
+        config.setConnectionInterceptor(new MockConnectionInterceptor());
         BeeDataSource ds = new BeeDataSource(config);
 
         LogCollector logCollector = LogCollector.startLogCollector();
@@ -52,7 +52,7 @@ public class Tc0041ConnectionTrackerTest {
     public void testPrepareStatement() throws Exception {
         BeeDataSourceConfig config = createEmpty();
         config.setConnectionFactory(new MockCommonConnectionFactory());
-        config.setConnectionTracker(new MockConnectionTracker());
+        config.setConnectionInterceptor(new MockConnectionInterceptor());
         BeeDataSource ds = new BeeDataSource(config);
 
         LogCollector logCollector = LogCollector.startLogCollector();
@@ -76,7 +76,7 @@ public class Tc0041ConnectionTrackerTest {
     public void testCallableStatement() throws Exception {
         BeeDataSourceConfig config = createEmpty();
         config.setConnectionFactory(new MockCommonConnectionFactory());
-        config.setConnectionTracker(new MockConnectionTracker());
+        config.setConnectionInterceptor(new MockConnectionInterceptor());
         BeeDataSource ds = new BeeDataSource(config);
 
         LogCollector logCollector = LogCollector.startLogCollector();
@@ -99,8 +99,8 @@ public class Tc0041ConnectionTrackerTest {
     @Test
     public void testFailOnGetConnection() throws Exception {
         BeeDataSourceConfig config = createEmpty();
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        config.setConnectionTracker(tracker);
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        config.setConnectionInterceptor(tracker);
         MockCommonConnectionFactory commonConnectionFactory = new MockCommonConnectionFactory();
         SQLException failException = new SQLException("Cannot connect to the target db");
         commonConnectionFactory.setCreateException1(failException);
@@ -129,8 +129,8 @@ public class Tc0041ConnectionTrackerTest {
     @Test
     public void testFailOnGetXAConnection() throws Exception {
         BeeDataSourceConfig config = createEmpty();
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        config.setConnectionTracker(tracker);
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        config.setConnectionInterceptor(tracker);
         MockCommonConnectionFactory commonConnectionFactory = new MockCommonConnectionFactory();
         SQLException failException = new SQLException("Cannot connect to the target db");
         commonConnectionFactory.setCreateException1(failException);
@@ -158,8 +158,8 @@ public class Tc0041ConnectionTrackerTest {
     @Test
     public void testFailOnPrepareSQL() throws Exception {
         BeeDataSourceConfig config = createEmpty();
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        config.setConnectionTracker(tracker);
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        config.setConnectionInterceptor(tracker);
 
         MockConnectionProperties properties = new MockConnectionProperties();
         MockCommonConnectionFactory commonConnectionFactory = new MockCommonConnectionFactory(properties);
@@ -194,8 +194,8 @@ public class Tc0041ConnectionTrackerTest {
     @Test
     public void testFailOnExecutePreparedSQL() throws Exception {
         BeeDataSourceConfig config = createEmpty();
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        config.setConnectionTracker(tracker);
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        config.setConnectionInterceptor(tracker);
 
         MockConnectionProperties properties = new MockConnectionProperties();
         MockCommonConnectionFactory commonConnectionFactory = new MockCommonConnectionFactory(properties);
@@ -270,8 +270,8 @@ public class Tc0041ConnectionTrackerTest {
     @Test
     public void testFailOnExecuteSQL() throws Exception {
         BeeDataSourceConfig config = createEmpty();
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        config.setConnectionTracker(tracker);
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        config.setConnectionInterceptor(tracker);
 
         MockConnectionProperties properties = new MockConnectionProperties();
         MockCommonConnectionFactory commonConnectionFactory = new MockCommonConnectionFactory(properties);

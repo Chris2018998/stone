@@ -15,9 +15,9 @@ package org.stone.test.beecp.objects;
  * @author Chris Liao
  */
 
-public class MockConnectionTracker2 extends MockConnectionTracker {
+public class MockConnectionInterceptor2 extends MockConnectionInterceptor {
 
-    public MockConnectionTracker2(String name) {
+    public MockConnectionInterceptor2(String name) {
 
     }
 }

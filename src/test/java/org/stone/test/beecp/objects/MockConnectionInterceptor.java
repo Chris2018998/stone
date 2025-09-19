@@ -11,7 +11,7 @@ package org.stone.test.beecp.objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.stone.beecp.BeeConnectionTracker;
+import org.stone.beecp.BeeConnectionInterceptor;
 
 import java.util.UUID;
 
@@ -21,8 +21,8 @@ import java.util.UUID;
  * @author Chris Liao
  */
 
-public class MockConnectionTracker implements BeeConnectionTracker {
-    private final Logger Log = LoggerFactory.getLogger(MockConnectionTracker.class);
+public class MockConnectionInterceptor implements BeeConnectionInterceptor {
+    private final Logger Log = LoggerFactory.getLogger(MockConnectionInterceptor.class);
 
     //field value from tracee method end or onException
     private Object preparedKey;
@@ -89,7 +89,7 @@ public class MockConnectionTracker implements BeeConnectionTracker {
      *
      * @return a unique key
      */
-    public Object genTraceKey() {
+    public Object genKey() {
         return UUID.randomUUID();
     }
 

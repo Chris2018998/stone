@@ -230,7 +230,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
+    public void setConnectionTracker(BeeConnectionInterceptor connectionTracker) {
         //do nothing
     }
 

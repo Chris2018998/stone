@@ -21,7 +21,7 @@ import org.stone.beecp.pool.exception.PoolNotCreatedException;
 import org.stone.test.base.LogCollector;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockConnectionTracker;
+import org.stone.test.beecp.objects.MockConnectionInterceptor;
 
 import javax.sql.XAConnection;
 import java.io.PrintWriter;
@@ -248,19 +248,19 @@ public class Tc0031DataSourcePoolTest {
         BeeDataSourceConfig config1 = createEmpty();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        config1.setConnectionTracker(new MockConnectionTracker());
+        config1.setConnectionInterceptor(new MockConnectionInterceptor());
         BeeDataSource ds1 = new BeeDataSource(config1);
         Assertions.assertInstanceOf(FastTraceConnectionPool.class, TestUtil.getFieldValue(ds1, "pool"));
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setConnectionTrackerClass(MockConnectionTracker.class);
+        config2.setConnectionInterceptorClass(MockConnectionInterceptor.class);
         BeeDataSource ds2 = new BeeDataSource(config2);
         Assertions.assertInstanceOf(FastTraceConnectionPool.class, TestUtil.getFieldValue(ds2, "pool"));
 
         BeeDataSourceConfig config3 = createEmpty();
         config3.setConnectionFactory(connectionFactory);
-        config3.setConnectionTrackerClassName(MockConnectionTracker.class.getName());
+        config3.setConnectionInterceptorClassName(MockConnectionInterceptor.class.getName());
         BeeDataSource ds3 = new BeeDataSource(config3);
         Assertions.assertInstanceOf(FastTraceConnectionPool.class, TestUtil.getFieldValue(ds3, "pool"));
 

@@ -11,11 +11,11 @@ package org.stone.test.beecp.config;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beecp.BeeConnectionTracker;
+import org.stone.beecp.BeeConnectionInterceptor;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockConnectionTracker;
+import org.stone.test.beecp.objects.MockConnectionInterceptor;
 import org.stone.tools.exception.BeanException;
 
 import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
@@ -24,22 +24,22 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
  * @author Chris Liao
  */
 
-public class Tc0017ConnectionTrackerTest {
+public class Tc0017ConnectionInterceptorTest {
 
     @Test
     public void testOnSetGet() {
         BeeDataSourceConfig config = createEmpty();
-        Class<? extends BeeConnectionTracker> trackerClass = MockConnectionTracker.class;
-        config.setConnectionTrackerClass(trackerClass);
-        Assertions.assertEquals(trackerClass, config.getConnectionTrackerClass());
+        Class<? extends BeeConnectionInterceptor> trackerClass = MockConnectionInterceptor.class;
+        config.setConnectionInterceptorClass(trackerClass);
+        Assertions.assertEquals(trackerClass, config.getConnectionInterceptorClass());
 
-        String trackerClassName = MockConnectionTracker.class.getName();
-        config.setConnectionTrackerClassName(trackerClassName);
-        Assertions.assertEquals(trackerClassName, config.getConnectionTrackerClassName());
+        String trackerClassName = MockConnectionInterceptor.class.getName();
+        config.setConnectionInterceptorClassName(trackerClassName);
+        Assertions.assertEquals(trackerClassName, config.getConnectionInterceptorClassName());
 
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        config.setConnectionTracker(tracker);
-        Assertions.assertEquals(config.getConnectionTracker(), tracker);
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        config.setConnectionInterceptor(tracker);
+        Assertions.assertEquals(config.getConnectionInterceptor(), tracker);
     }
 
     @Test
@@ -47,7 +47,7 @@ public class Tc0017ConnectionTrackerTest {
         BeeDataSourceConfig config1 = createEmpty();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        config1.setConnectionTrackerClassName("org.stone.test.beecp.objects.MockConnectionTracker3");//class not found
+        config1.setConnectionInterceptorClassName("org.stone.test.beecp.objects.MockConnectionInterceptor3");//class not found
         try {
             config1.check();
             Assertions.fail();
@@ -57,7 +57,7 @@ public class Tc0017ConnectionTrackerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setConnectionTrackerClassName("org.stone.test.beecp.objects.MockConnectionTracker2");//class can not be instan
+        config2.setConnectionInterceptorClassName("org.stone.test.beecp.objects.MockConnectionInterceptor2");//class can not be instan
         try {
             config2.check();
             Assertions.fail();

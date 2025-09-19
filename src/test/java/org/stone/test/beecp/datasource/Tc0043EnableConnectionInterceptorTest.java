@@ -16,7 +16,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beecp.pool.exception.PoolNotCreatedException;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockConnectionTracker;
+import org.stone.test.beecp.objects.MockConnectionInterceptor;
 
 import java.sql.SQLException;
 
@@ -25,25 +25,25 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 /**
  * @author Chris Liao
  */
-public class Tc0043EnableConnectionTrackerTest {
+public class Tc0043EnableConnectionInterceptorTest {
 
     @Test
     public void testSet() throws SQLException {
         BeeDataSource ds = new BeeDataSource();
-        Assertions.assertNull(ds.getConnectionTracker());
-        MockConnectionTracker tracker = new MockConnectionTracker();
-        ds.setConnectionTracker(tracker);
-        Assertions.assertEquals(tracker, ds.getConnectionTracker());
+        Assertions.assertNull(ds.getConnectionInterceptor());
+        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
+        ds.setConnectionInterceptor(tracker);
+        Assertions.assertEquals(tracker, ds.getConnectionInterceptor());
 
         try {
-            ds.enableConnectionTracker(true);
+            ds.enableConnectionInterceptor(true);
             Assertions.fail();
         } catch (SQLException e) {
             Assertions.assertInstanceOf(PoolNotCreatedException.class, e);
         }
 
         try {
-            if (ds.isEnabledConnectionTracker()) {
+            if (ds.isEnabledConnectionInterceptor()) {
                 System.out.println("isEnabledConnectionTracker");
             }
             Assertions.fail();
@@ -54,24 +54,24 @@ public class Tc0043EnableConnectionTrackerTest {
         BeeDataSourceConfig config = createEmpty();
         config.setConnectionFactory(new MockCommonConnectionFactory());
         ds = new BeeDataSource(config);
-        Assertions.assertFalse(ds.isEnabledConnectionTracker());
+        Assertions.assertFalse(ds.isEnabledConnectionInterceptor());
         try {
-            ds.enableConnectionTracker(true);
+            ds.enableConnectionInterceptor(true);
         } catch (RuntimeException e) {
             Assertions.assertInstanceOf(BeeDataSourceConfigException.class, e);
         }
-        ds.enableConnectionTracker(false);
-        Assertions.assertFalse(ds.isEnabledConnectionTracker());
-        ds.setConnectionTracker(tracker);
-        Assertions.assertTrue(ds.isEnabledConnectionTracker());
+        ds.enableConnectionInterceptor(false);
+        Assertions.assertFalse(ds.isEnabledConnectionInterceptor());
+        ds.setConnectionInterceptor(tracker);
+        Assertions.assertTrue(ds.isEnabledConnectionInterceptor());
 
-        config.setConnectionTracker(new MockConnectionTracker());
+        config.setConnectionInterceptor(new MockConnectionInterceptor());
         ds = new BeeDataSource(config);
-        Assertions.assertTrue(ds.isEnabledConnectionTracker());
-        ds.enableConnectionTracker(false);
-        Assertions.assertFalse(ds.isEnabledConnectionTracker());
-        ds.enableConnectionTracker(true);
-        Assertions.assertTrue(ds.isEnabledConnectionTracker());
+        Assertions.assertTrue(ds.isEnabledConnectionInterceptor());
+        ds.enableConnectionInterceptor(false);
+        Assertions.assertFalse(ds.isEnabledConnectionInterceptor());
+        ds.enableConnectionInterceptor(true);
+        Assertions.assertTrue(ds.isEnabledConnectionInterceptor());
     }
 
 }
