@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeConnectionTracker;
+import org.stone.beecp.BeeConnectionInterceptor;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     protected Object preparedKey;
     protected String sql;
     protected Statement raw;
-    protected BeeConnectionTracker tracker;
+    protected BeeConnectionInterceptor interceptor;
 
     boolean unregister;
     private ProxyResultSetBase curRe;
@@ -52,7 +52,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
 
         this.preparedKey = preparedKey;//if subclass is Statement implementation,its value is null
         this.sql = sql;//if subclass is Statement implementation,the sql is null
-        this.tracker = o.tracker;
+        this.interceptor = o.interceptor;
     }
 
     //***************************************************************************************************************//

@@ -97,7 +97,7 @@ public interface BeeConnectionPool {
      *
      * @param connectionTracker is a new tracker
      */
-    void setConnectionTracker(BeeConnectionTracker connectionTracker);
+    void setConnectionTracker(BeeConnectionInterceptor connectionTracker);
 
     /**
      * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.

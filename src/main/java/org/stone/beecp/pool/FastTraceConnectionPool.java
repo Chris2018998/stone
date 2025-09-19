@@ -26,7 +26,7 @@ public final class FastTraceConnectionPool extends FastConnectionPool {
 
     public Connection getConnection() throws SQLException {
         long startTime = System.currentTimeMillis();
-        Object key = conTracker.genTraceKey();
+        Object key = conTracker.genKey();
         try {
             conTracker.beforeGetConnection(key, GetConnection, startTime);
             Connection con = super.getConnection();
@@ -40,7 +40,7 @@ public final class FastTraceConnectionPool extends FastConnectionPool {
 
     public XAConnection getXAConnection() throws SQLException {
         long startTime = System.currentTimeMillis();
-        Object key = conTracker.genTraceKey();
+        Object key = conTracker.genKey();
         try {
             conTracker.beforeGetConnection(key, GetXAConnection, startTime);
             XAConnection con = super.getXAConnection();

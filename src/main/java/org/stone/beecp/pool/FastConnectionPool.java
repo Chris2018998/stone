@@ -54,7 +54,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
-    protected BeeConnectionTracker conTracker;
+    protected BeeConnectionInterceptor conTracker;
 
     String poolName;
     volatile int poolState;
@@ -132,7 +132,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         //step2: create proxy factory
-        this.conTracker = poolConfig.getConnectionTracker();
+        this.conTracker = poolConfig.getConnectionInterceptor();
         if (conTracker == null) {
             this.conProxyFactory = new ProxyConnectionFactory();
         } else {
@@ -974,15 +974,17 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         return this.conProxyFactory instanceof ProxyConnectionFactoryT;
     }
 
-    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
+    public void setConnectionTracker(BeeConnectionInterceptor connectionTracker) {
         this.conProxyFactory = new ProxyConnectionFactoryT(connectionTracker);
     }
 
     public void enableConnectionTracker(boolean enable) {
-        if (enable)
-            this.conProxyFactory = new ProxyConnectionFactoryT(poolConfig.getConnectionTracker());
-        else
+        if (enable) {
+            if (poolConfig.getConnectionInterceptor() != null)
+                this.conProxyFactory = new ProxyConnectionFactoryT(poolConfig.getConnectionInterceptor());
+        } else {
             this.conProxyFactory = new ProxyConnectionFactory();
+        }
     }
 
     //Method-5.3: the length of array stores pooled connections

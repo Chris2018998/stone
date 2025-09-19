@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeConnectionTracker;
+import org.stone.beecp.BeeConnectionInterceptor;
 
 import java.sql.SQLException;
 
@@ -21,10 +21,10 @@ import java.sql.SQLException;
  */
 
 final class ProxyConnectionFactoryT extends ProxyConnectionFactory {
-    private final BeeConnectionTracker tracker;
+    private final BeeConnectionInterceptor interceptor;
 
-    ProxyConnectionFactoryT(BeeConnectionTracker tracker) {
-        this.tracker = tracker;
+    ProxyConnectionFactoryT(BeeConnectionInterceptor interceptor) {
+        this.interceptor = interceptor;
     }
 
     public ProxyConnectionBase createProxyConnection(PooledConnection p) throws SQLException {

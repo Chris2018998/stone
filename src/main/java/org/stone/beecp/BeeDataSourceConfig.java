@@ -150,12 +150,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //Class name of Jdbc info decoder(url,username password),default is none
     private String jdbcLinkInfoDecoderClassName;
 
-    //connection operation tracker
-    private BeeConnectionTracker connectionTracker;
-    //Class of connection tracker,default is none
-    private Class<? extends BeeConnectionTracker> connectionTrackerClass;
-    //Class name of connection tracker,default is none
-    private String connectionTrackerClassName;
+    //connection operation interceptor
+    private BeeConnectionInterceptor connectionInterceptor;
+    //Class of connection interceptor,default is none
+    private Class<? extends BeeConnectionInterceptor> connectionInterceptorClass;
+    //Class name of connection interceptor,default is none
+    private String connectionInterceptorClassName;
 
     //An indicator to enable Jmx registration,default is false
     private boolean enableJmx;
@@ -669,28 +669,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.jdbcLinkInfoDecoder = jdbcLinkInfoDecoder;
     }
 
-    public BeeConnectionTracker getConnectionTracker() {
-        return connectionTracker;
+    public BeeConnectionInterceptor getConnectionInterceptor() {
+        return connectionInterceptor;
     }
 
-    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
-        this.connectionTracker = connectionTracker;
+    public void setConnectionInterceptor(BeeConnectionInterceptor connectionInterceptor) {
+        this.connectionInterceptor = connectionInterceptor;
     }
 
-    public Class<? extends BeeConnectionTracker> getConnectionTrackerClass() {
-        return connectionTrackerClass;
+    public Class<? extends BeeConnectionInterceptor> getConnectionInterceptorClass() {
+        return connectionInterceptorClass;
     }
 
-    public void setConnectionTrackerClass(Class<? extends BeeConnectionTracker> connectionTrackerClass) {
-        this.connectionTrackerClass = connectionTrackerClass;
+    public void setConnectionInterceptorClass(Class<? extends BeeConnectionInterceptor> connectionInterceptorClass) {
+        this.connectionInterceptorClass = connectionInterceptorClass;
     }
 
-    public String getConnectionTrackerClassName() {
-        return connectionTrackerClassName;
+    public String getConnectionInterceptorClassName() {
+        return connectionInterceptorClassName;
     }
 
-    public void setConnectionTrackerClassName(String connectionTrackerClassName) {
-        this.connectionTrackerClassName = connectionTrackerClassName;
+    public void setConnectionInterceptorClassName(String connectionInterceptorClassName) {
+        this.connectionInterceptorClassName = connectionInterceptorClassName;
     }
 
     public Object getConnectProperty(String key) {
@@ -862,7 +862,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeConnectionTracker connectionTracer = this.createConnectionTracker();
+        BeeConnectionInterceptor connectionTracer = this.createConnectionInterceptor();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -880,7 +880,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.evictPredicate = predicate;
-        checkedConfig.connectionTracker = connectionTracer;
+        checkedConfig.connectionInterceptor = connectionTracer;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
 
@@ -942,21 +942,21 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         return null;
     }
 
-    //create BeeConnectionTracer instance
-    private BeeConnectionTracker createConnectionTracker() {
-        //step1:if exists tracer,then return it
-        if (this.connectionTracker != null) return this.connectionTracker;
+    //create BeeConnectionListener instance
+    private BeeConnectionInterceptor createConnectionInterceptor() {
+        //step1:if exists listener,then return it
+        if (this.connectionInterceptor != null) return this.connectionInterceptor;
 
-        //step2: create connection tracer
-        if (this.connectionTrackerClass != null || isNotBlank(this.connectionTrackerClassName)) {
-            Class<?> tracerClass = null;
+        //step2: create connection listener
+        if (this.connectionInterceptorClass != null || isNotBlank(this.connectionInterceptorClassName)) {
+            Class<?> listenerClass = null;
             try {
-                tracerClass = connectionTrackerClass != null ? connectionTrackerClass : loadClass(connectionTrackerClassName);
-                return (BeeConnectionTracker) createClassInstance(tracerClass, BeeConnectionTracker.class, "connection tracker");
+                listenerClass = connectionInterceptorClass != null ? connectionInterceptorClass : loadClass(connectionInterceptorClassName);
+                return (BeeConnectionInterceptor) createClassInstance(listenerClass, BeeConnectionInterceptor.class, "connection interceptor");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create connection tracker with class[" + connectionTrackerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create connection interceptor with class[" + connectionInterceptorClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create connection tracker with class[" + tracerClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create connection interceptor with class[" + listenerClass + "]", e);
             }
         }
         return null;

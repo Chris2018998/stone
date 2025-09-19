@@ -79,7 +79,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         String poolImplementClassName = ds.getPoolImplementClassName();
         try {
             if (isBlank(poolImplementClassName)) {
-                poolImplementClassName = (ds.getConnectionTracker() != null || ds.getConnectionTrackerClass() != null || isNotBlank(ds.getConnectionTrackerClassName())) ?
+                poolImplementClassName = (ds.getConnectionInterceptor() != null || ds.getConnectionInterceptorClass() != null || isNotBlank(ds.getConnectionInterceptorClassName())) ?
                         FastTraceConnectionPool.class.getName() : FastConnectionPool.class.getName();
             }
 
@@ -220,25 +220,23 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         6: Connection tracker                                                 //
+    //                                         6: Connection listener                                                 //
     //***************************************************************************************************************//
-    public void setConnectionTracker(BeeConnectionTracker connectionTracker) {
+    public void setConnectionInterceptor(BeeConnectionInterceptor connectionInterceptor) {
         if (pool == null) {
-            super.setConnectionTracker(connectionTracker);//as configuration item
+            super.setConnectionInterceptor(connectionInterceptor);//as configuration item
         } else {
-            pool.setConnectionTracker(connectionTracker);//set to pool
+            pool.setConnectionTracker(connectionInterceptor);//set to pool
         }
     }
 
-    public boolean isEnabledConnectionTracker() throws SQLException {
+    public boolean isEnabledConnectionInterceptor() throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
         return this.pool.isEnabledConnectionTracker();
     }
 
-    public void enableConnectionTracker(boolean enable) throws SQLException {
+    public void enableConnectionInterceptor(boolean enable) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        if (enable && this.getConnectionTracker() == null)
-            throw new BeeDataSourceConfigException("Connection tracker not set in configuration");
         this.pool.enableConnectionTracker(enable);
     }
 
