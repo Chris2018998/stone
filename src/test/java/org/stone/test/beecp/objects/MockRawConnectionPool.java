@@ -226,11 +226,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableConnectionTracker(boolean enable) {
+    public void enableConnectionInterceptor(boolean enable) {
         //do nothing
     }
 
-    public void setConnectionTracker(BeeConnectionInterceptor connectionTracker) {
+    public void setConnectionInterceptor(BeeConnectionInterceptor connectionTracker) {
         //do nothing
     }
 
@@ -238,7 +238,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public boolean isEnabledConnectionTracker() {
+    public boolean isEnabledConnectionInterceptor() {
         return false;
     }
 

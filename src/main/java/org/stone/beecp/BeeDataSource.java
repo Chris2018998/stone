@@ -226,18 +226,18 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         if (pool == null) {
             super.setConnectionInterceptor(connectionInterceptor);//as configuration item
         } else {
-            pool.setConnectionTracker(connectionInterceptor);//set to pool
+            pool.setConnectionInterceptor(connectionInterceptor);//set to pool
         }
     }
 
     public boolean isEnabledConnectionInterceptor() throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return this.pool.isEnabledConnectionTracker();
+        return this.pool.isEnabledConnectionInterceptor();
     }
 
     public void enableConnectionInterceptor(boolean enable) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        this.pool.enableConnectionTracker(enable);
+        this.pool.enableConnectionInterceptor(enable);
     }
 
     //***************************************************************************************************************//
