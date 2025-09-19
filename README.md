@@ -35,17 +35,3 @@ ScheduledThreadPoolExecutor + ForkJoinPool
 A small thread synchronization pool
 
 
-##
-🌲**Project Vision** 
-
-**Protect nature, Protect bees!**
-
-Some articles about bees.
-
-1：What would happen if bees disappeared from the world</br>
-https://baijiahao.baidu.com/s?id=1789027203812401026&wfr=spider&for=pc
-
-2：Why are bees gradually disappearing and what are the impacts of their disappearance</br>
-https://baijiahao.baidu.com/s?id=1811412964672821848&wfr=spider&for=pc
-
-
