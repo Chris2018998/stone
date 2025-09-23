@@ -17,7 +17,7 @@ import java.io.Serializable;
  * @author Chris Liao
  */
 public final class BeeJdbcCallLog implements Serializable {
-    public static final int Type_GetConnection = 1;
+    public static final int Type_Get_Connection = 1;
     public static final int Type_Execution_SQL = 2;
 
     //Log type

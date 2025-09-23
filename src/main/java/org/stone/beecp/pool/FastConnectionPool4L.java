@@ -15,7 +15,7 @@ import javax.sql.XAConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.stone.beecp.BeeJdbcCallLog.Type_GetConnection;
+import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
 
 /**
  * JDBC Trace Connection Pool Implementation
@@ -30,7 +30,7 @@ public final class FastConnectionPool4L extends FastConnectionPool {
 
     public Connection getConnection() throws SQLException {
         if (this.isEnabledJdbcCallLogCollector()) {
-            BeeJdbcCallLog log = logCollector.startCall(Type_GetConnection, GetConnection, null, null);
+            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetConnection, null, null);
             try {
                 Connection con = super.getConnection();
                 logCollector.endCall(con, 0L, null, log);
@@ -46,7 +46,7 @@ public final class FastConnectionPool4L extends FastConnectionPool {
 
     public XAConnection getXAConnection() throws SQLException {
         if (this.isEnabledJdbcCallLogCollector()) {
-            BeeJdbcCallLog log = logCollector.startCall(Type_GetConnection, GetXAConnection, null, null);
+            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetXAConnection, null, null);
             try {
                 XAConnection con = super.getXAConnection();
                 logCollector.endCall(con, 0L, null, log);

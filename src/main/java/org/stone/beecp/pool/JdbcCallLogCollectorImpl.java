@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.stone.beecp.BeeJdbcCallLog.Type_Execution_SQL;
-import static org.stone.beecp.BeeJdbcCallLog.Type_GetConnection;
+import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
 
 /**
  * Default implementation of {@link BeeJdbcCallLogCollector} interface.
@@ -112,7 +112,7 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      * @return a list of
      */
     public Collection<BeeJdbcCallLog> getLog(int type) {
-        if (type == Type_GetConnection) {
+        if (type == Type_Get_Connection) {
             return new ArrayList<>(conLogQueue);
         } else {
             return new ArrayList<>(sqlLogQueue);
@@ -134,7 +134,7 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
         BeeJdbcCallLog log = new BeeJdbcCallLog(type, method, parameters);
         log.setStartTime(System.currentTimeMillis());
 
-        if (type == Type_GetConnection) {
+        if (type == Type_Get_Connection) {
             conLogQueue.offer(log);
             if (conLogCount.incrementAndGet() > cacheSize) {
                 conLogQueue.poll();
@@ -169,7 +169,7 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
         log.setEndTime(System.currentTimeMillis());
 
         if (listener != null) {
-            if ((Type_GetConnection == log.getType() && slowGet > 0L && log.getEndTime() - log.getStartTime() >= slowGet)
+            if ((Type_Get_Connection == log.getType() && slowGet > 0L && log.getEndTime() - log.getStartTime() >= slowGet)
                     || (Type_Execution_SQL == log.getType() && slowExec > 0L && log.getEndTime() - log.getStartTime() >= slowExec)) {
                 try {
                     listener.onSlow(log);
