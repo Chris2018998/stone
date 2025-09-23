@@ -13,6 +13,7 @@ import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
 import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
 import org.stone.beeop.pool.exception.PoolNotCreatedException;
 
+import java.io.Closeable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -31,7 +32,7 @@ import static org.stone.tools.BeanUtil.createClassInstance;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> {
+public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implements Closeable {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8L);//default vale equals same item in config

@@ -21,7 +21,7 @@ import org.stone.beeop.pool.exception.*;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeKeyedObjectPool<K, V> {
+public interface BeeKeyedObjectPool<K, V> extends Cloneable {
 
     /**
      * Pool initialize with a configuration object.
