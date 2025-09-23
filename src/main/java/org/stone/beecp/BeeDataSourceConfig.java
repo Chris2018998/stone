@@ -169,18 +169,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //timer interval to clear timeout logs in jdbc method logs in collector,default is 3 minutes
     private long jdbcCallLogTimeout = MINUTES.toMillis(3L);
 
-    //log listener
+    //jdbc call log listener
     private BeeJdbcCallLogListener jdbcCallLogListener;
-    //Class of log listener,default is none
+    //Class of jdbc call log listener,default is none
     private Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass;
     //Class name of log listener,default is none
     private String jdbcCallLogListenerClassName;
 
-    //connection/statement operation log collector
+    //jdbc call logs collector
     private BeeJdbcCallLogCollector jdbcCallLogCollector;
-    //Class of connection operation log collector,default is none
+    //Class of jdbc call logs collector,default is none
     private Class<? extends BeeJdbcCallLogCollector> jdbcCallLogCollectorClass;
-    //Class name of connection operation log collector,default is none
+    //Class name of jdbc call logs collector,default is none
     private String jdbcCallLogCollectorClassName;
 
     //****************************************************************************************************************//
@@ -947,9 +947,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-
-        BeeJdbcCallLogListener logListener = createLogListener();
         BeeJdbcCallLogCollector logCollector = this.createLogCollector();
+        BeeJdbcCallLogListener logListener = logCollector != null ? createLogListener() : null;
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
