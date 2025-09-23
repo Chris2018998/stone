@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeConnectionInterceptor;
+import org.stone.beecp.BeeJdbcCallLogCollector;
 
 import java.sql.SQLException;
 
@@ -20,14 +20,14 @@ import java.sql.SQLException;
  * @version 1.0
  */
 
-final class ProxyConnectionFactoryT extends ProxyConnectionFactory {
-    private final BeeConnectionInterceptor interceptor;
+final class ProxyConnectionFactory4L extends ProxyConnectionFactory {
+    private final BeeJdbcCallLogCollector logCollector;
 
-    ProxyConnectionFactoryT(BeeConnectionInterceptor interceptor) {
-        this.interceptor = interceptor;
+    ProxyConnectionFactory4L(BeeJdbcCallLogCollector logCollector) {
+        this.logCollector = logCollector;
     }
 
     public ProxyConnectionBase createProxyConnection(PooledConnection p) throws SQLException {
-        throw new SQLException("trace proxy classes not be generated,please execute 'ProxyClassGenerator' after compile");
+        throw new SQLException("Proxy classes for log collection not be generated,please execute 'ProxyClassGenerator' after compile");
     }
 }

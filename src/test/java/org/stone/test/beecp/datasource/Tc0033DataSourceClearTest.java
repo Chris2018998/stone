@@ -26,23 +26,17 @@ public class Tc0033DataSourceClearTest {
 
     @Test
     public void testOnClear1() throws Exception {
-        BeeDataSource ds = null;
-        try {
-            ds = new BeeDataSource(createDefault());
+        try (BeeDataSource ds = new BeeDataSource(createDefault())) {
             ds.clear(true);
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
             Assertions.assertEquals(0, vo.getIdleSize());
-        } finally {
-            if (ds != null) ds.close();
         }
     }
 
     @Test
     public void testOnClear2() throws Exception {
-        BeeDataSource ds = null;
-        try {
-            ds = new BeeDataSource(createDefault());
 
+        try (BeeDataSource ds = new BeeDataSource(createDefault())) {
             try {
                 ds.clear(true, null);
                 fail("testOnClear2");
@@ -55,8 +49,6 @@ public class Tc0033DataSourceClearTest {
             ds.clear(true, config2);
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
             Assertions.assertEquals(2, vo.getIdleSize());
-        } finally {
-            if (ds != null) ds.close();
         }
     }
 }

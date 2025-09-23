@@ -11,11 +11,11 @@ package org.stone.test.beecp.config;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beecp.BeeConnectionInterceptor;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockConnectionInterceptor;
+import org.stone.test.beecp.objects.MockJdbcCallLogCollector;
 import org.stone.tools.exception.BeanException;
 
 import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
@@ -24,30 +24,30 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
  * @author Chris Liao
  */
 
-public class Tc0017ConnectionInterceptorTest {
+public class Tc0017JdbcCallLogCollectorTest {
 
     @Test
     public void testOnSetGet() {
         BeeDataSourceConfig config = createEmpty();
-        Class<? extends BeeConnectionInterceptor> trackerClass = MockConnectionInterceptor.class;
-        config.setConnectionInterceptorClass(trackerClass);
-        Assertions.assertEquals(trackerClass, config.getConnectionInterceptorClass());
+        Class<? extends BeeJdbcCallLogCollector> trackerClass = MockJdbcCallLogCollector.class;
+        config.setJdbcCallLogCollectorClass(trackerClass);
+        Assertions.assertEquals(trackerClass, config.getJdbcCallLogCollectorClass());
 
-        String trackerClassName = MockConnectionInterceptor.class.getName();
-        config.setConnectionInterceptorClassName(trackerClassName);
-        Assertions.assertEquals(trackerClassName, config.getConnectionInterceptorClassName());
+        String trackerClassName = MockJdbcCallLogCollector.class.getName();
+        config.setJdbcCallLogCollectorClassName(trackerClassName);
+        Assertions.assertEquals(trackerClassName, config.getJdbcCallLogCollectorClassName());
 
-        MockConnectionInterceptor tracker = new MockConnectionInterceptor();
-        config.setConnectionInterceptor(tracker);
-        Assertions.assertEquals(config.getConnectionInterceptor(), tracker);
+        MockJdbcCallLogCollector tracker = new MockJdbcCallLogCollector();
+        config.setJdbcCallLogCollector(tracker);
+        Assertions.assertEquals(config.getJdbcCallLogCollector(), tracker);
     }
 
     @Test
-    public void testErrorTrackerClassName() throws Exception {
+    public void testErrorClassName() throws Exception {
         BeeDataSourceConfig config1 = createEmpty();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        config1.setConnectionInterceptorClassName("org.stone.test.beecp.objects.MockConnectionInterceptor3");//class not found
+        config1.setJdbcCallLogCollectorClassName("org.stone.test.beecp.objects.MockJdbcCallLogCollector3");//class not found
         try {
             config1.check();
             Assertions.fail();
@@ -57,7 +57,7 @@ public class Tc0017ConnectionInterceptorTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setConnectionInterceptorClassName("org.stone.test.beecp.objects.MockConnectionInterceptor2");//class can not be instan
+        config2.setJdbcCallLogCollectorClassName("org.stone.test.beecp.objects.MockJdbcCallLogCollector2");//class can not be instan
         try {
             config2.check();
             Assertions.fail();

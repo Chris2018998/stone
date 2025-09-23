@@ -56,9 +56,10 @@ public class Tc0034DataSourceFactoryTest {
         Method method = BeeDataSourceFactory.class.getDeclaredMethod("getConfigValue", Reference.class, String.class);
         setAccessible(null, method);
         Assertions.assertNull(method.invoke(factory, ref2, "URL"));
-        BeeDataSource ds2 = (BeeDataSource) factory.getObjectInstance(ref2, null, null, null);
-        Assertions.assertNotNull(ds2);
-        ds2.close();
+
+        try (BeeDataSource ds2 = (BeeDataSource) factory.getObjectInstance(ref2, null, null, null)) {
+            Assertions.assertNotNull(ds2);
+        }
 
         //jndi test3(jndi name ==null && tm!=null)
         Reference ref3 = new Reference("javax.sql.DataSource");
@@ -66,9 +67,9 @@ public class Tc0034DataSourceFactoryTest {
         ref3.add(new StringRefAddr("jdbcUrl", MOCK_URL));
         ref3.add(new StringRefAddr("driverClassName", MOCK_DRIVER));
 
-        BeeDataSource ds3 = (BeeDataSource) factory.getObjectInstance(ref3, null, new TestInitialContext(new TransactionManagerImpl()), null);
-        Assertions.assertNotNull(ds3);
-        ds3.close();
+        try (BeeDataSource ds3 = (BeeDataSource) factory.getObjectInstance(ref3, null, new TestInitialContext(new TransactionManagerImpl()), null)) {
+            Assertions.assertNotNull(ds3);
+        }
 
         //jndi test4(jndi name !=null && tm!=null)
         Reference ref4 = new Reference("javax.sql.DataSource");
@@ -76,9 +77,9 @@ public class Tc0034DataSourceFactoryTest {
         ref4.add(new StringRefAddr("driverClassName", MOCK_DRIVER));
 
         ref4.add(new StringRefAddr(CONFIG_TM_JNDI, "transactionManagerName"));
-        BeeJtaDataSource ds4 = (BeeJtaDataSource) factory.getObjectInstance(ref4, null, new TestInitialContext(new TransactionManagerImpl()), null);
-        Assertions.assertNotNull(ds4);
-        ds4.close();
+        try (BeeJtaDataSource ds4 = (BeeJtaDataSource) factory.getObjectInstance(ref4, null, new TestInitialContext(new TransactionManagerImpl()), null)) {
+            Assertions.assertNotNull(ds4);
+        }
 
         Reference ref5 = new Reference("javax.sql.DataSource");
         ref5.add(new StringRefAddr("jdbcUrl", MOCK_URL));
@@ -94,13 +95,15 @@ public class Tc0034DataSourceFactoryTest {
         ref5.add(new StringRefAddr("connectProperties.2", "2"));
         ref5.add(new StringRefAddr(CONFIG_SQL_EXCEPTION_CODE, "1,2"));
         ref5.add(new StringRefAddr(CONFIG_SQL_EXCEPTION_STATE, "A,B,C"));
-        BeeDataSource ds5 = (BeeDataSource) factory.getObjectInstance(ref5, null, null, null);
-        Assertions.assertNotNull(ds5);
-        Assertions.assertEquals(10, ds5.getInitialSize());
-        Assertions.assertEquals(20, ds5.getMaxActive());
-        Assertions.assertEquals("a", ds5.getConnectProperty("A"));
-        Assertions.assertEquals("b", ds5.getConnectProperty("B"));
-        ds5.close();
+
+        try (BeeDataSource ds5 = (BeeDataSource) factory.getObjectInstance(ref5, null, null, null)) {
+            Assertions.assertNotNull(ds5);
+            Assertions.assertEquals(10, ds5.getInitialSize());
+            Assertions.assertEquals(20, ds5.getMaxActive());
+            Assertions.assertEquals("a", ds5.getConnectProperty("A"));
+            Assertions.assertEquals("b", ds5.getConnectProperty("B"));
+        }
+
 
         Reference ref6 = new Reference("javax.sql.DataSource");
         ref6.add(new StringRefAddr("jdbcUrl", MOCK_URL));
@@ -108,22 +111,20 @@ public class Tc0034DataSourceFactoryTest {
 
         ref6.add(new StringRefAddr(CONFIG_SQL_EXCEPTION_CODE, ""));
         ref6.add(new StringRefAddr(CONFIG_SQL_EXCEPTION_STATE, ""));
-        BeeDataSource ds6 = (BeeDataSource) factory.getObjectInstance(ref6, null, null, null);
-        ds6.close();
+
+        try (BeeDataSource ds6 = (BeeDataSource) factory.getObjectInstance(ref6, null, null, null)) {
+
+        }
 
         Reference ref7 = new Reference("javax.sql.DataSource");
         ref7.add(new StringRefAddr("jdbcUrl", MOCK_URL));
         ref7.add(new StringRefAddr("driverClassName", MOCK_DRIVER));
         ref7.add(new StringRefAddr(CONFIG_SQL_EXCEPTION_CODE, "1,2,A"));
-        BeeDataSource ds7 = null;
-        try {
-            ds7 = (BeeDataSource) factory.getObjectInstance(ref7, null, null, null);
+        try (BeeDataSource ds7 = (BeeDataSource) factory.getObjectInstance(ref7, null, null, null)) {
             fail("testGetObjectInstance");
         } catch (BeeDataSourceConfigException e) {
             String errorMsg = e.getMessage();
             Assertions.assertTrue(errorMsg != null && errorMsg.contains("is not valid error code"));
-        } finally {
-            if (ds7 != null) ds7.close();
         }
     }
 

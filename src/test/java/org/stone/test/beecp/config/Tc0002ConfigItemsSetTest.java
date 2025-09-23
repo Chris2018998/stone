@@ -234,5 +234,44 @@ public class Tc0002ConfigItemsSetTest {
         Assertions.assertNull(config.getPoolImplementClassName());
         config.setPoolImplementClassName("org.stone.beecp.pool.FastConnectionPool");
         Assertions.assertEquals("org.stone.beecp.pool.FastConnectionPool", config.getPoolImplementClassName());
+
+
+        try {
+            config.setJdbcCallLogCacheSize(-1);
+            fail("[testOnSetAndGet]Setting test failed on configuration item[jdbc-call-log-cache-size]");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero", e.getMessage());
+        }
+
+        try {
+            config.setSlowConnectionGetThreshold(-1L);
+            fail("[testOnSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given value for configuration item 'slow-connection-get-threshold' must be greater than zero", e.getMessage());
+        }
+
+        try {
+            config.setSlowSQLExecutionThreshold(-1L);
+            fail("[testOnSetAndGet]Setting test failed on configuration item[slow-SQL-execution-threshold]");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given value for configuration item 'slow-SQL-execution-threshold' must be greater than zero", e.getMessage());
+        }
+
+        try {
+            config.setJdbcCallLogTimeout(-1L);
+            fail("[testOnSetAndGet]Setting test failed on configuration item[jdbc-call-log-timeout]");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero", e.getMessage());
+        }
+
+
+        config.setJdbcCallLogCacheSize(10);
+        config.setSlowConnectionGetThreshold(10L);
+        config.setSlowSQLExecutionThreshold(10L);
+        config.setJdbcCallLogTimeout(10L);
+        Assertions.assertEquals(10, config.getJdbcCallLogCacheSize());
+        Assertions.assertEquals(10, config.getSlowConnectionGetThreshold());
+        Assertions.assertEquals(10, config.getSlowSQLExecutionThreshold());
+        Assertions.assertEquals(10, config.getJdbcCallLogTimeout());
     }
 }

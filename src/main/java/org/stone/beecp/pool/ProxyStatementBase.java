@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeConnectionInterceptor;
+import org.stone.beecp.BeeJdbcCallLogCollector;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -27,10 +27,10 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
  */
 abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement {
     private final ProxyConnectionBase owner;
-    protected Object preparedKey;
     protected String sql;
     protected Statement raw;
-    protected BeeConnectionInterceptor interceptor;
+    protected long preparationTookTime;//ms
+    protected BeeJdbcCallLogCollector logCollector;
 
     boolean unregister;
     private ProxyResultSetBase curRe;
@@ -44,15 +44,15 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
         o.registerStatement(this);
     }
 
-    ProxyStatementBase(Statement raw, ProxyConnectionBase o, PooledConnection p, Object preparedKey, String sql) {
+    ProxyStatementBase(Statement raw, ProxyConnectionBase o, PooledConnection p, long preparationTookTime, String sql) {
         super(p);
         this.raw = raw;
         this.owner = o;
         o.registerStatement(this);
 
-        this.preparedKey = preparedKey;//if subclass is Statement implementation,its value is null
+        this.preparationTookTime = preparationTookTime;
         this.sql = sql;//if subclass is Statement implementation,the sql is null
-        this.interceptor = o.interceptor;
+        this.logCollector = o.logCollector;
     }
 
     //***************************************************************************************************************//

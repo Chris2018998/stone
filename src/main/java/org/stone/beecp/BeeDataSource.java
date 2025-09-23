@@ -10,7 +10,7 @@
 package org.stone.beecp;
 
 import org.stone.beecp.pool.FastConnectionPool;
-import org.stone.beecp.pool.FastTraceConnectionPool;
+import org.stone.beecp.pool.FastConnectionPool4L;
 import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
@@ -21,11 +21,13 @@ import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
 import javax.sql.XADataSource;
+import java.io.Closeable;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
+import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
@@ -46,7 +48,7 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  */
 //fix BeeCP-Starter-#6 Chris-2020-09-01 start
 //public final class BeeDataSource extends BeeDataSourceConfig implements DataSource {
-public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource {
+public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource, Closeable {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = SECONDS.toNanos(8L);//default vale same to config
@@ -79,8 +81,8 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         String poolImplementClassName = ds.getPoolImplementClassName();
         try {
             if (isBlank(poolImplementClassName)) {
-                poolImplementClassName = (ds.getConnectionInterceptor() != null || ds.getConnectionInterceptorClass() != null || isNotBlank(ds.getConnectionInterceptorClassName())) ?
-                        FastTraceConnectionPool.class.getName() : FastConnectionPool.class.getName();
+                poolImplementClassName = (ds.getJdbcCallLogCollector() != null || ds.getJdbcCallLogCollectorClass() != null || isNotBlank(ds.getJdbcCallLogCollectorClassName())) ?
+                        FastConnectionPool4L.class.getName() : FastConnectionPool.class.getName();
             }
 
             BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
@@ -220,24 +222,26 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         6: Connection listener                                                 //
+    //                                         6: JDBC method log collector                                          //
     //***************************************************************************************************************//
-    public void setConnectionInterceptor(BeeConnectionInterceptor connectionInterceptor) {
-        if (pool == null) {
-            super.setConnectionInterceptor(connectionInterceptor);//as configuration item
-        } else {
-            pool.setConnectionInterceptor(connectionInterceptor);//set to pool
-        }
+    public boolean isEnabledJdbcCallLogCollector() throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        return this.pool.isEnabledJdbcCallLogCollector();
     }
 
-    public boolean isEnabledConnectionInterceptor() throws SQLException {
+    public void enableJdbcCallLogCollector(boolean enable) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return this.pool.isEnabledConnectionInterceptor();
+        this.pool.enableJdbcCallLogCollector(enable);
     }
 
-    public void enableConnectionInterceptor(boolean enable) throws SQLException {
+    public Collection<BeeJdbcCallLog> getJdbcCallLog(int type) throws SQLException {
         if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        this.pool.enableConnectionInterceptor(enable);
+        return this.getJdbcCallLogCollector() != null ? this.getJdbcCallLogCollector().getLog(type) : null;
+    }
+
+    public void clearJdbcCallLog(long timeout) throws SQLException {
+        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        if (this.getJdbcCallLogCollector() != null) this.getJdbcCallLogCollector().clear(timeout);
     }
 
     //***************************************************************************************************************//

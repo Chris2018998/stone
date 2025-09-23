@@ -22,34 +22,35 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 /**
  * @author Chris Liao
  */
-public class Tc0042EnableLogPrintTest {
+public class Tc0041EnableLogPrintTest {
 
     @Test
     public void testSet() throws SQLException {
-        BeeDataSource ds = new BeeDataSource();
-        try {
-            ds.enableLogPrint(true);
-            Assertions.fail();
-        } catch (SQLException e) {
-            Assertions.assertInstanceOf(PoolNotCreatedException.class, e);
-        }
-
-        try {
-            if (ds.isEnabledLogPrint()) {
-                System.out.println("isEnabledLogPrint");
+        try (BeeDataSource ds = new BeeDataSource()) {
+            try {
+                ds.enableLogPrint(true);
+                Assertions.fail();
+            } catch (SQLException e) {
+                Assertions.assertInstanceOf(PoolNotCreatedException.class, e);
             }
-            Assertions.fail();
-        } catch (SQLException e) {
-            Assertions.assertInstanceOf(PoolNotCreatedException.class, e);
+
+            try {
+                if (ds.isEnabledLogPrint()) {
+                    System.out.println("isEnabledLogPrint");
+                }
+                Assertions.fail();
+            } catch (SQLException e) {
+                Assertions.assertInstanceOf(PoolNotCreatedException.class, e);
+            }
         }
 
         BeeDataSourceConfig config = createDefault();
         config.setInitialSize(1);
         config.setMaxActive(1);
-        ds = new BeeDataSource(config);
-
-        Assertions.assertFalse(ds.isEnabledLogPrint());
-        ds.enableLogPrint(true);
-        Assertions.assertTrue(ds.isEnabledLogPrint());
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertFalse(ds.isEnabledLogPrint());
+            ds.enableLogPrint(true);
+            Assertions.assertTrue(ds.isEnabledLogPrint());
+        }
     }
 }

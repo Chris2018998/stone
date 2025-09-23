@@ -226,11 +226,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableConnectionInterceptor(boolean enable) {
+    public void enableJdbcCallLogCollector(boolean enable) {
         //do nothing
     }
 
-    public void setConnectionInterceptor(BeeConnectionInterceptor connectionTracker) {
+    public void enableMethodLogCollector(BeeJdbcCallLogCollector connectionTracker) {
         //do nothing
     }
 
@@ -238,7 +238,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public boolean isEnabledConnectionInterceptor() {
+    public boolean isEnabledJdbcCallLogCollector() {
         return false;
     }
 

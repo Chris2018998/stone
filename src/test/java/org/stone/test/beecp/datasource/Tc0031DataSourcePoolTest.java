@@ -12,16 +12,15 @@ package org.stone.test.beecp.datasource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.*;
-import org.stone.beecp.pool.ConnectionPoolStatics;
 import org.stone.beecp.pool.FastConnectionPool;
-import org.stone.beecp.pool.FastTraceConnectionPool;
+import org.stone.beecp.pool.FastConnectionPool4L;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolInitializeFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreatedException;
 import org.stone.test.base.LogCollector;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockConnectionInterceptor;
+import org.stone.test.beecp.objects.MockJdbcCallLogCollector;
 
 import javax.sql.XAConnection;
 import java.io.PrintWriter;
@@ -46,12 +45,9 @@ public class Tc0031DataSourcePoolTest {
         config.setMaxActive(1);
         //config.setCreateTimeout(5);
         config.setPrintConfigInfo(false);
-        BeeDataSource ds = null;
 
-        try {
-            ds = new BeeDataSource(config);
+        try (BeeDataSource ds = new BeeDataSource(config)) {
             LogCollector logCollector = LogCollector.startLogCollector();
-
             //getConnection test
             Connection con1 = ds.getConnection();
             Assertions.assertNotNull(con1);
@@ -123,91 +119,92 @@ public class Tc0031DataSourcePoolTest {
             long newMaxWaitMillis2 = TimeUnit.SECONDS.toMillis(20L);
             ds.setMaxWait(newMaxWaitMillis2);
             Assertions.assertEquals(newMaxWaitMillis2, ds.getMaxWait());//changed
-
-        } finally {
-            if (ds != null && !ds.isClosed()) {
-                ds.close();
-                Assertions.assertTrue(ds.isClosed());
-            }
         }
     }
 
     @Test
+    public void testDsClose() {
+        BeeDataSource ds1 = new BeeDataSource();
+        Assertions.assertTrue(ds1.isClosed());
+
+        BeeDataSource ds2 = new BeeDataSource(createDefault());
+        Assertions.assertFalse(ds2.isClosed());
+        ds2.close();
+        Assertions.assertTrue(ds2.isClosed());
+    }
+
+    @Test
     public void testOnUninitializedPool() throws Exception {
-        BeeDataSource ds = new BeeDataSource();
-        BeeConnectionPool pool = (BeeConnectionPool) TestUtil.getFieldValue(ds, "pool");
-        Assertions.assertNull(pool);
-        Assertions.assertTrue(ds.isClosed());
+        try (BeeDataSource ds = new BeeDataSource()) {
+            BeeConnectionPool pool = (BeeConnectionPool) TestUtil.getFieldValue(ds, "pool");
+            Assertions.assertNull(pool);
 
-        //test on methods of commonDataSource
-        Assertions.assertNull(ds.getParentLogger());
-        Assertions.assertNull(ds.getLogWriter());
-        ds.setLogWriter(new PrintWriter(System.out));
-        Assertions.assertNull(ds.getLogWriter());
-        Assertions.assertEquals(0, ds.getLoginTimeout());
-        Assertions.assertEquals(0, DriverManager.getLoginTimeout());
-        ds.setLoginTimeout(10);//ten seconds
-        Assertions.assertEquals(0, ds.getLoginTimeout());
-        Assertions.assertEquals(0, DriverManager.getLoginTimeout());
+            //test on methods of commonDataSource
+            Assertions.assertNull(ds.getParentLogger());
+            Assertions.assertNull(ds.getLogWriter());
+            ds.setLogWriter(new PrintWriter(System.out));
+            Assertions.assertNull(ds.getLogWriter());
+            Assertions.assertEquals(0, ds.getLoginTimeout());
+            Assertions.assertEquals(0, DriverManager.getLoginTimeout());
+            ds.setLoginTimeout(10);//ten seconds
+            Assertions.assertEquals(0, ds.getLoginTimeout());
+            Assertions.assertEquals(0, DriverManager.getLoginTimeout());
 
-        ds.setPrintRuntimeLog(true);
-        try {
-            ds.getPoolMonitorVo();
-            fail("testOnUninitializedPool");
-        } catch (PoolNotCreatedException e) {
-            Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
+            ds.setPrintRuntimeLog(true);
+            try {
+                ds.getPoolMonitorVo();
+                fail("testOnUninitializedPool");
+            } catch (PoolNotCreatedException e) {
+                Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
+            }
+
+            try {
+                ds.interruptConnectionCreating(false);
+                fail("testOnUninitializedPool");
+            } catch (PoolNotCreatedException e) {
+                Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
+            }
+
+            try {
+                ds.clear(true);
+                fail("testOnUninitializedPool");
+            } catch (PoolNotCreatedException e) {
+                Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
+            }
+
+            try {
+                ds.clear(true, new BeeDataSourceConfig());
+                fail("testOnUninitializedPool");
+            } catch (PoolNotCreatedException e) {
+                Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
+            }
         }
 
-        try {
-            ds.interruptConnectionCreating(false);
-            fail("testOnUninitializedPool");
-        } catch (PoolNotCreatedException e) {
-            Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
-        }
-
-        try {
-            ds.clear(true);
-            fail("testOnUninitializedPool");
-        } catch (PoolNotCreatedException e) {
-            Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
-        }
-
-        try {
-            ds.clear(true, new BeeDataSourceConfig());
-            fail("testOnUninitializedPool");
-        } catch (PoolNotCreatedException e) {
-            Assertions.assertTrue(e.getMessage().contains("Pool not be created"));
-        }
 
         BeeDataSourceConfig config = createDefault();
         MockCommonConnectionFactory factory = new MockCommonConnectionFactory();
         factory.setReturnNullOnCreate(true);
         config.setConnectionFactory(factory);
-        new BeeDataSource(config);
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            //do nothing
+        }
     }
 
     @Test
     public void testPoolClassNotFound() {
-        BeeDataSource ds = null;
-        Connection con = null;
-        try {//lazy creation
-            ds = new BeeDataSource(JDBC_DRIVER, JDBC_URL, JDBC_USER, JDBC_PASSWORD);
+        try (BeeDataSource ds = new BeeDataSource(JDBC_DRIVER, JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {//lazy creation
             ds.setPoolImplementClassName("xx.xx.xx");//invalid pool class name
-            con = ds.getConnection();
-            fail("testPoolClassNotFound");
+            try (Connection con = ds.getConnection()) {
+                fail("testPoolClassNotFound");
+            }
         } catch (SQLException e) {
             Throwable poolCause = e.getCause();
             Assertions.assertInstanceOf(ClassNotFoundException.class, poolCause);
-        } finally {
-            if (con != null) ConnectionPoolStatics.oclose(con);
-            if (ds != null) ds.close();
         }
 
-        BeeDataSource ds2 = null;
-        try {//creation in constructor
-            BeeDataSourceConfig config = createDefault();
-            config.setPoolImplementClassName("xx.xx.xx");//invalid pool class name
-            ds2 = new BeeDataSource(config);
+        BeeDataSourceConfig config = createDefault();
+        config.setPoolImplementClassName("xx.xx.xx");//invalid pool class name
+        try (BeeDataSource ignored = new BeeDataSource(config)) {//creation in constructor
             fail("testPoolClassNotFound");
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
@@ -215,19 +212,16 @@ public class Tc0031DataSourcePoolTest {
             PoolCreateFailedException poolException = (PoolCreateFailedException) cause;
             Throwable poolCause = poolException.getCause();
             Assertions.assertInstanceOf(ClassNotFoundException.class, poolCause);
-        } finally {
-            if (ds2 != null) ds2.close();
         }
     }
 
     @Test
     public void testPoolInitializeFailedException() {
-        BeeDataSource ds = null;
-        try {
-            BeeDataSourceConfig config = createDefault();
-            config.setMaxActive(5);
-            config.setInitialSize(10);
-            ds = new BeeDataSource(config);
+        BeeDataSourceConfig config = createDefault();
+        config.setMaxActive(5);
+        config.setInitialSize(10);
+
+        try (BeeDataSource ds = new BeeDataSource(config)) {
             fail("testPoolInitializeFailedException");
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
@@ -238,8 +232,6 @@ public class Tc0031DataSourcePoolTest {
 
             System.out.println(bottomException.getMessage());
             //Assertions.assertTrue(bottomException.getMessage().equals("The configured value of item 'initial-size' cannot be greater than the configured value of item 'max-active'"));
-        } finally {
-            if (ds != null) ds.close();
         }
     }
 
@@ -248,25 +240,29 @@ public class Tc0031DataSourcePoolTest {
         BeeDataSourceConfig config1 = createEmpty();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        config1.setConnectionInterceptor(new MockConnectionInterceptor());
-        BeeDataSource ds1 = new BeeDataSource(config1);
-        Assertions.assertInstanceOf(FastTraceConnectionPool.class, TestUtil.getFieldValue(ds1, "pool"));
+        config1.setJdbcCallLogCollector(new MockJdbcCallLogCollector());
+        try (BeeDataSource ds1 = new BeeDataSource(config1)) {
+            Assertions.assertInstanceOf(FastConnectionPool4L.class, TestUtil.getFieldValue(ds1, "pool"));
+        }
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setConnectionInterceptorClass(MockConnectionInterceptor.class);
-        BeeDataSource ds2 = new BeeDataSource(config2);
-        Assertions.assertInstanceOf(FastTraceConnectionPool.class, TestUtil.getFieldValue(ds2, "pool"));
+        config2.setJdbcCallLogCollectorClass(MockJdbcCallLogCollector.class);
+        try (BeeDataSource ds2 = new BeeDataSource(config2)) {
+            Assertions.assertInstanceOf(FastConnectionPool4L.class, TestUtil.getFieldValue(ds2, "pool"));
+        }
 
         BeeDataSourceConfig config3 = createEmpty();
         config3.setConnectionFactory(connectionFactory);
-        config3.setConnectionInterceptorClassName(MockConnectionInterceptor.class.getName());
-        BeeDataSource ds3 = new BeeDataSource(config3);
-        Assertions.assertInstanceOf(FastTraceConnectionPool.class, TestUtil.getFieldValue(ds3, "pool"));
+        config3.setJdbcCallLogCollectorClassName(MockJdbcCallLogCollector.class.getName());
+        try (BeeDataSource ds3 = new BeeDataSource(config3)) {
+            Assertions.assertInstanceOf(FastConnectionPool4L.class, TestUtil.getFieldValue(ds3, "pool"));
+        }
 
         BeeDataSourceConfig config4 = createEmpty();
         config4.setConnectionFactory(connectionFactory);
-        BeeDataSource ds4 = new BeeDataSource(config3);
-        Assertions.assertInstanceOf(FastConnectionPool.class, TestUtil.getFieldValue(ds4, "pool"));
+        try (BeeDataSource ds4 = new BeeDataSource(config4)) {
+            Assertions.assertInstanceOf(FastConnectionPool.class, TestUtil.getFieldValue(ds4, "pool"));
+        }
     }
 }

@@ -26,9 +26,7 @@ public class Tc0030DataSourceCreateTest {
 
     @Test
     public void testCreationWithDefaultConstructor() {//success test
-        BeeDataSource ds = null;
-        try {
-            ds = new BeeDataSource();
+        try (BeeDataSource ds = new BeeDataSource()) {
             Assertions.assertNotNull(ds);
         } catch (Exception e) {
             fail("[testCreationWithDefaultConstructor]threw exception when create datasource object by default constructor");
@@ -37,38 +35,29 @@ public class Tc0030DataSourceCreateTest {
 
     @Test
     public void testCreationWithConfiguration() {//success test
-        BeeDataSource ds = null;
-        try {
-            ds = new BeeDataSource(createDefault());
+        try (BeeDataSource ds = new BeeDataSource(createDefault())) {
             Assertions.assertNotNull(ds);
         } catch (Exception e) {
             fail("[testCreationWithConfiguration]threw exception when create datasource with configuration object");
-        } finally {
-            if (ds != null) ds.close();
         }
     }
 
     @Test
     public void testCreationWithJdbcInfo() {//success test
-        BeeDataSource ds = null;
-        try {
-            ds = new BeeDataSource(JDBC_DRIVER, JDBC_URL, JDBC_USER, JDBC_PASSWORD);
+        try (BeeDataSource ds = new BeeDataSource(JDBC_DRIVER, JDBC_URL, JDBC_USER, JDBC_PASSWORD)) {
             Assertions.assertNotNull(ds);
         } catch (Exception e) {
             fail("[testCreationWithJdbcInfo]threw exception when create datasource with jdbc info");
-        } finally {
-            if (ds != null) ds.close();
         }
     }
 
 
     @Test
     public void testInvalidPoolClass() {//fail test
-        BeeDataSource ds = null;
-        try {
-            BeeDataSourceConfig config = createDefault();
-            config.setPoolImplementClassName("xx.xx.xx");//invalid pool class name
-            ds = new BeeDataSource(config);
+        BeeDataSourceConfig config = createDefault();
+        config.setPoolImplementClassName("xx.xx.xx");//invalid pool class name
+
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
             fail("[testDataSourceCreateFailed]not threw exception when Data source created with an invalid pool class");
         } catch (RuntimeException e) {
             Throwable cause = e.getCause();
@@ -77,8 +66,6 @@ public class Tc0030DataSourceCreateTest {
             PoolCreateFailedException poolException = (PoolCreateFailedException) cause;
             Throwable poolCause = poolException.getCause();
             Assertions.assertInstanceOf(ClassNotFoundException.class, poolCause);
-        } finally {
-            if (ds != null) ds.close();
         }
     }
 }

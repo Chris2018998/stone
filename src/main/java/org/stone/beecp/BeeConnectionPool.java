@@ -13,6 +13,7 @@ import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 
 import javax.sql.XAConnection;
+import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -22,7 +23,7 @@ import java.sql.SQLException;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeConnectionPool {
+public interface BeeConnectionPool extends Closeable {
 
     /**
      * Pool initializes with a configuration object.
@@ -38,7 +39,7 @@ public interface BeeConnectionPool {
      * @return a borrowed connection
      * @throws SQLException                      when fail to create a connection
      * @throws ConnectionGetTimeoutException     when wait timeout in pool
-     * @throws ConnectionGetInterruptedException while waiting is interrupted
+     * @throws ConnectionGetInterruptedException while interruption occurred during waiting
      */
     Connection getConnection() throws SQLException;
 
@@ -48,63 +49,9 @@ public interface BeeConnectionPool {
      * @return a borrowed XAConnection
      * @throws SQLException                      when fail to create a xa connection
      * @throws ConnectionGetTimeoutException     when wait timeout in pool
-     * @throws ConnectionGetInterruptedException while waiting is interrupted
+     * @throws ConnectionGetInterruptedException while interruption occurred during waiting
      */
     XAConnection getXAConnection() throws SQLException;
-
-    /**
-     * Shutdown pool
-     */
-    void close();
-
-    /**
-     * Queries pool state whether is closed.
-     *
-     * @return true when pool is closed
-     */
-    boolean isClosed();
-
-    /**
-     * A switch call to enable or disable runtime log print in pool
-     *
-     * @param enable is true that log print is enabled, false is not print
-     */
-    void enableLogPrint(boolean enable);
-
-    /**
-     * query log print is whether enabled in pool
-     *
-     * @return boolean true is enabled,false not be
-     */
-    boolean isEnabledLogPrint();
-
-    /**
-     * query connection Interceptor is whether enabled in pool
-     *
-     * @return boolean true is enabled,false not be
-     */
-    boolean isEnabledConnectionInterceptor();
-
-    /**
-     * A switch to enable Interceptor or disable Interceptor
-     *
-     * @param enable is true that enable, false is disabled
-     */
-    void enableConnectionInterceptor(boolean enable);
-
-    /**
-     * Set a connection Interceptor to pool
-     *
-     * @param connectionInterceptor is a new Interceptor
-     */
-    void setConnectionInterceptor(BeeConnectionInterceptor connectionInterceptor);
-
-    /**
-     * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
-     *
-     * @return monitoring object of pool
-     */
-    BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
     /**
      * Interrupts connections creation in blocking.
@@ -137,5 +84,51 @@ public interface BeeConnectionPool {
     void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
 
 
+    /**
+     * Shutdown pool
+     */
+    void close();
+
+    /**
+     * Queries pool state whether is closed.
+     *
+     * @return true when pool is closed
+     */
+    boolean isClosed();
+
+    /**
+     * Query logs print state whether in being enabled.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    boolean isEnabledLogPrint();
+
+    /**
+     * A switch to enable or disable pool work logs print.
+     *
+     * @param enable is true that log print is enabled, false is not print
+     */
+    void enableLogPrint(boolean enable);
+
+    /**
+     * Queries logs collector in whether in being enabled.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    boolean isEnabledJdbcCallLogCollector();
+
+    /**
+     * A switch to enable or disable configured log collector in pool.
+     *
+     * @param enable is true that enable, false is disabled
+     */
+    void enableJdbcCallLogCollector(boolean enable);
+
+    /**
+     * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
+     *
+     * @return monitoring object of pool
+     */
+    BeeConnectionPoolMonitorVo getPoolMonitorVo();
 }
 	

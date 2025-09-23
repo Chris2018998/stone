@@ -29,83 +29,87 @@ public class Tc0035DataSourceLockTest {
 
     @Test
     public void testWaitTimeoutOnDsRLock() throws Exception {
-        BeeDataSource ds = new BeeDataSource();
-        ds.setJdbcUrl(JDBC_URL);
-        ds.setDriverClassName(JDBC_DRIVER);
-        ds.setUsername(JDBC_USER);
-        ds.setMaxWait(TimeUnit.MILLISECONDS.toMillis(500L));//timeout on wait
-        ds.setPoolImplementClassName(MockBlockPoolImplementation1.class.getName());
+        try (BeeDataSource ds = new BeeDataSource()) {
+            ds.setJdbcUrl(JDBC_URL);
+            ds.setDriverClassName(JDBC_DRIVER);
+            ds.setUsername(JDBC_USER);
+            ds.setMaxWait(TimeUnit.MILLISECONDS.toMillis(500L));//timeout on wait
+            ds.setPoolImplementClassName(MockBlockPoolImplementation1.class.getName());
 
-        BorrowThread firstThread = new BorrowThread(ds);//first thread create pool under write-lock
-        firstThread.start();
+            BorrowThread firstThread = new BorrowThread(ds);//first thread create pool under write-lock
+            firstThread.start();
 
-        if (waitUtilWaiting(firstThread)) {
-            BorrowThread secondThread = new BorrowThread(ds);
-            secondThread.start();
-            secondThread.join();
-            Assertions.assertEquals("Timeout on waiting for pool ready", secondThread.getFailureCause().getMessage());
+            if (waitUtilWaiting(firstThread)) {
+                BorrowThread secondThread = new BorrowThread(ds);
+                secondThread.start();
+                secondThread.join();
+                Assertions.assertEquals("Timeout on waiting for pool ready", secondThread.getFailureCause().getMessage());
+            }
         }
     }
 
     @Test
     public void testInterruptionOnDsRLock() throws Exception {
-        BeeDataSource ds = new BeeDataSource();
-        ds.setJdbcUrl(JDBC_URL);
-        ds.setDriverClassName(JDBC_DRIVER);
-        ds.setUsername(JDBC_USER);
-        ds.setPoolImplementClassName(MockBlockPoolImplementation1.class.getName());
+        try (BeeDataSource ds = new BeeDataSource()) {
+            ds.setJdbcUrl(JDBC_URL);
+            ds.setDriverClassName(JDBC_DRIVER);
+            ds.setUsername(JDBC_USER);
+            ds.setPoolImplementClassName(MockBlockPoolImplementation1.class.getName());
 
-        BorrowThread firstThread = new BorrowThread(ds);
-        firstThread.start();
+            BorrowThread firstThread = new BorrowThread(ds);
+            firstThread.start();
 
-        if (waitUtilWaiting(firstThread)) {
-            BorrowThread secondThread = new BorrowThread(ds);
-            secondThread.start();
-            new InterruptionAction(secondThread).start();
-            secondThread.join();
-            Assertions.assertEquals("An interruption occurred while waiting for pool ready", secondThread.getFailureCause().getMessage());
+            if (waitUtilWaiting(firstThread)) {
+                BorrowThread secondThread = new BorrowThread(ds);
+                secondThread.start();
+                new InterruptionAction(secondThread).start();
+                secondThread.join();
+                Assertions.assertEquals("An interruption occurred while waiting for pool ready", secondThread.getFailureCause().getMessage());
+            }
         }
     }
 
     @Test
     public void testSuccessOnRLock() throws Exception {
-        BeeDataSource ds = new BeeDataSource();
-        ds.setJdbcUrl(JDBC_URL);
-        ds.setDriverClassName(JDBC_DRIVER);
-        ds.setUsername(JDBC_USER);
-        ds.setMaxWait(TimeUnit.SECONDS.toMillis(10L));//timeout on wait
-        ds.setPoolImplementClassName(MockBlockPoolImplementation2.class.getName());
+        try (BeeDataSource ds = new BeeDataSource()) {
+            ds.setJdbcUrl(JDBC_URL);
+            ds.setDriverClassName(JDBC_DRIVER);
+            ds.setUsername(JDBC_USER);
+            ds.setMaxWait(TimeUnit.SECONDS.toMillis(10L));//timeout on wait
+            ds.setPoolImplementClassName(MockBlockPoolImplementation2.class.getName());
 
-        BorrowThread firstThread = new BorrowThread(ds);
-        BorrowThread secondThread = new BorrowThread(ds);
-        firstThread.start();
+            BorrowThread firstThread = new BorrowThread(ds);
+            BorrowThread secondThread = new BorrowThread(ds);
+            firstThread.start();
 
-        if (waitUtilWaiting(firstThread)) {//block 1 second in pool instance creation
-            secondThread.start();
-            secondThread.join();
-            Assertions.assertNull(secondThread.getFailureCause());
-            Assertions.assertNotNull(secondThread.getConnection());
+            if (waitUtilWaiting(firstThread)) {//block 1 second in pool instance creation
+                secondThread.start();
+                secondThread.join();
+                Assertions.assertNull(secondThread.getFailureCause());
+                Assertions.assertNotNull(secondThread.getConnection());
+            }
         }
     }
 
     @Test
     public void testSuccessOnRLock2() throws Exception {
-        BeeDataSource ds = new BeeDataSource();
-        ds.setJdbcUrl(JDBC_URL);
-        ds.setDriverClassName(JDBC_DRIVER);
-        ds.setUsername(JDBC_USER);
-        ds.setMaxWait(TimeUnit.SECONDS.toMillis(10L));//timeout on wait
-        ds.setPoolImplementClassName(MockBlockPoolImplementation2.class.getName());
+        try (BeeDataSource ds = new BeeDataSource()) {
+            ds.setJdbcUrl(JDBC_URL);
+            ds.setDriverClassName(JDBC_DRIVER);
+            ds.setUsername(JDBC_USER);
+            ds.setMaxWait(TimeUnit.SECONDS.toMillis(10L));//timeout on wait
+            ds.setPoolImplementClassName(MockBlockPoolImplementation2.class.getName());
 
-        BorrowThread firstThread = new BorrowThread(ds, null, true);
-        BorrowThread secondThread = new BorrowThread(ds, null, true);
+            BorrowThread firstThread = new BorrowThread(ds, null, true);
+            BorrowThread secondThread = new BorrowThread(ds, null, true);
 
-        firstThread.start();
-        if (waitUtilWaiting(firstThread)) {//block 1 second in pool instance creation
-            secondThread.start();
-            secondThread.join();
-            Assertions.assertNull(secondThread.getFailureCause());
-            Assertions.assertNotNull(secondThread.getXAConnection());
+            firstThread.start();
+            if (waitUtilWaiting(firstThread)) {//block 1 second in pool instance creation
+                secondThread.start();
+                secondThread.join();
+                Assertions.assertNull(secondThread.getFailureCause());
+                Assertions.assertNotNull(secondThread.getXAConnection());
+            }
         }
     }
 }

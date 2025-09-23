@@ -38,7 +38,7 @@ import static jakarta.transaction.Status.STATUS_ACTIVE;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeJtaDataSource extends TimerTask implements DataSource {
+public class BeeJtaDataSource extends TimerTask implements DataSource, Cloneable, AutoCloseable {
     private final Timer transactionTimer = new Timer(true);
     private final ConcurrentHashMap<Transaction, Connection> transactionMap = new ConcurrentHashMap<>(10);
     private BeeDataSource ds;

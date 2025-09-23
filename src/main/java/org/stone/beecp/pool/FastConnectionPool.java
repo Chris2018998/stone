@@ -54,7 +54,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
-    protected BeeConnectionInterceptor conTracker;
+    protected BeeJdbcCallLogCollector logCollector;
 
     String poolName;
     volatile int poolState;
@@ -86,6 +86,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private BeeConnectionFactory rawConnFactory;
     private BeeXaConnectionFactory rawXaConnFactory;
     private ProxyConnectionFactory conProxyFactory;
+
     private PooledConnectionAliveTest conValidTest;
     private ThreadPoolExecutor networkTimeoutExecutor;
     private IdleTimeoutScanThread idleScanThread;
@@ -132,11 +133,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         //step2: create proxy factory
-        this.conTracker = poolConfig.getConnectionInterceptor();
-        if (conTracker == null) {
+        this.logCollector = poolConfig.getJdbcCallLogCollector();
+        if (logCollector == null) {
             this.conProxyFactory = new ProxyConnectionFactory();
         } else {
-            this.conProxyFactory = new ProxyConnectionFactoryT(conTracker);
+            logCollector.init(poolConfig.getJdbcCallLogCacheSize(), poolConfig.getSlowConnectionGetThreshold(), poolConfig.getSlowSQLExecutionThreshold(), poolConfig.getJdbcCallLogListener());
+            this.conProxyFactory = new ProxyConnectionFactory4L(logCollector);
         }
 
         //step3: create a fixed length array to store pooled connections(empty array)
@@ -970,19 +972,16 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         printRuntimeLog = indicator;
     }
 
-    public boolean isEnabledConnectionInterceptor() {
-        return this.conProxyFactory instanceof ProxyConnectionFactoryT;
+    public boolean isEnabledJdbcCallLogCollector() {
+        return this.conProxyFactory instanceof ProxyConnectionFactory4L;
     }
 
-    public void setConnectionInterceptor(BeeConnectionInterceptor connectionTracker) {
-        this.conProxyFactory = new ProxyConnectionFactoryT(connectionTracker);
-    }
-
-    public void enableConnectionInterceptor(boolean enable) {
-        if (enable) {
-            if (poolConfig.getConnectionInterceptor() != null)
-                this.conProxyFactory = new ProxyConnectionFactoryT(poolConfig.getConnectionInterceptor());
-        } else {
+    public void enableJdbcCallLogCollector(boolean enable) {
+        if (enable && logCollector != null) {
+            if (!(this.conProxyFactory instanceof ProxyConnectionFactory4L))
+                this.conProxyFactory = new ProxyConnectionFactory4L(logCollector);
+        } else if (!enable && this.conProxyFactory instanceof ProxyConnectionFactory4L) {
+            if (logCollector != null) logCollector.clear();
             this.conProxyFactory = new ProxyConnectionFactory();
         }
     }

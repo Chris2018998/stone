@@ -26,31 +26,32 @@ public class Tc0032DataSourceWrapperTest {
 
     @Test
     public void testOnWrapper() {
-        BeeDataSource ds = new BeeDataSource();
-        Assertions.assertFalse(ds.isWrapperFor(null));
-        Assertions.assertTrue(ds.isWrapperFor(DataSource.class));
-        Assertions.assertTrue(ds.isWrapperFor(BeeDataSource.class));
-        Assertions.assertFalse(ds.isWrapperFor(Connection.class));
+        try (BeeDataSource ds = new BeeDataSource()) {
+            Assertions.assertFalse(ds.isWrapperFor(null));
+            Assertions.assertTrue(ds.isWrapperFor(DataSource.class));
+            Assertions.assertTrue(ds.isWrapperFor(BeeDataSource.class));
+            Assertions.assertFalse(ds.isWrapperFor(Connection.class));
 
-        try {
-            ds.unwrap(null);
-            fail("testOnWrapper");
-        } catch (SQLException e) {
-            Assertions.assertTrue(e.getMessage().contains("The wrapper object was not an instance of"));
-        }
+            try {
+                ds.unwrap(null);
+                fail("testOnWrapper");
+            } catch (SQLException e) {
+                Assertions.assertTrue(e.getMessage().contains("The wrapper object was not an instance of"));
+            }
 
-        try {
-            ds.unwrap(Connection.class);
-            fail("testOnWrapper");
-        } catch (SQLException e) {
-            Assertions.assertTrue(e.getMessage().contains("The wrapper object was not an instance of"));
-        }
+            try {
+                ds.unwrap(Connection.class);
+                fail("testOnWrapper");
+            } catch (SQLException e) {
+                Assertions.assertTrue(e.getMessage().contains("The wrapper object was not an instance of"));
+            }
 
-        try {//correct
-            ds.unwrap(BeeDataSource.class);
-        } catch (SQLException e) {
-            fail("testOnWrapper");
-            Assertions.assertTrue(e.getMessage().contains("The wrapper object was not an instance of"));
+            try {//correct
+                ds.unwrap(BeeDataSource.class);
+            } catch (SQLException e) {
+                fail("testOnWrapper");
+                Assertions.assertTrue(e.getMessage().contains("The wrapper object was not an instance of"));
+            }
         }
     }
 }

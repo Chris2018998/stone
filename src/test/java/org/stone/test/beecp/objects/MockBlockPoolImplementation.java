@@ -11,8 +11,8 @@ package org.stone.test.beecp.objects;
 
 import org.stone.beecp.BeeConnectionPool;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
-import org.stone.beecp.BeeConnectionInterceptor;
 import org.stone.beecp.BeeDataSourceConfig;
+import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.test.beecp.driver.MockConnection;
 import org.stone.test.beecp.driver.MockXaConnection;
 
@@ -60,15 +60,15 @@ public class MockBlockPoolImplementation implements BeeConnectionPool {
         return false;
     }
 
-    public void enableConnectionInterceptor(boolean enable) {
+    public void enableJdbcCallLogCollector(boolean enable) {
         //do nothing
     }
 
-    public void setConnectionInterceptor(BeeConnectionInterceptor connectionTracker) {
+    public void enableMethodLogCollector(BeeJdbcCallLogCollector connectionTracker) {
         //do nothing
     }
 
-    public boolean isEnabledConnectionInterceptor() {
+    public boolean isEnabledJdbcCallLogCollector() {
         return false;
     }
 

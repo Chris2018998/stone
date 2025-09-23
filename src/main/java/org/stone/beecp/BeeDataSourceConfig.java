@@ -150,13 +150,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //Class name of Jdbc info decoder(url,username password),default is none
     private String jdbcLinkInfoDecoderClassName;
 
-    //connection operation interceptor
-    private BeeConnectionInterceptor connectionInterceptor;
-    //Class of connection interceptor,default is none
-    private Class<? extends BeeConnectionInterceptor> connectionInterceptorClass;
-    //Class name of connection interceptor,default is none
-    private String connectionInterceptorClassName;
-
     //An indicator to enable Jmx registration,default is false
     private boolean enableJmx;
     //An indicator to enable runtime log print in pool,default is false
@@ -165,6 +158,30 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private boolean printConfigInfo;
     //Class name of pool implementation,default is {@code FastConnectionPool}
     private String poolImplementClassName;
+
+    //********************************************** Jdbc call logs **************************************************//
+    //slow threshold value of connection get,time unit:milliseconds
+    private long slowConnectionGetThreshold;
+    //slow threshold of sql execution,time unit:milliseconds
+    private long slowSQLExecutionThreshold;
+    //Capacity of method logs cache，default is 1000
+    private int jdbcCallLogCacheSize = 1000;
+    //timer interval to clear timeout logs in jdbc method logs in collector,default is 3 minutes
+    private long jdbcCallLogTimeout = MINUTES.toMillis(3L);
+
+    //log listener
+    private BeeJdbcCallLogListener jdbcCallLogListener;
+    //Class of log listener,default is none
+    private Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass;
+    //Class name of log listener,default is none
+    private String jdbcCallLogListenerClassName;
+
+    //connection/statement operation log collector
+    private BeeJdbcCallLogCollector jdbcCallLogCollector;
+    //Class of connection operation log collector,default is none
+    private Class<? extends BeeJdbcCallLogCollector> jdbcCallLogCollectorClass;
+    //Class name of connection operation log collector,default is none
+    private String jdbcCallLogCollectorClassName;
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                                         //
@@ -669,30 +686,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.jdbcLinkInfoDecoder = jdbcLinkInfoDecoder;
     }
 
-    public BeeConnectionInterceptor getConnectionInterceptor() {
-        return connectionInterceptor;
-    }
-
-    public void setConnectionInterceptor(BeeConnectionInterceptor connectionInterceptor) {
-        this.connectionInterceptor = connectionInterceptor;
-    }
-
-    public Class<? extends BeeConnectionInterceptor> getConnectionInterceptorClass() {
-        return connectionInterceptorClass;
-    }
-
-    public void setConnectionInterceptorClass(Class<? extends BeeConnectionInterceptor> connectionInterceptorClass) {
-        this.connectionInterceptorClass = connectionInterceptorClass;
-    }
-
-    public String getConnectionInterceptorClassName() {
-        return connectionInterceptorClassName;
-    }
-
-    public void setConnectionInterceptorClassName(String connectionInterceptorClassName) {
-        this.connectionInterceptorClassName = connectionInterceptorClassName;
-    }
-
     public Object getConnectProperty(String key) {
         return this.connectProperties.get(key);
     }
@@ -722,7 +715,99 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                     7: properties configuration(3)                                             //
+    //                                    7: Log Collector(18)                                                        //
+    //****************************************************************************************************************//
+    public long getSlowConnectionGetThreshold() {
+        return slowConnectionGetThreshold;
+    }
+
+    public void setSlowConnectionGetThreshold(long slowConnectionGetThreshold) {
+        if (slowConnectionGetThreshold < 0L)
+            throw new InvalidParameterException("The given value for configuration item 'slow-connection-get-threshold' must be greater than zero");
+        this.slowConnectionGetThreshold = slowConnectionGetThreshold;
+    }
+
+    public long getSlowSQLExecutionThreshold() {
+        return slowSQLExecutionThreshold;
+    }
+
+    public void setSlowSQLExecutionThreshold(long slowSQLExecutionThreshold) {
+        if (slowSQLExecutionThreshold < 0L)
+            throw new InvalidParameterException("The given value for configuration item 'slow-SQL-execution-threshold' must be greater than zero");
+        this.slowSQLExecutionThreshold = slowSQLExecutionThreshold;
+    }
+
+    public int getJdbcCallLogCacheSize() {
+        return jdbcCallLogCacheSize;
+    }
+
+    public void setJdbcCallLogCacheSize(int jdbcCallLogCacheSize) {
+        if (jdbcCallLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero");
+        this.jdbcCallLogCacheSize = jdbcCallLogCacheSize;
+    }
+
+    public long getJdbcCallLogTimeout() {
+        return jdbcCallLogTimeout;
+    }
+
+    public void setJdbcCallLogTimeout(long jdbcCallLogTimeout) {
+        if (slowSQLExecutionThreshold <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero");
+
+        this.jdbcCallLogTimeout = jdbcCallLogTimeout;
+    }
+
+    public BeeJdbcCallLogListener getJdbcCallLogListener() {
+        return jdbcCallLogListener;
+    }
+
+    public void setJdbcCallLogListener(BeeJdbcCallLogListener jdbcCallLogListener) {
+        this.jdbcCallLogListener = jdbcCallLogListener;
+    }
+
+    public Class<? extends BeeJdbcCallLogListener> getJdbcCallLogListenerClass() {
+        return jdbcCallLogListenerClass;
+    }
+
+    public void setJdbcCallLogListenerClass(Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass) {
+        this.jdbcCallLogListenerClass = jdbcCallLogListenerClass;
+    }
+
+    public String getJdbcCallLogListenerClassName() {
+        return jdbcCallLogListenerClassName;
+    }
+
+    public void setJdbcCallLogListenerClassName(String jdbcCallLogListenerClassName) {
+        this.jdbcCallLogListenerClassName = jdbcCallLogListenerClassName;
+    }
+
+    public BeeJdbcCallLogCollector getJdbcCallLogCollector() {
+        return jdbcCallLogCollector;
+    }
+
+    public void setJdbcCallLogCollector(BeeJdbcCallLogCollector jdbcCallLogCollector) {
+        this.jdbcCallLogCollector = jdbcCallLogCollector;
+    }
+
+    public Class<? extends BeeJdbcCallLogCollector> getJdbcCallLogCollectorClass() {
+        return jdbcCallLogCollectorClass;
+    }
+
+    public void setJdbcCallLogCollectorClass(Class<? extends BeeJdbcCallLogCollector> jdbcCallLogCollectorClass) {
+        this.jdbcCallLogCollectorClass = jdbcCallLogCollectorClass;
+    }
+
+    public String getJdbcCallLogCollectorClassName() {
+        return jdbcCallLogCollectorClassName;
+    }
+
+    public void setJdbcCallLogCollectorClassName(String jdbcCallLogCollectorClassName) {
+        this.jdbcCallLogCollectorClassName = jdbcCallLogCollectorClassName;
+    }
+
+    //****************************************************************************************************************//
+    //                                     8: properties configuration(3)                                             //
     //****************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         loadFromPropertiesFile(filename, null);
@@ -846,7 +931,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                    8: configuration check and connection factory create methods(4)             //
+    //                                    9: configuration check and connection factory create methods(4)             //
     //****************************************************************************************************************//
 
     /**
@@ -862,7 +947,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeConnectionInterceptor connectionTracer = this.createConnectionInterceptor();
+
+        BeeJdbcCallLogListener logListener = createLogListener();
+        BeeJdbcCallLogCollector logCollector = this.createLogCollector();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -880,7 +967,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.evictPredicate = predicate;
-        checkedConfig.connectionInterceptor = connectionTracer;
+        checkedConfig.jdbcCallLogListener = logListener;
+        checkedConfig.jdbcCallLogCollector = logCollector;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
 
@@ -942,21 +1030,41 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         return null;
     }
 
-    //create BeeConnectionListener instance
-    private BeeConnectionInterceptor createConnectionInterceptor() {
+    //create method log listener
+    private BeeJdbcCallLogListener createLogListener() {
         //step1:if exists listener,then return it
-        if (this.connectionInterceptor != null) return this.connectionInterceptor;
+        if (this.jdbcCallLogListener != null) return this.jdbcCallLogListener;
 
-        //step2: create connection listener
-        if (this.connectionInterceptorClass != null || isNotBlank(this.connectionInterceptorClassName)) {
+        //step2: create a listener
+        if (this.jdbcCallLogListenerClass != null || isNotBlank(this.jdbcCallLogListenerClassName)) {
             Class<?> listenerClass = null;
             try {
-                listenerClass = connectionInterceptorClass != null ? connectionInterceptorClass : loadClass(connectionInterceptorClassName);
-                return (BeeConnectionInterceptor) createClassInstance(listenerClass, BeeConnectionInterceptor.class, "connection interceptor");
+                listenerClass = jdbcCallLogListenerClass != null ? jdbcCallLogListenerClass : loadClass(jdbcCallLogListenerClassName);
+                return (BeeJdbcCallLogListener) createClassInstance(listenerClass, BeeJdbcCallLogListener.class, "jdbc call log listener");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create connection interceptor with class[" + connectionInterceptorClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + jdbcCallLogListenerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create connection interceptor with class[" + listenerClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + listenerClass + "]", e);
+            }
+        }
+        return null;
+    }
+
+    //create jdbc method log collector
+    private BeeJdbcCallLogCollector createLogCollector() {
+        //step1:if exists log collector,then return it
+        if (this.jdbcCallLogCollector != null) return this.jdbcCallLogCollector;
+
+        //step2: create jdbc method log collector
+        if (this.jdbcCallLogCollectorClass != null || isNotBlank(this.jdbcCallLogCollectorClassName)) {
+            Class<?> collectorClass = null;
+            try {
+                collectorClass = jdbcCallLogCollectorClass != null ? jdbcCallLogCollectorClass : loadClass(jdbcCallLogCollectorClassName);
+                return (BeeJdbcCallLogCollector) createClassInstance(collectorClass, BeeJdbcCallLogCollector.class, "jdbc method log collector");
+            } catch (ClassNotFoundException e) {
+                throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + jdbcCallLogCollectorClassName + "]", e);
+            } catch (Throwable e) {
+                throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + collectorClass + "]", e);
             }
         }
         return null;
@@ -1165,4 +1273,3 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         CommonLog.info("................................................BeeCP({})configuration[end]................................................", poolName);
     }
 }
-
