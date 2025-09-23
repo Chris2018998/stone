@@ -26,8 +26,6 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
     }
 
 
-
-
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
         return null;
     }
