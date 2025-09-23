@@ -34,12 +34,12 @@ public class Tc0043ConnectionLogCollectTest {
         config.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
         config.setConnectionFactory(new MockCommonConnectionFactory());
         try (BeeDataSource ds = new BeeDataSource(config)) {
-            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
 
             //test1:getConnection()
             try (Connection ignored = ds.getConnection()) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 1);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getConnection()", log.getMethod());
@@ -52,7 +52,7 @@ public class Tc0043ConnectionLogCollectTest {
 
             //test2: getConnection(String,String)
             try (Connection ignored = ds.getConnection("root", "test")) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 2);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getConnection()", log.getMethod());
@@ -64,7 +64,7 @@ public class Tc0043ConnectionLogCollectTest {
             }
 
             ds.clearJdbcCallLog(0L);
-            logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
         }
     }
@@ -77,14 +77,14 @@ public class Tc0043ConnectionLogCollectTest {
         connectionFactory.setCreateException1(new SQLException("Failed to connect db"));
         config.setConnectionFactory(connectionFactory);
         try (BeeDataSource ds = new BeeDataSource(config)) {
-            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
 
             //test1:getConnection()
             try (Connection ignored = ds.getConnection()) {
                 Assertions.fail();
             } catch (SQLException e) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 1);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getConnection()", log.getMethod());
@@ -101,7 +101,7 @@ public class Tc0043ConnectionLogCollectTest {
             try (Connection ignored = ds.getConnection("root", "test")) {
                 Assertions.fail();
             } catch (SQLException e) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 2);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getConnection()", log.getMethod());
@@ -114,7 +114,7 @@ public class Tc0043ConnectionLogCollectTest {
             }
 
             ds.clearJdbcCallLog(0L);
-            logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
         }
     }
@@ -126,13 +126,13 @@ public class Tc0043ConnectionLogCollectTest {
         config.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
         config.setXaConnectionFactory(new MockCommonXaConnectionFactory());
         try (BeeDataSource ds = new BeeDataSource(config)) {
-            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
 
             //test1:getXAConnection()
             XAConnection ignored1 = ds.getXAConnection();
             try (Connection ignored11 = ignored1.getConnection()) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 1);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getXAConnection()", log.getMethod());
@@ -146,7 +146,7 @@ public class Tc0043ConnectionLogCollectTest {
             //test2: getXAConnection(String,String)
             XAConnection ignored2 = ds.getXAConnection("root", "test");
             try (Connection ignored21 = ignored2.getConnection()) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 2);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getXAConnection()", log.getMethod());
@@ -157,7 +157,7 @@ public class Tc0043ConnectionLogCollectTest {
                 }
 
                 ds.clearJdbcCallLog(0L);
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList.isEmpty());
             }
         }
@@ -171,7 +171,7 @@ public class Tc0043ConnectionLogCollectTest {
         connectionFactory.setCreateException1(new SQLException("Failed to connect db"));
         config.setXaConnectionFactory(connectionFactory);
         try (BeeDataSource ds = new BeeDataSource(config)) {
-            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
 
             //test1:getXAConnection()
@@ -181,7 +181,7 @@ public class Tc0043ConnectionLogCollectTest {
                     Assertions.fail();
                 }
             } catch (SQLException e) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 1);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getXAConnection()", log.getMethod());
@@ -201,7 +201,7 @@ public class Tc0043ConnectionLogCollectTest {
                     Assertions.fail();
                 }
             } catch (SQLException e) {
-                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+                logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
                 Assertions.assertTrue(logList != null && logList.size() == 2);
                 for (BeeJdbcCallLog log : logList) {
                     Assertions.assertEquals("FastConnectionPool4L.getXAConnection()", log.getMethod());
@@ -214,7 +214,7 @@ public class Tc0043ConnectionLogCollectTest {
             }
 
             ds.clearJdbcCallLog(0L);
-            logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_GetConnection);
+            logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Get_Connection);
             Assertions.assertTrue(logList.isEmpty());
         }
     }

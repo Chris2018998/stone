@@ -13,8 +13,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.beecp.BeeJdbcCallLogListener;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
+import org.stone.test.beecp.objects.MockJdbcCallLogCollector;
 import org.stone.test.beecp.objects.MockJdbcCallLogListener;
 import org.stone.tools.exception.BeanException;
 
@@ -47,6 +49,8 @@ public class Tc0018JdbcCallLogListenerTest {
         BeeDataSourceConfig config1 = createEmpty();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
+        BeeJdbcCallLogCollector logCollector= new MockJdbcCallLogCollector();
+        config1.setJdbcCallLogCollector(logCollector);
         config1.setJdbcCallLogListenerClassName("org.stone.test.beecp.objects.MockJdbcCallLogListener3");//class not found
         try {
             config1.check();
@@ -57,6 +61,7 @@ public class Tc0018JdbcCallLogListenerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
+        config2.setJdbcCallLogCollector(logCollector);
         config2.setJdbcCallLogListenerClassName("org.stone.test.beecp.objects.MockJdbcCallLogListener2");//class can not be
         try {
             config2.check();
@@ -69,6 +74,7 @@ public class Tc0018JdbcCallLogListenerTest {
 
         BeeDataSourceConfig config3 = createEmpty();
         config3.setConnectionFactory(connectionFactory);
+        config3.setJdbcCallLogCollector(logCollector);
         config3.setJdbcCallLogListener(new org.stone.test.beecp.objects.MockJdbcCallLogListener());
         BeeDataSourceConfig config31 = config3.check();
         Assertions.assertNotNull(config31.getJdbcCallLogListener());
@@ -76,11 +82,13 @@ public class Tc0018JdbcCallLogListenerTest {
 
         BeeDataSourceConfig config4 = createEmpty();
         config4.setConnectionFactory(connectionFactory);
+        config4.setJdbcCallLogCollector(logCollector);
         config4.setJdbcCallLogListenerClass(org.stone.test.beecp.objects.MockJdbcCallLogListener.class);
         BeeDataSourceConfig config41 = config4.check();
         Assertions.assertNotNull(config41.getJdbcCallLogListener());
 
         BeeDataSourceConfig config5 = createEmpty();
+        config5.setJdbcCallLogCollector(logCollector);
         config5.setConnectionFactory(connectionFactory);
         config5.setJdbcCallLogListenerClassName(org.stone.test.beecp.objects.MockJdbcCallLogListener.class.getName());
         BeeDataSourceConfig config51 = config5.check();

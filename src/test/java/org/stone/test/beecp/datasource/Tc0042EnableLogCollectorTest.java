@@ -19,7 +19,7 @@ import org.stone.beecp.pool.exception.PoolNotCreatedException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.stone.beecp.BeeJdbcCallLog.Type_GetConnection;
+import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
 /**
@@ -47,7 +47,7 @@ public class Tc0042EnableLogCollectorTest {
             }
 
             try {
-                ds.getJdbcCallLog(Type_GetConnection);
+                ds.getJdbcCallLog(Type_Get_Connection);
                 Assertions.fail();
             } catch (SQLException e) {
                 Assertions.assertInstanceOf(PoolNotCreatedException.class, e);
@@ -71,9 +71,9 @@ public class Tc0042EnableLogCollectorTest {
         BeeDataSourceConfig config = createDefault();
         try (BeeDataSource ds = new BeeDataSource(config)) {
             try (Connection ignored = ds.getConnection()) {
-                Assertions.assertNull(ds.getJdbcCallLog(Type_GetConnection));
+                Assertions.assertNull(ds.getJdbcCallLog(Type_Get_Connection));
                 ds.clearJdbcCallLog(0L);
-                Assertions.assertNull(ds.getJdbcCallLog(Type_GetConnection));
+                Assertions.assertNull(ds.getJdbcCallLog(Type_Get_Connection));
             }
         }
 
@@ -86,9 +86,9 @@ public class Tc0042EnableLogCollectorTest {
             Assertions.assertFalse(ds2.isEnabledJdbcCallLogCollector());
 
             try (Connection ignored = ds2.getConnection()) {
-                Assertions.assertTrue(ds2.getJdbcCallLog(Type_GetConnection).isEmpty());
+                Assertions.assertTrue(ds2.getJdbcCallLog(Type_Get_Connection).isEmpty());
                 ds2.clearJdbcCallLog(0L);
-                Assertions.assertTrue(ds2.getJdbcCallLog(Type_GetConnection).isEmpty());
+                Assertions.assertTrue(ds2.getJdbcCallLog(Type_Get_Connection).isEmpty());
             }
         }
     }
