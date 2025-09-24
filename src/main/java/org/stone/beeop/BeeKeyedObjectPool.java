@@ -188,8 +188,15 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception;
 
     //***************************************************************************************************************//
-    //                                        7: Log print                                                           //
+    //                                        7: pool work Log print                                                 //
     //***************************************************************************************************************//
+
+    /**
+     * A switch call to enable or disable logs print of pool.
+     *
+     * @param enable is true that print, false not print
+     */
+    void enableLogPrint(boolean enable);
 
     /**
      * Query print state of runtime logs.
@@ -209,12 +216,21 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      */
     void enableLogPrint(K key, boolean enable) throws Exception;
 
+    //***************************************************************************************************************//
+    //                                        8: pooled object call log collect                                      //
+    //***************************************************************************************************************//
+
     /**
-     * A switch call to enable or disable logs print of pool.
+     * Queries logs collector in whether in being enabled.
      *
-     * @param enable is true that print, false not print
+     * @return boolean true is enabled,false is disabled
      */
-    void enableLogPrint(boolean enable);
+    boolean isEnabledObjectCallLogCollector();
 
-
+    /**
+     * A switch to enable or disable configured log collector in pool.
+     *
+     * @param enable is true that enable, false is disabled
+     */
+    void enableObjectCallLogCollector(boolean enable);
 }

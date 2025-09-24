@@ -405,6 +405,24 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
         return getObjectInstancePool(key).interruptObjectCreating(interruptTimeout);
     }
 
+    /**
+     * Queries logs collector in whether in being enabled.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    public boolean isEnabledObjectCallLogCollector() {
+        return false;//@todo
+    }
+
+    /**
+     * A switch to enable or disable configured log collector in pool.
+     *
+     * @param enable is true that enable, false is disabled
+     */
+    public void enableObjectCallLogCollector(boolean enable) {
+
+    }
+
     //***************************************************************************************************************//
     //                7: Private methods and friendly methods (4)                                                    //                                                                                  //
     //***************************************************************************************************************//

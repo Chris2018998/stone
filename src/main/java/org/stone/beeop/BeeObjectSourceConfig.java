@@ -9,6 +9,7 @@
  */
 package org.stone.beeop;
 
+import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beeop.pool.KeyedObjectPool;
 import org.stone.tools.CommonUtil;
 import org.stone.tools.exception.BeanException;
@@ -94,7 +95,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //A class name array of interface implemented by object class
     private String[] objectInterfaceNames;
 
-
     //Object factory to create pooled objects to pool,first priority for being used if exists
     private BeeObjectFactory<K, V> objectFactory;
     //Class of object factory,second priority for being used if exists
@@ -109,10 +109,32 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //Class name of predicate,third priority for being used if exists
     private String objectPredicateClassName;
 
-
     //Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
 
+    //********************************************** object call logs **************************************************//
+    //slow threshold value of object get,time unit:milliseconds
+    private long slowObjectGetThreshold;
+    //slow threshold of object call,time unit:milliseconds
+    private long slowObjectCallThreshold;
+    //Capacity of method logs cache，default is 1000
+    private int objectCallLogCacheSize = 1000;
+    //timer interval to clear timeout logs in object method logs in collector,default is 3 minutes
+    private long objectCallLogTimeout = MINUTES.toMillis(3L);
+
+    //object call log listener
+    private BeeObjectCallLogListener<K, V> objectCallLogListener;
+    //Class of object call log listener,default is none
+    private Class<? extends BeeObjectCallLogListener<K, V>> objectCallLogListenerClass;
+    //Class name of log listener,default is none
+    private String objectCallLogListenerClassName;
+
+    //object call logs collector
+    private BeeObjectCallLogCollector<K, V> objectCallLogCollector;
+    //Class of object call logs collector,default is none
+    private Class<? extends BeeObjectCallLogCollector<K, V>> objectCallLogCollectorClass;
+    //Class name of object call logs collector,default is none
+    private String objectCallLogCollectorClassName;
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
@@ -436,7 +458,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //***************************************************************************************************************//
-    //                                     3: pool work configuration(2)                                             //
+    //                                     4: pool work configuration(2)                                             //
     //***************************************************************************************************************//
     public String getPoolImplementClassName() {
         return this.poolImplementClassName;
@@ -447,8 +469,102 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             this.poolImplementClassName = trimString(poolImplementClassName);
     }
 
+
+    //****************************************************************************************************************//
+    //                                    5: Log Collector(18)                                                        //
+    //****************************************************************************************************************//
+    public long getSlowObjectGetThreshold() {
+        return slowObjectGetThreshold;
+    }
+
+    public void setSlowObjectGetThreshold(long slowObjectGetThreshold) {
+        if (slowObjectGetThreshold < 0L)
+            throw new InvalidParameterException("The given value for configuration item 'slow-object-get-threshold' must be greater than zero");
+
+        this.slowObjectGetThreshold = slowObjectGetThreshold;
+    }
+
+    public long getSlowObjectCallThreshold() {
+        return slowObjectCallThreshold;
+    }
+
+    public void setSlowObjectCallThreshold(long slowObjectCallThreshold) {
+        if (slowObjectCallThreshold < 0L)
+            throw new InvalidParameterException("The given value for configuration item 'slow-object-call-threshold' must be greater than zero");
+
+        this.slowObjectCallThreshold = slowObjectCallThreshold;
+    }
+
+    public int getObjectCallLogCacheSize() {
+        return objectCallLogCacheSize;
+    }
+
+    public void setObjectCallLogCacheSize(int objectCallLogCacheSize) {
+        if (objectCallLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'object-call-log-cache-size' must be greater than zero");
+        this.objectCallLogCacheSize = objectCallLogCacheSize;
+    }
+
+    public long getObjectCallLogTimeout() {
+        return objectCallLogTimeout;
+    }
+
+    public void setObjectCallLogTimeout(long objectCallLogTimeout) {
+        if (objectCallLogTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'object-call-log-timeout' must be greater than zero");
+        this.objectCallLogTimeout = objectCallLogTimeout;
+    }
+
+    public BeeObjectCallLogListener<K, V> getObjectCallLogListener() {
+        return objectCallLogListener;
+    }
+
+    public void setObjectCallLogListener(BeeObjectCallLogListener<K, V> objectCallLogListener) {
+        this.objectCallLogListener = objectCallLogListener;
+    }
+
+    public Class<? extends BeeObjectCallLogListener<K, V>> getObjectCallLogListenerClass() {
+        return objectCallLogListenerClass;
+    }
+
+    public void setObjectCallLogListenerClass(Class<? extends BeeObjectCallLogListener<K, V>> objectCallLogListenerClass) {
+        this.objectCallLogListenerClass = objectCallLogListenerClass;
+    }
+
+    public String getObjectCallLogListenerClassName() {
+        return objectCallLogListenerClassName;
+    }
+
+    public void setObjectCallLogListenerClassName(String objectCallLogListenerClassName) {
+        this.objectCallLogListenerClassName = objectCallLogListenerClassName;
+    }
+
+    public Class<? extends BeeObjectCallLogCollector<K, V>> getObjectCallLogCollectorClass() {
+        return objectCallLogCollectorClass;
+    }
+
+    public void setObjectCallLogCollectorClass(Class<? extends BeeObjectCallLogCollector<K, V>> objectCallLogCollectorClass) {
+        this.objectCallLogCollectorClass = objectCallLogCollectorClass;
+    }
+
+    public BeeObjectCallLogCollector<K, V> getObjectCallLogCollector() {
+        return objectCallLogCollector;
+    }
+
+    public void setObjectCallLogCollector(BeeObjectCallLogCollector<K, V> objectCallLogCollector) {
+        this.objectCallLogCollector = objectCallLogCollector;
+    }
+
+    public String getObjectCallLogCollectorClassName() {
+        return objectCallLogCollectorClassName;
+    }
+
+    public void setObjectCallLogCollectorClassName(String objectCallLogCollectorClassName) {
+        this.objectCallLogCollectorClassName = objectCallLogCollectorClassName;
+    }
+
     //***************************************************************************************************************//
-    //                                     4: configuration file load(3)                                             //
+    //                                     6: configuration file load(3)                                             //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         loadFromPropertiesFile(filename, null);
@@ -572,7 +688,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //***************************************************************************************************************//
-    //                                     5: configuration check and object factory create methods(4)               //
+    //                                     7: configuration check and object factory create methods(4)               //
     //***************************************************************************************************************//
     //check pool configuration
     public BeeObjectSourceConfig<K, V> check() {
@@ -606,15 +722,19 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
-
-        //4: create a copy from this current configuration object
+        //4: create a log collector
+        BeeObjectCallLogCollector<K, V> logCollector = this.createLogCollector();
+        BeeObjectCallLogListener<K, V> objectCallLogListener = (logCollector != null) ? this.createLogListener() : null;
+        //5: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
 
-        //5: assign above objects to the checked configuration object(such as factory,filter,predicate)
+        //6: assign above objects to the checked configuration object(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
         if (predicate != null) checkedConfig.objectPredicate = predicate;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
+        if (logCollector != null) checkedConfig.objectCallLogCollector = logCollector;
+        if (objectCallLogListener != null) checkedConfig.objectCallLogListener = objectCallLogListener;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
         return checkedConfig;
@@ -727,6 +847,46 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                 throw new BeeObjectSourceConfigException("Not found predicate class:" + objectPredicateClassName, e);
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Failed to create predicate instance with class:" + predicationClass, e);
+            }
+        }
+        return null;
+    }
+
+    //create object call log listener
+    private BeeObjectCallLogListener<K, V> createLogListener() {
+        //step1:if exists listener,then return it
+        if (this.objectCallLogListener != null) return this.objectCallLogListener;
+
+        //step2: create a listener
+        if (this.objectCallLogListenerClass != null || isNotBlank(this.objectCallLogListenerClassName)) {
+            Class<?> listenerClass = null;
+            try {
+                listenerClass = objectCallLogListenerClass != null ? objectCallLogListenerClass : loadClass(objectCallLogListenerClassName);
+                return (BeeObjectCallLogListener<K, V>) createClassInstance(listenerClass, BeeObjectCallLogListener.class, "object call log listener");
+            } catch (ClassNotFoundException e) {
+                throw new BeeDataSourceConfigException("Failed to create object call log listener with class[" + objectCallLogListenerClassName + "]", e);
+            } catch (Throwable e) {
+                throw new BeeDataSourceConfigException("Failed to create object call log listener with class[" + listenerClass + "]", e);
+            }
+        }
+        return null;
+    }
+
+    //create object call log collector
+    private BeeObjectCallLogCollector<K, V> createLogCollector() {
+        //step1:if exists log collector,then return it
+        if (this.objectCallLogCollector != null) return this.objectCallLogCollector;
+
+        //step2: create object method log collector
+        if (this.objectCallLogCollectorClass != null || isNotBlank(this.objectCallLogCollectorClassName)) {
+            Class<?> collectorClass = null;
+            try {
+                collectorClass = objectCallLogCollectorClass != null ? objectCallLogCollectorClass : loadClass(objectCallLogCollectorClassName);
+                return (BeeObjectCallLogCollector<K, V>) createClassInstance(collectorClass, BeeObjectCallLogCollector.class, "object call log collector");
+            } catch (ClassNotFoundException e) {
+                throw new BeeDataSourceConfigException("Failed to create object call log collector with class[" + objectCallLogCollectorClassName + "]", e);
+            } catch (Throwable e) {
+                throw new BeeDataSourceConfigException("Failed to create object call log collector with class[" + collectorClass + "]", e);
             }
         }
         return null;
