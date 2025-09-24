@@ -16,17 +16,13 @@
 package org.stone.beecp;
 
 /**
- * A method log listener.
+ * A listener interface need be implemented by subClass
  *
  * @author Chris Liao
  */
-public class BeeJdbcCallLogListener {
+public interface BeeJdbcCallLogListener {
 
-    public void onSlow(BeeJdbcCallLog log) {
-        //do nothing
-    }
+    void onSlow(BeeJdbcCallLog log);
 
-    public void onException(BeeJdbcCallLog log) {
-        //do nothing
-    }
+    void onException(BeeJdbcCallLog log);
 }

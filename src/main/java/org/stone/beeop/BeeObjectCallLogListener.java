@@ -16,17 +16,13 @@
 package org.stone.beeop;
 
 /**
- * A base listener class need be overridden by subClass
+ * A listener interface need be implemented by subClass
  *
  * @author Chris Liao
  */
-public class BeeObjectCallLogListener<K, V> {
+public interface BeeObjectCallLogListener<K, V> {
 
-    public void onSlow(BeeObjectCallLog<K, V> log) {
-        //do nothing
-    }
+    void onSlow(BeeObjectCallLog<K, V> log);
 
-    public void onException(BeeObjectCallLog<K, V> log) {
-        //do nothing
-    }
+    void onException(BeeObjectCallLog<K, V> log);
 }
