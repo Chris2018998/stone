@@ -25,11 +25,23 @@ import org.stone.beecp.BeeJdbcCallLogListener;
  */
 public class MockJdbcCallLogListener extends BeeJdbcCallLogListener {
 
+    private BeeJdbcCallLog slowLog;
+
+    private BeeJdbcCallLog exceptionLog;
+
     public void onSlow(BeeJdbcCallLog log) {
-        //do nothing
+        this.slowLog = log;
     }
 
     public void onException(BeeJdbcCallLog log) {
-        //do nothing
+        this.exceptionLog = log;
+    }
+
+    public BeeJdbcCallLog getSlowLog() {
+        return slowLog;
+    }
+
+    public BeeJdbcCallLog getExceptionLog() {
+        return exceptionLog;
     }
 }

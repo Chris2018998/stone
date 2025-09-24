@@ -49,7 +49,7 @@ public class Tc0018JdbcCallLogListenerTest {
         BeeDataSourceConfig config1 = createEmpty();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        BeeJdbcCallLogCollector logCollector= new MockJdbcCallLogCollector();
+        BeeJdbcCallLogCollector logCollector = new MockJdbcCallLogCollector();
         config1.setJdbcCallLogCollector(logCollector);
         config1.setJdbcCallLogListenerClassName("org.stone.test.beecp.objects.MockJdbcCallLogListener3");//class not found
         try {

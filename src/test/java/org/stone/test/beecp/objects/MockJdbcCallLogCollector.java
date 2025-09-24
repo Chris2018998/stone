@@ -13,6 +13,7 @@ import org.stone.beecp.BeeJdbcCallLog;
 import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.beecp.BeeJdbcCallLogListener;
 
+import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -159,4 +160,14 @@ public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
     public void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcCallLog log) {
 
     }
+
+    /**
+     * Cancel statement in executing.
+     *
+     * @param uuid log uuid key
+     */
+    public void cancelStatement(Object uuid) throws SQLException {
+
+    }
+
 }

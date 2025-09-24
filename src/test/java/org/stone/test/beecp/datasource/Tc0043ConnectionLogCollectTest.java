@@ -17,6 +17,7 @@ import org.stone.beecp.BeeJdbcCallLog;
 import org.stone.beecp.pool.JdbcCallLogCollectorImpl;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
 import org.stone.test.beecp.objects.MockCommonXaConnectionFactory;
+import org.stone.test.beecp.objects.MockJdbcCallLogListener;
 
 import javax.sql.XAConnection;
 import java.sql.Connection;
@@ -31,6 +32,9 @@ public class Tc0043ConnectionLogCollectTest {
     @Test
     public void testGetConnection() throws Exception {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
+        MockJdbcCallLogListener listener = new  MockJdbcCallLogListener();
+        config.setJdbcCallLogListener(listener);
+        config.setSlowConnectionGetThreshold(1L);
         config.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
         config.setConnectionFactory(new MockCommonConnectionFactory());
         try (BeeDataSource ds = new BeeDataSource(config)) {
@@ -45,6 +49,7 @@ public class Tc0043ConnectionLogCollectTest {
                     Assertions.assertEquals("FastConnectionPool4L.getConnection()", log.getMethod());
                     Assertions.assertTrue(log.getStartTime() != 0);
                     Assertions.assertTrue(log.getEndTime() != 0);
+                    //Assertions.assertNotNull(listener.getSlowLog());
                     Assertions.assertTrue(log.getEndTime() >= log.getStartTime());
                     Assertions.assertNotNull(log.getResultObject());
                 }
@@ -72,6 +77,8 @@ public class Tc0043ConnectionLogCollectTest {
     @Test
     public void testExceptionOnGetConnection() throws Exception {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
+        MockJdbcCallLogListener listener = new  MockJdbcCallLogListener();
+        config.setJdbcCallLogListener(listener);
         config.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         connectionFactory.setCreateException1(new SQLException("Failed to connect db"));
@@ -91,11 +98,12 @@ public class Tc0043ConnectionLogCollectTest {
                     Assertions.assertTrue(log.getStartTime() != 0);
                     Assertions.assertTrue(log.getEndTime() != 0);
                     Assertions.assertTrue(log.getEndTime() >= log.getStartTime());
-
                     Assertions.assertNull(log.getResultObject());
                     Assertions.assertNotNull(log.getFailCause());
+                    Assertions.assertNotNull(listener.getExceptionLog());
                 }
             }
+
 
             //test2: getConnection(String,String)
             try (Connection ignored = ds.getConnection("root", "test")) {
@@ -118,7 +126,6 @@ public class Tc0043ConnectionLogCollectTest {
             Assertions.assertTrue(logList.isEmpty());
         }
     }
-
 
     @Test
     public void testGetXAConnection() throws Exception {
