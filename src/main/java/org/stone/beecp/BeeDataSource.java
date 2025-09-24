@@ -153,7 +153,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         3: Pool clean(2)                                                      //
+    //                                         3: Pool clear(2)                                                      //
     //***************************************************************************************************************//
     public void clear(boolean forceRecycleBorrowed) throws SQLException {
         this.getPool().clear(forceRecycleBorrowed);

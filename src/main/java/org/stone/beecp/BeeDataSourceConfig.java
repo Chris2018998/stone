@@ -752,7 +752,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     public void setJdbcCallLogTimeout(long jdbcCallLogTimeout) {
-        if (slowSQLExecutionThreshold <= 0L)
+        if (jdbcCallLogTimeout <= 0L)
             throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero");
 
         this.jdbcCallLogTimeout = jdbcCallLogTimeout;

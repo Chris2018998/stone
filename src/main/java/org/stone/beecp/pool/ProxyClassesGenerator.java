@@ -529,6 +529,7 @@ final class ProxyClassesGenerator {
 
                 //1: start to record a log
                 methodBuffer.append("BeeJdbcCallLog log = logCollector.startCall(BeeJdbcCallLog.Type_Execution_SQL,").append(methodSignature).append(",parameters,sql);");
+                methodBuffer.append("log.setStatement(this);");
                 boolean existsSQLException = exitsSQLException(ctMethod.getExceptionTypes());
                 if (existsSQLException) methodBuffer.append("  try{");
 

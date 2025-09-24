@@ -9,6 +9,7 @@
  */
 package org.stone.beecp;
 
+import java.sql.SQLException;
 import java.util.Collection;
 
 /**
@@ -45,7 +46,7 @@ public interface BeeJdbcCallLogCollector {
     /**
      * Clear timeout logs.
      *
-     * @Param timeout is zero,then clear all logs;otherwise only clear timeout logs.
+     * @Param timeout is not greater than zero,then clear all logs;otherwise only clear timeout logs.
      */
     void clear(long timeout);
 
@@ -90,4 +91,14 @@ public interface BeeJdbcCallLogCollector {
      */
     void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcCallLog log);
 
+    //***************************************************************************************************************//
+    //                                         4: statement                                                          //
+    //***************************************************************************************************************//
+
+    /**
+     * Cancel statement in executing.
+     *
+     * @param uuid log uuid key
+     */
+    void cancelStatement(Object uuid) throws SQLException;
 }

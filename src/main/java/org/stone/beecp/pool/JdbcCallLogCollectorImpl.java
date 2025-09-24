@@ -13,6 +13,7 @@ import org.stone.beecp.BeeJdbcCallLog;
 import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.beecp.BeeJdbcCallLogListener;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -196,6 +197,19 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
                 listener.onException(log);
             } catch (Throwable e) {
                 //do nothing
+            }
+        }
+    }
+
+    /**
+     * Cancel statement in executing
+     *
+     * @param uuid log uuid key
+     */
+    public void cancelStatement(Object uuid) throws SQLException {
+        for (BeeJdbcCallLog log : sqlLogQueue) {
+            if (log.getUUID().equals(uuid)) {
+                log.cancelStatement();
             }
         }
     }
