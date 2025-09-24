@@ -47,7 +47,7 @@ public final class BeeObjectCallLog<K, V> implements Serializable {
     //***************************************************************************************************************//
     //                                          constructor                                                          //
     //***************************************************************************************************************//
-    public BeeObjectCallLog(int type, K key, String method, Object[] parameters) {
+    public BeeObjectCallLog(K key, int type, String method, Object[] parameters) {
         this.key = key;
         this.type = type;
         this.method = method;
