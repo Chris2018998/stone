@@ -23,7 +23,7 @@ import org.stone.beecp.BeeJdbcCallLogListener;
  *
  * @author Chris Liao
  */
-public class MockJdbcCallLogListener2 extends BeeJdbcCallLogListener {
+public class MockJdbcCallLogListener2 implements BeeJdbcCallLogListener {
 
     public MockJdbcCallLogListener2(String name) {
 
