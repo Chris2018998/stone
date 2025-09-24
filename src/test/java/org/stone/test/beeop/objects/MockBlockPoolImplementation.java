@@ -94,4 +94,22 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
 
     public void deleteKey(Object key, boolean forceCloseUsing) {
     }
+
+    /**
+     * Queries logs collector in whether in being enabled.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    public boolean isEnabledObjectCallLogCollector(){
+        return false;
+    }
+
+    /**
+     * A switch to enable or disable configured log collector in pool.
+     *
+     * @param enable is true that enable, false is disabled
+     */
+    public void enableObjectCallLogCollector(boolean enable){
+
+    }
 }
