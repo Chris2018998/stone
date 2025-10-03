@@ -20,7 +20,7 @@ import org.stone.test.base.LogCollector;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.driver.MockDriver;
 import org.stone.test.beecp.driver.MockXaDataSource;
-import org.stone.test.beecp.objects.MockBlockPoolImplementation;
+import org.stone.test.beecp.objects.MockBasePoolImplementation;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
 import org.stone.test.beecp.objects.MockDriverConnectionFactory;
 import org.stone.test.beecp.objects.MockObjectForPropertiesSet;
@@ -253,7 +253,7 @@ public class Tc0050PoolStaticsTest {
 
     @Test
     public void testClassInstanceCreation() throws Exception {
-        Class<?> clazz = MockBlockPoolImplementation.class;
+        Class<?> clazz = MockBasePoolImplementation.class;
         BeeConnectionPool pool1 = (BeeConnectionPool) createClassInstance(clazz, (Class<?>) null, "pool");
         BeeConnectionPool pool2 = (BeeConnectionPool) createClassInstance(clazz, BeeConnectionPool.class, "pool");
         Assertions.assertNotNull(pool1);

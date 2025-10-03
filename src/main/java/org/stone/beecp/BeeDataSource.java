@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
@@ -73,7 +73,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             BeeDataSource.createPool(this);
             this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new BeeDataSourceCreationException(e);
         }
     }
 
@@ -200,9 +200,18 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             throw new SQLException("The wrapper object was not an instance of " + clazz);
     }
 
+
     //***************************************************************************************************************//
     //                                         5: log print                                                          //
     //***************************************************************************************************************//
+    public boolean isPrintRuntimeLog() {
+        if (pool == null) {
+            return super.isPrintRuntimeLog();
+        } else {
+            return pool.isEnabledLogPrint();
+        }
+    }
+
     public void setPrintRuntimeLog(boolean enable) {
         if (pool == null) {
             super.setPrintRuntimeLog(enable);//as configuration item
@@ -211,37 +220,31 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         }
     }
 
-    public void enableLogPrint(boolean enable) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        this.pool.enableLogPrint(enable);
+    public boolean isEnabledLogPrint() throws SQLException {
+        return this.getPool().isEnabledLogPrint();
     }
 
-    public boolean isEnabledLogPrint() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return this.pool.isEnabledLogPrint();
+    public void enableLogPrint(boolean enable) throws SQLException {
+        this.getPool().enableLogPrint(enable);
     }
 
     //***************************************************************************************************************//
     //                                         6: JDBC method log collector                                          //
     //***************************************************************************************************************//
     public boolean isEnabledJdbcCallLogCollector() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return this.pool.isEnabledJdbcCallLogCollector();
+        return this.getPool().isEnabledJdbcCallLogCollector();
     }
 
     public void enableJdbcCallLogCollector(boolean enable) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        this.pool.enableJdbcCallLogCollector(enable);
+        this.getPool().enableJdbcCallLogCollector(enable);
     }
 
-    public Collection<BeeJdbcCallLog> getJdbcCallLog(int type) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        return this.getJdbcCallLogCollector() != null ? this.getJdbcCallLogCollector().getLog(type) : null;
+    public List<BeeJdbcCallLog> getJdbcCallLog(int type) throws SQLException {
+        return this.getPool().getJdbcCallLog(type);
     }
 
-    public void clearJdbcCallLog(long timeout) throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
-        if (this.getJdbcCallLogCollector() != null) this.getJdbcCallLogCollector().clear(timeout);
+    public void clearJdbcCallLog() throws SQLException {
+        this.getPool().clearJdbcCallLog();
     }
 
     //***************************************************************************************************************//
@@ -311,8 +314,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     private BeeConnectionPool getPool() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Pool not be created");
+        if (this.pool == null) throw new PoolNotCreatedException("Data source pool not be instantiated");
         return this.pool;
     }
-
 }

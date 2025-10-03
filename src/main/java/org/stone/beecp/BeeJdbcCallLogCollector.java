@@ -10,10 +10,10 @@
 package org.stone.beecp;
 
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
 
 /**
- * An interface to collect logs of connection get and logs of SQL execution.
+ * An interface,its implementation is used to collect logs of connection get and logs of SQL execution.
  *
  * @author Chris Liao
  * @version 1.0
@@ -27,26 +27,24 @@ public interface BeeJdbcCallLogCollector {
     /**
      * initialize log collector.
      *
-     * @param cacheSize is capacity of logs cache
-     * @param slowGet   is slow threshold value of connection get,time unit:milliseconds
-     * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
-     * @param listener  is a log listener
+     * @param cacheSize    is capacity of logs cache
+     * @param slowGet      is slow threshold value of connection get,time unit:milliseconds
+     * @param slowExec     is slow threshold of sql execution,time unit:milliseconds
+     * @param listenInSync is work mode of listener
+     * @param listener     is a log listener
      */
-    void init(int cacheSize, long slowGet, long slowExec, BeeJdbcCallLogListener listener);
+    void init(int cacheSize,
+              long slowGet, long slowExec,
+              boolean listenInSync, BeeJdbcCallLogListener listener);
 
     //***************************************************************************************************************//
     //                                         2: logs maintain                                                      //
     //***************************************************************************************************************//
 
     /**
-     * Clear all logs.
-     */
-    void clear();
-
-    /**
-     * Clear timeout logs.
+     * Clear timeout logs from collector.
      *
-     * @Param timeout is not greater than zero,then clear all logs;otherwise only clear timeout logs.
+     * @param timeout to check timeout logs
      */
     void clear(long timeout);
 
@@ -56,7 +54,7 @@ public interface BeeJdbcCallLogCollector {
      * @param type is log type
      * @return a list of logs
      */
-    Collection<BeeJdbcCallLog> getLog(int type);
+    List<BeeJdbcCallLog> getLog(int type);
 
     //***************************************************************************************************************//
     //                                         3: logs record                                                        //
@@ -65,9 +63,10 @@ public interface BeeJdbcCallLogCollector {
     /**
      * Plugin method is executed at front of proxy methods to generate a start log object.
      *
-     * @param type       is method call type
-     * @param method     is method name,for example:getConnection()
-     * @param parameters is an array of method parameters
+     * @param type        is method call type
+     * @param method      is method name,for example:getConnection()
+     * @param parameters  is an array of method parameters
+     * @param preparedSQL is a prepared sql
      */
     BeeJdbcCallLog startCall(int type, String method, Object[] parameters, String preparedSQL);
 
@@ -98,7 +97,7 @@ public interface BeeJdbcCallLogCollector {
     /**
      * Cancel statement in executing.
      *
-     * @param uuid log uuid key
+     * @param id log id
      */
-    void cancelStatement(Object uuid) throws SQLException;
+    void cancelSqlExecuting(Object id) throws SQLException;
 }

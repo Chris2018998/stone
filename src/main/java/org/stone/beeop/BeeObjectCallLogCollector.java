@@ -9,6 +9,8 @@
  */
 package org.stone.beeop;
 
+import org.stone.beecp.BeeJdbcCallLogListener;
+
 import java.util.Collection;
 
 /**
@@ -31,7 +33,7 @@ public interface BeeObjectCallLogCollector<K, V> {
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
      * @param listener  is a log listener
      */
-    void init(int cacheSize, long slowGet, long slowExec, BeeObjectCallLogListener<K, V> listener);
+    void init(int cacheSize, long slowGet, long slowExec, boolean listenInSync, BeeJdbcCallLogListener listener);
 
     //***************************************************************************************************************//
     //                                         2: logs maintain                                                      //

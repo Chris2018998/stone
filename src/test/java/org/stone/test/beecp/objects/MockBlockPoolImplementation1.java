@@ -14,7 +14,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class MockBlockPoolImplementation1 extends MockBlockPoolImplementation {
+public class MockBlockPoolImplementation1 extends MockBasePoolImplementation {
 
     public MockBlockPoolImplementation1() {
         LockSupport.park();

@@ -14,7 +14,7 @@ import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.beecp.BeeJdbcCallLogListener;
 
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * A simple tracker implementation
@@ -89,7 +89,8 @@ public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
      *
      * @param cacheSize is capacity size of inner container to store log execution logs
      */
-    public void init(int cacheSize, long slowGet, long slowExec, BeeJdbcCallLogListener listener) {
+    public void init(int cacheSize, long slowGet, long slowExec,
+                     boolean listenInSync, BeeJdbcCallLogListener listener) {
 
     }
 
@@ -103,7 +104,6 @@ public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
     public void clear() {
 
     }
-
 
     /**
      * clean logs with timeout
@@ -120,7 +120,7 @@ public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
      * @param type is log type
      * @return a list of
      */
-    public Collection<BeeJdbcCallLog> getLog(int type) {
+    public List<BeeJdbcCallLog> getLog(int type) {
         return null;
     }
 
@@ -166,7 +166,7 @@ public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
      *
      * @param uuid log uuid key
      */
-    public void cancelStatement(Object uuid) throws SQLException {
+    public void cancelSqlExecuting(Object uuid) throws SQLException {
 
     }
 

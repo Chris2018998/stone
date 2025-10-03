@@ -15,14 +15,31 @@
  */
 package org.stone.beeop;
 
+import java.util.List;
+
 /**
  * A listener interface need be implemented by subClass
  *
  * @author Chris Liao
  */
-public interface BeeObjectCallLogListener<K, V> {
+public class BeeObjectCallLogListener<K, V> {
 
-    void onSlow(BeeObjectCallLog<K, V> log);
+    /**
+     * Process slow logs and exception logs in sync mode
+     *
+     * @param log is a slow log or an exception log
+     */
+    public void process(BeeObjectCallLog<K, V> log) {
+        //empty body
+    }
 
-    void onException(BeeObjectCallLog<K, V> log);
+    /**
+     * Process a log list which contains some slow logs and exception logs in async mode.
+     *
+     * @param logList is a log list need be process
+     */
+    public void process(List<BeeObjectCallLog<K, V>> logList) {
+        //empty body
+    }
+
 }

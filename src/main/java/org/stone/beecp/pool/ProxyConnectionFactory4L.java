@@ -28,6 +28,6 @@ final class ProxyConnectionFactory4L extends ProxyConnectionFactory {
     }
 
     public ProxyConnectionBase createProxyConnection(PooledConnection p) throws SQLException {
-        throw new SQLException("Proxy classes for log collection not be generated,please execute 'ProxyClassGenerator' after compile");
+        throw new SQLException("Proxy classes for log collector not be generated,please execute 'ProxyClassGenerator' after compile");
     }
 }

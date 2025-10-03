@@ -9,10 +9,13 @@
  */
 package org.stone.test.beecp.config;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.test.beecp.driver.MockDriver;
 
+import java.sql.DriverManager;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,17 +29,23 @@ import static org.stone.test.beecp.config.DsConfigFactory.*;
 public class Tc0005JdbcDriverTest {
 
     @Test
-    public void testNotFindSuitableDriver() {
-        try {
-            BeeDataSourceConfig config = createEmpty();
+    public void testUrlMatchDriver() throws SQLException {
+        //url match format: jdbc:beecp:xxx
+        DriverManager.registerDriver(new MockDriver());
+
+        BeeDataSourceConfig config = createEmpty();
+        try {//1: test not found matched driver with url
             config.setUrl("jdbc:beecp1://localhost/testdb");
             config.check();
-
-            fail("[testNotFindSuitableDriver]Not threw exception when not found suitable driver");
+            fail("[testUrlMatchDriver]Test failed");
         } catch (SQLException e) {//thrown from DriverManager
             String message = e.getMessage();
             assertTrue(message != null && message.contains("No suitable driver"));
         }
+
+        //2: set a matched url and recheck
+        config.setUrl("jdbc:beecp://localhost/testdb");
+        Assertions.assertNotNull(config.check());//
     }
 
     @Test

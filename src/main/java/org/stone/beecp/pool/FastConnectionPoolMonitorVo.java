@@ -18,43 +18,39 @@ import org.stone.beecp.BeeConnectionPoolMonitorVo;
  * @version 1.0
  */
 
-public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
-    private String poolName;
-    private String poolMode;
-    private int poolMaxSize;
+public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
+    private final String poolName;
+    private final String poolMode;
+    private final int maxSize;
+    private final int semaphoreSize;
 
     private int poolState;
     private int idleSize;
     private int borrowedSize;
+    private int semaphoreAcquiredSize;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
     private int creatingCount;
     private int creatingTimeoutCount;
 
+    public FastConnectionPoolMonitorVo(String poolName, String poolMode, int maxSize, int semaphoreSize) {
+        this.poolName = poolName;
+        this.poolMode = poolMode;
+        this.maxSize = maxSize;
+        this.semaphoreSize = semaphoreSize;
+    }
+
+    @Override
     public String getPoolName() {
         return poolName;
     }
 
-    public void setPoolName(String poolName) {
-        this.poolName = poolName;
-    }
-
+    @Override
     public String getPoolMode() {
         return poolMode;
     }
 
-    public void setPoolMode(String poolMode) {
-        this.poolMode = poolMode;
-    }
-
-    public int getPoolMaxSize() {
-        return poolMaxSize;
-    }
-
-    public void setPoolMaxSize(int poolMaxSize) {
-        this.poolMaxSize = poolMaxSize;
-    }
-
+    @Override
     public int getPoolState() {
         return poolState;
     }
@@ -63,14 +59,17 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         this.poolState = poolState;
     }
 
-    public int getIdleSize() {
-        return idleSize;
+    @Override
+    public int getMaxSize() {
+        return maxSize;
     }
 
-    public void setIdleSize(int idleSize) {
-        this.idleSize = idleSize;
+    @Override
+    public int getSemaphoreSize() {
+        return semaphoreSize;
     }
 
+    @Override
     public int getBorrowedSize() {
         return borrowedSize;
     }
@@ -79,6 +78,25 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         this.borrowedSize = borrowedSize;
     }
 
+    @Override
+    public int getIdleSize() {
+        return idleSize;
+    }
+
+    public void setIdleSize(int idleSize) {
+        this.idleSize = idleSize;
+    }
+
+    @Override
+    public int getSemaphoreAcquiredSize() {
+        return semaphoreAcquiredSize;
+    }
+
+    public void setSemaphoreAcquiredSize(int semaphoreAcquiredSize) {
+        this.semaphoreAcquiredSize = semaphoreAcquiredSize;
+    }
+
+    @Override
     public int getSemaphoreWaitingSize() {
         return semaphoreWaitingSize;
     }
@@ -87,6 +105,7 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
     }
 
+    @Override
     public int getTransferWaitingSize() {
         return transferWaitingSize;
     }
@@ -95,19 +114,21 @@ public class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         this.transferWaitingSize = transferWaitingSize;
     }
 
-    public int getCreatingTimeoutCount() {
-        return creatingTimeoutCount;
-    }
-
-    public void setCreatingTimeoutCount(int creatingTimeoutCount) {
-        this.creatingTimeoutCount = creatingTimeoutCount;
-    }
-
+    @Override
     public int getCreatingCount() {
         return creatingCount;
     }
 
     public void setCreatingCount(int creatingCount) {
         this.creatingCount = creatingCount;
+    }
+
+    @Override
+    public int getCreatingTimeoutCount() {
+        return creatingTimeoutCount;
+    }
+
+    public void setCreatingTimeoutCount(int creatingTimeoutCount) {
+        this.creatingTimeoutCount = creatingTimeoutCount;
     }
 }

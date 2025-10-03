@@ -119,8 +119,12 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private long slowObjectCallThreshold;
     //Capacity of method logs cache，default is 1000
     private int objectCallLogCacheSize = 1000;
-    //timer interval to clear timeout logs in object method logs in collector,default is 3 minutes
+    //Work mode of object call log listener,default is true,sync mode
+    private boolean objectCallLogListenInSync = true;
+    //log timeout in collector,default is 3 minutes
     private long objectCallLogTimeout = MINUTES.toMillis(3L);
+    //timer interval to clear timeout logs
+    private long objectCallLogClearInterval = objectCallLogTimeout;
 
     //object call log listener
     private BeeObjectCallLogListener<K, V> objectCallLogListener;
@@ -473,6 +477,16 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    5: Log Collector(18)                                                        //
     //****************************************************************************************************************//
+    public int getObjectCallLogCacheSize() {
+        return objectCallLogCacheSize;
+    }
+
+    public void setObjectCallLogCacheSize(int objectCallLogCacheSize) {
+        if (objectCallLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'object-call-log-cache-size' must be greater than zero");
+        this.objectCallLogCacheSize = objectCallLogCacheSize;
+    }
+
     public long getSlowObjectGetThreshold() {
         return slowObjectGetThreshold;
     }
@@ -495,14 +509,12 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.slowObjectCallThreshold = slowObjectCallThreshold;
     }
 
-    public int getObjectCallLogCacheSize() {
-        return objectCallLogCacheSize;
+    public boolean isObjectCallLogListenInSync() {
+        return objectCallLogListenInSync;
     }
 
-    public void setObjectCallLogCacheSize(int objectCallLogCacheSize) {
-        if (objectCallLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'object-call-log-cache-size' must be greater than zero");
-        this.objectCallLogCacheSize = objectCallLogCacheSize;
+    public void setObjectCallLogListenInSync(boolean objectCallLogListenInSync) {
+        this.objectCallLogListenInSync = objectCallLogListenInSync;
     }
 
     public long getObjectCallLogTimeout() {
@@ -513,6 +525,16 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         if (objectCallLogTimeout <= 0L)
             throw new InvalidParameterException("The given value for configuration item 'object-call-log-timeout' must be greater than zero");
         this.objectCallLogTimeout = objectCallLogTimeout;
+    }
+
+    public long getObjectCallLogClearInterval() {
+        return objectCallLogClearInterval;
+    }
+
+    public void setObjectCallLogClearInterval(long objectCallLogClearInterval) {
+        if (objectCallLogClearInterval <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'object-call-log-clear-interval' must be greater than zero");
+        this.objectCallLogClearInterval = objectCallLogClearInterval;
     }
 
     public BeeObjectCallLogListener<K, V> getObjectCallLogListener() {

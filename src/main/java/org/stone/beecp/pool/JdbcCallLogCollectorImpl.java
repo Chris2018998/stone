@@ -15,9 +15,9 @@ import org.stone.beecp.BeeJdbcCallLogListener;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.stone.beecp.BeeJdbcCallLog.Type_Execution_SQL;
 import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
@@ -29,15 +29,18 @@ import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
  * @version 1.0
  */
 public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
-    private int cacheSize;
-    private long slowGet;
-    private long slowExec;
+    private boolean listenInSync;
+    //log listener
     private BeeJdbcCallLogListener listener;
+    //slow threshold value of connection get,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowConnectionGetThreshold}
+    private long slowConnectionGetThreshold;
+    //slow threshold of sql execution,time unit:milliseconds,,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
+    private long slowSQLExecutionThreshold;
 
-    private AtomicInteger conLogCount;
-    private AtomicInteger sqlLogCount;
-    private ConcurrentLinkedQueue<BeeJdbcCallLog> conLogQueue;
-    private ConcurrentLinkedQueue<BeeJdbcCallLog> sqlLogQueue;
+    //logs queue of connection get
+    private LinkedBlockingQueue<BeeJdbcCallLog> conLogQueue;
+    //logs queue of sql execution
+    private LinkedBlockingQueue<BeeJdbcCallLog> sqlLogQueue;
 
     //***************************************************************************************************************//
     //                                         1: initialization                                                     //
@@ -51,16 +54,18 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
      * @param listener  is a log listener
      */
-    public void init(int cacheSize, long slowGet, long slowExec, BeeJdbcCallLogListener listener) {
-        this.cacheSize = cacheSize;
-        this.slowGet = slowGet;
-        this.slowExec = slowExec;
-        this.listener = listener;
+    public void init(int cacheSize,
+                     long slowGet, long slowExec,
+                     boolean listenInSync, BeeJdbcCallLogListener listener) {
 
-        this.conLogCount = new AtomicInteger(0);
-        this.sqlLogCount = new AtomicInteger(0);
-        this.conLogQueue = new ConcurrentLinkedQueue<>();
-        this.sqlLogQueue = new ConcurrentLinkedQueue<>();
+
+        this.listener = listener;
+        this.listenInSync = listenInSync;
+        this.slowConnectionGetThreshold = slowGet;
+        this.slowSQLExecutionThreshold = slowExec;
+
+        this.conLogQueue = new LinkedBlockingQueue<>(cacheSize);
+        this.sqlLogQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
     //***************************************************************************************************************//
@@ -68,61 +73,86 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
     //***************************************************************************************************************//
 
     /**
-     * clear all logs
-     */
-    public void clear() {
-        this.conLogCount.set(0);
-        this.sqlLogCount.set(0);
-        this.conLogQueue.clear();
-        this.sqlLogQueue.clear();
-    }
-
-    /**
-     * clean timeout logs
+     * Clear timeout logs from collector.
      *
-     * @param timeout,if elapsed time is not less than this value,log can be removed from this collector
+     * @param timeout to check timeout logs
      */
     public void clear(long timeout) {
-        if (timeout > 0L) {
-            long curTime = System.currentTimeMillis();
-            conLogQueue.removeIf(log -> log.getEndTime() > 0 && curTime - log.getEndTime() >= timeout);
-            sqlLogQueue.removeIf(log -> log.getEndTime() > 0 && curTime - log.getEndTime() >= timeout);
-        } else {
-            int curConLogCount = conLogCount.get();
-            do {
-                if (conLogCount.compareAndSet(curConLogCount, curConLogCount - 1)) {
-                    if (conLogQueue.poll() == null) break;
-                    curConLogCount--;
-                }
-            } while (curConLogCount > 0);
+        if (timeout <= 0L) {
+            this.conLogQueue.clear();
+            this.sqlLogQueue.clear();
+            return;
+        }
 
-            int cursqlLogCount = sqlLogCount.get();
-            do {
-                if (sqlLogCount.compareAndSet(cursqlLogCount, cursqlLogCount - 1)) {
-                    if (sqlLogQueue.poll() == null) break;
-                    cursqlLogCount--;
+        List<BeeJdbcCallLog> processLogList = null;
+        List<BeeJdbcCallLog> conPendingRemovalLogList = new LinkedList<>();
+        List<BeeJdbcCallLog> sqlPendingRemovalLogList = new LinkedList<>();
+
+        long currentTime = System.currentTimeMillis();
+        if (listenInSync) {
+            //timeout check on connection logs
+            for (BeeJdbcCallLog log : conLogQueue) {
+                if (currentTime - log.getEndTime() >= timeout) {
+                    log.setRemoved(true);
+                    conPendingRemovalLogList.add(log);
                 }
-            } while (cursqlLogCount > 0);
+            }
+
+            //timeout check on sql execution logs
+            for (BeeJdbcCallLog log : sqlLogQueue) {
+                if (currentTime - log.getEndTime() >= timeout) {
+                    log.setRemoved(true);
+                    sqlPendingRemovalLogList.add(log);
+                }
+            }
+        } else {//async mode
+            processLogList = new LinkedList<>();
+            for (BeeJdbcCallLog log : conLogQueue) {
+                if (currentTime - log.getEndTime() >= timeout) {
+                    log.setRemoved(true);
+                    conPendingRemovalLogList.add(log);
+                }
+                if (!log.isProcessed() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold) {
+                    log.setProcessed(true);
+                    processLogList.add(log);
+                }
+            }
+
+            //timeout check on sql execution logs
+            for (BeeJdbcCallLog log : sqlLogQueue) {
+                if (currentTime - log.getEndTime() >= timeout) {
+                    log.setRemoved(true);
+                    sqlPendingRemovalLogList.add(log);
+                }
+
+                if (!log.isProcessed() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold) {
+                    log.setProcessed(true);
+                    processLogList.add(log);
+                }
+            }
+        }
+
+        if (!conPendingRemovalLogList.isEmpty())
+            conLogQueue.removeAll(conPendingRemovalLogList);
+        if (!sqlPendingRemovalLogList.isEmpty())
+            sqlLogQueue.removeAll(sqlPendingRemovalLogList);
+
+        if (processLogList != null && !processLogList.isEmpty()) {
+            try {
+                this.listener.process(processLogList);
+            } catch (Throwable e) {
+                //do nothing
+            }
         }
     }
 
-    /**
-     * get log with type
-     *
-     * @param type is log type
-     * @return a list of
-     */
-    public Collection<BeeJdbcCallLog> getLog(int type) {
+    public List<BeeJdbcCallLog> getLog(int type) {
         if (type == Type_Get_Connection) {
             return new ArrayList<>(conLogQueue);
         } else {
             return new ArrayList<>(sqlLogQueue);
         }
     }
-
-    //***************************************************************************************************************//
-    //                                         2: log record                                                         //
-    //***************************************************************************************************************//
 
     /**
      * Start to call a method and a log object is return this start method
@@ -134,12 +164,19 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
     public BeeJdbcCallLog startCall(int type, String method, Object[] parameters, String preparedSQL) {
         BeeJdbcCallLog log = new BeeJdbcCallLog(type, method, parameters);
         log.setStartTime(System.currentTimeMillis());
+        offerQueue(log, type, parameters, preparedSQL);
+        return log;
+    }
 
+    private void offerQueue(BeeJdbcCallLog log, int type, Object[] parameters, String preparedSQL) {
         if (type == Type_Get_Connection) {
-            conLogQueue.offer(log);
-            if (conLogCount.incrementAndGet() > cacheSize) {
-                conLogQueue.poll();
-                conLogCount.decrementAndGet();
+            for (; ; ) {
+                if (conLogQueue.offer(log)) {
+                    break;
+                } else {
+                    BeeJdbcCallLog other = conLogQueue.poll();
+                    if (other != null) other.setRemoved(true);
+                }
             }
         } else {//Type_Execute_SQL
             if (parameters == null || parameters.length == 0) {
@@ -147,16 +184,20 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
             } else {
                 log.setSql((String) parameters[0]);
             }
-
-            sqlLogQueue.offer(log);
-            if (sqlLogCount.incrementAndGet() > cacheSize) {
-                sqlLogQueue.poll();
-                sqlLogCount.decrementAndGet();
+            for (; ; ) {
+                if (sqlLogQueue.offer(log)) {
+                    break;
+                } else {
+                    BeeJdbcCallLog other = sqlLogQueue.poll();
+                    if (other != null) other.setRemoved(true);
+                }
             }
         }
-
-        return log;
     }
+
+    //***************************************************************************************************************//
+    //                                         2: log record                                                         //
+    //***************************************************************************************************************//
 
     /**
      * update result info to log object
@@ -169,14 +210,18 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
         log.setResult(callResult, preparationTookTime, preparedParameters);
         log.setEndTime(System.currentTimeMillis());
 
-        if (listener != null) {
-            if ((Type_Get_Connection == log.getType() && slowGet > 0L && log.getEndTime() - log.getStartTime() >= slowGet)
-                    || (Type_Execution_SQL == log.getType() && slowExec > 0L && log.getEndTime() - log.getStartTime() >= slowExec)) {
-                try {
-                    listener.onSlow(log);
-                } catch (Throwable e) {
-                    //do nothing
-                }
+        if (log.isRemoved()) {
+            log.setRemoved(false);
+            offerQueue(log, log.getType(), log.getParameters(), log.getSql());
+        }
+
+        if (this.listenInSync && ((Type_Get_Connection == log.getType() && slowConnectionGetThreshold > 0L && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
+                || (Type_Execution_SQL == log.getType() && slowSQLExecutionThreshold > 0L && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
+            try {
+                listener.process(log);
+                log.setProcessed(true);
+            } catch (Throwable e) {
+                //do nothing
             }
         }
     }
@@ -192,9 +237,15 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
         log.setException(failCause, preparationTookTime, preparedParameters);
         log.setEndTime(System.currentTimeMillis());
 
-        if (listener != null) {
+        if (log.isRemoved()) {
+            log.setRemoved(false);
+            offerQueue(log, log.getType(), log.getParameters(), log.getSql());
+        }
+
+        if (this.listenInSync) {
             try {
-                listener.onException(log);
+                listener.process(log);
+                log.setProcessed(true);
             } catch (Throwable e) {
                 //do nothing
             }
@@ -206,10 +257,10 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      *
      * @param uuid log uuid key
      */
-    public void cancelStatement(Object uuid) throws SQLException {
+    public void cancelSqlExecuting(Object uuid) throws SQLException {
         for (BeeJdbcCallLog log : sqlLogQueue) {
-            if (log.getUUID().equals(uuid)) {
-                log.cancelStatement();
+            if (log.getId().equals(uuid)) {
+                log.cancelSqlExecuting();
             }
         }
     }

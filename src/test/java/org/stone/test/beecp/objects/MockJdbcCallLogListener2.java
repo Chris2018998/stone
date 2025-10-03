@@ -18,22 +18,34 @@ package org.stone.test.beecp.objects;
 import org.stone.beecp.BeeJdbcCallLog;
 import org.stone.beecp.BeeJdbcCallLogListener;
 
+import java.util.List;
+
 /**
  * A method log listener.
  *
  * @author Chris Liao
  */
-public class MockJdbcCallLogListener2 implements BeeJdbcCallLogListener {
+public class MockJdbcCallLogListener2 extends BeeJdbcCallLogListener {
 
     public MockJdbcCallLogListener2(String name) {
 
     }
 
-    public void onSlow(BeeJdbcCallLog log) {
-        //do nothing
+    /**
+     * Process slow logs and exception logs in sync mode
+     *
+     * @param log is a slow log or an exception log
+     */
+    public void process(BeeJdbcCallLog log) {
+
     }
 
-    public void onException(BeeJdbcCallLog log) {
-        //do nothing
+    /**
+     * Process a log list which contains some slow logs and exception logs in async mode.
+     *
+     * @param logList is a log list need be process
+     */
+    public void process(List<BeeJdbcCallLog> logList) {
+
     }
 }

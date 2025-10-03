@@ -120,7 +120,7 @@ public class Tc0092ConnectionEvictTest {
 
         BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
         Assertions.assertEquals("test", vo.getPoolName());
-        Assertions.assertEquals(4, vo.getPoolMaxSize());
+        Assertions.assertEquals(4, vo.getMaxSize());
         Assertions.assertEquals("compete", vo.getPoolMode());
         Assertions.assertEquals(POOL_READY, vo.getPoolState());
 
@@ -128,6 +128,7 @@ public class Tc0092ConnectionEvictTest {
         Assertions.assertEquals(4, vo.getIdleSize());
         Connection con = pool.getConnection();
         vo = pool.getPoolMonitorVo();
+        Assertions.assertEquals(1, vo.getBorrowedSize());
         Assertions.assertEquals(1, vo.getBorrowedSize());
         con.abort(null);
 

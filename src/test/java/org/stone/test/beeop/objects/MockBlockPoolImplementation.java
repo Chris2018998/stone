@@ -100,7 +100,7 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
      *
      * @return boolean true is enabled,false is disabled
      */
-    public boolean isEnabledObjectCallLogCollector(){
+    public boolean isEnabledObjectCallLogCollector() {
         return false;
     }
 
@@ -109,7 +109,7 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
      *
      * @param enable is true that enable, false is disabled
      */
-    public void enableObjectCallLogCollector(boolean enable){
+    public void enableObjectCallLogCollector(boolean enable) {
 
     }
 }

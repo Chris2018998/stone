@@ -15,14 +15,30 @@
  */
 package org.stone.beecp;
 
+import java.util.List;
+
 /**
  * A listener interface need be implemented by subClass
  *
  * @author Chris Liao
  */
-public interface BeeJdbcCallLogListener {
+public class BeeJdbcCallLogListener {
 
-    void onSlow(BeeJdbcCallLog log);
+    /**
+     * Process slow logs and exception logs in sync mode.
+     *
+     * @param log is a slow log or an exception log
+     */
+    public void process(BeeJdbcCallLog log) {
+        //empty body
+    }
 
-    void onException(BeeJdbcCallLog log);
+    /**
+     * Process a log list(slow logs and exception logs) in async mode.
+     *
+     * @param logList is a log list need be process
+     */
+    public void process(List<BeeJdbcCallLog> logList) {
+        //empty body
+    }
 }

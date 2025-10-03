@@ -16,6 +16,7 @@ import javax.sql.XAConnection;
 import java.io.Closeable;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Connection pool interface.
@@ -29,7 +30,8 @@ public interface BeeConnectionPool extends Closeable {
      * Pool initializes with a configuration object.
      *
      * @param config is a configuration object defines some items can be applied for pool
-     * @throws SQLException when fail to initialize
+     * @throws BeeDataSourceConfigException when configuration check fail
+     * @throws SQLException                 when fail to create initialization connection
      */
     void init(BeeDataSourceConfig config) throws SQLException;
 
@@ -83,6 +85,13 @@ public interface BeeConnectionPool extends Closeable {
      */
     void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
 
+    /**
+     * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
+     *
+     * @return monitoring object of pool
+     */
+    BeeConnectionPoolMonitorVo getPoolMonitorVo();
+
 
     /**
      * Shutdown pool
@@ -111,24 +120,30 @@ public interface BeeConnectionPool extends Closeable {
     void enableLogPrint(boolean enable);
 
     /**
-     * Queries logs collector in whether in being enabled.
+     * Queries logs collector whether being enabled.
      *
      * @return boolean true is enabled,false is disabled
      */
     boolean isEnabledJdbcCallLogCollector();
 
     /**
-     * A switch to enable or disable configured log collector in pool.
+     * Method call to enable log collector and disable it.
      *
-     * @param enable is true that enable, false is disabled
+     * @param enable is true that let configured log collector works,false is that disable it
      */
     void enableJdbcCallLogCollector(boolean enable);
 
     /**
-     * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
-     *
-     * @return monitoring object of pool
+     * Clear All logs in log collector.
      */
-    BeeConnectionPoolMonitorVo getPoolMonitorVo();
+    void clearJdbcCallLog();
+
+    /**
+     * Get Jdbc logs with a give type.
+     *
+     * @param type is log type to query
+     */
+    List<BeeJdbcCallLog> getJdbcCallLog(int type);
+
 }
 	

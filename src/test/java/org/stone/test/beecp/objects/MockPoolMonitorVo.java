@@ -21,24 +21,17 @@ import org.stone.beecp.BeeConnectionPoolMonitorVo;
 public class MockPoolMonitorVo implements BeeConnectionPoolMonitorVo {
     private String poolName;
     private String poolMode;
-    private int poolMaxSize;
-
     private int poolState;
+    private int maxSize;
+    private int semaphoreSize;
+
     private int idleSize;
     private int borrowedSize;
+    private int semaphoreAcquiredSize;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
     private int creatingCount;
     private int creatingTimeoutCount;
-
-    @Override
-    public String getPoolMode() {
-        return poolMode;
-    }
-
-    public void setPoolMode(String poolMode) {
-        this.poolMode = poolMode;
-    }
 
     @Override
     public String getPoolName() {
@@ -47,6 +40,15 @@ public class MockPoolMonitorVo implements BeeConnectionPoolMonitorVo {
 
     public void setPoolName(String poolName) {
         this.poolName = poolName;
+    }
+
+    @Override
+    public String getPoolMode() {
+        return poolMode;
+    }
+
+    public void setPoolMode(String poolMode) {
+        this.poolMode = poolMode;
     }
 
     @Override
@@ -59,12 +61,21 @@ public class MockPoolMonitorVo implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public int getPoolMaxSize() {
-        return poolMaxSize;
+    public int getMaxSize() {
+        return maxSize;
     }
 
-    public void setPoolMaxSize(int poolMaxSize) {
-        this.poolMaxSize = poolMaxSize;
+    public void setMaxSize(int maxSize) {
+        this.maxSize = maxSize;
+    }
+
+    @Override
+    public int getSemaphoreSize() {
+        return semaphoreSize;
+    }
+
+    public void setSemaphoreSize(int semaphoreSize) {
+        this.semaphoreSize = semaphoreSize;
     }
 
     @Override
@@ -86,21 +97,21 @@ public class MockPoolMonitorVo implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
+    public int getSemaphoreAcquiredSize() {
+        return semaphoreAcquiredSize;
+    }
+
+    public void setSemaphoreAcquiredSize(int semaphoreAcquiredSize) {
+        this.semaphoreAcquiredSize = semaphoreAcquiredSize;
+    }
+
+    @Override
     public int getSemaphoreWaitingSize() {
         return semaphoreWaitingSize;
     }
 
     public void setSemaphoreWaitingSize(int semaphoreWaitingSize) {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
-    }
-
-    @Override
-    public int getCreatingCount() {
-        return creatingCount;
-    }
-
-    public void setCreatingCount(int creatingCount) {
-        this.creatingCount = creatingCount;
     }
 
     @Override
@@ -113,6 +124,15 @@ public class MockPoolMonitorVo implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
+    public int getCreatingCount() {
+        return creatingCount;
+    }
+
+    public void setCreatingCount(int creatingCount) {
+        this.creatingCount = creatingCount;
+    }
+
+    @Override
     public int getCreatingTimeoutCount() {
         return creatingTimeoutCount;
     }
@@ -121,3 +141,4 @@ public class MockPoolMonitorVo implements BeeConnectionPoolMonitorVo {
         this.creatingTimeoutCount = creatingTimeoutCount;
     }
 }
+

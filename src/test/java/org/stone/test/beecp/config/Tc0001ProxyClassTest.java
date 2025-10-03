@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.stone.test.base.TestUtil.invokeMethod2;
 
 /**
- * Proxy objects test case
+ * Proxy classes check test
  *
  * @author Chris Liao
  */
@@ -28,23 +28,25 @@ public class Tc0001ProxyClassTest {
 
     @Test
     public void testCheckJdbcProxyClasses() throws Exception {
-        String className1 = "org/stone/beecp/pool/Borrower.class";
-        File classFile1 = TestUtil.getClassPathFileAbsolutePath(className1);
+        String conBorrowerClassFileName = "org/stone/beecp/pool/Borrower.class";
+        File conBorrowerClassFile = TestUtil.getClassPathFileAbsolutePath(conBorrowerClassFileName);
+        assert conBorrowerClassFile != null;
 
-        assert classFile1 != null;
-        String classFileName1 = classFile1.toString();
-        int pos = classFileName1.lastIndexOf(File.separator);
-        String folderName = classFileName1.substring(0, pos);
-        File classFile2 = new File(folderName + File.separator + "Borrower2.class");
+        String conBorrowerClassFileFullName = conBorrowerClassFile.toString();
+        int pos = conBorrowerClassFileFullName.lastIndexOf(File.separator);
+        String folderName = conBorrowerClassFileFullName.substring(0, pos);
 
+        //create a new file for copy content from conBorrowerClassFile
+        File conBorrowerClassFile2 = new File(folderName + File.separator + "Borrower2.class");
         try {
-            assertTrue(classFile1.renameTo(classFile2));
+            //run pool classes check
+            assertTrue(conBorrowerClassFile.renameTo(conBorrowerClassFile2));
             invokeMethod2(null, ConnectionPoolStatics.class, "checkJdbcProxyClass");
             fail("[testCheckJdbcProxyClasses]Not thrown exception when proxy classes missed");
         } catch (InvocationTargetException e) {
-            assertInstanceOf(ClassNotFoundException.class, e.getCause());
+            assertInstanceOf(ClassNotFoundException.class, e.getCause());//class not found exception is expected
         } finally {
-            assertTrue(classFile2.renameTo(classFile1));
+            assertTrue(conBorrowerClassFile2.renameTo(conBorrowerClassFile));//class file restore
         }
     }
 }

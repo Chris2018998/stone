@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.beecp.BeeTransactionIsolationLevels.TRANS_LEVEL_CODE_LIST;
+import static org.stone.beecp.BeeTransactionIsolationNames.TRANS_ISOLATION_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
@@ -43,7 +43,7 @@ import static org.stone.tools.CommonUtil.*;
  * @version 1.0
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
-    //An atomic integer to generate sequence value as suffix of a pool name,its value starts with 1
+    //An atomic integer to generate sequence value append to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //A list of field name,not be log print during pool initialization, default that five field names in list
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
@@ -159,17 +159,22 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //Class name of pool implementation,default is {@code FastConnectionPool}
     private String poolImplementClassName;
 
+
     //********************************************** Jdbc call logs **************************************************//
+    //Capacity of logs cache in log collector，default is 1000
+    private int jdbcCallLogCacheSize = 1000;
     //slow threshold value of connection get,time unit:milliseconds
     private long slowConnectionGetThreshold;
     //slow threshold of sql execution,time unit:milliseconds
     private long slowSQLExecutionThreshold;
-    //Capacity of method logs cache，default is 1000
-    private int jdbcCallLogCacheSize = 1000;
-    //timer interval to clear timeout logs in jdbc method logs in collector,default is 3 minutes
+    //Work mode of jdbc call log listener,default is true,sync mode
+    private boolean jdbcCallLogListenInSync = true;
+    //log timeout in collector,default is 3 minutes
     private long jdbcCallLogTimeout = MINUTES.toMillis(3L);
+    //timer interval to clear timeout logs
+    private long jdbcCallLogClearInterval = jdbcCallLogTimeout;
 
-    //jdbc call log listener
+    //jdbc call logs listener
     private BeeJdbcCallLogListener jdbcCallLogListener;
     //Class of jdbc call log listener,default is none
     private Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass;
@@ -539,11 +544,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
     public void setDefaultTransactionIsolationName(String transactionIsolationName) {
         String transactionIsolationNameTemp = trimString(transactionIsolationName);
-        this.defaultTransactionIsolationCode = BeeTransactionIsolationLevels.getTransactionIsolationCode(transactionIsolationNameTemp);
+        if (isBlank(transactionIsolationNameTemp))
+            throw new InvalidParameterException("The given value for configuration item 'default-transaction-isolation-name' cannot be null or empty");
+
+        this.defaultTransactionIsolationCode = BeeTransactionIsolationNames.getTransactionIsolationCode(transactionIsolationNameTemp);
         if (this.defaultTransactionIsolationCode != null) {
             defaultTransactionIsolationName = transactionIsolationNameTemp;
         } else {
-            throw new BeeDataSourceConfigException("Invalid transaction isolation name:" + transactionIsolationNameTemp + ", value is one of[" + TRANS_LEVEL_CODE_LIST + "]");
+            throw new BeeDataSourceConfigException("Invalid transaction isolation name:" + transactionIsolationNameTemp + ", value is one of[" + TRANS_ISOLATION_CODE_LIST + "]");
         }
     }
 
@@ -717,6 +725,16 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    7: Log Collector(18)                                                        //
     //****************************************************************************************************************//
+    public int getJdbcCallLogCacheSize() {
+        return jdbcCallLogCacheSize;
+    }
+
+    public void setJdbcCallLogCacheSize(int jdbcCallLogCacheSize) {
+        if (jdbcCallLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero");
+        this.jdbcCallLogCacheSize = jdbcCallLogCacheSize;
+    }
+
     public long getSlowConnectionGetThreshold() {
         return slowConnectionGetThreshold;
     }
@@ -737,14 +755,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.slowSQLExecutionThreshold = slowSQLExecutionThreshold;
     }
 
-    public int getJdbcCallLogCacheSize() {
-        return jdbcCallLogCacheSize;
+    public boolean isJdbcCallLogListenInSync() {
+        return jdbcCallLogListenInSync;
     }
 
-    public void setJdbcCallLogCacheSize(int jdbcCallLogCacheSize) {
-        if (jdbcCallLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero");
-        this.jdbcCallLogCacheSize = jdbcCallLogCacheSize;
+    public void setJdbcCallLogListenInSync(boolean jdbcCallLogListenInSync) {
+        this.jdbcCallLogListenInSync = jdbcCallLogListenInSync;
     }
 
     public long getJdbcCallLogTimeout() {
@@ -756,6 +772,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero");
 
         this.jdbcCallLogTimeout = jdbcCallLogTimeout;
+    }
+
+    public long getJdbcCallLogClearInterval() {
+        return jdbcCallLogClearInterval;
+    }
+
+    public void setJdbcCallLogClearInterval(long jdbcCallLogClearInterval) {
+        if (jdbcCallLogClearInterval <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-clear-interval' must be greater than zero");
+
+        this.jdbcCallLogClearInterval = jdbcCallLogClearInterval;
     }
 
     public BeeJdbcCallLogListener getJdbcCallLogListener() {
@@ -864,7 +891,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
     public void loadFromProperties(Properties configProperties, String keyPrefix) {
         if (configProperties == null || configProperties.isEmpty())
-            throw new IllegalArgumentException("Configuration properties can't be null or empty");
+            throw new IllegalArgumentException("Configuration properties must not be null or empty");
 
         //1:load configuration item values from outside properties
         HashMap<String, String> setValueMap;
@@ -1077,7 +1104,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (this.connectionFactory == null && this.connectionFactoryClass == null && isBlank(this.connectionFactoryClassName)) {
             //step2.1: prepare jdbc url
             String url = jdbcLinkInfoProperties.getProperty("url");
-            if (isBlank(url)) throw new BeeDataSourceConfigException("jdbcUrl can't be null");
+            if (isBlank(url)) throw new BeeDataSourceConfigException("jdbcUrl must not be null or blank");
             if (jdbcLinkInfoDecoder != null) url = jdbcLinkInfoDecoder.decodeUrl(url);//decode url
 
             //step2.2: find a matched driver

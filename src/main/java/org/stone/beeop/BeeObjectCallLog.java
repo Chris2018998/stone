@@ -24,7 +24,7 @@ public final class BeeObjectCallLog<K, V> implements Serializable {
     //pooled key
     private final K key;
     //uuid
-    private final Object uuid;
+    private final Object id;
     //Log type
     private final int type;
     //Method name of pool or object
@@ -44,6 +44,12 @@ public final class BeeObjectCallLog<K, V> implements Serializable {
     //desc of object source
     private String objectSourceInfo;
 
+
+    //Flag of removed from log collector
+    private boolean removed;
+    //Flag of processed by listener
+    private boolean processed;
+
     //***************************************************************************************************************//
     //                                          constructor                                                          //
     //***************************************************************************************************************//
@@ -52,14 +58,14 @@ public final class BeeObjectCallLog<K, V> implements Serializable {
         this.type = type;
         this.method = method;
         this.parameters = parameters;
-        this.uuid = UUID.randomUUID();
+        this.id = UUID.randomUUID();
     }
 
     //***************************************************************************************************************//
     //                                          set/get                                                              //
     //***************************************************************************************************************//
-    public Object getUUID() {
-        return uuid;
+    public Object getId() {
+        return id;
     }
 
     public Object getKey() {
@@ -118,13 +124,36 @@ public final class BeeObjectCallLog<K, V> implements Serializable {
         this.objectSourceInfo = objectSourceInfo;
     }
 
+
+    //***************************************************************************************************************//
+    //                                       maintain by log collector                                               //
+    //***************************************************************************************************************//
+    public boolean isRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(boolean removed) {
+        this.removed = removed;
+    }
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
+    //***************************************************************************************************************//
+    //                                       Override methods                                                        //
+    //***************************************************************************************************************//
     public int hashCode() {
-        return this.uuid.hashCode();
+        return this.id.hashCode();
     }
 
     public boolean equals(Object o) {
         if (o instanceof BeeObjectCallLog) {
-            return this.uuid.equals(((BeeObjectCallLog<?, ?>) o).uuid);
+            return this.id.equals(((BeeObjectCallLog<?, ?>) o).id);
         } else {
             return false;
         }

@@ -18,22 +18,6 @@ import javax.transaction.xa.Xid;
  * @author Chris Liao
  * @version 1.0
  */
-public class XAResourceHolder {
-    private final Xid xid;
-
-    private final XAResource resource;
-
-    public XAResourceHolder(Xid xid, XAResource resource) {
-        this.xid = xid;
-        this.resource = resource;
-    }
-
-    public Xid getXid() {
-        return xid;
-    }
-
-    public XAResource getResource() {
-        return resource;
-    }
+public record XAResourceHolder(Xid xid, XAResource resource) {
 
 }

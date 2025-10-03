@@ -36,11 +36,11 @@ public class Tc0000CopyRightTest {
                 """;
 
         try {
-            InitTest.setSystemOut();
+            InitTest.switchToSystemOut();
             System.out.print(buf);
             assertTrue(true);
         } finally {
-            InitTest.setSystemTestOut();
+            InitTest.switchToTestStreamOut();
         }
     }
 }

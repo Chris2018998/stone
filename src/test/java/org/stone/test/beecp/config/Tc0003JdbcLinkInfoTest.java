@@ -148,7 +148,7 @@ public class Tc0003JdbcLinkInfoTest {
             fail("[testJdbcUrlMatchToDriver]Not threw exception when jdbc-url is null");
         } catch (Exception e) {
             String message = e.getMessage();
-            assertTrue(message != null && message.contains("jdbcUrl can't be null"));
+            assertTrue(message != null && message.contains("jdbcUrl must not be null or blank"));
         }
 
         //situation2: load 'beecp.url' from system.properties

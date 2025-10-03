@@ -9,14 +9,15 @@
  */
 package org.stone.test.beecp.config;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
 
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
-import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 
 /**
  * @author Chris Liao
@@ -25,19 +26,19 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 public class Tc0004PoolNameTest {
 
     @Test
-    public void testNullValueSet() {
-        BeeDataSourceConfig config = createEmpty();
-
+    public void testConfigurationSet() {
+        BeeDataSourceConfig config = new BeeDataSourceConfig();
+        Assertions.assertNull(config.getPoolName());//default check
+        config.setPoolName("Fast-pool");
+        Assertions.assertEquals("Fast-pool", config.getPoolName());//default check
         config.setPoolName(null);
-        assertNull(config.getPoolName());
-
-        config.setPoolName("pool1");
-        assertEquals("pool1", config.getPoolName());
+        Assertions.assertNull(config.getPoolName());//default check
     }
 
     @Test
     public void testPoolNameGeneration() throws Exception {
         BeeDataSourceConfig config = createDefault();
+        Assertions.assertNull(config.getPoolName());
         BeeDataSourceConfig checkConfig = config.check();
         assertTrue(checkConfig.getPoolName().contains("FastPool-"));
 
@@ -47,7 +48,7 @@ public class Tc0004PoolNameTest {
     }
 
     @Test
-    public void testInProperties() {
+    public void testPoolNameLoadFromProperties() {
         BeeDataSourceConfig config = createDefault();
         Properties prop = new Properties();
 

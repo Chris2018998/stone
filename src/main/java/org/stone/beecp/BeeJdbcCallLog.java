@@ -15,7 +15,7 @@ import java.sql.Statement;
 import java.util.UUID;
 
 /**
- * A method log represents an activity of a connection get or execution of a SQL.
+ * A method call log is generated from {@link org.stone.beeop.BeeObjectCallLogCollector#startCall(Object, int, String, Object[])}
  *
  * @author Chris Liao
  */
@@ -25,34 +25,39 @@ public final class BeeJdbcCallLog implements Serializable {
 
     //Log type
     private final int type;
-    //uuid
-    private final Object uuid;
+    //log id
+    private final Object id;
     //Method name of pool or (Statement,PreparedStatement,CallableStatement)
     private final String method;
     //Array of method parameters
     private final Object[] parameters;
+    //desc of data source(Maybe for centralized manager,it can be a web url)
+    private String datasourceInfo;
 
-    //Start time to call method,time unit:milliseconds
+    //Start time of method call,time unit:milliseconds
     private long startTime;
     //End time of method call,time unit:milliseconds
     private long endTime;
 
-    //A prepared sql or a statement sql.
-    private String sql;
-
-    //An elapsed time on prepared sql,refer to {@code connection.prepareStatement(String,...)} method or {@code connection.prepareCall(String,...)}method
-    private long preparationTookTime;
-    //A parameter array for prepared sql
-    private Object[] preparedParameters;
-
     //Result object of method call
     private Object resultObject;
-    //Fail exception to method call
+    //Fail exception when method call
     private Throwable failCause;
-    //desc of data source
-    private String datasourceInfo;
+
+    //A prepared sql or a statement sql.
+    private String sql;
+    //elapsed time on prepared sql,refer to {@code connection.prepareStatement(String,...)} method or {@code connection.prepareCall(String,...)}method
+    private long sqlPreparedTime;
+    //a parameter array of prepared sql
+    private Object[] sqlPreparedParameters;
     //if current log is a sql execution
     private transient Statement statement;
+
+
+    //Flag of removed from log collector
+    private boolean removed;
+    //Flag of processed by listener
+    private boolean processed;
 
     //***************************************************************************************************************//
     //                                          constructor                                                          //
@@ -61,18 +66,26 @@ public final class BeeJdbcCallLog implements Serializable {
         this.type = type;
         this.method = method;
         this.parameters = parameters;
-        this.uuid = UUID.randomUUID();
+        this.id = UUID.randomUUID();
     }
 
     //***************************************************************************************************************//
     //                                          set/get                                                              //
     //***************************************************************************************************************//
-    public Object getUUID() {
-        return uuid;
+    public Object getId() {
+        return id;
     }
 
     public int getType() {
         return type;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public Object[] getParameters() {
+        return parameters;
     }
 
     public long getStartTime() {
@@ -91,30 +104,6 @@ public final class BeeJdbcCallLog implements Serializable {
         this.endTime = endTime;
     }
 
-    public String getMethod() {
-        return method;
-    }
-
-    public Object[] getParameters() {
-        return parameters;
-    }
-
-    public String getSql() {
-        return sql;
-    }
-
-    public void setSql(String sql) {
-        this.sql = sql;
-    }
-
-    public long getPreparationTookTime() {
-        return preparationTookTime;
-    }
-
-    public Object[] getPreparedParameters() {
-        return preparedParameters;
-    }
-
     public Object getResultObject() {
         return resultObject;
     }
@@ -131,48 +120,94 @@ public final class BeeJdbcCallLog implements Serializable {
         this.datasourceInfo = datasourceInfo;
     }
 
-    public Statement getStatement() {
-        return statement;
+    //***************************************************************************************************************//
+    //                                          sql execution                                                        //
+    //***************************************************************************************************************//
+
+    public String getSql() {
+        return sql;
+    }
+
+    public void setSql(String sql) {
+        this.sql = sql;
+    }
+
+    public long getSqlPreparedTime() {
+        return sqlPreparedTime;
+    }
+
+    public void setSqlPreparedTime(long sqlPreparedTime) {
+        this.sqlPreparedTime = sqlPreparedTime;
     }
 
     public void setStatement(Statement statement) {
         this.statement = statement;
     }
 
-    public void cancelStatement() throws SQLException {
-        if (this.statement != null) statement.cancel();
+    public Object[] getSqlPreparedParameters() {
+        return sqlPreparedParameters;
+    }
+
+    public void setSqlPreparedParameters(Object[] sqlPreparedParameters) {
+        this.sqlPreparedParameters = sqlPreparedParameters;
+    }
+
+    public boolean isSqlExecuting() {
+        return this.statement != null && endTime == 0L;
+    }
+
+    public void cancelSqlExecuting() throws SQLException {
+        if (this.statement != null && endTime == 0L) statement.cancel();
     }
 
     //***************************************************************************************************************//
-    //                                          Override methods                                                     //
+    //                                       maintain by log collector                                               //
     //***************************************************************************************************************//
+    public boolean isRemoved() {
+        return removed;
+    }
 
+    public void setRemoved(boolean removed) {
+        this.removed = removed;
+    }
+
+    public boolean isProcessed() {
+        return processed;
+    }
+
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
+
+    //***************************************************************************************************************//
+    //                                       set result and set exception                                            //
+    //***************************************************************************************************************//
+    public void setResult(Object callResult, long sqlPreparedTime, Object[] sqlPreparedParameters) {
+        this.resultObject = callResult;
+        this.sqlPreparedTime = sqlPreparedTime;
+        this.sqlPreparedParameters = sqlPreparedParameters;
+        this.statement = null;
+    }
+
+    public void setException(Throwable failCause, long sqlPreparedTime, Object[] sqlPreparedParameters) {
+        this.failCause = failCause;
+        this.sqlPreparedTime = sqlPreparedTime;
+        this.sqlPreparedParameters = sqlPreparedParameters;
+        this.statement = null;
+    }
+
+    //***************************************************************************************************************//
+    //                                       Override methods                                                        //
+    //***************************************************************************************************************//
     public int hashCode() {
-        return this.uuid.hashCode();
+        return this.id.hashCode();
     }
 
     public boolean equals(Object o) {
         if (o instanceof BeeJdbcCallLog) {
-            return this.uuid.equals(((BeeJdbcCallLog) o).uuid);
+            return this.id.equals(((BeeJdbcCallLog) o).id);
         } else {
             return false;
         }
-    }
-
-    //***************************************************************************************************************//
-    //                                          set result and set exception                                         //
-    //***************************************************************************************************************//
-    public void setResult(Object callResult, long preparationTookTime, Object[] preparedParameters) {
-        this.resultObject = callResult;
-        this.preparationTookTime = preparationTookTime;
-        this.preparedParameters = preparedParameters;
-        this.statement = null;
-    }
-
-    public void setException(Throwable failCause, long preparationTookTime, Object[] preparedParameters) {
-        this.failCause = failCause;
-        this.preparationTookTime = preparationTookTime;
-        this.preparedParameters = preparedParameters;
-        this.statement = null;
     }
 }

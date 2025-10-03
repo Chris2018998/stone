@@ -19,6 +19,8 @@ import org.stone.tools.extension.InterruptionSemaphore;
 import javax.sql.XAConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -234,6 +236,13 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
+    public List<BeeJdbcCallLog> getJdbcCallLog(int type) {
+        return Collections.emptyList();
+    }
+
+    public void clearJdbcCallLog() {
+    }
+
     public boolean isEnabledLogPrint() {
         return false;
     }
@@ -246,7 +255,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         monitorVo.setPoolName(this.poolName);
         monitorVo.setPoolMode(poolMode);
         monitorVo.setPoolState(poolState.get());
-        monitorVo.setPoolMaxSize(poolConfig.getMaxActive());
+        monitorVo.setMaxSize(poolConfig.getMaxActive());
         monitorVo.setIdleSize(getIdleSize());
         monitorVo.setBorrowedSize(getBorrowedSize());
         monitorVo.setSemaphoreWaitingSize(getSemaphoreWaitingSize());
