@@ -200,7 +200,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             throw new SQLException("The wrapper object was not an instance of " + clazz);
     }
 
-
     //***************************************************************************************************************//
     //                                         5: log print                                                          //
     //***************************************************************************************************************//

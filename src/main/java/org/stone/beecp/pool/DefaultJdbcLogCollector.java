@@ -14,6 +14,7 @@ import org.stone.beecp.BeeJdbcCallLogCollector;
 import org.stone.beecp.BeeJdbcCallLogListener;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,7 +29,7 @@ import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
  * @author Chris Liao
  * @version 1.0
  */
-public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
+public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
     private boolean listenInSync;
     //log listener
     private BeeJdbcCallLogListener listener;
@@ -38,9 +39,9 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
     private long slowSQLExecutionThreshold;
 
     //logs queue of connection get
-    private LinkedBlockingQueue<BeeJdbcCallLog> conLogQueue;
+    private LinkedBlockingQueue<DefaultJdbcCallLog> conLogQueue;
     //logs queue of sql execution
-    private LinkedBlockingQueue<BeeJdbcCallLog> sqlLogQueue;
+    private LinkedBlockingQueue<DefaultJdbcCallLog> sqlLogQueue;
 
     //***************************************************************************************************************//
     //                                         1: initialization                                                     //
@@ -85,13 +86,13 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
         }
 
         List<BeeJdbcCallLog> processLogList = null;
-        List<BeeJdbcCallLog> conPendingRemovalLogList = new LinkedList<>();
-        List<BeeJdbcCallLog> sqlPendingRemovalLogList = new LinkedList<>();
+        List<DefaultJdbcCallLog> conPendingRemovalLogList = new LinkedList<>();
+        List<DefaultJdbcCallLog> sqlPendingRemovalLogList = new LinkedList<>();
 
         long currentTime = System.currentTimeMillis();
         if (listenInSync) {
             //timeout check on connection logs
-            for (BeeJdbcCallLog log : conLogQueue) {
+            for (DefaultJdbcCallLog log : conLogQueue) {
                 if (currentTime - log.getEndTime() >= timeout) {
                     log.setRemoved(true);
                     conPendingRemovalLogList.add(log);
@@ -99,15 +100,15 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
             }
 
             //timeout check on sql execution logs
-            for (BeeJdbcCallLog log : sqlLogQueue) {
+            for (DefaultJdbcCallLog log : sqlLogQueue) {
                 if (currentTime - log.getEndTime() >= timeout) {
                     log.setRemoved(true);
                     sqlPendingRemovalLogList.add(log);
                 }
             }
         } else {//async mode
-            processLogList = new LinkedList<>();
-            for (BeeJdbcCallLog log : conLogQueue) {
+            processLogList = new ArrayList<>(10);
+            for (DefaultJdbcCallLog log : conLogQueue) {
                 if (currentTime - log.getEndTime() >= timeout) {
                     log.setRemoved(true);
                     conPendingRemovalLogList.add(log);
@@ -119,7 +120,7 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
             }
 
             //timeout check on sql execution logs
-            for (BeeJdbcCallLog log : sqlLogQueue) {
+            for (DefaultJdbcCallLog log : sqlLogQueue) {
                 if (currentTime - log.getEndTime() >= timeout) {
                     log.setRemoved(true);
                     sqlPendingRemovalLogList.add(log);
@@ -139,7 +140,10 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
 
         if (processLogList != null && !processLogList.isEmpty()) {
             try {
-                this.listener.process(processLogList);
+                boolean[] flags = this.listener.process(processLogList);
+                for (int i = 0, l = flags.length; i < l; i++) {
+                    ((DefaultJdbcCallLog) (processLogList.get(i))).setProcessed(flags[i]);
+                }
             } catch (Throwable e) {
                 //do nothing
             }
@@ -161,26 +165,27 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      * @param method     is method name,for example:getConnection()
      * @param parameters is an array of method parameters
      */
-    public BeeJdbcCallLog startCall(int type, String method, Object[] parameters, String preparedSQL) {
-        BeeJdbcCallLog log = new BeeJdbcCallLog(type, method, parameters);
+    public BeeJdbcCallLog startCall(int type, String method, Object[] parameters, String sql, Statement statement) {
+        DefaultJdbcCallLog log = new DefaultJdbcCallLog(type, method, parameters);
         log.setStartTime(System.currentTimeMillis());
-        offerQueue(log, type, parameters, preparedSQL);
+        log.setStatement(statement);
+        offerQueue(log, type, parameters, sql);
         return log;
     }
 
-    private void offerQueue(BeeJdbcCallLog log, int type, Object[] parameters, String preparedSQL) {
+    private void offerQueue(DefaultJdbcCallLog log, int type, Object[] parameters, String sql) {
         if (type == Type_Get_Connection) {
             for (; ; ) {
                 if (conLogQueue.offer(log)) {
                     break;
                 } else {
-                    BeeJdbcCallLog other = conLogQueue.poll();
+                    DefaultJdbcCallLog other = conLogQueue.poll();
                     if (other != null) other.setRemoved(true);
                 }
             }
         } else {//Type_Execute_SQL
             if (parameters == null || parameters.length == 0) {
-                log.setSql(preparedSQL);
+                log.setSql(sql);
             } else {
                 log.setSql((String) parameters[0]);
             }
@@ -188,7 +193,7 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
                 if (sqlLogQueue.offer(log)) {
                     break;
                 } else {
-                    BeeJdbcCallLog other = sqlLogQueue.poll();
+                    DefaultJdbcCallLog other = sqlLogQueue.poll();
                     if (other != null) other.setRemoved(true);
                 }
             }
@@ -207,19 +212,19 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
      */
     public void endCall(Object callResult, long preparationTookTime, Object[] preparedParameters, BeeJdbcCallLog log) {
-        log.setResult(callResult, preparationTookTime, preparedParameters);
-        log.setEndTime(System.currentTimeMillis());
+        DefaultJdbcCallLog defaultTypeLog = (DefaultJdbcCallLog) log;
+        defaultTypeLog.setResult(callResult, preparationTookTime, preparedParameters);
+        defaultTypeLog.setEndTime(System.currentTimeMillis());
 
         if (log.isRemoved()) {
-            log.setRemoved(false);
-            offerQueue(log, log.getType(), log.getParameters(), log.getSql());
+            defaultTypeLog.setRemoved(false);
+            offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
         }
 
         if (this.listenInSync && ((Type_Get_Connection == log.getType() && slowConnectionGetThreshold > 0L && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
                 || (Type_Execution_SQL == log.getType() && slowSQLExecutionThreshold > 0L && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
             try {
-                listener.process(log);
-                log.setProcessed(true);
+                defaultTypeLog.setProcessed(listener.process(log));
             } catch (Throwable e) {
                 //do nothing
             }
@@ -234,18 +239,19 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
      */
     public void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcCallLog log) {
-        log.setException(failCause, preparationTookTime, preparedParameters);
-        log.setEndTime(System.currentTimeMillis());
+        DefaultJdbcCallLog defaultTypeLog = (DefaultJdbcCallLog) log;
+
+        defaultTypeLog.setException(failCause, preparationTookTime, preparedParameters);
+        defaultTypeLog.setEndTime(System.currentTimeMillis());
 
         if (log.isRemoved()) {
-            log.setRemoved(false);
-            offerQueue(log, log.getType(), log.getParameters(), log.getSql());
+            defaultTypeLog.setRemoved(false);
+            offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
         }
 
         if (this.listenInSync) {
             try {
-                listener.process(log);
-                log.setProcessed(true);
+                defaultTypeLog.setProcessed(listener.process(log));
             } catch (Throwable e) {
                 //do nothing
             }
@@ -257,10 +263,10 @@ public class JdbcCallLogCollectorImpl implements BeeJdbcCallLogCollector {
      *
      * @param uuid log uuid key
      */
-    public void cancelSqlExecuting(Object uuid) throws SQLException {
+    public void cancelRunningStatement(Object uuid) throws SQLException {
         for (BeeJdbcCallLog log : sqlLogQueue) {
             if (log.getId().equals(uuid)) {
-                log.cancelSqlExecuting();
+                log.cancelRunningStatement();
             }
         }
     }

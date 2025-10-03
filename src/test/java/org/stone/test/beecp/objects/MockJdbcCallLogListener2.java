@@ -17,6 +17,7 @@ package org.stone.test.beecp.objects;
 
 import org.stone.beecp.BeeJdbcCallLog;
 import org.stone.beecp.BeeJdbcCallLogListener;
+import org.stone.beecp.pool.DefaultJdbcCallLogListener;
 
 import java.util.List;
 
@@ -25,27 +26,8 @@ import java.util.List;
  *
  * @author Chris Liao
  */
-public class MockJdbcCallLogListener2 extends BeeJdbcCallLogListener {
-
+public class MockJdbcCallLogListener2 extends DefaultJdbcCallLogListener {
     public MockJdbcCallLogListener2(String name) {
-
-    }
-
-    /**
-     * Process slow logs and exception logs in sync mode
-     *
-     * @param log is a slow log or an exception log
-     */
-    public void process(BeeJdbcCallLog log) {
-
-    }
-
-    /**
-     * Process a log list which contains some slow logs and exception logs in async mode.
-     *
-     * @param logList is a log list need be process
-     */
-    public void process(List<BeeJdbcCallLog> logList) {
 
     }
 }

@@ -10,6 +10,7 @@
 package org.stone.beecp;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 
 /**
@@ -65,10 +66,11 @@ public interface BeeJdbcCallLogCollector {
      *
      * @param type        is method call type
      * @param method      is method name,for example:getConnection()
-     * @param parameters  is an array of method parameters
-     * @param preparedSQL is a prepared sql
+     * @param parameters  is an array of method parameters,which may be null
+     * @param preparedSQL is a prepared sql,which may be null
+     * @param statement   is a sql statement,which may be null
      */
-    BeeJdbcCallLog startCall(int type, String method, Object[] parameters, String preparedSQL);
+    BeeJdbcCallLog startCall(int type, String method, Object[] parameters, String preparedSQL, Statement statement);
 
     /**
      * Plugin method is executed at end of proxy methods to update result and attach to a log object.
@@ -99,5 +101,5 @@ public interface BeeJdbcCallLogCollector {
      *
      * @param id log id
      */
-    void cancelSqlExecuting(Object id) throws SQLException;
+    void cancelRunningStatement(Object id) throws SQLException;
 }

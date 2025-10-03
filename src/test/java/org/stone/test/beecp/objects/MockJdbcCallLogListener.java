@@ -17,6 +17,7 @@ package org.stone.test.beecp.objects;
 
 import org.stone.beecp.BeeJdbcCallLog;
 import org.stone.beecp.BeeJdbcCallLogListener;
+import org.stone.beecp.pool.DefaultJdbcCallLogListener;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ import java.util.List;
  *
  * @author Chris Liao
  */
-public class MockJdbcCallLogListener extends BeeJdbcCallLogListener {
+public class MockJdbcCallLogListener extends DefaultJdbcCallLogListener {
 
     private BeeJdbcCallLog slowLog;
 
@@ -44,12 +45,13 @@ public class MockJdbcCallLogListener extends BeeJdbcCallLogListener {
      *
      * @param log is a slow log or an exception log
      */
-    public void process(BeeJdbcCallLog log) {
+    public boolean process(BeeJdbcCallLog log) {
         if (log.getFailCause() == null) {
             this.slowLog = log;
         } else {
             this.exceptionLog = log;
         }
+        return super.process(log);
     }
 
     /**
@@ -57,7 +59,7 @@ public class MockJdbcCallLogListener extends BeeJdbcCallLogListener {
      *
      * @param logList is a log list need be process
      */
-    public void process(List<BeeJdbcCallLog> logList) {
-
+    public boolean[] process(List<BeeJdbcCallLog> logList) {
+        return super.process(logList);
     }
 }

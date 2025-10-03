@@ -30,7 +30,7 @@ public final class FastConnectionPool4L extends FastConnectionPool {
 
     public Connection getConnection() throws SQLException {
         if (this.isEnabledJdbcCallLogCollector()) {
-            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetConnection, null, null);
+            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetConnection, null, null, null);
             try {
                 Connection con = super.getConnection();
                 logCollector.endCall(con, 0L, null, log);
@@ -46,7 +46,7 @@ public final class FastConnectionPool4L extends FastConnectionPool {
 
     public XAConnection getXAConnection() throws SQLException {
         if (this.isEnabledJdbcCallLogCollector()) {
-            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetXAConnection, null, null);
+            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetXAConnection, null, null, null);
             try {
                 XAConnection con = super.getXAConnection();
                 logCollector.endCall(con, 0L, null, log);

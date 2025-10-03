@@ -148,7 +148,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         } else {
             this.jdbcLogTimeoutMs = poolConfig.getJdbcCallLogTimeout();
             BeeJdbcCallLogListener listener = poolConfig.getJdbcCallLogListener();
-            if (listener == null) listener = new BeeJdbcCallLogListener();
+            if (listener == null) listener = new DefaultJdbcCallLogListener();
             logCollector.init(poolConfig.getJdbcCallLogCacheSize(),
                     poolConfig.getSlowConnectionGetThreshold(),
                     poolConfig.getSlowSQLExecutionThreshold(),

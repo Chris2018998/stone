@@ -174,7 +174,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //timer interval to clear timeout logs
     private long jdbcCallLogClearInterval = jdbcCallLogTimeout;
 
-    //jdbc call logs listener
+    //jdbc call logs listener(Note: only process slow logs and exception logs)
     private BeeJdbcCallLogListener jdbcCallLogListener;
     //Class of jdbc call log listener,default is none
     private Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass;

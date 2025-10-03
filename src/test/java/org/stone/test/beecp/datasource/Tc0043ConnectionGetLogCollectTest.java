@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeJdbcCallLog;
-import org.stone.beecp.pool.JdbcCallLogCollectorImpl;
+import org.stone.beecp.pool.DefaultJdbcLogCollector;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
 import org.stone.test.beecp.objects.MockCommonXaConnectionFactory;
 
@@ -50,7 +50,7 @@ public class Tc0043ConnectionGetLogCollectTest {
         //2: log collector created by log collector instance
         BeeDataSourceConfig config2 = createDefault();
         config2.setConnectionFactoryClassName(connectionFactoryClassName);
-        config2.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
+        config2.setJdbcCallLogCollector(new DefaultJdbcLogCollector());
         try (BeeDataSource ds = new BeeDataSource(config2)) {
             //enabled log collector
             Assertions.assertTrue(ds.isEnabledJdbcCallLogCollector());
@@ -90,7 +90,7 @@ public class Tc0043ConnectionGetLogCollectTest {
         //3: log collector created by class
         BeeDataSourceConfig config3 = createDefault();
         config3.setConnectionFactoryClassName(connectionFactoryClassName);
-        config3.setJdbcCallLogCollectorClass(JdbcCallLogCollectorImpl.class);
+        config3.setJdbcCallLogCollectorClass(DefaultJdbcLogCollector.class);
         try (BeeDataSource ds = new BeeDataSource(config3)) {
             Assertions.assertTrue(ds.isEnabledJdbcCallLogCollector());
             try (Connection ignored = ds.getConnection("test", "test")) {
@@ -101,7 +101,7 @@ public class Tc0043ConnectionGetLogCollectTest {
         //4: log collector created by class name
         BeeDataSourceConfig config4 = createDefault();
         config4.setConnectionFactoryClassName(connectionFactoryClassName);
-        config4.setJdbcCallLogCollectorClassName(JdbcCallLogCollectorImpl.class.getName());
+        config4.setJdbcCallLogCollectorClassName(DefaultJdbcLogCollector.class.getName());
         try (BeeDataSource ds = new BeeDataSource(config4)) {
             Assertions.assertTrue(ds.isEnabledJdbcCallLogCollector());
             XAConnection xaCon = ds.getXAConnection();//log generation
@@ -119,7 +119,7 @@ public class Tc0043ConnectionGetLogCollectTest {
     @Test
     public void testExceptionLog() throws Exception {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        config.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
+        config.setJdbcCallLogCollector(new DefaultJdbcLogCollector());
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         connectionFactory.setCreateException1(new SQLException("Failed to connect db"));
         config.setConnectionFactory(connectionFactory);
@@ -163,7 +163,7 @@ public class Tc0043ConnectionGetLogCollectTest {
 
         //2: XAConnection get test
         BeeDataSourceConfig config2 = new BeeDataSourceConfig();
-        config2.setJdbcCallLogCollector(new JdbcCallLogCollectorImpl());
+        config2.setJdbcCallLogCollector(new DefaultJdbcLogCollector());
         MockCommonXaConnectionFactory xaConnectionFactory = new MockCommonXaConnectionFactory();
         xaConnectionFactory.setCreateException1(new SQLException("Failed to connect db"));
         config2.setXaConnectionFactory(xaConnectionFactory);
