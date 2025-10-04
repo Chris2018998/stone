@@ -13,30 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.stone.beecp;
+package org.stone.beeop;
 
 import java.util.List;
 
 /**
- * A listener interface,its implementation class is driven by {@link BeeJdbcCallLogCollector} to process slow logs and exception logs.
+ * A listener interface need be implemented by subClass
  *
  * @author Chris Liao
  */
-public interface BeeJdbcCallLogListener {
+public class BeeObjectCallLogHandler<K, V> {
 
     /**
-     * Process slow logs and exception logs in sync mode.
+     * Handle slow logs and exception logs in sync mode
      *
      * @param log is a slow log or an exception log
-     * @return boolean,true is that log has been processed
      */
-    boolean process(BeeJdbcCallLog log);
+    public void handle(BeeObjectCallLog<K, V> log) {
+        //empty body
+    }
 
     /**
-     * Process a log list(slow logs and exception logs) in async mode.
+     * Handle a log list which contains some slow logs and exception logs in async mode.
      *
      * @param logList is a log list need be process
-     * @return boolean array,length must equal the size of log list
      */
-    boolean[] process(List<BeeJdbcCallLog> logList);
+    public void handle(List<BeeObjectCallLog<K, V>> logList) {
+        //empty body
+    }
+
 }

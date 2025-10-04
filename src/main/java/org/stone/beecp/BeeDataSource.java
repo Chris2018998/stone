@@ -81,7 +81,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         String poolImplementClassName = ds.getPoolImplementClassName();
         try {
             if (isBlank(poolImplementClassName)) {
-                poolImplementClassName = (ds.getJdbcCallLogCollector() != null || ds.getJdbcCallLogCollectorClass() != null || isNotBlank(ds.getJdbcCallLogCollectorClassName())) ?
+                poolImplementClassName = (ds.getJdbcCallLogManager() != null || ds.getJdbcCallLogManagerClass() != null || isNotBlank(ds.getJdbcCallLogManagerClassName())) ?
                         FastConnectionPool4L.class.getName() : FastConnectionPool.class.getName();
             }
 

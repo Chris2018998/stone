@@ -161,32 +161,33 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
 
     //********************************************** Jdbc call logs **************************************************//
-    //Capacity of logs cache in log collector，default is 1000
+    //jdbc call logs manager
+    private BeeJdbcCallLogManager jdbcCallLogManager;
+    //Class of jdbc call logs manager,default is none
+    private Class<? extends BeeJdbcCallLogManager> jdbcCallLogManagerClass;
+    //Class name of jdbc call logs manager,default is none
+    private String jdbcCallLogManagerClassName;
+
+    //Capacity of logs cache in log collector,default is 1000
     private int jdbcCallLogCacheSize = 1000;
-    //slow threshold value of connection get,time unit:milliseconds
-    private long slowConnectionGetThreshold;
-    //slow threshold of sql execution,time unit:milliseconds
-    private long slowSQLExecutionThreshold;
-    //Work mode of jdbc call log listener,default is true,sync mode
-    private boolean jdbcCallLogListenInSync = true;
-    //log timeout in collector,default is 3 minutes
+    //Log timeout in collector,default is 3 minutes
     private long jdbcCallLogTimeout = MINUTES.toMillis(3L);
-    //timer interval to clear timeout logs
+    //interval time to clear timeout logs,default is equal to jdbcCallLogTimeout
     private long jdbcCallLogClearInterval = jdbcCallLogTimeout;
 
-    //jdbc call logs listener(Note: only process slow logs and exception logs)
-    private BeeJdbcCallLogListener jdbcCallLogListener;
-    //Class of jdbc call log listener,default is none
-    private Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass;
-    //Class name of log listener,default is none
-    private String jdbcCallLogListenerClassName;
+    //Slow logs handler(Note: only handle slow logs and exception logs)
+    private BeeJdbcCallLogHandler slowLogHandler;
+    //Class of slow logs handler,default is none
+    private Class<? extends BeeJdbcCallLogHandler> slowLogHandlerClass;
+    //Class name of slow logs handler,default is none
+    private String slowLogHandlerClassName;
 
-    //jdbc call logs collector
-    private BeeJdbcCallLogCollector jdbcCallLogCollector;
-    //Class of jdbc call logs collector,default is none
-    private Class<? extends BeeJdbcCallLogCollector> jdbcCallLogCollectorClass;
-    //Class name of jdbc call logs collector,default is none
-    private String jdbcCallLogCollectorClassName;
+    //Slow threshold value of connection get,default is 30 seconds,time unit:milliseconds
+    private long slowConnectionGetThreshold = 30000L;
+    //Slow threshold of sql execution,default is 30 seconds,time unit:milliseconds
+    private long slowSQLExecutionThreshold = 30000L;
+    //Slow logs handle mode,default is true
+    private boolean slowLogHandledBySyncMode = true;
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                                         //
@@ -725,6 +726,30 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    7: Log Collector(18)                                                        //
     //****************************************************************************************************************//
+    public BeeJdbcCallLogManager getJdbcCallLogManager() {
+        return jdbcCallLogManager;
+    }
+
+    public void setJdbcCallLogManager(BeeJdbcCallLogManager jdbcCallLogManager) {
+        this.jdbcCallLogManager = jdbcCallLogManager;
+    }
+
+    public Class<? extends BeeJdbcCallLogManager> getJdbcCallLogManagerClass() {
+        return jdbcCallLogManagerClass;
+    }
+
+    public void setJdbcCallLogManagerClass(Class<? extends BeeJdbcCallLogManager> jdbcCallLogManagerClass) {
+        this.jdbcCallLogManagerClass = jdbcCallLogManagerClass;
+    }
+
+    public String getJdbcCallLogManagerClassName() {
+        return jdbcCallLogManagerClassName;
+    }
+
+    public void setJdbcCallLogManagerClassName(String jdbcCallLogManagerClassName) {
+        this.jdbcCallLogManagerClassName = jdbcCallLogManagerClassName;
+    }
+
     public int getJdbcCallLogCacheSize() {
         return jdbcCallLogCacheSize;
     }
@@ -733,6 +758,50 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (jdbcCallLogCacheSize <= 0)
             throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero");
         this.jdbcCallLogCacheSize = jdbcCallLogCacheSize;
+    }
+
+    public long getJdbcCallLogTimeout() {
+        return jdbcCallLogTimeout;
+    }
+
+    public void setJdbcCallLogTimeout(long jdbcCallLogTimeout) {
+        if (jdbcCallLogTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero");
+        this.jdbcCallLogTimeout = jdbcCallLogTimeout;
+    }
+
+    public long getJdbcCallLogClearInterval() {
+        return jdbcCallLogClearInterval;
+    }
+
+    public void setJdbcCallLogClearInterval(long jdbcCallLogClearInterval) {
+        if (jdbcCallLogClearInterval <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-clear-interval' must be greater than zero");
+        this.jdbcCallLogClearInterval = jdbcCallLogClearInterval;
+    }
+
+    public BeeJdbcCallLogHandler getSlowLogHandler() {
+        return slowLogHandler;
+    }
+
+    public void setSlowLogHandler(BeeJdbcCallLogHandler slowLogHandler) {
+        this.slowLogHandler = slowLogHandler;
+    }
+
+    public Class<? extends BeeJdbcCallLogHandler> getSlowLogHandlerClass() {
+        return slowLogHandlerClass;
+    }
+
+    public void setSlowLogHandlerClass(Class<? extends BeeJdbcCallLogHandler> slowLogHandlerClass) {
+        this.slowLogHandlerClass = slowLogHandlerClass;
+    }
+
+    public String getSlowLogHandlerClassName() {
+        return slowLogHandlerClassName;
+    }
+
+    public void setSlowLogHandlerClassName(String slowLogHandlerClassName) {
+        this.slowLogHandlerClassName = slowLogHandlerClassName;
     }
 
     public long getSlowConnectionGetThreshold() {
@@ -755,82 +824,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.slowSQLExecutionThreshold = slowSQLExecutionThreshold;
     }
 
-    public boolean isJdbcCallLogListenInSync() {
-        return jdbcCallLogListenInSync;
+    public boolean isSlowLogHandledBySyncMode() {
+        return slowLogHandledBySyncMode;
     }
 
-    public void setJdbcCallLogListenInSync(boolean jdbcCallLogListenInSync) {
-        this.jdbcCallLogListenInSync = jdbcCallLogListenInSync;
-    }
-
-    public long getJdbcCallLogTimeout() {
-        return jdbcCallLogTimeout;
-    }
-
-    public void setJdbcCallLogTimeout(long jdbcCallLogTimeout) {
-        if (jdbcCallLogTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero");
-
-        this.jdbcCallLogTimeout = jdbcCallLogTimeout;
-    }
-
-    public long getJdbcCallLogClearInterval() {
-        return jdbcCallLogClearInterval;
-    }
-
-    public void setJdbcCallLogClearInterval(long jdbcCallLogClearInterval) {
-        if (jdbcCallLogClearInterval <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-clear-interval' must be greater than zero");
-
-        this.jdbcCallLogClearInterval = jdbcCallLogClearInterval;
-    }
-
-    public BeeJdbcCallLogListener getJdbcCallLogListener() {
-        return jdbcCallLogListener;
-    }
-
-    public void setJdbcCallLogListener(BeeJdbcCallLogListener jdbcCallLogListener) {
-        this.jdbcCallLogListener = jdbcCallLogListener;
-    }
-
-    public Class<? extends BeeJdbcCallLogListener> getJdbcCallLogListenerClass() {
-        return jdbcCallLogListenerClass;
-    }
-
-    public void setJdbcCallLogListenerClass(Class<? extends BeeJdbcCallLogListener> jdbcCallLogListenerClass) {
-        this.jdbcCallLogListenerClass = jdbcCallLogListenerClass;
-    }
-
-    public String getJdbcCallLogListenerClassName() {
-        return jdbcCallLogListenerClassName;
-    }
-
-    public void setJdbcCallLogListenerClassName(String jdbcCallLogListenerClassName) {
-        this.jdbcCallLogListenerClassName = jdbcCallLogListenerClassName;
-    }
-
-    public BeeJdbcCallLogCollector getJdbcCallLogCollector() {
-        return jdbcCallLogCollector;
-    }
-
-    public void setJdbcCallLogCollector(BeeJdbcCallLogCollector jdbcCallLogCollector) {
-        this.jdbcCallLogCollector = jdbcCallLogCollector;
-    }
-
-    public Class<? extends BeeJdbcCallLogCollector> getJdbcCallLogCollectorClass() {
-        return jdbcCallLogCollectorClass;
-    }
-
-    public void setJdbcCallLogCollectorClass(Class<? extends BeeJdbcCallLogCollector> jdbcCallLogCollectorClass) {
-        this.jdbcCallLogCollectorClass = jdbcCallLogCollectorClass;
-    }
-
-    public String getJdbcCallLogCollectorClassName() {
-        return jdbcCallLogCollectorClassName;
-    }
-
-    public void setJdbcCallLogCollectorClassName(String jdbcCallLogCollectorClassName) {
-        this.jdbcCallLogCollectorClassName = jdbcCallLogCollectorClassName;
+    public void setSlowLogHandledBySyncMode(boolean slowLogHandledBySyncMode) {
+        this.slowLogHandledBySyncMode = slowLogHandledBySyncMode;
     }
 
     //****************************************************************************************************************//
@@ -974,8 +973,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeJdbcCallLogCollector logCollector = this.createLogCollector();
-        BeeJdbcCallLogListener logListener = logCollector != null ? createLogListener() : null;
+        BeeJdbcCallLogManager logCollector = this.createLogCollector();
+        BeeJdbcCallLogHandler logListener = logCollector != null ? createLogListener() : null;
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -993,8 +992,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.evictPredicate = predicate;
-        checkedConfig.jdbcCallLogListener = logListener;
-        checkedConfig.jdbcCallLogCollector = logCollector;
+        checkedConfig.slowLogHandler = logListener;
+        checkedConfig.jdbcCallLogManager = logCollector;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
 
@@ -1057,18 +1056,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //create method log listener
-    private BeeJdbcCallLogListener createLogListener() {
+    private BeeJdbcCallLogHandler createLogListener() {
         //step1:if exists listener,then return it
-        if (this.jdbcCallLogListener != null) return this.jdbcCallLogListener;
+        if (this.slowLogHandler != null) return this.slowLogHandler;
 
         //step2: create a listener
-        if (this.jdbcCallLogListenerClass != null || isNotBlank(this.jdbcCallLogListenerClassName)) {
+        if (this.slowLogHandlerClass != null || isNotBlank(this.slowLogHandlerClassName)) {
             Class<?> listenerClass = null;
             try {
-                listenerClass = jdbcCallLogListenerClass != null ? jdbcCallLogListenerClass : loadClass(jdbcCallLogListenerClassName);
-                return (BeeJdbcCallLogListener) createClassInstance(listenerClass, BeeJdbcCallLogListener.class, "jdbc call log listener");
+                listenerClass = slowLogHandlerClass != null ? slowLogHandlerClass : loadClass(slowLogHandlerClassName);
+                return (BeeJdbcCallLogHandler) createClassInstance(listenerClass, BeeJdbcCallLogHandler.class, "jdbc call log listener");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + jdbcCallLogListenerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + slowLogHandlerClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + listenerClass + "]", e);
             }
@@ -1077,18 +1076,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //create jdbc method log collector
-    private BeeJdbcCallLogCollector createLogCollector() {
+    private BeeJdbcCallLogManager createLogCollector() {
         //step1:if exists log collector,then return it
-        if (this.jdbcCallLogCollector != null) return this.jdbcCallLogCollector;
+        if (this.jdbcCallLogManager != null) return this.jdbcCallLogManager;
 
         //step2: create jdbc method log collector
-        if (this.jdbcCallLogCollectorClass != null || isNotBlank(this.jdbcCallLogCollectorClassName)) {
+        if (this.jdbcCallLogManagerClass != null || isNotBlank(this.jdbcCallLogManagerClassName)) {
             Class<?> collectorClass = null;
             try {
-                collectorClass = jdbcCallLogCollectorClass != null ? jdbcCallLogCollectorClass : loadClass(jdbcCallLogCollectorClassName);
-                return (BeeJdbcCallLogCollector) createClassInstance(collectorClass, BeeJdbcCallLogCollector.class, "jdbc method log collector");
+                collectorClass = jdbcCallLogManagerClass != null ? jdbcCallLogManagerClass : loadClass(jdbcCallLogManagerClassName);
+                return (BeeJdbcCallLogManager) createClassInstance(collectorClass, BeeJdbcCallLogManager.class, "jdbc method log collector");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + jdbcCallLogCollectorClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + jdbcCallLogManagerClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + collectorClass + "]", e);
             }

@@ -63,7 +63,7 @@ public class MockBasePoolImplementation implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableMethodLogCollector(BeeJdbcCallLogCollector connectionTracker) {
+    public void enableMethodLogCollector(BeeJdbcCallLogManager connectionTracker) {
         //do nothing
     }
 

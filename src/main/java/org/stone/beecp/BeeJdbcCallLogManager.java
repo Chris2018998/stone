@@ -19,7 +19,7 @@ import java.util.List;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeJdbcCallLogCollector {
+public interface BeeJdbcCallLogManager {
 
     //***************************************************************************************************************//
     //                                         1: initialization                                                     //
@@ -28,15 +28,15 @@ public interface BeeJdbcCallLogCollector {
     /**
      * initialize log collector.
      *
-     * @param cacheSize    is capacity of logs cache
-     * @param slowGet      is slow threshold value of connection get,time unit:milliseconds
-     * @param slowExec     is slow threshold of sql execution,time unit:milliseconds
-     * @param listenInSync is work mode of listener
-     * @param listener     is a log listener
+     * @param cacheSize  is capacity of logs cache
+     * @param slowGet    is slow threshold value of connection get,time unit:milliseconds
+     * @param slowExec   is slow threshold of sql execution,time unit:milliseconds
+     * @param syncHandle is work mode of handler
+     * @param handler    is a log handler
      */
     void init(int cacheSize,
               long slowGet, long slowExec,
-              boolean listenInSync, BeeJdbcCallLogListener listener);
+              boolean syncHandle, BeeJdbcCallLogHandler handler);
 
     //***************************************************************************************************************//
     //                                         2: logs maintain                                                      //

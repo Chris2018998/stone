@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeJdbcCallLog;
-import org.stone.beecp.pool.DefaultJdbcLogCollector;
+import org.stone.beecp.pool.DefaultJdbcLogManager;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
 
@@ -29,7 +29,7 @@ public class Tc0044SqlExecutionLogCollectTest {
     @Test
     public void testSQLExecution() throws SQLException {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        config.setJdbcCallLogCollector(new DefaultJdbcLogCollector());
+        config.setJdbcCallLogManager(new DefaultJdbcLogManager());
         config.setConnectionFactory(new MockCommonConnectionFactory());
         try (BeeDataSource ds = new BeeDataSource(config)) {
             Collection<BeeJdbcCallLog> logList = ds.getJdbcCallLog(BeeJdbcCallLog.Type_Execution_SQL);
@@ -104,7 +104,7 @@ public class Tc0044SqlExecutionLogCollectTest {
     @Test
     public void testSQLExecuteException() throws SQLException {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        config.setJdbcCallLogCollector(new DefaultJdbcLogCollector());
+        config.setJdbcCallLogManager(new DefaultJdbcLogManager());
 
         MockConnectionProperties properties = new MockConnectionProperties();
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory(properties);

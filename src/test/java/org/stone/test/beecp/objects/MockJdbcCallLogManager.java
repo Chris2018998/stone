@@ -10,8 +10,8 @@
 package org.stone.test.beecp.objects;
 
 import org.stone.beecp.BeeJdbcCallLog;
-import org.stone.beecp.BeeJdbcCallLogCollector;
-import org.stone.beecp.BeeJdbcCallLogListener;
+import org.stone.beecp.BeeJdbcCallLogManager;
+import org.stone.beecp.BeeJdbcCallLogHandler;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -23,7 +23,7 @@ import java.util.List;
  * @author Chris Liao
  */
 
-public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
+public class MockJdbcCallLogManager implements BeeJdbcCallLogManager {
     //field value from tracee method end or onException
     private Object preparedKey;
     private String methodSignature;
@@ -91,7 +91,7 @@ public class MockJdbcCallLogCollector implements BeeJdbcCallLogCollector {
      * @param cacheSize is capacity size of inner container to store log execution logs
      */
     public void init(int cacheSize, long slowGet, long slowExec,
-                     boolean listenInSync, BeeJdbcCallLogListener listener) {
+                     boolean listenInSync, BeeJdbcCallLogHandler listener) {
 
     }
 

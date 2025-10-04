@@ -10,23 +10,23 @@
 package org.stone.beecp.pool;
 
 import org.stone.beecp.BeeJdbcCallLog;
-import org.stone.beecp.BeeJdbcCallLogListener;
+import org.stone.beecp.BeeJdbcCallLogHandler;
 
 import java.util.List;
 
 /**
- * Default implementation of {@link BeeJdbcCallLogListener} interface.
+ * Default implementation of {@link BeeJdbcCallLogHandler} interface.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class DefaultJdbcCallLogListener implements BeeJdbcCallLogListener {
+public class DefaultJdbcCallLogHandler implements BeeJdbcCallLogHandler {
 
-    public boolean process(BeeJdbcCallLog log) {
+    public boolean handle(BeeJdbcCallLog log) {
         return true;
     }
 
-    public boolean[] process(List<BeeJdbcCallLog> logList) {
+    public boolean[] handle(List<BeeJdbcCallLog> logList) {
         boolean[] flags = new boolean[logList.size()];
         for (int i = 0, l = flags.length; i < l; i++) {
             flags[i] = true;

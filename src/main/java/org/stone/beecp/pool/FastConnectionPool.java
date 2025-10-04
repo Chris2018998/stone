@@ -55,7 +55,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
-    protected BeeJdbcCallLogCollector logCollector;
+    protected BeeJdbcCallLogManager logCollector;
 
     String poolMode;
     String poolName;
@@ -141,18 +141,18 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         if (this.jdbcLogTimeoutClearThread != null)
             this.jdbcLogTimeoutClearThread.setCheckTimeInterval(poolConfig.getJdbcCallLogClearInterval());
 
-        this.logCollector = poolConfig.getJdbcCallLogCollector();
+        this.logCollector = poolConfig.getJdbcCallLogManager();
         if (logCollector == null) {
             this.conProxyFactory = new ProxyConnectionFactory();
             this.usingJdbcLogCollector = false;
         } else {
             this.jdbcLogTimeoutMs = poolConfig.getJdbcCallLogTimeout();
-            BeeJdbcCallLogListener listener = poolConfig.getJdbcCallLogListener();
-            if (listener == null) listener = new DefaultJdbcCallLogListener();
+            BeeJdbcCallLogHandler listener = poolConfig.getSlowLogHandler();
+            if (listener == null) listener = new DefaultJdbcCallLogHandler();
             logCollector.init(poolConfig.getJdbcCallLogCacheSize(),
                     poolConfig.getSlowConnectionGetThreshold(),
                     poolConfig.getSlowSQLExecutionThreshold(),
-                    poolConfig.isJdbcCallLogListenInSync(),
+                    poolConfig.isSlowLogHandledBySyncMode(),
                     listener);
             this.conProxyFactory = new ProxyConnectionFactory4L(logCollector);
             this.jdbcLogTimeoutClearThread = new JdbcLogTimeoutScanThread(this,

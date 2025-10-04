@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockJdbcCallLogCollector;
+import org.stone.test.beecp.objects.MockJdbcCallLogManager;
 import org.stone.tools.exception.BeanException;
 
 import java.security.InvalidParameterException;
@@ -27,7 +27,7 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
  * @author Chris Liao
  */
 
-public class Tc0020JdbcCallLogCollectorTest {
+public class Tc0020JdbcCallLogManagerTest {
 
     @Test
     public void testConfigurationSet() {
@@ -51,7 +51,7 @@ public class Tc0020JdbcCallLogCollectorTest {
         Assertions.assertEquals(500, config.getJdbcCallLogCacheSize());//not changed check
 
         //slowConnectionGetThreshold
-        Assertions.assertEquals(0L, config.getSlowConnectionGetThreshold());//default check
+        Assertions.assertEquals(30000L, config.getSlowConnectionGetThreshold());//default check
         config.setSlowConnectionGetThreshold(5000L);
         Assertions.assertEquals(5000L, config.getSlowConnectionGetThreshold());
         config.setSlowConnectionGetThreshold(0L);
@@ -65,7 +65,7 @@ public class Tc0020JdbcCallLogCollectorTest {
         Assertions.assertEquals(0L, config.getSlowConnectionGetThreshold());//not changed check
 
         //slowSQLExecutionThreshold
-        Assertions.assertEquals(0L, config.getSlowSQLExecutionThreshold());//default check
+        Assertions.assertEquals(30000L, config.getSlowSQLExecutionThreshold());//default check
         config.setSlowSQLExecutionThreshold(5000L);
         Assertions.assertEquals(5000L, config.getSlowSQLExecutionThreshold());
         config.setSlowSQLExecutionThreshold(0L);
@@ -115,23 +115,23 @@ public class Tc0020JdbcCallLogCollectorTest {
         }
         Assertions.assertEquals(5000L, config.getJdbcCallLogClearInterval());//not changed check
 
-        Assertions.assertNull(config.getJdbcCallLogCollector());//default check
-        config.setJdbcCallLogCollector(new MockJdbcCallLogCollector());
-        Assertions.assertNotNull(config.getJdbcCallLogCollector());
-        config.setJdbcCallLogCollector(null);
-        Assertions.assertNull(config.getJdbcCallLogCollector());
+        Assertions.assertNull(config.getJdbcCallLogManager());//default check
+        config.setJdbcCallLogManager(new MockJdbcCallLogManager());
+        Assertions.assertNotNull(config.getJdbcCallLogManager());
+        config.setJdbcCallLogManager(null);
+        Assertions.assertNull(config.getJdbcCallLogManager());
 
-        Assertions.assertNull(config.getJdbcCallLogCollectorClass());//default check
-        config.setJdbcCallLogCollectorClass(MockJdbcCallLogCollector.class);
-        Assertions.assertNotNull(config.getJdbcCallLogCollectorClass());
-        config.setJdbcCallLogCollectorClass(null);
-        Assertions.assertNull(config.getJdbcCallLogCollectorClass());
+        Assertions.assertNull(config.getJdbcCallLogManagerClass());//default check
+        config.setJdbcCallLogManagerClass(MockJdbcCallLogManager.class);
+        Assertions.assertNotNull(config.getJdbcCallLogManagerClass());
+        config.setJdbcCallLogManagerClass(null);
+        Assertions.assertNull(config.getJdbcCallLogManagerClass());
 
-        Assertions.assertNull(config.getJdbcCallLogCollectorClassName());//default check
-        config.setJdbcCallLogCollectorClassName(MockJdbcCallLogCollector.class.getName());
-        Assertions.assertNotNull(config.getJdbcCallLogCollectorClassName());
-        config.setJdbcCallLogCollectorClassName(null);
-        Assertions.assertNull(config.getJdbcCallLogCollectorClassName());
+        Assertions.assertNull(config.getJdbcCallLogManagerClassName());//default check
+        config.setJdbcCallLogManagerClassName(MockJdbcCallLogManager.class.getName());
+        Assertions.assertNotNull(config.getJdbcCallLogManagerClassName());
+        config.setJdbcCallLogManagerClassName(null);
+        Assertions.assertNull(config.getJdbcCallLogManagerClassName());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class Tc0020JdbcCallLogCollectorTest {
         MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
-        config1.setJdbcCallLogCollectorClassName("org.stone.test.beecp.objects.MockJdbcCallLogCollector2");//class can not be instan
+        config1.setJdbcCallLogManagerClassName("org.stone.test.beecp.objects.MockJdbcCallLogManager2");//class can not be instan
         try {
             config1.check();
             Assertions.fail();
@@ -151,7 +151,7 @@ public class Tc0020JdbcCallLogCollectorTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setJdbcCallLogCollectorClassName("org.stone.test.beecp.objects.MockJdbcCallLogCollector3");//class not found
+        config2.setJdbcCallLogManagerClassName("org.stone.test.beecp.objects.MockJdbcCallLogManager3");//class not found
         try {
             config2.check();
             Assertions.fail();

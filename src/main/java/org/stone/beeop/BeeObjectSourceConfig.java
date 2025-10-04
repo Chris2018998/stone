@@ -127,16 +127,16 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private long objectCallLogClearInterval = objectCallLogTimeout;
 
     //object call log listener
-    private BeeObjectCallLogListener<K, V> objectCallLogListener;
+    private BeeObjectCallLogHandler<K, V> objectCallLogListener;
     //Class of object call log listener,default is none
-    private Class<? extends BeeObjectCallLogListener<K, V>> objectCallLogListenerClass;
+    private Class<? extends BeeObjectCallLogHandler<K, V>> objectCallLogListenerClass;
     //Class name of log listener,default is none
     private String objectCallLogListenerClassName;
 
     //object call logs collector
-    private BeeObjectCallLogCollector<K, V> objectCallLogCollector;
+    private BeeObjectCallLogManager<K, V> objectCallLogCollector;
     //Class of object call logs collector,default is none
-    private Class<? extends BeeObjectCallLogCollector<K, V>> objectCallLogCollectorClass;
+    private Class<? extends BeeObjectCallLogManager<K, V>> objectCallLogCollectorClass;
     //Class name of object call logs collector,default is none
     private String objectCallLogCollectorClassName;
 
@@ -537,19 +537,19 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.objectCallLogClearInterval = objectCallLogClearInterval;
     }
 
-    public BeeObjectCallLogListener<K, V> getObjectCallLogListener() {
+    public BeeObjectCallLogHandler<K, V> getObjectCallLogListener() {
         return objectCallLogListener;
     }
 
-    public void setObjectCallLogListener(BeeObjectCallLogListener<K, V> objectCallLogListener) {
+    public void setObjectCallLogListener(BeeObjectCallLogHandler<K, V> objectCallLogListener) {
         this.objectCallLogListener = objectCallLogListener;
     }
 
-    public Class<? extends BeeObjectCallLogListener<K, V>> getObjectCallLogListenerClass() {
+    public Class<? extends BeeObjectCallLogHandler<K, V>> getObjectCallLogListenerClass() {
         return objectCallLogListenerClass;
     }
 
-    public void setObjectCallLogListenerClass(Class<? extends BeeObjectCallLogListener<K, V>> objectCallLogListenerClass) {
+    public void setObjectCallLogListenerClass(Class<? extends BeeObjectCallLogHandler<K, V>> objectCallLogListenerClass) {
         this.objectCallLogListenerClass = objectCallLogListenerClass;
     }
 
@@ -561,19 +561,19 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.objectCallLogListenerClassName = objectCallLogListenerClassName;
     }
 
-    public Class<? extends BeeObjectCallLogCollector<K, V>> getObjectCallLogCollectorClass() {
+    public Class<? extends BeeObjectCallLogManager<K, V>> getObjectCallLogCollectorClass() {
         return objectCallLogCollectorClass;
     }
 
-    public void setObjectCallLogCollectorClass(Class<? extends BeeObjectCallLogCollector<K, V>> objectCallLogCollectorClass) {
+    public void setObjectCallLogCollectorClass(Class<? extends BeeObjectCallLogManager<K, V>> objectCallLogCollectorClass) {
         this.objectCallLogCollectorClass = objectCallLogCollectorClass;
     }
 
-    public BeeObjectCallLogCollector<K, V> getObjectCallLogCollector() {
+    public BeeObjectCallLogManager<K, V> getObjectCallLogCollector() {
         return objectCallLogCollector;
     }
 
-    public void setObjectCallLogCollector(BeeObjectCallLogCollector<K, V> objectCallLogCollector) {
+    public void setObjectCallLogCollector(BeeObjectCallLogManager<K, V> objectCallLogCollector) {
         this.objectCallLogCollector = objectCallLogCollector;
     }
 
@@ -745,8 +745,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
         //4: create a log collector
-        BeeObjectCallLogCollector<K, V> logCollector = this.createLogCollector();
-        BeeObjectCallLogListener<K, V> objectCallLogListener = (logCollector != null) ? this.createLogListener() : null;
+        BeeObjectCallLogManager<K, V> logCollector = this.createLogCollector();
+        BeeObjectCallLogHandler<K, V> objectCallLogListener = (logCollector != null) ? this.createLogListener() : null;
         //5: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
@@ -875,7 +875,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //create object call log listener
-    private BeeObjectCallLogListener<K, V> createLogListener() {
+    private BeeObjectCallLogHandler<K, V> createLogListener() {
         //step1:if exists listener,then return it
         if (this.objectCallLogListener != null) return this.objectCallLogListener;
 
@@ -884,7 +884,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             Class<?> listenerClass = null;
             try {
                 listenerClass = objectCallLogListenerClass != null ? objectCallLogListenerClass : loadClass(objectCallLogListenerClassName);
-                return (BeeObjectCallLogListener<K, V>) createClassInstance(listenerClass, BeeObjectCallLogListener.class, "object call log listener");
+                return (BeeObjectCallLogHandler<K, V>) createClassInstance(listenerClass, BeeObjectCallLogHandler.class, "object call log listener");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Failed to create object call log listener with class[" + objectCallLogListenerClassName + "]", e);
             } catch (Throwable e) {
@@ -895,7 +895,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //create object call log collector
-    private BeeObjectCallLogCollector<K, V> createLogCollector() {
+    private BeeObjectCallLogManager<K, V> createLogCollector() {
         //step1:if exists log collector,then return it
         if (this.objectCallLogCollector != null) return this.objectCallLogCollector;
 
@@ -904,7 +904,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             Class<?> collectorClass = null;
             try {
                 collectorClass = objectCallLogCollectorClass != null ? objectCallLogCollectorClass : loadClass(objectCallLogCollectorClassName);
-                return (BeeObjectCallLogCollector<K, V>) createClassInstance(collectorClass, BeeObjectCallLogCollector.class, "object call log collector");
+                return (BeeObjectCallLogManager<K, V>) createClassInstance(collectorClass, BeeObjectCallLogManager.class, "object call log collector");
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Failed to create object call log collector with class[" + objectCallLogCollectorClassName + "]", e);
             } catch (Throwable e) {

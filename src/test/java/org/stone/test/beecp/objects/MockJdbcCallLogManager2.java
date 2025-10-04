@@ -7,12 +7,17 @@
  *
  * Project Licensed under Apache License v2.0
  */
-package org.stone.test.beecp.datasource;
+package org.stone.test.beecp.objects;
 
 /**
+ * A simple tracker implementation
+ *
  * @author Chris Liao
  */
-public class Tc0045JdbcCallLogListenerTest {
 
+public class MockJdbcCallLogManager2 extends MockJdbcCallLogManager {
 
+    public MockJdbcCallLogManager2(String name) {
+
+    }
 }

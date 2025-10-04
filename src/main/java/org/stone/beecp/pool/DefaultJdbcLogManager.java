@@ -10,8 +10,8 @@
 package org.stone.beecp.pool;
 
 import org.stone.beecp.BeeJdbcCallLog;
-import org.stone.beecp.BeeJdbcCallLogCollector;
-import org.stone.beecp.BeeJdbcCallLogListener;
+import org.stone.beecp.BeeJdbcCallLogHandler;
+import org.stone.beecp.BeeJdbcCallLogManager;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -24,18 +24,18 @@ import static org.stone.beecp.BeeJdbcCallLog.Type_Execution_SQL;
 import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
 
 /**
- * Default implementation of {@link BeeJdbcCallLogCollector} interface.
+ * Default implementation of {@link BeeJdbcCallLogManager} interface.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
-    private boolean listenInSync;
-    //log listener
-    private BeeJdbcCallLogListener listener;
+public class DefaultJdbcLogManager implements BeeJdbcCallLogManager {
+    private boolean syncMode;
+    //log handler
+    private BeeJdbcCallLogHandler handler;
     //slow threshold value of connection get,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowConnectionGetThreshold}
     private long slowConnectionGetThreshold;
-    //slow threshold of sql execution,time unit:milliseconds,,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
+    //slow threshold of sql execution,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
     private long slowSQLExecutionThreshold;
 
     //logs queue of connection get
@@ -53,15 +53,15 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
      * @param cacheSize is capacity of logs cache
      * @param slowGet   is slow threshold value of connection get,time unit:milliseconds
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
-     * @param listener  is a log listener
+     * @param handler   is a log handler
      */
     public void init(int cacheSize,
                      long slowGet, long slowExec,
-                     boolean listenInSync, BeeJdbcCallLogListener listener) {
+                     boolean syncMode, BeeJdbcCallLogHandler handler) {
 
 
-        this.listener = listener;
-        this.listenInSync = listenInSync;
+        this.handler = handler;
+        this.syncMode = syncMode;
         this.slowConnectionGetThreshold = slowGet;
         this.slowSQLExecutionThreshold = slowExec;
 
@@ -90,7 +90,7 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
         List<DefaultJdbcCallLog> sqlPendingRemovalLogList = new LinkedList<>();
 
         long currentTime = System.currentTimeMillis();
-        if (listenInSync) {
+        if (syncMode) {
             //timeout check on connection logs
             for (DefaultJdbcCallLog log : conLogQueue) {
                 if (currentTime - log.getEndTime() >= timeout) {
@@ -113,8 +113,9 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
                     log.setRemoved(true);
                     conPendingRemovalLogList.add(log);
                 }
-                if (!log.isProcessed() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold) {
-                    log.setProcessed(true);
+                if (!log.isHandled() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold) {
+                    log.setSlow(true);
+                    log.setHandled(true);
                     processLogList.add(log);
                 }
             }
@@ -126,8 +127,9 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
                     sqlPendingRemovalLogList.add(log);
                 }
 
-                if (!log.isProcessed() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold) {
-                    log.setProcessed(true);
+                if (!log.isHandled() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold) {
+                    log.setSlow(true);
+                    log.setHandled(true);
                     processLogList.add(log);
                 }
             }
@@ -140,9 +142,9 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
 
         if (processLogList != null && !processLogList.isEmpty()) {
             try {
-                boolean[] flags = this.listener.process(processLogList);
+                boolean[] flags = this.handler.handle(processLogList);
                 for (int i = 0, l = flags.length; i < l; i++) {
-                    ((DefaultJdbcCallLog) (processLogList.get(i))).setProcessed(flags[i]);
+                    ((DefaultJdbcCallLog) (processLogList.get(i))).setHandled(flags[i]);
                 }
             } catch (Throwable e) {
                 //do nothing
@@ -221,10 +223,11 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
             offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
         }
 
-        if (this.listenInSync && ((Type_Get_Connection == log.getType() && slowConnectionGetThreshold > 0L && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
-                || (Type_Execution_SQL == log.getType() && slowSQLExecutionThreshold > 0L && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
+        if (this.syncMode && ((Type_Get_Connection == log.getType() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
+                || (Type_Execution_SQL == log.getType() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
             try {
-                defaultTypeLog.setProcessed(listener.process(log));
+                defaultTypeLog.setSlow(true);
+                defaultTypeLog.setHandled(handler.handle(log));
             } catch (Throwable e) {
                 //do nothing
             }
@@ -249,9 +252,9 @@ public class DefaultJdbcLogCollector implements BeeJdbcCallLogCollector {
             offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
         }
 
-        if (this.listenInSync) {
+        if (this.syncMode) {
             try {
-                defaultTypeLog.setProcessed(listener.process(log));
+                defaultTypeLog.setHandled(handler.handle(log));
             } catch (Throwable e) {
                 //do nothing
             }

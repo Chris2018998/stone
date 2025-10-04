@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcCallLogCollector;
+import org.stone.beecp.BeeJdbcCallLogManager;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     protected String sql;
     protected Statement raw;
     protected long preparationTookTime;//ms
-    protected BeeJdbcCallLogCollector logCollector;
+    protected BeeJdbcCallLogManager logCollector;
 
     boolean unregister;
     private ProxyResultSetBase curRe;

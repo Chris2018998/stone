@@ -11,7 +11,7 @@
 package org.stone.beecp.pool;
 
 import javassist.*;
-import org.stone.beecp.BeeJdbcCallLogCollector;
+import org.stone.beecp.BeeJdbcCallLogManager;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -90,7 +90,7 @@ final class ProxyClassesGenerator {
         CtClass ctConnectionClass = classPool.get(Connection.class.getName());
         CtClass ctProxyConnectionBaseClass = classPool.get(ProxyConnectionBase.class.getName());
         CtClass ctPooledConnectionClass = classPool.get(org.stone.beecp.pool.PooledConnection.class.getName());
-        CtClass ctBeeMethodLogCollectorClass = classPool.get(BeeJdbcCallLogCollector.class.getName());
+        CtClass ctBeeMethodLogCollectorClass = classPool.get(BeeJdbcCallLogManager.class.getName());
         CtClass ctProxyConnectionClass = classPool.makeClass("org.stone.beecp.pool.ProxyConnection", ctProxyConnectionBaseClass);
 
         //constructor1

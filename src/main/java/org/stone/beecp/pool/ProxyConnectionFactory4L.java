@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcCallLogCollector;
+import org.stone.beecp.BeeJdbcCallLogManager;
 
 import java.sql.SQLException;
 
@@ -21,9 +21,9 @@ import java.sql.SQLException;
  */
 
 final class ProxyConnectionFactory4L extends ProxyConnectionFactory {
-    private final BeeJdbcCallLogCollector logCollector;
+    private final BeeJdbcCallLogManager logCollector;
 
-    ProxyConnectionFactory4L(BeeJdbcCallLogCollector logCollector) {
+    ProxyConnectionFactory4L(BeeJdbcCallLogManager logCollector) {
         this.logCollector = logCollector;
     }
 

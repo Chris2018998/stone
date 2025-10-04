@@ -25,6 +25,7 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
     private final int type;
     //log id
     private final Object id;
+
     //Method name of pool or (Statement,PreparedStatement,CallableStatement)
     private final String method;
     //Array of method parameters
@@ -36,6 +37,8 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
     private long startTime;
     //End time of method call,time unit:milliseconds
     private long endTime;
+    //End time of method call,time unit:milliseconds
+    private int status = Status_Running;
 
     //Result object of method call
     private Object resultObject;
@@ -54,8 +57,10 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
 
     //Flag of removed from log collector
     private boolean removed;
-    //Flag of processed by listener
-    private boolean processed;
+    //Flag of handled by Handler
+    private boolean slow;
+    //Flag of handled by Handler
+    private boolean handled;
 
     //***************************************************************************************************************//
     //                                          constructor                                                          //
@@ -99,6 +104,22 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
         this.endTime = endTime;
     }
 
+    public int getStatus() {
+        return status;
+    }
+
+    public boolean isSlow() {
+        return slow;
+    }
+
+    void setSlow(boolean slow) {
+        this.slow = slow;
+    }
+
+    public boolean isException() {
+        return this.status == Status_Failed;
+    }
+
     public Object getResultObject() {
         return resultObject;
     }
@@ -114,6 +135,7 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
     void setDatasourceInfo(String datasourceInfo) {
         this.datasourceInfo = datasourceInfo;
     }
+
 
     public String getSql() {
         return sql;
@@ -155,12 +177,12 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
         this.removed = removed;
     }
 
-    public boolean isProcessed() {
-        return processed;
+    public boolean isHandled() {
+        return handled;
     }
 
-    void setProcessed(boolean processed) {
-        this.processed = processed;
+    void setHandled(boolean handled) {
+        this.handled = handled;
     }
 
     void setStatement(Statement statement) {
@@ -172,6 +194,7 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
         this.sqlPreparedTime = sqlPreparedTime;
         this.sqlPreparedParameters = sqlPreparedParameters;
         this.statement = null;
+        this.status = Status_Successful;
     }
 
     void setException(Throwable failCause, long sqlPreparedTime, Object[] sqlPreparedParameters) {
@@ -179,5 +202,6 @@ public class DefaultJdbcCallLog implements BeeJdbcCallLog {
         this.sqlPreparedTime = sqlPreparedTime;
         this.sqlPreparedParameters = sqlPreparedParameters;
         this.statement = null;
+        this.status = Status_Failed;
     }
 }
