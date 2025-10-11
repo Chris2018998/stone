@@ -9,13 +9,13 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcCallLog;
+import org.stone.beecp.BeeJdbcEventLog;
 
 import javax.sql.XAConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.stone.beecp.BeeJdbcCallLog.Type_Get_Connection;
+import static org.stone.beecp.BeeJdbcEventLog.Type_Connection_Get;
 
 /**
  * JDBC Trace Connection Pool Implementation
@@ -29,14 +29,14 @@ public final class FastConnectionPool4L extends FastConnectionPool {
     private static final String GetXAConnection = "FastConnectionPool4L.getXAConnection()";
 
     public Connection getConnection() throws SQLException {
-        if (this.isEnabledJdbcCallLogCollector()) {
-            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetConnection, null, null, null);
+        if (this.isEnabledJdbcEventLogManager()) {
+            BeeJdbcEventLog log = jdbcLogManager.startCall(Type_Connection_Get, GetConnection, null, null, null);
             try {
                 Connection con = super.getConnection();
-                logCollector.endCall(con, 0L, null, log);
+                jdbcLogManager.endCall(con, 0L, null, log);
                 return con;
             } catch (SQLException e) {
-                logCollector.endOnException(e, 0L, null, log);
+                jdbcLogManager.endOnException(e, 0L, null, log);
                 throw e;
             }
         } else {
@@ -45,14 +45,14 @@ public final class FastConnectionPool4L extends FastConnectionPool {
     }
 
     public XAConnection getXAConnection() throws SQLException {
-        if (this.isEnabledJdbcCallLogCollector()) {
-            BeeJdbcCallLog log = logCollector.startCall(Type_Get_Connection, GetXAConnection, null, null, null);
+        if (this.isEnabledJdbcEventLogManager()) {
+            BeeJdbcEventLog log = jdbcLogManager.startCall(Type_Connection_Get, GetXAConnection, null, null, null);
             try {
                 XAConnection con = super.getXAConnection();
-                logCollector.endCall(con, 0L, null, log);
+                jdbcLogManager.endCall(con, 0L, null, log);
                 return con;
             } catch (SQLException e) {
-                logCollector.endOnException(e, 0L, null, log);
+                jdbcLogManager.endOnException(e, 0L, null, log);
                 throw e;
             }
         } else {

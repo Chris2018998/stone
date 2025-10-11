@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcCallLogManager;
+import org.stone.beecp.BeeJdbcEventLogManager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -26,7 +26,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  */
 public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
     protected Connection raw;
-    protected BeeJdbcCallLogManager logCollector;
+    protected BeeJdbcEventLogManager jdbcLogManager;
 
     ProxyConnectionBase(PooledConnection p) {
         super(p);
@@ -34,12 +34,12 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
         p.proxyInUsing = this;
     }
 
-    ProxyConnectionBase(PooledConnection p, BeeJdbcCallLogManager logCollector) {
+    ProxyConnectionBase(PooledConnection p, BeeJdbcEventLogManager jdbcLogManager) {
         super(p);
         raw = p.rawConn;
         p.proxyInUsing = this;
 
-        this.logCollector = logCollector;
+        this.jdbcLogManager = jdbcLogManager;
     }
 
     //***************************************************************************************************************//
@@ -50,7 +50,7 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
     }
 
     final void checkClosed() throws SQLException {
-        if (this.isClosed) throw new SQLException("No operations allowed after connection closed");
+        if (this.isClosed) throw new SQLException("No operations allowed on closed connection");
     }
 
     synchronized final void registerStatement(ProxyStatementBase s) {

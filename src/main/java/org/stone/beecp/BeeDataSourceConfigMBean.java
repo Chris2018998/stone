@@ -33,7 +33,7 @@ public interface BeeDataSourceConfigMBean {
 
     int getMaxActive();
 
-    int getBorrowSemaphoreSize();
+    int getSemaphoreSize();
 
     Boolean isDefaultAutoCommit();
 
@@ -61,9 +61,9 @@ public interface BeeDataSourceConfigMBean {
 
     long getParkTimeForRetry();
 
-    long getTimerCheckInterval();
+    long getIntervalToClearTimeout();
 
     String getPoolImplementClassName();
 
-    boolean isEnableJmx();
+    boolean isRegisterMbeans();
 }

@@ -16,7 +16,6 @@ import org.stone.test.beeop.objects.JavaBookFactory;
 
 import java.security.InvalidParameterException;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -26,7 +25,7 @@ public class Tc0034ObjectSourceOtherTest {
 
     @Test
     public void testSetMaxWait() {
-        long maxWait = SECONDS.toMillis(8L);
+        long maxWait = 8000L;
         BeeObjectSource os = new BeeObjectSource();
         Assertions.assertEquals(maxWait, os.getMaxWait());
         try {
@@ -67,7 +66,7 @@ public class Tc0034ObjectSourceOtherTest {
         os.setForceRecycleBorrowedOnClose(true);
         JavaBookFactory objectFactory = new JavaBookFactory();
         os.setObjectFactory(new JavaBookFactory());
-        os.setPrintRuntimeLog(true);
+        os.setPrintRuntimeLogs(true);
         try {
             os.isEnabledLogPrint(objectFactory.getDefaultKey());
         } catch (Exception e) {
@@ -78,7 +77,7 @@ public class Tc0034ObjectSourceOtherTest {
         os.getObjectHandle(objectFactory.getDefaultKey());
         Assertions.assertTrue(os.isEnabledLogPrint(objectFactory.getDefaultKey()));
 
-        os.setPrintRuntimeLog(false);
+        os.setPrintRuntimeLogs(false);
         Assertions.assertFalse(os.isEnabledLogPrint(objectFactory.getDefaultKey()));
     }
 }

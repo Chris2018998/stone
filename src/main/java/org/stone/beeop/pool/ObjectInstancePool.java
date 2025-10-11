@@ -113,8 +113,8 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
         this.poolMode = isFairMode ? "fair" : "compete";
-        this.enableThreadLocal = config.isEnableThreadLocal();
-        this.semaphoreSize = config.getBorrowSemaphoreSize();
+        this.enableThreadLocal = config.isUseThreadLocal();
+        this.semaphoreSize = config.getSemaphoreSize();
 
         this.maxWaitMs = config.getMaxWait();
         this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
@@ -125,12 +125,12 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(config.getParkTimeForRetry());
         this.validAssumeTime = config.getAliveAssumeTime();
         this.validTestTimeout = config.getAliveTestTimeout();
-        this.printRuntimeLog = config.isPrintRuntimeLog();
+        this.printRuntimeLog = config.isPrintRuntimeLogs();
         this.poolState = POOL_NEW;
 
         //step2:object type field setting
         this.objectFactory = config.getObjectFactory();
-        BeeObjectPredicate predicate = config.getObjectPredicate();
+        BeeObjectPredicate predicate = config.getPredicate();
         this.methodMap = new ConcurrentHashMap<>(1);
 
         this.transferPolicy = isFairMode ? new FairTransferPolicy<>() : new CompeteTransferPolicy<>();

@@ -31,17 +31,18 @@ public class MockPreparedStatement extends MockStatement implements PreparedStat
 
 
     public boolean execute() throws SQLException {
-        connection.mockThrowExceptionOnMethod("execute");
+        connection.interceptBeforeCall("execute");
         return true;
     }
 
     public int executeUpdate() throws SQLException {
-        connection.mockThrowExceptionOnMethod("executeUpdate");
+        connection.interceptBeforeCall("executeUpdate");
+
         return 1;
     }
 
     public ResultSet executeQuery() throws SQLException {
-        connection.mockThrowExceptionOnMethod("executeQuery");
+        connection.interceptBeforeCall("executeQuery");
         resultSet = new MockResultSet(this);
         return resultSet;
     }

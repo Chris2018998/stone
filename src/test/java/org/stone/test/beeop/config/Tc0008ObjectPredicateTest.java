@@ -23,39 +23,39 @@ public class Tc0008ObjectPredicateTest {
     @Test
     public void testOnAddProperty() {
         BeeObjectSourceConfig config = OsConfigFactory.createEmpty();
-        config.setObjectPredicateClassName(JavaBookPredicate.class.getName());
-        Assertions.assertEquals(JavaBookPredicate.class.getName(), config.getObjectPredicateClassName());
-        config.setObjectPredicateClass(JavaBookPredicate.class);
-        Assertions.assertEquals(JavaBookPredicate.class, config.getObjectPredicateClass());
+        config.setPredicateClassName(JavaBookPredicate.class.getName());
+        Assertions.assertEquals(JavaBookPredicate.class.getName(), config.getPredicateClassName());
+        config.setPredicateClass(JavaBookPredicate.class);
+        Assertions.assertEquals(JavaBookPredicate.class, config.getPredicateClass());
         JavaBookPredicate predicate = new JavaBookPredicate();
-        config.setObjectPredicate(predicate);
-        Assertions.assertEquals(predicate, config.getObjectPredicate());
+        config.setPredicate(predicate);
+        Assertions.assertEquals(predicate, config.getPredicate());
     }
 
     @Test
     public void testCreation() {
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig config2 = config.check();
-        Assertions.assertNull(config2.getObjectPredicate());
+        Assertions.assertNull(config2.getPredicate());
 
         config = OsConfigFactory.createDefault();
         JavaBookPredicate predicate = new JavaBookPredicate();
-        config.setObjectPredicate(predicate);
+        config.setPredicate(predicate);
         config2 = config.check();
-        Assertions.assertEquals(predicate, config2.getObjectPredicate());
+        Assertions.assertEquals(predicate, config2.getPredicate());
 
         config = OsConfigFactory.createDefault();
-        config.setObjectPredicateClass(JavaBookPredicate.class);
+        config.setPredicateClass(JavaBookPredicate.class);
         config2 = config.check();
-        Assertions.assertNotNull(config2.getObjectPredicate());
+        Assertions.assertNotNull(config2.getPredicate());
 
         config = OsConfigFactory.createDefault();
-        config.setObjectPredicateClassName(JavaBookPredicate.class.getName());
+        config.setPredicateClassName(JavaBookPredicate.class.getName());
         config2 = config.check();
-        Assertions.assertNotNull(config2.getObjectPredicate());
+        Assertions.assertNotNull(config2.getPredicate());
 
         config = OsConfigFactory.createDefault();
-        config.setObjectPredicateClassName(JavaBookPredicate.class + "Test");
+        config.setPredicateClassName(JavaBookPredicate.class + "Test");
         try {
             config.check();
         } catch (BeeObjectSourceConfigException e) {
@@ -64,7 +64,7 @@ public class Tc0008ObjectPredicateTest {
         }
 
         config = OsConfigFactory.createDefault();
-        config.setObjectPredicateClassName(JavaBookPredicate2.class.getName());
+        config.setPredicateClassName(JavaBookPredicate2.class.getName());
         try {
             config.check();
         } catch (BeeObjectSourceConfigException e) {

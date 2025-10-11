@@ -3,7 +3,7 @@ package org.stone.test.beeop.objectsource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSource;
-import org.stone.test.beecp.objects.InterruptionAction;
+import org.stone.test.beecp.objects.threads.InterruptionAction;
 import org.stone.test.beeop.objects.JavaBookFactory;
 import org.stone.test.beeop.objects.MockBlockPoolImplementation1;
 import org.stone.test.beeop.objects.MockBlockPoolImplementation2;

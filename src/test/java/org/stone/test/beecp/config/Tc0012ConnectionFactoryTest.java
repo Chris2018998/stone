@@ -15,8 +15,8 @@ import org.stone.beecp.BeeConnectionFactory;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.test.base.LogCollector;
-import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockCommonXaConnectionFactory;
+import org.stone.test.beecp.objects.factory.MockConnectionFactory;
+import org.stone.test.beecp.objects.factory.MockXaConnectionFactory;
 
 import java.sql.SQLException;
 
@@ -33,26 +33,26 @@ public class Tc0012ConnectionFactoryTest {
     @Test
     public void testSetGetOnConfiguration() {
         BeeDataSourceConfig config = createEmpty();
-        Class<? extends BeeConnectionFactory> factClass = MockCommonConnectionFactory.class;
+        Class<? extends BeeConnectionFactory> factClass = MockConnectionFactory.class;
         config.setConnectionFactoryClass(factClass);
         Assertions.assertEquals(factClass, config.getConnectionFactoryClass());
 
-        String factClassName = MockCommonConnectionFactory.class.getName();
+        String factClassName = MockConnectionFactory.class.getName();
         config.setConnectionFactoryClassName(factClassName);
         Assertions.assertEquals(config.getConnectionFactoryClassName(), factClassName);
 
-        BeeConnectionFactory connectionFactory = new MockCommonConnectionFactory();
+        BeeConnectionFactory connectionFactory = new MockConnectionFactory();
         config.setConnectionFactory(connectionFactory);
         Assertions.assertEquals(config.getConnectionFactory(), connectionFactory);
 
-        MockCommonXaConnectionFactory xaConnectionFactory = new MockCommonXaConnectionFactory();
+        MockXaConnectionFactory xaConnectionFactory = new MockXaConnectionFactory();
         config.setXaConnectionFactory(xaConnectionFactory);
         Assertions.assertEquals(config.getConnectionFactory(), xaConnectionFactory);
     }
 
     @Test
     public void testAbandoningJdbcLinkInfo() throws SQLException {
-        MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
+        MockConnectionFactory connectionFactory = new MockConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setUsername(DsConfigFactory.JDBC_USER);
         config1.setConnectionFactory(connectionFactory);

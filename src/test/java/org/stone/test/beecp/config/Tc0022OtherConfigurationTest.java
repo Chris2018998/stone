@@ -32,17 +32,17 @@ public class Tc0022OtherConfigurationTest {
         Assertions.assertTrue(config.isAsyncCreateInitConnection());
 
         //enableJmx
-        Assertions.assertFalse(config.isEnableJmx());//default check
-        config.setEnableJmx(true);
-        Assertions.assertTrue(config.isEnableJmx());
-        config.setEnableJmx(false);
-        Assertions.assertFalse(config.isEnableJmx());
+        Assertions.assertFalse(config.isRegisterMbeans());//default check
+        config.setRegisterMbeans(true);
+        Assertions.assertTrue(config.isRegisterMbeans());
+        config.setRegisterMbeans(false);
+        Assertions.assertFalse(config.isRegisterMbeans());
 
         //enableThreadLocal
-        Assertions.assertTrue(config.isEnableThreadLocal());//default check
-        config.setEnableThreadLocal(false);
-        Assertions.assertFalse(config.isEnableThreadLocal());
-        config.setEnableThreadLocal(true);
-        Assertions.assertTrue(config.isEnableThreadLocal());
+        Assertions.assertTrue(config.isUseThreadLocal());//default check
+        config.setUseThreadLocal(false);
+        Assertions.assertFalse(config.isUseThreadLocal());
+        config.setUseThreadLocal(true);
+        Assertions.assertTrue(config.isUseThreadLocal());
     }
 }

@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Connection pool interface.
+ * Connection pool interface,a default implementation is provided for it,@see{@link org.stone.beecp.pool.FastConnectionPool}
  *
  * @author Chris Liao
  * @version 1.0
@@ -39,9 +39,9 @@ public interface BeeConnectionPool extends Closeable {
      * Attempts to get a connection from pool.
      *
      * @return a borrowed connection
-     * @throws SQLException                      when fail to create a connection
      * @throws ConnectionGetTimeoutException     when wait timeout in pool
      * @throws ConnectionGetInterruptedException while interruption occurred during waiting
+     * @throws SQLException                      when fail to create a connection
      */
     Connection getConnection() throws SQLException;
 
@@ -49,38 +49,35 @@ public interface BeeConnectionPool extends Closeable {
      * Attempts to get a XAConnection from pool.
      *
      * @return a borrowed XAConnection
-     * @throws SQLException                      when fail to create a xa connection
      * @throws ConnectionGetTimeoutException     when wait timeout in pool
      * @throws ConnectionGetInterruptedException while interruption occurred during waiting
+     * @throws SQLException                      when fail to create a xa connection
      */
     XAConnection getXAConnection() throws SQLException;
 
     /**
-     * Interrupts connections creation in blocking.
+     * Interrupts connections creation.
      *
-     * @param onlyInterruptTimeout is true that only interrupts timeout creation,false that interrupts all creation in blocking
+     * @param onlyInterruptTimeout is true that only interrupts timeout creation,false that interrupts all creation
      * @return interrupted threads
      */
     Thread[] interruptConnectionCreating(boolean onlyInterruptTimeout);
 
     /**
-     * Physically closes all connections and removes them from pool. Idle Connections are closed immediately when call
-     * this method; if exists borrowed connections,pool close them according to the method parameter value.
+     * Close all connections and remove them from pool.
      *
-     * @param forceRecycleBorrowed is true that pool close immediately borrowed connections by force; false that close
-     *                             operation after them return to pool.
+     * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
      * @throws SQLException when pool is closed or in clearing
      */
     void clear(boolean forceRecycleBorrowed) throws SQLException;
 
     /**
-     * Physically closes all connections and removes them from pool,then re-initializes with a new configuration.
+     * Close all connections and remove them from pool,then re-initialize pool with a configuration object.
      *
-     * @param forceRecycleBorrowed is true that pool close immediately borrowed connections by force; false that close
-     *                             operation after them return to pool.
+     * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
      * @param config               is a new configuration object for reinitialization
-     * @throws BeeDataSourceConfigException when configuration check fail
      * @throws SQLException                 when pool is closed or in clearing
+     * @throws BeeDataSourceConfigException when configuration check fail
      * @throws SQLException                 when pool reinitialize fail
      */
     void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
@@ -113,37 +110,39 @@ public interface BeeConnectionPool extends Closeable {
     boolean isEnabledLogPrint();
 
     /**
-     * A switch to enable or disable pool work logs print.
+     * Switch call to enable or disable logs print in pool.
      *
      * @param enable is true that log print is enabled, false is not print
      */
     void enableLogPrint(boolean enable);
 
     /**
-     * Queries logs collector whether being enabled.
+     * Queries logs manager whether being enabled in pool.
      *
      * @return boolean true is enabled,false is disabled
      */
-    boolean isEnabledJdbcCallLogCollector();
+    boolean isEnabledJdbcEventLogManager();
 
     /**
-     * Method call to enable log collector and disable it.
+     * Switch call to enable or disable configured {@link BeeJdbcEventLogManager}.
      *
-     * @param enable is true that let configured log collector works,false is that disable it
+     * @param enable is true that make configured manager to work;false that make it to stop work
      */
-    void enableJdbcCallLogCollector(boolean enable);
+    void enableJdbcEventLogManager(boolean enable);
 
     /**
-     * Clear All logs in log collector.
-     */
-    void clearJdbcCallLog();
-
-    /**
-     * Get Jdbc logs with a give type.
+     * Gets logs from pool with specified type.
      *
-     * @param type is log type to query
+     * @param type should be one of[BeeJdbcEventLog.Type_Connection_Get,BeeJdbcEventLog.Type_SQL_Execution];if not,then return all logs
      */
-    List<BeeJdbcCallLog> getJdbcCallLog(int type);
+    List<BeeJdbcEventLog> getJdbcEventLog(int type);
+
+    /**
+     * Clears logs from pool with specified type.
+     *
+     * @param type should be one of[BeeJdbcEventLog.Type_Connection_Get,BeeJdbcEventLog.Type_SQL_Execution];if not,then clear all logs
+     */
+    List<BeeJdbcEventLog> clearJdbcEventLog(int type);
 
 }
 	

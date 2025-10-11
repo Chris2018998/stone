@@ -11,7 +11,7 @@
 package org.stone.beecp.pool;
 
 import javassist.*;
-import org.stone.beecp.BeeJdbcCallLogManager;
+import org.stone.beecp.BeeJdbcEventLogManager;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -83,14 +83,14 @@ final class ProxyClassesGenerator {
         classPool.appendClassPath(new LoaderClassPath(BeeClassLoader));
 
         //************************************************************************************************************//
-        //              1: Create proxy Classes without log collector                                                 //                                                                                  //
+        //              1: Create proxy Classes without log Manager                                                   //                                                                                  //
         //************************************************************************************************************//
 
         //class1: org.stone.beecp.pool.ProxyConnection
         CtClass ctConnectionClass = classPool.get(Connection.class.getName());
         CtClass ctProxyConnectionBaseClass = classPool.get(ProxyConnectionBase.class.getName());
         CtClass ctPooledConnectionClass = classPool.get(org.stone.beecp.pool.PooledConnection.class.getName());
-        CtClass ctBeeMethodLogCollectorClass = classPool.get(BeeJdbcCallLogManager.class.getName());
+        CtClass ctBeeMethodjdbcLogManagerClass = classPool.get(BeeJdbcEventLogManager.class.getName());
         CtClass ctProxyConnectionClass = classPool.makeClass("org.stone.beecp.pool.ProxyConnection", ctProxyConnectionBaseClass);
 
         //constructor1
@@ -98,7 +98,7 @@ final class ProxyClassesGenerator {
         ctConstructor.setBody("{super($$);}");
         ctProxyConnectionClass.addConstructor(ctConstructor);
         //constructor2(for interceptor subclass)
-        ctConstructor = new CtConstructor(new CtClass[]{ctPooledConnectionClass, ctBeeMethodLogCollectorClass}, ctProxyConnectionClass);
+        ctConstructor = new CtConstructor(new CtClass[]{ctPooledConnectionClass, ctBeeMethodjdbcLogManagerClass}, ctProxyConnectionClass);
         ctConstructor.setBody("{super($$);}");
         ctProxyConnectionClass.addConstructor(ctConstructor);
 
@@ -239,7 +239,7 @@ final class ProxyClassesGenerator {
         //class: org.stone.beecp.pool.ProxyConnection4L
         CtClass ctProxyConnection4LClass = classPool.makeClass("org.stone.beecp.pool.ProxyConnection4L", ctProxyConnectionClass);
         ctProxyConnection4LClass.setModifiers(Modifier.PUBLIC | Modifier.FINAL);
-        ctConstructor = new CtConstructor(new CtClass[]{ctPooledConnectionClass, ctBeeMethodLogCollectorClass}, ctProxyConnection4LClass);
+        ctConstructor = new CtConstructor(new CtClass[]{ctPooledConnectionClass, ctBeeMethodjdbcLogManagerClass}, ctProxyConnection4LClass);
         ctConstructor.setBody("{super($$);}");
         ctProxyConnection4LClass.addConstructor(ctConstructor);
 
@@ -288,7 +288,7 @@ final class ProxyClassesGenerator {
         CtClass ctProxyObjectFactory4LClass = classPool.get(ProxyConnectionFactory4L.class.getName());
         for (CtMethod method : ctProxyObjectFactory4LClass.getDeclaredMethods()) {
             if ("createProxyConnection".equals(method.getName())) {
-                method.setBody("{return new ProxyConnection4L($$,logCollector);}");
+                method.setBody("{return new ProxyConnection4L($$,jdbcLogManager);}");
                 break;
             }
         }
@@ -528,7 +528,7 @@ final class ProxyClassesGenerator {
                 }
 
                 //1: start to record a log
-                methodBuffer.append("BeeJdbcCallLog log = logCollector.startCall(BeeJdbcCallLog.Type_Execution_SQL,").append(methodSignature).append(",parameters,sql,this);");
+                methodBuffer.append("BeeJdbcEventLog log = jdbcLogManager.startCall(BeeJdbcEventLog.Type_SQL_Execution,").append(methodSignature).append(",parameters,sql,this);");
                 boolean existsSQLException = exitsSQLException(ctMethod.getExceptionTypes());
                 if (existsSQLException) methodBuffer.append("  try{");
 
@@ -544,9 +544,9 @@ final class ProxyClassesGenerator {
                 methodBuffer.append("p.lastAccessTime=System.currentTimeMillis();");
 
                 if (ctResultType == CtClass.voidType) {
-                    methodBuffer.append("logCollector.endCall(null,preparationTookTime,null,log);");
+                    methodBuffer.append("jdbcLogManager.endCall(null,preparationTookTime,null,log);");
                 } else {
-                    methodBuffer.append("logCollector.endCall(").append(getConvertType("r", ctResultType)).append(",preparationTookTime,null,log);");
+                    methodBuffer.append("jdbcLogManager.endCall(").append(getConvertType("r", ctResultType)).append(",preparationTookTime,null,log);");
                 }
 
                 //7: return block
@@ -560,7 +560,7 @@ final class ProxyClassesGenerator {
                 if (existsSQLException) {
                     methodBuffer.append(" }catch(SQLException e){");
                     methodBuffer.append(" p.checkSQLException(e);");
-                    methodBuffer.append(" logCollector.endOnException(e,preparationTookTime,null,log);");
+                    methodBuffer.append(" jdbcLogManager.endOnException(e,preparationTookTime,null,log);");
                     methodBuffer.append(" throw e;}");
                 }
 

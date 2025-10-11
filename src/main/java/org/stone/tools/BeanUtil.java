@@ -307,7 +307,7 @@ public class BeanUtil {
         try {
             return beanClass.getConstructor().newInstance();
         } catch (Throwable e) {
-            throw new BeanException("Failed to create instance on class[" + beanClass + "]", e);
+            throw new BeanException("Failed to create instance on class[" + beanClass.getName() + "]", e);
         }
     }
 

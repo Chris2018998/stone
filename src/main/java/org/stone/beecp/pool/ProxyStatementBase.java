@@ -9,7 +9,7 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcCallLogManager;
+import org.stone.beecp.BeeJdbcEventLogManager;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -30,7 +30,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     protected String sql;
     protected Statement raw;
     protected long preparationTookTime;//ms
-    protected BeeJdbcCallLogManager logCollector;
+    protected BeeJdbcEventLogManager jdbcLogManager;
 
     boolean unregister;
     private ProxyResultSetBase curRe;
@@ -52,7 +52,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
 
         this.preparationTookTime = preparationTookTime;
         this.sql = sql;//if subclass is Statement implementation,the sql is null
-        this.logCollector = o.logCollector;
+        this.jdbcLogManager = o.jdbcLogManager;
     }
 
     //***************************************************************************************************************//
@@ -99,7 +99,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     //                                              Below are override methods                                       //
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
-        if (this.isClosed) throw new SQLException("No operations allowed after statement closed");
+        if (this.isClosed) throw new SQLException("No operations allowed on closed statement");
         return this.owner;
     }
 

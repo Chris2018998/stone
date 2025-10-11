@@ -108,7 +108,7 @@ public final class ConnectionPoolStatics {
                 if ("toString".equals(method.getName())) {
                     return "Connection has been closed";
                 } else {
-                    throw new SQLException("No operations allowed after connection closed");
+                    throw new SQLException("No operations allowed on closed connection");
                 }
             }
     );
@@ -119,7 +119,7 @@ public final class ConnectionPoolStatics {
                 if ("toString".equals(method.getName())) {
                     return "Statement has been closed";
                 } else {
-                    throw new SQLException("No operations allowed after statement closed");
+                    throw new SQLException("No operations allowed on closed statement");
                 }
             }
     );
@@ -130,7 +130,7 @@ public final class ConnectionPoolStatics {
                 if ("toString".equals(method.getName())) {
                     return "ResultSet has been closed";
                 } else {
-                    throw new SQLException("No operations allowed after resultSet closed");
+                    throw new SQLException("No operations allowed on closed resultSet");
                 }
             }
     );
@@ -142,7 +142,7 @@ public final class ConnectionPoolStatics {
         try {
             r.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing resultSet", e);
+            CommonLog.warn("Warning:Error at closing resultSet", e);
         }
     }
 
@@ -150,7 +150,7 @@ public final class ConnectionPoolStatics {
         try {
             s.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing statement", e);
+            CommonLog.warn("Warning:Error at closing statement", e);
         }
     }
 
@@ -158,7 +158,7 @@ public final class ConnectionPoolStatics {
         try {
             c.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing connection", e);
+            CommonLog.warn("Warning:Error at closing connection", e);
         }
     }
 
@@ -166,7 +166,7 @@ public final class ConnectionPoolStatics {
         try {
             c.close();
         } catch (Throwable e) {
-            CommonLog.debug("Warning:Error at closing connection", e);
+            CommonLog.warn("Warning:Error at closing xaConnection", e);
         }
     }
 
@@ -190,14 +190,16 @@ public final class ConnectionPoolStatics {
 
     static void checkJdbcProxyClass() throws ClassNotFoundException {
         String[] classNames = {
-                "org.stone.beecp.pool.Borrower",
-                "org.stone.beecp.pool.PooledConnection",
                 "org.stone.beecp.pool.ProxyConnection",
                 "org.stone.beecp.pool.ProxyStatement",
                 "org.stone.beecp.pool.ProxyPsStatement",
                 "org.stone.beecp.pool.ProxyCsStatement",
+                "org.stone.beecp.pool.ProxyResultSet",
                 "org.stone.beecp.pool.ProxyDatabaseMetaData",
-                "org.stone.beecp.pool.ProxyResultSet"};
+                "org.stone.beecp.pool.ProxyConnection4L",
+                "org.stone.beecp.pool.ProxyStatement4L",
+                "org.stone.beecp.pool.ProxyPsStatement4L",
+                "org.stone.beecp.pool.ProxyCsStatement4L"};
 
         ClassLoader loader = ConnectionPoolStatics.class.getClassLoader();
         for (String className : classNames)

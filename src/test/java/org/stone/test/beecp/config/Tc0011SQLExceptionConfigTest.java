@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeConnectionPredicate;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.test.beecp.objects.MockNotEvictConnectionPredicate1;
+import org.stone.test.beecp.objects.eviction.MockNotEvictConnectionPredicate1;
 
 import java.util.List;
 import java.util.Properties;
@@ -38,9 +38,9 @@ public class Tc0011SQLExceptionConfigTest {
         List<Integer> sqlExceptionCodeList = config.getSqlExceptionCodeList();
         Assertions.assertNotNull(sqlExceptionCodeList);
 
-        Assertions.assertTrue(sqlExceptionCodeList.contains(500151));
+        Assertions.assertTrue(sqlExceptionCodeList.contains(Integer.valueOf(500151)));
         config.removeSqlExceptionCode(500151);
-        Assertions.assertFalse(sqlExceptionCodeList.contains(500151));
+        Assertions.assertFalse(sqlExceptionCodeList.contains(Integer.valueOf(500151)));
         Assertions.assertTrue(sqlExceptionCodeList.isEmpty());
 
         config.addSqlExceptionCode(500152);
@@ -73,42 +73,42 @@ public class Tc0011SQLExceptionConfigTest {
         BeeDataSourceConfig config = createEmpty();
 
         BeeConnectionPredicate predication = new MockNotEvictConnectionPredicate1();
-        config.setEvictPredicate(predication);
-        Assertions.assertEquals(config.getEvictPredicate(), predication);
+        config.setPredicate(predication);
+        Assertions.assertEquals(config.getPredicate(), predication);
 
         Class<? extends BeeConnectionPredicate> predicationClass = MockNotEvictConnectionPredicate1.class;
-        config.setEvictPredicateClass(predicationClass);
-        Assertions.assertEquals(predicationClass, config.getEvictPredicateClass());
+        config.setPredicateClass(predicationClass);
+        Assertions.assertEquals(predicationClass, config.getPredicateClass());
 
         String predicationClassName = "org.stone.beecp.config.customization.DummySqlExceptionPredication";
-        config.setEvictPredicateClassName(predicationClassName);
-        Assertions.assertEquals(predicationClassName, config.getEvictPredicateClassName());
+        config.setPredicateClassName(predicationClassName);
+        Assertions.assertEquals(predicationClassName, config.getPredicateClassName());
     }
 
     @Test
     public void testOnPredicationCreation() throws Exception {
         BeeConnectionPredicate predication = new MockNotEvictConnectionPredicate1();
         BeeDataSourceConfig config1 = createDefault();
-        config1.setEvictPredicate(predication);
+        config1.setPredicate(predication);
         BeeDataSourceConfig checkConfig1 = config1.check();
-        Assertions.assertEquals(checkConfig1.getEvictPredicate(), predication);
+        Assertions.assertEquals(checkConfig1.getPredicate(), predication);
 
         BeeDataSourceConfig config2 = createDefault();
         Class<? extends BeeConnectionPredicate> predicationClass = MockNotEvictConnectionPredicate1.class;
-        config2.setEvictPredicateClass(predicationClass);
-        Assertions.assertEquals(predicationClass, config2.getEvictPredicateClass());
+        config2.setPredicateClass(predicationClass);
+        Assertions.assertEquals(predicationClass, config2.getPredicateClass());
         BeeDataSourceConfig checkConfig2 = config2.check();
-        Assertions.assertNotNull(checkConfig2.getEvictPredicate());
+        Assertions.assertNotNull(checkConfig2.getPredicate());
 
         BeeDataSourceConfig config3 = createDefault();
-        String predicationClassName = "org.stone.test.beecp.objects.MockNotEvictConnectionPredicate1";
-        config3.setEvictPredicateClassName(predicationClassName);
-        Assertions.assertEquals(predicationClassName, config3.getEvictPredicateClassName());
+        String predicationClassName = "org.stone.test.beecp.objects.eviction.MockNotEvictConnectionPredicate1";
+        config3.setPredicateClassName(predicationClassName);
+        Assertions.assertEquals(predicationClassName, config3.getPredicateClassName());
         BeeDataSourceConfig checkConfig3 = config3.check();
-        Assertions.assertNotNull(checkConfig3.getEvictPredicate());
+        Assertions.assertNotNull(checkConfig3.getPredicate());
 
         BeeDataSourceConfig config5 = createDefault();
-        config5.setEvictPredicateClassName("String");
+        config5.setPredicateClassName("String");
         try {
             config5.check();
             fail("[testOnPredicationCreation]not threw exception when set invalid predicate class name");
@@ -125,7 +125,7 @@ public class Tc0011SQLExceptionConfigTest {
         prop.setProperty("sqlExceptionCodeList", "123");
         prop.setProperty("sqlExceptionStateList", "A");
         config.loadFromProperties(prop);
-        Assertions.assertTrue(config.getSqlExceptionCodeList().contains(123));
+        Assertions.assertTrue(config.getSqlExceptionCodeList().contains(Integer.valueOf(123)));
         Assertions.assertTrue(config.getSqlExceptionStateList().contains("A"));
 
         prop.put("sqlExceptionCodeList", "1,A,C");//contains invalid error code
@@ -144,7 +144,7 @@ public class Tc0011SQLExceptionConfigTest {
         config1.addSqlExceptionCode(500151);
         config1.addSqlExceptionState("0A000");
         BeeDataSourceConfig checkConfig = config1.check();
-        Assertions.assertTrue(checkConfig.getSqlExceptionCodeList().contains(500151));
+        Assertions.assertTrue(checkConfig.getSqlExceptionCodeList().contains(Integer.valueOf(500151)));
         Assertions.assertTrue(checkConfig.getSqlExceptionStateList().contains("0A000"));
 
         config1.removeSqlExceptionCode(500151);

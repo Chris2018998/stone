@@ -33,7 +33,7 @@ public class Tc0010TransactionIsolationTest {
         Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, config.getDefaultTransactionIsolationCode());
         config.setDefaultTransactionIsolationCode(null);
         Assertions.assertNull(config.getDefaultTransactionIsolationCode());
-        config.setDefaultTransactionIsolationCode(123);
+        config.setDefaultTransactionIsolationCode(Integer.valueOf(123));
         Assertions.assertEquals(123, config.getDefaultTransactionIsolationCode());
 
         //transactionIsolation name

@@ -144,7 +144,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(categoryMaxSize), poolThreadFactory);
         this.servantService.allowCoreThreadTimeOut(true);
 
-        this.timerCheckInterval = config.getTimerCheckInterval();
+        this.timerCheckInterval = config.getIntervalToClearTimeout();
         this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
         this.scheduledService.setMaximumPoolSize(coreThreadSize);
         this.scheduledService.allowCoreThreadTimeOut(true);
@@ -410,7 +410,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
      *
      * @return boolean true is enabled,false is disabled
      */
-    public boolean isEnabledObjectCallLogCollector() {
+    public boolean isEnabledObjectCallLogManager() {
         return false;//@todo
     }
 
@@ -419,7 +419,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
      *
      * @param enable is true that enable, false is disabled
      */
-    public void enableObjectCallLogCollector(boolean enable) {
+    public void enableObjectCallLogManager(boolean enable) {
 
     }
 

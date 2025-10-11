@@ -36,21 +36,21 @@ public class Tc0018ConfigLoadFromFileTest {
     @Test
     public void testOnCorrectFile() throws Exception {
         String classFilename = "cp:" + filename;
-        Assertions.assertTrue(check(new BeeDataSourceConfig(classFilename)));//classpath
-        Assertions.assertTrue(check(new BeeDataSourceConfig(getClassPathFileAbsolutePath(filename))));//from file
-        Assertions.assertTrue(check(new BeeDataSourceConfig(loadPropertiesFromClassPathFile(filename))));//from properties
+        Assertions.assertTrue(check(new BeeDataSourceConfig(classFilename)).booleanValue());//classpath
+        Assertions.assertTrue(check(new BeeDataSourceConfig(getClassPathFileAbsolutePath(filename))).booleanValue());//from file
+        Assertions.assertTrue(check(new BeeDataSourceConfig(loadPropertiesFromClassPathFile(filename))).booleanValue());//from properties
 
         BeeDataSourceConfig config1 = createEmpty();
         config1.loadFromPropertiesFile(classFilename);
-        Assertions.assertTrue(check(config1));
+        Assertions.assertTrue(check(config1).booleanValue());
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.loadFromPropertiesFile(getClassPathFileAbsolutePath(filename));
-        Assertions.assertTrue(check(config2));
+        Assertions.assertTrue(check(config2).booleanValue());
 
         BeeDataSourceConfig config3 = createEmpty();
         config3.loadFromProperties(loadPropertiesFromClassPathFile(filename));
-        Assertions.assertTrue(check(config3));
+        Assertions.assertTrue(check(config3).booleanValue());
     }
 
     @Test
@@ -213,8 +213,8 @@ public class Tc0018ConfigLoadFromFileTest {
         Assertions.assertEquals(ConfigDriver, config.getDriverClassName());
         Assertions.assertEquals("test1", config.getDefaultCatalog());
         Assertions.assertEquals("test2", config.getDefaultSchema());
-        Assertions.assertTrue(config.isDefaultReadOnly());
-        Assertions.assertTrue(config.isDefaultAutoCommit());
+        Assertions.assertTrue(config.isDefaultReadOnly().booleanValue());
+        Assertions.assertTrue(config.isDefaultAutoCommit().booleanValue());
         Assertions.assertEquals(config.getDefaultTransactionIsolationCode(), Integer.valueOf(1));
         Assertions.assertEquals("READ_UNCOMMITTED", config.getDefaultTransactionIsolationName());
         Assertions.assertEquals("SELECT 1", config.getAliveTestSql());
@@ -227,26 +227,26 @@ public class Tc0018ConfigLoadFromFileTest {
         Assertions.assertEquals(30000L, config.getHoldTimeout());
         Assertions.assertEquals(3, config.getAliveTestTimeout());
         Assertions.assertEquals(500, config.getAliveAssumeTime());
-        Assertions.assertEquals(30000, config.getTimerCheckInterval());
+        Assertions.assertEquals(30000, config.getIntervalToClearTimeout());
         Assertions.assertTrue(config.isForceRecycleBorrowedOnClose());
         Assertions.assertEquals(3000, config.getParkTimeForRetry());
-        Assertions.assertEquals("com.myProject.TestPredication", config.getEvictPredicateClassName());
+        Assertions.assertEquals("com.myProject.TestPredication", config.getPredicateClassName());
 
         List<Integer> sqlExceptionCodeList = config.getSqlExceptionCodeList();
         List<String> sqlExceptionStateList = config.getSqlExceptionStateList();
         for (Integer code : sqlExceptionCodeList)
-            Assertions.assertTrue(code == 500150 || code == 2399);
+            Assertions.assertTrue(code.intValue() == 500150 || code.intValue() == 2399);
         for (String state : sqlExceptionStateList)
             Assertions.assertTrue("0A000".equals(state) || "57P01".equals(state));
 
         Assertions.assertEquals("org.stone.beecp.pool.ConnectionFactoryByDriver", config.getConnectionFactoryClassName());
-        Assertions.assertEquals("org.stone.test.beecp.objects.MockRawConnectionPool", config.getPoolImplementClassName());
-        Assertions.assertTrue(config.isEnableJmx());
+        Assertions.assertEquals("org.stone.test.beecp.objects.pool.MockRawConnectionPool", config.getPoolImplementClassName());
+        Assertions.assertTrue(config.isRegisterMbeans());
 
         Assertions.assertEquals("true", config.getConnectProperty("cachePrepStmts"));
         Assertions.assertEquals("50", config.getConnectProperty("prepStmtCacheSize"));
         Assertions.assertEquals("2048", config.getConnectProperty("prepStmtCacheSqlLimit"));
         Assertions.assertEquals("true", config.getConnectProperty("useServerPrepStmts"));
-        return true;
+        return Boolean.TRUE;
     }
 }

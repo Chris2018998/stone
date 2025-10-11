@@ -33,7 +33,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.Dummy_CommonDataSource;
 import static org.stone.tools.BeanUtil.CommonLog;
 import static org.stone.tools.BeanUtil.createClassInstance;
@@ -51,7 +50,7 @@ import static org.stone.tools.CommonUtil.isNotBlank;
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource, Closeable {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private long maxWaitNanos = SECONDS.toNanos(8L);//default vale same to config
+    private long maxWaitNanos = 8000L;//default vale same to config
     private BeeConnectionPool pool;
     private CommonDataSource subDs;//used to set loginTimeout
     private boolean ready;//true,means that inner pool has created
@@ -81,7 +80,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         String poolImplementClassName = ds.getPoolImplementClassName();
         try {
             if (isBlank(poolImplementClassName)) {
-                poolImplementClassName = (ds.getJdbcCallLogManager() != null || ds.getJdbcCallLogManagerClass() != null || isNotBlank(ds.getJdbcCallLogManagerClassName())) ?
+                poolImplementClassName = (ds.getLogManager() != null || ds.getLogManagerClass() != null || isNotBlank(ds.getLogManagerClassName())) ?
                         FastConnectionPool4L.class.getName() : FastConnectionPool.class.getName();
             }
 
@@ -100,6 +99,16 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             throw e;
         } catch (Throwable e) {
             throw new PoolCreateFailedException("Failed to create a pool with class:" + poolImplementClassName, e);
+        }
+    }
+
+    private static void set(Object target, String setMethodName, String value) {
+        try {
+            Method method = target.getClass().getMethod(setMethodName, String.class);
+            BeanUtil.setAccessible(target, method);
+            method.invoke(target, value);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException(e);
         }
     }
 
@@ -160,7 +169,6 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
-        if (config == null) throw new BeeDataSourceConfigException("Pool configuration object can't be null");
         this.getPool().clear(forceRecycleBorrowed, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
@@ -201,19 +209,19 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         5: log print                                                          //
+    //                                         5: runtime logs print(4)                                              //
     //***************************************************************************************************************//
-    public boolean isPrintRuntimeLog() {
+    public boolean isPrintRuntimeLogs() {
         if (pool == null) {
-            return super.isPrintRuntimeLog();
+            return super.isPrintRuntimeLogs();
         } else {
             return pool.isEnabledLogPrint();
         }
     }
 
-    public void setPrintRuntimeLog(boolean enable) {
+    public void setPrintRuntimeLogs(boolean enable) {
         if (pool == null) {
-            super.setPrintRuntimeLog(enable);//as configuration item
+            super.setPrintRuntimeLogs(enable);//as configuration item
         } else {
             pool.enableLogPrint(enable);//set to pool
         }
@@ -228,26 +236,26 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         6: JDBC method log collector                                          //
+    //                                         6: jdbc event logs manager(4)                                          //
     //***************************************************************************************************************//
-    public boolean isEnabledJdbcCallLogCollector() throws SQLException {
-        return this.getPool().isEnabledJdbcCallLogCollector();
+    public boolean isEnabledJdbcEventLogManager() throws SQLException {
+        return this.getPool().isEnabledJdbcEventLogManager();
     }
 
-    public void enableJdbcCallLogCollector(boolean enable) throws SQLException {
-        this.getPool().enableJdbcCallLogCollector(enable);
+    public void enableJdbcEventLogManager(boolean enable) throws SQLException {
+        this.getPool().enableJdbcEventLogManager(enable);
     }
 
-    public List<BeeJdbcCallLog> getJdbcCallLog(int type) throws SQLException {
-        return this.getPool().getJdbcCallLog(type);
+    public List<BeeJdbcEventLog> getJdbcEventLog(int type) throws SQLException {
+        return this.getPool().getJdbcEventLog(type);
     }
 
-    public void clearJdbcCallLog() throws SQLException {
-        this.getPool().clearJdbcCallLog();
+    public List<BeeJdbcEventLog> clearJdbcEventLog(int type) throws SQLException {
+        return this.getPool().clearJdbcEventLog(type);
     }
 
     //***************************************************************************************************************//
-    //                                     7: override set methods of jdbc info                                      //
+    //                                     7: override methods to set or update jdbc link info                       //
     //***************************************************************************************************************//
     public void setUsername(String username) {
         if (pool == null) {
@@ -274,16 +282,10 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void setUrl(String jdbcUrl) {
-        setJdbcUrl(jdbcUrl);
-    }
-
-    private void set(Object target, String setMethodName, String value) {
-        try {
-            Method method = target.getClass().getMethod(setMethodName, String.class);
-            BeanUtil.setAccessible(target, method);
-            method.invoke(target, value);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        if (pool == null) {
+            super.setUrl(jdbcUrl);
+        } else {
+            set(subDs, "setUrl", jdbcUrl);
         }
     }
 

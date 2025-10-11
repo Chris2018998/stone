@@ -26,11 +26,11 @@ public class Tc0017ConfigPrintExclusionTest {
     @Test
     public void testConfigurationSet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        Assertions.assertFalse(config.isPrintRuntimeLog());//default check
-        config.setPrintRuntimeLog(true);
-        Assertions.assertTrue(config.isPrintRuntimeLog());
-        config.setPrintRuntimeLog(false);
-        Assertions.assertFalse(config.isPrintRuntimeLog());
+        Assertions.assertFalse(config.isPrintRuntimeLogs());//default check
+        config.setPrintRuntimeLogs(true);
+        Assertions.assertTrue(config.isPrintRuntimeLogs());
+        config.setPrintRuntimeLogs(false);
+        Assertions.assertFalse(config.isPrintRuntimeLogs());
     }
 
     @Test

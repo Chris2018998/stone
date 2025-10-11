@@ -18,7 +18,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.tools.BeanUtil.createClassInstance;
 
 /**
@@ -35,7 +34,7 @@ import static org.stone.tools.BeanUtil.createClassInstance;
 public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implements Closeable {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private long maxWaitNanos = SECONDS.toNanos(8L);//default vale equals same item in config
+    private long maxWaitNanos = 8000L;//default vale equals same item in config
     private BeeKeyedObjectPool<K, V> pool;
     private boolean ready;
     private Exception cause;
@@ -196,11 +195,11 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         this.maxWaitNanos = MILLISECONDS.toNanos(maxWait);
     }
 
-    public void setPrintRuntimeLog(boolean printRuntimeLog) {
+    public void setPrintRuntimeLogs(boolean printRuntimeLogs) {
         if (pool == null) {
-            super.setPrintRuntimeLog(printRuntimeLog);
+            super.setPrintRuntimeLogs(printRuntimeLogs);
         } else {
-            pool.enableLogPrint(printRuntimeLog);//set to pool
+            pool.enableLogPrint(printRuntimeLogs);//set to pool
         }
     }
 }

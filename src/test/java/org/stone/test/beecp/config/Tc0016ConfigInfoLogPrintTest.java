@@ -25,18 +25,18 @@ public class Tc0016ConfigInfoLogPrintTest {
     @Test
     public void testConfigurationSet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        Assertions.assertFalse(config.isPrintConfigInfo());//default check
-        config.setPrintConfigInfo(true);
-        Assertions.assertTrue(config.isPrintConfigInfo());
-        config.setPrintConfigInfo(false);
-        Assertions.assertFalse(config.isPrintConfigInfo());
+        Assertions.assertFalse(config.isPrintConfiguration());//default check
+        config.setPrintConfiguration(true);
+        Assertions.assertTrue(config.isPrintConfiguration());
+        config.setPrintConfiguration(false);
+        Assertions.assertFalse(config.isPrintConfiguration());
     }
 
     @Test
     public void testOnConfigPrintInd() throws Exception {
         BeeDataSourceConfig config = createDefault();
         //situation1: not print config
-        config.setPrintConfigInfo(false);//test point
+        config.setPrintConfiguration(false);//test point
 
         LogCollector logCollector = startLogCollector();
         config.check();
@@ -44,7 +44,7 @@ public class Tc0016ConfigInfoLogPrintTest {
         Assertions.assertTrue(logs.isEmpty());
 
         //situation2: print config items
-        config.setPrintConfigInfo(true);//test point
+        config.setPrintConfiguration(true);//test point
         logCollector = startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
@@ -55,7 +55,7 @@ public class Tc0016ConfigInfoLogPrintTest {
     public void testOnExclusionConfigItems() throws Exception {
 
         BeeDataSourceConfig config = createDefault();
-        config.setPrintConfigInfo(true);
+        config.setPrintConfiguration(true);
 
         //situation1: check default exclusion print
         LogCollector logCollector = startLogCollector();

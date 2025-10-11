@@ -39,19 +39,19 @@ public class Tc0004ConfigSetAndGetTest {
 
         //borrowSemaphoreSize
         try {
-            config.setBorrowSemaphoreSize(-1);
+            config.setSemaphoreSize(-1);
             fail("Setting test failed on configuration item[borrow-semaphore-size]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'borrow-semaphore-size' must be greater than zero", e.getMessage());
         }
         try {
-            config.setBorrowSemaphoreSize(0);
+            config.setSemaphoreSize(0);
             fail("Setting test failed on configuration item[borrow-semaphore-size]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'borrow-semaphore-size' must be greater than zero", e.getMessage());
         }
-        config.setBorrowSemaphoreSize(1);
-        Assertions.assertEquals(1, config.getBorrowSemaphoreSize());
+        config.setSemaphoreSize(1);
+        Assertions.assertEquals(1, config.getSemaphoreSize());
 
         //maxWait
         try {
@@ -123,19 +123,19 @@ public class Tc0004ConfigSetAndGetTest {
 
         //timerCheckInterval
         try {
-            config.setTimerCheckInterval(-1L);
+            config.setIntervalToClearTimeout(-1L);
             fail("Setting test failed on configuration item[timer-check-interval]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'timer-check-interval' must be greater than zero", e.getMessage());
         }
         try {
-            config.setTimerCheckInterval(0L);
+            config.setIntervalToClearTimeout(0L);
             fail("Setting test failed on configuration item[timer-check-interval]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'timer-check-interval' must be greater than zero", e.getMessage());
         }
-        config.setTimerCheckInterval(3000L);
-        Assertions.assertEquals(3000L, config.getTimerCheckInterval());
+        config.setIntervalToClearTimeout(3000L);
+        Assertions.assertEquals(3000L, config.getIntervalToClearTimeout());
 
         //forceCloseUsingOnClose
         config.setForceRecycleBorrowedOnClose(true);
@@ -162,20 +162,20 @@ public class Tc0004ConfigSetAndGetTest {
         Assertions.assertEquals(factory, config.getObjectFactory());
 
         //enableJmx
-        config.setEnableJmx(true);
-        Assertions.assertTrue(config.isEnableJmx());
+        config.setRegisterMbeans(true);
+        Assertions.assertTrue(config.isRegisterMbeans());
 
         //printConfigInfo
-        config.setPrintConfigInfo(true);
-        Assertions.assertTrue(config.isPrintConfigInfo());
+        config.setPrintConfiguration(true);
+        Assertions.assertTrue(config.isPrintConfiguration());
 
         //printRuntimeLog
-        config.setPrintRuntimeLog(true);
-        Assertions.assertTrue(config.isPrintRuntimeLog());
+        config.setPrintRuntimeLogs(true);
+        Assertions.assertTrue(config.isPrintRuntimeLogs());
 
         //printRuntimeLog
-        config.setEnableThreadLocal(true);
-        Assertions.assertTrue(config.isEnableThreadLocal());
+        config.setUseThreadLocal(true);
+        Assertions.assertTrue(config.isUseThreadLocal());
 
         //poolImplementClassName
         config.setPoolImplementClassName(null);

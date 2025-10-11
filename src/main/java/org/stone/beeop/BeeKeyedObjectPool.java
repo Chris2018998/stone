@@ -221,16 +221,16 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     //***************************************************************************************************************//
 
     /**
-     * Queries logs collector in whether in being enabled.
+     * Queries logs manager in whether in being enabled.
      *
      * @return boolean true is enabled,false is disabled
      */
-    boolean isEnabledObjectCallLogCollector();
+    boolean isEnabledObjectCallLogManager();
 
     /**
-     * A switch to enable or disable configured log collector in pool.
+     * A switch to enable or disable configured log manager in pool.
      *
      * @param enable is true that enable, false is disabled
      */
-    void enableObjectCallLogCollector(boolean enable);
+    void enableObjectCallLogManager(boolean enable);
 }

@@ -14,10 +14,10 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeConnectionFactory;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.beecp.BeeJdbcCallLogManager;
-import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockJdbcCallLogManager;
-import org.stone.test.beecp.objects.MockJdbcCallLogHandler;
+import org.stone.beecp.BeeJdbcEventLogManager;
+import org.stone.test.beecp.objects.factory.MockConnectionFactory;
+import org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogHandler;
+import org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogManager;
 import org.stone.tools.exception.BeanException;
 
 import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
@@ -36,19 +36,19 @@ public class Tc0021JdbcCallLogHandlerTest {
         Assertions.assertFalse(config.isSlowLogHandledBySyncMode());
 
         Assertions.assertNull(config.getSlowLogHandler());//default check
-        config.setSlowLogHandler(new MockJdbcCallLogHandler());
+        config.setSlowLogHandler(new MockJdbcEventLogHandler());
         Assertions.assertNotNull(config.getSlowLogHandler());//default check
         config.setSlowLogHandler(null);
         Assertions.assertNull(config.getSlowLogHandler());//default check
 
         Assertions.assertNull(config.getSlowLogHandlerClass());//default check
-        config.setSlowLogHandlerClass(MockJdbcCallLogHandler.class);
+        config.setSlowLogHandlerClass(MockJdbcEventLogHandler.class);
         Assertions.assertNotNull(config.getSlowLogHandlerClass());
         config.setSlowLogHandlerClass(null);
         Assertions.assertNull(config.getSlowLogHandlerClass());
 
         Assertions.assertNull(config.getSlowLogHandlerClassName());//default check
-        config.setSlowLogHandlerClassName(MockJdbcCallLogHandler.class.getName());
+        config.setSlowLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
         Assertions.assertNotNull(config.getSlowLogHandlerClassName());
         config.setSlowLogHandlerClassName(null);
         Assertions.assertNull(config.getSlowLogHandlerClassName());
@@ -57,47 +57,47 @@ public class Tc0021JdbcCallLogHandlerTest {
     @Test
     public void testWithoutLogCollector() throws Exception {
         BeeDataSourceConfig config1 = createEmpty();
-        BeeConnectionFactory connectionFactory = new MockCommonConnectionFactory();
+        BeeConnectionFactory connectionFactory = new MockConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        config1.setSlowLogHandler(new MockJdbcCallLogHandler());
+        config1.setSlowLogHandler(new MockJdbcEventLogHandler());
         BeeDataSourceConfig config11 = config1.check();
         Assertions.assertNull(config11.getSlowLogHandler());
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setSlowLogHandlerClass(MockJdbcCallLogHandler.class);
+        config2.setSlowLogHandlerClass(MockJdbcEventLogHandler.class);
         BeeDataSourceConfig config21 = config2.check();
         Assertions.assertNull(config21.getSlowLogHandler());
 
         BeeDataSourceConfig config3 = createEmpty();
         config3.setConnectionFactory(connectionFactory);
-        config3.setSlowLogHandlerClassName(MockJdbcCallLogHandler.class.getName());
+        config3.setSlowLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
         BeeDataSourceConfig config31 = config3.check();
         Assertions.assertNull(config31.getSlowLogHandler());
 
         //test set a log collector to config object
-        BeeJdbcCallLogManager logCollector = new MockJdbcCallLogManager();
-        config1.setJdbcCallLogManager(logCollector);
+        BeeJdbcEventLogManager logCollector = new MockJdbcEventLogManager();
+        config1.setLogManager(logCollector);
         config11 = config1.check();
         Assertions.assertNotNull(config11.getSlowLogHandler());
 
-        config2.setJdbcCallLogManager(logCollector);
+        config2.setLogManager(logCollector);
         config21 = config2.check();
         Assertions.assertNotNull(config21.getSlowLogHandler());
 
-        config3.setJdbcCallLogManager(logCollector);
+        config3.setLogManager(logCollector);
         config31 = config3.check();
         Assertions.assertNotNull(config31.getSlowLogHandler());
     }
 
     @Test
     public void testErrorClassName() throws Exception {
-        BeeJdbcCallLogManager logCollector = new MockJdbcCallLogManager();
-        MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
+        BeeJdbcEventLogManager logCollector = new MockJdbcEventLogManager();
+        MockConnectionFactory connectionFactory = new MockConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
-        config1.setJdbcCallLogManager(logCollector);
-        config1.setSlowLogHandlerClassName("org.stone.test.beecp.objects.MockJdbcCallLogHandler2");//class can not be
+        config1.setLogManager(logCollector);
+        config1.setSlowLogHandlerClassName("org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogHandler2");//class can not be
         try {
             config1.check();
             Assertions.fail();
@@ -109,7 +109,7 @@ public class Tc0021JdbcCallLogHandlerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setJdbcCallLogManager(logCollector);
+        config2.setLogManager(logCollector);
         config2.setSlowLogHandlerClassName("org.stone.test.beecp.objects.MockJdbcCallLogHandler3");//class not found
         try {
             config2.check();
@@ -117,7 +117,5 @@ public class Tc0021JdbcCallLogHandlerTest {
         } catch (BeeDataSourceConfigException e) {
             Assertions.assertInstanceOf(ClassNotFoundException.class, e.getCause());
         }
-
-
     }
 }

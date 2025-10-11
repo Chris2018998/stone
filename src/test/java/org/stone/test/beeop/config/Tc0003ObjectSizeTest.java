@@ -71,11 +71,11 @@ public class Tc0003ObjectSizeTest {
         }
         config.setMaxActive(1);
         Assertions.assertEquals(1, config.getMaxActive());
-        Assertions.assertEquals(1, config.getBorrowSemaphoreSize());
+        Assertions.assertEquals(1, config.getSemaphoreSize());
         config.setMaxActive(20);
         Assertions.assertEquals(20, config.getMaxActive());
         int borrowSemaphoreExpectSize = Math.min(20 / 2, NCPU);
-        Assertions.assertEquals(config.getBorrowSemaphoreSize(), borrowSemaphoreExpectSize);
+        Assertions.assertEquals(config.getSemaphoreSize(), borrowSemaphoreExpectSize);
     }
 
     @Test

@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
 
+import java.security.InvalidParameterException;
 import java.util.Properties;
 
 import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
@@ -25,12 +26,27 @@ public class Tc0008ConnectPropertiesTest {
     @Test
     public void testOnAddProperty() {
         BeeDataSourceConfig config = createEmpty();
-        config.addConnectProperty(null, null);
-        Assertions.assertNull(config.getConnectProperty(null));
-        config.addConnectProperty(null, "value");
-        Assertions.assertNull(config.getConnectProperty(null));
+        try {
+            config.addConnectProperty(null, null);
+            Assertions.fail("[testOnAddProperty]Test failed");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given key cannot be null or blank", e.getMessage());
+        }
+        try {
+            config.addConnectProperty("", "value");
+            Assertions.fail("[testOnAddProperty]Test failed");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given key cannot be null or blank", e.getMessage());
+        }
+        try {
+            config.addConnectProperty(" ", "value");
+            Assertions.fail("[testOnAddProperty]Test failed");
+        } catch (InvalidParameterException e) {
+            Assertions.assertEquals("The given key cannot be null or blank", e.getMessage());
+        }
+
         config.addConnectProperty("key", null);
-        Assertions.assertNull(config.getConnectProperty(null));
+        Assertions.assertNull(config.getConnectProperty("key"));
         config.addConnectProperty("key", "value");
         Assertions.assertNotNull(config.getConnectProperty("key"));
     }

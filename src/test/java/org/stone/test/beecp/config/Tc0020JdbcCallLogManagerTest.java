@@ -13,13 +13,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.test.beecp.objects.MockCommonConnectionFactory;
-import org.stone.test.beecp.objects.MockJdbcCallLogManager;
+import org.stone.test.beecp.objects.factory.MockConnectionFactory;
+import org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogManager;
 import org.stone.tools.exception.BeanException;
 
 import java.security.InvalidParameterException;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 
@@ -33,22 +32,22 @@ public class Tc0020JdbcCallLogManagerTest {
     public void testConfigurationSet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         //jdbcCallLogCacheSize
-        Assertions.assertEquals(1000, config.getJdbcCallLogCacheSize());//default check
-        config.setJdbcCallLogCacheSize(500);
-        Assertions.assertEquals(500, config.getJdbcCallLogCacheSize());
+        Assertions.assertEquals(1000, config.getLogCacheSize());//default check
+        config.setLogCacheSize(500);
+        Assertions.assertEquals(500, config.getLogCacheSize());
         try {
-            config.setJdbcCallLogCacheSize(0);
-            fail("[testConfigurationSet]Setting test failed on configuration item[jdbc-call-log-cache-size]");
+            config.setLogCacheSize(0);
+            fail("[testConfigurationSet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
         }
         try {
-            config.setJdbcCallLogCacheSize(-1);
-            fail("[testConfigurationSet]Setting test failed on configuration item[jdbc-call-log-cache-size]");
+            config.setLogCacheSize(-1);
+            fail("[testConfigurationSet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(500, config.getJdbcCallLogCacheSize());//not changed check
+        Assertions.assertEquals(500, config.getLogCacheSize());//not changed check
 
         //slowConnectionGetThreshold
         Assertions.assertEquals(30000L, config.getSlowConnectionGetThreshold());//default check
@@ -79,67 +78,67 @@ public class Tc0020JdbcCallLogManagerTest {
         Assertions.assertEquals(0L, config.getSlowSQLExecutionThreshold());//not changed check
 
         //jdbcCallLogTimeout
-        Assertions.assertEquals(MINUTES.toMillis(3L), config.getJdbcCallLogTimeout());//default check
-        config.setJdbcCallLogTimeout(5000L);
-        Assertions.assertEquals(5000L, config.getJdbcCallLogTimeout());
+        Assertions.assertEquals(180000L, config.getLogTimeout());//default check
+        config.setLogTimeout(5000L);
+        Assertions.assertEquals(5000L, config.getLogTimeout());
         try {
-            config.setJdbcCallLogTimeout(0L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[jdbc-call-log-timeout]");
+            config.setLogTimeout(0L);
+            fail("[testConfigurationSet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
         }
         try {
-            config.setJdbcCallLogTimeout(-1L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[jdbc-call-log-timeout]");
+            config.setLogTimeout(-1L);
+            fail("[testConfigurationSet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(5000L, config.getJdbcCallLogTimeout());//not changed check
+        Assertions.assertEquals(5000L, config.getLogTimeout());//not changed check
 
 
         //jdbcCallLogTimeoutInterval
-        Assertions.assertEquals(MINUTES.toMillis(3L), config.getJdbcCallLogClearInterval());//default check
-        config.setJdbcCallLogClearInterval(5000L);
-        Assertions.assertEquals(5000L, config.getJdbcCallLogClearInterval());
+        Assertions.assertEquals(180000L, config.getIntervalToClearTimeoutEventLogs());//default check
+        config.setIntervalToClearTimeoutEventLogs(5000L);
+        Assertions.assertEquals(5000L, config.getIntervalToClearTimeoutEventLogs());
         try {
-            config.setJdbcCallLogClearInterval(0L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[jdbc-call-log-clear-interval]");
+            config.setIntervalToClearTimeoutEventLogs(0L);
+            fail("[testConfigurationSet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-clear-interval' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'log-clear-interval' must be greater than zero", e.getMessage());
         }
         try {
-            config.setJdbcCallLogClearInterval(-1L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[jdbc-call-log-clear-interval]");
+            config.setIntervalToClearTimeoutEventLogs(-1L);
+            fail("[testConfigurationSet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'jdbc-call-log-clear-interval' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'log-clear-interval' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(5000L, config.getJdbcCallLogClearInterval());//not changed check
+        Assertions.assertEquals(5000L, config.getIntervalToClearTimeoutEventLogs());//not changed check
 
-        Assertions.assertNull(config.getJdbcCallLogManager());//default check
-        config.setJdbcCallLogManager(new MockJdbcCallLogManager());
-        Assertions.assertNotNull(config.getJdbcCallLogManager());
-        config.setJdbcCallLogManager(null);
-        Assertions.assertNull(config.getJdbcCallLogManager());
+        Assertions.assertNull(config.getLogManager());//default check
+        config.setLogManager(new MockJdbcEventLogManager());
+        Assertions.assertNotNull(config.getLogManager());
+        config.setLogManager(null);
+        Assertions.assertNull(config.getLogManager());
 
-        Assertions.assertNull(config.getJdbcCallLogManagerClass());//default check
-        config.setJdbcCallLogManagerClass(MockJdbcCallLogManager.class);
-        Assertions.assertNotNull(config.getJdbcCallLogManagerClass());
-        config.setJdbcCallLogManagerClass(null);
-        Assertions.assertNull(config.getJdbcCallLogManagerClass());
+        Assertions.assertNull(config.getLogManagerClass());//default check
+        config.setLogManagerClass(MockJdbcEventLogManager.class);
+        Assertions.assertNotNull(config.getLogManagerClass());
+        config.setLogManagerClass(null);
+        Assertions.assertNull(config.getLogManagerClass());
 
-        Assertions.assertNull(config.getJdbcCallLogManagerClassName());//default check
-        config.setJdbcCallLogManagerClassName(MockJdbcCallLogManager.class.getName());
-        Assertions.assertNotNull(config.getJdbcCallLogManagerClassName());
-        config.setJdbcCallLogManagerClassName(null);
-        Assertions.assertNull(config.getJdbcCallLogManagerClassName());
+        Assertions.assertNull(config.getLogManagerClassName());//default check
+        config.setLogManagerClassName(MockJdbcEventLogManager.class.getName());
+        Assertions.assertNotNull(config.getLogManagerClassName());
+        config.setLogManagerClassName(null);
+        Assertions.assertNull(config.getLogManagerClassName());
     }
 
     @Test
     public void testErrorClassName() throws Exception {
-        MockCommonConnectionFactory connectionFactory = new MockCommonConnectionFactory();
+        MockConnectionFactory connectionFactory = new MockConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
-        config1.setJdbcCallLogManagerClassName("org.stone.test.beecp.objects.MockJdbcCallLogManager2");//class can not be instan
+        config1.setLogManagerClassName("org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogManager2");//class can not be instan
         try {
             config1.check();
             Assertions.fail();
@@ -151,7 +150,7 @@ public class Tc0020JdbcCallLogManagerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setJdbcCallLogManagerClassName("org.stone.test.beecp.objects.MockJdbcCallLogManager3");//class not found
+        config2.setLogManagerClassName("org.stone.test.beecp.objects.MockJdbcEventLogManager3");//class not found
         try {
             config2.check();
             Assertions.fail();

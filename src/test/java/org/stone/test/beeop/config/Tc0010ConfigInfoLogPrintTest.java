@@ -27,14 +27,14 @@ public class Tc0010ConfigInfoLogPrintTest {
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
 
         //situation1: not print config
-        config.setPrintConfigInfo(false);//test point
+        config.setPrintConfiguration(false);//test point
         LogCollector logCollector = LogCollector.startLogCollector();
         config.check();
         String logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.isEmpty());
 
         //situation2: print config items
-        config.setPrintConfigInfo(true);//test point
+        config.setPrintConfiguration(true);//test point
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
@@ -45,7 +45,7 @@ public class Tc0010ConfigInfoLogPrintTest {
     public void testOnExclusionConfigItems() {
 
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
-        config.setPrintConfigInfo(true);
+        config.setPrintConfiguration(true);
 
         //situation1:
         LogCollector logCollector = LogCollector.startLogCollector();

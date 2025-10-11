@@ -26,7 +26,7 @@ public interface BeeObjectSourceConfigMBean {
 
     int getMaxActive();
 
-    int getBorrowSemaphoreSize();
+    int getSemaphoreSize();
 
     long getMaxWait();
 
@@ -42,11 +42,11 @@ public interface BeeObjectSourceConfigMBean {
 
     long getParkTimeForRetry();
 
-    long getTimerCheckInterval();
+    long getIntervalToClearTimeout();
 
     String getPoolImplementClassName();
 
     String getObjectFactoryClassName();
 
-    boolean isEnableJmx();
+    boolean isRegisterMbeans();
 }

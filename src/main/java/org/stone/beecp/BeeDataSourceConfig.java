@@ -29,15 +29,13 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.BeeTransactionIsolationNames.TRANS_ISOLATION_CODE_LIST;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
 
 /**
- * Bee data source configuration object.
+ * Bee data source configuration object,which is not thread-safe.
  *
  * @author Chris Liao
  * @version 1.0
@@ -47,81 +45,89 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //A list of field name,not be log print during pool initialization, default that five field names in list
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
-
-    //A map stores some properties of connection factory,these properties are injected to factory during pool initialization
-    private final Map<String, Object> connectProperties = new HashMap<>(0);
-    //A list of configuration items ignore print when pool initializes,default is copies from {@code DefaultExclusionList}
+    //23: A list of configuration items ignore print when pool initializes,default is copies from {@code DefaultExclusionList}
     private final List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
-    //jdbc username link to database,default is none
+    //24: A map stores some properties of connection factory,these properties are injected to factory during pool initialization
+    private final Map<String, Object> connectProperties = new HashMap<>(1);
+
+    //1: Username link to database,default is none
     private String username;
-    //jdbc password link to database,default is none
+    //2: Password link to database,default is none
     private String password;
-    //jdbc url link to database,default is none
+    //3: Url link to database,default is none
     private String jdbcUrl;
-    //jdbc driver class name,default is none; if not set,a matched driver searched for it by filled url
+    //4: Jdbc driver class name,default is none; if not set, pool attempt to search a match driver with the set jdbc url.
     private String driverClassName;
-    //Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
+
+    //5: Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
     private String poolName;
-    //Connection getting mode applied on semaphore and transfer,default is false,unfair mode
+    //6: Pool mode,default is false,unfair mode
     private boolean fairMode;
-    //Creation size of connections when pool initialize,default is zero
+    //7: Initialization size of pooled connections
     private int initialSize;
-    //An indicator to create initial connections by async mode,default is false(synchronization mode)
+    //8: Creation mode of initialization connections;if it is true,pool use a thread to create them;default is false
     private boolean asyncCreateInitConnection;
-    //Maximum of connections in pool,default value is calculated by an expression
+    //9: Maximum of connections in pool,default value is calculated by formula
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
-    //Max permit size of pool semaphore,default value is calculated by an expression
-    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, NCPU);
-    //Milliseconds: max wait time in pool to get a connection for borrower,default is 8000 milliseconds(8 seconds)
-    private long maxWait = SECONDS.toMillis(8L);
-    //Milliseconds: max idle time of connections not borrowed out, default is 18000 milliseconds(3 minutes)
-    private long idleTimeout = MINUTES.toMillis(3L);
-    //Milliseconds: max inactive time of borrowed connections,timeout connections are recycled to pool by force;default is zero,no timeout,no force recycle for it
+    //10: Maximum of semaphore permits to control concurrency on connections get,default value is calculated by formula
+    private int semaphoreSize = Math.min(this.maxActive / 2, NCPU);
+    //11: A flag to enable or disable pool thread local to cache last borrowed connection(false can be used to support virtual threads)
+    private boolean useThreadLocal = true;
+    //12: Milliseconds,max time to get a connection from pool for a borrower;default is 8000 milliseconds(8 seconds)
+    private long maxWait = 8000L;
+    //13: Milliseconds,Max time of connections idle in pool;default is 180000 milliseconds(3 minutes)
+    private long idleTimeout = 180000L;
+    //14: Milliseconds,max time of connections not used by borrowers;default is zero
     private long holdTimeout;
-    //An alive test sql executed on connections when them borrowed
-    private String aliveTestSql = "SELECT 1";
-    //Seconds: max wait time to get alive test result from borrowed connections,default is 3 seconds.
-    private int aliveTestTimeout = 3;
-    //Milliseconds:A threshold time of alive test on borrowed connections,if gap time(Last active time **To** Borrowed time) is less than this value,connections need not be tested(ms),default is 500 milliseconds
-    private long aliveAssumeTime = 500L;
-    //Milliseconds: an interval time to scans out timeout connections(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
-    private long timerCheckInterval = MINUTES.toMillis(3L);
-    //An indicator to recycle borrowed connections and make them return to pool when pool shutdown,default is false.
+    //15: Milliseconds: interval time of pool timer to clear timeout connections(idle timeout and hold timeout),default is 180000 milliseconds(3 minutes)
+    private long intervalToClearTimeout = 180000L;
+    //16: A flag to recycle borrowed connections and remove them from pool when pool shutdown,default is false.
     private boolean forceRecycleBorrowedOnClose;
-    //Milliseconds: a park time to wait borrowed connections return to pool,default is 3000 milliseconds
+    //17: Milliseconds,A spin park time to wait borrowed connections self return to pool during when pool shutdown,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
-    //A {@code SQLException.vendorCode} list to check sql-exceptions thrown from connections, if code matched in list,then evicts connections from pool
-    private List<Integer> sqlExceptionCodeList;
-    //A {@code SQLException.SQLState} list to check sql-exceptions thrown from connections, if code matched in list,then evicts connections from pool
-    private List<String> sqlExceptionStateList;
-    //Default value of {@code Connection.catalog},set to new connections or reset on dirty connections
+    //18: A flag to register configuration and pool to JMX server
+    private boolean registerMbeans;
+    //19: A flag to print pool working logs,default is false
+    private boolean printRuntimeLogs;
+    //20: A flag to print configured items by logs after configuration check passed
+    private boolean printConfiguration;
+    //21: Class name of pool implementation,default is {@code FastConnectionPool}
+    private String poolImplementClassName;
+
+    //25: Test sql on borrowed connections to check them whether alive,default is "SELECT 1"
+    private String aliveTestSql = "SELECT 1";
+    //26: Seconds,max wait time of pool to get alive test result from borrowed connections,default is 3 seconds.
+    private int aliveTestTimeout = 3;
+    //27: Milliseconds: A threshold time for borrowed connections,if gap time of them is less than it,not need do alive test on them,default is 500 milliseconds;(Gap time = (time at borrowed) - (last used))
+    private long aliveAssumeTime = 500L;
+
+    //28: Default value of {@code Connection.catalog},set to new connections or reset on dirty connections
     private String defaultCatalog;
-    //Default value of {@code Connection.schema},set to new connections or reset on dirty connections
+    //29: Default value of {@code Connection.schema},set to new connections or reset on dirty connections
     private String defaultSchema;
-    //Default value of {@code Connection.readOnly},set to new connections or reset on dirty connections
+    //30: Default value of {@code Connection.readOnly},set to new connections or reset on dirty connections
     private Boolean defaultReadOnly;
-    //Default value of {@code Connection.autoCommit},set to new connections or reset on dirty connections
+    //31: Default value of {@code Connection.autoCommit},set to new connections or reset on dirty connections
     private Boolean defaultAutoCommit;
-    //Default value of {@code Connection.transactionIsolation},set to new connections or reset on dirty connections
+    //32: Default value of {@code Connection.transactionIsolation},set to new connections or reset on dirty connections
     private Integer defaultTransactionIsolationCode;
-    //Name of transactionIsolation,a mapping value of{@code defaultTransactionIsolationCode} retrieved by it when pool initialization
+    //33: Name of transactionIsolation,a mapping value of{@code defaultTransactionIsolationCode} retrieved by it when pool initialization
     private String defaultTransactionIsolationName;
-    //An indicator to enable or disable pool thread local to cache last borrowed connection(false can be used to support virtual threads)
-    private boolean enableThreadLocal = true;
-    //An indicator to enable catalog default setting on new connections,default is true
-    private boolean enableDefaultOnCatalog = true;
-    //An indicator to enable schema default setting on new connections,default is true
-    private boolean enableDefaultOnSchema = true;
-    //An indicator to enable readonly default setting on new connections,default is true
-    private boolean enableDefaultOnReadOnly = true;
-    //An indicator to enable autoCommit default setting on new connections,default is true
-    private boolean enableDefaultOnAutoCommit = true;
-    //An indicator to enable transactionIsolation default setting on new connections,default is true
-    private boolean enableDefaultOnTransactionIsolation = true;
-    //An indicator of force dirty on schema property to support to be reset under transaction,for example:PG driver
-    private boolean forceDirtyOnSchemaAfterSet;
-    //An indicator of force dirty on catalog property to support to be reset under transaction,for example:PG driver
-    private boolean forceDirtyOnCatalogAfterSet;
+    //34: A flag to enable catalog default setting on new connections,default is true
+    private boolean useDefaultCatalog = true;
+    //35: A flag to enable schema default setting on new connections,default is true
+    private boolean useDefaultSchema = true;
+    //36: A flag to enable readonly default setting on new connections,default is true
+    private boolean useDefaultReadOnly = true;
+    //37: A flag to enable autoCommit default setting on new connections,default is true
+    private boolean useDefaultAutoCommit = true;
+    //38: A flag to enable transactionIsolation default setting on new connections,default is true
+    private boolean useDefaultTransactionIsolation = true;
+    //39: A flag to set dirty on schema property to support to be reset under transaction,for example:PG driver
+    private boolean forceDirtyWhenSetSchema;
+    //40: A flag to set dirty on catalog property to support to be reset under transaction,for example:PG driver
+    private boolean forceDirtyWhenSetCatalog;
+
     /**
      * connection factory class,which must be implement one of the below four interfaces
      * 1: {@code RawConnectionFactory}
@@ -129,68 +135,62 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
      * 3: {@code DataSource}
      * 4: {@code XADataSource}
      */
-    //Connection factory,first priority to be chosen to create connections for pool
+    //41: Connection factory,priority order: instance > class > class name
     private Object connectionFactory;
-    //Class of Connection factory,second priority to be chosen
+    //42: Class of Connection factory
     private Class<?> connectionFactoryClass;
-    //Class name of Connection factory,third priority to be chosen
+    //43: Class name of Connection factory
     private String connectionFactoryClassName;
 
-    //Connection Predicate to do eviction test,first priority to be chosen
-    private BeeConnectionPredicate evictPredicate;
-    //Class of predicate,second priority to be chosen
-    private Class<? extends BeeConnectionPredicate> evictPredicateClass;
-    //Class name of predicate,third priority to be chosen
-    private String evictPredicateClassName;
+    //44: A {@code SQLException.vendorCode} list to check sql-exceptions thrown from connections, if code matched in list,then evicts connections from pool
+    private List<Integer> sqlExceptionCodeList;
+    //45: A {@code SQLException.SQLState} list to check sql-exceptions thrown from connections, if code matched in list,then evicts connections from pool
+    private List<String> sqlExceptionStateList;
+    //46: Connections predicate,priority order: instance > class > class name
+    private BeeConnectionPredicate predicate;
+    //47: Class of predicate
+    private Class<? extends BeeConnectionPredicate> predicateClass;
+    //48: Class name of predicate
+    private String predicateClassName;
 
-    //Jdbc info decoder(url,username password),default is none
-    private BeeJdbcLinkInfoDecoder jdbcLinkInfoDecoder;
-    //Class of Jdbc info decoder(url,username password),default is none
-    private Class<? extends BeeJdbcLinkInfoDecoder> jdbcLinkInfoDecoderClass;
-    //Class name of Jdbc info decoder(url,username password),default is none
-    private String jdbcLinkInfoDecoderClassName;
+    //49: Jdbc info decoder(url,username password),default is none;priority order: instance > class > class name
+    private BeeJdbcLinkInfoDecoder linkInfoDecoder;
+    //50 Class of Jdbc info decoder(url,username password),default is none
+    private Class<? extends BeeJdbcLinkInfoDecoder> linkInfoDecoderClass;
+    //51: Class name of Jdbc info decoder(url,username password),default is none
+    private String linkInfoDecoderClassName;
 
-    //An indicator to enable Jmx registration,default is false
-    private boolean enableJmx;
-    //An indicator to enable runtime log print in pool,default is false
-    private boolean printRuntimeLog;
-    //An indicator to enable configuration log print during pool initializes,default is false
-    private boolean printConfigInfo;
-    //Class name of pool implementation,default is {@code FastConnectionPool}
-    private String poolImplementClassName;
+    //********************************************** jdbc event logs **************************************************//
+    //52: Capacity of logs cache size,default is 1000
+    private int logCacheSize = 1000;
+    //53: Logs timeout,default is 3 minutes
+    private long logTimeout = 180000L;
+    //54: interval time to clear timeout logs,default is 3 minutes
+    private long intervalToClearTimeoutEventLogs = logTimeout;
 
+    //55: jdbc event logs manager,default is none;priority order: instance > class > class name
+    private BeeJdbcEventLogManager logManager;
+    //56: Class of jdbc event logs manager,default is none
+    private Class<? extends BeeJdbcEventLogManager> logManagerClass;
+    //57: Class name of jdbc event logs manager,default is none
+    private String logManagerClassName;
 
-    //********************************************** Jdbc call logs **************************************************//
-    //jdbc call logs manager
-    private BeeJdbcCallLogManager jdbcCallLogManager;
-    //Class of jdbc call logs manager,default is none
-    private Class<? extends BeeJdbcCallLogManager> jdbcCallLogManagerClass;
-    //Class name of jdbc call logs manager,default is none
-    private String jdbcCallLogManagerClassName;
-
-    //Capacity of logs cache in log collector,default is 1000
-    private int jdbcCallLogCacheSize = 1000;
-    //Log timeout in collector,default is 3 minutes
-    private long jdbcCallLogTimeout = MINUTES.toMillis(3L);
-    //interval time to clear timeout logs,default is equal to jdbcCallLogTimeout
-    private long jdbcCallLogClearInterval = jdbcCallLogTimeout;
-
-    //Slow logs handler(Note: only handle slow logs and exception logs)
-    private BeeJdbcCallLogHandler slowLogHandler;
-    //Class of slow logs handler,default is none
-    private Class<? extends BeeJdbcCallLogHandler> slowLogHandlerClass;
-    //Class name of slow logs handler,default is none
-    private String slowLogHandlerClassName;
-
-    //Slow threshold value of connection get,default is 30 seconds,time unit:milliseconds
+    //58: Slow threshold for connection acquisition,default is 30 seconds,time unit:milliseconds
     private long slowConnectionGetThreshold = 30000L;
-    //Slow threshold of sql execution,default is 30 seconds,time unit:milliseconds
+    //59: Slow threshold for sql execution,default is 30 seconds,time unit:milliseconds
     private long slowSQLExecutionThreshold = 30000L;
-    //Slow logs handle mode,default is true
+    //60: Slow logs handle mode,default is true
     private boolean slowLogHandledBySyncMode = true;
 
+    //61: Slow logs handler(Note: only supports slow logs and exception logs);priority order: instance > class > class name
+    private BeeJdbcEventLogHandler slowLogHandler;
+    //62: Class of slow logs handler,default is none
+    private Class<? extends BeeJdbcEventLogHandler> slowLogHandlerClass;
+    //63: Class name of slow logs handler,default is none
+    private String slowLogHandlerClassName;
+
     //****************************************************************************************************************//
-    //                                     1: constructors(5)                                                         //
+    //                                     1: constructors(5)                                              //
     //****************************************************************************************************************//
     public BeeDataSourceConfig() {
     }
@@ -218,14 +218,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                     2: JDBC link configuration methods(10)                                     //
+    //                                     2: JDBC link info(10)[1 --- 4]                                             //
     //****************************************************************************************************************//
     public String getUsername() {
         return this.username;
     }
 
     public void setUsername(String username) {
-        this.username = trimString(username);
+        this.username = username;
     }
 
     public String getPassword() {
@@ -233,15 +233,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     public void setPassword(String password) {
-        this.password = trimString(password);
-    }
-
-    public String getUrl() {
-        return this.jdbcUrl;
-    }
-
-    public void setUrl(String jdbcUrl) {
-        this.jdbcUrl = trimString(jdbcUrl);
+        this.password = password;
     }
 
     public String getJdbcUrl() {
@@ -249,6 +241,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     public void setJdbcUrl(String jdbcUrl) {
+        this.jdbcUrl = trimString(jdbcUrl);
+    }
+
+    public String getUrl() {
+        return this.jdbcUrl;
+    }
+
+    public void setUrl(String jdbcUrl) {
         this.jdbcUrl = trimString(jdbcUrl);
     }
 
@@ -261,7 +261,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                3: configuration about pool inner control(30)                                   //
+    //                                     3: Pool control setting(42)[5 --- 24]                                      //
     //****************************************************************************************************************//
     public String getPoolName() {
         return this.poolName;
@@ -306,18 +306,26 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
             throw new InvalidParameterException("The given value for configuration item 'max-active' must be greater than zero");
         this.maxActive = maxActive;
         //fix issue:#19 Chris-2020-08-16 begin
-        this.borrowSemaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, NCPU) : 1;
+        this.semaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, NCPU) : 1;
         //fix issue:#19 Chris-2020-08-16 end
     }
 
-    public int getBorrowSemaphoreSize() {
-        return this.borrowSemaphoreSize;
+    public int getSemaphoreSize() {
+        return this.semaphoreSize;
     }
 
-    public void setBorrowSemaphoreSize(int borrowSemaphoreSize) {
-        if (borrowSemaphoreSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'borrow-semaphore-size' must be greater than zero");
-        this.borrowSemaphoreSize = borrowSemaphoreSize;
+    public void setSemaphoreSize(int semaphoreSize) {
+        if (semaphoreSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'semaphore-size' must be greater than zero");
+        this.semaphoreSize = semaphoreSize;
+    }
+
+    public boolean isUseThreadLocal() {
+        return useThreadLocal;
+    }
+
+    public void setUseThreadLocal(boolean useThreadLocal) {
+        this.useThreadLocal = useThreadLocal;
     }
 
     public long getMaxWait() {
@@ -350,6 +358,114 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.holdTimeout = holdTimeout;
     }
 
+    public long getIntervalToClearTimeout() {
+        return this.intervalToClearTimeout;
+    }
+
+    public void setIntervalToClearTimeout(long intervalToClearTimeout) {
+        if (intervalToClearTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-to-clear-timeout' must be greater than zero");
+        this.intervalToClearTimeout = intervalToClearTimeout;
+    }
+
+    public boolean isForceRecycleBorrowedOnClose() {
+        return this.forceRecycleBorrowedOnClose;
+    }
+
+    public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
+        this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
+    }
+
+    public long getParkTimeForRetry() {
+        return this.parkTimeForRetry;
+    }
+
+    public void setParkTimeForRetry(long parkTimeForRetry) {
+        if (parkTimeForRetry < 0L)
+            throw new InvalidParameterException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
+        this.parkTimeForRetry = parkTimeForRetry;
+    }
+
+    public boolean isRegisterMbeans() {
+        return this.registerMbeans;
+    }
+
+    public void setRegisterMbeans(boolean registerMbeans) {
+        this.registerMbeans = registerMbeans;
+    }
+
+    public boolean isPrintRuntimeLogs() {
+        return this.printRuntimeLogs;
+    }
+
+    public void setPrintRuntimeLogs(boolean printRuntimeLogs) {
+        this.printRuntimeLogs = printRuntimeLogs;
+    }
+
+    public boolean isPrintConfiguration() {
+        return this.printConfiguration;
+    }
+
+    public void setPrintConfiguration(boolean printConfiguration) {
+        this.printConfiguration = printConfiguration;
+    }
+
+    public String getPoolImplementClassName() {
+        return this.poolImplementClassName;
+    }
+
+    public void setPoolImplementClassName(String poolImplementClassName) {
+        this.poolImplementClassName = trimString(poolImplementClassName);
+    }
+
+    public void clearAllConfigPrintExclusion() {
+        this.configPrintExclusionList.clear();
+    }
+
+    public void addConfigPrintExclusion(String fieldName) {
+        if (!configPrintExclusionList.contains(fieldName)) this.configPrintExclusionList.add(fieldName);
+    }
+
+    public boolean removeConfigPrintExclusion(String fieldName) {
+        return this.configPrintExclusionList.remove(fieldName);
+    }
+
+    public boolean existConfigPrintExclusion(String fieldName) {
+        return this.configPrintExclusionList.contains(fieldName);
+    }
+
+    public Object getConnectProperty(String key) {
+        return this.connectProperties.get(key);
+    }
+
+    public Object removeConnectProperty(String key) {
+        return this.connectProperties.remove(key);
+    }
+
+    public void addConnectProperty(String key, Object value) {
+        if (isBlank(key)) throw new InvalidParameterException("The given key cannot be null or blank");
+        this.connectProperties.put(key, value);
+    }
+
+    public void addConnectProperty(String connectPropertyText) {
+        if (isNotBlank(connectPropertyText)) {
+            for (String attribute : connectPropertyText.split("&")) {
+                String[] pair = attribute.split("=");
+                if (pair.length == 2) {
+                    this.addConnectProperty(pair[0].trim(), pair[1].trim());
+                } else {
+                    pair = attribute.split(":");
+                    if (pair.length == 2) {
+                        this.addConnectProperty(pair[0].trim(), pair[1].trim());
+                    }
+                }
+            }
+        }
+    }
+
+    //****************************************************************************************************************//
+    //                                     4: Connection alive test(6)[25 --- 27]                                     //
+    //****************************************************************************************************************//
     public String getAliveTestSql() {
         return this.aliveTestSql;
     }
@@ -385,119 +501,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.aliveAssumeTime = aliveAssumeTime;
     }
 
-    public long getTimerCheckInterval() {
-        return this.timerCheckInterval;
-    }
-
-    public void setTimerCheckInterval(long timerCheckInterval) {
-        if (timerCheckInterval <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'timer-check-interval' must be greater than zero");
-        this.timerCheckInterval = timerCheckInterval;
-    }
-
-    public boolean isForceRecycleBorrowedOnClose() {
-        return this.forceRecycleBorrowedOnClose;
-    }
-
-    public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
-        this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
-    }
-
-    public long getParkTimeForRetry() {
-        return this.parkTimeForRetry;
-    }
-
-    public void setParkTimeForRetry(long parkTimeForRetry) {
-        if (parkTimeForRetry < 0L)
-            throw new InvalidParameterException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
-        this.parkTimeForRetry = parkTimeForRetry;
-    }
-
-    public List<Integer> getSqlExceptionCodeList() {
-        return sqlExceptionCodeList;
-    }
-
-    public void addSqlExceptionCode(int code) {
-        if (sqlExceptionCodeList == null) sqlExceptionCodeList = new ArrayList<>(1);
-        if (!this.sqlExceptionCodeList.contains(code)) this.sqlExceptionCodeList.add(code);
-    }
-
-    public void removeSqlExceptionCode(int code) {
-        if (sqlExceptionCodeList != null) this.sqlExceptionCodeList.remove(Integer.valueOf(code));
-    }
-
-    public List<String> getSqlExceptionStateList() {
-        return sqlExceptionStateList;
-    }
-
-    public void addSqlExceptionState(String state) {
-        if (sqlExceptionStateList == null) sqlExceptionStateList = new ArrayList<>(1);
-        if (!this.sqlExceptionStateList.contains(state)) this.sqlExceptionStateList.add(state);
-    }
-
-    public void removeSqlExceptionState(String state) {
-        if (sqlExceptionStateList != null) this.sqlExceptionStateList.remove(state);
-    }
-
-    public String getPoolImplementClassName() {
-        return this.poolImplementClassName;
-    }
-
-    public void setPoolImplementClassName(String poolImplementClassName) {
-        this.poolImplementClassName = trimString(poolImplementClassName);
-    }
-
-    public boolean isEnableJmx() {
-        return this.enableJmx;
-    }
-
-    public void setEnableJmx(boolean enableJmx) {
-        this.enableJmx = enableJmx;
-    }
-
-    public boolean isPrintRuntimeLog() {
-        return this.printRuntimeLog;
-    }
-
-    public void setPrintRuntimeLog(boolean printRuntimeLog) {
-        this.printRuntimeLog = printRuntimeLog;
-    }
-
-    public boolean isPrintConfigInfo() {
-        return this.printConfigInfo;
-    }
-
-    public void setPrintConfigInfo(boolean printConfigInfo) {
-        this.printConfigInfo = printConfigInfo;
-    }
-
-    public void clearAllConfigPrintExclusion() {
-        this.configPrintExclusionList.clear();
-    }
-
-    public void addConfigPrintExclusion(String fieldName) {
-        if (!configPrintExclusionList.contains(fieldName))
-            this.configPrintExclusionList.add(fieldName);
-    }
-
-    public boolean removeConfigPrintExclusion(String fieldName) {
-        return this.configPrintExclusionList.remove(fieldName);
-    }
-
-    public boolean existConfigPrintExclusion(String fieldName) {
-        return this.configPrintExclusionList.contains(fieldName);
-    }
-
-    public boolean isEnableThreadLocal() {
-        return enableThreadLocal;
-    }
-
-    public void setEnableThreadLocal(boolean enableThreadLocal) {
-        this.enableThreadLocal = enableThreadLocal;
-    }
-
     //****************************************************************************************************************//
-    //                                     4: connection default value set methods(12)                                //
+    //                                     5: connection default value Setting (26)[28 --- 40]                        //
     //****************************************************************************************************************//
     public String getDefaultCatalog() {
         return this.defaultCatalog;
@@ -556,73 +561,70 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         }
     }
 
-    //****************************************************************************************************************//
-    //                                     5: connection default value set Indicator methods(10)                      //
-    //****************************************************************************************************************//
-    public boolean isEnableDefaultOnCatalog() {
-        return enableDefaultOnCatalog;
+    public boolean isUseDefaultCatalog() {
+        return useDefaultCatalog;
     }
 
-    public void setEnableDefaultOnCatalog(boolean enableDefaultOnCatalog) {
-        this.enableDefaultOnCatalog = enableDefaultOnCatalog;
+    public void setUseDefaultCatalog(boolean useDefaultCatalog) {
+        this.useDefaultCatalog = useDefaultCatalog;
     }
 
-    public boolean isEnableDefaultOnSchema() {
-        return enableDefaultOnSchema;
+    public boolean isUseDefaultSchema() {
+        return useDefaultSchema;
     }
 
-    public void setEnableDefaultOnSchema(boolean enableDefaultOnSchema) {
-        this.enableDefaultOnSchema = enableDefaultOnSchema;
+    public void setUseDefaultSchema(boolean useDefaultSchema) {
+        this.useDefaultSchema = useDefaultSchema;
     }
 
-    public boolean isEnableDefaultOnReadOnly() {
-        return enableDefaultOnReadOnly;
+    public boolean isUseDefaultReadOnly() {
+        return useDefaultReadOnly;
     }
 
-    public void setEnableDefaultOnReadOnly(boolean enableDefaultOnReadOnly) {
-        this.enableDefaultOnReadOnly = enableDefaultOnReadOnly;
+    public void setUseDefaultReadOnly(boolean useDefaultReadOnly) {
+        this.useDefaultReadOnly = useDefaultReadOnly;
     }
 
-    public boolean isEnableDefaultOnAutoCommit() {
-        return enableDefaultOnAutoCommit;
+    public boolean isUseDefaultAutoCommit() {
+        return useDefaultAutoCommit;
     }
 
-    public void setEnableDefaultOnAutoCommit(boolean enableDefaultOnAutoCommit) {
-        this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
+    public void setUseDefaultAutoCommit(boolean useDefaultAutoCommit) {
+        this.useDefaultAutoCommit = useDefaultAutoCommit;
     }
 
-    public boolean isEnableDefaultOnTransactionIsolation() {
-        return enableDefaultOnTransactionIsolation;
+    public boolean isUseDefaultTransactionIsolation() {
+        return useDefaultTransactionIsolation;
     }
 
-    public void setEnableDefaultOnTransactionIsolation(boolean enableDefaultOnTransactionIsolation) {
-        this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
+    public void setUseDefaultTransactionIsolation(boolean useDefaultTransactionIsolation) {
+        this.useDefaultTransactionIsolation = useDefaultTransactionIsolation;
     }
 
-    public boolean isForceDirtyOnSchemaAfterSet() {
-        return forceDirtyOnSchemaAfterSet;
+    public boolean isForceDirtyWhenSetSchema() {
+        return forceDirtyWhenSetSchema;
     }
 
-    public void setForceDirtyOnSchemaAfterSet(boolean forceDirtyOnSchemaAfterSet) {
-        this.forceDirtyOnSchemaAfterSet = forceDirtyOnSchemaAfterSet;
+    public void setForceDirtyWhenSetSchema(boolean forceDirtyWhenSetSchema) {
+        this.forceDirtyWhenSetSchema = forceDirtyWhenSetSchema;
     }
 
-    public boolean isForceDirtyOnCatalogAfterSet() {
-        return forceDirtyOnCatalogAfterSet;
+    public boolean isForceDirtyWhenSetCatalog() {
+        return forceDirtyWhenSetCatalog;
     }
 
-    public void setForceDirtyOnCatalogAfterSet(boolean forceDirtyOnCatalogAfterSet) {
-        this.forceDirtyOnCatalogAfterSet = forceDirtyOnCatalogAfterSet;
+    public void setForceDirtyWhenSetCatalog(boolean forceDirtyWhenSetCatalog) {
+        this.forceDirtyWhenSetCatalog = forceDirtyWhenSetCatalog;
     }
+
 
     //****************************************************************************************************************//
-    //                                    6: connection factory class set methods(12)                                 //
+    //                                     6: Connection factory Setting (7)[41 --- 43]                               //
     //****************************************************************************************************************//
     public Object getConnectionFactory() {
         return this.connectionFactory;
     }
 
-    //connection factory
     public void setConnectionFactory(BeeConnectionFactory factory) {
         this.connectionFactory = factory;
     }
@@ -647,152 +649,157 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactoryClassName = trimString(connectionFactoryClassName);
     }
 
-    public Class<? extends BeeConnectionPredicate> getEvictPredicateClass() {
-        return evictPredicateClass;
+    //****************************************************************************************************************//
+    //                                     7: Connection predicate(12)[44 --- 48]                                     //
+    //****************************************************************************************************************//
+    public BeeConnectionPredicate getPredicate() {
+        return predicate;
     }
 
-    public void setEvictPredicateClass(Class<? extends BeeConnectionPredicate> evictPredicateClass) {
-        this.evictPredicateClass = evictPredicateClass;
+    public void setPredicate(BeeConnectionPredicate predicate) {
+        this.predicate = predicate;
     }
 
-    public String getEvictPredicateClassName() {
-        return evictPredicateClassName;
+    public Class<? extends BeeConnectionPredicate> getPredicateClass() {
+        return predicateClass;
     }
 
-    public void setEvictPredicateClassName(String evictPredicateClassName) {
-        this.evictPredicateClassName = evictPredicateClassName;
+    public void setPredicateClass(Class<? extends BeeConnectionPredicate> predicateClass) {
+        this.predicateClass = predicateClass;
     }
 
-    public BeeConnectionPredicate getEvictPredicate() {
-        return evictPredicate;
+    public String getPredicateClassName() {
+        return predicateClassName;
     }
 
-    public void setEvictPredicate(BeeConnectionPredicate evictPredicate) {
-        this.evictPredicate = evictPredicate;
+    public void setPredicateClassName(String predicateClassName) {
+        this.predicateClassName = predicateClassName;
     }
 
-    public Class<? extends BeeJdbcLinkInfoDecoder> getJdbcLinkInfoDecoderClass() {
-        return this.jdbcLinkInfoDecoderClass;
+    public List<Integer> getSqlExceptionCodeList() {
+        return sqlExceptionCodeList;
     }
 
-    public void setJdbcLinkInfoDecoderClass(Class<? extends BeeJdbcLinkInfoDecoder> jdbcLinkInfoDecoderClass) {
-        this.jdbcLinkInfoDecoderClass = jdbcLinkInfoDecoderClass;
+    public void addSqlExceptionCode(int code) {
+        if (sqlExceptionCodeList == null) sqlExceptionCodeList = new ArrayList<>(1);
+        if (!this.sqlExceptionCodeList.contains(code)) this.sqlExceptionCodeList.add(code);
     }
 
-    public String getJdbcLinkInfoDecoderClassName() {
-        return this.jdbcLinkInfoDecoderClassName;
+    public void removeSqlExceptionCode(int code) {
+        if (sqlExceptionCodeList != null) this.sqlExceptionCodeList.remove(Integer.valueOf(code));
     }
 
-    public void setJdbcLinkInfoDecoderClassName(String jdbcLinkInfoDecoderClassName) {
-        this.jdbcLinkInfoDecoderClassName = jdbcLinkInfoDecoderClassName;
+    public List<String> getSqlExceptionStateList() {
+        return sqlExceptionStateList;
     }
 
-    public BeeJdbcLinkInfoDecoder getJdbcLinkInfoDecoder() {
-        return jdbcLinkInfoDecoder;
+    public void addSqlExceptionState(String state) {
+        if (sqlExceptionStateList == null) sqlExceptionStateList = new ArrayList<>(1);
+        if (!this.sqlExceptionStateList.contains(state)) this.sqlExceptionStateList.add(state);
     }
 
-    public void setJdbcLinkInfoDecoder(BeeJdbcLinkInfoDecoder jdbcLinkInfoDecoder) {
-        this.jdbcLinkInfoDecoder = jdbcLinkInfoDecoder;
-    }
-
-    public Object getConnectProperty(String key) {
-        return this.connectProperties.get(key);
-    }
-
-    public Object removeConnectProperty(String key) {
-        return this.connectProperties.remove(key);
-    }
-
-    public void addConnectProperty(String key, Object value) {
-        if (isNotBlank(key) && value != null) this.connectProperties.put(key, value);
-    }
-
-    public void addConnectProperty(String connectPropertyText) {
-        if (isNotBlank(connectPropertyText)) {
-            for (String attribute : connectPropertyText.split("&")) {
-                String[] pair = attribute.split("=");
-                if (pair.length == 2) {
-                    this.addConnectProperty(pair[0].trim(), pair[1].trim());
-                } else {
-                    pair = attribute.split(":");
-                    if (pair.length == 2) {
-                        this.addConnectProperty(pair[0].trim(), pair[1].trim());
-                    }
-                }
-            }
-        }
+    public void removeSqlExceptionState(String state) {
+        if (sqlExceptionStateList != null) this.sqlExceptionStateList.remove(state);
     }
 
     //****************************************************************************************************************//
-    //                                    7: Log Collector(18)                                                        //
+    //                                    8: Link Info Decoder(6)[49 --- 51]                                          //
     //****************************************************************************************************************//
-    public BeeJdbcCallLogManager getJdbcCallLogManager() {
-        return jdbcCallLogManager;
+    public BeeJdbcLinkInfoDecoder getLinkInfoDecoder() {
+        return linkInfoDecoder;
     }
 
-    public void setJdbcCallLogManager(BeeJdbcCallLogManager jdbcCallLogManager) {
-        this.jdbcCallLogManager = jdbcCallLogManager;
+    public void setLinkInfoDecoder(BeeJdbcLinkInfoDecoder linkInfoDecoder) {
+        this.linkInfoDecoder = linkInfoDecoder;
     }
 
-    public Class<? extends BeeJdbcCallLogManager> getJdbcCallLogManagerClass() {
-        return jdbcCallLogManagerClass;
+    public Class<? extends BeeJdbcLinkInfoDecoder> getLinkInfoDecoderClass() {
+        return this.linkInfoDecoderClass;
     }
 
-    public void setJdbcCallLogManagerClass(Class<? extends BeeJdbcCallLogManager> jdbcCallLogManagerClass) {
-        this.jdbcCallLogManagerClass = jdbcCallLogManagerClass;
+    public void setLinkInfoDecoderClass(Class<? extends BeeJdbcLinkInfoDecoder> linkInfoDecoderClass) {
+        this.linkInfoDecoderClass = linkInfoDecoderClass;
     }
 
-    public String getJdbcCallLogManagerClassName() {
-        return jdbcCallLogManagerClassName;
+    public String getLinkInfoDecoderClassName() {
+        return this.linkInfoDecoderClassName;
     }
 
-    public void setJdbcCallLogManagerClassName(String jdbcCallLogManagerClassName) {
-        this.jdbcCallLogManagerClassName = jdbcCallLogManagerClassName;
+    public void setLinkInfoDecoderClassName(String linkInfoDecoderClassName) {
+        this.linkInfoDecoderClassName = linkInfoDecoderClassName;
     }
 
-    public int getJdbcCallLogCacheSize() {
-        return jdbcCallLogCacheSize;
+    //****************************************************************************************************************//
+    //                                    9: Log Manager(18)[50 --- 52]                                                          //
+    //****************************************************************************************************************//
+    public int getLogCacheSize() {
+        return logCacheSize;
     }
 
-    public void setJdbcCallLogCacheSize(int jdbcCallLogCacheSize) {
-        if (jdbcCallLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-cache-size' must be greater than zero");
-        this.jdbcCallLogCacheSize = jdbcCallLogCacheSize;
+    public void setLogCacheSize(int logCacheSize) {
+        if (logCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'log-cache-size' must be greater than zero");
+        this.logCacheSize = logCacheSize;
     }
 
-    public long getJdbcCallLogTimeout() {
-        return jdbcCallLogTimeout;
+    public long getLogTimeout() {
+        return logTimeout;
     }
 
-    public void setJdbcCallLogTimeout(long jdbcCallLogTimeout) {
-        if (jdbcCallLogTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-timeout' must be greater than zero");
-        this.jdbcCallLogTimeout = jdbcCallLogTimeout;
+    public void setLogTimeout(long logTimeout) {
+        if (logTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'log-timeout' must be greater than zero");
+        this.logTimeout = logTimeout;
     }
 
-    public long getJdbcCallLogClearInterval() {
-        return jdbcCallLogClearInterval;
+    public long getIntervalToClearTimeoutEventLogs() {
+        return intervalToClearTimeoutEventLogs;
     }
 
-    public void setJdbcCallLogClearInterval(long jdbcCallLogClearInterval) {
-        if (jdbcCallLogClearInterval <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'jdbc-call-log-clear-interval' must be greater than zero");
-        this.jdbcCallLogClearInterval = jdbcCallLogClearInterval;
+    public void setIntervalToClearTimeoutEventLogs(long intervalToClearTimeoutEventLogs) {
+        if (intervalToClearTimeoutEventLogs <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'log-clear-interval' must be greater than zero");
+        this.intervalToClearTimeoutEventLogs = intervalToClearTimeoutEventLogs;
     }
 
-    public BeeJdbcCallLogHandler getSlowLogHandler() {
+    public BeeJdbcEventLogManager getLogManager() {
+        return logManager;
+    }
+
+    public void setLogManager(BeeJdbcEventLogManager logManager) {
+        this.logManager = logManager;
+    }
+
+    public Class<? extends BeeJdbcEventLogManager> getLogManagerClass() {
+        return logManagerClass;
+    }
+
+    public void setLogManagerClass(Class<? extends BeeJdbcEventLogManager> logManagerClass) {
+        this.logManagerClass = logManagerClass;
+    }
+
+    public String getLogManagerClassName() {
+        return logManagerClassName;
+    }
+
+    public void setLogManagerClassName(String logManagerClassName) {
+        this.logManagerClassName = logManagerClassName;
+    }
+
+
+    public BeeJdbcEventLogHandler getSlowLogHandler() {
         return slowLogHandler;
     }
 
-    public void setSlowLogHandler(BeeJdbcCallLogHandler slowLogHandler) {
+    public void setSlowLogHandler(BeeJdbcEventLogHandler slowLogHandler) {
         this.slowLogHandler = slowLogHandler;
     }
 
-    public Class<? extends BeeJdbcCallLogHandler> getSlowLogHandlerClass() {
+    public Class<? extends BeeJdbcEventLogHandler> getSlowLogHandlerClass() {
         return slowLogHandlerClass;
     }
 
-    public void setSlowLogHandlerClass(Class<? extends BeeJdbcCallLogHandler> slowLogHandlerClass) {
+    public void setSlowLogHandlerClass(Class<? extends BeeJdbcEventLogHandler> slowLogHandlerClass) {
         this.slowLogHandlerClass = slowLogHandlerClass;
     }
 
@@ -833,7 +840,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                     8: properties configuration(3)                                             //
+    //                                     10: properties configuration(3)                                             //
     //****************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         loadFromPropertiesFile(filename, null);
@@ -957,7 +964,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                    9: configuration check and connection factory create methods(4)             //
+    //                                   11: configuration check and connection factory create methods(8)             //
     //****************************************************************************************************************//
 
     /**
@@ -973,8 +980,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeJdbcCallLogManager logCollector = this.createLogCollector();
-        BeeJdbcCallLogHandler logListener = logCollector != null ? createLogListener() : null;
+        BeeJdbcEventLogManager logManager = this.createJdbcEventLogManager();
+        BeeJdbcEventLogHandler logHandler = logManager != null ? createJdbcCallLogHandler() : null;
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -991,11 +998,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         //set some factories to config
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
-        checkedConfig.evictPredicate = predicate;
-        checkedConfig.slowLogHandler = logListener;
-        checkedConfig.jdbcCallLogManager = logCollector;
+        checkedConfig.predicate = predicate;
+        checkedConfig.slowLogHandler = logHandler;
+        checkedConfig.logManager = logManager;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
-        if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
+        if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
 
         return checkedConfig;
     }
@@ -1009,22 +1016,38 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
                 fieldName = field.getName();
                 switch (fieldName) {
+                    case CONFIG_CONNECT_PROP: //copy 'connectProperties'
+                        config.connectProperties.putAll(connectProperties);
+                        break;
                     case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
                         if (configPrintExclusionList.isEmpty())
                             config.configPrintExclusionList.clear();
                         else
                             config.configPrintExclusionList.addAll(configPrintExclusionList);
                         break;
-                    case CONFIG_CONNECT_PROP: //copy 'connectProperties'
-                        config.connectProperties.putAll(connectProperties);
-                        break;
                     case CONFIG_SQL_EXCEPTION_CODE: //copy 'sqlExceptionCodeList'
-                        if (this.sqlExceptionCodeList != null && !sqlExceptionCodeList.isEmpty())
-                            config.sqlExceptionCodeList = new ArrayList<>(sqlExceptionCodeList);
+                        if (sqlExceptionCodeList == null)
+                            config.sqlExceptionCodeList = null;
+                        else if (!sqlExceptionCodeList.isEmpty()) {
+                            if (config.sqlExceptionCodeList == null) {
+                                config.sqlExceptionCodeList = new ArrayList<>(sqlExceptionCodeList);
+                            } else {
+                                config.sqlExceptionCodeList.clear();
+                                config.sqlExceptionCodeList.addAll(sqlExceptionCodeList);
+                            }
+                        }
                         break;
                     case CONFIG_SQL_EXCEPTION_STATE: //copy 'sqlExceptionStateList'
-                        if (this.sqlExceptionStateList != null && !sqlExceptionStateList.isEmpty())
-                            config.sqlExceptionStateList = new ArrayList<>(sqlExceptionStateList);
+                        if (sqlExceptionStateList == null)
+                            config.sqlExceptionStateList = null;
+                        else if (!sqlExceptionStateList.isEmpty()) {
+                            if (config.sqlExceptionStateList == null) {
+                                config.sqlExceptionStateList = new ArrayList<>(sqlExceptionStateList);
+                            } else {
+                                config.sqlExceptionStateList.clear();
+                                config.sqlExceptionStateList.addAll(sqlExceptionStateList);
+                            }
+                        }
                         break;
                     default: //other config items
                         field.set(config, field.get(this));
@@ -1038,16 +1061,16 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //create BeeJdbcLinkInfoDecoder instance
     private BeeJdbcLinkInfoDecoder createJdbcLinkInfoDecoder() {
         //step1:if exists link info decoder,then return it
-        if (jdbcLinkInfoDecoder != null) return this.jdbcLinkInfoDecoder;
+        if (linkInfoDecoder != null) return this.linkInfoDecoder;
 
         //step2: create link info decoder
-        if (jdbcLinkInfoDecoderClass != null || isNotBlank(jdbcLinkInfoDecoderClassName)) {
+        if (linkInfoDecoderClass != null || isNotBlank(linkInfoDecoderClassName)) {
             Class<?> decoderClass = null;
             try {
-                decoderClass = jdbcLinkInfoDecoderClass != null ? jdbcLinkInfoDecoderClass : loadClass(jdbcLinkInfoDecoderClassName);
+                decoderClass = linkInfoDecoderClass != null ? linkInfoDecoderClass : loadClass(linkInfoDecoderClassName);
                 return (BeeJdbcLinkInfoDecoder) createClassInstance(decoderClass, BeeJdbcLinkInfoDecoder.class, "jdbc link info decoder");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc link info decoder with class[" + jdbcLinkInfoDecoderClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc link info decoder with class[" + linkInfoDecoderClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create jdbc link info decoder with class[" + decoderClass + "]", e);
             }
@@ -1055,41 +1078,41 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         return null;
     }
 
-    //create method log listener
-    private BeeJdbcCallLogHandler createLogListener() {
-        //step1:if exists listener,then return it
+    //create method log handler
+    private BeeJdbcEventLogHandler createJdbcCallLogHandler() {
+        //step1:if exists handler,then return it
         if (this.slowLogHandler != null) return this.slowLogHandler;
 
-        //step2: create a listener
+        //step2: create a handler
         if (this.slowLogHandlerClass != null || isNotBlank(this.slowLogHandlerClassName)) {
-            Class<?> listenerClass = null;
+            Class<?> handlerClass = null;
             try {
-                listenerClass = slowLogHandlerClass != null ? slowLogHandlerClass : loadClass(slowLogHandlerClassName);
-                return (BeeJdbcCallLogHandler) createClassInstance(listenerClass, BeeJdbcCallLogHandler.class, "jdbc call log listener");
+                handlerClass = slowLogHandlerClass != null ? slowLogHandlerClass : loadClass(slowLogHandlerClassName);
+                return (BeeJdbcEventLogHandler) createClassInstance(handlerClass, BeeJdbcEventLogHandler.class, "jdbc call log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + slowLogHandlerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + slowLogHandlerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc call log listener with class[" + listenerClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + handlerClass + "]", e);
             }
         }
         return null;
     }
 
-    //create jdbc method log collector
-    private BeeJdbcCallLogManager createLogCollector() {
-        //step1:if exists log collector,then return it
-        if (this.jdbcCallLogManager != null) return this.jdbcCallLogManager;
+    //create jdbc method log manager
+    private BeeJdbcEventLogManager createJdbcEventLogManager() {
+        //step1:if exists log manager,then return it
+        if (this.logManager != null) return this.logManager;
 
-        //step2: create jdbc method log collector
-        if (this.jdbcCallLogManagerClass != null || isNotBlank(this.jdbcCallLogManagerClassName)) {
-            Class<?> collectorClass = null;
+        //step2: create jdbc method log manager
+        if (this.logManagerClass != null || isNotBlank(this.logManagerClassName)) {
+            Class<?> logManagerClass = null;
             try {
-                collectorClass = jdbcCallLogManagerClass != null ? jdbcCallLogManagerClass : loadClass(jdbcCallLogManagerClassName);
-                return (BeeJdbcCallLogManager) createClassInstance(collectorClass, BeeJdbcCallLogManager.class, "jdbc method log collector");
+                logManagerClass = this.logManagerClass != null ? this.logManagerClass : loadClass(logManagerClassName);
+                return (BeeJdbcEventLogManager) createClassInstance(logManagerClass, BeeJdbcEventLogManager.class, "jdbc method log manager");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + jdbcCallLogManagerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc event log manager with class[" + logManagerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc call log collector with class[" + collectorClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc event log manager with class[" + logManagerClass + "]", e);
             }
         }
         return null;
@@ -1243,16 +1266,16 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //create Thread factory
     private BeeConnectionPredicate createConnectionEvictPredicate() throws BeeDataSourceConfigException {
         //step1:if exists predication,then return it
-        if (this.evictPredicate != null) return this.evictPredicate;
+        if (this.predicate != null) return this.predicate;
 
         //step2: create SQLExceptionPredication
-        if (evictPredicateClass != null || isNotBlank(evictPredicateClassName)) {
+        if (predicateClass != null || isNotBlank(predicateClassName)) {
             Class<?> predicationClass = null;
             try {
-                predicationClass = evictPredicateClass != null ? evictPredicateClass : loadClass(evictPredicateClassName);
+                predicationClass = predicateClass != null ? predicateClass : loadClass(predicateClassName);
                 return (BeeConnectionPredicate) createClassInstance(predicationClass, BeeConnectionPredicate.class, "sql exception predicate");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Not found sql exception predicate class[" + evictPredicateClassName + "]", e);
+                throw new BeeDataSourceConfigException("Not found sql exception predicate class[" + predicateClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create sql exception predicate with class[" + predicationClass + "]", e);
             }

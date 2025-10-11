@@ -24,8 +24,6 @@ import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
@@ -44,101 +42,100 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //A map stores some properties of object factory,these properties injected to factory during pool initialization
     private final Map<String, Object> factoryProperties = new HashMap<>(0);
 
-    //Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
+    //1: Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
     private String poolName;
-    //Object getting mode in pool
+    //2: Object getting mode in pool
     private boolean fairMode;
-    //Object creation size during pool initialization,default is zero
+    //3: Object creation size during pool initialization,default is zero
     private int initialSize;
-    //Max reachable size of object categories in pool,default is 50
+    //4: Max reachable size of object categories in pool,default is 50
     private int maxKeySize = 50;
-    //Max reachable size of pooled objects of per category,pool total capacity = maxObjectKeySize * maxActive
+    //5: Max reachable size of pooled objects of per category,pool total capacity = maxObjectKeySize * maxActive
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
-    //Permit size of semaphore for per object category
-    private int borrowSemaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
-    //Milliseconds: max wait time for a borrower to get a object from pool,default is 8000 milliseconds(8 seconds)
-    private long maxWait = SECONDS.toMillis(8L);
-    //An indicator of object creation,true that pool use a thread to create initial objects during initialization,default is false
+    //6: Permit size of semaphore for per object category
+    private int semaphoreSize = Math.min(this.maxActive / 2, CommonUtil.NCPU);
+    //7: A flag,true is that pool use a threadLocal to store used object for borrowers(false can be used to support virtual threads)
+    private boolean useThreadLocal = true;
+    //8: Milliseconds,max wait time for a borrower to get a object from pool,default is 8000 milliseconds(8 seconds)
+    private long maxWait = 8000L;
+    //9: A flag of object creation,true that pool use a thread to create initial objects during initialization,default is false
     private boolean asyncCreateInitObject;
-
-    //Milliseconds: max idle time of pooled objects stay in pool,default is 18000 milliseconds(3 minutes)
-    private long idleTimeout = MINUTES.toMillis(3L);
-    //Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
+    //10: Milliseconds,max idle time of pooled objects stay in pool,default is 18000 milliseconds(3 minutes)
+    private long idleTimeout = 180000L;
+    //11: Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
     private long holdTimeout;
-
-    //Seconds: max wait time to get alive test result on borrowed objects,default is 3 seconds.
+    //12: Milliseconds: an interval time of pool thread to find out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
+    private long intervalToClearTimeout = 180000L;
+    //15: Seconds,max wait time to get alive test result on borrowed objects,default is 3 seconds.
     private int aliveTestTimeout = 3;
-    //Milliseconds: a threshold time of alive since from last test,if gap time is less than it,assume objects are alive,and skip test,default is 500 milliseconds
+    //16: Milliseconds,a threshold time of alive since from last test,if gap time is less than it,assume objects are alive,and skip test,default is 500 milliseconds
     private long aliveAssumeTime = 500L;
-    //Milliseconds: an interval time of pool thread to find out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
-    private long timerCheckInterval = MINUTES.toMillis(3L);
-    //An indicator that how to close borrowed objects when pool close or pool clean,true is that pool recycles them immediately,false that pool wait them return to pool,default is false.
+    //17: A flag that how to close borrowed objects when pool close or pool clean,true is that pool recycles them immediately,false that pool wait them return to pool,default is false.
     private boolean forceRecycleBorrowedOnClose;
-    //An indicator that shutdown thread pool when restart or shutdown object pool.
+    //18: A flag that shutdown thread pool when restart or shutdown object pool.
     private boolean forceShutdownThreadPoolOnClose;
-    //Milliseconds: wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
+    //19: Milliseconds,wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
-
-    //An indicator,true is that pool use a threadLocal to store used object for borrowers(false can be used to support virtual threads)
-    private boolean enableThreadLocal = true;
-    //An indicator to enable Jmx registration,default is false
-    private boolean enableJmx;
-    //An indicator to enable runtime log print in pool,default is false
-    private boolean printRuntimeLog;
-    //An indicator to enable configuration log print during pool initializes,default is false
-    private boolean printConfigInfo;
-    //A list of field name,not be log print during pool initialization,default is null
+    //20: A flag to enable Jmx registration,default is false
+    private boolean registerMbeans;
+    //21: A flag to enable runtime log print in pool,default is false
+    private boolean printRuntimeLogs;
+    //22: A flag to enable configuration log print during pool initializes,default is false
+    private boolean printConfiguration;
+    //23: A list of field name,not be log print during pool initialization,default is null
     private List<String> configPrintExclusionList;
-
-    //An array of interfaces implemented by object class
-    private Class<?>[] objectInterfaces;
-    //A class name array of interface implemented by object class
-    private String[] objectInterfaceNames;
-
-    //Object factory to create pooled objects to pool,first priority for being used if exists
-    private BeeObjectFactory<K, V> objectFactory;
-    //Class of object factory,second priority for being used if exists
-    private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
-    //Class name of object factory,third priority for being used if exists
-    private String objectFactoryClassName;
-
-    //Predicate to do eviction test on exception objects,first priority for selected if exists
-    private BeeObjectPredicate objectPredicate;
-    //Class of predicate,second priority for being used if exists
-    private Class<? extends BeeObjectPredicate> objectPredicateClass;
-    //Class name of predicate,third priority for being used if exists
-    private String objectPredicateClassName;
-
-    //Class name of pool implementation,default is {@code KeyedObjectPool}
+    //24: Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
 
-    //********************************************** object call logs **************************************************//
-    //slow threshold value of object get,time unit:milliseconds
-    private long slowObjectGetThreshold;
-    //slow threshold of object call,time unit:milliseconds
-    private long slowObjectCallThreshold;
-    //Capacity of method logs cache，default is 1000
-    private int objectCallLogCacheSize = 1000;
-    //Work mode of object call log listener,default is true,sync mode
-    private boolean objectCallLogListenInSync = true;
-    //log timeout in collector,default is 3 minutes
-    private long objectCallLogTimeout = MINUTES.toMillis(3L);
-    //timer interval to clear timeout logs
-    private long objectCallLogClearInterval = objectCallLogTimeout;
 
-    //object call log listener
-    private BeeObjectCallLogHandler<K, V> objectCallLogListener;
-    //Class of object call log listener,default is none
-    private Class<? extends BeeObjectCallLogHandler<K, V>> objectCallLogListenerClass;
-    //Class name of log listener,default is none
-    private String objectCallLogListenerClassName;
+    //25: An array of interfaces implemented by object class
+    private Class<?>[] objectInterfaces;
+    //26: A class name array of interface implemented by object class
+    private String[] objectInterfaceNames;
 
-    //object call logs collector
-    private BeeObjectCallLogManager<K, V> objectCallLogCollector;
-    //Class of object call logs collector,default is none
-    private Class<? extends BeeObjectCallLogManager<K, V>> objectCallLogCollectorClass;
-    //Class name of object call logs collector,default is none
-    private String objectCallLogCollectorClassName;
+    //27: Object factory,priority order: instance > class > class name
+    private BeeObjectFactory<K, V> objectFactory;
+    //28: Class of object factory
+    private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
+    //29: Class name of object factory
+    private String objectFactoryClassName;
+
+    //30: Predicate to do eviction test on exception objects,priority order: instance > class > class name
+    private BeeObjectPredicate predicate;
+    //31: Class of predicate
+    private Class<? extends BeeObjectPredicate> predicateClass;
+    //32: Class name of predicate
+    private String predicateClassName;
+
+
+    //********************************************** object event logs **************************************************//
+    //33: Capacity of method logs cache，default is 1000
+    private int logCacheSize = 1000;
+    //34: Log timeout in manager,default is 3 minutes
+    private long logTimeout = 180000L;
+    //35: Timer interval to clear timeout logs,default is 3 minutes
+    private long intervalToClearTimeoutEventLogs = logTimeout;
+
+    //36: Object call logs manager,priority order: instance > class > class name
+    private BeeObjectEventLogManager<K, V> logManager;
+    //37: Class of object call logs manager,default is none
+    private Class<? extends BeeObjectEventLogManager<K, V>> logManagerClass;
+    //38: Class name of object call logs manager,default is none
+    private String logManagerClassName;
+
+    //39: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
+    private long slowObjectGetThreshold = 30000L;
+    //40: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    private long slowObjectCallThreshold = 30000L;
+    //41: Slow logs handle mode,default is true
+    private boolean slowLogHandledBySyncMode = true;
+
+    //42: Object call log handler,priority order: instance > class > class name
+    private BeeObjectEventLogHandler<K, V> logHandler;
+    //43: Class of object call log handler,default is none
+    private Class<? extends BeeObjectEventLogHandler<K, V>> logHandlerClass;
+    //44: Class name of log handler,default is none
+    private String logHandlerClassName;
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
@@ -159,51 +156,35 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //***************************************************************************************************************//
-    //                                     2: base configuration(40)                                                 //
+    //                                     2:  Pool control setting(46)[1 --- 24]                                       //
     //***************************************************************************************************************//
+    @Override
     public String getPoolName() {
-        return this.poolName;
+        return poolName;
     }
 
     public void setPoolName(String poolName) {
-        this.poolName = trimString(poolName);
+        this.poolName = poolName;
     }
 
+    @Override
     public boolean isFairMode() {
-        return this.fairMode;
+        return fairMode;
     }
 
     public void setFairMode(boolean fairMode) {
         this.fairMode = fairMode;
     }
 
+    @Override
     public int getInitialSize() {
-        return this.initialSize;
+        return initialSize;
     }
 
     public void setInitialSize(int initialSize) {
         if (initialSize < 0)
             throw new InvalidParameterException("The given value for the configuration item 'initial-size' cannot be less than zero");
         this.initialSize = initialSize;
-    }
-
-    public boolean isAsyncCreateInitObject() {
-        return asyncCreateInitObject;
-    }
-
-    public void setAsyncCreateInitObject(boolean asyncCreateInitObject) {
-        this.asyncCreateInitObject = asyncCreateInitObject;
-    }
-
-    public int getMaxActive() {
-        return this.maxActive;
-    }
-
-    public void setMaxActive(int maxActive) {
-        if (maxActive <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'max-active' must be greater than zero");
-        this.maxActive = maxActive;
-        borrowSemaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
     }
 
     public int getMaxKeySize() {
@@ -216,18 +197,40 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.maxKeySize = maxKeySize;
     }
 
-    public int getBorrowSemaphoreSize() {
-        return this.borrowSemaphoreSize;
+    @Override
+    public int getMaxActive() {
+        return maxActive;
     }
 
-    public void setBorrowSemaphoreSize(int borrowSemaphoreSize) {
-        if (borrowSemaphoreSize <= 0)
+    public void setMaxActive(int maxActive) {
+        if (maxActive <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'max-active' must be greater than zero");
+        this.maxActive = maxActive;
+        this.semaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
+    }
+
+    @Override
+    public int getSemaphoreSize() {
+        return semaphoreSize;
+    }
+
+    public void setSemaphoreSize(int semaphoreSize) {
+        if (semaphoreSize <= 0)
             throw new InvalidParameterException("The given value for configuration item 'borrow-semaphore-size' must be greater than zero");
-        this.borrowSemaphoreSize = borrowSemaphoreSize;
+        this.semaphoreSize = semaphoreSize;
     }
 
+    public boolean isUseThreadLocal() {
+        return useThreadLocal;
+    }
+
+    public void setUseThreadLocal(boolean useThreadLocal) {
+        this.useThreadLocal = useThreadLocal;
+    }
+
+    @Override
     public long getMaxWait() {
-        return this.maxWait;
+        return maxWait;
     }
 
     public void setMaxWait(long maxWait) {
@@ -236,8 +239,17 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.maxWait = maxWait;
     }
 
+    public boolean isAsyncCreateInitObject() {
+        return asyncCreateInitObject;
+    }
+
+    public void setAsyncCreateInitObject(boolean asyncCreateInitObject) {
+        this.asyncCreateInitObject = asyncCreateInitObject;
+    }
+
+    @Override
     public long getIdleTimeout() {
-        return this.idleTimeout;
+        return idleTimeout;
     }
 
     public void setIdleTimeout(long idleTimeout) {
@@ -246,19 +258,31 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.idleTimeout = idleTimeout;
     }
 
+    @Override
     public long getHoldTimeout() {
-        return this.holdTimeout;
+        return holdTimeout;
     }
 
     public void setHoldTimeout(long holdTimeout) {
         if (holdTimeout < 0L)
             throw new InvalidParameterException("The given value for configuration item 'hold-timeout' cannot be less than zero");
-
         this.holdTimeout = holdTimeout;
     }
 
+    @Override
+    public long getIntervalToClearTimeout() {
+        return intervalToClearTimeout;
+    }
+
+    public void setIntervalToClearTimeout(long intervalToClearTimeout) {
+        if (intervalToClearTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'timer-check-interval' must be greater than zero");
+        this.intervalToClearTimeout = intervalToClearTimeout;
+    }
+
+    @Override
     public int getAliveTestTimeout() {
-        return this.aliveTestTimeout;
+        return aliveTestTimeout;
     }
 
     public void setAliveTestTimeout(int aliveTestTimeout) {
@@ -267,8 +291,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.aliveTestTimeout = aliveTestTimeout;
     }
 
+    @Override
     public long getAliveAssumeTime() {
-        return this.aliveAssumeTime;
+        return aliveAssumeTime;
     }
 
     public void setAliveAssumeTime(long aliveAssumeTime) {
@@ -277,18 +302,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.aliveAssumeTime = aliveAssumeTime;
     }
 
-    public long getTimerCheckInterval() {
-        return this.timerCheckInterval;
-    }
-
-    public void setTimerCheckInterval(long timerCheckInterval) {
-        if (timerCheckInterval <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'timer-check-interval' must be greater than zero");
-        this.timerCheckInterval = timerCheckInterval;
-    }
-
+    @Override
     public boolean isForceRecycleBorrowedOnClose() {
-        return this.forceRecycleBorrowedOnClose;
+        return forceRecycleBorrowedOnClose;
     }
 
     public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
@@ -303,8 +319,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.forceShutdownThreadPoolOnClose = forceShutdownThreadPoolOnClose;
     }
 
+    @Override
     public long getParkTimeForRetry() {
-        return this.parkTimeForRetry;
+        return parkTimeForRetry;
     }
 
     public void setParkTimeForRetry(long parkTimeForRetry) {
@@ -313,36 +330,29 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.parkTimeForRetry = parkTimeForRetry;
     }
 
-    public boolean isEnableJmx() {
-        return this.enableJmx;
+    @Override
+    public boolean isRegisterMbeans() {
+        return registerMbeans;
     }
 
-    public void setEnableJmx(boolean enableJmx) {
-        this.enableJmx = enableJmx;
+    public void setRegisterMbeans(boolean registerMbeans) {
+        this.registerMbeans = registerMbeans;
     }
 
-    public boolean isEnableThreadLocal() {
-        return enableThreadLocal;
+    public boolean isPrintRuntimeLogs() {
+        return printRuntimeLogs;
     }
 
-    public void setEnableThreadLocal(boolean enableThreadLocal) {
-        this.enableThreadLocal = enableThreadLocal;
+    public void setPrintRuntimeLogs(boolean printRuntimeLogs) {
+        this.printRuntimeLogs = printRuntimeLogs;
     }
 
-    public boolean isPrintRuntimeLog() {
-        return this.printRuntimeLog;
+    public boolean isPrintConfiguration() {
+        return printConfiguration;
     }
 
-    public void setPrintRuntimeLog(boolean printRuntimeLog) {
-        this.printRuntimeLog = printRuntimeLog;
-    }
-
-    public boolean isPrintConfigInfo() {
-        return this.printConfigInfo;
-    }
-
-    public void setPrintConfigInfo(boolean printConfigInfo) {
-        this.printConfigInfo = printConfigInfo;
+    public void setPrintConfiguration(boolean printConfiguration) {
+        this.printConfiguration = printConfiguration;
     }
 
     public void addConfigPrintExclusion(String fieldName) {
@@ -363,6 +373,15 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public boolean existConfigPrintExclusion(String fieldName) {
         return configPrintExclusionList != null && configPrintExclusionList.contains(fieldName);
+    }
+
+    @Override
+    public String getPoolImplementClassName() {
+        return poolImplementClassName;
+    }
+
+    public void setPoolImplementClassName(String poolImplementClassName) {
+        this.poolImplementClassName = poolImplementClassName;
     }
 
     //***************************************************************************************************************//
@@ -408,28 +427,28 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.objectFactoryClassName = trimString(objectFactoryClassName);
     }
 
-    public BeeObjectPredicate getObjectPredicate() {
-        return objectPredicate;
+    public BeeObjectPredicate getPredicate() {
+        return predicate;
     }
 
-    public void setObjectPredicate(BeeObjectPredicate objectPredicate) {
-        this.objectPredicate = objectPredicate;
+    public void setPredicate(BeeObjectPredicate predicate) {
+        this.predicate = predicate;
     }
 
-    public Class<? extends BeeObjectPredicate> getObjectPredicateClass() {
-        return objectPredicateClass;
+    public Class<? extends BeeObjectPredicate> getPredicateClass() {
+        return predicateClass;
     }
 
-    public void setObjectPredicateClass(Class<? extends BeeObjectPredicate> objectPredicateClass) {
-        this.objectPredicateClass = objectPredicateClass;
+    public void setPredicateClass(Class<? extends BeeObjectPredicate> predicateClass) {
+        this.predicateClass = predicateClass;
     }
 
-    public String getObjectPredicateClassName() {
-        return objectPredicateClassName;
+    public String getPredicateClassName() {
+        return predicateClassName;
     }
 
-    public void setObjectPredicateClassName(String objectPredicateClassName) {
-        this.objectPredicateClassName = objectPredicateClassName;
+    public void setPredicateClassName(String predicateClassName) {
+        this.predicateClassName = predicateClassName;
     }
 
     public Object getFactoryProperty(String key) {
@@ -464,27 +483,43 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //***************************************************************************************************************//
     //                                     4: pool work configuration(2)                                             //
     //***************************************************************************************************************//
-    public String getPoolImplementClassName() {
-        return this.poolImplementClassName;
-    }
-
-    public void setPoolImplementClassName(String poolImplementClassName) {
-        if (isNotBlank(poolImplementClassName))
-            this.poolImplementClassName = trimString(poolImplementClassName);
-    }
 
 
     //****************************************************************************************************************//
-    //                                    5: Log Collector(18)                                                        //
+    //                                    5: Log manager(18)                                                        //
     //****************************************************************************************************************//
-    public int getObjectCallLogCacheSize() {
-        return objectCallLogCacheSize;
+    public BeeObjectEventLogManager<K, V> getLogManager() {
+        return logManager;
     }
 
-    public void setObjectCallLogCacheSize(int objectCallLogCacheSize) {
-        if (objectCallLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'object-call-log-cache-size' must be greater than zero");
-        this.objectCallLogCacheSize = objectCallLogCacheSize;
+    public void setLogManager(BeeObjectEventLogManager<K, V> logManager) {
+        this.logManager = logManager;
+    }
+
+    public Class<? extends BeeObjectEventLogManager<K, V>> getLogManagerClass() {
+        return logManagerClass;
+    }
+
+    public void setLogManagerClass(Class<? extends BeeObjectEventLogManager<K, V>> logManagerClass) {
+        this.logManagerClass = logManagerClass;
+    }
+
+    public String getLogManagerClassName() {
+        return logManagerClassName;
+    }
+
+    public void setLogManagerClassName(String logManagerClassName) {
+        this.logManagerClassName = logManagerClassName;
+    }
+
+    public int getLogCacheSize() {
+        return logCacheSize;
+    }
+
+    public void setLogCacheSize(int logCacheSize) {
+        if (logCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'log-cache-size' must be greater than zero");
+        this.logCacheSize = logCacheSize;
     }
 
     public long getSlowObjectGetThreshold() {
@@ -509,80 +544,58 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.slowObjectCallThreshold = slowObjectCallThreshold;
     }
 
-    public boolean isObjectCallLogListenInSync() {
-        return objectCallLogListenInSync;
+
+    public long getLogTimeout() {
+        return logTimeout;
     }
 
-    public void setObjectCallLogListenInSync(boolean objectCallLogListenInSync) {
-        this.objectCallLogListenInSync = objectCallLogListenInSync;
+    public void setLogTimeout(long logTimeout) {
+        if (logTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'log-timeout' must be greater than zero");
+        this.logTimeout = logTimeout;
     }
 
-    public long getObjectCallLogTimeout() {
-        return objectCallLogTimeout;
+    public long getIntervalToClearTimeoutEventLogs() {
+        return intervalToClearTimeoutEventLogs;
     }
 
-    public void setObjectCallLogTimeout(long objectCallLogTimeout) {
-        if (objectCallLogTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'object-call-log-timeout' must be greater than zero");
-        this.objectCallLogTimeout = objectCallLogTimeout;
+    public void setIntervalToClearTimeoutEventLogs(long intervalToClearTimeoutEventLogs) {
+        if (intervalToClearTimeoutEventLogs <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'log-clear-interval' must be greater than zero");
+        this.intervalToClearTimeoutEventLogs = intervalToClearTimeoutEventLogs;
     }
 
-    public long getObjectCallLogClearInterval() {
-        return objectCallLogClearInterval;
+    public BeeObjectEventLogHandler<K, V> getLogHandler() {
+        return logHandler;
     }
 
-    public void setObjectCallLogClearInterval(long objectCallLogClearInterval) {
-        if (objectCallLogClearInterval <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'object-call-log-clear-interval' must be greater than zero");
-        this.objectCallLogClearInterval = objectCallLogClearInterval;
+    public void setLogHandler(BeeObjectEventLogHandler<K, V> logHandler) {
+        this.logHandler = logHandler;
     }
 
-    public BeeObjectCallLogHandler<K, V> getObjectCallLogListener() {
-        return objectCallLogListener;
+    public Class<? extends BeeObjectEventLogHandler<K, V>> getLogHandlerClass() {
+        return logHandlerClass;
     }
 
-    public void setObjectCallLogListener(BeeObjectCallLogHandler<K, V> objectCallLogListener) {
-        this.objectCallLogListener = objectCallLogListener;
+    public void setLogHandlerClass(Class<? extends BeeObjectEventLogHandler<K, V>> logHandlerClass) {
+        this.logHandlerClass = logHandlerClass;
     }
 
-    public Class<? extends BeeObjectCallLogHandler<K, V>> getObjectCallLogListenerClass() {
-        return objectCallLogListenerClass;
+    public String getLogHandlerClassName() {
+        return logHandlerClassName;
     }
 
-    public void setObjectCallLogListenerClass(Class<? extends BeeObjectCallLogHandler<K, V>> objectCallLogListenerClass) {
-        this.objectCallLogListenerClass = objectCallLogListenerClass;
+    public void setLogHandlerClassName(String logHandlerClassName) {
+        this.logHandlerClassName = logHandlerClassName;
     }
 
-    public String getObjectCallLogListenerClassName() {
-        return objectCallLogListenerClassName;
+
+    public boolean isSlowLogHandledBySyncMode() {
+        return slowLogHandledBySyncMode;
     }
 
-    public void setObjectCallLogListenerClassName(String objectCallLogListenerClassName) {
-        this.objectCallLogListenerClassName = objectCallLogListenerClassName;
-    }
-
-    public Class<? extends BeeObjectCallLogManager<K, V>> getObjectCallLogCollectorClass() {
-        return objectCallLogCollectorClass;
-    }
-
-    public void setObjectCallLogCollectorClass(Class<? extends BeeObjectCallLogManager<K, V>> objectCallLogCollectorClass) {
-        this.objectCallLogCollectorClass = objectCallLogCollectorClass;
-    }
-
-    public BeeObjectCallLogManager<K, V> getObjectCallLogCollector() {
-        return objectCallLogCollector;
-    }
-
-    public void setObjectCallLogCollector(BeeObjectCallLogManager<K, V> objectCallLogCollector) {
-        this.objectCallLogCollector = objectCallLogCollector;
-    }
-
-    public String getObjectCallLogCollectorClassName() {
-        return objectCallLogCollectorClassName;
-    }
-
-    public void setObjectCallLogCollectorClassName(String objectCallLogCollectorClassName) {
-        this.objectCallLogCollectorClassName = objectCallLogCollectorClassName;
+    public void setSlowLogHandledBySyncMode(boolean slowLogHandledBySyncMode) {
+        this.slowLogHandledBySyncMode = slowLogHandledBySyncMode;
     }
 
     //***************************************************************************************************************//
@@ -744,21 +757,21 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
-        //4: create a log collector
-        BeeObjectCallLogManager<K, V> logCollector = this.createLogCollector();
-        BeeObjectCallLogHandler<K, V> objectCallLogListener = (logCollector != null) ? this.createLogListener() : null;
+        //4: create a log manager
+        BeeObjectEventLogManager<K, V> logManager = this.createLogManager();
+        BeeObjectEventLogHandler<K, V> logHandler = (logManager != null) ? this.createLogHandler() : null;
         //5: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
 
         //6: assign above objects to the checked configuration object(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
-        if (predicate != null) checkedConfig.objectPredicate = predicate;
+        if (predicate != null) checkedConfig.predicate = predicate;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
-        if (logCollector != null) checkedConfig.objectCallLogCollector = logCollector;
-        if (objectCallLogListener != null) checkedConfig.objectCallLogListener = objectCallLogListener;
+        if (logManager != null) checkedConfig.logManager = logManager;
+        if (logHandler != null) checkedConfig.logHandler = logHandler;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
-        if (checkedConfig.printConfigInfo) printConfiguration(checkedConfig);
+        if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
         return checkedConfig;
     }
 
@@ -857,16 +870,16 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     private BeeObjectPredicate createObjectPredicate() throws BeeObjectSourceConfigException {
         //step1:if exits a set predicate,then return it
-        if (this.objectPredicate != null) return this.objectPredicate;
+        if (this.predicate != null) return this.predicate;
 
         //step2: create predicate instance with a class or class name
-        if (objectPredicateClass != null || isNotBlank(objectPredicateClassName)) {
+        if (predicateClass != null || isNotBlank(predicateClassName)) {
             Class<?> predicationClass = null;
             try {
-                predicationClass = objectPredicateClass != null ? objectPredicateClass : loadClass(objectPredicateClassName);
+                predicationClass = predicateClass != null ? predicateClass : loadClass(predicateClassName);
                 return (BeeObjectPredicate) createClassInstance(predicationClass, BeeObjectPredicate.class, "object predicate");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Not found predicate class:" + objectPredicateClassName, e);
+                throw new BeeObjectSourceConfigException("Not found predicate class:" + predicateClassName, e);
             } catch (Throwable e) {
                 throw new BeeObjectSourceConfigException("Failed to create predicate instance with class:" + predicationClass, e);
             }
@@ -874,41 +887,41 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         return null;
     }
 
-    //create object call log listener
-    private BeeObjectCallLogHandler<K, V> createLogListener() {
-        //step1:if exists listener,then return it
-        if (this.objectCallLogListener != null) return this.objectCallLogListener;
+    //create object call log handler
+    private BeeObjectEventLogHandler<K, V> createLogHandler() {
+        //step1:if exists handler,then return it
+        if (this.logHandler != null) return this.logHandler;
 
-        //step2: create a listener
-        if (this.objectCallLogListenerClass != null || isNotBlank(this.objectCallLogListenerClassName)) {
-            Class<?> listenerClass = null;
+        //step2: create a handler
+        if (this.logHandlerClass != null || isNotBlank(this.logHandlerClassName)) {
+            Class<?> handlerClass = null;
             try {
-                listenerClass = objectCallLogListenerClass != null ? objectCallLogListenerClass : loadClass(objectCallLogListenerClassName);
-                return (BeeObjectCallLogHandler<K, V>) createClassInstance(listenerClass, BeeObjectCallLogHandler.class, "object call log listener");
+                handlerClass = logHandlerClass != null ? logHandlerClass : loadClass(logHandlerClassName);
+                return (BeeObjectEventLogHandler<K, V>) createClassInstance(handlerClass, BeeObjectEventLogHandler.class, "object call log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log listener with class[" + objectCallLogListenerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + logHandlerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log listener with class[" + listenerClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + handlerClass + "]", e);
             }
         }
         return null;
     }
 
-    //create object call log collector
-    private BeeObjectCallLogManager<K, V> createLogCollector() {
-        //step1:if exists log collector,then return it
-        if (this.objectCallLogCollector != null) return this.objectCallLogCollector;
+    //create object call log manager
+    private BeeObjectEventLogManager<K, V> createLogManager() {
+        //step1:if exists log manager,then return it
+        if (this.logManager != null) return this.logManager;
 
-        //step2: create object method log collector
-        if (this.objectCallLogCollectorClass != null || isNotBlank(this.objectCallLogCollectorClassName)) {
-            Class<?> collectorClass = null;
+        //step2: create object method log manager
+        if (this.logManagerClass != null || isNotBlank(this.logManagerClassName)) {
+            Class<?> managerClass = null;
             try {
-                collectorClass = objectCallLogCollectorClass != null ? objectCallLogCollectorClass : loadClass(objectCallLogCollectorClassName);
-                return (BeeObjectCallLogManager<K, V>) createClassInstance(collectorClass, BeeObjectCallLogManager.class, "object call log collector");
+                managerClass = logManagerClass != null ? logManagerClass : loadClass(logManagerClassName);
+                return (BeeObjectEventLogManager<K, V>) createClassInstance(managerClass, BeeObjectEventLogManager.class, "object call log manager");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log collector with class[" + objectCallLogCollectorClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create object call log manager with class[" + logManagerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log collector with class[" + collectorClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create object call log manager with class[" + managerClass + "]", e);
             }
         }
         return null;

@@ -12,7 +12,7 @@ package org.stone.test.beecp.config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.test.beecp.objects.MockBasePoolImplementation;
+import org.stone.test.beecp.objects.pool.BaseSimplePoolImpl;
 
 /**
  * @author Chris Liao
@@ -23,8 +23,8 @@ public class Tc0015PoolImplementClassNameTest {
     public void testConfigurationSet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         Assertions.assertNull(config.getPoolImplementClassName());//default check
-        config.setPoolImplementClassName(MockBasePoolImplementation.class.getName());
-        Assertions.assertEquals(MockBasePoolImplementation.class.getName(), config.getPoolImplementClassName());
+        config.setPoolImplementClassName(BaseSimplePoolImpl.class.getName());
+        Assertions.assertEquals(BaseSimplePoolImpl.class.getName(), config.getPoolImplementClassName());
         config.setPoolImplementClassName(null);
         Assertions.assertNull(config.getPoolImplementClassName());
     }

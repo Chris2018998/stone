@@ -147,7 +147,7 @@ public class BeeJtaDataSource extends TimerTask implements DataSource, AutoClose
 
     public void setPrintRuntimeLog(boolean printRuntimeLog) throws SQLException {
         checkDataSource();
-        ds.setPrintRuntimeLog(printRuntimeLog);
+        ds.setPrintRuntimeLogs(printRuntimeLog);
     }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
