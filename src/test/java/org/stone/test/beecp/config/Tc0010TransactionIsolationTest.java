@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class Tc0010TransactionIsolationTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         Assertions.assertNull(config.getDefaultTransactionIsolationCode());
         config.setDefaultTransactionIsolationCode(Connection.TRANSACTION_READ_COMMITTED);

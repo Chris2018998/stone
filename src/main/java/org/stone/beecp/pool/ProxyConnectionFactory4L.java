@@ -21,10 +21,10 @@ import java.sql.SQLException;
  */
 
 final class ProxyConnectionFactory4L extends ProxyConnectionFactory {
-    private final BeeJdbcEventLogManager jdbcLogManager;
+    private final BeeJdbcEventLogManager logManager;
 
-    ProxyConnectionFactory4L(BeeJdbcEventLogManager jdbcLogManager) {
-        this.jdbcLogManager = jdbcLogManager;
+    ProxyConnectionFactory4L(BeeJdbcEventLogManager logManager) {
+        this.logManager = logManager;
     }
 
     public ProxyConnectionBase createProxyConnection(PooledConnection p) throws SQLException {

@@ -11,8 +11,8 @@ package org.stone.test.beecp.datasource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.pool.FastConnectionPool;
 import org.stone.test.base.LogCollector;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
@@ -38,18 +38,15 @@ public class Tc0069ConnectionDefaultTest {
         config1.setUseDefaultReadOnly(true);
         config1.setUseDefaultAutoCommit(true);
         config1.setUseDefaultTransactionIsolation(true);
-
-        FastConnectionPool pool1 = new FastConnectionPool();
-        pool1.init(config1);
-
-        Connection con1 = pool1.getConnection();
-        Assertions.assertTrue(con1.getAutoCommit());
-        Assertions.assertFalse(con1.isReadOnly());
-        Assertions.assertEquals(0, con1.getTransactionIsolation());
-        Assertions.assertNull(con1.getSchema());
-        Assertions.assertNull(con1.getCatalog());
-        con1.close();
-        pool1.close();
+        try (BeeDataSource ds = new BeeDataSource(config1)) {
+            try (Connection con1 = ds.getConnection()) {
+                Assertions.assertTrue(con1.getAutoCommit());
+                Assertions.assertFalse(con1.isReadOnly());
+                Assertions.assertEquals(0, con1.getTransactionIsolation());
+                Assertions.assertNull(con1.getSchema());
+                Assertions.assertNull(con1.getCatalog());
+            }
+        }
 
         BeeDataSourceConfig config2 = createDefault();
         config2.setInitialSize(1);
@@ -67,17 +64,15 @@ public class Tc0069ConnectionDefaultTest {
         config2.setDefaultSchema("schema");
         config2.setDefaultCatalog("catalog");
 
-        FastConnectionPool pool2 = new FastConnectionPool();
-        pool2.init(config2);
-
-        Connection con2 = pool2.getConnection();
-        Assertions.assertTrue(con2.getAutoCommit());
-        Assertions.assertTrue(con2.isReadOnly());
-        Assertions.assertEquals(1, con2.getTransactionIsolation());
-        Assertions.assertEquals("schema", con2.getSchema());
-        Assertions.assertEquals("catalog", con2.getCatalog());
-        con2.close();
-        pool2.close();
+        try (BeeDataSource ds = new BeeDataSource(config2)) {
+            try (Connection con2 = ds.getConnection()) {
+                Assertions.assertTrue(con2.getAutoCommit());
+                Assertions.assertTrue(con2.isReadOnly());
+                Assertions.assertEquals(1, con2.getTransactionIsolation());
+                Assertions.assertEquals("schema", con2.getSchema());
+                Assertions.assertEquals("catalog", con2.getCatalog());
+            }
+        }
     }
 
     @Test
@@ -92,17 +87,15 @@ public class Tc0069ConnectionDefaultTest {
         config.setUseDefaultReadOnly(false);
         config.setUseDefaultAutoCommit(false);
         config.setUseDefaultTransactionIsolation(false);
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
-
-        Connection con = pool.getConnection();
-        Assertions.assertTrue(con.getAutoCommit());
-        Assertions.assertFalse(con.isReadOnly());
-        Assertions.assertEquals(0, con.getTransactionIsolation());
-        Assertions.assertNull(con.getSchema());
-        Assertions.assertNull(con.getCatalog());
-        con.close();
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            try (Connection con = ds.getConnection()) {
+                Assertions.assertTrue(con.getAutoCommit());
+                Assertions.assertFalse(con.isReadOnly());
+                Assertions.assertEquals(0, con.getTransactionIsolation());
+                Assertions.assertNull(con.getSchema());
+                Assertions.assertNull(con.getCatalog());
+            }
+        }
 
         BeeDataSourceConfig config2 = createDefault();
         config2.setInitialSize(1);
@@ -122,17 +115,15 @@ public class Tc0069ConnectionDefaultTest {
         config2.setDefaultSchema("schema");
         config2.setDefaultCatalog("catalog");
 
-        FastConnectionPool pool2 = new FastConnectionPool();
-        pool2.init(config2);
-
-        Connection con2 = pool2.getConnection();
-        Assertions.assertTrue(con2.getAutoCommit());
-        Assertions.assertFalse(con2.isReadOnly());
-        Assertions.assertEquals(0, con2.getTransactionIsolation());
-        Assertions.assertNull(con2.getSchema());
-        Assertions.assertNull(con2.getCatalog());
-        con2.close();
-        pool2.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            try (Connection con = ds.getConnection()) {
+                Assertions.assertTrue(con.getAutoCommit());
+                Assertions.assertFalse(con.isReadOnly());
+                Assertions.assertEquals(0, con.getTransactionIsolation());
+                Assertions.assertNull(con.getSchema());
+                Assertions.assertNull(con.getCatalog());
+            }
+        }
     }
 
     @Test
@@ -155,26 +146,26 @@ public class Tc0069ConnectionDefaultTest {
         config.setConnectionFactory(factory);
 
         LogCollector logCollector = startLogCollector();
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.contains("failed to get value of auto-commit property"));
         Assertions.assertTrue(logs.contains("failed to get value of transaction-isolation property "));
         Assertions.assertTrue(logs.contains("failed to get value of read-only property"));
         Assertions.assertTrue(logs.contains("failed to get value of catalog property"));
         Assertions.assertTrue(logs.contains("failed to get value of schema property"));
-
         Assertions.assertTrue(logs.contains("as default value of auto-commit property"));
         Assertions.assertTrue(logs.contains("as default value of transaction-isolation property"));
         Assertions.assertTrue(logs.contains("as default value of read-only property"));
 
+
         //not print logs
         config.setPrintRuntimeLogs(false);
-        pool = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool.init(config);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertNotNull(ds);
+        }
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains("failed to get value of auto-commit property"));
         Assertions.assertFalse(logs.contains("failed to get value of transaction-isolation property "));
@@ -213,9 +204,9 @@ public class Tc0069ConnectionDefaultTest {
 
 
         LogCollector logCollector = startLogCollector();
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.contains("of auto-commit property on first connection object"));
         Assertions.assertTrue(logs.contains("of transaction-isolation property on first connection object"));
@@ -225,10 +216,10 @@ public class Tc0069ConnectionDefaultTest {
 
         //not print logs
         config.setPrintRuntimeLogs(false);
-        pool = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool.init(config);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertNotNull(ds);
+        }
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains("of auto-commit property on first connection object"));
         Assertions.assertFalse(logs.contains("of transaction-isolation property on first connection object"));
@@ -248,18 +239,19 @@ public class Tc0069ConnectionDefaultTest {
         MockConnectionFactory factory = new MockConnectionFactory(connectionProperties);
         config1.setConnectionFactory(factory);
         LogCollector logCollector = startLogCollector();
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config1);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config1)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.contains("get false from call of isValid method on first connection object"));
 
         //not print logs
         config1.setPrintRuntimeLogs(false);
-        pool = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool.init(config1);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config1)) {
+            Assertions.assertNotNull(ds);
+        }
+
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains("isValid method tested failed on first connection object"));
 
@@ -273,18 +265,18 @@ public class Tc0069ConnectionDefaultTest {
         config2.setConnectionFactory(factory);
 
         logCollector = startLogCollector();
-        FastConnectionPool pool2 = new FastConnectionPool();
-        pool2.init(config2);
-        pool2.close();
+        try (BeeDataSource ds = new BeeDataSource(config2)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs2 = logCollector.endLogCollector();
         Assertions.assertTrue(logs2.contains("isValid method tested failed on first connection object"));
 
         //not print logs
         config2.setPrintRuntimeLogs(false);
-        pool2 = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool2.init(config2);
-        pool2.close();
+        try (BeeDataSource ds = new BeeDataSource(config2)) {
+            Assertions.assertNotNull(ds);
+        }
         logs2 = logCollector.endLogCollector();
         Assertions.assertFalse(logs2.contains("isValid method tested failed on first connection object"));
     }
@@ -299,19 +291,19 @@ public class Tc0069ConnectionDefaultTest {
         MockConnectionFactory factory = new MockConnectionFactory(connectionProperties);
         config.setConnectionFactory(factory);
 
-        FastConnectionPool pool = new FastConnectionPool();
         LogCollector logCollector = startLogCollector();
-        pool.init(config);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.contains("networkTimeout property not supported by connections due to a negative number returned from first connection object"));
 
         //not print logs
         config.setPrintRuntimeLogs(false);
-        pool = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool.init(config);
-        pool.close();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertNotNull(ds);
+        }
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains("networkTimeout property not supported by connections due to a negative number returned from first connection object"));
 
@@ -324,20 +316,19 @@ public class Tc0069ConnectionDefaultTest {
         config2.setInitialSize(1);
         config2.setPrintRuntimeLogs(true);
         config2.setConnectionFactory(factory);
-
-        FastConnectionPool pool2 = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool2.init(config2);
-        pool2.close();
+        try (BeeDataSource ds = new BeeDataSource(config2)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs2 = logCollector.endLogCollector();
         Assertions.assertTrue(logs2.contains("networkTimeout property tested failed on first connection object"));
 
         //not print logs
         config2.setPrintRuntimeLogs(false);
         logCollector = startLogCollector();
-        pool2 = new FastConnectionPool();
-        pool2.init(config2);
-        pool2.close();
+        try (BeeDataSource ds = new BeeDataSource(config2)) {
+            Assertions.assertNotNull(ds);
+        }
         logs2 = logCollector.endLogCollector();
         Assertions.assertFalse(logs2.contains("networkTimeout property tested failed on first connection object"));
 
@@ -350,10 +341,10 @@ public class Tc0069ConnectionDefaultTest {
         config3.setPrintRuntimeLogs(true);
         config3.setConnectionFactory(factory);
 
-        FastConnectionPool pool3 = new FastConnectionPool();
         logCollector = startLogCollector();
-        pool3.init(config3);
-        pool3.close();
+        try (BeeDataSource ds = new BeeDataSource(config3)) {
+            Assertions.assertNotNull(ds);
+        }
         String logs3 = logCollector.endLogCollector();
         Assertions.assertTrue(logs3.contains("networkTimeout property tested failed on first connection object"));
     }

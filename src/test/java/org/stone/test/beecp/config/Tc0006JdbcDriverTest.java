@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class Tc0006JdbcDriverTest {
 
     @Test
-    public void testUrlNotMatchDriver() throws SQLException {
+    public void testCheckFailed_UrlNotMatchDriver() throws SQLException {
         DriverManager.registerDriver(new MockDriver());
         BeeDataSourceConfig config = new BeeDataSourceConfig();
 
@@ -51,19 +51,10 @@ public class Tc0006JdbcDriverTest {
             String expectedMsg = "jdbcUrl(" + config.getJdbcUrl() + ")can not match configured driver[" + MockDriver.class.getName() + "]";
             assertEquals(expectedMsg, e.getMessage());
         }
-
-        //3:set a matched url to retest
-        try {
-            config.setDriverClassName(null);
-            config.setUrl("jdbc:beecp://localhost/testdb");
-            config.check();
-        } catch (Exception e) {
-            Assertions.fail("");
-        }
     }
 
     @Test
-    public void testDriverLoadFail() throws SQLException {
+    public void testCheckFailed_DriverLoadFail() throws SQLException {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setUrl("jdbc:beecp://localhost/testdb");
 
@@ -83,6 +74,18 @@ public class Tc0006JdbcDriverTest {
             fail("[testDriverLoadFail]Test failed");
         } catch (BeeDataSourceConfigException e) {
             assertEquals("Failed to create jdbc driver by class:" + driverClass2, e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCheckPassed() throws Exception {
+        DriverManager.registerDriver(new MockDriver());
+        BeeDataSourceConfig config = new BeeDataSourceConfig();
+        try {
+            config.setUrl("jdbc:beecp://localhost/testdb");
+            config.check();
+        } catch (Exception e) {
+            Assertions.fail("[testCheckPassed]Test failed");
         }
     }
 }

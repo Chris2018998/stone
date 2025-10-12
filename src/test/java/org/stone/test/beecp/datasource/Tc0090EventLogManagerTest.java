@@ -15,6 +15,7 @@ import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeJdbcEventLog;
 import org.stone.beecp.pool.DefaultJdbcEventLogManager;
+import org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogHandler;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,15 +28,15 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 /**
  * @author Chris Liao
  */
-public class Tc0090JdbcLogManagerTest {
+public class Tc0090EventLogManagerTest {
 
     @Test
-    public void testLogManagerWorks() throws SQLException {
+    public void testFastConnectionPool4LCreation() throws SQLException {
         //1: Not set Log Manager
         String connectionFactoryClassName = "org.stone.test.beecp.objects.factory.MockConnectionFactory";
-        BeeDataSourceConfig config1 = createDefault();
-        config1.setConnectionFactoryClassName(connectionFactoryClassName);
-        try (BeeDataSource ds = new BeeDataSource(config1)) {
+        BeeDataSourceConfig config = new BeeDataSourceConfig();
+        config.setConnectionFactoryClassName(connectionFactoryClassName);
+        try (BeeDataSource ds = new BeeDataSource(config)) {
             Assertions.assertFalse(ds.isEnabledJdbcEventLogManager());
             ds.enableJdbcEventLogManager(true);//no impact when not configure a log manager
             Assertions.assertFalse(ds.isEnabledJdbcEventLogManager());//still be false
@@ -45,11 +46,10 @@ public class Tc0090JdbcLogManagerTest {
             }
         }
 
-        //2：Set a log manager
-        BeeDataSourceConfig config2 = createDefault();
-        config2.setConnectionFactoryClassName(connectionFactoryClassName);
-        config2.setLogManager(new DefaultJdbcEventLogManager());
-        try (BeeDataSource ds = new BeeDataSource(config2)) {
+        config = new BeeDataSourceConfig();
+        config.setConnectionFactoryClassName(connectionFactoryClassName);
+        config.setLogManager(new DefaultJdbcEventLogManager());
+        try (BeeDataSource ds = new BeeDataSource(config)) {
             Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());//should be true
             try (Connection ignore = ds.getConnection()) {
                 Assertions.assertFalse(ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get).isEmpty());//is not empty when configure a log manager
@@ -67,6 +67,22 @@ public class Tc0090JdbcLogManagerTest {
             try (Connection ignore = ds.getConnection()) {
                 Assertions.assertFalse(ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get).isEmpty());//a new log should be generated
             }
+        }
+
+        config = new BeeDataSourceConfig();
+        config.setConnectionFactoryClassName(connectionFactoryClassName);
+        config.setLogManagerClass(DefaultJdbcEventLogManager.class);
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());
+        }
+
+        config = new BeeDataSourceConfig();
+        config.setConnectionFactoryClassName(connectionFactoryClassName);
+        config.setLogHandler(new MockJdbcEventLogHandler());
+        config.setLogManagerClassName(DefaultJdbcEventLogManager.class.getName());
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());
+
         }
     }
 
@@ -116,7 +132,7 @@ public class Tc0090JdbcLogManagerTest {
         config1.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
         config1.setLogManager(new DefaultJdbcEventLogManager());
         config1.setConnectionFactoryClassName(connectionFactoryClassName);
-        Assertions.assertTrue(config1.isSlowLogHandledBySyncMode());
+        Assertions.assertTrue(config1.isLogHandledBySyncMode());
         //1: clear type test(for sync mode)
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());
@@ -134,8 +150,8 @@ public class Tc0090JdbcLogManagerTest {
         config2.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
         config2.setLogManager(new DefaultJdbcEventLogManager());
         config2.setConnectionFactoryClassName(connectionFactoryClassName);
-        config2.setSlowLogHandledBySyncMode(false);//async mode
-        Assertions.assertFalse(config2.isSlowLogHandledBySyncMode());
+        config2.setLogHandledBySyncMode(false);//async mode
+        Assertions.assertFalse(config2.isLogHandledBySyncMode());
         //2: clear type test(for async mode)
         try (BeeDataSource ds = new BeeDataSource(config2)) {
             Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());
@@ -157,7 +173,7 @@ public class Tc0090JdbcLogManagerTest {
         config1.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
         config1.setLogManager(new DefaultJdbcEventLogManager());
         config1.setConnectionFactoryClassName(connectionFactoryClassName);
-        Assertions.assertTrue(config1.isSlowLogHandledBySyncMode());
+        Assertions.assertTrue(config1.isLogHandledBySyncMode());
         //1: clear type test(for sync mode)
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());
@@ -175,8 +191,8 @@ public class Tc0090JdbcLogManagerTest {
         config2.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
         config2.setLogManager(new DefaultJdbcEventLogManager());
         config2.setConnectionFactoryClassName(connectionFactoryClassName);
-        config2.setSlowLogHandledBySyncMode(false);//async mode
-        Assertions.assertFalse(config2.isSlowLogHandledBySyncMode());
+        config2.setLogHandledBySyncMode(false);//async mode
+        Assertions.assertFalse(config2.isLogHandledBySyncMode());
         //2: clear type test(for async mode)
         try (BeeDataSource ds = new BeeDataSource(config2)) {
             Assertions.assertTrue(ds.isEnabledJdbcEventLogManager());

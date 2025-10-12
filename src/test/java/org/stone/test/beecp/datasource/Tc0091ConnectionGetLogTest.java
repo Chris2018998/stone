@@ -10,12 +10,14 @@
 package org.stone.test.beecp.datasource;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeJdbcEventLog;
 import org.stone.beecp.pool.DefaultJdbcEventLogManager;
 import org.stone.test.beecp.objects.factory.ExceptionConnectionFactory;
-import org.stone.test.beecp.objects.factory.MockXaConnectionFactory;
+import org.stone.test.beecp.objects.factory.ExceptionXaConnectionFactory;
+import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 
 import javax.sql.XAConnection;
 import java.sql.Connection;
@@ -23,19 +25,17 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 
-import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
-
 /**
  * @author Chris Liao
  */
 public class Tc0091ConnectionGetLogTest {
 
-    //@Test
+    @Test
     public void testEnableAndDisableLogManager() throws SQLException {
-        String connectionFactoryClassName = "org.stone.test.beecp.objects.factory.MockConnectionFactory";
+        String connectionFactoryClassName = MockConnectionFactory.class.getName();
 
         //1：not configured log manager
-        BeeDataSourceConfig config1 = createDefault();
+        BeeDataSourceConfig config1 = new BeeDataSourceConfig();
         config1.setConnectionFactoryClassName(connectionFactoryClassName);
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertFalse(ds.isEnabledJdbcEventLogManager());
@@ -47,7 +47,7 @@ public class Tc0091ConnectionGetLogTest {
         }
 
         //2: log manager created by log manager instance
-        BeeDataSourceConfig config2 = createDefault();
+        BeeDataSourceConfig config2 = new BeeDataSourceConfig();
         config2.setConnectionFactoryClassName(connectionFactoryClassName);
         config2.setLogManager(new DefaultJdbcEventLogManager());
         try (BeeDataSource ds = new BeeDataSource(config2)) {
@@ -77,6 +77,10 @@ public class Tc0091ConnectionGetLogTest {
             try (Connection ignored = ds.getConnection()) {
                 Assertions.assertEquals(0, ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get).size());//connection get
             }
+            XAConnection xaCon = ds.getXAConnection();
+            try (Connection ignored = xaCon.getConnection()) {
+                Assertions.assertEquals(0, ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get).size());//connection get
+            }
 
             //re-enable jdbc log manager
             ds.enableJdbcEventLogManager(true);
@@ -87,7 +91,7 @@ public class Tc0091ConnectionGetLogTest {
         }
 
         //3: log manager created by class
-        BeeDataSourceConfig config3 = createDefault();
+        BeeDataSourceConfig config3 = new BeeDataSourceConfig();
         config3.setConnectionFactoryClassName(connectionFactoryClassName);
         config3.setLogManagerClass(DefaultJdbcEventLogManager.class);
         try (BeeDataSource ds = new BeeDataSource(config3)) {
@@ -98,7 +102,7 @@ public class Tc0091ConnectionGetLogTest {
         }
 
         //4: log manager created by class name
-        BeeDataSourceConfig config4 = createDefault();
+        BeeDataSourceConfig config4 = new BeeDataSourceConfig();
         config4.setConnectionFactoryClassName(connectionFactoryClassName);
         config4.setLogManagerClassName(DefaultJdbcEventLogManager.class.getName());
         try (BeeDataSource ds = new BeeDataSource(config4)) {
@@ -115,7 +119,7 @@ public class Tc0091ConnectionGetLogTest {
         }
     }
 
-    //@Test
+    @Test
     public void testExceptionLog() throws Exception {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setLogManager(new DefaultJdbcEventLogManager());
@@ -163,7 +167,7 @@ public class Tc0091ConnectionGetLogTest {
         //2: XAConnection get test
         BeeDataSourceConfig config2 = new BeeDataSourceConfig();
         config2.setLogManager(new DefaultJdbcEventLogManager());
-        MockXaConnectionFactory xaConnectionFactory = new MockXaConnectionFactory();
+        ExceptionXaConnectionFactory xaConnectionFactory = new ExceptionXaConnectionFactory();
         xaConnectionFactory.setFailCause(new SQLException("Failed to connect db"));
         config2.setXaConnectionFactory(xaConnectionFactory);
         try (BeeDataSource ds = new BeeDataSource(config2)) {

@@ -15,6 +15,7 @@ import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.beecp.pool.DefaultJdbcEventLogManager;
 import org.stone.beecp.pool.exception.PoolInClearingException;
 import org.stone.test.beecp.objects.threads.TimeDelayCloseConnectionThread;
 
@@ -73,6 +74,7 @@ public class Tc0044DataSourceClearTest {
         }
 
         //2: wait borrowed connections released to pool
+        config.setLogManager(new DefaultJdbcEventLogManager());
         try (BeeDataSource ds = new BeeDataSource(config)) {
             Connection con = ds.getConnection();//not close it
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();

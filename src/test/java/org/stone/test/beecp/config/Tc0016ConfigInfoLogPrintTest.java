@@ -23,7 +23,7 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 public class Tc0016ConfigInfoLogPrintTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         Assertions.assertFalse(config.isPrintConfiguration());//default check
         config.setPrintConfiguration(true);
@@ -68,7 +68,7 @@ public class Tc0016ConfigInfoLogPrintTest {
         Assertions.assertFalse(logs.contains(".url"));
 
         //situation2: print out all items(clear all exclusion)
-        config.clearAllConfigPrintExclusion();//test point
+        config.clearExclusionListOfPrint();//test point
         logCollector = startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
@@ -80,31 +80,31 @@ public class Tc0016ConfigInfoLogPrintTest {
         Assertions.assertTrue(logs.contains(".maxActive"));
 
         //situation4: test on excluded item
-        config.addConfigPrintExclusion("maxActive");//test point
+        config.addExclusionNameOfPrint("maxActive");//test point
         logCollector = startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains(".maxActive"));
 
-        //situation5: test on pint connectProperties
-        config.addConnectProperty("dbGroup", "test");
-        config.addConnectProperty("dbName", "test-Mysql1");
+        //situation5: test on pint connectionProviderProperties
+        config.addConnectionProviderProperty("dbGroup", "test");
+        config.addConnectionProviderProperty("dbName", "test-Mysql1");
 
         logCollector = startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
-        Assertions.assertTrue(logs.contains(".connectProperties.dbGroup"));
-        Assertions.assertTrue(logs.contains(".connectProperties.dbName"));
+        Assertions.assertTrue(logs.contains(".connectionProviderProperties.dbGroup"));
+        Assertions.assertTrue(logs.contains(".connectionProviderProperties.dbName"));
 
-        //situation6: test on exclusion connectProperties
-        config.addConfigPrintExclusion("dbGroup");
-        config.addConfigPrintExclusion("dbName");
-        config.addConfigPrintExclusion("connectProperties");
+        //situation6: test on exclusion connectionProviderProperties
+        config.addExclusionNameOfPrint("dbGroup");
+        config.addExclusionNameOfPrint("dbName");
+        config.addExclusionNameOfPrint("connectionProviderProperties");
 
         logCollector = startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
-        Assertions.assertFalse(logs.contains(".connectProperties.dbGroup"));
-        Assertions.assertFalse(logs.contains(".connectProperties.dbName"));
+        Assertions.assertFalse(logs.contains(".connectionProviderProperties.dbGroup"));
+        Assertions.assertFalse(logs.contains(".connectionProviderProperties.dbName"));
     }
 }

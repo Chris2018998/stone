@@ -54,7 +54,7 @@ public class Tc0018ConfigLoadFromFileTest {
     }
 
     @Test
-    public void testOnLoadByFileName() {
+    public void testOnLoadByFileName() throws Exception {
         BeeDataSourceConfig config1 = createEmpty();
         try {
             config1.loadFromPropertiesFile("");
@@ -93,27 +93,24 @@ public class Tc0018ConfigLoadFromFileTest {
             Assertions.assertTrue(message != null && message.contains("Target object is a valid configuration file"));
         }
 
+        File path = getClassPathFileAbsolutePath(filename);
+        assert path != null;
         try {//success test
-            File path = getClassPathFileAbsolutePath(filename);
-            assert path != null;
             config1.loadFromPropertiesFile(path.toString());
         } catch (Exception e) {
-            String message = e.getMessage();
-            Assertions.assertTrue(message != null && message.contains("Configuration properties must not be null or empty"));
+            Assertions.fail("[testOnLoadByFileName]Test failed");
         }
 
         try {//success test:load from classpath
             config1.loadFromPropertiesFile("cp:" + filename);
         } catch (Exception e) {
-            String message = e.getMessage();
-            Assertions.assertTrue(message != null && message.contains("Configuration properties must not be null or empty"));
+            Assertions.fail("[testOnLoadByFileName]Test failed");
         }
 
         try {//success test: load from classpath
             config1.loadFromPropertiesFile("classpath:" + filename);
         } catch (Exception e) {
-            String message = e.getMessage();
-            Assertions.assertTrue(message != null && message.contains("Configuration properties must not be null or empty"));
+            Assertions.fail("[testOnLoadByFileName]Test failed");
         }
     }
 
@@ -243,10 +240,10 @@ public class Tc0018ConfigLoadFromFileTest {
         Assertions.assertEquals("org.stone.test.beecp.objects.pool.MockRawConnectionPool", config.getPoolImplementClassName());
         Assertions.assertTrue(config.isRegisterMbeans());
 
-        Assertions.assertEquals("true", config.getConnectProperty("cachePrepStmts"));
-        Assertions.assertEquals("50", config.getConnectProperty("prepStmtCacheSize"));
-        Assertions.assertEquals("2048", config.getConnectProperty("prepStmtCacheSqlLimit"));
-        Assertions.assertEquals("true", config.getConnectProperty("useServerPrepStmts"));
+        Assertions.assertEquals("true", config.getConnectionProviderProperty("cachePrepStmts"));
+        Assertions.assertEquals("50", config.getConnectionProviderProperty("prepStmtCacheSize"));
+        Assertions.assertEquals("2048", config.getConnectionProviderProperty("prepStmtCacheSqlLimit"));
+        Assertions.assertEquals("true", config.getConnectionProviderProperty("useServerPrepStmts"));
         return Boolean.TRUE;
     }
 }

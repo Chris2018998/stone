@@ -15,6 +15,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 import org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogManager;
+import org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogManager2;
 import org.stone.tools.exception.BeanException;
 
 import java.security.InvalidParameterException;
@@ -26,10 +27,10 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
  * @author Chris Liao
  */
 
-public class Tc0020JdbcCallLogManagerTest {
+public class Tc0020JdbcEventLogManagerTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         //jdbcCallLogCacheSize
         Assertions.assertEquals(1000, config.getLogCacheSize());//default check
@@ -37,13 +38,13 @@ public class Tc0020JdbcCallLogManagerTest {
         Assertions.assertEquals(500, config.getLogCacheSize());
         try {
             config.setLogCacheSize(0);
-            fail("[testConfigurationSet]Setting test failed on configuration item[log-cache-size]");
+            fail("[testSetAndGet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
         }
         try {
             config.setLogCacheSize(-1);
-            fail("[testConfigurationSet]Setting test failed on configuration item[log-cache-size]");
+            fail("[testSetAndGet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
         }
@@ -57,7 +58,7 @@ public class Tc0020JdbcCallLogManagerTest {
         Assertions.assertEquals(0L, config.getSlowConnectionGetThreshold());
         try {
             config.setSlowConnectionGetThreshold(-1L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[slow-connection-get-threshold]");
+            fail("[testSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'slow-connection-get-threshold' must be greater than zero", e.getMessage());
         }
@@ -71,7 +72,7 @@ public class Tc0020JdbcCallLogManagerTest {
         Assertions.assertEquals(0L, config.getSlowSQLExecutionThreshold());
         try {
             config.setSlowSQLExecutionThreshold(-1L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[slow-SQL-execution-threshold]");
+            fail("[testSetAndGet]Setting test failed on configuration item[slow-SQL-execution-threshold]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'slow-SQL-execution-threshold' must be greater than zero", e.getMessage());
         }
@@ -83,13 +84,13 @@ public class Tc0020JdbcCallLogManagerTest {
         Assertions.assertEquals(5000L, config.getLogTimeout());
         try {
             config.setLogTimeout(0L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[log-timeout]");
+            fail("[testSetAndGet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
         }
         try {
             config.setLogTimeout(-1L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[log-timeout]");
+            fail("[testSetAndGet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
         }
@@ -102,13 +103,13 @@ public class Tc0020JdbcCallLogManagerTest {
         Assertions.assertEquals(5000L, config.getIntervalToClearTimeoutEventLogs());
         try {
             config.setIntervalToClearTimeoutEventLogs(0L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[log-clear-interval]");
+            fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'log-clear-interval' must be greater than zero", e.getMessage());
         }
         try {
             config.setIntervalToClearTimeoutEventLogs(-1L);
-            fail("[testConfigurationSet]Setting test failed on configuration item[log-clear-interval]");
+            fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
             Assertions.assertEquals("The given value for configuration item 'log-clear-interval' must be greater than zero", e.getMessage());
         }
@@ -134,14 +135,14 @@ public class Tc0020JdbcCallLogManagerTest {
     }
 
     @Test
-    public void testErrorClassName() throws Exception {
+    public void testCheckFailed() throws Exception {
         MockConnectionFactory connectionFactory = new MockConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
-        config1.setLogManagerClassName("org.stone.test.beecp.objects.jdbclog.MockJdbcEventLogManager2");//class can not be instan
+        config1.setLogManagerClassName(MockJdbcEventLogManager2.class.getName());//class can not be instantiated
         try {
             config1.check();
-            Assertions.fail();
+            Assertions.fail("[testCheckFailed]Test failed");
         } catch (BeeDataSourceConfigException e) {
             Throwable cause1 = e.getCause();
             Assertions.assertInstanceOf(BeanException.class, cause1);
@@ -150,12 +151,49 @@ public class Tc0020JdbcCallLogManagerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setLogManagerClassName("org.stone.test.beecp.objects.MockJdbcEventLogManager3");//class not found
+        config2.setLogManagerClassName(MockJdbcEventLogManager2.class.getName() + "_NOT");//class not found
         try {
             config2.check();
-            Assertions.fail();
+            Assertions.fail("[testCheckFailed]Test failed");
         } catch (BeeDataSourceConfigException e) {
             Assertions.assertInstanceOf(ClassNotFoundException.class, e.getCause());
+        }
+    }
+
+    @Test
+    public void testCheckPassed() throws Exception {
+        MockConnectionFactory connectionFactory = new MockConnectionFactory();
+
+        //1: instance
+        BeeDataSourceConfig config1 = new BeeDataSourceConfig();
+        config1.setConnectionFactory(connectionFactory);
+        MockJdbcEventLogManager manager = new MockJdbcEventLogManager();
+        config1.setLogManager(manager);
+        try {
+            BeeDataSourceConfig checkedConfig = config1.check();
+            Assertions.assertEquals(manager, checkedConfig.getLogManager());
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.fail("[testCheckPassed]Test failed");
+        }
+
+        //2: class
+        BeeDataSourceConfig config2 = new BeeDataSourceConfig();
+        config2.setConnectionFactory(connectionFactory);
+        config2.setLogManagerClass(MockJdbcEventLogManager.class);
+        try {
+            config2.check();
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.fail("[testCheckPassed]Test failed");
+        }
+
+        //3: class name
+        BeeDataSourceConfig config3 = new BeeDataSourceConfig();
+        config3.setConnectionFactory(connectionFactory);
+        config3.setLogManagerClassName(MockJdbcEventLogManager.class.getName());
+        try {
+            config3.check();
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.fail("[testCheckPassed]Test failed");
         }
     }
 }

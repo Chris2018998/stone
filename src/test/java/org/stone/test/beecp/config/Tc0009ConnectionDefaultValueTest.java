@@ -22,7 +22,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 public class Tc0009ConnectionDefaultValueTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         //defaultCatalog
         Assertions.assertNull(config.getDefaultCatalog());//default value check(null)

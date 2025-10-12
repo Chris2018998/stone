@@ -29,14 +29,14 @@ public final class FastConnectionPool4L extends FastConnectionPool {
     private static final String GetXAConnection = "FastConnectionPool4L.getXAConnection()";
 
     public Connection getConnection() throws SQLException {
-        if (this.isEnabledJdbcEventLogManager()) {
-            BeeJdbcEventLog log = jdbcLogManager.startCall(Type_Connection_Get, GetConnection, null, null, null);
+        if (this.usingEventLogManager) {
+            BeeJdbcEventLog log = eventLogManager.startCall(Type_Connection_Get, GetConnection, null, null, null);
             try {
                 Connection con = super.getConnection();
-                jdbcLogManager.endCall(con, 0L, null, log);
+                eventLogManager.endCall(con, 0L, null, log);
                 return con;
             } catch (SQLException e) {
-                jdbcLogManager.endOnException(e, 0L, null, log);
+                eventLogManager.endOnException(e, 0L, null, log);
                 throw e;
             }
         } else {
@@ -45,14 +45,14 @@ public final class FastConnectionPool4L extends FastConnectionPool {
     }
 
     public XAConnection getXAConnection() throws SQLException {
-        if (this.isEnabledJdbcEventLogManager()) {
-            BeeJdbcEventLog log = jdbcLogManager.startCall(Type_Connection_Get, GetXAConnection, null, null, null);
+        if (this.usingEventLogManager) {
+            BeeJdbcEventLog log = eventLogManager.startCall(Type_Connection_Get, GetXAConnection, null, null, null);
             try {
                 XAConnection con = super.getXAConnection();
-                jdbcLogManager.endCall(con, 0L, null, log);
+                eventLogManager.endCall(con, 0L, null, log);
                 return con;
             } catch (SQLException e) {
-                jdbcLogManager.endOnException(e, 0L, null, log);
+                eventLogManager.endOnException(e, 0L, null, log);
                 throw e;
             }
         } else {

@@ -42,6 +42,10 @@ public class MockXaConnectionFactory extends BaseConnectionFactory implements Be
             }
         }
 
+        if (failCause1 != null) throw failCause1;
+        if (failCause2 != null) throw failCause2;
+        if (failCause3 != null) throw failCause3;
+
         MockConnection con = new MockConnection(xaConnectionProperties);
         return new MockXaConnection(xaConnectionProperties, con, new MockXaResource(con));
     }

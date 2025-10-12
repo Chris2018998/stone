@@ -82,6 +82,6 @@ public class BaseConnectionFactory {
             count = createdCount.get();
             if (count >= maxSize)
                 throw new ConnectionCreateException("the count of created connections has reached max");
-        } while (createdCount.compareAndSet(count, count + 1));
+        } while (!createdCount.compareAndSet(count, count + 1));
     }
 }

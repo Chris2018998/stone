@@ -30,17 +30,17 @@ public final class ConnectionPoolStatics {
     //transaction manager jndi name in configuration
     public static final String CONFIG_TM_JNDI = "transactionManagerName";
     //connect properties for driver or driver dataSource
-    public static final String CONFIG_CONNECT_PROP = "connectProperties";
+    public static final String CONFIG_PROVIDER_PROP = "connectionProviderProperties";
     //connect properties count for driver or driver dataSource
-    public static final String CONFIG_CONNECT_PROP_SIZE = "connectProperties.size";
+    public static final String CONFIG_PROVIDER_PROP_SIZE = "connectionProviderProperties.size";
     //connect properties prefix for driver or driver dataSource
-    public static final String CONFIG_CONNECT_PROP_KEY_PREFIX = "connectProperties.";
+    public static final String CONFIG_PROVIDER_PROP_KEY_PREFIX = "connectionProviderProperties.";
     //sql exception fatal code
     public static final String CONFIG_SQL_EXCEPTION_CODE = "sqlExceptionCodeList";
     //sql exception fatal state
     public static final String CONFIG_SQL_EXCEPTION_STATE = "sqlExceptionStateList";
     //sql exception fatal state
-    public static final String CONFIG_CONFIG_PRINT_EXCLUSION_LIST = "configPrintExclusionList";
+    public static final String CONFIG_EXCLUSION_LIST_OF_PRINT = "exclusionListOfPrint";
 
     //dummy impl on CommonDataSource
     public static final CommonDataSource Dummy_CommonDataSource = new CommonDataSource() {

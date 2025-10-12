@@ -45,10 +45,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //A list of field name,not be log print during pool initialization, default that five field names in list
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
-    //23: A list of configuration items ignore print when pool initializes,default is copies from {@code DefaultExclusionList}
-    private final List<String> configPrintExclusionList = new ArrayList<>(DefaultExclusionList);
-    //24: A map stores some properties of connection factory,these properties are injected to factory during pool initialization
-    private final Map<String, Object> connectProperties = new HashMap<>(1);
+    //23: An exclusion list of configuration print,default is copies from {@code DefaultExclusionList}
+    private final List<String> exclusionListOfPrint = new ArrayList<>(DefaultExclusionList);
+    //24: A map stores some properties of connection provider,these properties are injected to provider during pool initialization
+    private final Map<String, Object> connectionProviderProperties = new HashMap<>(1);
 
     //1: Username link to database,default is none
     private String username;
@@ -175,19 +175,19 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //57: Class name of jdbc event logs manager,default is none
     private String logManagerClassName;
 
-    //58: Slow threshold for connection acquisition,default is 30 seconds,time unit:milliseconds
+    //58: Slow logs handle mode,default is true
+    private boolean logHandledBySyncMode = true;
+    //59: Slow threshold for connection acquisition,default is 30 seconds,time unit:milliseconds
     private long slowConnectionGetThreshold = 30000L;
-    //59: Slow threshold for sql execution,default is 30 seconds,time unit:milliseconds
+    //60: Slow threshold for sql execution,default is 30 seconds,time unit:milliseconds
     private long slowSQLExecutionThreshold = 30000L;
-    //60: Slow logs handle mode,default is true
-    private boolean slowLogHandledBySyncMode = true;
 
     //61: Slow logs handler(Note: only supports slow logs and exception logs);priority order: instance > class > class name
-    private BeeJdbcEventLogHandler slowLogHandler;
+    private BeeJdbcEventLogHandler logHandler;
     //62: Class of slow logs handler,default is none
-    private Class<? extends BeeJdbcEventLogHandler> slowLogHandlerClass;
+    private Class<? extends BeeJdbcEventLogHandler> logHandlerClass;
     //63: Class name of slow logs handler,default is none
-    private String slowLogHandlerClassName;
+    private String logHandlerClassName;
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                              //
@@ -418,45 +418,45 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.poolImplementClassName = trimString(poolImplementClassName);
     }
 
-    public void clearAllConfigPrintExclusion() {
-        this.configPrintExclusionList.clear();
+    public void clearExclusionListOfPrint() {
+        this.exclusionListOfPrint.clear();
     }
 
-    public void addConfigPrintExclusion(String fieldName) {
-        if (!configPrintExclusionList.contains(fieldName)) this.configPrintExclusionList.add(fieldName);
+    public void addExclusionNameOfPrint(String fieldName) {
+        if (!exclusionListOfPrint.contains(fieldName)) this.exclusionListOfPrint.add(fieldName);
     }
 
-    public boolean removeConfigPrintExclusion(String fieldName) {
-        return this.configPrintExclusionList.remove(fieldName);
+    public boolean removeExclusionNameOfPrint(String fieldName) {
+        return this.exclusionListOfPrint.remove(fieldName);
     }
 
-    public boolean existConfigPrintExclusion(String fieldName) {
-        return this.configPrintExclusionList.contains(fieldName);
+    public boolean existExclusionNameOfPrint(String fieldName) {
+        return this.exclusionListOfPrint.contains(fieldName);
     }
 
-    public Object getConnectProperty(String key) {
-        return this.connectProperties.get(key);
+    public Object getConnectionProviderProperty(String key) {
+        return this.connectionProviderProperties.get(key);
     }
 
-    public Object removeConnectProperty(String key) {
-        return this.connectProperties.remove(key);
+    public Object removeConnectionProviderProperty(String key) {
+        return this.connectionProviderProperties.remove(key);
     }
 
-    public void addConnectProperty(String key, Object value) {
+    public void addConnectionProviderProperty(String key, Object value) {
         if (isBlank(key)) throw new InvalidParameterException("The given key cannot be null or blank");
-        this.connectProperties.put(key, value);
+        this.connectionProviderProperties.put(key, value);
     }
 
-    public void addConnectProperty(String connectPropertyText) {
+    public void addConnectionProviderProperty(String connectPropertyText) {
         if (isNotBlank(connectPropertyText)) {
             for (String attribute : connectPropertyText.split("&")) {
                 String[] pair = attribute.split("=");
                 if (pair.length == 2) {
-                    this.addConnectProperty(pair[0].trim(), pair[1].trim());
+                    this.addConnectionProviderProperty(pair[0].trim(), pair[1].trim());
                 } else {
                     pair = attribute.split(":");
                     if (pair.length == 2) {
-                        this.addConnectProperty(pair[0].trim(), pair[1].trim());
+                        this.addConnectionProviderProperty(pair[0].trim(), pair[1].trim());
                     }
                 }
             }
@@ -786,29 +786,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.logManagerClassName = logManagerClassName;
     }
 
-
-    public BeeJdbcEventLogHandler getSlowLogHandler() {
-        return slowLogHandler;
+    public BeeJdbcEventLogHandler getLogHandler() {
+        return logHandler;
     }
 
-    public void setSlowLogHandler(BeeJdbcEventLogHandler slowLogHandler) {
-        this.slowLogHandler = slowLogHandler;
+    public void setLogHandler(BeeJdbcEventLogHandler logHandler) {
+        this.logHandler = logHandler;
     }
 
-    public Class<? extends BeeJdbcEventLogHandler> getSlowLogHandlerClass() {
-        return slowLogHandlerClass;
+    public Class<? extends BeeJdbcEventLogHandler> getLogHandlerClass() {
+        return logHandlerClass;
     }
 
-    public void setSlowLogHandlerClass(Class<? extends BeeJdbcEventLogHandler> slowLogHandlerClass) {
-        this.slowLogHandlerClass = slowLogHandlerClass;
+    public void setLogHandlerClass(Class<? extends BeeJdbcEventLogHandler> logHandlerClass) {
+        this.logHandlerClass = logHandlerClass;
     }
 
-    public String getSlowLogHandlerClassName() {
-        return slowLogHandlerClassName;
+    public String getLogHandlerClassName() {
+        return logHandlerClassName;
     }
 
-    public void setSlowLogHandlerClassName(String slowLogHandlerClassName) {
-        this.slowLogHandlerClassName = slowLogHandlerClassName;
+    public void setLogHandlerClassName(String logHandlerClassName) {
+        this.logHandlerClassName = logHandlerClassName;
     }
 
     public long getSlowConnectionGetThreshold() {
@@ -831,12 +830,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.slowSQLExecutionThreshold = slowSQLExecutionThreshold;
     }
 
-    public boolean isSlowLogHandledBySyncMode() {
-        return slowLogHandledBySyncMode;
+    public boolean isLogHandledBySyncMode() {
+        return logHandledBySyncMode;
     }
 
-    public void setSlowLogHandledBySyncMode(boolean slowLogHandledBySyncMode) {
-        this.slowLogHandledBySyncMode = slowLogHandledBySyncMode;
+    public void setLogHandledBySyncMode(boolean logHandledBySyncMode) {
+        this.logHandledBySyncMode = logHandledBySyncMode;
     }
 
     //****************************************************************************************************************//
@@ -916,11 +915,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         }
 
         //2: exclude some special keys in setValueMap
-        String connectPropertiesText = setValueMap.remove(CONFIG_CONNECT_PROP);//remove item if exists in properties file before injection
-        String connectPropertiesSize = setValueMap.remove(CONFIG_CONNECT_PROP_SIZE);//remove item if exists in properties file before injection
+        String connectPropertiesText = setValueMap.remove(CONFIG_PROVIDER_PROP);//remove item if exists in properties file before injection
+        String connectPropertiesSize = setValueMap.remove(CONFIG_PROVIDER_PROP_SIZE);//remove item if exists in properties file before injection
         String sqlExceptionCode = setValueMap.remove(CONFIG_SQL_EXCEPTION_CODE);//remove item if exists in properties file before injection
         String sqlExceptionState = setValueMap.remove(CONFIG_SQL_EXCEPTION_STATE);//remove item if exists in properties file before injection
-        String exclusionListText = setValueMap.remove(CONFIG_CONFIG_PRINT_EXCLUSION_LIST);
+        String exclusionListText = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
 
         try {
             setPropertiesValue(this, setValueMap);
@@ -929,11 +928,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         }
 
         //3:try to find 'connectProperties' config value and put to ds config object
-        this.addConnectProperty(connectPropertiesText);
+        this.addConnectionProviderProperty(connectPropertiesText);
         if (isNotBlank(connectPropertiesSize)) {
             int size = Integer.parseInt(connectPropertiesSize.trim());
             for (int i = 1; i <= size; i++)//properties index begin with 1
-                this.addConnectProperty(getPropertyValue(setValueMap, CONFIG_CONNECT_PROP_KEY_PREFIX + i));
+                this.addConnectionProviderProperty(getPropertyValue(setValueMap, CONFIG_PROVIDER_PROP_KEY_PREFIX + i));
         }
 
         //4: add error codes if not null and not empty
@@ -956,9 +955,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         //6:try to load exclusion list on config print
         if (isNotBlank(exclusionListText)) {
-            this.clearAllConfigPrintExclusion();//remove existed exclusion
+            this.clearExclusionListOfPrint();//remove existed exclusion
             for (String exclusion : exclusionListText.trim().split(",")) {
-                this.addConfigPrintExclusion(exclusion);
+                this.addExclusionNameOfPrint(exclusion);
             }
         }
     }
@@ -999,7 +998,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.predicate = predicate;
-        checkedConfig.slowLogHandler = logHandler;
+        checkedConfig.logHandler = logHandler;
         checkedConfig.logManager = logManager;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
@@ -1016,14 +1015,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
                 fieldName = field.getName();
                 switch (fieldName) {
-                    case CONFIG_CONNECT_PROP: //copy 'connectProperties'
-                        config.connectProperties.putAll(connectProperties);
+                    case CONFIG_PROVIDER_PROP: //copy 'connectProperties'
+                        config.connectionProviderProperties.putAll(connectionProviderProperties);
                         break;
-                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
-                        if (configPrintExclusionList.isEmpty())
-                            config.configPrintExclusionList.clear();
+                    case CONFIG_EXCLUSION_LIST_OF_PRINT: //copy 'exclusionListOfPrint'
+                        if (exclusionListOfPrint.isEmpty())
+                            config.exclusionListOfPrint.clear();
                         else
-                            config.configPrintExclusionList.addAll(configPrintExclusionList);
+                            config.exclusionListOfPrint.addAll(exclusionListOfPrint);
                         break;
                     case CONFIG_SQL_EXCEPTION_CODE: //copy 'sqlExceptionCodeList'
                         if (sqlExceptionCodeList == null)
@@ -1081,16 +1080,16 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //create method log handler
     private BeeJdbcEventLogHandler createJdbcCallLogHandler() {
         //step1:if exists handler,then return it
-        if (this.slowLogHandler != null) return this.slowLogHandler;
+        if (this.logHandler != null) return this.logHandler;
 
         //step2: create a handler
-        if (this.slowLogHandlerClass != null || isNotBlank(this.slowLogHandlerClassName)) {
+        if (this.logHandlerClass != null || isNotBlank(this.logHandlerClassName)) {
             Class<?> handlerClass = null;
             try {
-                handlerClass = slowLogHandlerClass != null ? slowLogHandlerClass : loadClass(slowLogHandlerClassName);
+                handlerClass = logHandlerClass != null ? logHandlerClass : loadClass(logHandlerClassName);
                 return (BeeJdbcEventLogHandler) createClassInstance(handlerClass, BeeJdbcEventLogHandler.class, "jdbc call log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + slowLogHandlerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + logHandlerClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + handlerClass + "]", e);
             }
@@ -1153,7 +1152,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
             //step2.5: make a copy from connect properties
             Properties localConnectProperties = new Properties();
-            localConnectProperties.putAll(this.connectProperties);
+            localConnectProperties.putAll(this.connectionProviderProperties);
 
             //2.6: set username and password to local connectProperties
             if (isNotBlank(username)) {
@@ -1179,7 +1178,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 }
 
                 //3.4: create a copy on local connectProperties
-                Map<String, Object> localConnectProperties = new HashMap<>(this.connectProperties);//copy
+                Map<String, Object> localConnectProperties = new HashMap<>(this.connectionProviderProperties);//copy
 
                 //3.5: set jdbc link info
                 String url = jdbcLinkInfoProperties.getProperty("url");
@@ -1224,8 +1223,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 }
             } catch (ClassNotFoundException e) {
                 throw new BeeDataSourceConfigException("Not found connection factory class[" + conFactClass + "]", e);
-            } catch (BeeDataSourceConfigException e) {
-                throw e;
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create connection factory with class[" + conFactClass + "]", e);
             }
@@ -1239,12 +1236,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         String password = this.password;
 
         if (isBlank(url)) {
-            url = (String) this.connectProperties.get("url");
-            if (isBlank(url)) url = (String) connectProperties.get("URL");
-            if (isBlank(url)) url = (String) connectProperties.get("jdbcUrl");
+            url = (String) this.connectionProviderProperties.get("url");
+            if (isBlank(url)) url = (String) connectionProviderProperties.get("URL");
+            if (isBlank(url)) url = (String) connectionProviderProperties.get("jdbcUrl");
             if (isNotBlank(url)) {//url found from connectProperties
-                username = (String) connectProperties.get("user");
-                password = (String) connectProperties.get("password");
+                username = (String) connectionProviderProperties.get("user");
+                password = (String) connectionProviderProperties.get("password");
             } else {
                 url = System.getProperty("beecp.url");
                 if (isBlank(url)) url = System.getProperty("beecp.URL");
@@ -1293,18 +1290,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                 if (Modifier.isStatic(field.getModifiers())) continue;
 
                 String fieldName = field.getName();
-                boolean infoPrint = !checkedConfig.configPrintExclusionList.contains(fieldName);
+                boolean infoPrint = !checkedConfig.exclusionListOfPrint.contains(fieldName);
                 switch (fieldName) {
-                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST: //copy 'exclusionConfigPrintList'
+                    case CONFIG_EXCLUSION_LIST_OF_PRINT: //copy 'exclusionConfigPrintList'
                         break;
-                    case CONFIG_CONNECT_PROP: //copy 'connectProperties'
-                        if (!connectProperties.isEmpty()) {
+                    case CONFIG_PROVIDER_PROP: //copy 'connectionProviderProperties'
+                        if (!connectionProviderProperties.isEmpty()) {
                             if (infoPrint) {
-                                for (Map.Entry<String, Object> entry : checkedConfig.connectProperties.entrySet())
-                                    CommonLog.info("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                for (Map.Entry<String, Object> entry : checkedConfig.connectionProviderProperties.entrySet())
+                                    CommonLog.info("BeeCP({}).connectionProviderProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
-                                for (Map.Entry<String, Object> entry : checkedConfig.connectProperties.entrySet())
-                                    CommonLog.debug("BeeCP({}).connectProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                for (Map.Entry<String, Object> entry : checkedConfig.connectionProviderProperties.entrySet())
+                                    CommonLog.debug("BeeCP({}).connectionProviderProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;

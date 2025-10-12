@@ -54,8 +54,8 @@ public class Tc0010ConfigInfoLogPrintTest {
         Assertions.assertTrue(logs.contains(".initialSize"));
         Assertions.assertTrue(logs.contains(".maxKeySize"));
 
-        config.addConfigPrintExclusion("aliveTestTimeout");
-        config.clearAllConfigPrintExclusion();
+        config.addExclusionNameOfPrint("aliveTestTimeout");
+        config.clearExclusionListOfPrint();
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
@@ -69,8 +69,8 @@ public class Tc0010ConfigInfoLogPrintTest {
         Assertions.assertTrue(logs.contains(".maxKeySize"));
 
         //situation2:
-        config.addConfigPrintExclusion("initialSize");
-        config.addConfigPrintExclusion("maxKeySize");
+        config.addExclusionNameOfPrint("initialSize");
+        config.addExclusionNameOfPrint("maxKeySize");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
@@ -99,9 +99,9 @@ public class Tc0010ConfigInfoLogPrintTest {
         Assertions.assertTrue(logs.contains(".factoryProperties"));
 
 
-        config.addConfigPrintExclusion("objectInterfaces");
-        config.addConfigPrintExclusion("objectInterfaceNames");
-        config.addConfigPrintExclusion("factoryProperties");
+        config.addExclusionNameOfPrint("objectInterfaces");
+        config.addExclusionNameOfPrint("objectInterfaceNames");
+        config.addExclusionNameOfPrint("factoryProperties");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();

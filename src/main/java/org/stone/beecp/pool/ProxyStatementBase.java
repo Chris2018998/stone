@@ -30,7 +30,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     protected String sql;
     protected Statement raw;
     protected long preparationTookTime;//ms
-    protected BeeJdbcEventLogManager jdbcLogManager;
+    protected BeeJdbcEventLogManager logManager;
 
     boolean unregister;
     private ProxyResultSetBase curRe;
@@ -52,7 +52,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
 
         this.preparationTookTime = preparationTookTime;
         this.sql = sql;//if subclass is Statement implementation,the sql is null
-        this.jdbcLogManager = o.jdbcLogManager;
+        this.logManager = o.logManager;
     }
 
     //***************************************************************************************************************//

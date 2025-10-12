@@ -25,7 +25,7 @@ import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 public class Tc0014ConnectionPredicateTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
 
         Assertions.assertNull(config.getPredicate());//default check
@@ -48,7 +48,7 @@ public class Tc0014ConnectionPredicateTest {
     }
 
     @Test
-    public void testErrorClassName() throws Exception {
+    public void testCheckFailed() throws Exception {
         MockConnectionFactory connectionFactory = new MockConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
@@ -70,6 +70,44 @@ public class Tc0014ConnectionPredicateTest {
             Assertions.fail();
         } catch (BeeDataSourceConfigException e) {
             Assertions.assertInstanceOf(ClassNotFoundException.class, e.getCause());
+        }
+    }
+
+
+    @Test
+    public void testCheckPassed() throws Exception {
+        MockConnectionFactory connectionFactory = new MockConnectionFactory();
+
+        //1: instance
+        BeeDataSourceConfig config1 = new BeeDataSourceConfig();
+        config1.setConnectionFactory(connectionFactory);
+        MockEvictConnectionPredicate predicate = new MockEvictConnectionPredicate();
+        config1.setPredicate(predicate);
+        try {
+            BeeDataSourceConfig checkedConfig = config1.check();
+            Assertions.assertEquals(predicate, checkedConfig.getPredicate());
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.fail("[testCheckPassed]Test failed");
+        }
+
+        //2: class name
+        BeeDataSourceConfig config2 = new BeeDataSourceConfig();
+        config2.setConnectionFactory(connectionFactory);
+        config2.setPredicateClass(MockEvictConnectionPredicate.class);
+        try {
+            config2.check();
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.fail("[testCheckPassed]Test failed");
+        }
+
+        //3: class name
+        BeeDataSourceConfig config3 = new BeeDataSourceConfig();
+        config3.setConnectionFactory(connectionFactory);
+        config3.setPredicateClassName(MockEvictConnectionPredicate.class.getName());
+        try {
+            config3.check();
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.fail("[testCheckPassed]Test failed");
         }
     }
 }

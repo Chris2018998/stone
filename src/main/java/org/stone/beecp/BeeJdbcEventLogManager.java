@@ -14,8 +14,8 @@ import java.sql.Statement;
 import java.util.List;
 
 /**
- * jdbc event logs manager interface,at present,only support two kind of logs{@link BeeJdbcEventLog}: Logs of connection get,
- * Logs of sql execution.
+ * jdbc event logs manager interface,at present,only support two kinds of log:{@link BeeJdbcEventLog#Type_Connection_Get}
+ * and {@link BeeJdbcEventLog#Type_SQL_Execution}.
  *
  * @author Chris Liao
  * @version 1.0

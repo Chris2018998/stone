@@ -179,8 +179,7 @@ public class Tc0004ConfigSetAndGetTest {
 
         //poolImplementClassName
         config.setPoolImplementClassName(null);
-        Assertions.assertNotNull(config.getPoolImplementClassName());
-        Assertions.assertEquals("org.stone.beeop.pool.KeyedObjectPool", config.getPoolImplementClassName());
+        Assertions.assertNull(config.getPoolImplementClassName());
         config.setPoolImplementClassName("org.stone.beeop.pool.KeyedObjectPool");
         Assertions.assertEquals("org.stone.beeop.pool.KeyedObjectPool", config.getPoolImplementClassName());
     }

@@ -26,7 +26,7 @@ import static org.stone.tools.CommonUtil.objectEquals;
  */
 public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
     protected Connection raw;
-    protected BeeJdbcEventLogManager jdbcLogManager;
+    protected BeeJdbcEventLogManager logManager;
 
     ProxyConnectionBase(PooledConnection p) {
         super(p);
@@ -34,12 +34,12 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
         p.proxyInUsing = this;
     }
 
-    ProxyConnectionBase(PooledConnection p, BeeJdbcEventLogManager jdbcLogManager) {
+    ProxyConnectionBase(PooledConnection p, BeeJdbcEventLogManager logManager) {
         super(p);
         raw = p.rawConn;
         p.proxyInUsing = this;
 
-        this.jdbcLogManager = jdbcLogManager;
+        this.logManager = logManager;
     }
 
     //***************************************************************************************************************//

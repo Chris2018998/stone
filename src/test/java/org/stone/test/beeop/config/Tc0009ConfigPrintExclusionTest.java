@@ -24,50 +24,50 @@ public class Tc0009ConfigPrintExclusionTest {
     @Test
     public void testOnSetAndGet() throws Exception {
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
-        Assertions.assertNull(TestUtil.getFieldValue(config, "configPrintExclusionList"));
-        Assertions.assertFalse(config.existConfigPrintExclusion("initialSize"));
-        Assertions.assertFalse(config.removeConfigPrintExclusion("initialSize"));
-        config.clearAllConfigPrintExclusion();
+        Assertions.assertNull(TestUtil.getFieldValue(config, "exclusionListOfPrint"));
+        Assertions.assertFalse(config.existExclusionNameOfPrint("initialSize"));
+        Assertions.assertFalse(config.removeExclusionNameOfPrint("initialSize"));
+        config.clearExclusionListOfPrint();
 
-        config.addConfigPrintExclusion("initialSize");
-        Assertions.assertNotNull(TestUtil.getFieldValue(config, "configPrintExclusionList"));
-        Assertions.assertTrue(config.existConfigPrintExclusion("initialSize"));
-        Assertions.assertTrue(config.removeConfigPrintExclusion("initialSize"));
+        config.addExclusionNameOfPrint("initialSize");
+        Assertions.assertNotNull(TestUtil.getFieldValue(config, "exclusionListOfPrint"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("initialSize"));
+        Assertions.assertTrue(config.removeExclusionNameOfPrint("initialSize"));
 
-        Assertions.assertFalse(config.existConfigPrintExclusion("maxActive"));
-        Assertions.assertFalse(config.removeConfigPrintExclusion("maxActive"));
-        config.clearAllConfigPrintExclusion();
-        config.addConfigPrintExclusion("maxActive");
-        config.addConfigPrintExclusion("maxActive");
-        Assertions.assertTrue(config.existConfigPrintExclusion("maxActive"));
-        Assertions.assertTrue(config.removeConfigPrintExclusion("maxActive"));
+        Assertions.assertFalse(config.existExclusionNameOfPrint("maxActive"));
+        Assertions.assertFalse(config.removeExclusionNameOfPrint("maxActive"));
+        config.clearExclusionListOfPrint();
+        config.addExclusionNameOfPrint("maxActive");
+        config.addExclusionNameOfPrint("maxActive");
+        Assertions.assertTrue(config.existExclusionNameOfPrint("maxActive"));
+        Assertions.assertTrue(config.removeExclusionNameOfPrint("maxActive"));
     }
 
     @Test
     public void testOnLoadFromProperties() {
         Properties prop = new Properties();
-        prop.put("configPrintExclusionList", "username,password,poolName");
+        prop.put("exclusionListOfPrint", "username,password,poolName");
 
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         config.loadFromProperties(prop);
-        Assertions.assertTrue(config.existConfigPrintExclusion("username"));
-        Assertions.assertTrue(config.existConfigPrintExclusion("password"));
-        Assertions.assertTrue(config.existConfigPrintExclusion("poolName"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("username"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("password"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("poolName"));
     }
 
     @Test
     public void testOnConfigCopy() throws Exception {
         BeeObjectSourceConfig config = OsConfigFactory.createDefault();
         BeeObjectSourceConfig config2 = config.check();
-        Assertions.assertNull(TestUtil.getFieldValue(config2, "configPrintExclusionList"));
+        Assertions.assertNull(TestUtil.getFieldValue(config2, "exclusionListOfPrint"));
 
         config = OsConfigFactory.createDefault();
-        config.addConfigPrintExclusion("poolName");
+        config.addExclusionNameOfPrint("poolName");
         config2 = config.check();
-        Assertions.assertNotNull(TestUtil.getFieldValue(config2, "configPrintExclusionList"));
+        Assertions.assertNotNull(TestUtil.getFieldValue(config2, "exclusionListOfPrint"));
 
-        config.removeConfigPrintExclusion("poolName");
+        config.removeExclusionNameOfPrint("poolName");
         config2 = config.check();
-        Assertions.assertNull(TestUtil.getFieldValue(config2, "configPrintExclusionList"));
+        Assertions.assertNull(TestUtil.getFieldValue(config2, "exclusionListOfPrint"));
     }
 }

@@ -20,7 +20,7 @@ import org.stone.test.beecp.objects.pool.BaseSimplePoolImpl;
 public class Tc0015PoolImplementClassNameTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         Assertions.assertNull(config.getPoolImplementClassName());//default check
         config.setPoolImplementClassName(BaseSimplePoolImpl.class.getName());

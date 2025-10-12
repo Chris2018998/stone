@@ -91,6 +91,18 @@ public class Tc0041DsPoolWaitQueueTest {
                 Assertions.assertNotNull(secondBorrower.getConnection());
             }
         }
+
+        config.setUseThreadLocal(false);
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Connection con = ds.getConnection();
+            BorrowThread secondBorrower = new BorrowThread(ds);
+            secondBorrower.start();
+            if (TestUtil.waitUtilWaiting(secondBorrower)) {
+                con.close();
+                secondBorrower.join();
+                Assertions.assertNotNull(secondBorrower.getConnection());
+            }
+        }
     }
 
     @Test

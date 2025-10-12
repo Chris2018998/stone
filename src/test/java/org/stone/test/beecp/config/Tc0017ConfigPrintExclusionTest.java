@@ -15,6 +15,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 
 import java.util.Properties;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.CONFIG_EXCLUSION_LIST_OF_PRINT;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 import static org.stone.test.beecp.config.DsConfigFactory.createEmpty;
 
@@ -36,33 +37,33 @@ public class Tc0017ConfigPrintExclusionTest {
     @Test
     public void testOnSetAndGet() {
         BeeDataSourceConfig config = createEmpty();
-        Assertions.assertTrue(config.existConfigPrintExclusion("username"));
-        config.addConfigPrintExclusion("password");
-        config.addConfigPrintExclusion("poolName");
-        Assertions.assertTrue(config.existConfigPrintExclusion("poolName"));
-        Assertions.assertTrue(config.removeConfigPrintExclusion("poolName"));
-        Assertions.assertFalse(config.existConfigPrintExclusion("poolName"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("username"));
+        config.addExclusionNameOfPrint("password");
+        config.addExclusionNameOfPrint("poolName");
+        Assertions.assertTrue(config.existExclusionNameOfPrint("poolName"));
+        Assertions.assertTrue(config.removeExclusionNameOfPrint("poolName"));
+        Assertions.assertFalse(config.existExclusionNameOfPrint("poolName"));
     }
 
     @Test
     public void testOnLoadFromProperties() {
         Properties prop = new Properties();
-        prop.put("configPrintExclusionList", "username,password,poolName");
+        prop.put(CONFIG_EXCLUSION_LIST_OF_PRINT, "username,password,poolName");
 
         BeeDataSourceConfig config = createDefault();
         config.loadFromProperties(prop);
-        Assertions.assertTrue(config.existConfigPrintExclusion("username"));
-        Assertions.assertTrue(config.existConfigPrintExclusion("password"));
-        Assertions.assertTrue(config.existConfigPrintExclusion("poolName"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("username"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("password"));
+        Assertions.assertTrue(config.existExclusionNameOfPrint("poolName"));
     }
 
     @Test
     public void testOnConfigCopy() throws Exception {
         BeeDataSourceConfig config = createDefault();
-        config.addConnectProperty("DB-Name", "MySQL");
-        config.addConnectProperty("DB-URL", "jdbc:test");
-        config.addConfigPrintExclusion("DB-Name");
+        config.addConnectionProviderProperty("DB-Name", "MySQL");
+        config.addConnectionProviderProperty("DB-URL", "jdbc:test");
+        config.addExclusionNameOfPrint("DB-Name");
         BeeDataSourceConfig config2 = config.check();
-        Assertions.assertTrue(config2.existConfigPrintExclusion("DB-Name"));
+        Assertions.assertTrue(config2.existExclusionNameOfPrint("DB-Name"));
     }
 }

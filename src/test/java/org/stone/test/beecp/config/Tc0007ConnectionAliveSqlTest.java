@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class Tc0007ConnectionAliveSqlTest {
 
     @Test
-    public void testConfigurationSet() {
+    public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         Assertions.assertEquals("SELECT 1", config.getAliveTestSql());//default check
         config.setAliveTestSql("SELECT 2");

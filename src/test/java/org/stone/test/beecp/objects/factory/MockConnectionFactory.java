@@ -39,6 +39,10 @@ public class MockConnectionFactory extends BaseConnectionFactory implements BeeC
                 return null;
             }
         }
+
+        if (failCause1 != null) throw failCause1;
+        if (failCause2 != null) throw failCause2;
+        if (failCause3 != null) throw failCause3;
         return new MockConnection(connectionProperties);
     }
 }

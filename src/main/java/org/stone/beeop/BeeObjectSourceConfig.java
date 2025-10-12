@@ -82,8 +82,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private boolean printRuntimeLogs;
     //22: A flag to enable configuration log print during pool initializes,default is false
     private boolean printConfiguration;
-    //23: A list of field name,not be log print during pool initialization,default is null
-    private List<String> configPrintExclusionList;
+    //23: An exclusion list of configuration print,default is null
+    private List<String> exclusionListOfPrint;
     //24: Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName = KeyedObjectPool.class.getName();
 
@@ -123,12 +123,12 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //38: Class name of object call logs manager,default is none
     private String logManagerClassName;
 
-    //39: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
+    //39: Slow logs handle mode,default is true
+    private boolean logHandledBySyncMode = true;
+    //40: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
     private long slowObjectGetThreshold = 30000L;
-    //40: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    //41: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
     private long slowObjectCallThreshold = 30000L;
-    //41: Slow logs handle mode,default is true
-    private boolean slowLogHandledBySyncMode = true;
 
     //42: Object call log handler,priority order: instance > class > class name
     private BeeObjectEventLogHandler<K, V> logHandler;
@@ -355,24 +355,24 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.printConfiguration = printConfiguration;
     }
 
-    public void addConfigPrintExclusion(String fieldName) {
-        if (configPrintExclusionList == null)
-            this.configPrintExclusionList = new ArrayList<>(1);
+    public void addExclusionNameOfPrint(String fieldName) {
+        if (exclusionListOfPrint == null)
+            this.exclusionListOfPrint = new ArrayList<>(1);
 
-        if (!configPrintExclusionList.contains(fieldName))
-            this.configPrintExclusionList.add(fieldName);
+        if (!exclusionListOfPrint.contains(fieldName))
+            this.exclusionListOfPrint.add(fieldName);
     }
 
-    public void clearAllConfigPrintExclusion() {
-        if (configPrintExclusionList != null) this.configPrintExclusionList.clear();
+    public void clearExclusionListOfPrint() {
+        if (exclusionListOfPrint != null) this.exclusionListOfPrint.clear();
     }
 
-    public boolean removeConfigPrintExclusion(String fieldName) {
-        return configPrintExclusionList != null && configPrintExclusionList.remove(fieldName);
+    public boolean removeExclusionNameOfPrint(String fieldName) {
+        return exclusionListOfPrint != null && exclusionListOfPrint.remove(fieldName);
     }
 
-    public boolean existConfigPrintExclusion(String fieldName) {
-        return configPrintExclusionList != null && configPrintExclusionList.contains(fieldName);
+    public boolean existExclusionNameOfPrint(String fieldName) {
+        return exclusionListOfPrint != null && exclusionListOfPrint.contains(fieldName);
     }
 
     @Override
@@ -590,12 +590,12 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
 
-    public boolean isSlowLogHandledBySyncMode() {
-        return slowLogHandledBySyncMode;
+    public boolean isLogHandledBySyncMode() {
+        return logHandledBySyncMode;
     }
 
-    public void setSlowLogHandledBySyncMode(boolean slowLogHandledBySyncMode) {
-        this.slowLogHandledBySyncMode = slowLogHandledBySyncMode;
+    public void setLogHandledBySyncMode(boolean logHandledBySyncMode) {
+        this.logHandledBySyncMode = logHandledBySyncMode;
     }
 
     //***************************************************************************************************************//
@@ -678,7 +678,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         String factoryPropertiesSizeText = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);
         String objectInterfacesText = setValueMap.remove(CONFIG_OBJECT_INTERFACES);
         String objectInterfaceNamesText = setValueMap.remove(CONFIG_OBJECT_INTERFACE_NAMES);
-        String exclusionListText = setValueMap.remove(CONFIG_CONFIG_PRINT_EXCLUSION_LIST);
+        String exclusionListText = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
 
         //3:inject item value from map to this dataSource config object
         try {
@@ -715,9 +715,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
         //7:try to load exclusion list on config print
         if (isNotBlank(exclusionListText)) {
-            this.clearAllConfigPrintExclusion();//remove existed exclusion
+            this.clearExclusionListOfPrint();//remove existed exclusion
             for (String exclusion : exclusionListText.trim().split(",")) {
-                this.addConfigPrintExclusion(exclusion);
+                this.addExclusionNameOfPrint(exclusion);
             }
         }
     }
@@ -795,9 +795,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                     case CONFIG_FACTORY_PROP:
                         config.factoryProperties.putAll(factoryProperties);
                         break;
-                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST:
-                        if (configPrintExclusionList != null && !configPrintExclusionList.isEmpty())
-                            config.configPrintExclusionList = new ArrayList<>(configPrintExclusionList);//support empty list copy
+                    case CONFIG_EXCLUSION_LIST_OF_PRINT:
+                        if (exclusionListOfPrint != null && !exclusionListOfPrint.isEmpty())
+                            config.exclusionListOfPrint = new ArrayList<>(exclusionListOfPrint);//support empty list copy
                         break;
                     default: //other config items
                         field.set(config, field.get(this));
@@ -930,7 +930,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //print check passed configuration
     private void printConfiguration(BeeObjectSourceConfig<K, V> checkedConfig) {
         String poolName = checkedConfig.poolName;
-        List<String> exclusionList = checkedConfig.configPrintExclusionList;
+        List<String> exclusionList = checkedConfig.exclusionListOfPrint;
         CommonLog.info("................................................BeeOP({})configuration[start]................................................", poolName);
 
         try {
@@ -980,7 +980,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                         }
                         break;
                     }
-                    case CONFIG_CONFIG_PRINT_EXCLUSION_LIST:
+                    case CONFIG_EXCLUSION_LIST_OF_PRINT:
                         break;
                     default:
                         if (infoPrint)

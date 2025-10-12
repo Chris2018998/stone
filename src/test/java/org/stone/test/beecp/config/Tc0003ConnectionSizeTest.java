@@ -84,7 +84,7 @@ public class Tc0003ConnectionSizeTest {
     }
 
     @Test
-    public void testCheckInitializeSizeGreaterThanMaxActive() throws Exception {
+    public void testCheckFailed_InitializeSizeGreaterThanMaxActive() throws Exception {
         BeeDataSourceConfig config = createDefault();
         config.setMaxActive(5);
         config.setInitialSize(10);
