@@ -9,6 +9,7 @@
  */
 package org.stone.test.beecp.driver;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
@@ -27,7 +28,7 @@ public class MockConnectionProperties {
     private boolean autoCommit = true;
     private boolean readOnly = false;
     private boolean valid = true;
-    private int transactionIsolation;
+    private int transactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
     private String catalog;
     private String schema;
     private int networkTimeout;

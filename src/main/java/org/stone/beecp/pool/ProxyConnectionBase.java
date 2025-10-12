@@ -13,10 +13,10 @@ import org.stone.beecp.BeeJdbcEventLogManager;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.tools.CommonUtil.objectEquals;
 
 /**
  * connection proxy
@@ -114,13 +114,13 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
 
     public void setCatalog(String catalog) throws SQLException {
         this.raw.setCatalog(catalog);
-        this.p.setResetInd(PS_CATALOG, p.forceDirtyOnCatalogAfterSet || !objectEquals(catalog, this.p.defaultCatalog));
+        this.p.setResetInd(PS_CATALOG, p.forceDirtyOnCatalogAfterSet || !Objects.equals(catalog, this.p.defaultCatalog));
     }
 
     //--------------------------JDBC 4.1 -----------------------------
     public void setSchema(String schema) throws SQLException {
         this.raw.setSchema(schema);
-        this.p.setResetInd(PS_SCHEMA, p.forceDirtyOnSchemaAfterSet || !objectEquals(schema, this.p.defaultSchema));
+        this.p.setResetInd(PS_SCHEMA, p.forceDirtyOnSchemaAfterSet || !Objects.equals(schema, this.p.defaultSchema));
     }
 
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {

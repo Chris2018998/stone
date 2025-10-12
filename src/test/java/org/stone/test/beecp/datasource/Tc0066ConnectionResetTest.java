@@ -39,7 +39,7 @@ public class Tc0066ConnectionResetTest {
         config.setDefaultSchema("DefaultSchema");
         config.setDefaultCatalog("DefaultCatalog");
         config.setDefaultReadOnly(false);
-        config.setDefaultTransactionIsolationCode(TRANSACTION_READ_COMMITTED);
+        config.setDefaultTransactionIsolation(TRANSACTION_READ_COMMITTED);
         FastConnectionPool pool = new FastConnectionPool();
         pool.init(config);
 

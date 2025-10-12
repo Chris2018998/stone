@@ -37,7 +37,7 @@ public interface BeeDataSourceConfigMBean {
 
     Boolean isDefaultAutoCommit();
 
-    Integer getDefaultTransactionIsolationCode();
+    Integer getDefaultTransactionIsolation();
 
     String getDefaultTransactionIsolationName();
 

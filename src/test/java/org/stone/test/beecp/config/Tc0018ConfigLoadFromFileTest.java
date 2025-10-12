@@ -212,7 +212,7 @@ public class Tc0018ConfigLoadFromFileTest {
         Assertions.assertEquals("test2", config.getDefaultSchema());
         Assertions.assertTrue(config.isDefaultReadOnly().booleanValue());
         Assertions.assertTrue(config.isDefaultAutoCommit().booleanValue());
-        Assertions.assertEquals(config.getDefaultTransactionIsolationCode(), Integer.valueOf(1));
+        Assertions.assertEquals(config.getDefaultTransactionIsolation(), Integer.valueOf(1));
         Assertions.assertEquals("READ_UNCOMMITTED", config.getDefaultTransactionIsolationName());
         Assertions.assertEquals("SELECT 1", config.getAliveTestSql());
         Assertions.assertEquals("Pool1", config.getPoolName());

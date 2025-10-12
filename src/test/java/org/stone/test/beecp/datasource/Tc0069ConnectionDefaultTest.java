@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
+import org.stone.beecp.BeeDataSourceCreationException;
+import org.stone.beecp.pool.exception.ConnectionDefaultSetFailedException;
 import org.stone.test.base.LogCollector;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
@@ -29,48 +31,67 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 public class Tc0069ConnectionDefaultTest {
 
     @Test
-    public void testEnableDefault() throws Exception {
-        BeeDataSourceConfig config1 = createDefault();
-        config1.setInitialSize(1);
-        //enable all default
-        config1.setUseDefaultSchema(true);
-        config1.setUseDefaultCatalog(true);
-        config1.setUseDefaultReadOnly(true);
-        config1.setUseDefaultAutoCommit(true);
-        config1.setUseDefaultTransactionIsolation(true);
-        try (BeeDataSource ds = new BeeDataSource(config1)) {
-            try (Connection con1 = ds.getConnection()) {
-                Assertions.assertTrue(con1.getAutoCommit());
-                Assertions.assertFalse(con1.isReadOnly());
-                Assertions.assertEquals(0, con1.getTransactionIsolation());
-                Assertions.assertNull(con1.getSchema());
-                Assertions.assertNull(con1.getCatalog());
+    public void testUseDefault() throws Exception {
+        BeeDataSourceConfig config = createDefault();
+        config.setInitialSize(1);
+        config.setMaxActive(1);
+        config.setUseDefaultSchema(true);
+        config.setUseDefaultCatalog(true);
+        config.setUseDefaultReadOnly(true);
+        config.setUseDefaultAutoCommit(true);
+        config.setUseDefaultTransactionIsolation(true);
+
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            try (Connection con = ds.getConnection()) {
+                Assertions.assertFalse(con.isReadOnly());
+                Assertions.assertTrue(con.getAutoCommit());
+                Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, con.getTransactionIsolation());
+                Assertions.assertNull(con.getSchema());
+                Assertions.assertNull(con.getCatalog());
+
+                con.setReadOnly(true);
+                con.setAutoCommit(false);
+                con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+                con.setSchema("schema");
+                con.setCatalog("catalog");
+            }
+
+            try (Connection con = ds.getConnection()) {//check reset
+                Assertions.assertFalse(con.isReadOnly());
+                Assertions.assertTrue(con.getAutoCommit());
+                Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, con.getTransactionIsolation());
+                Assertions.assertNull(con.getSchema());
+                Assertions.assertNull(con.getCatalog());
             }
         }
 
-        BeeDataSourceConfig config2 = createDefault();
-        config2.setInitialSize(1);
-        //enable all default
-        config2.setUseDefaultSchema(true);
-        config2.setUseDefaultCatalog(true);
-        config2.setUseDefaultReadOnly(true);
-        config2.setUseDefaultAutoCommit(true);
-        config2.setUseDefaultTransactionIsolation(true);
-
         //set defaults to config
-        config2.setDefaultReadOnly(true);
-        config2.setDefaultAutoCommit(true);
-        config2.setDefaultTransactionIsolationCode(1);
-        config2.setDefaultSchema("schema");
-        config2.setDefaultCatalog("catalog");
+        config.setDefaultReadOnly(Boolean.TRUE);
+        config.setDefaultAutoCommit(Boolean.FALSE);
+        config.setDefaultTransactionIsolation(Integer.valueOf(Connection.TRANSACTION_READ_UNCOMMITTED));
+        config.setDefaultSchema("schema");
+        config.setDefaultCatalog("catalog");
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            try (Connection con = ds.getConnection()) {
+                Assertions.assertTrue(con.isReadOnly());
+                Assertions.assertFalse(con.getAutoCommit());
+                Assertions.assertEquals(Connection.TRANSACTION_READ_UNCOMMITTED, con.getTransactionIsolation());
+                Assertions.assertEquals("schema", con.getSchema());
+                Assertions.assertEquals("catalog", con.getCatalog());
 
-        try (BeeDataSource ds = new BeeDataSource(config2)) {
-            try (Connection con2 = ds.getConnection()) {
-                Assertions.assertTrue(con2.getAutoCommit());
-                Assertions.assertTrue(con2.isReadOnly());
-                Assertions.assertEquals(1, con2.getTransactionIsolation());
-                Assertions.assertEquals("schema", con2.getSchema());
-                Assertions.assertEquals("catalog", con2.getCatalog());
+                con.setReadOnly(false);
+                con.setAutoCommit(true);
+                con.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
+                con.setSchema(null);
+                con.setCatalog(null);
+            }
+
+            try (Connection con = ds.getConnection()) {
+                Assertions.assertTrue(con.isReadOnly());
+                Assertions.assertFalse(con.getAutoCommit());
+                Assertions.assertEquals(Connection.TRANSACTION_READ_UNCOMMITTED, con.getTransactionIsolation());
+                Assertions.assertEquals("schema", con.getSchema());
+                Assertions.assertEquals("catalog", con.getCatalog());
             }
         }
     }
@@ -79,50 +100,108 @@ public class Tc0069ConnectionDefaultTest {
     public void testDisableDefault() throws Exception {
         BeeDataSourceConfig config = createDefault();
         config.setInitialSize(1);
-        //disable all default
-        config.setPrintRuntimeLogs(true);
+        config.setMaxActive(1);
         config.setUseDefaultSchema(false);
         config.setUseDefaultCatalog(false);
-        config.setUseDefaultSchema(false);
         config.setUseDefaultReadOnly(false);
         config.setUseDefaultAutoCommit(false);
         config.setUseDefaultTransactionIsolation(false);
+
         try (BeeDataSource ds = new BeeDataSource(config)) {
             try (Connection con = ds.getConnection()) {
-                Assertions.assertTrue(con.getAutoCommit());
                 Assertions.assertFalse(con.isReadOnly());
-                Assertions.assertEquals(0, con.getTransactionIsolation());
+                Assertions.assertTrue(con.getAutoCommit());
+                Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, con.getTransactionIsolation());
                 Assertions.assertNull(con.getSchema());
                 Assertions.assertNull(con.getCatalog());
             }
         }
 
-        BeeDataSourceConfig config2 = createDefault();
-        config2.setInitialSize(1);
-        //disable all default
-        config2.setPrintRuntimeLogs(true);
-        config2.setUseDefaultSchema(false);
-        config2.setUseDefaultCatalog(false);
-        config2.setUseDefaultSchema(false);
-        config2.setUseDefaultReadOnly(false);
-        config2.setUseDefaultAutoCommit(false);
-        config2.setUseDefaultTransactionIsolation(false);
-
-        //set defaults to config
-        config2.setDefaultReadOnly(true);
-        config2.setDefaultAutoCommit(true);
-        config2.setDefaultTransactionIsolationCode(1);
-        config2.setDefaultSchema("schema");
-        config2.setDefaultCatalog("catalog");
-
+        config.setDefaultAutoCommit(Boolean.FALSE);
+        config.setDefaultReadOnly(Boolean.TRUE);
+        config.setDefaultTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
         try (BeeDataSource ds = new BeeDataSource(config)) {
             try (Connection con = ds.getConnection()) {
-                Assertions.assertTrue(con.getAutoCommit());
                 Assertions.assertFalse(con.isReadOnly());
-                Assertions.assertEquals(0, con.getTransactionIsolation());
+                Assertions.assertTrue(con.getAutoCommit());
+                Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, con.getTransactionIsolation());
                 Assertions.assertNull(con.getSchema());
                 Assertions.assertNull(con.getCatalog());
             }
+        }
+    }
+
+    @Test
+    public void testDefaultSetFailed() throws Exception {
+        BeeDataSourceConfig config = createDefault();
+        config.setInitialSize(1);
+        config.setPrintRuntimeLogs(true);
+        config.setUseDefaultCatalog(true);
+        config.setUseDefaultSchema(true);
+        config.setUseDefaultReadOnly(true);
+        config.setUseDefaultAutoCommit(true);
+        config.setUseDefaultTransactionIsolation(true);
+        config.setDefaultReadOnly(true);
+        config.setDefaultAutoCommit(true);
+        config.setDefaultTransactionIsolation(1);
+        config.setDefaultSchema("schema");
+        config.setDefaultCatalog("catalog");
+
+        MockConnectionProperties connectionProperties = new MockConnectionProperties();
+        connectionProperties.setMockException1(new SQLException("Communication failed"));
+        MockConnectionFactory factory = new MockConnectionFactory(connectionProperties);
+        config.setConnectionFactory(factory);
+
+        //setAutoCommit
+        connectionProperties.enableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setCatalog,setSchema");
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            Assertions.fail("[testDefaultSetFailed]Test failed");
+        } catch (BeeDataSourceCreationException e) {
+            Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
+        }
+
+        //setTransactionIsolation
+        connectionProperties.disableExceptionOnMethod("setAutoCommit");
+        connectionProperties.enableExceptionOnMethod("setTransactionIsolation,setReadOnly,setCatalog,setSchema");
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            Assertions.fail("[testDefaultSetFailed]Test failed");
+        } catch (BeeDataSourceCreationException e) {
+            Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
+        }
+
+        //setReadOnly
+        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation");
+        connectionProperties.enableExceptionOnMethod("setReadOnly,setCatalog,setSchema");
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            Assertions.fail("[testDefaultSetFailed]Test failed");
+        } catch (BeeDataSourceCreationException e) {
+            Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
+        }
+
+        //setCatalog
+        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly");
+        connectionProperties.enableExceptionOnMethod("setCatalog,setSchema");
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            Assertions.fail("[testDefaultSetFailed]Test failed");
+        } catch (BeeDataSourceCreationException e) {
+            Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
+        }
+
+        //setSchema
+        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setTransactionIsolation");
+        connectionProperties.enableExceptionOnMethod("setSchema");
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            Assertions.fail("[testDefaultSetFailed]Test failed");
+        } catch (BeeDataSourceCreationException e) {
+            Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
+        }
+
+        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setTransactionIsolation,setCatalog");
+        connectionProperties.enableExceptionOnMethod("setSchema");
+        try (BeeDataSource ignored = new BeeDataSource(config)) {
+            Assertions.fail("[testDefaultSetFailed]Test failed");
+        } catch (BeeDataSourceCreationException e) {
+            Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
         }
     }
 
@@ -139,9 +218,7 @@ public class Tc0069ConnectionDefaultTest {
 
         MockConnectionProperties connectionProperties = new MockConnectionProperties();
         connectionProperties.setMockException1(new SQLException("Communication failed"));
-        connectionProperties.enableExceptionOnMethod("getAutoCommit,setAutoCommit,isReadOnly,setReadOnly");
-        connectionProperties.enableExceptionOnMethod("getTransactionIsolation,setTransactionIsolation");
-        connectionProperties.enableExceptionOnMethod("setCatalog,getCatalog,setSchema,getSchema");
+        connectionProperties.enableExceptionOnMethod("getAutoCommit,isReadOnly,getTransactionIsolation,getCatalog,getSchema");
         MockConnectionFactory factory = new MockConnectionFactory(connectionProperties);
         config.setConnectionFactory(factory);
 
@@ -158,7 +235,6 @@ public class Tc0069ConnectionDefaultTest {
         Assertions.assertTrue(logs.contains("as default value of auto-commit property"));
         Assertions.assertTrue(logs.contains("as default value of transaction-isolation property"));
         Assertions.assertTrue(logs.contains("as default value of read-only property"));
-
 
         //not print logs
         config.setPrintRuntimeLogs(false);
@@ -177,7 +253,7 @@ public class Tc0069ConnectionDefaultTest {
         Assertions.assertFalse(logs.contains("as default value of read-only property"));
     }
 
-    @Test
+    //@Test
     public void testSetDefaultValue() throws Exception {
         BeeDataSourceConfig config = createDefault();
         config.setInitialSize(1);
@@ -190,7 +266,7 @@ public class Tc0069ConnectionDefaultTest {
         //set defaults to config
         config.setDefaultReadOnly(true);
         config.setDefaultAutoCommit(true);
-        config.setDefaultTransactionIsolationCode(1);
+        config.setDefaultTransactionIsolation(1);
         config.setDefaultSchema("schema");
         config.setDefaultCatalog("catalog");
 

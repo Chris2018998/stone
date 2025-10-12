@@ -28,19 +28,19 @@ public class Tc0010TransactionIsolationTest {
     @Test
     public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        Assertions.assertNull(config.getDefaultTransactionIsolationCode());
-        config.setDefaultTransactionIsolationCode(Connection.TRANSACTION_READ_COMMITTED);
-        Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, config.getDefaultTransactionIsolationCode());
-        config.setDefaultTransactionIsolationCode(null);
-        Assertions.assertNull(config.getDefaultTransactionIsolationCode());
-        config.setDefaultTransactionIsolationCode(Integer.valueOf(123));
-        Assertions.assertEquals(123, config.getDefaultTransactionIsolationCode());
+        Assertions.assertNull(config.getDefaultTransactionIsolation());
+        config.setDefaultTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+        Assertions.assertEquals(Connection.TRANSACTION_READ_COMMITTED, config.getDefaultTransactionIsolation());
+        config.setDefaultTransactionIsolation(null);
+        Assertions.assertNull(config.getDefaultTransactionIsolation());
+        config.setDefaultTransactionIsolation(Integer.valueOf(123));
+        Assertions.assertEquals(123, config.getDefaultTransactionIsolation());
 
         //transactionIsolation name
         Assertions.assertNull(config.getDefaultTransactionIsolationName());
         config.setDefaultTransactionIsolationName(BeeTransactionIsolationNames.TRANSACTION_READ_UNCOMMITTED);
         Assertions.assertEquals(BeeTransactionIsolationNames.TRANSACTION_READ_UNCOMMITTED, config.getDefaultTransactionIsolationName());
-        Assertions.assertEquals(Connection.TRANSACTION_READ_UNCOMMITTED, config.getDefaultTransactionIsolationCode());
+        Assertions.assertEquals(Connection.TRANSACTION_READ_UNCOMMITTED, config.getDefaultTransactionIsolation());
 
         try {
             config.setDefaultTransactionIsolationName(null);

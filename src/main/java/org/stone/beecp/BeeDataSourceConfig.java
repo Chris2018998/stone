@@ -110,8 +110,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //31: Default value of {@code Connection.autoCommit},set to new connections or reset on dirty connections
     private Boolean defaultAutoCommit;
     //32: Default value of {@code Connection.transactionIsolation},set to new connections or reset on dirty connections
-    private Integer defaultTransactionIsolationCode;
-    //33: Name of transactionIsolation,a mapping value of{@code defaultTransactionIsolationCode} retrieved by it when pool initialization
+    private Integer defaultTransactionIsolation;
+    //33: Name of transactionIsolation,a mapping value of{@code defaultTransactionIsolation} retrieved by it when pool initialization
     private String defaultTransactionIsolationName;
     //34: A flag to enable catalog default setting on new connections,default is true
     private boolean useDefaultCatalog = true;
@@ -536,12 +536,12 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.defaultAutoCommit = defaultAutoCommit;
     }
 
-    public Integer getDefaultTransactionIsolationCode() {
-        return this.defaultTransactionIsolationCode;
+    public Integer getDefaultTransactionIsolation() {
+        return this.defaultTransactionIsolation;
     }
 
-    public void setDefaultTransactionIsolationCode(Integer transactionIsolationCode) {
-        this.defaultTransactionIsolationCode = transactionIsolationCode;//support Informix jdbc
+    public void setDefaultTransactionIsolation(Integer transactionIsolationCode) {
+        this.defaultTransactionIsolation = transactionIsolationCode;//support Informix jdbc
     }
 
     public String getDefaultTransactionIsolationName() {
@@ -553,8 +553,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         if (isBlank(transactionIsolationNameTemp))
             throw new InvalidParameterException("The given value for configuration item 'default-transaction-isolation-name' cannot be null or empty");
 
-        this.defaultTransactionIsolationCode = BeeTransactionIsolationNames.getTransactionIsolationCode(transactionIsolationNameTemp);
-        if (this.defaultTransactionIsolationCode != null) {
+        this.defaultTransactionIsolation = BeeTransactionIsolationNames.getTransactionIsolationCode(transactionIsolationNameTemp);
+        if (this.defaultTransactionIsolation != null) {
             defaultTransactionIsolationName = transactionIsolationNameTemp;
         } else {
             throw new BeeDataSourceConfigException("Invalid transaction isolation name:" + transactionIsolationNameTemp + ", value is one of[" + TRANS_ISOLATION_CODE_LIST + "]");

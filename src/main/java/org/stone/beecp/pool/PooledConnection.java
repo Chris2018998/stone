@@ -16,6 +16,7 @@ import javax.transaction.xa.XAResource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
@@ -64,13 +65,11 @@ final class PooledConnection {
     //***************************************************************************************************************//
     //                                     section-C: some switch fields and others                                  //                                                                                  //
     //***************************************************************************************************************//
-    private boolean enableDefaultOnCatalog;
+    private boolean useDefaultOnCatalog;
     private boolean enableDefaultOnSchema;
-    private boolean enableDefaultOnReadOnly;
-    private boolean enableDefaultOnAutoCommit;
-    private boolean enableDefaultOnTransactionIsolation;
-    private boolean defaultCatalogIsNotBlank;
-    private boolean defaultSchemaIsNotBlank;
+    private boolean useDefaultOnReadOnly;
+    private boolean useDefaultOnAutoCommit;
+    private boolean useDefaultOnTransactionIsolation;
     private boolean supportNetworkTimeoutInd;
     private ThreadPoolExecutor networkTimeoutExecutor;
     private List<Integer> sqlExceptionCodeList;
@@ -88,22 +87,20 @@ final class PooledConnection {
     //                                      2: init method                                                           //                                                                                  //
     //***************************************************************************************************************//
     void init(//1:defaultAutoCommit
-              boolean enableDefaultOnAutoCommit,
+              boolean useDefaultOnAutoCommit,
               boolean defaultAutoCommit,
               //2:defaultTransactionIsolation
-              boolean enableDefaultOnTransactionIsolation,
+              boolean useDefaultOnTransactionIsolation,
               int defaultTransactionIsolation,
               //3:defaultReadOnly
-              boolean enableDefaultOnReadOnly,
+              boolean useDefaultOnReadOnly,
               boolean defaultReadOnly,
               //4:defaultCatalog
-              boolean enableDefaultOnCatalog,
-              boolean defaultCatalogIsNotBlank,
+              boolean useDefaultOnCatalog,
               String defaultCatalog,
               boolean forceDirtyOnCatalogAfterSet,
               //5:defaultSchema
-              boolean enableDefaultOnSchema,
-              boolean defaultSchemaIsNotBlank,
+              boolean useDefaultOnSchema,
               String defaultSchema,
               boolean forceDirtyOnSchemaAfterSet,
               //6:defaultNetworkTimeout
@@ -116,23 +113,21 @@ final class PooledConnection {
               BeeConnectionPredicate predicate) {
 
         //1:defaultAutoCommit
-        this.enableDefaultOnAutoCommit = enableDefaultOnAutoCommit;
+        this.useDefaultOnAutoCommit = useDefaultOnAutoCommit;
         this.defaultAutoCommit = defaultAutoCommit;
         //2:defaultTransactionIsolation
-        this.enableDefaultOnTransactionIsolation = enableDefaultOnTransactionIsolation;
+        this.useDefaultOnTransactionIsolation = useDefaultOnTransactionIsolation;
         this.defaultTransactionIsolation = defaultTransactionIsolation;
         //3:defaultReadOnly
-        this.enableDefaultOnReadOnly = enableDefaultOnReadOnly;
+        this.useDefaultOnReadOnly = useDefaultOnReadOnly;
         this.defaultReadOnly = defaultReadOnly;
         //4:defaultCatalog
-        this.enableDefaultOnCatalog = enableDefaultOnCatalog;
+        this.useDefaultOnCatalog = useDefaultOnCatalog;
         this.defaultCatalog = defaultCatalog;
-        this.defaultCatalogIsNotBlank = defaultCatalogIsNotBlank;
         this.forceDirtyOnCatalogAfterSet = forceDirtyOnCatalogAfterSet;
         //5:defaultSchema
-        this.enableDefaultOnSchema = enableDefaultOnSchema;
+        this.enableDefaultOnSchema = useDefaultOnSchema;
         this.defaultSchema = defaultSchema;
-        this.defaultSchemaIsNotBlank = defaultSchemaIsNotBlank;
         this.forceDirtyOnSchemaAfterSet = forceDirtyOnSchemaAfterSet;
         //6:defaultNetworkTimeout
         this.supportNetworkTimeoutInd = supportNetworkTimeoutInd;
@@ -148,15 +143,15 @@ final class PooledConnection {
     //                                      3: set a created connection and set default on it                        //                                                                                  //
     //***************************************************************************************************************//
     void setRawConnection(int state, Connection rawConn, XAResource rawXaRes) throws SQLException {
-        if (enableDefaultOnAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
+        if (useDefaultOnAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
             rawConn.setAutoCommit(defaultAutoCommit);
-        if (enableDefaultOnTransactionIsolation && defaultTransactionIsolation - rawConn.getTransactionIsolation() != 0)
+        if (useDefaultOnTransactionIsolation && defaultTransactionIsolation - rawConn.getTransactionIsolation() != 0)
             rawConn.setTransactionIsolation(defaultTransactionIsolation);
-        if (enableDefaultOnReadOnly && defaultReadOnly != rawConn.isReadOnly())
+        if (useDefaultOnReadOnly && defaultReadOnly != rawConn.isReadOnly())
             rawConn.setReadOnly(defaultReadOnly);
-        if (enableDefaultOnCatalog && defaultCatalogIsNotBlank && !defaultCatalog.equals(rawConn.getCatalog()))
+        if (useDefaultOnCatalog && !Objects.equals(defaultCatalog, rawConn.getCatalog()))
             rawConn.setCatalog(defaultCatalog);
-        if (enableDefaultOnSchema && defaultSchemaIsNotBlank && !defaultSchema.equals(rawConn.getSchema()))
+        if (enableDefaultOnSchema && !Objects.equals(defaultSchema, rawConn.getSchema()))
             rawConn.setSchema(defaultSchema);
 
         setRawConnection2(state, rawConn, rawXaRes);
@@ -331,11 +326,11 @@ final class PooledConnection {
                 this.rawConn.setTransactionIsolation(this.defaultTransactionIsolation);
             if (this.resetFlags[PS_READONLY]) //reset readonly
                 this.rawConn.setReadOnly(this.defaultReadOnly);
-            if (this.defaultCatalogIsNotBlank && this.resetFlags[PS_CATALOG]) //reset catalog
+            if (this.resetFlags[PS_CATALOG]) //reset catalog
                 this.rawConn.setCatalog(this.defaultCatalog);
 
             //for JDK1.7 begin
-            if (this.defaultSchemaIsNotBlank && this.resetFlags[PS_SCHEMA]) //reset schema
+            if (this.resetFlags[PS_SCHEMA]) //reset schema
                 this.rawConn.setSchema(this.defaultSchema);
             if (this.resetFlags[PS_NETWORK]) //reset networkTimeout
                 this.rawConn.setNetworkTimeout(this.networkTimeoutExecutor, this.defaultNetworkTimeout);

@@ -377,8 +377,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private void initPooledConnectionArray(Connection firstConn) throws SQLException {
         //step1: initialization for auto-commit property of connection(get default, test default)
         Boolean defaultAutoCommit = poolConfig.isDefaultAutoCommit();
-        boolean isEnableDefaultOnAutoCommit = poolConfig.isUseDefaultAutoCommit();
-        if (isEnableDefaultOnAutoCommit) {
+        boolean useDefaultAutoCommit = poolConfig.isUseDefaultAutoCommit();
+        if (useDefaultAutoCommit) {
             if (defaultAutoCommit == null) {
                 try {
                     defaultAutoCommit = firstConn.getAutoCommit();
@@ -392,21 +392,20 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 if (this.printRuntimeLog)
                     Log.warn("BeeCP({})assign {} as default value of auto-commit property for connections", this.poolName, Boolean.TRUE);
             }
+
             try {
-                firstConn.setAutoCommit(defaultAutoCommit);//set default for test
+                firstConn.setAutoCommit(defaultAutoCommit.booleanValue());//set default
             } catch (Throwable e) {
-                isEnableDefaultOnAutoCommit = false;//disable when test fail
-                if (this.printRuntimeLog)
-                    Log.warn("BeeCP({})failed to set default value({}) of auto-commit property on first connection object", this.poolName, defaultAutoCommit, e);
+                throw new ConnectionDefaultSetFailedException("Failed to set default of 'auto-commit' with value(" + defaultAutoCommit + ")", e);
             }
         } else if (defaultAutoCommit == null) {
             defaultAutoCommit = Boolean.TRUE;
         }
 
         //step2: initialization for transaction-isolation property of connection(get default,test default)
-        Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolationCode();
-        boolean isEnableDefaultOnTransactionIsolation = poolConfig.isUseDefaultTransactionIsolation();
-        if (isEnableDefaultOnTransactionIsolation) {
+        Integer defaultTransactionIsolation = poolConfig.getDefaultTransactionIsolation();
+        boolean useDefaultTransactionIsolation = poolConfig.isUseDefaultTransactionIsolation();
+        if (useDefaultTransactionIsolation) {
             if (defaultTransactionIsolation == null) {
                 try {
                     defaultTransactionIsolation = firstConn.getTransactionIsolation();
@@ -421,11 +420,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                     Log.warn("BeeCP({})assign {} as default value of transaction-isolation property for connections", this.poolName, defaultTransactionIsolation);
             }
             try {
-                firstConn.setTransactionIsolation(defaultTransactionIsolation);//set default for test
+                firstConn.setTransactionIsolation(defaultTransactionIsolation);////set default
             } catch (Throwable e) {
-                isEnableDefaultOnTransactionIsolation = false;
-                if (this.printRuntimeLog)
-                    Log.warn("BeeCP({})failed to set default value({}) of transaction-isolation property on first connection object", this.poolName, defaultTransactionIsolation, e);
+                throw new ConnectionDefaultSetFailedException("Failed to set default of 'transaction-isolation' with value(" + defaultTransactionIsolation + ")", e);
             }
         } else if (defaultTransactionIsolation == null) {
             defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
@@ -433,8 +430,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step3:get default value of property read-only from config or from first connection
         Boolean defaultReadOnly = poolConfig.isDefaultReadOnly();
-        boolean isEnableDefaultOnReadOnly = poolConfig.isUseDefaultReadOnly();
-        if (poolConfig.isUseDefaultReadOnly()) {
+        boolean useDefaultReadOnly = poolConfig.isUseDefaultReadOnly();
+        if (useDefaultReadOnly) {
             if (defaultReadOnly == null) {
                 try {
                     defaultReadOnly = firstConn.isReadOnly();
@@ -449,11 +446,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                     Log.warn("BeeCP({})assign {} as default value of read-only property for connections", this.poolName, Boolean.FALSE);
             }
             try {
-                firstConn.setReadOnly(defaultReadOnly);//set default for test
+                firstConn.setReadOnly(defaultReadOnly);//set default
             } catch (Throwable e) {
-                isEnableDefaultOnReadOnly = false;
-                if (this.printRuntimeLog)
-                    Log.warn("BeeCP({})failed to set default value({}) of read-only property on first connection object", this.poolName, defaultTransactionIsolation, e);
+                throw new ConnectionDefaultSetFailedException("Failed to set default of 'read-only' with value(" + defaultReadOnly + ")", e);
             }
         } else if (defaultReadOnly == null) {
             defaultReadOnly = Boolean.FALSE;
@@ -461,8 +456,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step4: initialization for catalog property of connection(get default,test default)
         String defaultCatalog = poolConfig.getDefaultCatalog();
-        boolean isEnableDefaultOnCatalog = poolConfig.isUseDefaultCatalog();
-        if (isEnableDefaultOnCatalog) {
+        boolean useDefaultOnCatalog = poolConfig.isUseDefaultCatalog();
+        if (useDefaultOnCatalog) {
             if (isBlank(defaultCatalog)) {
                 try {
                     defaultCatalog = firstConn.getCatalog();
@@ -473,19 +468,17 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             }
             if (isNotBlank(defaultCatalog)) {
                 try {
-                    firstConn.setCatalog(defaultCatalog);//test default by setting it
+                    firstConn.setCatalog(defaultCatalog);//set default
                 } catch (Throwable e) {
-                    isEnableDefaultOnCatalog = false;
-                    if (this.printRuntimeLog)
-                        Log.warn("BeeCP({})failed to set default value({}) of catalog property on first connection object", this.poolName, defaultCatalog, e);
+                    throw new ConnectionDefaultSetFailedException("Failed to set default of 'catalog' with value(" + defaultCatalog + ")", e);
                 }
             }
         }
 
         //step5: initialization for schema property of connection(get default,test default)
         String defaultSchema = poolConfig.getDefaultSchema();
-        boolean isEnableDefaultOnSchema = poolConfig.isUseDefaultSchema();
-        if (isEnableDefaultOnSchema) {
+        boolean useDefaultOnSchema = poolConfig.isUseDefaultSchema();
+        if (useDefaultOnSchema) {
             if (isBlank(defaultSchema)) {
                 try {
                     defaultSchema = firstConn.getSchema();
@@ -496,11 +489,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             }
             if (isNotBlank(defaultSchema)) {
                 try {
-                    firstConn.setSchema(defaultSchema);//test default by setting
+                    firstConn.setSchema(defaultSchema);//set default
                 } catch (Throwable e) {
-                    isEnableDefaultOnSchema = false;
-                    if (this.printRuntimeLog)
-                        Log.warn("BeeCP({})failed to set default value({}) of schema property on first connection object", this.poolName, defaultSchema, e);
+                    throw new ConnectionDefaultSetFailedException("Failed to set default of 'schema' with value(" + defaultSchema + ")", e);
                 }
             }
         }
@@ -558,27 +549,23 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         //step9: Ok,we fill default value prepared in previous steps to all pooled connections at final step
-        boolean defaultCatalogIsNotBlank = !isBlank(defaultCatalog);
-        boolean defaultSchemaIsNotBlank = !isBlank(defaultSchema);
         for (int i = 0; i < connectionArrayLen; i++) {
             connectionArray[i].init(
                     //1:defaultAutoCommit
-                    isEnableDefaultOnAutoCommit,
+                    useDefaultAutoCommit,
                     defaultAutoCommit,
                     //2:defaultTransactionIsolation
-                    isEnableDefaultOnTransactionIsolation,
+                    useDefaultTransactionIsolation,
                     defaultTransactionIsolation,
                     //3:defaultReadOnly
-                    isEnableDefaultOnReadOnly,
+                    useDefaultReadOnly,
                     defaultReadOnly,
                     //4:defaultCatalog
-                    isEnableDefaultOnCatalog,
-                    defaultCatalogIsNotBlank,
+                    useDefaultOnCatalog,
                     defaultCatalog,
                     poolConfig.isForceDirtyWhenSetCatalog(),
                     //5:defaultCatalog
-                    isEnableDefaultOnSchema,
-                    defaultSchemaIsNotBlank,
+                    useDefaultOnSchema,
                     defaultSchema,
                     poolConfig.isForceDirtyWhenSetSchema(),
                     //6:defaultNetworkTimeout
