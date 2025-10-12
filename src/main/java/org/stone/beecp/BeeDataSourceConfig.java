@@ -101,15 +101,15 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //27: Milliseconds: A threshold time for borrowed connections,if gap time of them is less than it,not need do alive test on them,default is 500 milliseconds;(Gap time = (time at borrowed) - (last used))
     private long aliveAssumeTime = 500L;
 
-    //28: Default value of {@code Connection.catalog},set to new connections or reset on dirty connections
+    //28: Default value to {@code java.sql.Connection.setCatalog(String)} on created connections and released connections
     private String defaultCatalog;
-    //29: Default value of {@code Connection.schema},set to new connections or reset on dirty connections
+    //29: Default value to {@code java.sql.Connection.setSchema(String)} on created connections and released connections
     private String defaultSchema;
-    //30: Default value of {@code Connection.readOnly},set to new connections or reset on dirty connections
+    //30: Default value to {@code java.sql.Connection.Connection.setReadOnly(boolean)} on created connections and released connections
     private Boolean defaultReadOnly;
-    //31: Default value of {@code Connection.autoCommit},set to new connections or reset on dirty connections
+    //31: Default value to {@code java.sql.Connection.Connection.setAutoCommit(boolean)} on created connections and released connections
     private Boolean defaultAutoCommit;
-    //32: Default value of {@code Connection.transactionIsolation},set to new connections or reset on dirty connections
+    //32: Default value to {@code java.sql.Connection.setTransactionIsolation(int)} on created connections and released connections
     private Integer defaultTransactionIsolation;
     //33: Name of transactionIsolation,a mapping value of{@code defaultTransactionIsolation} retrieved by it when pool initialization
     private String defaultTransactionIsolationName;
