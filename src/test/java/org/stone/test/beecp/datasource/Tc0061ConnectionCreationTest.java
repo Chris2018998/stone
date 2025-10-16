@@ -64,7 +64,7 @@ public class Tc0061ConnectionCreationTest {
             BorrowThread borrowThread = new BorrowThread(ds);
             borrowThread.start();
             if (waitUtilWaiting(borrowThread)) {
-                ds.interruptConnectionCreating(false);
+                ds.interruptWaitingThreads();
             }
             borrowThread.join();
             Assertions.assertNotNull(borrowThread.getFailureCause());
@@ -78,7 +78,7 @@ public class Tc0061ConnectionCreationTest {
             BorrowThread borrowThread = new BorrowThread(ds, null, true);
             borrowThread.start();
             if (waitUtilWaiting(borrowThread)) {
-                ds.interruptConnectionCreating(false);
+                ds.interruptWaitingThreads();
             }
             borrowThread.join();
             Assertions.assertNotNull(borrowThread.getFailureCause());

@@ -59,75 +59,75 @@ public class Tc0030ObjectSourcePoolTest {
     public void testPoolNotReady() {
         BeeObjectSource os = new BeeObjectSource();
         try {
-            os.interruptObjectCreating(null, true);
+            os.interruptWaitingThreads(null);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
             os.getPoolMonitorVo();
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
 //        try {
 //            os.keys();
 //        } catch (Exception e) {
-//            Assertions.assertEquals("Pool not be created", e.getMessage());
+//            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
 //        }
 
         try {
             os.exists(null);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
             os.getMonitorVo(null);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
             os.enableLogPrint(null, false);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
-            os.clear(null);
+            os.restart(null);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
-            os.clear(null, true);
+            os.restart(null, true);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
             os.deleteKey(null);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
             os.deleteKey(null, true);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
-            os.clear(true);
+            os.restart(true);
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         try {
-            os.clear(true, new BeeObjectSourceConfig());
+            os.restart(true, new BeeObjectSourceConfig());
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
     }
 
@@ -142,15 +142,15 @@ public class Tc0030ObjectSourcePoolTest {
 
         Assertions.assertTrue(os.exists(key));
 //        Assertions.assertEquals(1, os.keys().length);
-        os.interruptObjectCreating(key, true);
+        os.interruptWaitingThreads(key);
         os.getPoolMonitorVo();
         os.getMonitorVo(key);
         os.enableLogPrint(key, false);
-        os.clear(true);
+        os.restart(true);
         Assertions.assertTrue(os.exists(key));//<--default key forbidden to delete
-        os.clear(key);
+        os.restart(key);
         Assertions.assertTrue(os.exists(key));//<--default key forbidden to delete
-        os.clear(key, true);
+        os.restart(key, true);
         Assertions.assertTrue(os.exists(key));//<--default key forbidden to delete
     }
 

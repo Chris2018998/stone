@@ -12,10 +12,11 @@ package org.stone.beeop;
 import org.stone.beeop.pool.exception.ObjectGetInterruptedException;
 import org.stone.beeop.pool.exception.ObjectGetTimeoutException;
 import org.stone.beeop.pool.exception.PoolNotCreatedException;
+import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 
 import java.io.Closeable;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.tools.BeanUtil.createClassInstance;
@@ -32,8 +33,8 @@ import static org.stone.tools.BeanUtil.createClassInstance;
  * @version 1.0
  */
 public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implements Closeable {
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final InterruptionReentrantReadWriteLock lock = new InterruptionReentrantReadWriteLock();
+    private final InterruptionReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = 8000L;//default vale equals same item in config
     private BeeKeyedObjectPool<K, V> pool;
     private boolean ready;
@@ -55,10 +56,8 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     private void createPool(BeeObjectSource<K, V> os) throws Exception {
-        BeeKeyedObjectPool<K, V> pool = (BeeKeyedObjectPool<K, V>) createClassInstance(os.getPoolImplementClassName(), BeeKeyedObjectPool.class, "pool");
-
-        pool.init(os);
-        os.pool = pool;
+        os.pool = (BeeKeyedObjectPool<K, V>) createClassInstance(os.getPoolImplementClassName(), BeeKeyedObjectPool.class, "pool");
+        os.pool.start(os);
         os.ready = true;
     }
 
@@ -66,11 +65,15 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //                                          1: Close(2)                                                          //
     //***************************************************************************************************************//
     public void close() {
-        if (pool != null) pool.close();
+        if (this.ready) this.pool.close();
     }
 
     public boolean isClosed() {
-        return pool == null || pool.isClosed();
+        return !this.ready || this.pool.isClosed();
+    }
+
+    public boolean isReady() {
+        return this.ready && this.pool.isReady();
     }
 
     //***************************************************************************************************************//
@@ -116,20 +119,20 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     //                                        3: clear pool(4)                                                       //
     //***************************************************************************************************************//
-    public void clear(K key) throws Exception {
-        getPool().clear(key);
+    public void restart(K key) throws Exception {
+        getPool().restart(key);
     }
 
-    public void clear(K key, boolean forceRecycleBorrowed) throws Exception {
-        getPool().clear(key, forceRecycleBorrowed);
+    public void restart(K key, boolean forceRecycleBorrowed) throws Exception {
+        getPool().restart(key, forceRecycleBorrowed);
     }
 
-    public void clear(boolean forceRecycleBorrowed) throws Exception {
-        getPool().clear(forceRecycleBorrowed);
+    public void restart(boolean forceRecycleBorrowed) throws Exception {
+        getPool().restart(forceRecycleBorrowed);
     }
 
-    public void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
-        getPool().clear(forceRecycleBorrowed, config);
+    public void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
+        getPool().restart(forceRecycleBorrowed, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
@@ -152,12 +155,16 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     //                                        5: Interrupt blocking of object instance creation                      //
     //***************************************************************************************************************//
-    public Thread[] interruptObjectCreating(K key, boolean interruptTimeout) throws Exception {
-        return getPool().interruptObjectCreating(key, interruptTimeout);
+    public List<Thread> interruptWaitingThreads(K key) throws Exception {
+        if (this.ready) {
+            return pool.interruptWaitingThreads();
+        } else {
+            return lock.interruptAllThreads();
+        }
     }
 
     private BeeKeyedObjectPool<K, V> getPool() throws Exception {
-        if (pool == null) throw new PoolNotCreatedException("Pool not be created");
+        if (!this.ready) throw new PoolNotCreatedException("Internal pool was not ready");
         return this.pool;
     }
 

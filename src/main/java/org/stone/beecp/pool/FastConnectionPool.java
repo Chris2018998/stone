@@ -28,9 +28,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -104,12 +103,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //               1: Pool initializes and maintenance on pooled connections(6)                                    //                                                                                  //
     //***************************************************************************************************************//
     //Method-1.1: pool initializes.
-    public void init(BeeDataSourceConfig config) throws SQLException {
+    public void start(BeeDataSourceConfig config) throws SQLException {
         if (config == null) throw new PoolInitializeFailedException("Pool initialization configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {//initializes after cas success to change pool state
             try {
                 checkJdbcProxyClass();
-                startup(POOL_STARTING, config.check());
+                startupInternal(POOL_STARTING, config.check());
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
             } catch (Throwable e) {
                 Log.info("BeeCP({})initialized failed", this.poolName, e);
@@ -122,7 +121,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     // Method-1.2: launch the pool
-    private void startup(final int poolWorkState, BeeDataSourceConfig poolConfig) throws SQLException {
+    private void startupInternal(final int poolWorkState, BeeDataSourceConfig poolConfig) throws SQLException {
         this.poolConfig = poolConfig;
         this.poolName = poolConfig.getPoolName();
         Log.info("BeeCP({})starting up....", this.poolName);
@@ -599,7 +598,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //Method-2.3: attempt to get pooled connection(key method)
     private PooledConnection getPooledConnection() throws SQLException {
         if (this.poolState != POOL_READY)
-            throw new ConnectionGetForbiddenException("Pool has been closed or is being cleared");
+            throw new ConnectionGetForbiddenException("Pool has been closed or is restarting");
 
         //1: try to reuse last used connection
         Borrower b = null;
@@ -816,7 +815,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         //step2: interrupt current creation of a connection when this operation is timeout
-        this.interruptConnectionCreating(true);
+        this.interruptTimeoutBlockingCreation();
 
         //step3: clean timeout connection in a loop
         for (PooledConnection p : this.connectionArray) {
@@ -850,21 +849,21 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     //                                  4: pool clean and pool close  (6)                                            //                                                                                  //
     //***************************************************************************************************************//
-    public void clear(boolean forceRecycleBorrowed) throws SQLException {
-        clear(forceRecycleBorrowed, false, null);
+    public void restart(boolean forceRecycleBorrowed) throws SQLException {
+        restart(forceRecycleBorrowed, false, null);
     }
 
     //Method-4.2: close all connections in pool and removes them from pool,then re-initializes pool with new configuration
-    public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
-        clear(forceRecycleBorrowed, true, config);
+    public void restart(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
+        restart(forceRecycleBorrowed, true, config);
     }
 
     //Method-4.3: close all connections in pool and removes them from pool,then re-initializes pool with new configuration
-    private void clear(boolean forceRecycleBorrowed, boolean reinit, BeeDataSourceConfig config) throws SQLException {
+    private void restart(boolean forceRecycleBorrowed, boolean reinit, BeeDataSourceConfig config) throws SQLException {
         if (reinit && config == null)
             throw new BeeDataSourceConfigException("Pool reinitialization configuration can't be null");
 
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             try {
                 BeeDataSourceConfig checkedConfig = null;
                 if (reinit) checkedConfig = config.check();
@@ -875,29 +874,22 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
                 if (reinit) {
                     Log.info("BeeCP({})start to reinitialize pool", this.poolName);
-                    startup(POOL_CLEARING, checkedConfig);//throws SQLException only fail to create initial connections or fail to set default
+                    startupInternal(POOL_RESTARTING, checkedConfig);//throws SQLException only fail to create initial connections or fail to set default
                     //note: if failed,this method may be recalled with correct configuration
-                    Log.info("BeeCP({})completed to reinitialize pool successful", this.poolName);
+                    Log.info("BeeCP({})pool restart successful", this.poolName);
                 }
             } finally {
                 this.poolState = POOL_READY;
             }
         } else {
-            throw new PoolInClearingException("Pool has been closed or is being cleared");
+            throw new PoolInClearingException("Pool has been closed or is restarting");
         }
     }
 
     //Method-4.4: remove all connections from pool
     private void removeAllConnections(boolean force, String source) {
-        //1: interrupt waiters on semaphore
-        this.semaphore.interruptQueuedWaitThreads();
         //2: interrupt all threads waits on lock or blocking in factory.create method call
-        this.interruptConnectionCreating(false);
-        //3: transfer exception to waiter in queue
-        if (!this.waitQueue.isEmpty()) {
-            PoolInClearingException exception = new PoolInClearingException("Pool has been closed or is being cleared");
-            while (!this.waitQueue.isEmpty()) this.transferException(exception);
-        }
+        this.interruptWaitingThreads();
 
         //4:clear all connections
         int closedCount = 0;
@@ -936,13 +928,17 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         return this.poolState == POOL_CLOSED;
     }
 
+    public boolean isReady() {
+        return this.poolState == POOL_READY;
+    }
+
     //Method-4.6: shut down the pool and set its state to closed
     public void close() {
         do {
             int poolStateCode = this.poolState;
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
             if (poolStateCode == POOL_NEW && PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
-            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
+            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeCP({})begin to shutdown pool", this.poolName);
@@ -1103,39 +1099,38 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     //                                  7: other methods (3)                                                         //                                                                                  //
     //***************************************************************************************************************//
-    public Thread[] interruptConnectionCreating(boolean onlyInterruptTimeout) {
-        if (this.printRuntimeLog)
-            Log.info("BeeCP({})attempt to interrupt connection creation,only for timeout:{}", this.poolName, onlyInterruptTimeout);
+    public List<Thread> interruptWaitingThreads() {
+        //1clear waiting thread on semaphore
+        List<Thread> threads = new LinkedList<>(this.semaphore.interruptQueuedWaitThreads());
 
-        Set<Thread> threads = new HashSet<>(this.semaphoreSize);
-        //1: maybe connection array is in initializing,so attempt to interrupt threads on lock
-        if (!connectionArrayInitialized) {
-            Thread holdThread = connectionArrayInitLock.interruptOwnerThread();
-            List<Thread> waitThreads = connectionArrayInitLock.interruptQueuedWaitThreads();
-            if (holdThread != null) threads.add(holdThread);
-            if (!waitThreads.isEmpty()) threads.addAll(waitThreads);
+        //2: transfer exception to waiter in queue
+        if (!this.waitQueue.isEmpty()) {
+            PoolInClearingException exception = new PoolInClearingException("Pool has been closed or is restarting");
+            while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 
-        //2: attempt to interrupt creating of connections
-        if (onlyInterruptTimeout) {
-            for (PooledConnection p : connectionArray) {
-                ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L) {
-                    creatingInfo.creatingThread.interrupt();
-                    threads.add(creatingInfo.creatingThread);
-                }
-            }
-        } else {
-            for (PooledConnection p : connectionArray) {
-                ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null) {
-                    creatingInfo.creatingThread.interrupt();
-                    threads.add(creatingInfo.creatingThread);
-                }
+        //3: interrupt threads on lock
+        threads.addAll(connectionArrayInitLock.interruptAllThreads());
+
+        //4: attempt to interrupt creating of connections
+        for (PooledConnection p : connectionArray) {
+            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null) {
+                creatingInfo.creatingThread.interrupt();
+                threads.add(creatingInfo.creatingThread);
             }
         }
 
-        return threads.toArray(new Thread[0]);
+        return threads;
+    }
+
+    private void interruptTimeoutBlockingCreation() {
+        for (PooledConnection p : connectionArray) {
+            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L) {
+                creatingInfo.creatingThread.interrupt();
+            }
+        }
     }
 
     //Method-7.2: do alive test on a pooed connection

@@ -29,7 +29,7 @@ import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
 
 /**
- * Bee object source configuration object
+ * Bee object source configuration object,which is not thread-safe.
  *
  * @param <K> is pooled key
  * @param <V> is pooled object type

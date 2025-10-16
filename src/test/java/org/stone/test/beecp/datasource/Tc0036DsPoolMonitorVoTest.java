@@ -38,7 +38,7 @@ public class Tc0036DsPoolMonitorVoTest {
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
             Assertions.assertEquals("fastPool", vo.getPoolName());
             Assertions.assertEquals("fair", vo.getPoolMode());
-            Assertions.assertEquals(POOL_READY, vo.getPoolState());
+            Assertions.assertTrue(vo.isReady());
             Assertions.assertEquals(20, vo.getMaxSize());
             Assertions.assertEquals(10, vo.getSemaphoreSize());
             Assertions.assertEquals(0, vo.getSemaphoreAcquiredSize());

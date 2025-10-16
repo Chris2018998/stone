@@ -131,7 +131,7 @@ public class BeeJtaDataSource extends TimerTask implements DataSource, AutoClose
 
     public void clear(boolean force) throws SQLException {
         checkDataSource();
-        this.ds.clear(force);
+        this.ds.restart(force);
     }
 
     public boolean isClosed() throws SQLException {

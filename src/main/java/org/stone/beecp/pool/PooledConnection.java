@@ -273,7 +273,7 @@ final class PooledConnection {
         if (proxyInUsing == null) return;
 
         if (predicate != null) {
-            String msg = predicate.evictTest(e);
+            String msg = predicate.evictionTest(e);
             if (isNotBlank(msg)) {
                 if (pool.isPrintRuntimeLog())
                     CommonLog.warn("BeeCP({})Connection has been broken because of predicate result({})", pool.getPoolName(), msg);

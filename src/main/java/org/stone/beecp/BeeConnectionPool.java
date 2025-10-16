@@ -27,13 +27,32 @@ import java.util.List;
 public interface BeeConnectionPool extends Closeable {
 
     /**
-     * Pool initializes with a configuration object.
+     * Pool startup with a configuration object.
      *
      * @param config is a configuration object defines some items can be applied for pool
      * @throws BeeDataSourceConfigException when configuration check fail
      * @throws SQLException                 when fail to create initialization connection
      */
-    void init(BeeDataSourceConfig config) throws SQLException;
+    void start(BeeDataSourceConfig config) throws SQLException;
+
+    /**
+     * Pool re-startup.
+     *
+     * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
+     * @throws SQLException when pool is closed or in clearing
+     */
+    void restart(boolean forceRecycleBorrowed) throws SQLException;
+
+    /**
+     * Pool re-startup with a new configuration
+     *
+     * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
+     * @param config               is a new configuration object for reinitialization
+     * @throws SQLException                 when pool is closed or in clearing
+     * @throws BeeDataSourceConfigException when configuration check fail
+     * @throws SQLException                 when pool reinitialize fail
+     */
+    void restart(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
 
     /**
      * Attempts to get a connection from pool.
@@ -56,41 +75,6 @@ public interface BeeConnectionPool extends Closeable {
     XAConnection getXAConnection() throws SQLException;
 
     /**
-     * Interrupts connections creation.
-     *
-     * @param onlyInterruptTimeout is true that only interrupts timeout creation,false that interrupts all creation
-     * @return interrupted threads
-     */
-    Thread[] interruptConnectionCreating(boolean onlyInterruptTimeout);
-
-    /**
-     * Close all connections and remove them from pool.
-     *
-     * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
-     * @throws SQLException when pool is closed or in clearing
-     */
-    void clear(boolean forceRecycleBorrowed) throws SQLException;
-
-    /**
-     * Close all connections and remove them from pool,then re-initialize pool with a configuration object.
-     *
-     * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
-     * @param config               is a new configuration object for reinitialization
-     * @throws SQLException                 when pool is closed or in clearing
-     * @throws BeeDataSourceConfigException when configuration check fail
-     * @throws SQLException                 when pool reinitialize fail
-     */
-    void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException;
-
-    /**
-     * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
-     *
-     * @return monitoring object of pool
-     */
-    BeeConnectionPoolMonitorVo getPoolMonitorVo();
-
-
-    /**
      * Shutdown pool
      */
     void close();
@@ -101,6 +85,28 @@ public interface BeeConnectionPool extends Closeable {
      * @return true when pool is closed
      */
     boolean isClosed();
+
+    /**
+     * Queries pool state whether is ready.
+     *
+     * @return true when pool is closed
+     */
+    boolean isReady();
+
+    /**
+     * Interrupts all threads in waiting.
+     *
+     * @return a list of interrupted threads
+     */
+    List<Thread> interruptWaitingThreads();
+
+    /**
+     * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
+     *
+     * @return monitoring object of pool
+     */
+    BeeConnectionPoolMonitorVo getPoolMonitorVo();
+
 
     /**
      * Query logs print state whether in being enabled.

@@ -42,7 +42,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setPrintRuntimeLogs(true);
         config.setIntervalToClearTimeout(5000L);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         //1: logs print test
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
@@ -62,7 +62,7 @@ public class Tc0065ConnectionTimeoutTest {
         config2.setIdleTimeout(1L);
         config2.setIntervalToClearTimeout(50L);
         FastConnectionPool pool2 = new FastConnectionPool();
-        pool2.init(config2);
+        pool2.start(config2);
         Assertions.assertEquals(1, pool2.getIdleSize());
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
         Assertions.assertEquals(0, pool2.getIdleSize());
@@ -79,7 +79,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setPrintRuntimeLogs(true);
         config.setSemaphoreSize(1);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
         Assertions.assertEquals(1, vo.getIdleSize());
@@ -97,7 +97,7 @@ public class Tc0065ConnectionTimeoutTest {
 
         Connection con = null;
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
         Assertions.assertEquals(100L, getFieldValue(pool, "holdTimeoutMs"));
         Assertions.assertTrue((Boolean) getFieldValue(pool, "supportHoldTimeout"));
 
@@ -129,7 +129,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setHoldTimeout(0);//default is zero,not timeout
         config.setIntervalToClearTimeout(500L);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
         Assertions.assertEquals(0L, getFieldValue(pool, "holdTimeoutMs"));
         Assertions.assertFalse((Boolean) getFieldValue(pool, "supportHoldTimeout"));
 

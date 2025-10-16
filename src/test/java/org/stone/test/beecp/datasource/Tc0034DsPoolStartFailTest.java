@@ -29,7 +29,7 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 /**
  * @author Chris Liao
  */
-public class Tc0034DsPoolInitializeFailTest {
+public class Tc0034DsPoolStartFailTest {
 
     @Test
     public void testInitializationFail() {
@@ -80,7 +80,7 @@ public class Tc0034DsPoolInitializeFailTest {
     @Test
     public void testNullConfig() {
         try (FastConnectionPool pool = new FastConnectionPool()) {
-            pool.init(null);
+            pool.start(null);
             Assertions.fail("[testNullConfig]Test failed");
         } catch (SQLException e) {
             Assertions.assertInstanceOf(PoolInitializeFailedException.class, e);
@@ -127,7 +127,7 @@ public class Tc0034DsPoolInitializeFailTest {
         public void run() {
             LockSupport.parkNanos(tagetTime - System.nanoTime());
             try {
-                pool.init(config);
+                pool.start(config);
             } catch (SQLException e) {
                 this.failCause = e;
             }

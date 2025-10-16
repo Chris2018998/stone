@@ -19,7 +19,7 @@ import org.stone.beeop.BeeObjectPredicate;
 
 public class JavaBookPredicate implements BeeObjectPredicate {
 
-    public String evictTest(Exception e) {
+    public String evictionTest(Exception e) {
         return null;
     }
 }

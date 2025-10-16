@@ -19,7 +19,7 @@ public interface BeeDataSourceConfigMBean {
 
     String getUsername();
 
-    String getUrl();
+    String getJdbcUrl();
 
     String getDriverClassName();
 

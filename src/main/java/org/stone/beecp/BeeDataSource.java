@@ -16,6 +16,7 @@ import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreatedException;
 import org.stone.tools.BeanUtil;
+import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 
 import javax.sql.CommonDataSource;
 import javax.sql.DataSource;
@@ -29,7 +30,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -48,8 +48,8 @@ import static org.stone.tools.CommonUtil.isNotBlank;
 //fix BeeCP-Starter-#6 Chris-2020-09-01 start
 //public final class BeeDataSource extends BeeDataSourceConfig implements DataSource {
 public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XADataSource, Closeable {
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final InterruptionReentrantReadWriteLock lock = new InterruptionReentrantReadWriteLock();
+    private final InterruptionReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = 8000L;//default vale same to config
     private BeeConnectionPool pool;
     private CommonDataSource subDs;//used to set loginTimeout
@@ -84,9 +84,8 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
                         FastConnectionPool4L.class.getName() : FastConnectionPool.class.getName();
             }
 
-            BeeConnectionPool pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
-            pool.init(ds);
-            ds.pool = pool;
+            ds.pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
+            ds.pool.start(ds);
 
             Object connectionFactory = ds.getConnectionFactory();
             if (connectionFactory instanceof CommonDataSource)
@@ -164,12 +163,12 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                         3: Pool clear(2)                                                      //
     //***************************************************************************************************************//
-    public void clear(boolean forceRecycleBorrowed) throws SQLException {
-        this.getPool().clear(forceRecycleBorrowed);
+    public void restart(boolean forceRecycleBorrowed) throws SQLException {
+        this.getPool().restart(forceRecycleBorrowed);
     }
 
-    public void clear(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
-        this.getPool().clear(forceRecycleBorrowed, config);
+    public void restart(boolean forceRecycleBorrowed, BeeDataSourceConfig config) throws SQLException {
+        this.getPool().restart(forceRecycleBorrowed, config);
         config.copyTo(this);
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
@@ -293,11 +292,15 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         8: other methods(7)                                                   //
     //***************************************************************************************************************//
     public void close() {
-        if (this.pool != null) this.pool.close();
+        if (this.ready) this.pool.close();
     }
 
     public boolean isClosed() {
-        return this.pool == null || this.pool.isClosed();
+        return !this.ready || this.pool.isClosed();
+    }
+
+    public boolean isReady() {
+        return this.ready && this.pool.isReady();
     }
 
     //override method
@@ -310,12 +313,16 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.getPool().getPoolMonitorVo();
     }
 
-    public Thread[] interruptConnectionCreating(boolean interruptTimeout) throws SQLException {
-        return this.getPool().interruptConnectionCreating(interruptTimeout);
+    public List<Thread> interruptWaitingThreads() throws SQLException {
+        if (this.ready) {
+            return pool.interruptWaitingThreads();
+        } else {
+            return lock.interruptAllThreads();
+        }
     }
 
     private BeeConnectionPool getPool() throws SQLException {
-        if (this.pool == null) throw new PoolNotCreatedException("Data source pool not be instantiated");
+        if (!this.ready) throw new PoolNotCreatedException("Internal pool was not ready");
         return this.pool;
     }
 }

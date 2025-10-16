@@ -14,8 +14,10 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
 
+import java.util.List;
+
 public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
-    public void init(BeeObjectSourceConfig config) throws Exception {
+    public void start(BeeObjectSourceConfig config) throws Exception {
     }
 
     public void close() {
@@ -25,15 +27,18 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return false;
     }
 
+    public boolean isReady() {
+        return false;
+    }
 
     public BeeObjectPoolMonitorVo getPoolMonitorVo() {
         return null;
     }
 
-    public void clear(boolean forceCloseUsing) throws Exception {
+    public void restart(boolean forceCloseUsing) throws Exception {
     }
 
-    public void clear(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
+    public void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
     }
 
     public BeeObjectHandle getObjectHandle() {
@@ -44,18 +49,13 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return new MockObjectHandleImpl();
     }
 
-    public int getObjectCreatingCount(Object key) {
-        return 0;
-    }
-
-    public int getObjectCreatingTimeoutCount(Object key) {
-        return 0;
-    }
-
-    public Thread[] interruptObjectCreating(Object key, boolean onlyInterruptTimeout) {
+    public List<Thread> interruptWaitingThreads() {
         return null;
     }
 
+    public List<Thread> interruptWaitingThreads(Object key) {
+        return null;
+    }
 
     public void enableLogPrint(boolean indicator) {
     }
@@ -83,10 +83,10 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return true;
     }
 
-    public void clear(Object key) {
+    public void restart(Object key) {
     }
 
-    public void clear(Object key, boolean forceCloseUsing) {
+    public void restart(Object key, boolean forceCloseUsing) {
     }
 
     public void deleteKey(Object key) {

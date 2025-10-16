@@ -41,7 +41,7 @@ public class Tc0066ConnectionResetTest {
         config.setDefaultReadOnly(false);
         config.setDefaultTransactionIsolation(TRANSACTION_READ_COMMITTED);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         Connection con1 = null;
         Connection con2 = null;

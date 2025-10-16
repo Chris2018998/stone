@@ -11,6 +11,8 @@ package org.stone.beecp.pool;
 
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.*;
+
 /**
  * Connection pool Monitor impl
  *
@@ -51,8 +53,18 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public int getPoolState() {
-        return poolState;
+    public boolean isClosed() {
+        return poolState == POOL_CLOSED;
+    }
+
+    @Override
+    public boolean isReady() {
+        return poolState == POOL_READY;
+    }
+
+    @Override
+    public boolean isStarting() {
+        return poolState == POOL_STARTING || poolState == POOL_RESTARTING;
     }
 
     public void setPoolState(int poolState) {

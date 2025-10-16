@@ -21,7 +21,11 @@ public interface BeeConnectionPoolMonitorVo {
 
     String getPoolMode();
 
-    int getPoolState();
+    boolean isClosed();
+
+    boolean isReady();
+
+    boolean isStarting();
 
     int getMaxSize();
 

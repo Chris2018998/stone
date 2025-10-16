@@ -122,7 +122,7 @@ public class Tc0041DsPoolWaitQueueTest {
             secondBorrower.start();
 
             if (TestUtil.waitUtilWaiting(secondBorrower)) {
-                ds.clear(true);
+                ds.restart(true);
             }
         }
     }

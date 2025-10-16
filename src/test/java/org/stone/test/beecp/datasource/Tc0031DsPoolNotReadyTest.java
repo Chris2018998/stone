@@ -34,88 +34,77 @@ public class Tc0031DsPoolNotReadyTest {
         //1: Pool Creation in BeeDataSource constructor: new BeeDataSource(BeeDataSourceConfig config)
         //2: Pool Lazy Creation(ds.getConnection(),ds.getXAConnection(),ds.getConnection(String,String),ds.getXAConnection(String,String))
         try (BeeDataSource ds = new BeeDataSource()) {
+            Assertions.assertTrue(ds.isClosed());
+            Assertions.assertFalse(ds.isReady());
             try {
-                ds.clear(false);
+                ds.restart(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clear(false, new BeeDataSourceConfig());
+                ds.restart(false, new BeeDataSourceConfig());
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
-            try {
-                ds.interruptConnectionCreating(false);
-                Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
-            }
 
             try {
                 ds.enableLogPrint(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.isEnabledLogPrint();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.enableJdbcEventLogManager(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.isEnabledJdbcEventLogManager();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.getPoolMonitorVo();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
-            }
-
-            try {
-                ds.interruptConnectionCreating(true);
-                Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
@@ -165,87 +154,73 @@ public class Tc0031DsPoolNotReadyTest {
 
         try (BeeDataSource ds = new BeeDataSource(driver, url, user, password)) {
             try {
-                ds.clear(false);
+                ds.restart(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clear(false, new BeeDataSourceConfig());
+                ds.restart(false, new BeeDataSourceConfig());
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
-            }
-
-            try {
-                ds.interruptConnectionCreating(false);
-                Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.enableLogPrint(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.isEnabledLogPrint();
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.enableJdbcEventLogManager(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.isEnabledJdbcEventLogManager();
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
                 ds.getPoolMonitorVo();
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
-            }
-
-            try {
-                ds.interruptConnectionCreating(true);
-                Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (PoolNotCreatedException e) {
-                Assertions.assertEquals("Data source pool not be instantiated", e.getMessage());
+                Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             //pool created during getConnection() method call

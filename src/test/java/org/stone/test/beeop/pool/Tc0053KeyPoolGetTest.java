@@ -31,7 +31,7 @@ public class Tc0053KeyPoolGetTest {
         config.setMaxKeySize(2);
         config.setForceRecycleBorrowedOnClose(true);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         String testKey = "pool2";
         Assertions.assertFalse(pool.exists(testKey));

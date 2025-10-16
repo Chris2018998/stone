@@ -19,7 +19,7 @@ import java.sql.SQLException;
 public class MockNotEvictConnectionPredicate2 implements BeeConnectionPredicate {
 
     //return desc of eviction,if null or empty,not be evicted
-    public String evictTest(SQLException e) {
+    public String evictionTest(SQLException e) {
         return "";
     }
 }

@@ -29,7 +29,7 @@ public class Tc0067ConnectionTransactionTest {
     public void testCloseConnectionNotCommited() throws Exception {
         BeeDataSourceConfig config = createDefault();
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         Connection con1 = null;
         PreparedStatement ps1 = null;
@@ -78,7 +78,7 @@ public class Tc0067ConnectionTransactionTest {
         BeeDataSourceConfig config = createDefault();
         config.setDefaultAutoCommit(false);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         Connection con1 = null;
         PreparedStatement ps1 = null;
@@ -106,7 +106,7 @@ public class Tc0067ConnectionTransactionTest {
     public void testRollback() throws Exception {
         BeeDataSourceConfig config = createDefault();
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         Connection con1 = null;
         PreparedStatement ps1 = null;
@@ -161,7 +161,7 @@ public class Tc0067ConnectionTransactionTest {
         config.setInitialSize(0);
         config.setMaxActive(1);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         try (Connection conn1 = pool.getConnection()) {//
             conn1.setAutoCommit(false);//

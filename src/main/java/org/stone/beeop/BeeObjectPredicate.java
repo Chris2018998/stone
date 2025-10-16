@@ -24,6 +24,6 @@ public interface BeeObjectPredicate {
      * @param e thrown from a working object
      * @return a string as eviction reason,but it is null or empty,not evict target object
      */
-    String evictTest(Exception e);
+    String evictionTest(Exception e);
 
 }

@@ -15,7 +15,6 @@ import org.stone.beecp.BeeDataSource;
 import org.stone.test.beecp.objects.pool.BlockingPoolImpl_Park;
 import org.stone.test.beecp.objects.pool.BlockingPoolImpl_ParkNanos;
 import org.stone.test.beecp.objects.threads.BorrowThread;
-import org.stone.test.beecp.objects.threads.InterruptionAction;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -76,17 +75,16 @@ public class Tc0033DataSourceLockTest {
             BorrowThread firstThread = new BorrowThread(ds);//first thread create pool under write-lock
             firstThread.start();
 
-            if (waitUtilWaiting(firstThread)) {
+            if (waitUtilWaiting(firstThread)) {//blocking in pool
                 BorrowThread secondThread = new BorrowThread(ds);
                 secondThread.start();
+                if (waitUtilWaiting(secondThread)) {//blocking lock
+                    ds.interruptWaitingThreads();
+                }
 
-                //1: interrupt second thread
-                new InterruptionAction(secondThread).start();//try to interrupt the second thread
+                firstThread.join();
                 secondThread.join();
                 Assertions.assertEquals("An interruption occurred while waiting for pool ready", secondThread.getFailureCause().getMessage());
-
-                //2: interrupt firstThread
-                firstThread.interrupt();
             }
         }
     }

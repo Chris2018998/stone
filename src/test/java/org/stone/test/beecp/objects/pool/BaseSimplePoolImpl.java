@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class BaseSimplePoolImpl implements BeeConnectionPool {
 
-    public void init(BeeDataSourceConfig config) {
+    public void start(BeeDataSourceConfig config) {
         //do nothing
     }
 
@@ -48,6 +48,10 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
     }
 
     public boolean isClosed() {
+        return false;
+    }
+
+    public boolean isReady() {
         return false;
     }
 
@@ -101,15 +105,15 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         return 0;
     }
 
-    public Thread[] interruptConnectionCreating(boolean interruptTimeout) {
+    public List<Thread> interruptWaitingThreads() {
         return null;
     }
 
-    public void clear(boolean forceCloseUsing) {
+    public void restart(boolean forceCloseUsing) {
         //do nothing
     }
 
-    public void clear(boolean forceCloseUsing, BeeDataSourceConfig config) {
+    public void restart(boolean forceCloseUsing, BeeDataSourceConfig config) {
         //do nothing
     }
 }

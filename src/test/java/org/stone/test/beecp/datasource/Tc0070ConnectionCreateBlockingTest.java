@@ -40,7 +40,7 @@ public class Tc0070ConnectionCreateBlockingTest {
         BlockingMockConnectionFactory factory = new BlockingMockConnectionFactory();
         config.setConnectionFactory(factory);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         //1: create first thread
         BorrowThread firstBorrower = new BorrowThread(pool);
@@ -51,7 +51,7 @@ public class Tc0070ConnectionCreateBlockingTest {
             BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
             Assertions.assertEquals(1, vo.getCreatingCount());
             Assertions.assertEquals(0, vo.getCreatingTimeoutCount());
-            pool.interruptConnectionCreating(false);
+            pool.interruptWaitingThreads();
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
             vo = pool.getPoolMonitorVo();
             Assertions.assertEquals(0, vo.getCreatingCount());
@@ -71,7 +71,7 @@ public class Tc0070ConnectionCreateBlockingTest {
         BlockingMockConnectionFactory factory = new BlockingMockConnectionFactory();
         config.setConnectionFactory(factory);
         FastConnectionPool pool = new FastConnectionPool();
-        pool.init(config);
+        pool.start(config);
 
         //1: create first thread
         BorrowThread firstBorrower = new BorrowThread(pool);
@@ -86,7 +86,7 @@ public class Tc0070ConnectionCreateBlockingTest {
             vo = pool.getPoolMonitorVo();
             Assertions.assertEquals(1, vo.getCreatingCount());
             Assertions.assertEquals(1, vo.getCreatingTimeoutCount());
-            pool.interruptConnectionCreating(true);
+            pool.interruptWaitingThreads();
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
             vo = pool.getPoolMonitorVo();
             Assertions.assertEquals(0, vo.getCreatingCount());

@@ -29,7 +29,7 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 /**
  * @author Chris Liao
  */
-public class Tc0044DataSourceClearTest {
+public class Tc0044DataSourceRestartTest {
 
     @Test
     public void testClear() throws Exception {
@@ -61,11 +61,11 @@ public class Tc0044DataSourceClearTest {
 
             if (thread1.getFailException() != null) {
                 Assertions.assertInstanceOf(PoolInClearingException.class, thread1.getFailException());
-                Assertions.assertEquals("Pool has been closed or is being cleared", thread1.getFailException().getMessage());
+                Assertions.assertEquals("Pool has been closed or is restarting", thread1.getFailException().getMessage());
             }
             if (thread2.getFailException() != null) {
                 Assertions.assertInstanceOf(PoolInClearingException.class, thread2.getFailException());
-                Assertions.assertEquals("Pool has been closed or is being cleared", thread2.getFailException().getMessage());
+                Assertions.assertEquals("Pool has been closed or is restarting", thread2.getFailException().getMessage());
             }
 
             vo = ds.getPoolMonitorVo();
@@ -82,12 +82,12 @@ public class Tc0044DataSourceClearTest {
             new TimeDelayCloseConnectionThread(con, Long.valueOf(System.currentTimeMillis() + 500L)).start();
 
             //2.1: wait borrowed connections return to pool
-            ds.clear(false);//not force
+            ds.restart(false);//not force
             vo = ds.getPoolMonitorVo();
             Assertions.assertEquals(0, vo.getBorrowedSize());
 
             try {
-                ds.clear(true, null);
+                ds.restart(true, null);
                 Assertions.fail("[testReInitialize]test fail");
             } catch (BeeDataSourceConfigException e) {
                 Assertions.assertEquals("Pool reinitialization configuration can't be null", e.getMessage());
@@ -99,7 +99,7 @@ public class Tc0044DataSourceClearTest {
             newConfig.setMaxActive(20);
             newConfig.addSqlExceptionCode(200);
             newConfig.addSqlExceptionState("B200");
-            ds.clear(true, newConfig);
+            ds.restart(true, newConfig);
             vo = ds.getPoolMonitorVo();
             Assertions.assertEquals(0, vo.getBorrowedSize());
             Assertions.assertEquals(10, vo.getIdleSize());
@@ -138,7 +138,7 @@ public class Tc0044DataSourceClearTest {
         public void run() {
             LockSupport.parkNanos(concurrentTime - System.nanoTime());
             try {
-                ds.clear(true);
+                ds.restart(true);
             } catch (Exception e) {
                 this.failException = e;
             }

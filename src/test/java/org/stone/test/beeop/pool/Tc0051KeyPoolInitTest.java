@@ -25,7 +25,7 @@ public class Tc0051KeyPoolInitTest {
     public void testNullConfig() {
         KeyedObjectPool pool = new KeyedObjectPool();
         try {
-            pool.init(null);
+            pool.start(null);
         } catch (Exception e) {
             Assertions.assertEquals("Configuration can't be null", e.getMessage());
         }
@@ -64,7 +64,7 @@ public class Tc0051KeyPoolInitTest {
 
         public void run() {
             try {
-                pool.init(config);
+                pool.start(config);
             } catch (Exception e) {
                 this.failureException = e;
             }

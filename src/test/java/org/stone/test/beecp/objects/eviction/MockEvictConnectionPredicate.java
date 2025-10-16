@@ -31,7 +31,7 @@ public class MockEvictConnectionPredicate implements BeeConnectionPredicate {
         this.errorState = errorState;
     }
 
-    public String evictTest(SQLException e) {
+    public String evictionTest(SQLException e) {
         return errorCode == e.getErrorCode() && Objects.equals(errorState, e.getSQLState()) ? "dead" : null;
     }
 }

@@ -119,7 +119,7 @@ public class Tc0063ConnectionEvictTest {
             Assertions.assertEquals("test", vo.getPoolName());
             Assertions.assertEquals(4, vo.getMaxSize());
             Assertions.assertEquals("compete", vo.getPoolMode());
-            Assertions.assertEquals(POOL_READY, vo.getPoolState());
+            Assertions.assertTrue(vo.isReady());
 
             Assertions.assertEquals(0, vo.getBorrowedSize());
             Assertions.assertEquals(4, vo.getIdleSize());

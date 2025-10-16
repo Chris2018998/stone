@@ -29,7 +29,7 @@ public class Tc0054KeyPoolCloseTest {
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         Assertions.assertNotNull(pool.getObjectHandle());
         pool.close();
@@ -37,7 +37,7 @@ public class Tc0054KeyPoolCloseTest {
             pool.getObjectHandle();
             fail("Pool close test fail");
         } catch (ObjectGetForbiddenException e) {
-            Assertions.assertEquals("Object pool was not ready or closed", e.getMessage());
+            Assertions.assertEquals("Object Internal pool was not ready or closed", e.getMessage());
         }
         //nop
         pool.close();

@@ -26,5 +26,5 @@ public interface BeeConnectionPredicate {
      * @param e is thrown from a working connection
      * @return eviction reason,which is not blank and not null,pool evicts the connection,false that pool ignores it
      */
-    String evictTest(SQLException e);
+    String evictionTest(SQLException e);
 }

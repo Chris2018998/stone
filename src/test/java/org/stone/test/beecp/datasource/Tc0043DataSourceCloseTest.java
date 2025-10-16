@@ -30,21 +30,24 @@ public class Tc0043DataSourceCloseTest {
         Assertions.assertTrue(ds1.isClosed());
         ds1.close();//no impact
         Assertions.assertTrue(ds1.isClosed());
+        Assertions.assertFalse(ds1.isReady());
 
         BeeDataSource ds2 = null;
         try {
             BeeDataSourceConfig config = createDefault();
             ds2 = new BeeDataSource(config);
+            Assertions.assertTrue(ds2.isReady());
             Assertions.assertFalse(ds2.isClosed());
             try (Connection ignored = ds2.getConnection()) {
                 Assertions.assertFalse(ds2.isClosed());
             }
             ds2.close();
-
+            Assertions.assertTrue(ds2.isClosed());
+            Assertions.assertFalse(ds2.isReady());
             try (Connection ignored = ds2.getConnection()) {
                 Assertions.fail("[testDatasourceClose]Test failed");
             } catch (SQLException ee) {
-                Assertions.assertEquals("Pool has been closed or is being cleared", ee.getMessage());
+                Assertions.assertEquals("Pool has been closed or is restarting", ee.getMessage());
             }
         } finally {
             if (ds2 != null && !ds2.isClosed()) {

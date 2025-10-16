@@ -32,10 +32,10 @@ public class Tc0055KeyPoolKeyTest {
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         try {
-            pool.clear(null);
+            pool.restart(null);
         } catch (ObjectKeyException e) {
             Assertions.assertTrue(e.getMessage().contains("Key can't be null"));
         }
@@ -58,11 +58,11 @@ public class Tc0055KeyPoolKeyTest {
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         //1: default key
         Assertions.assertEquals(2, pool.getMonitorVo(defaultKey).getIdleSize());
-        pool.clear(defaultKey);
+        pool.restart(defaultKey);
         Assertions.assertEquals(0, pool.getMonitorVo(defaultKey).getIdleSize());
         try {
             pool.deleteKey(new JavaBookTypeKey());
@@ -76,7 +76,7 @@ public class Tc0055KeyPoolKeyTest {
         BeeObjectPoolMonitorVo categoryMonitorVo = pool.getMonitorVo(simpleKey);
         Assertions.assertEquals(1, categoryMonitorVo.getIdleSize());
         Assertions.assertEquals(1, categoryMonitorVo.getBorrowedSize());
-        pool.clear(simpleKey, true);
+        pool.restart(simpleKey, true);
         categoryMonitorVo = pool.getMonitorVo(simpleKey);
         Assertions.assertEquals(0, categoryMonitorVo.getIdleSize());
         Assertions.assertEquals(0, categoryMonitorVo.getBorrowedSize());

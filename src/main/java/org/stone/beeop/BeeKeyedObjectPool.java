@@ -11,6 +11,8 @@ package org.stone.beeop;
 
 import org.stone.beeop.pool.exception.*;
 
+import java.util.List;
+
 /**
  * Keyed object pool interface.
  * <p>
@@ -29,7 +31,65 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @param config is a configuration object defines some items can be applied in pool
      * @throws Exception when fail to initialize
      */
-    void init(BeeObjectSourceConfig<K, V> config) throws Exception;
+    void start(BeeObjectSourceConfig<K, V> config) throws Exception;
+
+    /**
+     * Physically closes all connections and removes them from pool which not accepts borrow requests before completion.
+     *
+     * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
+     *                             false that wait them return to pool
+     * @throws PoolInClearingException when pool is closed or in clearing
+     */
+    void restart(boolean forceRecycleBorrowed) throws Exception;
+
+    /**
+     * Physically close all pooled objects and remove them from pool,then pool reinitialize with new configuration,not accept
+     * requests before completion of this operation call.
+     *
+     * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
+     *                             false that wait them return to pool
+     * @param config               is a configuration object for pool reinitialize
+     * @throws BeeObjectSourceConfigException when config is null
+     * @throws PoolInClearingException        when pool is closed or in clearing
+     * @throws PoolInitializeFailedException  when fail to reinitialize
+     */
+    void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
+
+    /**
+     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
+     *
+     * @param key to locate related pooled objects
+     * @throws ObjectKeyException if key is null
+     */
+    void restart(K key) throws Exception;
+
+    /**
+     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
+     *
+     * @param key                  to locate related pooled objects
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
+     */
+    void restart(K key, boolean forceRecycleBorrowed) throws Exception;
+
+    /**
+     * Shutdown pool to not work(closed state),closes all maintained connections and removes them from pool.
+     */
+    void close();
+
+    /**
+     * Queries pool whether is closed.
+     *
+     * @return a boolean value of pool close status
+     */
+    boolean isClosed();
+
+    /**
+     * Queries pool state whether is ready.
+     *
+     * @return true when pool is closed
+     */
+    boolean isReady();
 
     //***************************************************************************************************************//
     //                                    Object getting(2)                                                          //
@@ -56,65 +116,6 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @throws ObjectGetInterruptedException while waiting is interrupted
      */
     BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
-
-    //***************************************************************************************************************//
-    //                                   Pool close(2)                                                               //
-    //***************************************************************************************************************//
-
-    /**
-     * Shutdown pool to not work(closed state),closes all maintained connections and removes them from pool.
-     */
-    void close();
-
-    /**
-     * Queries pool whether is closed.
-     *
-     * @return a boolean value of pool close status
-     */
-    boolean isClosed();
-
-    //***************************************************************************************************************//
-    //                                        3: clear pool(4)                                                       //
-    //***************************************************************************************************************//
-
-    /**
-     * Physically closes all connections and removes them from pool which not accepts borrow requests before completion.
-     *
-     * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
-     *                             false that wait them return to pool
-     * @throws PoolInClearingException when pool is closed or in clearing
-     */
-    void clear(boolean forceRecycleBorrowed) throws Exception;
-
-    /**
-     * Physically close all pooled objects and remove them from pool,then pool reinitialize with new configuration,not accept
-     * requests before completion of this operation call.
-     *
-     * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
-     *                             false that wait them return to pool
-     * @param config               is a configuration object for pool reinitialize
-     * @throws BeeObjectSourceConfigException when config is null
-     * @throws PoolInClearingException        when pool is closed or in clearing
-     * @throws PoolInitializeFailedException  when fail to reinitialize
-     */
-    void clear(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
-
-    /**
-     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
-     *
-     * @param key to locate related pooled objects
-     * @throws ObjectKeyException if key is null
-     */
-    void clear(K key) throws Exception;
-
-    /**
-     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
-     *
-     * @param key                  to locate related pooled objects
-     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
-     */
-    void clear(K key, boolean forceRecycleBorrowed) throws Exception;
 
     //***************************************************************************************************************//
     //                                        4: keys maintenance(4)                                                 //
@@ -152,19 +153,22 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      */
     void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
-    //***************************************************************************************************************//
-    //                                        5: Interrupt blocking of object instance creation                      //
-    //***************************************************************************************************************//
-
     /**
-     * Interrupts processing of object creation.
+     * Interrupts waiting threads.
      *
-     * @param key                  may be mapping to a set of pooled objects
-     * @param onlyInterruptTimeout is true that only interrupt timeout creation,see{@link BeeObjectSourceConfig#getMaxWait()}
      * @return interrupted threads
      * @throws Exception when key is null or not exist key in pool
      */
-    Thread[] interruptObjectCreating(K key, boolean onlyInterruptTimeout) throws Exception;
+    List<Thread> interruptWaitingThreads() throws Exception;
+
+    /**
+     * Interrupts waiting threads.
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return interrupted threads
+     * @throws Exception when key is null or not exist key in pool
+     */
+    List<Thread> interruptWaitingThreads(K key) throws Exception;
 
 
     //***************************************************************************************************************//

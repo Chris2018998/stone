@@ -158,7 +158,7 @@ public class Tc0064ConnectionAliveTest {
         MockConnectionFactory factory3 = new MockConnectionFactory(propertiesSet3);
         config3.setConnectionFactory(factory3);
         FastConnectionPool pool3 = new FastConnectionPool();
-        pool3.init(config3);
+        pool3.start(config3);
         Assertions.assertEquals(1, pool3.getIdleSize());
         Connection con3 = null;
         try {//success test
@@ -186,7 +186,7 @@ public class Tc0064ConnectionAliveTest {
         MockConnectionFactory factory4 = new MockConnectionFactory(propertiesSet4);
         config4.setConnectionFactory(factory4);
         FastConnectionPool pool4 = new FastConnectionPool();
-        pool4.init(config4);
+        pool4.start(config4);
         Assertions.assertEquals(1, pool4.getIdleSize());
         Connection con4 = null;
         try {//success test
@@ -217,7 +217,7 @@ public class Tc0064ConnectionAliveTest {
         propertiesSet5.enableExceptionOnMethod("setQueryTimeout");
         propertiesSet5.setMockException1(new SQLException("setQueryTimeout failed"));
 
-        pool5.init(config5);
+        pool5.start(config5);
         Assertions.assertEquals(1, pool5.getIdleSize());
         Connection con5 = null;
         try {//success test
@@ -247,7 +247,7 @@ public class Tc0064ConnectionAliveTest {
         config1.setConnectionFactory(factory1);
         FastConnectionPool pool1 = new FastConnectionPool();
 
-        pool1.init(config1);
+        pool1.start(config1);
         Assertions.assertEquals(1, pool1.getIdleSize());
         Connection con = null;
         try {//
@@ -277,7 +277,7 @@ public class Tc0064ConnectionAliveTest {
         config2.setConnectionFactory(factory2);
         FastConnectionPool pool2 = new FastConnectionPool();
 
-        pool2.init(config2);
+        pool2.start(config2);
         Assertions.assertEquals(1, pool2.getIdleSize());
         Connection con2 = null;
         try {//
@@ -308,7 +308,7 @@ public class Tc0064ConnectionAliveTest {
         config3.setConnectionFactory(factory3);
         FastConnectionPool pool3 = new FastConnectionPool();
 
-        pool3.init(config3);
+        pool3.start(config3);
         Assertions.assertEquals(1, pool3.getIdleSize());
         Connection con3 = null;
         try {//

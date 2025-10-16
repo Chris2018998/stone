@@ -102,7 +102,7 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
             p.updateAccessTime();
             return v;
         } catch (Exception e) {
-            if (predicate != null && isNotBlank(predicate.evictTest(e)))
+            if (predicate != null && isNotBlank(predicate.evictionTest(e)))
                 p.abortSelf(DESC_RM_BAD);
 
             throw e;

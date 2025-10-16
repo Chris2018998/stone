@@ -76,7 +76,7 @@ public final class ConnectionPoolStatics {
     public static final int POOL_READY = 2;
     public static final int POOL_CLOSING = 3;
     public static final int POOL_CLOSED = 4;
-    public static final int POOL_CLEARING = 5;
+    public static final int POOL_RESTARTING = 5;
 
     //pool thread state
     static final int THREAD_WORKING = 0;

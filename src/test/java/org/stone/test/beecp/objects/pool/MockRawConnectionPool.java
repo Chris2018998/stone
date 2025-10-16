@@ -53,7 +53,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
      *
      * @param config data source configuration
      */
-    public void init(BeeDataSourceConfig config) throws SQLException {
+    public void start(BeeDataSourceConfig config) throws SQLException {
         if (config == null) throw new PoolInitializeFailedException("Pool initialization configuration can't be null");
         this.poolConfig = config.check();
         this.defaultMaxWait = MILLISECONDS.toNanos(poolConfig.getMaxWait());
@@ -175,8 +175,8 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return 0;
     }
 
-    public Thread[] interruptConnectionCreating(boolean interruptTimeout) {
-        return borrowSemaphore.interruptQueuedWaitThreads().toArray(new Thread[0]);
+    public List<Thread> interruptWaitingThreads() {
+        return null;
     }
 
     /**
@@ -186,12 +186,14 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return poolState.get() == POOL_CLOSED;
     }
 
+    public boolean isReady() {return poolState.get() == POOL_READY;}
+
     //******************************** JMX **************************************//
-    public void clear(boolean force) {
+    public void restart(boolean force) {
         //do nothing
     }
 
-    public void clear(boolean force, BeeDataSourceConfig config) {
+    public void restart(boolean force, BeeDataSourceConfig config) {
         //do nothing
     }
 

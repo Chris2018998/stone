@@ -33,19 +33,19 @@ public class Tc0032ObjectSourceClearTest {
         BeeObjectHandle handle = os.getObjectHandle();
         handle.abort();
         Assertions.assertEquals(1, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
-        os.clear(true);
+        os.restart(true);
         Assertions.assertEquals(0, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
 
         //2:with new config
         try {
-            os.clear(true, null);
+            os.restart(true, null);
         } catch (Exception e) {
             Assertions.assertTrue(e.getMessage().contains("Configuration can't be null"));
         }
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.setObjectFactory(new JavaBookFactory());
         config2.setInitialSize(3);
-        os.clear(true, config2);
+        os.restart(true, config2);
         Assertions.assertEquals(3, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
     }
 }

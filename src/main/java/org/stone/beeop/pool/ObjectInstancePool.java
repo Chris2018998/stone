@@ -20,7 +20,8 @@ import org.stone.tools.extension.InterruptionSemaphore;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -475,7 +476,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         }
 
         //step2: attempt to interrupt timeout creation
-        this.interruptObjectCreating(true);
+        this.interruptObjectCreating();
 
         //step3: remove idle timeout and hold timeout
         for (PooledObject<K, V> p : this.objectArray) {
@@ -502,13 +503,13 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     //***************************************************************************************************************//
-    //                                      6: Pooled objects clear(2)                                               //                                                                                  //
+    //                                      6: Pool restart(2)                                               //                                                                                  //
     //***************************************************************************************************************//
     //Method-6.1: remove all object from pool
-    boolean clear(boolean forceRecycleBorrowed) {
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_CLEARING)) {
+    boolean restart(boolean forceRecycleBorrowed) {
+        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             Log.info("BeeOP({})begin to clear all objects", this.poolName);
-            this.clear(forceRecycleBorrowed, DESC_RM_CLEAR);
+            this.restart(forceRecycleBorrowed, DESC_RM_CLEAR);
             Log.info("BeeOP({})has clear all objects", this.poolName);
             this.poolState = POOL_READY;// restore state;
             Log.info("BeeOP({})pool has cleared all objects", this.poolName);
@@ -519,18 +520,11 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     //Method-6.2: remove all connections from pool
-    private void clear(boolean forceRecycleBorrowed, String removeReason) {
-        //1: interrupt waiters on semaphore
-        this.semaphore.interruptQueuedWaitThreads();
-        //2: interrupt all threads waits on lock or blocking in factory.create method call
-        this.interruptObjectCreating(false);
-        //3: transfer exception to waiter in queue
-        if (!this.waitQueue.isEmpty()) {
-            PoolInClearingException clearException = new PoolInClearingException("Object pool was in clearing");
-            while (!this.waitQueue.isEmpty()) this.transferException(clearException);
-        }
+    private void restart(boolean forceRecycleBorrowed, String removeReason) {
+        //1:interrupt all waiting thread
+        this.interruptWaitingThreads();
 
-        //4:clear all connections
+        //2:clear all connections
         int closedCount = 0;
         while (true) {
             for (PooledObject<K, V> p : this.objectArray) {
@@ -576,11 +570,11 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             int poolStateCode = this.poolState;
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
             if (poolStateCode == POOL_NEW && PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
-            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_CLEARING) {
+            if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 Log.info("BeeOP({})begin to shutdown", this.poolName);
-                this.clear(forceRecycleBorrowed, DESC_RM_DESTROY);
+                this.restart(forceRecycleBorrowed, DESC_RM_DESTROY);
 
                 this.poolState = POOL_CLOSED;
                 Log.info("BeeOP({})has shutdown", this.poolName);
@@ -689,30 +683,35 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         return count;
     }
 
-    public Thread[] interruptObjectCreating(boolean onlyInterruptTimeout) {
-        if (this.printRuntimeLog)
-            Log.info("BeeCP({})attempt to interrupt object creation,only for timeout:{}", this.poolName, onlyInterruptTimeout);
+    public List<Thread> interruptWaitingThreads() {
+        //1clear waiting thread on semaphore
+        List<Thread> threads = new LinkedList<>(this.semaphore.interruptQueuedWaitThreads());
 
-        ArrayList<Thread> threads = new ArrayList<>(this.semaphoreSize);
-        if (onlyInterruptTimeout) {
-            for (PooledObject<K, V> p : objectArray) {
-                ObjectCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L) {
-                    creatingInfo.creatingThread.interrupt();
-                    threads.add(creatingInfo.creatingThread);
-                }
-            }
-        } else {
-            for (PooledObject<K, V> p : objectArray) {
-                ObjectCreatingInfo creatingInfo = p.creatingInfo;
-                if (creatingInfo != null) {
-                    creatingInfo.creatingThread.interrupt();
-                    threads.add(creatingInfo.creatingThread);
-                }
+        //2: transfer exception to waiter in queue
+        if (!this.waitQueue.isEmpty()) {
+            org.stone.beecp.pool.exception.PoolInClearingException exception = new org.stone.beecp.pool.exception.PoolInClearingException("Pool has been closed or is restarting");
+            while (!this.waitQueue.isEmpty()) this.transferException(exception);
+        }
+
+        //3: attempt to interrupt creating of connections
+        for (PooledObject<K, V> p : objectArray) {
+            ObjectCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null) {
+                creatingInfo.creatingThread.interrupt();
+                threads.add(creatingInfo.creatingThread);
             }
         }
 
-        return threads.toArray(new Thread[0]);
+        return threads;
+    }
+
+    public void interruptObjectCreating() {
+        for (PooledObject<K, V> p : objectArray) {
+            ObjectCreatingInfo creatingInfo = p.creatingInfo;
+            if (creatingInfo != null && System.currentTimeMillis() - creatingInfo.creatingStartTime - maxWaitMs >= 0L) {
+                creatingInfo.creatingThread.interrupt();
+            }
+        }
     }
 
     //***************************************************************************************************************//

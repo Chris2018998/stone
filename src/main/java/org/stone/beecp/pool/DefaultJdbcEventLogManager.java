@@ -131,21 +131,21 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
         if (syncMode) {
             //timeout check on connection logs
             for (DefaultJdbcEventLog log : conLogQueue) {
-                if (currentTime - log.getEndTime() >= timeout) {
+                if (currentTime - log.getStartTime() >= timeout) {
                     conPendingRemovalLogList.add(log);
                 }
             }
 
             //timeout check on sql execution logs
             for (DefaultJdbcEventLog log : sqlLogQueue) {
-                if (currentTime - log.getEndTime() >= timeout) {
+                if (currentTime - log.getStartTime() >= timeout) {
                     sqlPendingRemovalLogList.add(log);
                 }
             }
         } else {//async mode
             handleLogList = new ArrayList<>(10);
             for (DefaultJdbcEventLog log : conLogQueue) {
-                if (currentTime - log.getEndTime() >= timeout) {
+                if (currentTime - log.getStartTime() >= timeout) {
                     conPendingRemovalLogList.add(log);
                 }
 
@@ -161,7 +161,7 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
 
             //timeout check on sql execution logs
             for (DefaultJdbcEventLog log : sqlLogQueue) {
-                if (currentTime - log.getEndTime() >= timeout) {
+                if (currentTime - log.getStartTime() >= timeout) {
                     sqlPendingRemovalLogList.add(log);
                 }
 

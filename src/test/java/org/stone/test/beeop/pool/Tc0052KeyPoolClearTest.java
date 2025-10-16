@@ -29,10 +29,10 @@ public class Tc0052KeyPoolClearTest {
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         try {
-            pool.clear(true, null);
+            pool.restart(true, null);
         } catch (BeeObjectSourceConfigException e) {
             Assertions.assertEquals("Configuration can't be null", e.getMessage());
         }
@@ -43,10 +43,10 @@ public class Tc0052KeyPoolClearTest {
         BeeObjectSourceConfig config = createDefault();
         config.setInitialSize(2);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         Assertions.assertEquals(2, pool.getPoolMonitorVo().getIdleSize());
-        pool.clear(false);
+        pool.restart(false);
         Assertions.assertEquals(0, pool.getPoolMonitorVo().getIdleSize());
     }
 
@@ -57,13 +57,13 @@ public class Tc0052KeyPoolClearTest {
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
         KeyedObjectPool pool = new KeyedObjectPool();
-        pool.init(config);
+        pool.start(config);
 
         Assertions.assertEquals(2, pool.getPoolMonitorVo().getIdleSize());
         pool.getObjectHandle();
         Assertions.assertEquals(1, pool.getPoolMonitorVo().getBorrowedSize());
 
-        pool.clear(true);
+        pool.restart(true);
         Assertions.assertEquals(0, pool.getPoolMonitorVo().getIdleSize());
         Assertions.assertEquals(0, pool.getPoolMonitorVo().getBorrowedSize());
     }
@@ -86,7 +86,7 @@ public class Tc0052KeyPoolClearTest {
 //        if (errorMessage == null && thread2.getfailureException() != null)
 //            errorMessage = thread2.getfailureException().getMessage();
 //
-//        if (errorMessage != null) Assertions.assertEquals("Object Pool has been closed or is being cleared", errorMessage);
+//        if (errorMessage != null) Assertions.assertEquals("Object Pool has been closed or is restarting", errorMessage);
 //    }
 //
 //    private static class ClearThread extends Thread {
