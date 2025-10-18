@@ -33,68 +33,68 @@ public class Tc0020JdbcEventLogManagerTest {
     public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         //jdbcCallLogCacheSize
-        Assertions.assertEquals(1000, config.getLogCacheSize());//default check
-        config.setLogCacheSize(500);
-        Assertions.assertEquals(500, config.getLogCacheSize());
+        Assertions.assertEquals(1000, config.getEventLogCacheSize());//default check
+        config.setEventLogCacheSize(500);
+        Assertions.assertEquals(500, config.getEventLogCacheSize());
         try {
-            config.setLogCacheSize(0);
+            config.setEventLogCacheSize(0);
             fail("[testSetAndGet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'event-log-cache-size' must be greater than zero", e.getMessage());
         }
         try {
-            config.setLogCacheSize(-1);
+            config.setEventLogCacheSize(-1);
             fail("[testSetAndGet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'event-log-cache-size' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(500, config.getLogCacheSize());//not changed check
+        Assertions.assertEquals(500, config.getEventLogCacheSize());//not changed check
 
         //slowConnectionGetThreshold
-        Assertions.assertEquals(30000L, config.getSlowConnectionGetThreshold());//default check
-        config.setSlowConnectionGetThreshold(5000L);
-        Assertions.assertEquals(5000L, config.getSlowConnectionGetThreshold());
-        config.setSlowConnectionGetThreshold(0L);
-        Assertions.assertEquals(0L, config.getSlowConnectionGetThreshold());
+        Assertions.assertEquals(30000L, config.getSlowConnectionThreshold());//default check
+        config.setSlowConnectionThreshold(5000L);
+        Assertions.assertEquals(5000L, config.getSlowConnectionThreshold());
+        config.setSlowConnectionThreshold(0L);
+        Assertions.assertEquals(0L, config.getSlowConnectionThreshold());
         try {
-            config.setSlowConnectionGetThreshold(-1L);
+            config.setSlowConnectionThreshold(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'slow-connection-get-threshold' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'slow-connection-threshold' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(0L, config.getSlowConnectionGetThreshold());//not changed check
+        Assertions.assertEquals(0L, config.getSlowConnectionThreshold());//not changed check
 
         //slowSQLExecutionThreshold
-        Assertions.assertEquals(30000L, config.getSlowSQLExecutionThreshold());//default check
-        config.setSlowSQLExecutionThreshold(5000L);
-        Assertions.assertEquals(5000L, config.getSlowSQLExecutionThreshold());
-        config.setSlowSQLExecutionThreshold(0L);
-        Assertions.assertEquals(0L, config.getSlowSQLExecutionThreshold());
+        Assertions.assertEquals(30000L, config.getSlowSQLThreshold());//default check
+        config.setSlowSQLThreshold(5000L);
+        Assertions.assertEquals(5000L, config.getSlowSQLThreshold());
+        config.setSlowSQLThreshold(0L);
+        Assertions.assertEquals(0L, config.getSlowSQLThreshold());
         try {
-            config.setSlowSQLExecutionThreshold(-1L);
+            config.setSlowSQLThreshold(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[slow-SQL-execution-threshold]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'slow-SQL-execution-threshold' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'slow-SQL-threshold' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(0L, config.getSlowSQLExecutionThreshold());//not changed check
+        Assertions.assertEquals(0L, config.getSlowSQLThreshold());//not changed check
 
         //jdbcCallLogTimeout
-        Assertions.assertEquals(180000L, config.getLogTimeout());//default check
-        config.setLogTimeout(5000L);
-        Assertions.assertEquals(5000L, config.getLogTimeout());
+        Assertions.assertEquals(180000L, config.getEventLogTimeout());//default check
+        config.setEventLogTimeout(5000L);
+        Assertions.assertEquals(5000L, config.getEventLogTimeout());
         try {
-            config.setLogTimeout(0L);
+            config.setEventLogTimeout(0L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'event-log-timeout' must be greater than zero", e.getMessage());
         }
         try {
-            config.setLogTimeout(-1L);
+            config.setEventLogTimeout(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'event-log-timeout' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(5000L, config.getLogTimeout());//not changed check
+        Assertions.assertEquals(5000L, config.getEventLogTimeout());//not changed check
 
 
         //jdbcCallLogTimeoutInterval
@@ -105,33 +105,33 @@ public class Tc0020JdbcEventLogManagerTest {
             config.setIntervalToClearTimeoutEventLogs(0L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-clear-interval' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-to-clear-timeout-event-logs' must be greater than zero", e.getMessage());
         }
         try {
             config.setIntervalToClearTimeoutEventLogs(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-clear-interval' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-to-clear-timeout-event-logs' must be greater than zero", e.getMessage());
         }
         Assertions.assertEquals(5000L, config.getIntervalToClearTimeoutEventLogs());//not changed check
 
-        Assertions.assertNull(config.getLogManager());//default check
-        config.setLogManager(new MockJdbcEventLogManager());
-        Assertions.assertNotNull(config.getLogManager());
-        config.setLogManager(null);
-        Assertions.assertNull(config.getLogManager());
+        Assertions.assertNull(config.getEventLogManager());//default check
+        config.setEventLogManager(new MockJdbcEventLogManager());
+        Assertions.assertNotNull(config.getEventLogManager());
+        config.setEventLogManager(null);
+        Assertions.assertNull(config.getEventLogManager());
 
-        Assertions.assertNull(config.getLogManagerClass());//default check
-        config.setLogManagerClass(MockJdbcEventLogManager.class);
-        Assertions.assertNotNull(config.getLogManagerClass());
-        config.setLogManagerClass(null);
-        Assertions.assertNull(config.getLogManagerClass());
+        Assertions.assertNull(config.getEventlogManagerClass());//default check
+        config.setEventLogManagerClass(MockJdbcEventLogManager.class);
+        Assertions.assertNotNull(config.getEventlogManagerClass());
+        config.setEventLogManagerClass(null);
+        Assertions.assertNull(config.getEventlogManagerClass());
 
-        Assertions.assertNull(config.getLogManagerClassName());//default check
-        config.setLogManagerClassName(MockJdbcEventLogManager.class.getName());
-        Assertions.assertNotNull(config.getLogManagerClassName());
-        config.setLogManagerClassName(null);
-        Assertions.assertNull(config.getLogManagerClassName());
+        Assertions.assertNull(config.getEventLogManagerClassName());//default check
+        config.setEventLogManagerClassName(MockJdbcEventLogManager.class.getName());
+        Assertions.assertNotNull(config.getEventLogManagerClassName());
+        config.setEventLogManagerClassName(null);
+        Assertions.assertNull(config.getEventLogManagerClassName());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class Tc0020JdbcEventLogManagerTest {
         MockConnectionFactory connectionFactory = new MockConnectionFactory();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
-        config1.setLogManagerClassName(MockJdbcEventLogManager2.class.getName());//class can not be instantiated
+        config1.setEventLogManagerClassName(MockJdbcEventLogManager2.class.getName());//class can not be instantiated
         try {
             config1.check();
             Assertions.fail("[testCheckFailed]Test failed");
@@ -151,7 +151,7 @@ public class Tc0020JdbcEventLogManagerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setLogManagerClassName(MockJdbcEventLogManager2.class.getName() + "_NOT");//class not found
+        config2.setEventLogManagerClassName(MockJdbcEventLogManager2.class.getName() + "_NOT");//class not found
         try {
             config2.check();
             Assertions.fail("[testCheckFailed]Test failed");
@@ -168,10 +168,10 @@ public class Tc0020JdbcEventLogManagerTest {
         BeeDataSourceConfig config1 = new BeeDataSourceConfig();
         config1.setConnectionFactory(connectionFactory);
         MockJdbcEventLogManager manager = new MockJdbcEventLogManager();
-        config1.setLogManager(manager);
+        config1.setEventLogManager(manager);
         try {
             BeeDataSourceConfig checkedConfig = config1.check();
-            Assertions.assertEquals(manager, checkedConfig.getLogManager());
+            Assertions.assertEquals(manager, checkedConfig.getEventLogManager());
         } catch (BeeDataSourceConfigException e) {
             Assertions.fail("[testCheckPassed]Test failed");
         }
@@ -179,7 +179,7 @@ public class Tc0020JdbcEventLogManagerTest {
         //2: class
         BeeDataSourceConfig config2 = new BeeDataSourceConfig();
         config2.setConnectionFactory(connectionFactory);
-        config2.setLogManagerClass(MockJdbcEventLogManager.class);
+        config2.setEventLogManagerClass(MockJdbcEventLogManager.class);
         try {
             config2.check();
         } catch (BeeDataSourceConfigException e) {
@@ -189,7 +189,7 @@ public class Tc0020JdbcEventLogManagerTest {
         //3: class name
         BeeDataSourceConfig config3 = new BeeDataSourceConfig();
         config3.setConnectionFactory(connectionFactory);
-        config3.setLogManagerClassName(MockJdbcEventLogManager.class.getName());
+        config3.setEventLogManagerClassName(MockJdbcEventLogManager.class.getName());
         try {
             config3.check();
         } catch (BeeDataSourceConfigException e) {

@@ -32,27 +32,27 @@ public class Tc0021JdbcEventLogHandlerTest {
     @Test
     public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        Assertions.assertTrue(config.isLogHandledBySyncMode());//default check
-        config.setLogHandledBySyncMode(false);
-        Assertions.assertFalse(config.isLogHandledBySyncMode());
+        Assertions.assertTrue(config.isEventLogHandledBySyncMode());//default check
+        config.setEventLogHandledBySyncMode(false);
+        Assertions.assertFalse(config.isEventLogHandledBySyncMode());
 
-        Assertions.assertNull(config.getLogHandler());//default check
-        config.setLogHandler(new MockJdbcEventLogHandler());
-        Assertions.assertNotNull(config.getLogHandler());//default check
-        config.setLogHandler(null);
-        Assertions.assertNull(config.getLogHandler());//default check
+        Assertions.assertNull(config.getEventLogHandler());//default check
+        config.setEventLogHandler(new MockJdbcEventLogHandler());
+        Assertions.assertNotNull(config.getEventLogHandler());//default check
+        config.setEventLogHandler(null);
+        Assertions.assertNull(config.getEventLogHandler());//default check
 
-        Assertions.assertNull(config.getLogHandlerClass());//default check
-        config.setLogHandlerClass(MockJdbcEventLogHandler.class);
-        Assertions.assertNotNull(config.getLogHandlerClass());
-        config.setLogHandlerClass(null);
-        Assertions.assertNull(config.getLogHandlerClass());
+        Assertions.assertNull(config.getEventLogHandlerClass());//default check
+        config.setEventLogHandlerClass(MockJdbcEventLogHandler.class);
+        Assertions.assertNotNull(config.getEventLogHandlerClass());
+        config.setEventLogHandlerClass(null);
+        Assertions.assertNull(config.getEventLogHandlerClass());
 
-        Assertions.assertNull(config.getLogHandlerClassName());//default check
-        config.setLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
-        Assertions.assertNotNull(config.getLogHandlerClassName());
-        config.setLogHandlerClassName(null);
-        Assertions.assertNull(config.getLogHandlerClassName());
+        Assertions.assertNull(config.getEventLogHandlerClassName());//default check
+        config.setEventLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
+        Assertions.assertNotNull(config.getEventLogHandlerClassName());
+        config.setEventLogHandlerClassName(null);
+        Assertions.assertNull(config.getEventLogHandlerClassName());
     }
 
     @Test
@@ -61,8 +61,8 @@ public class Tc0021JdbcEventLogHandlerTest {
         BeeJdbcEventLogManager logManager = new MockJdbcEventLogManager();
         BeeDataSourceConfig config1 = createEmpty();
         config1.setConnectionFactory(connectionFactory);
-        config1.setLogManager(logManager);
-        config1.setLogHandlerClassName(MockJdbcEventLogHandler2.class.getName());//class can not be
+        config1.setEventLogManager(logManager);
+        config1.setEventLogHandlerClassName(MockJdbcEventLogHandler2.class.getName());//class can not be
         try {
             config1.check();
             Assertions.fail("[testCheckFailed]Test failed");
@@ -74,8 +74,8 @@ public class Tc0021JdbcEventLogHandlerTest {
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setLogManager(logManager);
-        config2.setLogHandlerClassName(MockJdbcEventLogHandler2.class.getName() + "_NOT");//class not found
+        config2.setEventLogManager(logManager);
+        config2.setEventLogHandlerClassName(MockJdbcEventLogHandler2.class.getName() + "_NOT");//class not found
         try {
             config2.check();
             Assertions.fail("[testCheckFailed]Test failed");
@@ -92,12 +92,12 @@ public class Tc0021JdbcEventLogHandlerTest {
         //1: instance
         BeeDataSourceConfig config1 = new BeeDataSourceConfig();
         config1.setConnectionFactory(connectionFactory);
-        config1.setLogManager(logManager);
+        config1.setEventLogManager(logManager);
         MockJdbcEventLogHandler handler = new MockJdbcEventLogHandler();
-        config1.setLogHandler(handler);
+        config1.setEventLogHandler(handler);
         try {
             BeeDataSourceConfig checkedConfig = config1.check();
-            Assertions.assertEquals(handler, checkedConfig.getLogHandler());
+            Assertions.assertEquals(handler, checkedConfig.getEventLogHandler());
         } catch (BeeDataSourceConfigException e) {
             Assertions.fail("[testCheckPassed]Test failed");
         }
@@ -105,8 +105,8 @@ public class Tc0021JdbcEventLogHandlerTest {
         //2: class
         BeeDataSourceConfig config2 = new BeeDataSourceConfig();
         config2.setConnectionFactory(connectionFactory);
-        config2.setLogManager(logManager);
-        config2.setLogHandlerClass(MockJdbcEventLogHandler.class);
+        config2.setEventLogManager(logManager);
+        config2.setEventLogHandlerClass(MockJdbcEventLogHandler.class);
         try {
             config2.check();
         } catch (BeeDataSourceConfigException e) {
@@ -116,8 +116,8 @@ public class Tc0021JdbcEventLogHandlerTest {
         //3: class name
         BeeDataSourceConfig config3 = new BeeDataSourceConfig();
         config3.setConnectionFactory(connectionFactory);
-        config3.setLogManager(logManager);
-        config3.setLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
+        config3.setEventLogManager(logManager);
+        config3.setEventLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
         try {
             config3.check();
         } catch (BeeDataSourceConfigException e) {
@@ -130,34 +130,34 @@ public class Tc0021JdbcEventLogHandlerTest {
         BeeDataSourceConfig config1 = createEmpty();
         BeeConnectionFactory connectionFactory = new MockConnectionFactory();
         config1.setConnectionFactory(connectionFactory);
-        config1.setLogHandler(new MockJdbcEventLogHandler());
+        config1.setEventLogHandler(new MockJdbcEventLogHandler());
         BeeDataSourceConfig config11 = config1.check();
-        Assertions.assertNull(config11.getLogHandler());
+        Assertions.assertNull(config11.getEventLogHandler());
 
         BeeDataSourceConfig config2 = createEmpty();
         config2.setConnectionFactory(connectionFactory);
-        config2.setLogHandlerClass(MockJdbcEventLogHandler.class);
+        config2.setEventLogHandlerClass(MockJdbcEventLogHandler.class);
         BeeDataSourceConfig config21 = config2.check();
-        Assertions.assertNull(config21.getLogHandler());
+        Assertions.assertNull(config21.getEventLogHandler());
 
         BeeDataSourceConfig config3 = createEmpty();
         config3.setConnectionFactory(connectionFactory);
-        config3.setLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
+        config3.setEventLogHandlerClassName(MockJdbcEventLogHandler.class.getName());
         BeeDataSourceConfig config31 = config3.check();
-        Assertions.assertNull(config31.getLogHandler());
+        Assertions.assertNull(config31.getEventLogHandler());
 
         //test set a log collector to config object
         BeeJdbcEventLogManager logManager = new MockJdbcEventLogManager();
-        config1.setLogManager(logManager);
+        config1.setEventLogManager(logManager);
         config11 = config1.check();
-        Assertions.assertNotNull(config11.getLogHandler());
+        Assertions.assertNotNull(config11.getEventLogHandler());
 
-        config2.setLogManager(logManager);
+        config2.setEventLogManager(logManager);
         config21 = config2.check();
-        Assertions.assertNotNull(config21.getLogHandler());
+        Assertions.assertNotNull(config21.getEventLogHandler());
 
-        config3.setLogManager(logManager);
+        config3.setEventLogManager(logManager);
         config31 = config3.check();
-        Assertions.assertNotNull(config31.getLogHandler());
+        Assertions.assertNotNull(config31.getEventLogHandler());
     }
 }

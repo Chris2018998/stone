@@ -69,7 +69,7 @@ public class Tc0064ConnectionAliveTest {
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertEquals(1, ds.getPoolMonitorVo().getIdleSize());
             propertiesSet.setMockException1(new SQLException());
-            propertiesSet.enableExceptionOnMethod("isValid");
+            propertiesSet.throwsExceptionWhenCallMethod("isValid");
 
             LogCollector logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {
@@ -95,7 +95,7 @@ public class Tc0064ConnectionAliveTest {
         try (BeeDataSource ds = new BeeDataSource(config2)) {
             Assertions.assertEquals(1, ds.getPoolMonitorVo().getIdleSize());
             propertiesSet2.setMockException1(new SQLException());
-            propertiesSet2.enableExceptionOnMethod("isValid");
+            propertiesSet2.throwsExceptionWhenCallMethod("isValid");
 
             LogCollector logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {
@@ -162,7 +162,7 @@ public class Tc0064ConnectionAliveTest {
         Assertions.assertEquals(1, pool3.getIdleSize());
         Connection con3 = null;
         try {//success test
-            propertiesSet3.enableExceptionOnMethod("setQueryTimeout");
+            propertiesSet3.throwsExceptionWhenCallMethod("setQueryTimeout");
             propertiesSet3.setMockException1(new SQLException("setQueryTimeout failed"));
             LogCollector logCollector = LogCollector.startLogCollector();
             con3 = pool3.getConnection();
@@ -190,7 +190,7 @@ public class Tc0064ConnectionAliveTest {
         Assertions.assertEquals(1, pool4.getIdleSize());
         Connection con4 = null;
         try {//success test
-            propertiesSet4.enableExceptionOnMethod("setQueryTimeout");
+            propertiesSet4.throwsExceptionWhenCallMethod("setQueryTimeout");
             propertiesSet4.setMockException1(new SQLException("setQueryTimeout failed"));
             LogCollector logCollector = LogCollector.startLogCollector();
             con4 = pool4.getConnection();
@@ -214,7 +214,7 @@ public class Tc0064ConnectionAliveTest {
         MockConnectionFactory factory5 = new MockConnectionFactory(propertiesSet5);
         config5.setConnectionFactory(factory5);
         FastConnectionPool pool5 = new FastConnectionPool();
-        propertiesSet5.enableExceptionOnMethod("setQueryTimeout");
+        propertiesSet5.throwsExceptionWhenCallMethod("setQueryTimeout");
         propertiesSet5.setMockException1(new SQLException("setQueryTimeout failed"));
 
         pool5.start(config5);
@@ -252,7 +252,7 @@ public class Tc0064ConnectionAliveTest {
         Connection con = null;
         try {//
             propertiesSet1.setMockException1(new SQLException("execute fail"));
-            propertiesSet1.enableExceptionOnMethod("execute");
+            propertiesSet1.throwsExceptionWhenCallMethod("execute");
             LogCollector logCollector = LogCollector.startLogCollector();
             con = pool1.getConnection();
             String logs = logCollector.endLogCollector();
@@ -282,7 +282,7 @@ public class Tc0064ConnectionAliveTest {
         Connection con2 = null;
         try {//
             propertiesSet2.setMockException1(new SQLException("execute fail"));
-            propertiesSet2.enableExceptionOnMethod("execute");
+            propertiesSet2.throwsExceptionWhenCallMethod("execute");
             LogCollector logCollector = LogCollector.startLogCollector();
             con2 = pool2.getConnection();
             String logs = logCollector.endLogCollector();
@@ -313,7 +313,7 @@ public class Tc0064ConnectionAliveTest {
         Connection con3 = null;
         try {//
             propertiesSet3.setMockException1(new SQLException("createStatement fail"));
-            propertiesSet3.enableExceptionOnMethod("createStatement");
+            propertiesSet3.throwsExceptionWhenCallMethod("createStatement");
             LogCollector logCollector = LogCollector.startLogCollector();
             con3 = pool3.getConnection();
             String logs = logCollector.endLogCollector();

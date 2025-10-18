@@ -12,7 +12,6 @@ package org.stone.test.beecp.objects.pool;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTARTING;
 
 /**
  * Connection pool Monitor impl
@@ -33,8 +32,11 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     private int semaphoreAcquiredSize;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
-    private int creatingCount;
-    private int creatingTimeoutCount;
+    private int creatingSize;
+    private int creatingTimeoutSize;
+
+    private boolean enabledLogPrint;
+    private boolean enabledJdbcEventLogManager;
 
     @Override
     public String getPoolName() {
@@ -58,10 +60,12 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     public boolean isClosed() {
         return poolState == POOL_CLOSED;
     }
+
     @Override
     public boolean isReady() {
         return poolState == POOL_READY;
     }
+
     @Override
     public boolean isStarting() {
         return poolState == POOL_STARTING || poolState == POOL_RESTARTING;
@@ -135,21 +139,39 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public int getCreatingCount() {
-        return creatingCount;
+    public int getCreatingSize() {
+        return creatingSize;
     }
 
-    public void setCreatingCount(int creatingCount) {
-        this.creatingCount = creatingCount;
+    public void setCreatingSize(int creatingSize) {
+        this.creatingSize = creatingSize;
     }
 
     @Override
-    public int getCreatingTimeoutCount() {
-        return creatingTimeoutCount;
+    public int getCreatingTimeoutSize() {
+        return creatingTimeoutSize;
     }
 
-    public void setCreatingTimeoutCount(int creatingTimeoutCount) {
-        this.creatingTimeoutCount = creatingTimeoutCount;
+    public void setCreatingTimeoutSize(int creatingTimeoutSize) {
+        this.creatingTimeoutSize = creatingTimeoutSize;
+    }
+
+    @Override
+    public boolean isEnabledLogPrint() {
+        return enabledLogPrint;
+    }
+
+    public void setEnabledLogPrint(boolean enabledLogPrint) {
+        this.enabledLogPrint = enabledLogPrint;
+    }
+
+    @Override
+    public boolean isEnabledJdbcEventLogManager() {
+        return enabledJdbcEventLogManager;
+    }
+
+    public void setEnabledJdbcEventLogManager(boolean enabledJdbcEventLogManager) {
+        this.enabledJdbcEventLogManager = enabledJdbcEventLogManager;
     }
 }
 

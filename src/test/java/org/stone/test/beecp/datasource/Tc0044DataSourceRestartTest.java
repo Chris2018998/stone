@@ -74,7 +74,7 @@ public class Tc0044DataSourceRestartTest {
         }
 
         //2: wait borrowed connections released to pool
-        config.setLogManager(new DefaultJdbcEventLogManager());
+        config.setEventLogManager(new DefaultJdbcEventLogManager());
         try (BeeDataSource ds = new BeeDataSource(config)) {
             Connection con = ds.getConnection();//not close it
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();

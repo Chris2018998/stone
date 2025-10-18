@@ -17,7 +17,6 @@ import org.stone.beecp.BeeDataSourceConfig;
 
 import java.sql.SQLException;
 
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
 /**
@@ -45,8 +44,8 @@ public class Tc0036DsPoolMonitorVoTest {
 
             Assertions.assertEquals(10, vo.getIdleSize());
             Assertions.assertEquals(0, vo.getSemaphoreWaitingSize());
-            Assertions.assertEquals(0, vo.getCreatingCount());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutCount());
+            Assertions.assertEquals(0, vo.getCreatingSize());
+            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
         }
     }
 }

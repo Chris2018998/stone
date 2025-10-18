@@ -12,7 +12,6 @@ package org.stone.test.beecp.driver;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -38,7 +37,8 @@ public class MockConnectionProperties {
     private int errorCode;
     private String errorState;
 
-    private long delayTimeNs;
+    //protected long parkNanos;
+    private long parkNanos;
     private SQLException mockException1;
     private RuntimeException mockException2;
     private Error mockException3;
@@ -75,11 +75,11 @@ public class MockConnectionProperties {
         this.mockException3 = mockException3;
     }
 
-    public void setSelayTime(long time) {
-        this.delayTimeNs = TimeUnit.MILLISECONDS.toNanos(time);
+    public void setParkNanos(long parkNanos) {
+        this.parkNanos = parkNanos;
     }
 
-    public void enableExceptionOnMethod(String names) {
+    public void throwsExceptionWhenCallMethod(String names) {
         if (names != null) {
             for (String methodName : names.split(",")) {
                 this.methodExceptionFlagMap.put(methodName, Boolean.TRUE);
@@ -87,7 +87,7 @@ public class MockConnectionProperties {
         }
     }
 
-    public void disableExceptionOnMethod(String names) {
+    public void clearExceptionableMethod(String names) {
         if (names != null) {
             for (String methodName : names.split(",")) {
                 this.methodExceptionFlagMap.remove(methodName);
@@ -95,7 +95,7 @@ public class MockConnectionProperties {
         }
     }
 
-    public void enableDelayOnMethod(String names) {
+    public void parkWhenCallMethod(String names) {
         if (names != null) {
             for (String methodName : names.split(",")) {
                 this.methodDelayFlagMap.put(methodName, Boolean.TRUE);
@@ -103,7 +103,7 @@ public class MockConnectionProperties {
         }
     }
 
-    public void disableDelayOnMethod(String names) {
+    public void clearParkableMethod(String names) {
         if (names != null) {
             for (String methodName : names.split(",")) {
                 this.methodDelayFlagMap.remove(methodName);
@@ -119,8 +119,12 @@ public class MockConnectionProperties {
             throw new SQLException(error, this.errorState, this.errorCode);
         }
 
-        if (this.delayTimeNs > 0L && methodDelayFlagMap.containsKey(methodName)) {
-            LockSupport.parkNanos(delayTimeNs);
+        if (methodDelayFlagMap.containsKey(methodName)) {
+            if (this.parkNanos > 0L) {
+                LockSupport.parkNanos(parkNanos);
+            } else {
+                LockSupport.park();
+            }
         }
     }
 

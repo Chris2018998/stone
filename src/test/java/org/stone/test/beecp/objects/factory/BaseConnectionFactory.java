@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Chris Liao
  */
 public class BaseConnectionFactory {
+    protected long parkNanos;
     protected boolean needPark;
     protected SQLException failCause1;
     protected RuntimeException failCause2;
@@ -28,6 +29,14 @@ public class BaseConnectionFactory {
     private String JdbcUrl;
     private String username;
     private String password;
+
+    public long getParkNanos() {
+        return parkNanos;
+    }
+
+    public void setParkNanos(long parkNanos) {
+        this.parkNanos = parkNanos;
+    }
 
     public boolean isNeedPark() {
         return needPark;

@@ -25,8 +25,12 @@ import java.util.List;
  */
 public interface BeeKeyedObjectPool<K, V> extends Cloneable {
 
+    //***************************************************************************************************************//
+    //                                     1: start and re-start(3)                                                  //
+    //***************************************************************************************************************//
+
     /**
-     * Pool initialize with a configuration object.
+     * Pool startup with a configuration object.
      *
      * @param config is a configuration object defines some items can be applied in pool
      * @throws Exception when fail to initialize
@@ -34,7 +38,7 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     void start(BeeObjectSourceConfig<K, V> config) throws Exception;
 
     /**
-     * Physically closes all connections and removes them from pool which not accepts borrow requests before completion.
+     * Pool re-startup with last used configuration when pool is in ready state
      *
      * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
      *                             false that wait them return to pool
@@ -43,8 +47,7 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     void restart(boolean forceRecycleBorrowed) throws Exception;
 
     /**
-     * Physically close all pooled objects and remove them from pool,then pool reinitialize with new configuration,not accept
-     * requests before completion of this operation call.
+     * Pool re-startup with a new configuration when pool is in ready state.
      *
      * @param forceRecycleBorrowed is true that recycle borrowed connections immediately and make them return to pool;
      *                             false that wait them return to pool
@@ -55,44 +58,8 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      */
     void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
 
-    /**
-     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
-     *
-     * @param key to locate related pooled objects
-     * @throws ObjectKeyException if key is null
-     */
-    void restart(K key) throws Exception;
-
-    /**
-     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
-     *
-     * @param key                  to locate related pooled objects
-     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
-     */
-    void restart(K key, boolean forceRecycleBorrowed) throws Exception;
-
-    /**
-     * Shutdown pool to not work(closed state),closes all maintained connections and removes them from pool.
-     */
-    void close();
-
-    /**
-     * Queries pool whether is closed.
-     *
-     * @return a boolean value of pool close status
-     */
-    boolean isClosed();
-
-    /**
-     * Queries pool state whether is ready.
-     *
-     * @return true when pool is closed
-     */
-    boolean isReady();
-
     //***************************************************************************************************************//
-    //                                    Object getting(2)                                                          //
+    //                                     2: Object get(2)                                                          //
     //***************************************************************************************************************//
 
     /**
@@ -116,6 +83,66 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @throws ObjectGetInterruptedException while waiting is interrupted
      */
     BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
+
+    //***************************************************************************************************************//
+    //                                     2: Object get(2)                                                          //
+    //***************************************************************************************************************//
+
+    /**
+     * Shutdown pool to not work(closed state),closes all maintained connections and removes them from pool.
+     */
+    void close();
+
+    /**
+     * Queries pool whether is closed.
+     *
+     * @return a boolean value of pool close status
+     */
+    boolean isClosed();
+
+    /**
+     * Queries pool state whether is ready.
+     *
+     * @return true when pool is closed
+     */
+    boolean isReady();
+
+    /**
+     * Gets runtime monitoring object of pool,refer to {@link BeeObjectPoolMonitorVo}.
+     *
+     * @return monitor of pool
+     */
+    BeeObjectPoolMonitorVo getPoolMonitorVo();
+
+    /**
+     * Interrupts waiting threads.
+     *
+     * @return interrupted threads
+     * @throws Exception when key is null or not exist key in pool
+     */
+    List<Thread> interruptWaitingThreads() throws Exception;
+
+    /**
+     * A switch call to enable or disable logs print of pool.
+     *
+     * @param enable is true that print, false not print
+     */
+    void enableLogPrint(boolean enable);
+
+    /**
+     * Queries logs manager in whether in being enabled.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    boolean isEnabledObjectCallLogManager();
+
+    /**
+     * A switch to enable or disable configured log manager in pool.
+     *
+     * @param enable is true that enable, false is disabled
+     */
+    void enableObjectCallLogManager(boolean enable);
+
 
     //***************************************************************************************************************//
     //                                        4: keys maintenance(4)                                                 //
@@ -156,31 +183,34 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     /**
      * Interrupts waiting threads.
      *
-     * @return interrupted threads
-     * @throws Exception when key is null or not exist key in pool
-     */
-    List<Thread> interruptWaitingThreads() throws Exception;
-
-    /**
-     * Interrupts waiting threads.
-     *
      * @param key may be mapping to a set of pooled objects
      * @return interrupted threads
      * @throws Exception when key is null or not exist key in pool
      */
     List<Thread> interruptWaitingThreads(K key) throws Exception;
 
+    /**
+     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
+     *
+     * @param key to locate related pooled objects
+     * @throws ObjectKeyException if key is null
+     */
+    void restart(K key) throws Exception;
+
+    /**
+     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
+     *
+     * @param key                  to locate related pooled objects
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
+     */
+    void restart(K key, boolean forceRecycleBorrowed) throws Exception;
+
 
     //***************************************************************************************************************//
     //                                        6: Pool monitor                                                        //
     //***************************************************************************************************************//
 
-    /**
-     * Gets runtime monitoring object of pool,refer to {@link BeeObjectPoolMonitorVo}.
-     *
-     * @return monitor of pool
-     */
-    BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
      * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.
@@ -195,12 +225,6 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     //                                        7: pool work Log print                                                 //
     //***************************************************************************************************************//
 
-    /**
-     * A switch call to enable or disable logs print of pool.
-     *
-     * @param enable is true that print, false not print
-     */
-    void enableLogPrint(boolean enable);
 
     /**
      * Query print state of runtime logs.
@@ -224,17 +248,5 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     //                                        8: pooled object call log collect                                      //
     //***************************************************************************************************************//
 
-    /**
-     * Queries logs manager in whether in being enabled.
-     *
-     * @return boolean true is enabled,false is disabled
-     */
-    boolean isEnabledObjectCallLogManager();
 
-    /**
-     * A switch to enable or disable configured log manager in pool.
-     *
-     * @param enable is true that enable, false is disabled
-     */
-    void enableObjectCallLogManager(boolean enable);
 }

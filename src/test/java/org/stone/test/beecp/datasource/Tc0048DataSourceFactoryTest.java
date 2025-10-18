@@ -34,7 +34,7 @@ import static org.stone.tools.BeanUtil.setAccessible;
 /**
  * @author Chris Liao
  */
-public class Tc0094DataSourceFactoryTest {
+public class Tc0048DataSourceFactoryTest {
 
     @Test
     public void testGetObjectInstance() throws Exception {

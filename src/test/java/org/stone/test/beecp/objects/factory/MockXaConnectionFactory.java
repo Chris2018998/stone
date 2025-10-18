@@ -36,7 +36,11 @@ public class MockXaConnectionFactory extends BaseConnectionFactory implements Be
 
     public XAConnection create() throws SQLException {
         if (needPark) {
-            LockSupport.park();
+            if (this.parkNanos > 0L) {
+                LockSupport.parkNanos(parkNanos);
+            } else {
+                LockSupport.park();
+            }
             if (Thread.interrupted()) {
                 return null;
             }

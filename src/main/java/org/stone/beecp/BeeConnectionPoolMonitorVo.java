@@ -33,6 +33,10 @@ public interface BeeConnectionPoolMonitorVo {
 
     int getBorrowedSize();
 
+    int getCreatingSize();
+
+    int getCreatingTimeoutSize();
+
     int getSemaphoreSize();
 
     int getSemaphoreAcquiredSize();
@@ -41,8 +45,7 @@ public interface BeeConnectionPoolMonitorVo {
 
     int getTransferWaitingSize();
 
-    int getCreatingCount();
+    boolean isEnabledLogPrint();
 
-    int getCreatingTimeoutCount();
-
+    boolean isEnabledJdbcEventLogManager();
 }

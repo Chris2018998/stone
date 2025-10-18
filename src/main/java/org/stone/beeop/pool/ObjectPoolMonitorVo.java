@@ -87,7 +87,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.borrowedSize = borrowedSize;
     }
 
-    public int getCreatingCount() {
+    public int getCreatingSize() {
         return creatingCount;
     }
 
@@ -95,7 +95,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         this.creatingCount = creatingCount;
     }
 
-    public int getCreatingTimeoutCount() {
+    public int getCreatingTimeoutSize() {
         return creatingTimeoutCount;
     }
 

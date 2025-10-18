@@ -63,7 +63,7 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         return false;
     }
 
-    public void enableJdbcEventLogManager(boolean enable) {
+    public void enableEventLogManager(boolean enable) {
         //do nothing
     }
 
@@ -71,7 +71,7 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         //do nothing
     }
 
-    public boolean isEnabledJdbcEventLogManager() {
+    public boolean isEnabledEventLogManager() {
         return false;
     }
 
@@ -81,14 +81,14 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
      *
      * @param type is log type to query
      */
-    public List<BeeJdbcEventLog> getJdbcEventLog(int type) {
+    public List<BeeJdbcEventLog> getEventLog(int type) {
         return Collections.emptyList();
     }
 
     /**
      * Clear All logs in log collector.
      */
-    public List<BeeJdbcEventLog> clearJdbcEventLog(int type) {
+    public List<BeeJdbcEventLog> clearEventLog(int type) {
         return null;
     }
 

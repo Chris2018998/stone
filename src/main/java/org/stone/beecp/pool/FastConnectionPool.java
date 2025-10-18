@@ -141,19 +141,17 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             this.eventLogClearWorker.shutdown();
             this.eventLogClearWorker = null;
         }
-        this.eventLogManager = poolConfig.getLogManager();
+        this.eventLogManager = poolConfig.getEventLogManager();
         if (this.eventLogManager == null) {
             this.conProxyFactory = new ProxyConnectionFactory();
             this.usingEventLogManager = false;
         } else {
-            this.eventLogTimeoutMs = poolConfig.getLogTimeout();
-            BeeJdbcEventLogHandler logHandler = poolConfig.getLogHandler();
-            if (logHandler == null) logHandler = new DefaultJdbcEventLogHandler();
-            eventLogManager.init(poolConfig.getLogCacheSize(),
-                    poolConfig.getSlowConnectionGetThreshold(),
-                    poolConfig.getSlowSQLExecutionThreshold(),
-                    poolConfig.isLogHandledBySyncMode(),
-                    logHandler);
+            this.eventLogTimeoutMs = poolConfig.getEventLogTimeout();
+            this.eventLogManager.init(poolConfig.getEventLogCacheSize(),
+                    poolConfig.getSlowConnectionThreshold(),
+                    poolConfig.getSlowSQLThreshold(),
+                    poolConfig.isEventLogHandledBySyncMode(),
+                    poolConfig.getEventLogHandler());
             this.conProxyFactory = new ProxyConnectionFactory4L(eventLogManager);
             this.eventLogClearWorker = new JdbcLogTimeoutScanWorker(this,
                     poolConfig.getIntervalToClearTimeoutEventLogs(),
@@ -972,31 +970,29 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         printRuntimeLog = enable;
     }
 
-    public boolean isEnabledJdbcEventLogManager() {
+    public boolean isEnabledEventLogManager() {
         return this.usingEventLogManager;
     }
 
-    public List<BeeJdbcEventLog> getJdbcEventLog(int type) {
+    public List<BeeJdbcEventLog> getEventLog(int type) {
         return eventLogManager != null ? this.eventLogManager.getLog(type) : Collections.emptyList();
     }
 
-    public List<BeeJdbcEventLog> clearJdbcEventLog(int type) {
+    public List<BeeJdbcEventLog> clearEventLog(int type) {
         return eventLogManager != null ? eventLogManager.clear(type) : Collections.emptyList();
     }
 
-    public void enableJdbcEventLogManager(boolean enable) {
+    public void enableEventLogManager(boolean enable) {
         if (eventLogManager != null) {
             if (enable) {//enable
-                if (!usingEventLogManager) {
+                if (!usingEventLogManager) {//re-enable eventLogManager
                     this.conProxyFactory = new ProxyConnectionFactory4L(eventLogManager);
                     this.usingEventLogManager = true;
                 }
-            } else {//disable
-                if (usingEventLogManager) {
-                    this.conProxyFactory = new ProxyConnectionFactory();
-                    this.usingEventLogManager = false;
-                    eventLogManager.clear(Integer.MAX_VALUE);
-                }
+            } else if (usingEventLogManager) {//disable
+                this.conProxyFactory = new ProxyConnectionFactory();
+                this.usingEventLogManager = false;
+                this.eventLogManager.clear(Integer.MAX_VALUE);
             }
         }
     }
@@ -1171,10 +1167,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         monitorVo.setIdleSize(idleSize);
         monitorVo.setSemaphoreAcquiredSize(this.semaphoreSize - this.semaphore.availablePermits());
         monitorVo.setBorrowedSize(borrowedSize);
-        monitorVo.setCreatingCount(creatingCount);
-        monitorVo.setCreatingTimeoutCount(creatingTimeoutCount);
+        monitorVo.setCreatingSize(creatingCount);
+        monitorVo.setCreatingTimeoutSize(creatingTimeoutCount);
         monitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
         monitorVo.setTransferWaitingSize(transferWaitingSize);
+        monitorVo.setEnabledLogPrint(this.printRuntimeLog);
+        monitorVo.setEnabledJdbcEventLogManager(this.usingEventLogManager);
         return this.monitorVo;
     }
 

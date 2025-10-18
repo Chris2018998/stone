@@ -110,5 +110,5 @@ public interface BeeJdbcEventLogManager {
      *
      * @param id log id
      */
-    void cancelRunningStatement(Object id) throws SQLException;
+    void cancelStatement(Object id) throws SQLException;
 }

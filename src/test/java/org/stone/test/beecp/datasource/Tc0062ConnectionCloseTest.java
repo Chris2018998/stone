@@ -79,7 +79,7 @@ public class Tc0062ConnectionCloseTest {
     @Test
     public void testExceptionOnClose() throws SQLException {
         MockConnectionProperties conProperties = new MockConnectionProperties();
-        conProperties.enableExceptionOnMethod("close");
+        conProperties.throwsExceptionWhenCallMethod("close");
         conProperties.setMockException1(new SQLException("unknown error during close"));
         MockConnectionFactory factory = new MockConnectionFactory(conProperties);
         BeeDataSourceConfig config = new BeeDataSourceConfig();
@@ -102,7 +102,7 @@ public class Tc0062ConnectionCloseTest {
 
         //close xa connection
         MockXaConnectionProperties xaConnectionProperties = new MockXaConnectionProperties();
-        xaConnectionProperties.enableExceptionOnMethod("close");
+        xaConnectionProperties.throwsExceptionWhenCallMethod("close");
         xaConnectionProperties.setMockException1(new SQLException("unknown error during close"));
         MockXaConnectionFactory XaConnectionFactory = new MockXaConnectionFactory(xaConnectionProperties);
         BeeDataSourceConfig config2 = new BeeDataSourceConfig();

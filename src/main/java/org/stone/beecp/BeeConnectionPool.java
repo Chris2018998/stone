@@ -36,7 +36,7 @@ public interface BeeConnectionPool extends Closeable {
     void start(BeeDataSourceConfig config) throws SQLException;
 
     /**
-     * Pool re-startup.
+     * Pool re-startup with last used configuration when pool is in ready state
      *
      * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
      * @throws SQLException when pool is closed or in clearing
@@ -44,7 +44,7 @@ public interface BeeConnectionPool extends Closeable {
     void restart(boolean forceRecycleBorrowed) throws SQLException;
 
     /**
-     * Pool re-startup with a new configuration
+     * Pool re-startup with a new configuration when pool is in ready state
      *
      * @param forceRecycleBorrowed is true that pool close borrowed connections immediately;false that pool wait borrowed released to pool,then close them
      * @param config               is a new configuration object for reinitialization
@@ -87,7 +87,7 @@ public interface BeeConnectionPool extends Closeable {
     boolean isClosed();
 
     /**
-     * Queries pool state whether is ready.
+     * Queries pool state whether is ready to accept get request
      *
      * @return true when pool is closed
      */
@@ -127,28 +127,28 @@ public interface BeeConnectionPool extends Closeable {
      *
      * @return boolean true is enabled,false is disabled
      */
-    boolean isEnabledJdbcEventLogManager();
+    boolean isEnabledEventLogManager();
 
     /**
      * Switch call to enable or disable configured {@link BeeJdbcEventLogManager}.
      *
      * @param enable is true that make configured manager to work;false that make it to stop work
      */
-    void enableJdbcEventLogManager(boolean enable);
+    void enableEventLogManager(boolean enable);
 
     /**
      * Gets logs from pool with specified type.
      *
      * @param type should be one of[BeeJdbcEventLog.Type_Connection_Get,BeeJdbcEventLog.Type_SQL_Execution];if not,then return all logs
      */
-    List<BeeJdbcEventLog> getJdbcEventLog(int type);
+    List<BeeJdbcEventLog> getEventLog(int type);
 
     /**
      * Clears logs from pool with specified type.
      *
      * @param type should be one of[BeeJdbcEventLog.Type_Connection_Get,BeeJdbcEventLog.Type_SQL_Execution];if not,then clear all logs
      */
-    List<BeeJdbcEventLog> clearJdbcEventLog(int type);
+    List<BeeJdbcEventLog> clearEventLog(int type);
 
 }
 	

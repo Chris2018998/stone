@@ -31,9 +31,9 @@ public interface BeeObjectPoolMonitorVo {
 
     int getBorrowedSize();
 
-    int getCreatingCount();
+    int getCreatingSize();
 
-    int getCreatingTimeoutCount();
+    int getCreatingTimeoutSize();
 
     int getSemaphoreWaitingSize();
 

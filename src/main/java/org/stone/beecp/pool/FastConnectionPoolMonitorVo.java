@@ -32,8 +32,11 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     private int semaphoreAcquiredSize;
     private int semaphoreWaitingSize;
     private int transferWaitingSize;
-    private int creatingCount;
-    private int creatingTimeoutCount;
+    private int creatingSize;
+    private int creatingTimeoutSize;
+
+    private boolean enabledLogPrint;
+    private boolean enabledJdbcEventLogManager;
 
     public FastConnectionPoolMonitorVo(String poolName, String poolMode, int maxSize, int semaphoreSize) {
         this.poolName = poolName;
@@ -100,6 +103,25 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
+    public int getCreatingSize() {
+        return creatingSize;
+    }
+
+    public void setCreatingSize(int creatingSize) {
+        this.creatingSize = creatingSize;
+    }
+
+    @Override
+    public int getCreatingTimeoutSize() {
+        return creatingTimeoutSize;
+    }
+
+    public void setCreatingTimeoutSize(int creatingTimeoutSize) {
+        this.creatingTimeoutSize = creatingTimeoutSize;
+    }
+
+
+    @Override
     public int getSemaphoreAcquiredSize() {
         return semaphoreAcquiredSize;
     }
@@ -127,20 +149,20 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public int getCreatingCount() {
-        return creatingCount;
+    public boolean isEnabledLogPrint() {
+        return enabledLogPrint;
     }
 
-    public void setCreatingCount(int creatingCount) {
-        this.creatingCount = creatingCount;
+    public void setEnabledLogPrint(boolean enabledLogPrint) {
+        this.enabledLogPrint = enabledLogPrint;
     }
 
     @Override
-    public int getCreatingTimeoutCount() {
-        return creatingTimeoutCount;
+    public boolean isEnabledJdbcEventLogManager() {
+        return enabledJdbcEventLogManager;
     }
 
-    public void setCreatingTimeoutCount(int creatingTimeoutCount) {
-        this.creatingTimeoutCount = creatingTimeoutCount;
+    public void setEnabledJdbcEventLogManager(boolean enabledJdbcEventLogManager) {
+        this.enabledJdbcEventLogManager = enabledJdbcEventLogManager;
     }
 }

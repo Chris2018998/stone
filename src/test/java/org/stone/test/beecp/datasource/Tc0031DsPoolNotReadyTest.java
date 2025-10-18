@@ -66,35 +66,35 @@ public class Tc0031DsPoolNotReadyTest {
             }
 
             try {
-                ds.enableJdbcEventLogManager(false);
+                ds.enableEventLogManager(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.getEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.isEnabledJdbcEventLogManager();
+                ds.isEnabledEventLogManager();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
@@ -182,35 +182,35 @@ public class Tc0031DsPoolNotReadyTest {
             }
 
             try {
-                ds.enableJdbcEventLogManager(false);
+                ds.enableEventLogManager(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.getJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.getEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearJdbcEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.isEnabledJdbcEventLogManager();
+                ds.isEnabledEventLogManager();
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());

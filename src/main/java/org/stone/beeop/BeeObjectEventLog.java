@@ -22,13 +22,6 @@ public interface BeeObjectEventLog<K, V> extends Serializable {
     //constants log type,object call logs
     int Type_Object_Call = 1;
 
-    //Method call is in executing
-    int Status_Running = 0;
-    //Method call is successful
-    int Status_Successful = 1;
-    //Method call is failed
-    int Status_Failed = 2;
-
     /**
      * Get log type.
      *
@@ -87,29 +80,40 @@ public interface BeeObjectEventLog<K, V> extends Serializable {
 
 
     //***************************************************************************************************************//
-    //                                         2: Status and result                                                  //
+    //                                         2: Status                                                             //
     //***************************************************************************************************************//
 
     /**
-     * Query status of method call.
+     * Query log owner is whether running.
      *
-     * @return an int value,which one of [Status_Running,Status_Successful,Status_Failed]
+     * @return a boolean,true is slow
      */
-    int getStatus();
+    boolean isRunning();
 
     /**
-     * Query method call is whether slow.
+     * Query log owner is successful to end call.
+     *
+     * @return a boolean,true is slow
+     */
+    boolean isSuccessful();
+
+    /**
+     * Query log owner is failed to call.
+     *
+     * @return a boolean,true is exception
+     */
+    boolean isException();
+
+    /**
+     * Query log is whether slow.
      *
      * @return a boolean,true is slow
      */
     boolean isSlow();
 
-    /**
-     * Query method call is whether exception.
-     *
-     * @return a boolean,true is exception
-     */
-    boolean isException();
+    //***************************************************************************************************************//
+    //                                         3: Result                                                             //
+    //***************************************************************************************************************//
 
     /**
      * Get result of method call,this result may be null.

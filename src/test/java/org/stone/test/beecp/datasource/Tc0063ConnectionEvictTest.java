@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
 /**
@@ -41,7 +40,7 @@ public class Tc0063ConnectionEvictTest {
 
         MockConnectionProperties conProperties = new MockConnectionProperties();
         conProperties.setErrorCode(errorCode);
-        conProperties.enableExceptionOnMethod("createStatement");
+        conProperties.throwsExceptionWhenCallMethod("createStatement");
         config.setConnectionFactory(new MockConnectionFactory(conProperties));
 
         try (BeeDataSource ds = new BeeDataSource(config)) {
@@ -65,7 +64,7 @@ public class Tc0063ConnectionEvictTest {
 
         MockConnectionProperties conProperties = new MockConnectionProperties();
         conProperties.setErrorState(errorState);
-        conProperties.enableExceptionOnMethod("createStatement");
+        conProperties.throwsExceptionWhenCallMethod("createStatement");
         config.setConnectionFactory(new MockConnectionFactory(conProperties));
 
         try (BeeDataSource ds = new BeeDataSource(config)) {
@@ -91,7 +90,7 @@ public class Tc0063ConnectionEvictTest {
         MockConnectionProperties conProperties = new MockConnectionProperties();
         conProperties.setErrorState(errorState);
         conProperties.setErrorCode(errorCode);
-        conProperties.enableExceptionOnMethod("createStatement");
+        conProperties.throwsExceptionWhenCallMethod("createStatement");
         config.setConnectionFactory(new MockConnectionFactory(conProperties));
 
         try (BeeDataSource ds = new BeeDataSource(config)) {

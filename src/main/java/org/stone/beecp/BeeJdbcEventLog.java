@@ -24,13 +24,6 @@ public interface BeeJdbcEventLog extends Serializable {
     //Log type represent method call that sql execution on pooled connections
     int Type_SQL_Execution = 1;
 
-    //Method call is in executing
-    int Status_Running = 0;
-    //Method call is successful
-    int Status_Successful = 1;
-    //Method call is failed
-    int Status_Failed = 2;
-
     /**
      * Get log type.
      *
@@ -82,29 +75,40 @@ public interface BeeJdbcEventLog extends Serializable {
 
 
     //***************************************************************************************************************//
-    //                                         2: Status and result                                                  //
+    //                                         2: Status                                                             //
     //***************************************************************************************************************//
 
     /**
-     * Query status of method call.
+     * Query log owner is whether running.
      *
-     * @return an int value,which one of [Status_Running,Status_Successful,Status_Failed]
+     * @return a boolean,true is slow
      */
-    int getStatus();
+    boolean isRunning();
 
     /**
-     * Query current log is whether slow log.
+     * Query log owner is successful to end call.
+     *
+     * @return a boolean,true is slow
+     */
+    boolean isSuccessful();
+
+    /**
+     * Query log owner is failed to call.
+     *
+     * @return a boolean,true is exception
+     */
+    boolean isException();
+
+    /**
+     * Query log is whether slow.
      *
      * @return a boolean,true is slow
      */
     boolean isSlow();
 
-    /**
-     * Query method call is whether failed in exception.
-     *
-     * @return a boolean,true is exception
-     */
-    boolean isException();
+    //***************************************************************************************************************//
+    //                                         3: Result                                                             //
+    //***************************************************************************************************************//
 
     /**
      * Get result of method call,this result may be null.
@@ -135,7 +139,7 @@ public interface BeeJdbcEventLog extends Serializable {
     boolean isRemoved();
 
     //***************************************************************************************************************//
-    //                                         3: SQL Execution                                                      //
+    //                                         4: SQL Execution                                                      //
     //***************************************************************************************************************//
 
     /**
@@ -160,14 +164,7 @@ public interface BeeJdbcEventLog extends Serializable {
     Object[] getSqlPreparedParameters();
 
     /**
-     * Query current log is whether sql in running
-     *
-     * @return true if current log is sql execution log and in running,otherwise return false
-     */
-    boolean isRunningStatement();
-
-    /**
      * Cancel sql statement if in execution.
      */
-    void cancelRunningStatement() throws SQLException;
+    void cancelStatement() throws SQLException;
 }

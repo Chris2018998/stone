@@ -153,7 +153,7 @@ public class Tc0069ConnectionDefaultTest {
         config.setConnectionFactory(factory);
 
         //setAutoCommit
-        connectionProperties.enableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setCatalog,setSchema");
+        connectionProperties.throwsExceptionWhenCallMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setCatalog,setSchema");
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testDefaultSetFailed]Test failed");
         } catch (BeeDataSourceCreationException e) {
@@ -161,8 +161,8 @@ public class Tc0069ConnectionDefaultTest {
         }
 
         //setTransactionIsolation
-        connectionProperties.disableExceptionOnMethod("setAutoCommit");
-        connectionProperties.enableExceptionOnMethod("setTransactionIsolation,setReadOnly,setCatalog,setSchema");
+        connectionProperties.clearExceptionableMethod("setAutoCommit");
+        connectionProperties.throwsExceptionWhenCallMethod("setTransactionIsolation,setReadOnly,setCatalog,setSchema");
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testDefaultSetFailed]Test failed");
         } catch (BeeDataSourceCreationException e) {
@@ -170,8 +170,8 @@ public class Tc0069ConnectionDefaultTest {
         }
 
         //setReadOnly
-        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation");
-        connectionProperties.enableExceptionOnMethod("setReadOnly,setCatalog,setSchema");
+        connectionProperties.clearExceptionableMethod("setAutoCommit,setTransactionIsolation");
+        connectionProperties.throwsExceptionWhenCallMethod("setReadOnly,setCatalog,setSchema");
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testDefaultSetFailed]Test failed");
         } catch (BeeDataSourceCreationException e) {
@@ -179,8 +179,8 @@ public class Tc0069ConnectionDefaultTest {
         }
 
         //setCatalog
-        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly");
-        connectionProperties.enableExceptionOnMethod("setCatalog,setSchema");
+        connectionProperties.clearExceptionableMethod("setAutoCommit,setTransactionIsolation,setReadOnly");
+        connectionProperties.throwsExceptionWhenCallMethod("setCatalog,setSchema");
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testDefaultSetFailed]Test failed");
         } catch (BeeDataSourceCreationException e) {
@@ -188,16 +188,16 @@ public class Tc0069ConnectionDefaultTest {
         }
 
         //setSchema
-        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setTransactionIsolation");
-        connectionProperties.enableExceptionOnMethod("setSchema");
+        connectionProperties.clearExceptionableMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setTransactionIsolation");
+        connectionProperties.throwsExceptionWhenCallMethod("setSchema");
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testDefaultSetFailed]Test failed");
         } catch (BeeDataSourceCreationException e) {
             Assertions.assertInstanceOf(ConnectionDefaultSetFailedException.class, e.getCause());
         }
 
-        connectionProperties.disableExceptionOnMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setTransactionIsolation,setCatalog");
-        connectionProperties.enableExceptionOnMethod("setSchema");
+        connectionProperties.clearExceptionableMethod("setAutoCommit,setTransactionIsolation,setReadOnly,setTransactionIsolation,setCatalog");
+        connectionProperties.throwsExceptionWhenCallMethod("setSchema");
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testDefaultSetFailed]Test failed");
         } catch (BeeDataSourceCreationException e) {
@@ -218,7 +218,7 @@ public class Tc0069ConnectionDefaultTest {
 
         MockConnectionProperties connectionProperties = new MockConnectionProperties();
         connectionProperties.setMockException1(new SQLException("Communication failed"));
-        connectionProperties.enableExceptionOnMethod("getAutoCommit,isReadOnly,getTransactionIsolation,getCatalog,getSchema");
+        connectionProperties.throwsExceptionWhenCallMethod("getAutoCommit,isReadOnly,getTransactionIsolation,getCatalog,getSchema");
         MockConnectionFactory factory = new MockConnectionFactory(connectionProperties);
         config.setConnectionFactory(factory);
 
@@ -272,9 +272,9 @@ public class Tc0069ConnectionDefaultTest {
 
         MockConnectionProperties connectionProperties = new MockConnectionProperties();
         connectionProperties.setMockException1(new SQLException("Communication failed"));
-        connectionProperties.enableExceptionOnMethod("getAutoCommit,setAutoCommit,isReadOnly,setReadOnly");
-        connectionProperties.enableExceptionOnMethod("getTransactionIsolation,setTransactionIsolation");
-        connectionProperties.enableExceptionOnMethod("setCatalog,getCatalog,setSchema,getSchema");
+        connectionProperties.throwsExceptionWhenCallMethod("getAutoCommit,setAutoCommit,isReadOnly,setReadOnly");
+        connectionProperties.throwsExceptionWhenCallMethod("getTransactionIsolation,setTransactionIsolation");
+        connectionProperties.throwsExceptionWhenCallMethod("setCatalog,getCatalog,setSchema,getSchema");
         MockConnectionFactory factory = new MockConnectionFactory(connectionProperties);
         config.setConnectionFactory(factory);
 
@@ -336,7 +336,7 @@ public class Tc0069ConnectionDefaultTest {
         config2.setInitialSize(1);
         config2.setPrintRuntimeLogs(true);
         connectionProperties.setValid(true);
-        connectionProperties.enableExceptionOnMethod("isValid");
+        connectionProperties.throwsExceptionWhenCallMethod("isValid");
         connectionProperties.setMockException1(new SQLException("Communication failed"));
         config2.setConnectionFactory(factory);
 
@@ -385,7 +385,7 @@ public class Tc0069ConnectionDefaultTest {
 
         //exception from  getNetworkTimeout
         connectionProperties.setNetworkTimeout(0);
-        connectionProperties.enableExceptionOnMethod("getNetworkTimeout");
+        connectionProperties.throwsExceptionWhenCallMethod("getNetworkTimeout");
         connectionProperties.setMockException1(new SQLException("NetworkTimeout"));
 
         BeeDataSourceConfig config2 = createDefault();
@@ -410,8 +410,8 @@ public class Tc0069ConnectionDefaultTest {
 
         //exception from setNetworkTimeout
         connectionProperties.setNetworkTimeout(10);
-        connectionProperties.disableExceptionOnMethod("getNetworkTimeout");
-        connectionProperties.enableExceptionOnMethod("setNetworkTimeout");
+        connectionProperties.clearExceptionableMethod("getNetworkTimeout");
+        connectionProperties.throwsExceptionWhenCallMethod("setNetworkTimeout");
         BeeDataSourceConfig config3 = createDefault();
         config3.setInitialSize(1);
         config3.setPrintRuntimeLogs(true);

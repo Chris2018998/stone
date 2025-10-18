@@ -21,6 +21,13 @@ import java.util.UUID;
  * @author Chris Liao
  */
 public class DefaultJdbcEventLog implements BeeJdbcEventLog {
+    //Method call is in executing
+    static final int Status_Running = 0;
+    //Method call is successful
+    static final int Status_Successful = 1;
+    //Method call is failed
+    static final int Status_Failed = 2;
+
     //Log type
     private final int type;
     //log id
@@ -62,9 +69,7 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
     //Flag of handled by Handler
     private boolean handled;
 
-    //***************************************************************************************************************//
-    //                                          constructor                                                          //
-    //***************************************************************************************************************//
+
     public DefaultJdbcEventLog(int type, String method, Object[] parameters) {
         this.type = type;
         this.method = method;
@@ -104,8 +109,16 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.endTime = endTime;
     }
 
-    public int getStatus() {
-        return status;
+    public boolean isRunning() {
+        return this.status == Status_Running;
+    }
+
+    public boolean isSuccessful() {
+        return this.status == Status_Successful;
+    }
+
+    public boolean isException() {
+        return this.status == Status_Failed;
     }
 
     public boolean isSlow() {
@@ -114,10 +127,6 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
 
     void setAsSlow() {
         this.slow = true;
-    }
-
-    public boolean isException() {
-        return this.status == Status_Failed;
     }
 
     public Object getResultObject() {
@@ -149,10 +158,6 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         return sqlPreparedTime;
     }
 
-    void setSqlPreparedTime(long sqlPreparedTime) {
-        this.sqlPreparedTime = sqlPreparedTime;
-    }
-
     public Object[] getSqlPreparedParameters() {
         return sqlPreparedParameters;
     }
@@ -161,11 +166,7 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.sqlPreparedParameters = sqlPreparedParameters;
     }
 
-    public boolean isRunningStatement() {
-        return this.statement != null && endTime == 0L;
-    }
-
-    public void cancelRunningStatement() throws SQLException {
+    public void cancelStatement() throws SQLException {
         if (this.statement != null && endTime == 0L) statement.cancel();
     }
 

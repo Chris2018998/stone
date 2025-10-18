@@ -53,7 +53,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private long maxWaitNanos = 8000L;//default vale same to config
     private BeeConnectionPool pool;
     private CommonDataSource subDs;//used to set loginTimeout
-    private boolean ready;//true,means that inner pool has created
+    private boolean poolCreated;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause
 
     //***************************************************************************************************************//
@@ -80,7 +80,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         String poolImplementClassName = ds.getPoolImplementClassName();
         try {
             if (isBlank(poolImplementClassName)) {
-                poolImplementClassName = (ds.getLogManager() != null || ds.getLogManagerClass() != null || isNotBlank(ds.getLogManagerClassName())) ?
+                poolImplementClassName = (ds.getEventLogManager() != null || ds.getEventlogManagerClass() != null || isNotBlank(ds.getEventLogManagerClassName())) ?
                         FastConnectionPool4L.class.getName() : FastConnectionPool.class.getName();
             }
 
@@ -93,7 +93,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
             else
                 ds.subDs = Dummy_CommonDataSource;
 
-            ds.ready = true;
+            ds.poolCreated = true;
         } catch (SQLException e) {
             throw e;
         } catch (Throwable e) {
@@ -115,12 +115,12 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         2: Pooled connections get                                             //
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
-        if (this.ready) return pool.getConnection();
+        if (this.poolCreated) return pool.getConnection();
         return createPoolByLock().getConnection();
     }
 
     public XAConnection getXAConnection() throws SQLException {
-        if (this.ready) return pool.getXAConnection();
+        if (this.poolCreated) return pool.getXAConnection();
         return createPoolByLock().getXAConnection();
     }
 
@@ -137,7 +137,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private BeeConnectionPool createPoolByLock() throws SQLException {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
-                if (!ready) {
+                if (!poolCreated) {
                     cause = null;
                     createPool(this);
                 }
@@ -177,23 +177,23 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         4: Override methods of CommonDataSource                              //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
-        return subDs != null ? subDs.getLogWriter() : null;
+        return poolCreated ? subDs.getLogWriter() : null;
     }
 
     public void setLogWriter(PrintWriter out) throws SQLException {
-        if (subDs != null) subDs.setLogWriter(out);
+        if (poolCreated) subDs.setLogWriter(out);
     }
 
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return subDs != null ? subDs.getParentLogger() : null;
+        return poolCreated ? subDs.getParentLogger() : null;
     }
 
     public int getLoginTimeout() throws SQLException {
-        return subDs != null ? subDs.getLoginTimeout() : 0;
+        return poolCreated ? subDs.getLoginTimeout() : 0;
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {
-        if (subDs != null) subDs.setLoginTimeout(seconds);
+        if (poolCreated) subDs.setLoginTimeout(seconds);
     }
 
     public boolean isWrapperFor(Class<?> clazz) {
@@ -211,18 +211,18 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         5: runtime logs print(4)                                              //
     //***************************************************************************************************************//
     public boolean isPrintRuntimeLogs() {
-        if (pool == null) {
-            return super.isPrintRuntimeLogs();
-        } else {
+        if (poolCreated) {
             return pool.isEnabledLogPrint();
+        } else {
+            return super.isPrintRuntimeLogs();
         }
     }
 
     public void setPrintRuntimeLogs(boolean enable) {
-        if (pool == null) {
-            super.setPrintRuntimeLogs(enable);//as configuration item
-        } else {
+        if (poolCreated) {
             pool.enableLogPrint(enable);//set to pool
+        } else {
+            super.setPrintRuntimeLogs(enable);//as configuration item
         }
     }
 
@@ -237,27 +237,27 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                         6: jdbc event logs manager(4)                                          //
     //***************************************************************************************************************//
-    public boolean isEnabledJdbcEventLogManager() throws SQLException {
-        return this.getPool().isEnabledJdbcEventLogManager();
+    public boolean isEnabledEventLogManager() throws SQLException {
+        return this.getPool().isEnabledEventLogManager();
     }
 
-    public void enableJdbcEventLogManager(boolean enable) throws SQLException {
-        this.getPool().enableJdbcEventLogManager(enable);
+    public void enableEventLogManager(boolean enable) throws SQLException {
+        this.getPool().enableEventLogManager(enable);
     }
 
-    public List<BeeJdbcEventLog> getJdbcEventLog(int type) throws SQLException {
-        return this.getPool().getJdbcEventLog(type);
+    public List<BeeJdbcEventLog> getEventLog(int type) throws SQLException {
+        return this.getPool().getEventLog(type);
     }
 
-    public List<BeeJdbcEventLog> clearJdbcEventLog(int type) throws SQLException {
-        return this.getPool().clearJdbcEventLog(type);
+    public List<BeeJdbcEventLog> clearEventLog(int type) throws SQLException {
+        return this.getPool().clearEventLog(type);
     }
 
     //***************************************************************************************************************//
     //                                     7: override methods to set or update jdbc link info                       //
     //***************************************************************************************************************//
     public void setUsername(String username) {
-        if (pool == null) {
+        if (subDs == null) {
             super.setUsername(username);
         } else {
             set(subDs, "setUsername", username);
@@ -265,7 +265,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void setPassword(String password) {
-        if (pool == null) {
+        if (subDs == null) {
             super.setPassword(password);
         } else {
             set(subDs, "setPassword", password);
@@ -273,7 +273,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void setJdbcUrl(String jdbcUrl) {
-        if (pool == null) {
+        if (subDs == null) {
             super.setJdbcUrl(jdbcUrl);
         } else {
             set(subDs, "setJdbcUrl", jdbcUrl);
@@ -281,7 +281,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void setUrl(String jdbcUrl) {
-        if (pool == null) {
+        if (subDs == null) {
             super.setUrl(jdbcUrl);
         } else {
             set(subDs, "setUrl", jdbcUrl);
@@ -292,15 +292,15 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         8: other methods(7)                                                   //
     //***************************************************************************************************************//
     public void close() {
-        if (this.ready) this.pool.close();
+        if (this.poolCreated) this.pool.close();
     }
 
     public boolean isClosed() {
-        return !this.ready || this.pool.isClosed();
+        return !this.poolCreated || this.pool.isClosed();
     }
 
     public boolean isReady() {
-        return this.ready && this.pool.isReady();
+        return this.poolCreated && this.pool.isReady();
     }
 
     //override method
@@ -314,7 +314,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public List<Thread> interruptWaitingThreads() throws SQLException {
-        if (this.ready) {
+        if (this.poolCreated) {
             return pool.interruptWaitingThreads();
         } else {
             return lock.interruptAllThreads();
@@ -322,7 +322,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     private BeeConnectionPool getPool() throws SQLException {
-        if (!this.ready) throw new PoolNotCreatedException("Internal pool was not ready");
+        if (!this.poolCreated) throw new PoolNotCreatedException("Internal pool was not ready");
         return this.pool;
     }
 }

@@ -186,7 +186,9 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return poolState.get() == POOL_CLOSED;
     }
 
-    public boolean isReady() {return poolState.get() == POOL_READY;}
+    public boolean isReady() {
+        return poolState.get() == POOL_READY;
+    }
 
     //******************************** JMX **************************************//
     public void restart(boolean force) {
@@ -230,7 +232,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableJdbcEventLogManager(boolean enable) {
+    public void enableEventLogManager(boolean enable) {
         //do nothing
     }
 
@@ -238,11 +240,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public List<BeeJdbcEventLog> getJdbcEventLog(int type) {
+    public List<BeeJdbcEventLog> getEventLog(int type) {
         return Collections.emptyList();
     }
 
-    public List<BeeJdbcEventLog> clearJdbcEventLog(int type) {
+    public List<BeeJdbcEventLog> clearEventLog(int type) {
         return null;
     }
 
@@ -250,7 +252,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public boolean isEnabledJdbcEventLogManager() {
+    public boolean isEnabledEventLogManager() {
         return false;
     }
 

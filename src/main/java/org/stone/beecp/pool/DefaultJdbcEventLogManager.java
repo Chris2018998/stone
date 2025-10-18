@@ -30,9 +30,10 @@ import static org.stone.beecp.BeeJdbcEventLog.Type_SQL_Execution;
  * @version 1.0
  */
 public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
-    private boolean syncMode;
-    //log handler
+    private boolean handleBySyncMode;
+    private boolean handleByAsyncMode;
     private BeeJdbcEventLogHandler handler;
+
     //slow threshold value of connection get,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowConnectionGetThreshold}
     private long slowConnectionGetThreshold;
     //slow threshold of sql execution,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
@@ -60,9 +61,12 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
                      long slowGet, long slowExec,
                      boolean syncMode, BeeJdbcEventLogHandler handler) {
 
+        if (handler != null) {
+            this.handler = handler;
+            this.handleBySyncMode = syncMode;
+            this.handleByAsyncMode = !syncMode;
+        }
 
-        this.handler = handler;
-        this.syncMode = syncMode;
         this.slowConnectionGetThreshold = slowGet;
         this.slowSQLExecutionThreshold = slowExec;
 
@@ -128,21 +132,8 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
         List<BeeJdbcEventLog> sqlPendingRemovalLogList = new LinkedList<>();
         long currentTime = System.currentTimeMillis();
 
-        if (syncMode) {
-            //timeout check on connection logs
-            for (DefaultJdbcEventLog log : conLogQueue) {
-                if (currentTime - log.getStartTime() >= timeout) {
-                    conPendingRemovalLogList.add(log);
-                }
-            }
-
-            //timeout check on sql execution logs
-            for (DefaultJdbcEventLog log : sqlLogQueue) {
-                if (currentTime - log.getStartTime() >= timeout) {
-                    sqlPendingRemovalLogList.add(log);
-                }
-            }
-        } else {//async mode
+        //1: scan log list to find out all timeout logs to be removed
+        if (handleByAsyncMode) {//async mode
             handleLogList = new ArrayList<>(10);
             for (DefaultJdbcEventLog log : conLogQueue) {
                 if (currentTime - log.getStartTime() >= timeout) {
@@ -174,19 +165,36 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
                     }
                 }
             }
+        } else {
+            //timeout check on connection logs
+            for (DefaultJdbcEventLog log : conLogQueue) {
+                if (currentTime - log.getStartTime() >= timeout) {
+                    conPendingRemovalLogList.add(log);
+                }
+            }
+
+            //timeout check on sql execution logs
+            for (DefaultJdbcEventLog log : sqlLogQueue) {
+                if (currentTime - log.getStartTime() >= timeout) {
+                    sqlPendingRemovalLogList.add(log);
+                }
+            }
         }
 
+        //2: remove timeout logs from connection log list
         if (!conPendingRemovalLogList.isEmpty() && conLogQueue.removeAll(conPendingRemovalLogList)) {
             for (BeeJdbcEventLog log : conPendingRemovalLogList) {
                 ((DefaultJdbcEventLog) log).setRemoved(true);
             }
         }
+        //3: remove timeout logs from sql execution log list
         if (!sqlPendingRemovalLogList.isEmpty() && sqlLogQueue.removeAll(sqlPendingRemovalLogList)) {
             for (BeeJdbcEventLog log : sqlPendingRemovalLogList) {
                 ((DefaultJdbcEventLog) log).setRemoved(true);
             }
         }
 
+        //4: handle exception logs and slow logs
         if (handleLogList != null && !handleLogList.isEmpty()) {
             try {
                 boolean[] flags = this.handler.handle(handleLogList);
@@ -260,13 +268,15 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
             offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
         }
 
-        if (this.syncMode && ((Type_Connection_Get == log.getType() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
+        if (((Type_Connection_Get == log.getType() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
                 || (Type_SQL_Execution == log.getType() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
-            try {
-                defaultTypeLog.setAsSlow();
-                defaultTypeLog.setHandled(handler.handle(log));
-            } catch (Throwable e) {
-                //do nothing
+            defaultTypeLog.setAsSlow();
+            if (this.handleBySyncMode) {
+                try {
+                    defaultTypeLog.setHandled(handler.handle(log));
+                } catch (Throwable e) {
+                    //do nothing
+                }
             }
         }
     }
@@ -288,7 +298,7 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
             offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
         }
 
-        if (this.syncMode) {
+        if (this.handleBySyncMode) {
             try {
                 defaultTypeLog.setHandled(handler.handle(log));
             } catch (Throwable e) {
@@ -302,10 +312,10 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
      *
      * @param uuid log uuid key
      */
-    public void cancelRunningStatement(Object uuid) throws SQLException {
+    public void cancelStatement(Object uuid) throws SQLException {
         for (BeeJdbcEventLog log : sqlLogQueue) {
             if (log.getId().equals(uuid)) {
-                log.cancelRunningStatement();
+                log.cancelStatement();
             }
         }
     }

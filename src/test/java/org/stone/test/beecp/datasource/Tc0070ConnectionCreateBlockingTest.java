@@ -49,13 +49,13 @@ public class Tc0070ConnectionCreateBlockingTest {
         //2: attempt to get connection in current thread
         if (waitUtilWaiting(firstBorrower)) {//block 1 second in pool instance creation
             BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(1, vo.getCreatingCount());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutCount());
+            Assertions.assertEquals(1, vo.getCreatingSize());
+            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
             pool.interruptWaitingThreads();
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
             vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(0, vo.getCreatingCount());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutCount());
+            Assertions.assertEquals(0, vo.getCreatingSize());
+            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
         }
     }
 
@@ -80,17 +80,17 @@ public class Tc0070ConnectionCreateBlockingTest {
         //2: attempt to get connection in current thread
         if (waitUtilWaiting(firstBorrower)) {//block 1 second in pool instance creation
             BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(1, vo.getCreatingCount());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutCount());
+            Assertions.assertEquals(1, vo.getCreatingSize());
+            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
             LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
             vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(1, vo.getCreatingCount());
-            Assertions.assertEquals(1, vo.getCreatingTimeoutCount());
+            Assertions.assertEquals(1, vo.getCreatingSize());
+            Assertions.assertEquals(1, vo.getCreatingTimeoutSize());
             pool.interruptWaitingThreads();
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
             vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(0, vo.getCreatingCount());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutCount());
+            Assertions.assertEquals(0, vo.getCreatingSize());
+            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
         }
     }
 }
