@@ -240,6 +240,10 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
+    public boolean cancelStatement(Object logId) {
+        return false;
+    }
+
     public List<BeeJdbcEventLog> getEventLog(int type) {
         return Collections.emptyList();
     }

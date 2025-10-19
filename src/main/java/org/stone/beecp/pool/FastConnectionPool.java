@@ -997,6 +997,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
     }
 
+    public boolean cancelStatement(Object id) throws SQLException {
+        return eventLogManager != null && eventLogManager.cancelStatement(id);
+    }
+
     //***************************************************************************************************************//
     //                                  6: Jmx methods (16)                                                          //                                                                                  //
     //***************************************************************************************************************//

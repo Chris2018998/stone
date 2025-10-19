@@ -51,14 +51,14 @@ public interface BeeJdbcEventLogManager {
     void clearTimeout(long timeout);
 
     /**
-     * Clears logs with a given type,this method only called by data source.
+     * Clears logs with given type,this method only called by data source.
      *
      * @param type to clear type matched logs
      */
     List<BeeJdbcEventLog> clear(int type);
 
     /**
-     * Query logs with a given log type.
+     * Query logs with given log type.
      *
      * @param type is a log type for logs being gotten
      * @return a result log list of expected type
@@ -106,9 +106,10 @@ public interface BeeJdbcEventLogManager {
     //***************************************************************************************************************//
 
     /**
-     * Cancel statement in executing.
+     * Cancel statement in executing,this method may be support distribution network.
      *
-     * @param id log id
+     * @param logId log id
+     * @return boolean is true that log is a statement log exist in manager and success to cancellation called on this statement.
      */
-    void cancelStatement(Object id) throws SQLException;
+    boolean cancelStatement(Object logId) throws SQLException;
 }

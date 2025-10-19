@@ -310,13 +310,15 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
     /**
      * Cancel statement in executing
      *
-     * @param uuid log uuid key
+     * @param logId is an id of statement log cached in manager.
      */
-    public void cancelStatement(Object uuid) throws SQLException {
+    public boolean cancelStatement(Object logId) throws SQLException {
+        if (logId == null) return false;
         for (BeeJdbcEventLog log : sqlLogQueue) {
-            if (log.getId().equals(uuid)) {
-                log.cancelStatement();
+            if (logId.equals(log.getId())) {
+                return log.cancelStatement();
             }
         }
+        return false;
     }
 }

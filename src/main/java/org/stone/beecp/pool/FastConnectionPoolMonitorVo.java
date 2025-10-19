@@ -158,7 +158,7 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public boolean isEnabledJdbcEventLogManager() {
+    public boolean isEnabledEventLogManager() {
         return enabledJdbcEventLogManager;
     }
 

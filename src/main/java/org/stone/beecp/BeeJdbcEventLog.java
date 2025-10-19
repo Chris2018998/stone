@@ -164,7 +164,9 @@ public interface BeeJdbcEventLog extends Serializable {
     Object[] getSqlPreparedParameters();
 
     /**
-     * Cancel sql statement if in execution.
+     * cancel a executing statement
+     *
+     * @return boolean is true that log is a statement log exist in manager and success to cancellation called on this statement.
      */
-    void cancelStatement() throws SQLException;
+    boolean cancelStatement() throws SQLException;
 }

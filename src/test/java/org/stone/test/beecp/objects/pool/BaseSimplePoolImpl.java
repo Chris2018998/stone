@@ -75,6 +75,9 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         return false;
     }
 
+    public boolean cancelStatement(Object logId) {
+        return false;
+    }
 
     /**
      * Get Jdbc logs with a give type

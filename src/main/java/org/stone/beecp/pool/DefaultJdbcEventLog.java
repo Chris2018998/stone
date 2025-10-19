@@ -145,7 +145,6 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.datasourceInfo = datasourceInfo;
     }
 
-
     public String getSql() {
         return sql;
     }
@@ -166,8 +165,13 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.sqlPreparedParameters = sqlPreparedParameters;
     }
 
-    public void cancelStatement() throws SQLException {
-        if (this.statement != null && endTime == 0L) statement.cancel();
+    public boolean cancelStatement() throws SQLException {
+        if (this.statement != null) {
+            statement.cancel();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public boolean isRemoved() {
@@ -204,17 +208,5 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.sqlPreparedParameters = sqlPreparedParameters;
         this.statement = null;
         this.status = Status_Failed;
-    }
-
-    public int hashCode() {
-        return id.hashCode();
-    }
-
-    public boolean equals(Object v) {
-        if (v instanceof DefaultJdbcEventLog) {
-            return this.id.equals(((DefaultJdbcEventLog) v).id);
-        } else {
-            return false;
-        }
     }
 }

@@ -42,12 +42,15 @@ public class Tc0037DsPoolWorkLogPrintTest {
             //print log
             Connection con = ds.getConnection();
             Assertions.assertTrue(ds.isPrintRuntimeLogs());
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogPrint());
             String logContent = logCollector.endLogCollector();
             Assertions.assertTrue(logContent.contains("start to create a connection"));
             con.abort(null);
 
             //2: not print log
             ds.setPrintRuntimeLogs(false);
+            Assertions.assertFalse(ds.isPrintRuntimeLogs());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledLogPrint());
             logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {
                 logContent = logCollector.endLogCollector();
@@ -74,6 +77,8 @@ public class Tc0037DsPoolWorkLogPrintTest {
 
             //2: print runtime log
             ds.enableLogPrint(true);
+            Assertions.assertTrue(ds.isPrintRuntimeLogs());
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogPrint());
             Assertions.assertTrue(ds.isEnabledLogPrint());
             logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {

@@ -166,7 +166,7 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public boolean isEnabledJdbcEventLogManager() {
+    public boolean isEnabledEventLogManager() {
         return enabledJdbcEventLogManager;
     }
 

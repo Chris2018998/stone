@@ -190,7 +190,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     private String eventLogHandlerClassName;
 
     //****************************************************************************************************************//
-    //                                     1: constructors(5)                                              //
+    //                                     1: constructors(5)                                                         //
     //****************************************************************************************************************//
     public BeeDataSourceConfig() {
     }

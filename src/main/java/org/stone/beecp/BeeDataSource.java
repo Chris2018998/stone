@@ -235,7 +235,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         6: jdbc event logs manager(4)                                          //
+    //                                         6: jdbc event logs manager(5)                                          //
     //***************************************************************************************************************//
     public boolean isEnabledEventLogManager() throws SQLException {
         return this.getPool().isEnabledEventLogManager();
@@ -251,6 +251,10 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
     public List<BeeJdbcEventLog> clearEventLog(int type) throws SQLException {
         return this.getPool().clearEventLog(type);
+    }
+
+    public boolean cancelStatement(Object logId) throws SQLException {
+        return this.getPool().cancelStatement(logId);
     }
 
     //***************************************************************************************************************//

@@ -49,6 +49,7 @@ public class MockJdbcEventLogManager implements BeeJdbcEventLogManager {
     public void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcEventLog log) {
     }
 
-    public void cancelStatement(Object uuid) throws SQLException {
+    public boolean cancelStatement(Object logId)  {
+        return true;
     }
 }

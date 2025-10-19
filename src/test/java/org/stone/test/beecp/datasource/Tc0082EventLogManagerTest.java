@@ -54,6 +54,7 @@ public class Tc0082EventLogManagerTest {
         config3.setEventLogManagerClassName(DefaultJdbcEventLogManager.class.getName());
         try (BeeDataSource ds = new BeeDataSource(config3)) {
             Assertions.assertTrue(ds.isEnabledEventLogManager());
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledEventLogManager());
             try (Connection ignore = ds.getConnection()) {
                 List<BeeJdbcEventLog> logList = ds.getEventLog(Type_Connection_Get);
                 Assertions.assertEquals(1, logList.size());
@@ -63,6 +64,8 @@ public class Tc0082EventLogManagerTest {
             }
             //disable log manager then retry to get a connection
             ds.enableEventLogManager(false);
+            Assertions.assertFalse(ds.isEnabledEventLogManager());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledEventLogManager());
             Assertions.assertTrue(ds.getEventLog(Type_Connection_Get).isEmpty());//logs be cleared when disable log manager
             try (Connection ignore = ds.getConnection()) {
                 Assertions.assertTrue(ds.getEventLog(Type_Connection_Get).isEmpty());//no logs generated when disable log manager
@@ -140,7 +143,7 @@ public class Tc0082EventLogManagerTest {
         config1.setEventLogTimeout(1L);//1:milliseconds
         config1.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
         config1.setConnectionFactory(new MockConnectionFactory());
-        Assertions.assertTrue(config1.isEventLogHandledBySyncMode());
+        Assertions.assertFalse(config1.isEventLogHandledBySyncMode());
 
         //1: clear type test(for sync mode)
         try (BeeDataSource ds = new BeeDataSource(config1)) {

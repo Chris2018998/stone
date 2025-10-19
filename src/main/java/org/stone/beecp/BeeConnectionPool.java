@@ -150,5 +150,13 @@ public interface BeeConnectionPool extends Closeable {
      */
     List<BeeJdbcEventLog> clearEventLog(int type);
 
+    /**
+     * Cancel statement in executing,this method may be support distribution network.
+     *
+     * @param logId log id
+     * @return boolean is true that log is a statement log and success to cancellation called on this statement.
+     */
+    boolean cancelStatement(Object logId) throws SQLException;
+
 }
 	

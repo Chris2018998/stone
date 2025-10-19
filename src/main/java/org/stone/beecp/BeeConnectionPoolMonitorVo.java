@@ -47,5 +47,5 @@ public interface BeeConnectionPoolMonitorVo {
 
     boolean isEnabledLogPrint();
 
-    boolean isEnabledJdbcEventLogManager();
+    boolean isEnabledEventLogManager();
 }
