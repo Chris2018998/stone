@@ -11,10 +11,11 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
-import org.stone.tools.LogPrinter;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 import org.stone.tools.extension.InterruptionSemaphore;
+import org.stone.tools.logger.LogPrinter;
+import org.stone.tools.logger.LogPrinterFactory;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -149,7 +150,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     void startup(String ownerName, K key, int initSize, boolean async, boolean isPrintRuntimeLogs) throws Exception {
         this.key = key;
         this.poolName = ownerName + "-[" + key + "]";
-        this.Log = LogPrinter.getLogPrinter(ObjectInstancePool.class, isPrintRuntimeLogs);
+        this.Log = LogPrinterFactory.getLogPrinter(isPrintRuntimeLogs ? ObjectInstancePool.class : null);
 
         this.objectArray = new PooledObject[maxActiveSize];
         for (int i = 0; i < maxActiveSize; i++)
@@ -606,7 +607,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     void setPrintRuntimeLog(boolean enable) {
-        this.Log.setOutputLogs(enable);
+        this.Log = LogPrinterFactory.getLogPrinter(enable ? ObjectInstancePool.class : null);
     }
 
     private int getTotalSize() {

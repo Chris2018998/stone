@@ -11,8 +11,9 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
-import org.stone.tools.LogPrinter;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
+import org.stone.tools.logger.LogPrinter;
+import org.stone.tools.logger.LogPrinterFactory;
 
 import java.lang.reflect.Constructor;
 import java.util.LinkedList;
@@ -39,9 +40,8 @@ import static org.stone.tools.CommonUtil.getArrayIndex;
 public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final ConcurrentHashMap<K, ObjectInstancePool<K, V>> categoryPoolMap = new ConcurrentHashMap<>(1);
-    private final LogPrinter Log = LogPrinter.getLogPrinter(KeyedObjectPool.class, true);
-
     String poolName;
+    private LogPrinter Log = LogPrinterFactory.getLogPrinter(KeyedObjectPool.class);
     private volatile int poolState;
     //max size of object category
     private int categoryMaxSize;
@@ -92,7 +92,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //1.2: Launch pool with check passed configuration
     private void startup(BeeObjectSourceConfig<K, V> config) throws Exception {
         //step1: set log print flag
-        Log.setOutputLogs(config.isPrintRuntimeLogs());
+        this.Log = LogPrinterFactory.getLogPrinter(config.isPrintRuntimeLogs() ? KeyedObjectPool.class : null);
 
         //step2: generate Object Proxy class
         Constructor<?> objectProxyClassConstructor = null;
@@ -273,7 +273,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //***************************************************************************************************************//
     //4.1: Enable or disable switch of runtime log print
     public void enableLogPrint(boolean enable) {
-        Log.setOutputLogs(enable);
+        this.Log = LogPrinterFactory.getLogPrinter(enable ? KeyedObjectPool.class : null);
         for (ObjectInstancePool<K, V> pool : categoryPoolMap.values()) {
             pool.setPrintRuntimeLog(enable);
         }

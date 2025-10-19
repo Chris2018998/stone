@@ -33,7 +33,7 @@ import static org.stone.beecp.BeeTransactionIsolationNames.TRANS_ISOLATION_CODE_
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
-import static org.stone.tools.LogPrinter.CommonLogPrinter;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * Bee data source configuration object,which is not thread-safe.

@@ -18,7 +18,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 
-import static org.stone.tools.LogPrinter.CommonLogPrinter;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * Pool Static Center

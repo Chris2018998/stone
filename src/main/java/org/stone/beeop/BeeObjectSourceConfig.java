@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
-import static org.stone.tools.LogPrinter.CommonLogPrinter;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * Bee object source configuration object,which is not thread-safe.

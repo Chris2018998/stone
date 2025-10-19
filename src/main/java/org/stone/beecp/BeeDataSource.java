@@ -37,7 +37,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.Dummy_CommonDataSource;
 import static org.stone.tools.BeanUtil.createClassInstance;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
-import static org.stone.tools.LogPrinter.CommonLogPrinter;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * Bee DataSource wrap implementation of {@link BeeConnectionPool}.

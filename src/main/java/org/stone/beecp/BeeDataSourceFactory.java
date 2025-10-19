@@ -27,7 +27,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
-import static org.stone.tools.LogPrinter.CommonLogPrinter;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * Bee implementation of object factory interface.

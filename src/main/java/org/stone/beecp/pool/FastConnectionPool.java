@@ -11,11 +11,12 @@ package org.stone.beecp.pool;
 
 import org.stone.beecp.*;
 import org.stone.beecp.pool.exception.*;
-import org.stone.tools.LogPrinter;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 import org.stone.tools.extension.InterruptionReentrantReadWriteLock;
 import org.stone.tools.extension.InterruptionSemaphore;
+import org.stone.tools.logger.LogPrinter;
+import org.stone.tools.logger.LogPrinterFactory;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -54,7 +55,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
     protected boolean usingEventLogManager;
     protected BeeJdbcEventLogManager eventLogManager;
-    LogPrinter Log = LogPrinter.getLogPrinter(FastConnectionPool.class, true);
+    LogPrinter Log = LogPrinterFactory.getLogPrinter(FastConnectionPool.class);
 
     String poolMode;
     String poolName;
@@ -122,7 +123,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private void startupInternal(final int poolWorkState, BeeDataSourceConfig poolConfig) throws SQLException {
         this.poolConfig = poolConfig;
         this.poolName = poolConfig.getPoolName();
-        Log.setOutputLogs(poolConfig.isPrintRuntimeLogs());
+        this.Log = LogPrinterFactory.getLogPrinter(poolConfig.isPrintRuntimeLogs() ? FastConnectionPool.class : null);
         Log.info("BeeCP({})starting up....", this.poolName);
 
         //step1: copy connection factory to pool local
@@ -951,7 +952,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     public void enableLogPrint(boolean enable) {
-        Log.setOutputLogs(enable);
+        this.Log = LogPrinterFactory.getLogPrinter(enable ? FastConnectionPool.class : null);
     }
 
     public boolean isEnabledEventLogManager() {
@@ -1009,7 +1010,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     public void setPrintRuntimeLog(boolean enable) {
-        Log.setOutputLogs(enable);
+        enableLogPrint(enable);
     }
 
     public int getMaxSize() {

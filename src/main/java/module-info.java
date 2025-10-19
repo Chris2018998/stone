@@ -25,4 +25,5 @@ module org.stone {
     exports org.stone.tools;
     exports org.stone.tools.exception;
     exports org.stone.tools.extension;
+    exports org.stone.tools.logger;
 }

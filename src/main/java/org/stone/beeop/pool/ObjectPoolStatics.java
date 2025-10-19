@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 
-import static org.stone.tools.LogPrinter.CommonLogPrinter;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * Pool Static Center
