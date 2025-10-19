@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
+import static org.stone.tools.LogPrinter.CommonLogPrinter;
 
 /**
  * Bee object source configuration object,which is not thread-safe.
@@ -931,7 +932,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private void printConfiguration(BeeObjectSourceConfig<K, V> checkedConfig) {
         String poolName = checkedConfig.poolName;
         List<String> exclusionList = checkedConfig.exclusionListOfPrint;
-        CommonLog.info("................................................BeeOP({})configuration[start]................................................", poolName);
+        CommonLogPrinter.info("................................................BeeOP({})configuration[start]................................................", poolName);
 
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
@@ -948,9 +949,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                                 interfacesClassBuf.append(clazz);
                             }
                             if (infoPrint)
-                                CommonLog.info("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
+                                CommonLogPrinter.info("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
                             else
-                                CommonLog.debug("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
+                                CommonLogPrinter.debug("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
                         }
                         break;
                     }
@@ -962,9 +963,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                                 interfaceNameBuf.append(name);
                             }
                             if (infoPrint)
-                                CommonLog.info("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
+                                CommonLogPrinter.info("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
                             else
-                                CommonLog.debug("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
+                                CommonLogPrinter.debug("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
                         }
                         break;
                     }
@@ -972,10 +973,10 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                         if (!this.factoryProperties.isEmpty()) {
                             if (infoPrint) {
                                 for (Map.Entry<String, Object> entry : checkedConfig.factoryProperties.entrySet())
-                                    CommonLog.info("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    CommonLogPrinter.info("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
                                 for (Map.Entry<String, Object> entry : checkedConfig.factoryProperties.entrySet())
-                                    CommonLog.debug("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    CommonLogPrinter.debug("BeeCP({}).factoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;
@@ -984,15 +985,15 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
                         break;
                     default:
                         if (infoPrint)
-                            CommonLog.info("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            CommonLogPrinter.info("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            CommonLog.debug("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            CommonLogPrinter.debug("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
-            CommonLog.warn("BeeOP({})failed to print configuration", poolName, e);
+            CommonLogPrinter.warn("BeeOP({})failed to print configuration", poolName, e);
         }
-        CommonLog.info("................................................BeeOP({})configuration[end]................................................", poolName);
+        CommonLogPrinter.info("................................................BeeOP({})configuration[end]................................................", poolName);
     }
 }
 

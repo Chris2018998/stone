@@ -9,8 +9,6 @@
  */
 package org.stone.tools;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stone.tools.exception.BeanException;
 import org.stone.tools.exception.PropertyValueConvertException;
 import org.stone.tools.exception.PropertyValueSetFailedException;
@@ -34,8 +32,6 @@ public class BeanUtil {
     public static final String Separator_MiddleLine = "-";
     //under-line:separator symbol in configuration properties name
     public static final String Separator_UnderLine = "_";
-    //a SLF4 logger used in stone project
-    public static final Logger CommonLog = LoggerFactory.getLogger(BeanUtil.class);
     //Class loader
     public static final ClassLoader BeeClassLoader = BeanUtil.class.getClassLoader();
 

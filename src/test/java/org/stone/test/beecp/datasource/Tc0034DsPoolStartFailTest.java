@@ -64,6 +64,7 @@ public class Tc0034DsPoolStartFailTest {
         }
 
         //3: create initial connections in sync mode
+        config.setPrintRuntimeLogs(true);
         config.setAsyncCreateInitConnection(true);//<---- test point
         LogCollector logCollector = LogCollector.startLogCollector();
         try (BeeDataSource ignored = new BeeDataSource(config)) {

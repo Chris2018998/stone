@@ -17,7 +17,6 @@ import java.util.Map;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
 import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
-import static org.stone.tools.BeanUtil.CommonLog;
 
 /**
  * Pooled object
@@ -97,20 +96,17 @@ final class PooledObject<K, V> {
 
     //pool call this method before this object removed
     void onRemove(String cause) {
-        if (ownerPool.isPrintRuntimeLog())
-            CommonLog.info("BeeOP({}))begin to remove a pooled object:{} for cause:{}", ownerPool.getPoolName(), this, cause);
+        ownerPool.Log.info("BeeOP({}))begin to remove a pooled object:{} for cause:{}", ownerPool.getPoolName(), this, cause);
 
         try {
             this.factory.reset(key, raw);
         } catch (Throwable e) {
-            if (ownerPool.isPrintRuntimeLog())
-                CommonLog.warn("BeeOP({})reset object failed", ownerPool.getPoolName(), e);
+            ownerPool.Log.warn("BeeOP({})reset object failed", ownerPool.getPoolName(), e);
         } finally {
             try {
                 this.factory.destroy(key, raw);
             } catch (Throwable e) {
-                if (ownerPool.isPrintRuntimeLog())
-                    CommonLog.warn("BeeOP({})An error occurred when destroyed object", ownerPool.getPoolName(), e);
+                ownerPool.Log.warn("BeeOP({})An error occurred when destroyed object", ownerPool.getPoolName(), e);
             }
 
             this.state = OBJECT_CLOSED;

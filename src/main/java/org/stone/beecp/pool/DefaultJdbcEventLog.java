@@ -209,4 +209,16 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.statement = null;
         this.status = Status_Failed;
     }
+
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    public boolean equals(Object v) {
+        if (v instanceof DefaultJdbcEventLog) {
+            return this.id.equals(((DefaultJdbcEventLog) v).id);
+        } else {
+            return false;
+        }
+    }
 }

@@ -33,6 +33,7 @@ import static org.stone.beecp.BeeTransactionIsolationNames.TRANS_ISOLATION_CODE_
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
+import static org.stone.tools.LogPrinter.CommonLogPrinter;
 
 /**
  * Bee data source configuration object,which is not thread-safe.
@@ -986,7 +987,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         copyTo(checkedConfig);
         if (this.connectionFactory != null || connectionFactoryClass != null || isNotBlank(connectionFactoryClassName)) {
             if (isNotBlank(this.username) || isNotBlank(this.password) || isNotBlank(this.jdbcUrl) || isNotBlank(driverClassName)) {
-                CommonLog.info("BeeCP({})configured jdbc link info abandoned according that a connection factory has been existed", "...");
+                CommonLogPrinter.info("BeeCP({})configured jdbc link info abandoned according that a connection factory has been existed", "...");
                 checkedConfig.username = null;
                 checkedConfig.password = null;
                 checkedConfig.jdbcUrl = null;
@@ -1284,7 +1285,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //print check passed configuration
     private void printConfiguration(BeeDataSourceConfig checkedConfig) {
         String poolName = checkedConfig.poolName;
-        CommonLog.info("................................................BeeCP({})configuration[start]................................................", poolName);
+        CommonLogPrinter.info("................................................BeeCP({})configuration[start]................................................", poolName);
         try {
             for (Field field : BeeDataSourceConfig.class.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers())) continue;
@@ -1298,23 +1299,23 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                         if (!connectionProviderProperties.isEmpty()) {
                             if (infoPrint) {
                                 for (Map.Entry<String, Object> entry : checkedConfig.connectionProviderProperties.entrySet())
-                                    CommonLog.info("BeeCP({}).connectionProviderProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    CommonLogPrinter.info("BeeCP({}).connectionProviderProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
                                 for (Map.Entry<String, Object> entry : checkedConfig.connectionProviderProperties.entrySet())
-                                    CommonLog.debug("BeeCP({}).connectionProviderProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    CommonLogPrinter.debug("BeeCP({}).connectionProviderProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;
                     default:
                         if (infoPrint)
-                            CommonLog.info("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            CommonLogPrinter.info("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            CommonLog.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            CommonLogPrinter.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
-            CommonLog.warn("BeeCP({})failed to print configuration", poolName, e);
+            CommonLogPrinter.warn("BeeCP({})failed to print configuration", poolName, e);
         }
-        CommonLog.info("................................................BeeCP({})configuration[end]................................................", poolName);
+        CommonLogPrinter.info("................................................BeeCP({})configuration[end]................................................", poolName);
     }
 }

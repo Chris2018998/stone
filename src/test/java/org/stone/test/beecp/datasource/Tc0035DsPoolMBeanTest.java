@@ -80,6 +80,7 @@ public class Tc0035DsPoolMBeanTest {
     @Test
     public void testRegisterFail() throws Exception {
         BeeDataSourceConfig config = createDefault();
+        config.setPrintRuntimeLogs(true);
         config.setRegisterMbeans(true);
         String poolName = "JMX-POOL";
         config.setPoolName(poolName);
@@ -116,6 +117,7 @@ public class Tc0035DsPoolMBeanTest {
     @Test
     public void testUnRegisterFail() throws Exception {
         BeeDataSourceConfig config = createDefault();
+        config.setPrintRuntimeLogs(true);
         config.setRegisterMbeans(true);
         String poolName = "JMX-POOL";
         config.setPoolName(poolName);

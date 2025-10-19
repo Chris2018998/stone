@@ -120,11 +120,11 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //                                        3: clear pool(4)                                                       //
     //***************************************************************************************************************//
     public void restart(K key) throws Exception {
-        getPool().restart(key);
+        getPool().reset(key);
     }
 
     public void restart(K key, boolean forceRecycleBorrowed) throws Exception {
-        getPool().restart(key, forceRecycleBorrowed);
+        getPool().reset(key, forceRecycleBorrowed);
     }
 
     public void restart(boolean forceRecycleBorrowed) throws Exception {

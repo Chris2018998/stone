@@ -143,7 +143,6 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      */
     void enableObjectCallLogManager(boolean enable);
 
-
     //***************************************************************************************************************//
     //                                        4: keys maintenance(4)                                                 //
     //***************************************************************************************************************//
@@ -181,6 +180,35 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
+     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
+     *
+     * @param key to locate related pooled objects
+     * @throws ObjectKeyException if key is null
+     */
+    void reset(K key) throws Exception;
+
+    /**
+     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
+     *
+     * @param key                  to locate related pooled objects
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
+     */
+    void reset(K key, boolean forceRecycleBorrowed) throws Exception;
+
+    /**
+     * A switch call to enable or disable logs print of pool.
+     */
+    boolean isEnabledLogPrint(K key) throws Exception;
+
+    /**
+     * A switch call to enable or disable logs print of pool.
+     *
+     * @param enable is true that print, false not print
+     */
+    void enableLogPrint(K key, boolean enable) throws Exception;
+
+    /**
      * Interrupts waiting threads.
      *
      * @param key may be mapping to a set of pooled objects
@@ -190,29 +218,6 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     List<Thread> interruptWaitingThreads(K key) throws Exception;
 
     /**
-     * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
-     *
-     * @param key to locate related pooled objects
-     * @throws ObjectKeyException if key is null
-     */
-    void restart(K key) throws Exception;
-
-    /**
-     * Only clear all pooled object related with given key, and remain key in pool(different to {@link #deleteKey(Object, boolean)}).
-     *
-     * @param key                  to locate related pooled objects
-     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
-     */
-    void restart(K key, boolean forceRecycleBorrowed) throws Exception;
-
-
-    //***************************************************************************************************************//
-    //                                        6: Pool monitor                                                        //
-    //***************************************************************************************************************//
-
-
-    /**
      * Get monitoring object contains some runtime info of keyed objects,for example:count of idle,using,creating,timeout and so on.
      *
      * @param key may be mapping to a set of pooled objects
@@ -220,33 +225,4 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @throws Exception when key is null or not exist key in pool
      */
     BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception;
-
-    //***************************************************************************************************************//
-    //                                        7: pool work Log print                                                 //
-    //***************************************************************************************************************//
-
-
-    /**
-     * Query print state of runtime logs.
-     *
-     * @param key pooled key
-     * @return boolean value,true,keyed pool print runtime logs,otherwise not print
-     * @throws Exception when key is null or not exist key in pool
-     */
-    boolean isEnabledLogPrint(K key) throws Exception;
-
-    /**
-     * Enable runtime log print or disable.
-     *
-     * @param key    pooled key
-     * @param enable is true,print logs;false,not print
-     * @throws Exception when key is null or not exist key in pool
-     */
-    void enableLogPrint(K key, boolean enable) throws Exception;
-
-    //***************************************************************************************************************//
-    //                                        8: pooled object call log collect                                      //
-    //***************************************************************************************************************//
-
-
 }

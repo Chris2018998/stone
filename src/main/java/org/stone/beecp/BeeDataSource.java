@@ -34,10 +34,10 @@ import java.util.logging.Logger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.Dummy_CommonDataSource;
-import static org.stone.tools.BeanUtil.CommonLog;
 import static org.stone.tools.BeanUtil.createClassInstance;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
+import static org.stone.tools.LogPrinter.CommonLogPrinter;
 
 /**
  * Bee DataSource wrap implementation of {@link BeeConnectionPool}.
@@ -125,12 +125,12 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public Connection getConnection(String user, String password) throws SQLException {
-        CommonLog.info("getConnection (user,password) ignores authentication - returning default connection");
+        CommonLogPrinter.info("getConnection (user,password) ignores authentication - returning default connection");
         return getConnection();
     }
 
     public XAConnection getXAConnection(String user, String password) throws SQLException {
-        CommonLog.info("getXAConnection (user,password) ignores authentication - returning default XAConnection");
+        CommonLogPrinter.info("getXAConnection (user,password) ignores authentication - returning default XAConnection");
         return getXAConnection();
     }
 

@@ -27,6 +27,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.isBlank;
 import static org.stone.tools.CommonUtil.isNotBlank;
+import static org.stone.tools.LogPrinter.CommonLogPrinter;
 
 /**
  * Bee implementation of object factory interface.
@@ -58,7 +59,7 @@ public final class BeeDataSourceFactory implements ObjectFactory {
             if (refObject == null) return null;
             String value = refObject.toString().trim();
             if (isNotBlank(value)) {
-                CommonLog.info("beecp.{}={}", propertyName, value);
+                CommonLogPrinter.info("beecp.{}={}", propertyName, value);
                 return value;
             }
         }

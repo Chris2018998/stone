@@ -9,10 +9,9 @@
  */
 package org.stone.beeop.pool;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
+import org.stone.tools.LogPrinter;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 import org.stone.tools.extension.InterruptionSemaphore;
@@ -41,7 +40,6 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
 final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantState");
-    private static final Logger Log = LoggerFactory.getLogger(ObjectInstancePool.class);
     private static final AtomicReferenceFieldUpdater<ObjectBorrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(ObjectBorrower.class, Object.class, "state");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<ObjectInstancePool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectInstancePool.class, "servantTryCount");
@@ -82,6 +80,8 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     //retry count of servant thread to work
     volatile int servantTryCount;
 
+    //pool logger
+    LogPrinter Log;
     //an array store pooled objects
     PooledObject<K, V>[] objectArray;
     //A wait queue,borrowers offer them-self into it when all objects are borrowed out from pool
@@ -99,8 +99,6 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     private ThreadLocal<WeakReference<ObjectBorrower<K, V>>> threadLocal;
     //pool monitor vo
     private ObjectPoolMonitorVo monitorVo;
-    //a
-    private boolean printRuntimeLog;
 
     //***************************************************************************************************************//
     //                1: Pool Creation/clone(2)                                                                      //
@@ -126,7 +124,6 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(config.getParkTimeForRetry());
         this.validAssumeTime = config.getAliveAssumeTime();
         this.validTestTimeout = config.getAliveTestTimeout();
-        this.printRuntimeLog = config.isPrintRuntimeLogs();
         this.poolState = POOL_NEW;
 
         //step2:object type field setting
@@ -149,9 +146,11 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     //method-1.3: startup pool
-    void startup(String ownerName, K key, int initSize, boolean async) throws Exception {
+    void startup(String ownerName, K key, int initSize, boolean async, boolean isPrintRuntimeLogs) throws Exception {
         this.key = key;
         this.poolName = ownerName + "-[" + key + "]";
+        this.Log = LogPrinter.getLogPrinter(ObjectInstancePool.class, isPrintRuntimeLogs);
+
         this.objectArray = new PooledObject[maxActiveSize];
         for (int i = 0; i < maxActiveSize; i++)
             objectArray[i] = new PooledObject(key, objectFactory, methodMap, this);
@@ -221,8 +220,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     //Method-2.3: create one pooled object
     private PooledObject<K, V> fillRawObject(PooledObject<K, V> p, int state, Thread creatingThread) throws Exception {
         //1: print runtime log of object creation
-        if (this.printRuntimeLog)
-            Log.info("BeeCP({}))begin to create a raw object", this.poolName);
+        Log.info("BeeCP({}))begin to create a raw object", this.poolName);
 
         V rawObj = null;
         try {
@@ -236,8 +234,8 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
 
             objectFactory.setDefault(key, rawObj);
             p.setRawObject(state, rawObj);
-            if (this.printRuntimeLog)
-                Log.info("BeeOP({})has created a new pooled object:{} with state:{}", this.poolName, p, state);
+
+            Log.info("BeeOP({})has created a new pooled object:{} with state:{}", this.poolName, p, state);
 
             return p;
         } catch (Throwable e) {
@@ -426,8 +424,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
                 return true;
             }
         } catch (Throwable e) {
-            if (this.printRuntimeLog)
-                Log.warn("BeeOP({})alive test failed on a borrowed object", this.poolName, e);
+            Log.warn("BeeOP({})alive test failed on a borrowed object", this.poolName, e);
         }
         return false;
     }
@@ -470,7 +467,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     //Method-5.1: clear idle-timeout pooled objects and hold-time objects,this method will be called by ScheduledThreadPoolExecutor in key pool
     void closeIdleTimeout() {
         //step1: print pool info before clean
-        if (this.printRuntimeLog) {
+        if (Log.isOutputLogs()) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})-before idle clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
@@ -496,7 +493,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
         }
 
         //step4: print pool info after idle clean
-        if (this.printRuntimeLog) {
+        if (Log.isOutputLogs()) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})-after idle clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
@@ -550,7 +547,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
             closedCount = 0;
         } // while
 
-        if (this.printRuntimeLog) {
+        if (Log.isOutputLogs()) {
             BeeObjectPoolMonitorVo vo = getPoolMonitorVo();
             Log.info("BeeOP({})idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
@@ -605,11 +602,11 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     }
 
     boolean isPrintRuntimeLog() {
-        return this.printRuntimeLog;
+        return this.Log.isOutputLogs();
     }
 
     void setPrintRuntimeLog(boolean enable) {
-        printRuntimeLog = enable;
+        this.Log.setOutputLogs(enable);
     }
 
     private int getTotalSize() {

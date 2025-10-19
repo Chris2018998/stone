@@ -182,13 +182,15 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
         }
 
         //2: remove timeout logs from connection log list
-        if (!conPendingRemovalLogList.isEmpty() && conLogQueue.removeAll(conPendingRemovalLogList)) {
+        if (!conPendingRemovalLogList.isEmpty()) {
+            conLogQueue.removeAll(conPendingRemovalLogList);
             for (BeeJdbcEventLog log : conPendingRemovalLogList) {
                 ((DefaultJdbcEventLog) log).setRemoved(true);
             }
         }
         //3: remove timeout logs from sql execution log list
-        if (!sqlPendingRemovalLogList.isEmpty() && sqlLogQueue.removeAll(sqlPendingRemovalLogList)) {
+        if (!sqlPendingRemovalLogList.isEmpty()) {
+            sqlLogQueue.removeAll(sqlPendingRemovalLogList);
             for (BeeJdbcEventLog log : sqlPendingRemovalLogList) {
                 ((DefaultJdbcEventLog) log).setRemoved(true);
             }

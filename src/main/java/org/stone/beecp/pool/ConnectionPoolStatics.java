@@ -18,7 +18,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Proxy;
 import java.sql.*;
 
-import static org.stone.tools.BeanUtil.CommonLog;
+import static org.stone.tools.LogPrinter.CommonLogPrinter;
 
 /**
  * Pool Static Center
@@ -142,7 +142,7 @@ public final class ConnectionPoolStatics {
         try {
             r.close();
         } catch (Throwable e) {
-            CommonLog.warn("Warning:Error at closing resultSet", e);
+            CommonLogPrinter.warn("Warning:Error at closing resultSet", e);
         }
     }
 
@@ -150,7 +150,7 @@ public final class ConnectionPoolStatics {
         try {
             s.close();
         } catch (Throwable e) {
-            CommonLog.warn("Warning:Error at closing statement", e);
+            CommonLogPrinter.warn("Warning:Error at closing statement", e);
         }
     }
 
@@ -158,7 +158,7 @@ public final class ConnectionPoolStatics {
         try {
             c.close();
         } catch (Throwable e) {
-            CommonLog.warn("Warning:Error at closing connection", e);
+            CommonLogPrinter.warn("Warning:Error at closing connection", e);
         }
     }
 
@@ -166,7 +166,7 @@ public final class ConnectionPoolStatics {
         try {
             c.close();
         } catch (Throwable e) {
-            CommonLog.warn("Warning:Error at closing xaConnection", e);
+            CommonLogPrinter.warn("Warning:Error at closing xaConnection", e);
         }
     }
 
@@ -229,7 +229,7 @@ public final class ConnectionPoolStatics {
                 st.setQueryTimeout(validTestTimeout);
             } catch (Throwable e) {
                 supportQueryTimeout = false;
-                CommonLog.warn("BeeCP({})driver not support 'queryTimeout'", poolName, e);
+                CommonLogPrinter.warn("BeeCP({})driver not support 'queryTimeout'", poolName, e);
             }
 
             //step3: execute test sql

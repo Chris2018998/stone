@@ -13,7 +13,6 @@ import org.stone.beecp.BeeJdbcEventLog;
 import org.stone.beecp.BeeJdbcEventLogHandler;
 import org.stone.beecp.BeeJdbcEventLogManager;
 
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
@@ -49,7 +48,7 @@ public class MockJdbcEventLogManager implements BeeJdbcEventLogManager {
     public void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcEventLog log) {
     }
 
-    public boolean cancelStatement(Object logId)  {
+    public boolean cancelStatement(Object logId) {
         return true;
     }
 }
