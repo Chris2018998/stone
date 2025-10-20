@@ -75,7 +75,6 @@ public class BeanUtil {
         return methodMap;
     }
 
-
     /**
      * gets property value(a string) from a properties map with property name.Three kinds of format conversion are supported on
      * propertyName to get value from properties value map,for example: if input a 'maxActive' propertyName,ordered

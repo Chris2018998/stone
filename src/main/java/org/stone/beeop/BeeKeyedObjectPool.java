@@ -59,7 +59,7 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
 
     //***************************************************************************************************************//
-    //                                     2: Object get(2)                                                          //
+    //                                     2: Pooled objects get(2)                                                  //
     //***************************************************************************************************************//
 
     /**
@@ -85,7 +85,7 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
 
     //***************************************************************************************************************//
-    //                                     2: Object get(2)                                                          //
+    //                                     3: Pool maintenance(2)                                                    //
     //***************************************************************************************************************//
 
     /**
@@ -115,15 +115,7 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     BeeObjectPoolMonitorVo getPoolMonitorVo();
 
     /**
-     * Interrupts waiting threads.
-     *
-     * @return interrupted threads
-     * @throws Exception when key is null or not exist key in pool
-     */
-    List<Thread> interruptWaitingThreads() throws Exception;
-
-    /**
-     * A switch call to enable or disable logs print of pool.
+     * A switch method to enable or disable logs print of pool.
      *
      * @param enable is true that print, false not print
      */
@@ -134,14 +126,23 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      *
      * @return boolean true is enabled,false is disabled
      */
-    boolean isEnabledObjectCallLogManager();
+    boolean isEnabledEventLogManager();
 
     /**
-     * A switch to enable or disable configured log manager in pool.
+     * A switch method to enable or disable configured log manager in pool.
      *
      * @param enable is true that enable, false is disabled
      */
-    void enableObjectCallLogManager(boolean enable);
+    void enableEventLogManager(boolean enable);
+
+    /**
+     * Interrupts waiting threads.
+     *
+     * @return interrupted threads
+     * @throws Exception when key is null or not exist key in pool
+     */
+    List<Thread> interruptWaitingThreads() throws Exception;
+
 
     //***************************************************************************************************************//
     //                                        4: keys maintenance(4)                                                 //

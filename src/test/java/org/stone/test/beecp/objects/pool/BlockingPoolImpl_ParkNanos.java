@@ -9,6 +9,9 @@
  */
 package org.stone.test.beecp.objects.pool;
 
+import org.stone.beecp.BeeDataSourceCreationException;
+import org.stone.beecp.pool.exception.PoolCreateFailedException;
+
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -19,6 +22,7 @@ public class BlockingPoolImpl_ParkNanos extends BaseSimplePoolImpl {
 
     public BlockingPoolImpl_ParkNanos() {
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
+        if (Thread.interrupted())
+            throw new BeeDataSourceCreationException(new PoolCreateFailedException("Interruption occurred during pool being instantiated", new InterruptedException()));
     }
-
 }

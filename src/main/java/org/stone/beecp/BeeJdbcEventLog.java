@@ -19,10 +19,12 @@ import java.sql.Statement;
  * @author Chris Liao
  */
 public interface BeeJdbcEventLog extends Serializable {
+    //All logs
+    int Type_All = 0;
     //Log type represent method call that connection get from pool
-    int Type_Connection_Get = 0;
+    int Type_Connection_Get = 1;
     //Log type represent method call that sql execution on pooled connections
-    int Type_SQL_Execution = 1;
+    int Type_SQL_Execution = 2;
 
     /**
      * Get log type.
@@ -44,13 +46,6 @@ public interface BeeJdbcEventLog extends Serializable {
      * @return method name of method
      */
     String getMethod();
-
-    /**
-     * Get desc info of data source(which may show on a distribution manager).
-     *
-     * @return desc
-     */
-    String getDatasourceInfo();
 
     /**
      * Get method parameter values,which may be null.

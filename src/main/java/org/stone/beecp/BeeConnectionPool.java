@@ -107,7 +107,6 @@ public interface BeeConnectionPool extends Closeable {
      */
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 
-
     /**
      * Query logs print state whether in being enabled.
      *
@@ -116,7 +115,7 @@ public interface BeeConnectionPool extends Closeable {
     boolean isEnabledLogPrint();
 
     /**
-     * Switch call to enable or disable logs print in pool.
+     * A switch method to enable or disable logs print in pool.
      *
      * @param enable is true that log print is enabled, false is not print
      */
@@ -130,11 +129,12 @@ public interface BeeConnectionPool extends Closeable {
     boolean isEnabledEventLogManager();
 
     /**
-     * Switch call to enable or disable configured {@link BeeJdbcEventLogManager}.
+     * A switch method to enable or disable configured {@link BeeJdbcEventLogManager}.
      *
      * @param enable is true that make configured manager to work;false that make it to stop work
      */
     void enableEventLogManager(boolean enable);
+
 
     /**
      * Gets logs from pool with specified type.

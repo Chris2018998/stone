@@ -86,6 +86,7 @@ public class Tc0041DsPoolWaitQueueTest {
             BorrowThread secondBorrower = new BorrowThread(ds);
             secondBorrower.start();
             if (TestUtil.waitUtilWaiting(secondBorrower)) {
+                Assertions.assertEquals(1, ds.getPoolMonitorVo().getTransferWaitingSize());
                 con.close();
                 secondBorrower.join();
                 Assertions.assertNotNull(secondBorrower.getConnection());

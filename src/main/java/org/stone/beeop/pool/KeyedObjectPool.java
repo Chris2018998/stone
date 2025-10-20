@@ -28,6 +28,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 import static org.stone.tools.CommonUtil.getArrayIndex;
+import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
  * keyed object pool implementation,which is a manager pool maintains a default category pool and some category pools
@@ -41,7 +42,8 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
     private final ConcurrentHashMap<K, ObjectInstancePool<K, V>> categoryPoolMap = new ConcurrentHashMap<>(1);
     String poolName;
-    private LogPrinter Log = LogPrinterFactory.getLogPrinter(KeyedObjectPool.class);
+
+    private LogPrinter logPrinter = CommonLogPrinter;
     private volatile int poolState;
     //max size of object category
     private int categoryMaxSize;
@@ -92,7 +94,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //1.2: Launch pool with check passed configuration
     private void startup(BeeObjectSourceConfig<K, V> config) throws Exception {
         //step1: set log print flag
-        this.Log = LogPrinterFactory.getLogPrinter(config.isPrintRuntimeLogs() ? KeyedObjectPool.class : null);
+        this.logPrinter = LogPrinterFactory.getLogPrinter(config.isPrintRuntimeLogs() ? KeyedObjectPool.class : null);
 
         //step2: generate Object Proxy class
         Constructor<?> objectProxyClassConstructor = null;
@@ -113,7 +115,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
         this.defaultPool = new ObjectInstancePool<>(config, this, objectProxyClassConstructor);
         BeeObjectFactory<K, V> objectFactory = config.getObjectFactory();
         this.defaultKey = objectFactory.getDefaultKey();
-        this.defaultPool.startup(poolName, defaultKey, this.initialSize, this.asyncCreateInitObject, Log.isOutputLogs());
+        this.defaultPool.startup(poolName, defaultKey, this.initialSize, this.asyncCreateInitObject, logPrinter.isOutputLogs());
         this.categoryPoolMap.put(defaultKey, defaultPool);
 
         //step5: Creates Locks
@@ -144,7 +146,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(categoryMaxSize), poolThreadFactory);
         this.servantService.allowCoreThreadTimeOut(true);
 
-        this.timerCheckInterval = config.getIntervalToClearTimeout();
+        this.timerCheckInterval = config.getIntervalOfClearTimeout();
         this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
         this.scheduledService.setMaximumPoolSize(coreThreadSize);
         this.scheduledService.allowCoreThreadTimeOut(true);
@@ -188,7 +190,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//state must be one of(POOL_NEW,POOL_READY)
-                Log.info("BeeOP({})Begin to shutdown", this.poolName);
+                logPrinter.info("BeeOP({})Begin to shutdown", this.poolName);
 
                 if (this.forceShutdownThreadPoolOnClose) {
                     servantService.shutdownNow();
@@ -213,7 +215,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
 
                 //mark pool as closed state
                 this.poolState = POOL_CLOSED;
-                Log.info("BeeOP({})has shutdown", this.poolName);
+                logPrinter.info("BeeOP({})has shutdown", this.poolName);
                 break;
             } else {//pool State == POOL_CLOSING
                 break;
@@ -247,18 +249,18 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
                 if (reinit) checkedConfig = config.check();
 
                 //clean sub pools one by one
-                Log.info("BeeOP({})begin to remove all pooled objects", this.poolName);
+                logPrinter.info("BeeOP({})begin to remove all pooled objects", this.poolName);
                 for (ObjectInstancePool<K, V> pool : categoryPoolMap.values())
                     pool.restart(forceRecycleBorrowed);
-                Log.info("BeeOP({})completed to remove all pooled objects", this.poolName);
+                logPrinter.info("BeeOP({})completed to remove all pooled objects", this.poolName);
 
                 if (reinit) {
                     this.defaultKey = null;
                     this.defaultPool = null;
                     categoryPoolMap.clear();
-                    Log.info("BeeOP({})start to reinitialize object pool", this.poolName);
+                    logPrinter.info("BeeOP({})start to reinitialize object pool", this.poolName);
                     this.startup(checkedConfig);//note: if fail to startup,you can adjust configuration and retry this method
-                    Log.info("BeeOP({})completed to reinitialize object pool", this.poolName);
+                    logPrinter.info("BeeOP({})completed to reinitialize object pool", this.poolName);
                 }
             } finally {
                 this.poolState = POOL_READY;//reset pool state to ready
@@ -273,7 +275,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //***************************************************************************************************************//
     //4.1: Enable or disable switch of runtime log print
     public void enableLogPrint(boolean enable) {
-        this.Log = LogPrinterFactory.getLogPrinter(enable ? KeyedObjectPool.class : null);
+        this.logPrinter = LogPrinterFactory.getLogPrinter(enable ? KeyedObjectPool.class : null);
         for (ObjectInstancePool<K, V> pool : categoryPoolMap.values()) {
             pool.setPrintRuntimeLog(enable);
         }
@@ -344,7 +346,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
                         //Create a category pool by clone
                         categoryPool = defaultPool.createByClone();
                         //Run category pool by async mode
-                        categoryPool.startup(poolName, key, this.initialSize, this.asyncCreateInitObject, Log.isOutputLogs());
+                        categoryPool.startup(poolName, key, this.initialSize, this.asyncCreateInitObject, logPrinter.isOutputLogs());
                         categoryPoolMap.put(key, categoryPool);
                         //Create time task to do timeout check on category pool
                         this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask<>(categoryPool), timerCheckInterval,
@@ -422,7 +424,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
      *
      * @return boolean true is enabled,false is disabled
      */
-    public boolean isEnabledObjectCallLogManager() {
+    public boolean isEnabledEventLogManager() {
         return false;//@todo
     }
 
@@ -431,7 +433,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
      *
      * @param enable is true that enable, false is disabled
      */
-    public void enableObjectCallLogManager(boolean enable) {
+    public void enableEventLogManager(boolean enable) {
 
     }
 
@@ -505,10 +507,10 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
 
         public void run() {
             try {
-                pool.Log.info("BeeOP({})Object pool hook is running", this.pool.poolName);
+                pool.logPrinter.info("BeeOP({})Object pool hook is running", this.pool.poolName);
                 this.pool.close();
             } catch (Throwable e) {
-                pool.Log.error("BeeOP({})Error occurred while pool hook running,cause:", this.pool.poolName, e);
+                pool.logPrinter.error("BeeOP({})Error occurred while pool hook running,cause:", this.pool.poolName, e);
             }
         }
     }

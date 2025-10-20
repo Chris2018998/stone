@@ -17,10 +17,12 @@ import java.io.Serializable;
  * @author Chris Liao
  */
 public interface BeeObjectEventLog<K, V> extends Serializable {
+    //All logs
+    int Type_All = 0;
     //constants log type,objects borrow log
-    int Type_Object_Get = 0;
+    int Type_Object_Get = 1;
     //constants log type,object call logs
-    int Type_Object_Call = 1;
+    int Type_Object_Call = 2;
 
     /**
      * Get log type.

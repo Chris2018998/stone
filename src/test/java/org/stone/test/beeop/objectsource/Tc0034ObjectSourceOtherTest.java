@@ -70,7 +70,7 @@ public class Tc0034ObjectSourceOtherTest {
         try {
             os.isEnabledLogPrint(objectFactory.getDefaultKey());
         } catch (Exception e) {
-            Assertions.assertEquals("Pool not be created", e.getMessage());
+            Assertions.assertEquals("Internal pool was not ready", e.getMessage());
         }
 
         //3: lazy initialization

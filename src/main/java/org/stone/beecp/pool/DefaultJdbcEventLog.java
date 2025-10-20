@@ -37,11 +37,9 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
     private final String method;
     //Array of method parameters
     private final Object[] parameters;
-    //desc of data source(Maybe for centralized manager,it can be a web url)
-    private String datasourceInfo;
 
     //Start time of method call,time unit:milliseconds
-    private long startTime;
+    private final long startTime;
     //End time of method call,time unit:milliseconds
     private long endTime;
     //End time of method call,time unit:milliseconds
@@ -69,12 +67,12 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
     //Flag of handled by Handler
     private boolean handled;
 
-
     public DefaultJdbcEventLog(int type, String method, Object[] parameters) {
         this.type = type;
         this.method = method;
         this.parameters = parameters;
         this.id = UUID.randomUUID();
+        this.startTime = System.currentTimeMillis();
     }
 
     public int getType() {
@@ -97,16 +95,8 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         return startTime;
     }
 
-    void setStartTime(long startTime) {
-        this.startTime = startTime;
-    }
-
     public long getEndTime() {
         return endTime;
-    }
-
-    void setEndTime(long endTime) {
-        this.endTime = endTime;
     }
 
     public boolean isRunning() {
@@ -137,14 +127,6 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         return failCause;
     }
 
-    public String getDatasourceInfo() {
-        return datasourceInfo;
-    }
-
-    void setDatasourceInfo(String datasourceInfo) {
-        this.datasourceInfo = datasourceInfo;
-    }
-
     public String getSql() {
         return sql;
     }
@@ -159,10 +141,6 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
 
     public Object[] getSqlPreparedParameters() {
         return sqlPreparedParameters;
-    }
-
-    void setSqlPreparedParameters(Object[] sqlPreparedParameters) {
-        this.sqlPreparedParameters = sqlPreparedParameters;
     }
 
     public boolean cancelStatement() throws SQLException {
@@ -199,6 +177,7 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.sqlPreparedTime = sqlPreparedTime;
         this.sqlPreparedParameters = sqlPreparedParameters;
         this.statement = null;
+        this.endTime = System.currentTimeMillis();
         this.status = Status_Successful;
     }
 
@@ -207,18 +186,11 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.sqlPreparedTime = sqlPreparedTime;
         this.sqlPreparedParameters = sqlPreparedParameters;
         this.statement = null;
+        this.endTime = System.currentTimeMillis();
         this.status = Status_Failed;
     }
 
-    public int hashCode() {
-        return id.hashCode();
-    }
-
     public boolean equals(Object v) {
-        if (v instanceof DefaultJdbcEventLog) {
-            return this.id.equals(((DefaultJdbcEventLog) v).id);
-        } else {
-            return false;
-        }
+        return (v instanceof DefaultJdbcEventLog) && this.id.equals(((DefaultJdbcEventLog) v).id);
     }
 }

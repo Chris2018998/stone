@@ -55,7 +55,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
     protected boolean usingEventLogManager;
     protected BeeJdbcEventLogManager eventLogManager;
-    LogPrinter Log = LogPrinterFactory.getLogPrinter(FastConnectionPool.class);
+    LogPrinter logPrinter = LogPrinterFactory.CommonLogPrinter;
 
     String poolMode;
     String poolName;
@@ -91,7 +91,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private ThreadPoolExecutor networkTimeoutExecutor;
     private IdleTimeoutScanWorker conIdleScanThread;
     private long eventLogTimeoutMs;//milliseconds
-    private JdbcLogTimeoutScanWorker eventLogClearWorker;
+    private EventLogTimeoutScanWorker eventLogClearWorker;
 
     private boolean useThreadLocal;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
@@ -110,7 +110,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 startupInternal(POOL_STARTING, config.check());
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
             } catch (Throwable e) {
-                Log.info("BeeCP({})initialized failed", this.poolName, e);
+                logPrinter.info("BeeCP({})initialized failed", this.poolName, e);
                 this.poolState = POOL_NEW;//reset state to new after failure
                 throw e instanceof SQLException ? (SQLException) e : new PoolInitializeFailedException(e);
             }
@@ -123,8 +123,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private void startupInternal(final int poolWorkState, BeeDataSourceConfig poolConfig) throws SQLException {
         this.poolConfig = poolConfig;
         this.poolName = poolConfig.getPoolName();
-        this.Log = LogPrinterFactory.getLogPrinter(poolConfig.isPrintRuntimeLogs() ? FastConnectionPool.class : null);
-        Log.info("BeeCP({})starting up....", this.poolName);
+        this.logPrinter = LogPrinterFactory.getLogPrinter(poolConfig.isPrintRuntimeLogs() ? FastConnectionPool.class : null);
+        logPrinter.info("BeeCP({})starting up....", this.poolName);
 
         //step1: copy connection factory to pool local
         Object rawFactory = poolConfig.getConnectionFactory();
@@ -137,27 +137,29 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step2: Create factory of connection proxy and set event log manager
         if (this.eventLogManager != null) {
-            this.eventLogManager.clear(Integer.MAX_VALUE);
-            this.eventLogClearWorker.shutdown();
-            this.eventLogClearWorker = null;
+            this.eventLogManager.clear(Integer.MAX_VALUE);//clear all logs
+            this.eventLogClearWorker.shutdown();//shutdown timer thread of clearing timeout logs
+            this.eventLogClearWorker = null;//help gc
         }
-        this.eventLogManager = poolConfig.getEventLogManager();
+        this.eventLogManager = poolConfig.getEventLogManager();//new one
         if (this.eventLogManager == null) {
             this.conProxyFactory = new ProxyConnectionFactory();
             this.usingEventLogManager = false;
         } else {
-            this.eventLogTimeoutMs = poolConfig.getEventLogTimeout();
+            this.eventLogTimeoutMs = poolConfig.getEventLogTimeout();//timeout value
             this.eventLogManager.init(poolConfig.getEventLogCacheSize(),
                     poolConfig.getSlowConnectionThreshold(),
                     poolConfig.getSlowSQLThreshold(),
                     poolConfig.isEventLogHandledBySyncMode(),
                     poolConfig.getEventLogHandler());
             this.conProxyFactory = new ProxyConnectionFactory4L(eventLogManager);
-            this.eventLogClearWorker = new JdbcLogTimeoutScanWorker(this,
-                    poolConfig.getIntervalToClearTimeoutEventLogs(),
+            this.eventLogClearWorker = new EventLogTimeoutScanWorker(this,
+                    poolConfig.getIntervalOfClearTimeoutEventLogs(),
                     "BeeCP(" + poolName + ")" + "-eventLogTimeoutScanner");
             this.eventLogClearWorker.start();
             this.usingEventLogManager = true;
+            poolConfig.setEventLogManager(null);
+            poolConfig.setEventLogHandler(null);
         }
 
         //step3: create a fixed length array to store pooled connections(empty array)
@@ -208,7 +210,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             //a working count for servant thread to get connections
             this.servantTryCount = 0;
             this.servantState = THREAD_WORKING;
-            this.conIdleScanThread = new IdleTimeoutScanWorker(this, poolConfig.getIntervalToClearTimeout(), "BeeCP(" + poolName + ")" + "-idleScanner");
+            this.conIdleScanThread = new IdleTimeoutScanWorker(this, poolConfig.getIntervalOfClearTimeout(), "BeeCP(" + poolName + ")" + "-idleScanner");
 
             //pool monitor object
             this.monitorVo = new FastConnectionPoolMonitorVo(poolName, poolMode, connectionArrayLen, semaphoreSize);
@@ -221,7 +223,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             start();
             this.conIdleScanThread.start();
         } else {
-            this.conIdleScanThread.setInterval(poolConfig.getIntervalToClearTimeout());
+            this.conIdleScanThread.setInterval(poolConfig.getIntervalOfClearTimeout());
         }
 
         //step9: create a thread to do pool initialization(create initial connections and fill them to array)
@@ -238,8 +240,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             driverClassNameOrFactoryName = rawFactory.getClass().getName();
             poolInitInfo = "BeeCP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms,factory:{}}";
         }
-        Log.info(poolInitInfo, poolName, poolMode, initialSize, connectionArrayLen, semaphoreSize, poolConfig.getMaxWait(), driverClassNameOrFactoryName);
-        Log.setOutputLogs(poolConfig.isPrintRuntimeLogs());
+        logPrinter.info(poolInitInfo, poolName, poolMode, initialSize, connectionArrayLen, semaphoreSize, poolConfig.getMaxWait(), driverClassNameOrFactoryName);
     }
 
     //Method-1.3: creates initial connections
@@ -263,7 +264,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                         connectionArray[i].onRemove(DESC_RM_INIT);
                     throw e;
                 } else {//print log under async mode
-                    Log.warn("Failed to create initial connections by async mode", e);
+                    logPrinter.warn("Failed to create initial connections by async mode", e);
                 }
             } finally {
                 if (isWriteLocked) writeLock.unlock();
@@ -317,7 +318,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //Method-1.5: create a created connection and fill it into pooled Connection(a pooled wrapper of connection)
     private PooledConnection fillRawConnection(PooledConnection p, int state, Thread creatingThread) throws SQLException {
         //1: print info of creation starting
-        Log.info("BeeCP({}))start to create a connection", this.poolName);
+        logPrinter.info("BeeCP({}))start to create a connection", this.poolName);
 
         //2: use factory to create connection
         Connection rawConn = null;
@@ -354,7 +355,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             }
 
             //4: print log of creation ending
-            Log.info("BeeCP({}))created a new connection:{} to fill pooled connection:{}", this.poolName, rawConn, p);
+            logPrinter.info("BeeCP({}))created a new connection:{} to fill pooled connection:{}", this.poolName, rawConn, p);
 
             //5: return result
             return p;
@@ -378,12 +379,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     defaultAutoCommit = firstConn.getAutoCommit();
                 } catch (Throwable e) {
-                    Log.warn("BeeCP({})failed to get value of auto-commit property from first connection object", this.poolName, e);
+                    logPrinter.warn("BeeCP({})failed to get value of auto-commit property from first connection object", this.poolName, e);
                 }
             }
             if (defaultAutoCommit == null) {
                 defaultAutoCommit = Boolean.TRUE;
-                Log.warn("BeeCP({})assign {} as default value of auto-commit property for connections", this.poolName, Boolean.TRUE);
+                logPrinter.warn("BeeCP({})assign {} as default value of auto-commit property for connections", this.poolName, Boolean.TRUE);
             }
 
             try {
@@ -403,12 +404,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     defaultTransactionIsolation = firstConn.getTransactionIsolation();
                 } catch (Throwable e) {
-                    Log.warn("BeeCP({})failed to get value of transaction-isolation property from first connection object", this.poolName, e);
+                    logPrinter.warn("BeeCP({})failed to get value of transaction-isolation property from first connection object", this.poolName, e);
                 }
             }
             if (defaultTransactionIsolation == null) {
                 defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
-                Log.warn("BeeCP({})assign {} as default value of transaction-isolation property for connections", this.poolName, defaultTransactionIsolation);
+                logPrinter.warn("BeeCP({})assign {} as default value of transaction-isolation property for connections", this.poolName, defaultTransactionIsolation);
             }
             try {
                 firstConn.setTransactionIsolation(defaultTransactionIsolation);////set default
@@ -427,12 +428,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     defaultReadOnly = firstConn.isReadOnly();
                 } catch (Throwable e) {
-                    Log.warn("BeeCP({})failed to get value of read-only property from first connection object", this.poolName);
+                    logPrinter.warn("BeeCP({})failed to get value of read-only property from first connection object", this.poolName);
                 }
             }
             if (defaultReadOnly == null) {
                 defaultReadOnly = Boolean.FALSE;
-                Log.warn("BeeCP({})assign {} as default value of read-only property for connections", this.poolName, Boolean.FALSE);
+                logPrinter.warn("BeeCP({})assign {} as default value of read-only property for connections", this.poolName, Boolean.FALSE);
             }
             try {
                 firstConn.setReadOnly(defaultReadOnly);//set default
@@ -451,7 +452,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     defaultCatalog = firstConn.getCatalog();
                 } catch (Throwable e) {
-                    Log.warn("BeeCP({})failed to get value of catalog property from first connection object", this.poolName, e);
+                    logPrinter.warn("BeeCP({})failed to get value of catalog property from first connection object", this.poolName, e);
                 }
             }
             if (isNotBlank(defaultCatalog)) {
@@ -471,7 +472,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     defaultSchema = firstConn.getSchema();
                 } catch (Throwable e) {
-                    Log.warn("BeeCP({})failed to get value of schema property from first connection object", this.poolName, e);
+                    logPrinter.warn("BeeCP({})failed to get value of schema property from first connection object", this.poolName, e);
                 }
             }
             if (isNotBlank(defaultSchema)) {
@@ -490,11 +491,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 conValidTest = this;
             } else {
                 supportIsValid = false;
-                Log.warn("BeeCP({})get false from call of isValid method on first connection object", this.poolName);
+                logPrinter.warn("BeeCP({})get false from call of isValid method on first connection object", this.poolName);
             }
         } catch (Throwable e) {
             supportIsValid = false;
-            Log.warn("BeeCP({})isValid method tested failed on first connection object", this.poolName, e);
+            logPrinter.warn("BeeCP({})isValid method tested failed on first connection object", this.poolName, e);
         }
 
         //step7: second way: if isValid method is not supported, then execute alive test sql to validate it
@@ -511,7 +512,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             defaultNetworkTimeout = firstConn.getNetworkTimeout();
             if (defaultNetworkTimeout < 0) {
                 supportNetworkTimeoutInd = false;
-                Log.warn("BeeCP({})networkTimeout property not supported by connections due to a negative number returned from first connection object", this.poolName);
+                logPrinter.warn("BeeCP({})networkTimeout property not supported by connections due to a negative number returned from first connection object", this.poolName);
             } else {//driver support networkTimeout
                 if (this.networkTimeoutExecutor == null) {
                     int poolMaxSize = poolConfig.getMaxActive();
@@ -523,7 +524,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             }
         } catch (Throwable e) {
             supportNetworkTimeoutInd = false;
-            Log.warn("BeeCP({})networkTimeout property tested failed on first connection object", this.poolName, e);
+            logPrinter.warn("BeeCP({})networkTimeout property tested failed on first connection object", this.poolName, e);
             if (networkTimeoutExecutor != null) {
                 networkTimeoutExecutor.shutdown();
                 networkTimeoutExecutor = null;
@@ -792,9 +793,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //Method-3.3: clean timeout connections(idle timeout and hold timeout)
     void closeIdleTimeoutConnection() {
         //step1:print pool info before clean
-        if (Log.isOutputLogs()) {
+        if (logPrinter.isOutputLogs()) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})before timed scan,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            logPrinter.info("BeeCP({})before timed scan,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
         //step2: interrupt current creation of a connection when this operation is timeout
@@ -818,9 +819,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         //step4: print pool info after clean
-        if (Log.isOutputLogs()) {
+        if (logPrinter.isOutputLogs()) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})after timed scan,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            logPrinter.info("BeeCP({})after timed scan,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -851,15 +852,15 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 BeeDataSourceConfig checkedConfig = null;
                 if (reinit) checkedConfig = config.check();
 
-                Log.info("BeeCP({})begin to remove all connections", this.poolName);
+                logPrinter.info("BeeCP({})begin to remove all connections", this.poolName);
                 this.removeAllConnections(forceRecycleBorrowed, DESC_RM_CLEAR);
-                Log.info("BeeCP({})completed to remove all connections", this.poolName);
+                logPrinter.info("BeeCP({})completed to remove all connections", this.poolName);
 
                 if (reinit) {
-                    Log.info("BeeCP({})start to reinitialize pool", this.poolName);
+                    logPrinter.info("BeeCP({})start to reinitialize pool", this.poolName);
                     startupInternal(POOL_RESTARTING, checkedConfig);//throws SQLException only fail to create initial connections or fail to set default
                     //note: if failed,this method may be recalled with correct configuration
-                    Log.info("BeeCP({})pool restart successful", this.poolName);
+                    logPrinter.info("BeeCP({})pool restart successful", this.poolName);
                 }
             } finally {
                 this.poolState = POOL_READY;
@@ -900,9 +901,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             closedCount = 0;
         } // while
 
-        if (Log.isOutputLogs()) {
+        if (logPrinter.isOutputLogs()) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();
-            Log.info("BeeCP({})after clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            logPrinter.info("BeeCP({})after clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -924,7 +925,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
-                Log.info("BeeCP({})begin to shutdown pool", this.poolName);
+                logPrinter.info("BeeCP({})begin to shutdown pool", this.poolName);
                 this.unregisterJmx();
                 this.shutdownPoolThreads();
                 this.removeAllConnections(this.poolConfig.isForceRecycleBorrowedOnClose(), DESC_RM_DESTROY);
@@ -936,7 +937,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                     //do nothing
                 }
                 this.poolState = POOL_CLOSED;
-                Log.info("BeeCP({})has shutdown pool", this.poolName);
+                logPrinter.info("BeeCP({})has shutdown pool", this.poolName);
                 break;
             } else {//pool State == POOL_CLOSING
                 break;
@@ -948,11 +949,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //                                  5: Pool log print and jdbc logs Manager (6)                                //                                                                                  //
     //***************************************************************************************************************//
     public boolean isEnabledLogPrint() {
-        return Log.isOutputLogs();
+        return logPrinter.isOutputLogs();
     }
 
     public void enableLogPrint(boolean enable) {
-        this.Log = LogPrinterFactory.getLogPrinter(enable ? FastConnectionPool.class : null);
+        this.logPrinter = LogPrinterFactory.getLogPrinter(enable ? FastConnectionPool.class : null);
     }
 
     public boolean isEnabledEventLogManager() {
@@ -1006,7 +1007,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     public boolean isPrintRuntimeLog() {
-        return Log.isOutputLogs();
+        return logPrinter.isOutputLogs();
     }
 
     public void setPrintRuntimeLog(boolean enable) {
@@ -1061,7 +1062,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         try {
             mBeanServer.registerMBean(bean, new ObjectName(regName));
         } catch (Throwable e) {
-            Log.warn("BeeCP({})failed to register jmx-bean:{}", this.poolName, regName, e);
+            logPrinter.warn("BeeCP({})failed to register jmx-bean:{}", this.poolName, regName, e);
         }
     }
 
@@ -1077,7 +1078,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         try {
             mBeanServer.unregisterMBean(new ObjectName(regName));
         } catch (Throwable e) {
-            Log.warn("BeeCP({})failed to unregister jmx-bean:{}", this.poolName, regName, e);
+            logPrinter.warn("BeeCP({})failed to unregister jmx-bean:{}", this.poolName, regName, e);
         }
     }
 
@@ -1085,24 +1086,27 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //                                  7: other methods (3)                                                         //                                                                                  //
     //***************************************************************************************************************//
     public List<Thread> interruptWaitingThreads() {
-        //1clear waiting thread on semaphore
-        List<Thread> threads = new LinkedList<>(this.semaphore.interruptQueuedWaitThreads());
+        List<Thread> threads = new LinkedList<>();
+        //1: clear waiting thread on semaphore
+        if (this.semaphore != null) threads.addAll(this.semaphore.interruptQueuedWaitThreads());
 
         //2: transfer exception to waiter in queue
-        if (!this.waitQueue.isEmpty()) {
+        if (this.waitQueue != null && !this.waitQueue.isEmpty()) {
             PoolInClearingException exception = new PoolInClearingException("Pool has been closed or is restarting");
             while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 
         //3: interrupt threads on lock
-        threads.addAll(connectionArrayInitLock.interruptAllThreads());
+        if (connectionArrayInitLock != null) threads.addAll(connectionArrayInitLock.interruptAllThreads());
 
         //4: attempt to interrupt creating of connections
-        for (PooledConnection p : connectionArray) {
-            ConnectionCreatingInfo creatingInfo = p.creatingInfo;
-            if (creatingInfo != null) {
-                creatingInfo.creatingThread.interrupt();
-                threads.add(creatingInfo.creatingThread);
+        if (connectionArray != null) {
+            for (PooledConnection p : connectionArray) {
+                ConnectionCreatingInfo creatingInfo = p.creatingInfo;
+                if (creatingInfo != null) {
+                    creatingInfo.creatingThread.interrupt();
+                    threads.add(creatingInfo.creatingThread);
+                }
             }
         }
 
@@ -1126,7 +1130,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 return true;
             }
         } catch (Throwable e) {
-            Log.warn("BeeCP({})alive test failed on a borrowed connection", this.poolName, e);
+            logPrinter.warn("BeeCP({})alive test failed on a borrowed connection", this.poolName, e);
         }
         return false;
     }
@@ -1159,7 +1163,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         monitorVo.setCreatingTimeoutSize(creatingTimeoutCount);
         monitorVo.setSemaphoreWaitingSize(semaphoreWaitingSize);
         monitorVo.setTransferWaitingSize(transferWaitingSize);
-        monitorVo.setEnabledLogPrint(this.Log.isOutputLogs());
+        monitorVo.setEnabledLogPrint(this.logPrinter.isOutputLogs());
         monitorVo.setEnabledJdbcEventLogManager(this.usingEventLogManager);
         return this.monitorVo;
     }
@@ -1234,20 +1238,20 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     pool.closeIdleTimeoutConnection();
                 } catch (Throwable e) {
-                    pool.Log.warn("BeeCP({})an exception occurred while scanning idle-timeout connections", this.pool.poolName, e);
+                    pool.logPrinter.warn("BeeCP({})an exception occurred while scanning idle-timeout connections", this.pool.poolName, e);
                 }
             }
         }
     }
 
     //class-8.4: A timed thread to clear timeout jdbc logs
-    private static final class JdbcLogTimeoutScanWorker extends Thread {
+    private static final class EventLogTimeoutScanWorker extends Thread {
         private final FastConnectionPool pool;
         private final long checkTimeIntervalNanos;
         private volatile int workerState;
 
-        JdbcLogTimeoutScanWorker(FastConnectionPool pool,
-                                 long jdbcCallLogClearInterval, String threadName) {
+        EventLogTimeoutScanWorker(FastConnectionPool pool,
+                                  long jdbcCallLogClearInterval, String threadName) {
             super(threadName);
             this.pool = pool;
             this.workerState = THREAD_WORKING;//default status
@@ -1266,7 +1270,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 try {
                     pool.clearJdbcTimeoutLog();
                 } catch (Throwable e) {
-                    pool.Log.warn("BeeCP({})an exception occurred while scanning timeout jdbc event logs", this.pool.poolName, e);
+                    pool.logPrinter.warn("BeeCP({})an exception occurred while scanning timeout jdbc event logs", this.pool.poolName, e);
                 }
             }
         }
@@ -1281,11 +1285,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         public void run() {
-            pool.Log.info("BeeCP({})detect Jvm exit,pool will be shutdown", this.pool.poolName);
+            pool.logPrinter.info("BeeCP({})detect Jvm exit,pool will be shutdown", this.pool.poolName);
             try {
                 this.pool.close();
             } catch (Throwable e) {
-                pool.Log.error("BeeCP({})an exception occurred when shutdown pool", this.pool.poolName, e);
+                pool.logPrinter.error("BeeCP({})an exception occurred when shutdown pool", this.pool.poolName, e);
             }
         }
     }
@@ -1340,7 +1344,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                     try {
                         st.setQueryTimeout(validTestTimeout);//time unit is second
                     } catch (Throwable e) {
-                        pool.Log.warn("BeeCP({})failed to set query timeout value on statement of a borrowed connection", poolName, e);
+                        pool.logPrinter.warn("BeeCP({})failed to set query timeout value on statement of a borrowed connection", poolName, e);
                     }
                 }
 
@@ -1353,14 +1357,14 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 }
             } catch (Throwable e) {
                 checkPassed = false;
-                pool.Log.warn("BeeCP({})connection alive test failed with sql,pool will abandon it", poolName, e);
+                pool.logPrinter.warn("BeeCP({})connection alive test failed with sql,pool will abandon it", poolName, e);
             } finally {
                 if (st != null) oclose(st);
                 if (changed) {
                     try {
                         rawConn.setAutoCommit(true);
                     } catch (Throwable e) {
-                        pool.Log.warn("BeeCP({})failed to reset 'auto-commit' to false after alive test,pool will abandon test connection", poolName, e);
+                        pool.logPrinter.warn("BeeCP({})failed to reset 'auto-commit' to false after alive test,pool will abandon test connection", poolName, e);
                         checkPassed = false;
                     }
                 }

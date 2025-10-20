@@ -224,7 +224,7 @@ public class Tc0018ConfigLoadFromFileTest {
         Assertions.assertEquals(30000L, config.getHoldTimeout());
         Assertions.assertEquals(3, config.getAliveTestTimeout());
         Assertions.assertEquals(500, config.getAliveAssumeTime());
-        Assertions.assertEquals(30000, config.getIntervalToClearTimeout());
+        Assertions.assertEquals(30000, config.getIntervalOfClearTimeout());
         Assertions.assertTrue(config.isForceRecycleBorrowedOnClose());
         Assertions.assertEquals(3000, config.getParkTimeForRetry());
         Assertions.assertEquals("com.myProject.TestPredication", config.getPredicateClassName());

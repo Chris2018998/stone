@@ -106,20 +106,20 @@ public class Tc0004TimeSettingTest {
         Assertions.assertEquals(0L, config.getAliveAssumeTime());//not change check
 
         //timerCheckInterval
-        Assertions.assertEquals(180000L, config.getIntervalToClearTimeout());//default value check(3 minutes)
+        Assertions.assertEquals(180000L, config.getIntervalOfClearTimeout());//default value check(3 minutes)
         config.setAliveAssumeTime(MINUTES.toMillis(2L));
         Assertions.assertEquals(MINUTES.toMillis(2L), config.getAliveAssumeTime());
         try {
-            config.setIntervalToClearTimeout(0L);
+            config.setIntervalOfClearTimeout(0L);
             fail("[testSetAndGet]Setting test failed on configuration item[interval-to-clear-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-to-clear-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero", e.getMessage());
         }
         try {
-            config.setIntervalToClearTimeout(-1L);
+            config.setIntervalOfClearTimeout(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[interval-to-clear-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-to-clear-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero", e.getMessage());
         }
         Assertions.assertEquals(MINUTES.toMillis(2L), config.getAliveAssumeTime());//not change check
 

@@ -16,8 +16,10 @@ import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeJdbcEventLog;
 import org.stone.beecp.pool.DefaultJdbcEventLogHandler;
 import org.stone.beecp.pool.DefaultJdbcEventLogManager;
+import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 
+import javax.sql.XAConnection;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -25,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.beecp.BeeJdbcEventLog.Type_All;
 import static org.stone.beecp.BeeJdbcEventLog.Type_Connection_Get;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
@@ -32,6 +35,22 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
  * @author Chris Liao
  */
 public class Tc0082EventLogManagerTest {
+
+    @Test
+    public void testLogManagerNotSet() throws SQLException {
+        BeeDataSourceConfig config1 = new BeeDataSourceConfig();
+        config1.setConnectionFactory(new MockConnectionFactory());
+        try (BeeDataSource ds = new BeeDataSource(config1)) {
+            Assertions.assertFalse(ds.isEnabledEventLogManager());
+            try (Connection ignore = ds.getConnection()) {
+                Assertions.assertTrue(ds.getEventLog(Type_Connection_Get).isEmpty());
+                Assertions.assertTrue(ds.clearEventLog(Type_Connection_Get).isEmpty());
+                ds.enableEventLogManager(true);//no impact
+                Assertions.assertFalse(ds.isEnabledEventLogManager());
+                Assertions.assertFalse(ds.cancelStatement(new Object()));
+            }
+        }
+    }
 
     @Test
     public void testLogManagerSet() throws SQLException {
@@ -70,6 +89,10 @@ public class Tc0082EventLogManagerTest {
             try (Connection ignore = ds.getConnection()) {
                 Assertions.assertTrue(ds.getEventLog(Type_Connection_Get).isEmpty());//no logs generated when disable log manager
             }
+            XAConnection xaCon = ds.getXAConnection();
+            try (Connection ignore = xaCon.getConnection()) {
+                Assertions.assertTrue(ds.getEventLog(Type_Connection_Get).isEmpty());//no logs generated when disable log manager
+            }
             ds.enableEventLogManager(false);
             Assertions.assertTrue(ds.getEventLog(Type_Connection_Get).isEmpty());//no logs generated when disable log manager
 
@@ -94,7 +117,6 @@ public class Tc0082EventLogManagerTest {
 
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertTrue(ds.isEnabledEventLogManager());
-
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
                 Assertions.assertEquals(1, ds.getEventLog(Type_Connection_Get).size());
                 st.execute("select * from test_user");
@@ -112,45 +134,42 @@ public class Tc0082EventLogManagerTest {
 
     @Test
     public void testTimeoutClear() throws SQLException {
-        BeeDataSourceConfig config1 = new BeeDataSourceConfig();
-        config1.setEventLogManager(new DefaultJdbcEventLogManager());
-        config1.setEventLogHandler(new DefaultJdbcEventLogHandler());
-        config1.setSlowSQLThreshold(1L);
-        config1.setSlowSQLThreshold(1L);
-        config1.setEventLogHandledBySyncMode(false);//<-- async mode
-        config1.setEventLogTimeout(1L);//1:milliseconds
-        config1.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
-        config1.setConnectionFactory(new MockConnectionFactory());
-        Assertions.assertFalse(config1.isEventLogHandledBySyncMode());
+        BeeDataSourceConfig config = new BeeDataSourceConfig();
+        config.setEventLogManager(new DefaultJdbcEventLogManager());
+        config.setEventLogHandler(new DefaultJdbcEventLogHandler());
+        config.setSlowSQLThreshold(1L);
+        config.setSlowConnectionThreshold(1L);
+
+
+        config.setEventLogHandledBySyncMode(false);//<-- async mode
+        config.setEventLogTimeout(1L);//1:milliseconds
+        config.setIntervalOfClearTimeoutEventLogs(100L);//500:milliseconds
+
+        MockConnectionProperties connectionProperties = new MockConnectionProperties();
+        connectionProperties.setParkNanos(200L);
+        connectionProperties.parkWhenCallMethod("executeUpdate");
+        connectionProperties.throwsExceptionWhenCallMethod("execute");
+        SQLException failException = new SQLException("NetWork failed");
+        connectionProperties.setMockException1(failException);
+
+        MockConnectionFactory connectionFactory = new MockConnectionFactory(connectionProperties);
+        connectionFactory.setNeedPark(true);
+        connectionFactory.setParkNanos(TimeUnit.MILLISECONDS.toNanos(200L));
+        config.setConnectionFactory(connectionFactory);
 
         //1: clear type test(for sync mode)
-        try (BeeDataSource ds = new BeeDataSource(config1)) {
+        try (BeeDataSource ds = new BeeDataSource(config)) {
             Assertions.assertTrue(ds.isEnabledEventLogManager());
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
-                st.execute("select * from test_user");
-                Assertions.assertEquals(1, ds.getEventLog(Type_Connection_Get).size());
-                Assertions.assertEquals(1, ds.getEventLog(BeeJdbcEventLog.Type_SQL_Execution).size());
+                st.executeUpdate("update test_user set name ='chris' where id=1");
+                try {
+                    st.execute("select * from test_user");
+                    Assertions.fail("[testTimeoutClear]test failed");
+                } catch (SQLException e) {
+                    Assertions.assertEquals(failException, e);
+                }
                 LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000L));//wait pool timer to clear timeout logs
-                Assertions.assertEquals(0, ds.getEventLog(Integer.MAX_VALUE).size());
-            }
-        }
-
-        BeeDataSourceConfig config2 = createDefault();
-        config2.setEventLogTimeout(1L);//1:milliseconds
-        config2.setIntervalToClearTimeoutEventLogs(500L);//500:milliseconds
-        config2.setEventLogManager(new DefaultJdbcEventLogManager());
-        config2.setConnectionFactory(new MockConnectionFactory());
-        config2.setEventLogHandledBySyncMode(false);//async mode
-        Assertions.assertFalse(config2.isEventLogHandledBySyncMode());
-        //2: clear type test(for async mode)
-        try (BeeDataSource ds = new BeeDataSource(config2)) {
-            Assertions.assertTrue(ds.isEnabledEventLogManager());
-            try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
-                st.execute("select * from test_user");
-                Assertions.assertEquals(1, ds.getEventLog(Type_Connection_Get).size());
-                Assertions.assertEquals(1, ds.getEventLog(BeeJdbcEventLog.Type_SQL_Execution).size());
-                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000L));//wait pool timer to clear timeout logs
-                Assertions.assertEquals(0, ds.getEventLog(Integer.MAX_VALUE).size());
+                Assertions.assertEquals(0, ds.getEventLog(Type_All).size());
             }
         }
     }

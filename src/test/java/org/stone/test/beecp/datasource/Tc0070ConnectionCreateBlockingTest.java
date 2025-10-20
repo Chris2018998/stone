@@ -12,8 +12,8 @@ package org.stone.test.beecp.datasource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
+import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.pool.FastConnectionPool;
 import org.stone.test.beecp.objects.factory.BlockingMockConnectionFactory;
 import org.stone.test.beecp.objects.threads.BorrowThread;
 
@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.test.base.TestUtil.waitUtilWaiting;
-import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
 /**
  * @author Chris Liao
@@ -30,7 +29,7 @@ public class Tc0070ConnectionCreateBlockingTest {
 
     @Test
     public void testInterruptConnectionCreating1() throws Exception {
-        BeeDataSourceConfig config = createDefault();
+        BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setInitialSize(0);
         config.setMaxActive(1);
         config.setSemaphoreSize(2);
@@ -39,29 +38,30 @@ public class Tc0070ConnectionCreateBlockingTest {
         config.setMaxWait(TimeUnit.MILLISECONDS.toMillis(500L));
         BlockingMockConnectionFactory factory = new BlockingMockConnectionFactory();
         config.setConnectionFactory(factory);
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.start(config);
 
-        //1: create first thread
-        BorrowThread firstBorrower = new BorrowThread(pool);
-        firstBorrower.start();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            //1: create first thread
+            BorrowThread firstBorrower = new BorrowThread(ds);
+            firstBorrower.start();
 
-        //2: attempt to get connection in current thread
-        if (waitUtilWaiting(firstBorrower)) {//block 1 second in pool instance creation
-            BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(1, vo.getCreatingSize());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
-            pool.interruptWaitingThreads();
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
-            vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(0, vo.getCreatingSize());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
+            //2: attempt to get connection in current thread
+            if (waitUtilWaiting(firstBorrower)) {//block 1 second in pool instance creation
+                BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
+                Assertions.assertEquals(1, vo.getCreatingSize());
+                Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
+
+                ds.interruptWaitingThreads();
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
+                vo = ds.getPoolMonitorVo();
+                Assertions.assertEquals(0, vo.getCreatingSize());
+                Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
+            }
         }
     }
 
     @Test
     public void testInterruptConnectionCreating2() throws Exception {
-        BeeDataSourceConfig config = createDefault();
+        BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setInitialSize(0);
         config.setMaxActive(1);
         config.setSemaphoreSize(2);
@@ -70,27 +70,27 @@ public class Tc0070ConnectionCreateBlockingTest {
         config.setMaxWait(TimeUnit.MILLISECONDS.toMillis(500L));
         BlockingMockConnectionFactory factory = new BlockingMockConnectionFactory();
         config.setConnectionFactory(factory);
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.start(config);
 
-        //1: create first thread
-        BorrowThread firstBorrower = new BorrowThread(pool);
-        firstBorrower.start();
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            //1: create first thread
+            BorrowThread firstBorrower = new BorrowThread(ds);
+            firstBorrower.start();
 
-        //2: attempt to get connection in current thread
-        if (waitUtilWaiting(firstBorrower)) {//block 1 second in pool instance creation
-            BeeConnectionPoolMonitorVo vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(1, vo.getCreatingSize());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
-            LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
-            vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(1, vo.getCreatingSize());
-            Assertions.assertEquals(1, vo.getCreatingTimeoutSize());
-            pool.interruptWaitingThreads();
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
-            vo = pool.getPoolMonitorVo();
-            Assertions.assertEquals(0, vo.getCreatingSize());
-            Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
+            //2: attempt to get connection in current thread
+            if (waitUtilWaiting(firstBorrower)) {//block 1 second in pool instance creation
+                BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
+                Assertions.assertEquals(1, vo.getCreatingSize());
+                Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
+                LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
+                vo = ds.getPoolMonitorVo();
+                Assertions.assertEquals(1, vo.getCreatingSize());
+                Assertions.assertEquals(1, vo.getCreatingTimeoutSize());
+                ds.interruptWaitingThreads();
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toMillis(500L));
+                vo = ds.getPoolMonitorVo();
+                Assertions.assertEquals(0, vo.getCreatingSize());
+                Assertions.assertEquals(0, vo.getCreatingTimeoutSize());
+            }
         }
     }
 }

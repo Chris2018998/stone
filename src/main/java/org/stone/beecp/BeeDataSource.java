@@ -53,7 +53,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private long maxWaitNanos = 8000L;//default vale same to config
     private BeeConnectionPool pool;
     private CommonDataSource subDs;//used to set loginTimeout
-    private boolean poolCreated;//true,means that inner pool has created
+    private boolean poolStarted;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause
 
     //***************************************************************************************************************//
@@ -86,14 +86,13 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
 
             ds.pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
             ds.pool.start(ds);
+            ds.poolStarted = true;
 
             Object connectionFactory = ds.getConnectionFactory();
             if (connectionFactory instanceof CommonDataSource)
                 ds.subDs = (CommonDataSource) connectionFactory;
             else
                 ds.subDs = Dummy_CommonDataSource;
-
-            ds.poolCreated = true;
         } catch (SQLException e) {
             throw e;
         } catch (Throwable e) {
@@ -115,12 +114,12 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         2: Pooled connections get                                             //
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
-        if (this.poolCreated) return pool.getConnection();
+        if (this.poolStarted) return pool.getConnection();
         return createPoolByLock().getConnection();
     }
 
     public XAConnection getXAConnection() throws SQLException {
-        if (this.poolCreated) return pool.getXAConnection();
+        if (this.poolStarted) return pool.getXAConnection();
         return createPoolByLock().getXAConnection();
     }
 
@@ -137,7 +136,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private BeeConnectionPool createPoolByLock() throws SQLException {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
-                if (!poolCreated) {
+                if (!poolStarted) {
                     cause = null;
                     createPool(this);
                 }
@@ -177,23 +176,23 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         4: Override methods of CommonDataSource                              //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
-        return poolCreated ? subDs.getLogWriter() : null;
+        return poolStarted ? subDs.getLogWriter() : null;
     }
 
     public void setLogWriter(PrintWriter out) throws SQLException {
-        if (poolCreated) subDs.setLogWriter(out);
+        if (poolStarted) subDs.setLogWriter(out);
     }
 
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return poolCreated ? subDs.getParentLogger() : null;
+        return poolStarted ? subDs.getParentLogger() : null;
     }
 
     public int getLoginTimeout() throws SQLException {
-        return poolCreated ? subDs.getLoginTimeout() : 0;
+        return poolStarted ? subDs.getLoginTimeout() : 0;
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {
-        if (poolCreated) subDs.setLoginTimeout(seconds);
+        if (poolStarted) subDs.setLoginTimeout(seconds);
     }
 
     public boolean isWrapperFor(Class<?> clazz) {
@@ -211,7 +210,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         5: runtime logs print(4)                                              //
     //***************************************************************************************************************//
     public boolean isPrintRuntimeLogs() {
-        if (poolCreated) {
+        if (poolStarted) {
             return pool.isEnabledLogPrint();
         } else {
             return super.isPrintRuntimeLogs();
@@ -219,7 +218,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public void setPrintRuntimeLogs(boolean enable) {
-        if (poolCreated) {
+        if (poolStarted) {
             pool.enableLogPrint(enable);//set to pool
         } else {
             super.setPrintRuntimeLogs(enable);//as configuration item
@@ -296,15 +295,15 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         8: other methods(7)                                                   //
     //***************************************************************************************************************//
     public void close() {
-        if (this.poolCreated) this.pool.close();
+        if (this.poolStarted) this.pool.close();
     }
 
     public boolean isClosed() {
-        return !this.poolCreated || this.pool.isClosed();
+        return !this.poolStarted || this.pool.isClosed();
     }
 
     public boolean isReady() {
-        return this.poolCreated && this.pool.isReady();
+        return this.poolStarted && this.pool.isReady();
     }
 
     //override method
@@ -318,7 +317,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     public List<Thread> interruptWaitingThreads() throws SQLException {
-        if (this.poolCreated) {
+        if (pool != null) {
             return pool.interruptWaitingThreads();
         } else {
             return lock.interruptAllThreads();
@@ -326,7 +325,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     private BeeConnectionPool getPool() throws SQLException {
-        if (!this.poolCreated) throw new PoolNotCreatedException("Internal pool was not ready");
+        if (!this.poolStarted) throw new PoolNotCreatedException("Internal pool was not ready");
         return this.pool;
     }
 }

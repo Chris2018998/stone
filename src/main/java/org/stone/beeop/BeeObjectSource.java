@@ -37,7 +37,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     private final InterruptionReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = 8000L;//default vale equals same item in config
     private BeeKeyedObjectPool<K, V> pool;
-    private boolean poolCreated;
+    private boolean poolStarted;
     private Exception cause;
 
     public BeeObjectSource() {
@@ -58,41 +58,41 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     private void createPool(BeeObjectSource<K, V> os) throws Exception {
         os.pool = (BeeKeyedObjectPool<K, V>) createClassInstance(os.getPoolImplementClassName(), BeeKeyedObjectPool.class, "pool");
         os.pool.start(os);
-        os.poolCreated = true;
+        os.poolStarted = true;
     }
 
     //***************************************************************************************************************//
     //                                          1: Close(2)                                                          //
     //***************************************************************************************************************//
     public void close() {
-        if (this.poolCreated) this.pool.close();
+        if (this.poolStarted) this.pool.close();
     }
 
     public boolean isClosed() {
-        return !this.poolCreated || this.pool.isClosed();
+        return !this.poolStarted || this.pool.isClosed();
     }
 
     public boolean isReady() {
-        return this.poolCreated && this.pool.isReady();
+        return this.poolStarted && this.pool.isReady();
     }
 
     //***************************************************************************************************************//
     //                                        2: Pooled objects Get                                                  //
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
-        if (this.poolCreated) return pool.getObjectHandle();
+        if (this.poolStarted) return pool.getObjectHandle();
         return createPoolByLock().getObjectHandle();
     }
 
     public BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception {
-        if (this.poolCreated) return pool.getObjectHandle(key);
+        if (this.poolStarted) return pool.getObjectHandle(key);
         return createPoolByLock().getObjectHandle(key);
     }
 
     private BeeKeyedObjectPool<K, V> createPoolByLock() throws Exception {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
-                if (!poolCreated) {
+                if (!poolStarted) {
                     cause = null;
                     createPool(this);
                 }
@@ -156,7 +156,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //                                        5: Interrupt blocking of object instance creation                      //
     //***************************************************************************************************************//
     public List<Thread> interruptWaitingThreads(K key) throws Exception {
-        if (this.poolCreated) {
+        if (pool != null) {
             return pool.interruptWaitingThreads();
         } else {
             return lock.interruptAllThreads();
@@ -164,7 +164,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     private BeeKeyedObjectPool<K, V> getPool() throws Exception {
-        if (!this.poolCreated) throw new PoolNotCreatedException("Internal pool was not ready");
+        if (!this.poolStarted) throw new PoolNotCreatedException("Internal pool was not ready");
         return this.pool;
     }
 

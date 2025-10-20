@@ -81,7 +81,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //14: Milliseconds,max time of connections not used by borrowers;default is zero
     private long holdTimeout;
     //15: Milliseconds: interval time of pool timer to clear timeout connections(idle timeout and hold timeout),default is 180000 milliseconds(3 minutes)
-    private long intervalToClearTimeout = 180000L;
+    private long intervalOfClearTimeout = 180000L;
     //16: A flag to recycle borrowed connections and remove them from pool when pool shutdown,default is false.
     private boolean forceRecycleBorrowedOnClose;
     //17: Milliseconds,A spin park time to wait borrowed connections self return to pool during when pool shutdown,default is 3000 milliseconds
@@ -167,7 +167,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //53: Logs timeout,default is 3 minutes
     private long eventLogTimeout = 180000L;
     //54: interval time to clear timeout logs,default is 3 minutes
-    private long intervalToClearTimeoutEventLogs = eventLogTimeout;
+    private long intervalOfClearTimeoutEventLogs = eventLogTimeout;
 
     //55: jdbc event logs manager,default is none;priority order: instance > class > class name
     private BeeJdbcEventLogManager eventLogManager;
@@ -359,14 +359,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.holdTimeout = holdTimeout;
     }
 
-    public long getIntervalToClearTimeout() {
-        return this.intervalToClearTimeout;
+    public long getIntervalOfClearTimeout() {
+        return this.intervalOfClearTimeout;
     }
 
-    public void setIntervalToClearTimeout(long intervalToClearTimeout) {
-        if (intervalToClearTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'interval-to-clear-timeout' must be greater than zero");
-        this.intervalToClearTimeout = intervalToClearTimeout;
+    public void setIntervalOfClearTimeout(long intervalOfClearTimeout) {
+        if (intervalOfClearTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero");
+        this.intervalOfClearTimeout = intervalOfClearTimeout;
     }
 
     public boolean isForceRecycleBorrowedOnClose() {
@@ -753,14 +753,14 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.eventLogTimeout = eventLogTimeout;
     }
 
-    public long getIntervalToClearTimeoutEventLogs() {
-        return intervalToClearTimeoutEventLogs;
+    public long getIntervalOfClearTimeoutEventLogs() {
+        return intervalOfClearTimeoutEventLogs;
     }
 
-    public void setIntervalToClearTimeoutEventLogs(long intervalToClearTimeoutEventLogs) {
-        if (intervalToClearTimeoutEventLogs <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'interval-to-clear-timeout-event-logs' must be greater than zero");
-        this.intervalToClearTimeoutEventLogs = intervalToClearTimeoutEventLogs;
+    public void setIntervalOfClearTimeoutEventLogs(long intervalOfClearTimeoutEventLogs) {
+        if (intervalOfClearTimeoutEventLogs <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-event-logs' must be greater than zero");
+        this.intervalOfClearTimeoutEventLogs = intervalOfClearTimeoutEventLogs;
     }
 
     public BeeJdbcEventLogManager getEventLogManager() {

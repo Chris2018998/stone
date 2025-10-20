@@ -61,7 +61,7 @@ public interface BeeDataSourceConfigMBean {
 
     long getParkTimeForRetry();
 
-    long getIntervalToClearTimeout();
+    long getIntervalOfClearTimeout();
 
     String getPoolImplementClassName();
 

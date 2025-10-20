@@ -66,7 +66,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //11: Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
     private long holdTimeout;
     //12: Milliseconds: an interval time of pool thread to find out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
-    private long intervalToClearTimeout = 180000L;
+    private long intervalOfClearTimeout = 180000L;
     //15: Seconds,max wait time to get alive test result on borrowed objects,default is 3 seconds.
     private int aliveTestTimeout = 3;
     //16: Milliseconds,a threshold time of alive since from last test,if gap time is less than it,assume objects are alive,and skip test,default is 500 milliseconds
@@ -271,14 +271,14 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     @Override
-    public long getIntervalToClearTimeout() {
-        return intervalToClearTimeout;
+    public long getIntervalOfClearTimeout() {
+        return intervalOfClearTimeout;
     }
 
-    public void setIntervalToClearTimeout(long intervalToClearTimeout) {
-        if (intervalToClearTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'timer-check-interval' must be greater than zero");
-        this.intervalToClearTimeout = intervalToClearTimeout;
+    public void setIntervalOfClearTimeout(long intervalOfClearTimeout) {
+        if (intervalOfClearTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero");
+        this.intervalOfClearTimeout = intervalOfClearTimeout;
     }
 
     @Override
@@ -562,7 +562,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setIntervalToClearTimeoutEventLogs(long intervalToClearTimeoutEventLogs) {
         if (intervalToClearTimeoutEventLogs <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'interval-to-clear-timeout-event-logs' must be greater than zero");
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-event-logs' must be greater than zero");
         this.intervalToClearTimeoutEventLogs = intervalToClearTimeoutEventLogs;
     }
 

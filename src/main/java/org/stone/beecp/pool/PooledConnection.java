@@ -205,12 +205,12 @@ final class PooledConnection {
      * call back while remove pooledConnection from pool
      */
     void onRemove(String msg) {
-        pool.Log.info("BeeCP({}))begin to remove a pooled connection:{} for cause:{}", pool.getPoolName(), this, msg);
+        pool.logPrinter.info("BeeCP({}))begin to remove a pooled connection:{} for cause:{}", pool.getPoolName(), this, msg);
 
         try {
             this.resetRawConn();
         } catch (Throwable e) {
-            pool.Log.warn("BeeCP({})Resetting connection failed", pool.getPoolName(), e);
+            pool.logPrinter.warn("BeeCP({})Resetting connection failed", pool.getPoolName(), e);
         } finally {
             oclose(this.rawConn);
 
@@ -273,20 +273,20 @@ final class PooledConnection {
         if (predicate != null) {
             String msg = predicate.evictionTest(e);
             if (isNotBlank(msg)) {
-                pool.Log.warn("BeeCP({})Connection has been broken because of predicate result({})", pool.getPoolName(), msg);
+                pool.logPrinter.warn("BeeCP({})Connection has been broken because of predicate result({})", pool.getPoolName(), msg);
                 proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             }
         } else {
             int code = e.getErrorCode();
             if (code != 0 && sqlExceptionCodeList != null && sqlExceptionCodeList.contains(code)) {
-                pool.Log.warn("BeeCP({})Connection has been broken because of error code({})", pool.getPoolName(), code);
+                pool.logPrinter.warn("BeeCP({})Connection has been broken because of error code({})", pool.getPoolName(), code);
                 proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
                 return;
             }
 
             String state = e.getSQLState();
             if (state != null && sqlExceptionStateList != null && sqlExceptionStateList.contains(state)) {
-                pool.Log.warn("BeeCP({})Connection has been broken because of SQL state({})", pool.getPoolName(), state);
+                pool.logPrinter.warn("BeeCP({})Connection has been broken because of SQL state({})", pool.getPoolName(), state);
                 proxyInUsing.abort(null);//remove connection from pool and add re-try count for other borrowers
             }
         }

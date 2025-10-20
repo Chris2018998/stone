@@ -16,6 +16,7 @@ import org.stone.test.beecp.objects.pool.BlockingPoolImpl_Park;
 import org.stone.test.beecp.objects.pool.BlockingPoolImpl_ParkNanos;
 import org.stone.test.beecp.objects.threads.BorrowThread;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -79,7 +80,9 @@ public class Tc0033DataSourceLockTest {
                 BorrowThread secondThread = new BorrowThread(ds);
                 secondThread.start();
                 if (waitUtilWaiting(secondThread)) {//blocking lock
-                    ds.interruptWaitingThreads();
+                    List<Thread> threadList = ds.interruptWaitingThreads();
+                    Assertions.assertTrue(threadList.contains(firstThread));//blocking pool new
+                    Assertions.assertTrue(threadList.contains(secondThread));//blocking in ds read-lock
                 }
 
                 firstThread.join();

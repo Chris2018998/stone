@@ -40,7 +40,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setMaxActive(initSize);
         config.setIdleTimeout(1L);
         config.setPrintRuntimeLogs(true);
-        config.setIntervalToClearTimeout(5000L);
+        config.setIntervalOfClearTimeout(5000L);
         FastConnectionPool pool = new FastConnectionPool();
         pool.start(config);
 
@@ -60,7 +60,7 @@ public class Tc0065ConnectionTimeoutTest {
         BeeDataSourceConfig config2 = createDefault();
         config2.setInitialSize(1);
         config2.setIdleTimeout(1L);
-        config2.setIntervalToClearTimeout(50L);
+        config2.setIntervalOfClearTimeout(50L);
         FastConnectionPool pool2 = new FastConnectionPool();
         pool2.start(config2);
         Assertions.assertEquals(1, pool2.getIdleSize());
@@ -75,7 +75,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setMaxActive(1);
         config.setInitialSize(1);
         config.setIdleTimeout(50L);
-        config.setIntervalToClearTimeout(50L);
+        config.setIntervalOfClearTimeout(50L);
         config.setPrintRuntimeLogs(true);
         config.setSemaphoreSize(1);
         FastConnectionPool pool = new FastConnectionPool();
@@ -93,7 +93,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setInitialSize(1);
         config.setMaxActive(1);
         config.setHoldTimeout(100L);// hold and not using connection;
-        config.setIntervalToClearTimeout(500L);
+        config.setIntervalOfClearTimeout(500L);
 
         Connection con = null;
         FastConnectionPool pool = new FastConnectionPool();
@@ -127,7 +127,7 @@ public class Tc0065ConnectionTimeoutTest {
         config.setInitialSize(1);
         config.setMaxActive(1);
         config.setHoldTimeout(0);//default is zero,not timeout
-        config.setIntervalToClearTimeout(500L);
+        config.setIntervalOfClearTimeout(500L);
         FastConnectionPool pool = new FastConnectionPool();
         pool.start(config);
         Assertions.assertEquals(0L, getFieldValue(pool, "holdTimeoutMs"));

@@ -1,8 +1,14 @@
 stone changes
 
 
+stone-2.0.1
+-----------------------------------------------------
+[beecp]
+1: rename some configuration items
+
 stone-2.0.0
 -----------------------------------------------------
+[beecp]
 1:support event log collection
 2:support runtime change jdbc link info of pool(setUsername,setPassword,setJdbcUrl)
 3:move shine package to test/study folder

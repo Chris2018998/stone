@@ -98,6 +98,9 @@ public class Tc0080ConnectionEventLogTest {
                 Assertions.assertTrue(log.getStartTime() != 0);
                 Assertions.assertTrue(log.getEndTime() != 0);
                 Assertions.assertTrue(log.getEndTime() >= log.getStartTime());
+
+                logList = ds.clearEventLog(Type_Connection_Get);
+                Assertions.assertEquals(1, logList.size());
             }
         }
     }

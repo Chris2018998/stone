@@ -123,19 +123,19 @@ public class Tc0004ConfigSetAndGetTest {
 
         //timerCheckInterval
         try {
-            config.setIntervalToClearTimeout(-1L);
+            config.setIntervalOfClearTimeout(-1L);
             fail("Setting test failed on configuration item[timer-check-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'timer-check-interval' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero", e.getMessage());
         }
         try {
-            config.setIntervalToClearTimeout(0L);
+            config.setIntervalOfClearTimeout(0L);
             fail("Setting test failed on configuration item[timer-check-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'timer-check-interval' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero", e.getMessage());
         }
-        config.setIntervalToClearTimeout(3000L);
-        Assertions.assertEquals(3000L, config.getIntervalToClearTimeout());
+        config.setIntervalOfClearTimeout(3000L);
+        Assertions.assertEquals(3000L, config.getIntervalOfClearTimeout());
 
         //forceCloseUsingOnClose
         config.setForceRecycleBorrowedOnClose(true);

@@ -57,8 +57,7 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
      * @param handler   is a log handler
      */
-    public void init(int cacheSize,
-                     long slowGet, long slowExec,
+    public void init(int cacheSize, long slowGet, long slowExec,
                      boolean syncMode, BeeJdbcEventLogHandler handler) {
 
         if (handler != null) {
@@ -74,6 +73,118 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
         this.conLogQueue = new LinkedBlockingQueue<>(cacheSize);
         this.sqlLogQueue = new LinkedBlockingQueue<>(cacheSize);
     }
+
+    /**
+     * Start to call a method and a log object is return this start method
+     *
+     * @param type       is method call type
+     * @param method     is method name,for example:getConnection()
+     * @param parameters is an array of method parameters
+     */
+    public BeeJdbcEventLog startCall(int type, String method, Object[] parameters, String sql, Statement statement) {
+        DefaultJdbcEventLog log = new DefaultJdbcEventLog(type, method, parameters);
+        log.setStatement(statement);
+        offerQueue(log, type, parameters, sql);
+        return log;
+    }
+
+    private void offerQueue(DefaultJdbcEventLog log, int type, Object[] parameters, String sql) {
+        if (type == Type_Connection_Get) {
+            while (!conLogQueue.offer(log)) {
+                if (conLogQueue.size() == this.maxSize) {
+                    DefaultJdbcEventLog other = conLogQueue.poll();
+                    if (other != null) other.setRemoved(true);
+                }
+            }
+        } else {//Type_Execute_SQL
+            if (parameters == null || parameters.length == 0) {
+                log.setSql(sql);
+            } else {
+                log.setSql((String) parameters[0]);
+            }
+
+            while (!sqlLogQueue.offer(log)) {
+                if (sqlLogQueue.size() == this.maxSize) {
+                    DefaultJdbcEventLog other = sqlLogQueue.poll();
+                    if (other != null) other.setRemoved(true);
+                }
+            }
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                                         2: log record                                                         //
+    //***************************************************************************************************************//
+
+    /**
+     * update result info to log object
+     *
+     * @param callResult is result of target method call
+     * @param log        generated from startCall method
+     * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
+     */
+    public void endCall(Object callResult, long preparationTookTime, Object[] preparedParameters, BeeJdbcEventLog log) {
+        DefaultJdbcEventLog defaultTypeLog = (DefaultJdbcEventLog) log;
+        defaultTypeLog.setResult(callResult, preparationTookTime, preparedParameters);
+
+        if (log.isRemoved()) {
+            defaultTypeLog.setRemoved(false);
+            offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
+        }
+
+        if (((Type_Connection_Get == log.getType() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
+                || (Type_SQL_Execution == log.getType() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
+            defaultTypeLog.setAsSlow();
+            if (this.handleBySyncMode) {
+                try {
+                    defaultTypeLog.setHandled(handler.handle(log));
+                } catch (Throwable e) {
+                    //do nothing
+                }
+            }
+        }
+    }
+
+    /**
+     * update exception to log object
+     *
+     * @param failCause is result of target method call
+     * @param log       generated from startCall method
+     * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
+     */
+    public void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcEventLog log) {
+        DefaultJdbcEventLog defaultTypeLog = (DefaultJdbcEventLog) log;
+        defaultTypeLog.setException(failCause, preparationTookTime, preparedParameters);
+
+        if (log.isRemoved()) {
+            defaultTypeLog.setRemoved(false);
+            offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
+        }
+
+        if (this.handleBySyncMode) {
+            try {
+                defaultTypeLog.setHandled(handler.handle(log));
+            } catch (Throwable e) {
+                //do nothing
+            }
+        }
+    }
+
+    /**
+     * Cancel statement in executing
+     *
+     * @param logId is an id of statement log cached in manager.
+     */
+    public boolean cancelStatement(Object logId) throws SQLException {
+        if (logId == null) return false;
+        for (BeeJdbcEventLog log : sqlLogQueue) {
+            if (logId.equals(log.getId())) {
+                return log.cancelStatement();
+            }
+        }
+        return false;
+    }
+
 
     //***************************************************************************************************************//
     //                                         1: Logs maintain                                                      //
@@ -141,10 +252,10 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
                 }
 
                 if (!log.isHandled()) {
-                    if (log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold) {
-                        log.setAsSlow();
+                    if (log.isException()) {
                         handleLogList.add(log);
-                    } else if (log.isException()) {
+                    } else if (log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold) {
+                        log.setAsSlow();
                         handleLogList.add(log);
                     }
                 }
@@ -157,10 +268,10 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
                 }
 
                 if (!log.isHandled()) {
-                    if (log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold) {
-                        log.setAsSlow();
+                    if (log.isException()) {
                         handleLogList.add(log);
-                    } else if (log.isException()) {
+                    } else if (log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold) {
+                        log.setAsSlow();
                         handleLogList.add(log);
                     }
                 }
@@ -207,120 +318,5 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
                 //do nothing
             }
         }
-    }
-
-
-    /**
-     * Start to call a method and a log object is return this start method
-     *
-     * @param type       is method call type
-     * @param method     is method name,for example:getConnection()
-     * @param parameters is an array of method parameters
-     */
-    public BeeJdbcEventLog startCall(int type, String method, Object[] parameters, String sql, Statement statement) {
-        DefaultJdbcEventLog log = new DefaultJdbcEventLog(type, method, parameters);
-        log.setStartTime(System.currentTimeMillis());
-        log.setStatement(statement);
-        offerQueue(log, type, parameters, sql);
-        return log;
-    }
-
-    private void offerQueue(DefaultJdbcEventLog log, int type, Object[] parameters, String sql) {
-        if (type == Type_Connection_Get) {
-            while (!conLogQueue.offer(log)) {
-                if (conLogQueue.size() == this.maxSize) {
-                    DefaultJdbcEventLog other = conLogQueue.poll();
-                    if (other != null) other.setRemoved(true);
-                }
-            }
-        } else {//Type_Execute_SQL
-            if (parameters == null || parameters.length == 0) {
-                log.setSql(sql);
-            } else {
-                log.setSql((String) parameters[0]);
-            }
-
-            while (!sqlLogQueue.offer(log)) {
-                if (sqlLogQueue.size() == this.maxSize) {
-                    DefaultJdbcEventLog other = sqlLogQueue.poll();
-                    if (other != null) other.setRemoved(true);
-                }
-            }
-        }
-    }
-
-    //***************************************************************************************************************//
-    //                                         2: log record                                                         //
-    //***************************************************************************************************************//
-
-    /**
-     * update result info to log object
-     *
-     * @param callResult is result of target method call
-     * @param log        generated from startCall method
-     * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
-     */
-    public void endCall(Object callResult, long preparationTookTime, Object[] preparedParameters, BeeJdbcEventLog log) {
-        DefaultJdbcEventLog defaultTypeLog = (DefaultJdbcEventLog) log;
-        defaultTypeLog.setResult(callResult, preparationTookTime, preparedParameters);
-        defaultTypeLog.setEndTime(System.currentTimeMillis());
-
-        if (log.isRemoved()) {
-            defaultTypeLog.setRemoved(false);
-            offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
-        }
-
-        if (((Type_Connection_Get == log.getType() && log.getEndTime() - log.getStartTime() >= slowConnectionGetThreshold)
-                || (Type_SQL_Execution == log.getType() && log.getEndTime() - log.getStartTime() >= slowSQLExecutionThreshold))) {
-            defaultTypeLog.setAsSlow();
-            if (this.handleBySyncMode) {
-                try {
-                    defaultTypeLog.setHandled(handler.handle(log));
-                } catch (Throwable e) {
-                    //do nothing
-                }
-            }
-        }
-    }
-
-    /**
-     * update exception to log object
-     *
-     * @param failCause is result of target method call
-     * @param log       generated from startCall method
-     * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
-     */
-    public void endOnException(Throwable failCause, long preparationTookTime, Object[] preparedParameters, BeeJdbcEventLog log) {
-        DefaultJdbcEventLog defaultTypeLog = (DefaultJdbcEventLog) log;
-        defaultTypeLog.setException(failCause, preparationTookTime, preparedParameters);
-        defaultTypeLog.setEndTime(System.currentTimeMillis());
-
-        if (log.isRemoved()) {
-            defaultTypeLog.setRemoved(false);
-            offerQueue(defaultTypeLog, log.getType(), log.getParameters(), log.getSql());
-        }
-
-        if (this.handleBySyncMode) {
-            try {
-                defaultTypeLog.setHandled(handler.handle(log));
-            } catch (Throwable e) {
-                //do nothing
-            }
-        }
-    }
-
-    /**
-     * Cancel statement in executing
-     *
-     * @param logId is an id of statement log cached in manager.
-     */
-    public boolean cancelStatement(Object logId) throws SQLException {
-        if (logId == null) return false;
-        for (BeeJdbcEventLog log : sqlLogQueue) {
-            if (logId.equals(log.getId())) {
-                return log.cancelStatement();
-            }
-        }
-        return false;
     }
 }

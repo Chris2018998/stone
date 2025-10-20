@@ -98,22 +98,22 @@ public class Tc0020JdbcEventLogManagerTest {
 
 
         //jdbcCallLogTimeoutInterval
-        Assertions.assertEquals(180000L, config.getIntervalToClearTimeoutEventLogs());//default check
-        config.setIntervalToClearTimeoutEventLogs(5000L);
-        Assertions.assertEquals(5000L, config.getIntervalToClearTimeoutEventLogs());
+        Assertions.assertEquals(180000L, config.getIntervalOfClearTimeoutEventLogs());//default check
+        config.setIntervalOfClearTimeoutEventLogs(5000L);
+        Assertions.assertEquals(5000L, config.getIntervalOfClearTimeoutEventLogs());
         try {
-            config.setIntervalToClearTimeoutEventLogs(0L);
+            config.setIntervalOfClearTimeoutEventLogs(0L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-to-clear-timeout-event-logs' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-event-logs' must be greater than zero", e.getMessage());
         }
         try {
-            config.setIntervalToClearTimeoutEventLogs(-1L);
+            config.setIntervalOfClearTimeoutEventLogs(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-to-clear-timeout-event-logs' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-event-logs' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(5000L, config.getIntervalToClearTimeoutEventLogs());//not changed check
+        Assertions.assertEquals(5000L, config.getIntervalOfClearTimeoutEventLogs());//not changed check
 
         Assertions.assertNull(config.getEventLogManager());//default check
         config.setEventLogManager(new MockJdbcEventLogManager());
