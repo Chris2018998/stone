@@ -80,7 +80,7 @@ public class Tc0081SQLExecutionEventLogTest {
                     Assertions.assertTrue(log.isException());
                     Assertions.assertTrue(log.isHandled());
                 }
-                Assertions.assertEquals(4,ds.clearEventLog(Type_SQL_Execution).size());
+                Assertions.assertEquals(4, ds.clearEventLog(Type_SQL_Execution).size());
             }
         }
     }

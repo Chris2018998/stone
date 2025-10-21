@@ -27,7 +27,7 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 /**
  * @author Chris Liao
  */
-public class Tc0063ConnectionEvictTest {
+public class Tc0063ConnectionEvictionTest {
 
     private final int errorCode = 0b010000;
     private final String errorState = "57P02";

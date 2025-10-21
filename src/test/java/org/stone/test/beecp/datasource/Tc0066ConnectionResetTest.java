@@ -11,8 +11,8 @@ package org.stone.test.beecp.datasource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.pool.FastConnectionPool;
 import org.stone.test.base.TestUtil;
 
 import java.sql.Connection;
@@ -35,59 +35,51 @@ public class Tc0066ConnectionResetTest {
         BeeDataSourceConfig config = createDefault();
         config.setInitialSize(1);
         config.setMaxActive(1);
-        config.setDefaultAutoCommit(false);
+        config.setDefaultAutoCommit(Boolean.FALSE);
         config.setDefaultSchema("DefaultSchema");
         config.setDefaultCatalog("DefaultCatalog");
-        config.setDefaultReadOnly(false);
-        config.setDefaultTransactionIsolation(TRANSACTION_READ_COMMITTED);
-        FastConnectionPool pool = new FastConnectionPool();
-        pool.start(config);
+        config.setDefaultReadOnly(Boolean.FALSE);
+        config.setDefaultTransactionIsolation(Integer.valueOf(TRANSACTION_READ_COMMITTED));
 
-        Connection con1 = null;
-        Connection con2 = null;
-        Connection raw1, raw2;
-        try {
-            con1 = pool.getConnection();
-            raw1 = (Connection) TestUtil.getFieldValue(con1, "raw");
+        try (BeeDataSource ds = new BeeDataSource(config)) {
 
-            Assertions.assertFalse(con1.getAutoCommit());
-            Assertions.assertFalse(con1.isReadOnly());
-            Assertions.assertEquals(TRANSACTION_READ_COMMITTED, con1.getTransactionIsolation());
-            Assertions.assertEquals("DefaultSchema", con1.getSchema());
-            Assertions.assertEquals("DefaultCatalog", con1.getCatalog());
-            Assertions.assertEquals(0, con1.getNetworkTimeout());
+            Connection raw1, raw2;
+            try (Connection con1 = ds.getConnection()) {
+                raw1 = (Connection) TestUtil.getFieldValue(con1, "raw");
+                Assertions.assertFalse(con1.getAutoCommit());
+                Assertions.assertFalse(con1.isReadOnly());
+                Assertions.assertEquals(TRANSACTION_READ_COMMITTED, con1.getTransactionIsolation());
+                Assertions.assertEquals("DefaultSchema", con1.getSchema());
+                Assertions.assertEquals("DefaultCatalog", con1.getCatalog());
+                Assertions.assertEquals(0, con1.getNetworkTimeout());
 
-            //change properties
-            con1.setAutoCommit(true);
-            con1.setReadOnly(true);
-            con1.setTransactionIsolation(TRANSACTION_SERIALIZABLE);
-            con1.setSchema("DefaultSchema1");
-            con1.setCatalog("DefaultCatalog1");
-            con1.setNetworkTimeout(new ThreadPoolExecutor(1, 1, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>()), 10);
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500L));
+                //change properties
+                con1.setAutoCommit(true);
+                con1.setReadOnly(true);
+                con1.setTransactionIsolation(TRANSACTION_SERIALIZABLE);
+                con1.setSchema("DefaultSchema1");
+                con1.setCatalog("DefaultCatalog1");
+                con1.setNetworkTimeout(new ThreadPoolExecutor(1, 1, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>()), 10);
+                LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(500L));
 
-            Assertions.assertEquals(TRANSACTION_SERIALIZABLE, con1.getTransactionIsolation());
-            Assertions.assertEquals("DefaultSchema1", con1.getSchema());
-            Assertions.assertEquals("DefaultCatalog1", con1.getCatalog());
+                Assertions.assertEquals(TRANSACTION_SERIALIZABLE, con1.getTransactionIsolation());
+                Assertions.assertEquals("DefaultSchema1", con1.getSchema());
+                Assertions.assertEquals("DefaultCatalog1", con1.getCatalog());
 
-            Assertions.assertEquals(10, con1.getNetworkTimeout());
-        } finally {
-            if (con1 != null) TestUtil.oclose(con1);
-        }
+                Assertions.assertEquals(10, con1.getNetworkTimeout());
+            }
 
-        try {
-            con2 = pool.getConnection();
-            raw2 = (Connection) TestUtil.getFieldValue(con2, "raw");
-            Assertions.assertEquals(raw1, raw2);
+            try (Connection con2 = ds.getConnection()) {
+                raw2 = (Connection) TestUtil.getFieldValue(con2, "raw");
+                Assertions.assertEquals(raw1, raw2);
 
-            Assertions.assertFalse(con2.getAutoCommit());
-            Assertions.assertFalse(con2.isReadOnly());
-            Assertions.assertEquals(TRANSACTION_READ_COMMITTED, con2.getTransactionIsolation());
-            Assertions.assertEquals("DefaultSchema", con2.getSchema());
-            Assertions.assertEquals("DefaultCatalog", con2.getCatalog());
-            Assertions.assertEquals(0, con2.getNetworkTimeout());
-        } finally {
-            if (con2 != null) TestUtil.oclose(con2);
+                Assertions.assertFalse(con2.getAutoCommit());
+                Assertions.assertFalse(con2.isReadOnly());
+                Assertions.assertEquals(TRANSACTION_READ_COMMITTED, con2.getTransactionIsolation());
+                Assertions.assertEquals("DefaultSchema", con2.getSchema());
+                Assertions.assertEquals("DefaultCatalog", con2.getCatalog());
+                Assertions.assertEquals(0, con2.getNetworkTimeout());
+            }
         }
     }
 }

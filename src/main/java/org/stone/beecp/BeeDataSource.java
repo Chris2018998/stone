@@ -176,23 +176,23 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //                                         4: Override methods of CommonDataSource                              //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
-        return poolStarted ? subDs.getLogWriter() : null;
+        return subDs != null ? subDs.getLogWriter() : null;
     }
 
     public void setLogWriter(PrintWriter out) throws SQLException {
-        if (poolStarted) subDs.setLogWriter(out);
+        if (subDs != null) subDs.setLogWriter(out);
     }
 
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return poolStarted ? subDs.getParentLogger() : null;
+        return subDs != null ? subDs.getParentLogger() : null;
     }
 
     public int getLoginTimeout() throws SQLException {
-        return poolStarted ? subDs.getLoginTimeout() : 0;
+        return subDs != null ? subDs.getLoginTimeout() : 0;
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {
-        if (poolStarted) subDs.setLoginTimeout(seconds);
+        if (subDs != null) subDs.setLoginTimeout(seconds);
     }
 
     public boolean isWrapperFor(Class<?> clazz) {
