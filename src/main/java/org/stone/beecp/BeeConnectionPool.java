@@ -151,6 +151,13 @@ public interface BeeConnectionPool extends Closeable {
     List<BeeJdbcEventLog> clearEventLog(int type);
 
     /**
+     * Switch method to switch event handle mode.
+     *
+     * @param syncMode is true that logs handled by sync mode
+     */
+    void setEventLogHandledMode(boolean syncMode);
+
+    /**
      * Cancel statement in executing,this method may be support distribution network.
      *
      * @param logId log id

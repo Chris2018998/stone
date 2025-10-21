@@ -95,6 +95,12 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         return null;
     }
 
+    /**
+     * Switch method to switch event handle mode.
+     *
+     * @param syncMode is a log type for logs being gotten
+     */
+    public void setEventLogHandledMode(boolean syncMode){}
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         return null;

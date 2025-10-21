@@ -57,6 +57,7 @@ public interface BeeJdbcEventLogManager {
      */
     List<BeeJdbcEventLog> clear(int type);
 
+
     /**
      * Query logs with given log type.
      *
@@ -64,6 +65,13 @@ public interface BeeJdbcEventLogManager {
      * @return a result log list of expected type
      */
     List<BeeJdbcEventLog> getLog(int type);
+
+    /**
+     * Switch method to switch event handle mode.
+     *
+     * @param syncMode is a log type for logs being gotten
+     */
+    void setEventLogHandledMode(boolean syncMode);
 
     //***************************************************************************************************************//
     //                                         3: logs collection                                                        //

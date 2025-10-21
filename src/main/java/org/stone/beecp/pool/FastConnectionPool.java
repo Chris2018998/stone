@@ -968,6 +968,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         return eventLogManager != null ? eventLogManager.clear(type) : Collections.emptyList();
     }
 
+    public void setEventLogHandledMode(boolean syncMode) {
+        if (eventLogManager != null) eventLogManager.setEventLogHandledMode(syncMode);
+    }
+
     public void enableEventLogManager(boolean enable) {
         if (eventLogManager != null) {
             if (enable) {//enable

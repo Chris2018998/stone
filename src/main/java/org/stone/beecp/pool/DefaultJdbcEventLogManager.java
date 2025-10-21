@@ -74,6 +74,10 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
         this.sqlLogQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
+    //***************************************************************************************************************//
+    //                                         2: logs record                                                        //
+    //***************************************************************************************************************//
+
     /**
      * Start to call a method and a log object is return this start method
      *
@@ -111,10 +115,6 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
             }
         }
     }
-
-    //***************************************************************************************************************//
-    //                                         2: log record                                                         //
-    //***************************************************************************************************************//
 
     /**
      * update result info to log object
@@ -170,25 +170,17 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
         }
     }
 
-    /**
-     * Cancel statement in executing
-     *
-     * @param logId is an id of statement log cached in manager.
-     */
-    public boolean cancelStatement(Object logId) throws SQLException {
-        if (logId == null) return false;
-        for (BeeJdbcEventLog log : sqlLogQueue) {
-            if (logId.equals(log.getId())) {
-                return log.cancelStatement();
-            }
-        }
-        return false;
-    }
-
 
     //***************************************************************************************************************//
     //                                         1: Logs maintain                                                      //
     //***************************************************************************************************************//
+    public void setEventLogHandledMode(boolean syncMode) {
+        if (this.handler != null) {
+            this.handleBySyncMode = syncMode;
+            this.handleByAsyncMode = !syncMode;
+        }
+    }
+
     public List<BeeJdbcEventLog> getLog(int type) {
         List<BeeJdbcEventLog> logList = new LinkedList<>();
         switch (type) {
@@ -319,4 +311,20 @@ public class DefaultJdbcEventLogManager implements BeeJdbcEventLogManager {
             }
         }
     }
+
+    /**
+     * Cancel statement in executing
+     *
+     * @param logId is an id of statement log cached in manager.
+     */
+    public boolean cancelStatement(Object logId) throws SQLException {
+        if (logId == null) return false;
+        for (BeeJdbcEventLog log : sqlLogQueue) {
+            if (logId.equals(log.getId())) {
+                return log.cancelStatement();
+            }
+        }
+        return false;
+    }
+
 }

@@ -256,6 +256,10 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.getPool().cancelStatement(logId);
     }
 
+    public void setEventLogHandledMode(boolean syncMode) throws SQLException {
+        this.getPool().setEventLogHandledMode(syncMode);
+    }
+
     //***************************************************************************************************************//
     //                                     7: override methods to set or update jdbc link info                       //
     //***************************************************************************************************************//

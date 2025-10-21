@@ -236,10 +236,6 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableMethodLogCollector(BeeJdbcEventLogManager connectionTracker) {
-        //do nothing
-    }
-
     public boolean cancelStatement(Object logId) {
         return false;
     }
@@ -259,6 +255,8 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
     public boolean isEnabledEventLogManager() {
         return false;
     }
+
+    public void setEventLogHandledMode(boolean syncMode){}
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(this.poolName);

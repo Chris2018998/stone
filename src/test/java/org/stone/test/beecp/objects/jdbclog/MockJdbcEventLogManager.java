@@ -38,6 +38,8 @@ public class MockJdbcEventLogManager implements BeeJdbcEventLogManager {
         return null;
     }
 
+
+
     public BeeJdbcEventLog startCall(int type, String method, Object[] parameters, String preparedSQL, Statement statement) {
         return null;
     }
@@ -50,5 +52,10 @@ public class MockJdbcEventLogManager implements BeeJdbcEventLogManager {
 
     public boolean cancelStatement(Object logId) {
         return true;
+    }
+
+
+    public void setEventLogHandledMode(boolean syncMode){
+
     }
 }
