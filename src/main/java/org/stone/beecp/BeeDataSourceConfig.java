@@ -724,7 +724,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //****************************************************************************************************************//
-    //                                    9: Log Manager(18)[50 --- 52]                                                          //
+    //                                    9: Log Manager(18)[52 --- 60]                                               //
     //****************************************************************************************************************//
     public boolean isEnableMethodExecutionLogCache() {
         return enableMethodExecutionLogCache;
