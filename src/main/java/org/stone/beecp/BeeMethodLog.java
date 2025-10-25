@@ -11,20 +11,21 @@ package org.stone.beecp;
 
 import java.io.Serializable;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
- * Jdbc log interface,its instances generated from {@link BeeJdbcEventLogManager#startCall(int, String, Object[], String, Statement)}
+ * Method call log interface.
  *
  * @author Chris Liao
  */
-public interface BeeJdbcEventLog extends Serializable {
+public interface BeeMethodLog extends Serializable {
     //All logs
     int Type_All = 0;
     //Log type represent method call that connection get from pool
     int Type_Connection_Get = 1;
-    //Log type represent method call that sql execution on pooled connections
-    int Type_SQL_Execution = 2;
+    //Log type represent method call that sql preparation on pooled connections
+    int Type_SQL_Preparation = 2;
+    //Log type represent method call that sql execution on (Statement,PreparedStatement,CallableStatement)
+    int Type_SQL_Execution = 3;
 
     /**
      * Get log type.
@@ -110,7 +111,7 @@ public interface BeeJdbcEventLog extends Serializable {
      *
      * @return a result object
      */
-    Object getResultObject();
+    Object getResult();
 
     /**
      * Get fail cause of method call,this cause may be null.
@@ -118,13 +119,6 @@ public interface BeeJdbcEventLog extends Serializable {
      * @return a result object
      */
     Throwable getFailCause();
-
-    /**
-     * Query log is whether handled by handler.
-     *
-     * @return a boolean,true is handled
-     */
-    boolean isHandled();
 
     /**
      * Query log is whether removed from log manager.

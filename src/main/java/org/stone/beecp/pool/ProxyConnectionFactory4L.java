@@ -9,8 +9,6 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcEventLogManager;
-
 import java.sql.SQLException;
 
 /**
@@ -21,10 +19,10 @@ import java.sql.SQLException;
  */
 
 final class ProxyConnectionFactory4L extends ProxyConnectionFactory {
-    private final BeeJdbcEventLogManager logManager;
+    private final DefaultMethodLogCache logCache;
 
-    ProxyConnectionFactory4L(BeeJdbcEventLogManager logManager) {
-        this.logManager = logManager;
+    ProxyConnectionFactory4L(DefaultMethodLogCache logCache) {
+        this.logCache = logCache;
     }
 
     public ProxyConnectionBase createProxyConnection(PooledConnection p) throws SQLException {

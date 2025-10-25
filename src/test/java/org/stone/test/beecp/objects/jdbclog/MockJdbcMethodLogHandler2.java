@@ -13,29 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.stone.beeop;
-
-import java.util.List;
+package org.stone.test.beecp.objects.jdbclog;
 
 /**
- * A handler interface need be implemented by subClass
+ * A method log handler.
  *
  * @author Chris Liao
  */
-public interface BeeObjectEventLogHandler<K, V> {
+public class MockJdbcMethodLogHandler2 extends DefaultMethodLogHandler {
+    public MockJdbcMethodLogHandler2(String name) {
 
-    /**
-     * Handle slow logs and exception logs in sync mode
-     *
-     * @param log is a slow log or an exception log
-     */
-    boolean handle(BeeObjectEventLog<K, V> log);
-
-    /**
-     * Handle a log list which contains some slow logs and exception logs in async mode.
-     *
-     * @param logList is a log list need be handled
-     */
-    boolean[] handle(List<BeeObjectEventLog<K, V>> logList);
-
+    }
 }

@@ -9,8 +9,6 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcEventLogManager;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -30,7 +28,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     protected String sql;
     protected Statement raw;
     protected long preparationTookTime;//ms
-    protected BeeJdbcEventLogManager logManager;
+    protected DefaultMethodLogCache logCache;
 
     boolean unregister;
     private ProxyResultSetBase curRe;
@@ -52,7 +50,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
 
         this.preparationTookTime = preparationTookTime;
         this.sql = sql;//if subclass is Statement implementation,the sql is null
-        this.logManager = o.logManager;
+        this.logCache = o.logCache;
     }
 
     //***************************************************************************************************************//

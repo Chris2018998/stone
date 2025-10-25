@@ -9,6 +9,8 @@
  */
 package org.stone.beeop;
 
+import org.stone.beeop.pool.BeeObjectEventLogManager;
+
 import java.io.Serializable;
 
 /**
@@ -16,7 +18,7 @@ import java.io.Serializable;
  *
  * @author Chris Liao
  */
-public interface BeeObjectEventLog<K, V> extends Serializable {
+public interface BeeObjectMethodLog<K, V> extends Serializable {
     //All logs
     int Type_All = 0;
     //constants log type,objects borrow log

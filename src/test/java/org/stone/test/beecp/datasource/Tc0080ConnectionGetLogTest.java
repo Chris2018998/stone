@@ -12,11 +12,10 @@ package org.stone.test.beecp.datasource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeJdbcEventLog;
-import org.stone.beecp.pool.DefaultJdbcEventLogHandler;
-import org.stone.beecp.pool.DefaultJdbcEventLogManager;
+import org.stone.beecp.BeeMethodLog;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 import org.stone.test.beecp.objects.factory.MockXaConnectionFactory;
+import org.stone.test.beecp.objects.jdbclog.DefaultMethodLogHandler;
 import org.stone.test.beecp.objects.threads.BorrowThread;
 
 import javax.sql.XAConnection;
@@ -25,20 +24,20 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.stone.beecp.BeeJdbcEventLog.Type_Connection_Get;
+import static org.stone.beecp.BeeMethodLog.Type_Connection_Get;
 
 /**
  * @author Chris Liao
  */
-public class Tc0080ConnectionEventLogTest {
+public class Tc0080ConnectionGetLogTest {
 
     @Test
     public void testExceptionLog() throws SQLException {
         //1: get connection
         try (BeeDataSource ds = new BeeDataSource()) {
-            ds.setEventLogManager(new DefaultJdbcEventLogManager());
-            ds.setEventLogHandler(new DefaultJdbcEventLogHandler());
-            ds.setEventLogHandledBySyncMode(true);//sync mode
+
+            ds.setEnableMethodLogCache(true);
+            ds.setMethodLogHandler(new DefaultMethodLogHandler());
             MockConnectionFactory connectionFactory = new MockConnectionFactory();
             connectionFactory.setFailCause(new SQLException("Failed to connect database"));
             ds.setConnectionFactory(connectionFactory);
@@ -46,19 +45,18 @@ public class Tc0080ConnectionEventLogTest {
             try (Connection ignored = ds.getConnection()) {
                 Assertions.fail("[testConnectionExceptionLog]Test failed");
             } catch (SQLException e) {
-                Assertions.assertTrue(ds.isEnabledEventLogManager());
-                List<BeeJdbcEventLog> logList = ds.getEventLog(Type_Connection_Get);
+                Assertions.assertTrue(ds.isEnabledMethodLogCache());
+                List<BeeMethodLog> logList = ds.getMethodLog(Type_Connection_Get);
                 Assertions.assertEquals(1, logList.size());
-                BeeJdbcEventLog log = logList.get(0);
+                BeeMethodLog log = logList.get(0);
                 Assertions.assertNotNull(log.getId());
                 Assertions.assertEquals(Type_Connection_Get, log.getType());
 
-                Assertions.assertEquals("FastConnectionPool4L.getConnection()", log.getMethod());
-                Assertions.assertTrue(log.isHandled());
+                Assertions.assertEquals("FastConnectionPool.getConnection()", log.getMethod());
                 Assertions.assertFalse(log.isSuccessful());
                 Assertions.assertTrue(log.isException());
                 Assertions.assertFalse(log.isRunning());
-                Assertions.assertNull(log.getResultObject());
+                Assertions.assertNull(log.getResult());
                 Assertions.assertNotNull(log.getFailCause());
 
                 Assertions.assertTrue(log.getStartTime() != 0);
@@ -69,9 +67,9 @@ public class Tc0080ConnectionEventLogTest {
 
         //2: get XA connection
         try (BeeDataSource ds = new BeeDataSource()) {
-            ds.setEventLogManager(new DefaultJdbcEventLogManager());
-            ds.setEventLogHandler(new DefaultJdbcEventLogHandler());
-            ds.setEventLogHandledBySyncMode(true);//sync mode
+            //ds.setEventLogManager(new MethodLogCache());
+            ds.setMethodLogHandler(new DefaultMethodLogHandler());
+            ds.setEnableMethodLogCache(true);//sync mode
             MockXaConnectionFactory xaConnectionFactory = new MockXaConnectionFactory();
             xaConnectionFactory.setFailCause(new SQLException("Failed to connect database"));
             ds.setXaConnectionFactory(xaConnectionFactory);
@@ -82,24 +80,23 @@ public class Tc0080ConnectionEventLogTest {
                     Assertions.fail("[testConnectionExceptionLog]Test failed");
                 }
             } catch (SQLException e) {
-                Assertions.assertTrue(ds.isEnabledEventLogManager());
-                List<BeeJdbcEventLog> logList = ds.getEventLog(Type_Connection_Get);
+                Assertions.assertTrue(ds.isEnabledMethodLogCache());
+                List<BeeMethodLog> logList = ds.getMethodLog(Type_Connection_Get);
                 Assertions.assertEquals(1, logList.size());
-                BeeJdbcEventLog log = logList.get(0);
+                BeeMethodLog log = logList.get(0);
                 Assertions.assertNotNull(log.getId());
                 Assertions.assertEquals(Type_Connection_Get, log.getType());
 
-                Assertions.assertEquals("FastConnectionPool4L.getXAConnection()", log.getMethod());
+                Assertions.assertEquals("FastConnectionPool.getXAConnection()", log.getMethod());
                 Assertions.assertTrue(log.isException());
-                Assertions.assertTrue(log.isHandled());
                 Assertions.assertFalse(log.isSuccessful());
                 Assertions.assertFalse(log.isRunning());
-                Assertions.assertNull(log.getResultObject());
+                Assertions.assertNull(log.getResult());
                 Assertions.assertTrue(log.getStartTime() != 0);
                 Assertions.assertTrue(log.getEndTime() != 0);
                 Assertions.assertTrue(log.getEndTime() >= log.getStartTime());
 
-                logList = ds.clearEventLog(Type_Connection_Get);
+                logList = ds.clearMethodLog(Type_Connection_Get);
                 Assertions.assertEquals(1, logList.size());
             }
         }
@@ -109,9 +106,9 @@ public class Tc0080ConnectionEventLogTest {
     public void testSlowLog() throws Exception {
         //1: get connection
         try (BeeDataSource ds = new BeeDataSource()) {
-            ds.setEventLogManager(new DefaultJdbcEventLogManager());
-            ds.setEventLogHandler(new DefaultJdbcEventLogHandler());
-            ds.setEventLogHandledBySyncMode(true);//sync mode
+            //ds.setEventLogManager(new MethodLogCache());
+            ds.setMethodLogHandler(new DefaultMethodLogHandler());
+            ds.setEnableMethodLogCache(true);//sync mode
             ds.setSlowConnectionThreshold(100L);
             MockConnectionFactory connectionFactory = new MockConnectionFactory();
             connectionFactory.setNeedPark(true);
@@ -122,21 +119,22 @@ public class Tc0080ConnectionEventLogTest {
             borrowThread.start();
             borrowThread.join();
 
-            Assertions.assertTrue(ds.isEnabledEventLogManager());
-            List<BeeJdbcEventLog> logList = ds.getEventLog(Type_Connection_Get);
+            Assertions.assertTrue(ds.isEnabledMethodLogCache());
+            List<BeeMethodLog> logList = ds.getMethodLog(Type_Connection_Get);
             Assertions.assertEquals(1, logList.size());
-            BeeJdbcEventLog log = logList.get(0);
+            BeeMethodLog log = logList.get(0);
             Assertions.assertNotNull(log.getId());
             Assertions.assertEquals(Type_Connection_Get, log.getType());
             Assertions.assertTrue(log.isSlow());
-            Assertions.assertTrue(log.isHandled());
+            Assertions.assertTrue(log.isSuccessful());
+            Assertions.assertFalse(log.isException());
         }
 
         //2: get XA connection
         try (BeeDataSource ds = new BeeDataSource()) {
-            ds.setEventLogManager(new DefaultJdbcEventLogManager());
-            ds.setEventLogHandler(new DefaultJdbcEventLogHandler());
-            ds.setEventLogHandledBySyncMode(true);//sync mode
+            //ds.setEventLogManager(new MethodLogCache());
+            ds.setMethodLogHandler(new DefaultMethodLogHandler());
+            ds.setEnableMethodLogCache(true);//sync mode
             ds.setSlowConnectionThreshold(100L);
             MockXaConnectionFactory xaConnectionFactory = new MockXaConnectionFactory();
             xaConnectionFactory.setNeedPark(true);
@@ -147,11 +145,10 @@ public class Tc0080ConnectionEventLogTest {
             borrowThread.start();
             borrowThread.join();
 
-            List<BeeJdbcEventLog> logList = ds.getEventLog(Type_Connection_Get);
-            BeeJdbcEventLog log = logList.get(0);
+            List<BeeMethodLog> logList = ds.getMethodLog(Type_Connection_Get);
+            BeeMethodLog log = logList.get(0);
             Assertions.assertEquals(Type_Connection_Get, log.getType());
             Assertions.assertTrue(log.isSlow());
-            Assertions.assertTrue(log.isHandled());
         }
     }
 }

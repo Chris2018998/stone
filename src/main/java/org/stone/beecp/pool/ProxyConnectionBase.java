@@ -9,8 +9,6 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcEventLogManager;
-
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Objects;
@@ -26,7 +24,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
  */
 public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
     protected Connection raw;
-    protected BeeJdbcEventLogManager logManager;
+    protected DefaultMethodLogCache logCache;
 
     ProxyConnectionBase(PooledConnection p) {
         super(p);
@@ -34,12 +32,12 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
         p.proxyInUsing = this;
     }
 
-    ProxyConnectionBase(PooledConnection p, BeeJdbcEventLogManager logManager) {
+    ProxyConnectionBase(PooledConnection p, DefaultMethodLogCache logCache) {
         super(p);
         raw = p.rawConn;
         p.proxyInUsing = this;
 
-        this.logManager = logManager;
+        this.logCache = logCache;
     }
 
     //***************************************************************************************************************//

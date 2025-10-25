@@ -121,41 +121,45 @@ public interface BeeConnectionPool extends Closeable {
      */
     void enableLogPrint(boolean enable);
 
+
+    //***************************************************************************************************************//
+    //                                         3: method logs                                                          //
+    //***************************************************************************************************************//
+
     /**
-     * Queries logs manager whether being enabled in pool.
+     * Queries method log cache whether being enabled in pool.
      *
      * @return boolean true is enabled,false is disabled
      */
-    boolean isEnabledEventLogManager();
+    boolean isEnabledMethodLogCache();
 
     /**
-     * A switch method to enable or disable configured {@link BeeJdbcEventLogManager}.
+     * A switch method to enable or disable method log cache
      *
-     * @param enable is true that make configured manager to work;false that make it to stop work
+     * @param enable is true that make cache to collect method logs;false that make it to stop work
      */
-    void enableEventLogManager(boolean enable);
-
+    void enableMethodLogCache(boolean enable);
 
     /**
      * Gets logs from pool with specified type.
      *
-     * @param type should be one of[BeeJdbcEventLog.Type_Connection_Get,BeeJdbcEventLog.Type_SQL_Execution];if not,then return all logs
+     * @param type should be one of[BeeMethodLog.Type_Connection_Get,BeeMethodLog.Type_SQL_Execution];if not,then return all logs
      */
-    List<BeeJdbcEventLog> getEventLog(int type);
+    List<BeeMethodLog> getMethodLog(int type);
 
     /**
      * Clears logs from pool with specified type.
      *
-     * @param type should be one of[BeeJdbcEventLog.Type_Connection_Get,BeeJdbcEventLog.Type_SQL_Execution];if not,then clear all logs
+     * @param type should be one of[BeeMethodLog.Type_Connection_Get,BeeMethodLog.Type_SQL_Execution];if not,then clear all logs
      */
-    List<BeeJdbcEventLog> clearEventLog(int type);
+    List<BeeMethodLog> clearMethodLog(int type);
 
     /**
-     * Switch method to switch event handle mode.
+     * Set a new log handler to pool.
      *
-     * @param syncMode is true that logs handled by sync mode
+     * @param handler to handle method logs
      */
-    void setEventLogHandledMode(boolean syncMode);
+    void setMethodLogHandler(BeeMethodLogHandler handler);
 
     /**
      * Cancel statement in executing,this method may be support distribution network.
@@ -164,6 +168,5 @@ public interface BeeConnectionPool extends Closeable {
      * @return boolean is true that log is a statement log and success to cancellation called on this statement.
      */
     boolean cancelStatement(Object logId) throws SQLException;
-
 }
 	

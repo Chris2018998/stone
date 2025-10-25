@@ -161,34 +161,27 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //51: Class name of Jdbc info decoder(url,username password),default is none
     private String linkInfoDecoderClassName;
 
-    //********************************************** jdbc event logs **************************************************//
-    //52: Capacity of logs cache size,default is 1000
-    private int eventLogCacheSize = 1000;
-    //53: Logs timeout,default is 3 minutes
-    private long eventLogTimeout = 180000L;
-    //54: interval time to clear timeout logs,default is 3 minutes
-    private long intervalOfClearTimeoutEventLogs = eventLogTimeout;
+    //********************************************** method call logs ************************************************//
+    //52: A flag to enable method log cache
+    private boolean enableMethodLogCache;
+    //53: Capacity of logs cache size,default is 1000
+    private int methodLogCacheSize = 1000;
+    //54: Logs timeout,default is 3 minutes
+    private long methodLogTimeout = 180000L;
+    //55: interval time to clear timeout logs,default is 3 minutes
+    private long intervalOfClearTimeoutMethodLogs = methodLogTimeout;
 
-    //55: jdbc event logs manager,default is none;priority order: instance > class > class name
-    private BeeJdbcEventLogManager eventLogManager;
-    //56: Class of jdbc event logs manager,default is none
-    private Class<? extends BeeJdbcEventLogManager> eventlogManagerClass;
-    //57: Class name of jdbc event logs manager,default is none
-    private String eventLogManagerClassName;
-
-    //58: Slow logs handle mode,default is true
-    private boolean eventLogHandledBySyncMode = true;
-    //59: Slow threshold for connection acquisition,default is 30 seconds,time unit:milliseconds
+    //56: Slow threshold for connection acquisition,default is 30 seconds,time unit:milliseconds
     private long slowConnectionThreshold = 30000L;
-    //60: Slow threshold for sql execution,default is 30 seconds,time unit:milliseconds
+    //57: Slow threshold for sql execution,default is 30 seconds,time unit:milliseconds
     private long slowSQLThreshold = 30000L;
 
-    //61: Slow logs handler(Note: only supports slow logs and exception logs);priority order: instance > class > class name
-    private BeeJdbcEventLogHandler eventLogHandler;
-    //62: Class of slow logs handler,default is none
-    private Class<? extends BeeJdbcEventLogHandler> eventLogHandlerClass;
-    //63: Class name of slow logs handler,default is none
-    private String eventLogHandlerClassName;
+    //58: log handler: instance > class > class name
+    private BeeMethodLogHandler methodLogHandler;
+    //59: Class of slow logs handler,default is none
+    private Class<? extends BeeMethodLogHandler> methodLogHandlerClass;
+    //60: Class name of log handler,default is none
+    private String methodLogHandlerClassName;
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                                         //
@@ -733,82 +726,42 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    9: Log Manager(18)[50 --- 52]                                                          //
     //****************************************************************************************************************//
-    public int getEventLogCacheSize() {
-        return eventLogCacheSize;
+    public boolean isEnableMethodLogCache() {
+        return enableMethodLogCache;
     }
 
-    public void setEventLogCacheSize(int eventLogCacheSize) {
-        if (eventLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'event-log-cache-size' must be greater than zero");
-        this.eventLogCacheSize = eventLogCacheSize;
+    public void setEnableMethodLogCache(boolean enableMethodLogCache) {
+        this.enableMethodLogCache = enableMethodLogCache;
     }
 
-    public long getEventLogTimeout() {
-        return eventLogTimeout;
+    public int getMethodLogCacheSize() {
+        return methodLogCacheSize;
     }
 
-    public void setEventLogTimeout(long eventLogTimeout) {
-        if (eventLogTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'event-log-timeout' must be greater than zero");
-        this.eventLogTimeout = eventLogTimeout;
+    public void setMethodLogCacheSize(int methodLogCacheSize) {
+        if (methodLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'method-log-cache-size' must be greater than zero");
+        this.methodLogCacheSize = methodLogCacheSize;
     }
 
-    public long getIntervalOfClearTimeoutEventLogs() {
-        return intervalOfClearTimeoutEventLogs;
+    public long getMethodLogTimeout() {
+        return methodLogTimeout;
     }
 
-    public void setIntervalOfClearTimeoutEventLogs(long intervalOfClearTimeoutEventLogs) {
-        if (intervalOfClearTimeoutEventLogs <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-event-logs' must be greater than zero");
-        this.intervalOfClearTimeoutEventLogs = intervalOfClearTimeoutEventLogs;
+    public void setMethodLogTimeout(long methodLogTimeout) {
+        if (methodLogTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'method-log-timeout' must be greater than zero");
+        this.methodLogTimeout = methodLogTimeout;
     }
 
-    public BeeJdbcEventLogManager getEventLogManager() {
-        return eventLogManager;
+    public long getIntervalOfClearTimeoutMethodLogs() {
+        return intervalOfClearTimeoutMethodLogs;
     }
 
-    public void setEventLogManager(BeeJdbcEventLogManager eventLogManager) {
-        this.eventLogManager = eventLogManager;
-    }
-
-    public Class<? extends BeeJdbcEventLogManager> getEventlogManagerClass() {
-        return eventlogManagerClass;
-    }
-
-    public void setEventLogManagerClass(Class<? extends BeeJdbcEventLogManager> eventlogManagerClass) {
-        this.eventlogManagerClass = eventlogManagerClass;
-    }
-
-    public String getEventLogManagerClassName() {
-        return eventLogManagerClassName;
-    }
-
-    public void setEventLogManagerClassName(String eventLogManagerClassName) {
-        this.eventLogManagerClassName = eventLogManagerClassName;
-    }
-
-    public BeeJdbcEventLogHandler getEventLogHandler() {
-        return eventLogHandler;
-    }
-
-    public void setEventLogHandler(BeeJdbcEventLogHandler eventLogHandler) {
-        this.eventLogHandler = eventLogHandler;
-    }
-
-    public Class<? extends BeeJdbcEventLogHandler> getEventLogHandlerClass() {
-        return eventLogHandlerClass;
-    }
-
-    public void setEventLogHandlerClass(Class<? extends BeeJdbcEventLogHandler> eventLogHandlerClass) {
-        this.eventLogHandlerClass = eventLogHandlerClass;
-    }
-
-    public String getEventLogHandlerClassName() {
-        return eventLogHandlerClassName;
-    }
-
-    public void setEventLogHandlerClassName(String eventLogHandlerClassName) {
-        this.eventLogHandlerClassName = eventLogHandlerClassName;
+    public void setIntervalOfClearTimeoutMethodLogs(long intervalOfClearTimeoutMethodLogs) {
+        if (intervalOfClearTimeoutMethodLogs <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-method-logs' must be greater than zero");
+        this.intervalOfClearTimeoutMethodLogs = intervalOfClearTimeoutMethodLogs;
     }
 
     public long getSlowConnectionThreshold() {
@@ -831,12 +784,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.slowSQLThreshold = slowSQLThreshold;
     }
 
-    public boolean isEventLogHandledBySyncMode() {
-        return eventLogHandledBySyncMode;
+    public BeeMethodLogHandler getMethodLogHandler() {
+        return methodLogHandler;
     }
 
-    public void setEventLogHandledBySyncMode(boolean eventLogHandledBySyncMode) {
-        this.eventLogHandledBySyncMode = eventLogHandledBySyncMode;
+    public void setMethodLogHandler(BeeMethodLogHandler methodLogHandler) {
+        this.methodLogHandler = methodLogHandler;
+    }
+
+    public Class<? extends BeeMethodLogHandler> getMethodLogHandlerClass() {
+        return methodLogHandlerClass;
+    }
+
+    public void setMethodLogHandlerClass(Class<? extends BeeMethodLogHandler> methodLogHandlerClass) {
+        this.methodLogHandlerClass = methodLogHandlerClass;
+    }
+
+    public String getMethodLogHandlerClassName() {
+        return methodLogHandlerClassName;
+    }
+
+    public void setMethodLogHandlerClassName(String methodLogHandlerClassName) {
+        this.methodLogHandlerClassName = methodLogHandlerClassName;
     }
 
     //****************************************************************************************************************//
@@ -980,8 +949,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeJdbcEventLogManager logManager = this.createJdbcEventLogManager();
-        BeeJdbcEventLogHandler logHandler = logManager != null ? createJdbcCallLogHandler() : null;
+        BeeMethodLogHandler logHandler = createJdbcMethodLogHandler();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -999,8 +967,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.predicate = predicate;
-        checkedConfig.eventLogHandler = logHandler;
-        checkedConfig.eventLogManager = logManager;
+        checkedConfig.methodLogHandler = logHandler;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
 
@@ -1079,40 +1046,20 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //create method log handler
-    private BeeJdbcEventLogHandler createJdbcCallLogHandler() {
+    private BeeMethodLogHandler createJdbcMethodLogHandler() {
         //step1:if exists handler,then return it
-        if (this.eventLogHandler != null) return this.eventLogHandler;
+        if (this.methodLogHandler != null) return this.methodLogHandler;
 
         //step2: create a handler
-        if (this.eventLogHandlerClass != null || isNotBlank(this.eventLogHandlerClassName)) {
+        if (this.methodLogHandlerClass != null || isNotBlank(this.methodLogHandlerClassName)) {
             Class<?> handlerClass = null;
             try {
-                handlerClass = eventLogHandlerClass != null ? eventLogHandlerClass : loadClass(eventLogHandlerClassName);
-                return (BeeJdbcEventLogHandler) createClassInstance(handlerClass, BeeJdbcEventLogHandler.class, "jdbc call log handler");
+                handlerClass = methodLogHandlerClass != null ? methodLogHandlerClass : loadClass(methodLogHandlerClassName);
+                return (BeeMethodLogHandler) createClassInstance(handlerClass, BeeMethodLogHandler.class, "method log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + eventLogHandlerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create method log handler with class[" + methodLogHandlerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc event log handler with class[" + handlerClass + "]", e);
-            }
-        }
-        return null;
-    }
-
-    //create jdbc method log manager
-    private BeeJdbcEventLogManager createJdbcEventLogManager() {
-        //step1:if exists log manager,then return it
-        if (this.eventLogManager != null) return this.eventLogManager;
-
-        //step2: create jdbc method log manager
-        if (this.eventlogManagerClass != null || isNotBlank(this.eventLogManagerClassName)) {
-            Class<?> logManagerClass = null;
-            try {
-                logManagerClass = this.eventlogManagerClass != null ? this.eventlogManagerClass : loadClass(eventLogManagerClassName);
-                return (BeeJdbcEventLogManager) createClassInstance(logManagerClass, BeeJdbcEventLogManager.class, "jdbc method log manager");
-            } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc event log manager with class[" + eventLogManagerClassName + "]", e);
-            } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create jdbc event log manager with class[" + logManagerClass + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create method log handler with class[" + handlerClass + "]", e);
             }
         }
         return null;

@@ -15,28 +15,35 @@
  */
 package org.stone.beecp;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
- * Log handler interface, {@link BeeJdbcEventLogManager} drives its implementation instance to handle slow logs and exception logs.
+ * Log handler interface.
  *
  * @author Chris Liao
  */
-public interface BeeJdbcEventLogHandler {
+public interface BeeMethodLogHandler {
 
     /**
-     * Handle slow logs and exception logs in sync mode.
+     * Plugin method: Handles a log of method call.
      *
-     * @param log is a slow log or an exception log
-     * @return true if success to be handled,false that not be handled.
+     * @param log to be handled
      */
-    boolean handle(BeeJdbcEventLog log);
+    void handleStartLog(BeeMethodLog log) throws SQLException;
 
     /**
-     * Handle a log list(slow logs and exception logs) in async mode.
+     * Plugin method: Handles a log of method call.
      *
-     * @param logList contains slow logs and exceptions,may be one type of them
-     * @return boolean array of logs handled flag
+     * @param log to be handled
      */
-    boolean[] handle(List<BeeJdbcEventLog> logList);
+    void handleEndLog(BeeMethodLog log) throws SQLException;
+
+    /**
+     * Handle a list of long-running logs
+     *
+     * @param longRunningList to be handled
+     */
+    void handleLongRunningLogs(List<BeeMethodLog> longRunningList);
+
 }

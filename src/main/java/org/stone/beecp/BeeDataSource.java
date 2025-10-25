@@ -10,7 +10,6 @@
 package org.stone.beecp;
 
 import org.stone.beecp.pool.FastConnectionPool;
-import org.stone.beecp.pool.FastConnectionPool4L;
 import org.stone.beecp.pool.exception.ConnectionGetInterruptedException;
 import org.stone.beecp.pool.exception.ConnectionGetTimeoutException;
 import org.stone.beecp.pool.exception.PoolCreateFailedException;
@@ -36,7 +35,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.stone.beecp.pool.ConnectionPoolStatics.Dummy_CommonDataSource;
 import static org.stone.tools.BeanUtil.createClassInstance;
 import static org.stone.tools.CommonUtil.isBlank;
-import static org.stone.tools.CommonUtil.isNotBlank;
 import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
 
 /**
@@ -79,11 +77,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private static void createPool(BeeDataSource ds) throws SQLException {
         String poolImplementClassName = ds.getPoolImplementClassName();
         try {
-            if (isBlank(poolImplementClassName)) {
-                poolImplementClassName = (ds.getEventLogManager() != null || ds.getEventlogManagerClass() != null || isNotBlank(ds.getEventLogManagerClassName())) ?
-                        FastConnectionPool4L.class.getName() : FastConnectionPool.class.getName();
-            }
-
+            if (isBlank(poolImplementClassName)) poolImplementClassName = FastConnectionPool.class.getName();
             ds.pool = (BeeConnectionPool) createClassInstance(poolImplementClassName, BeeConnectionPool.class, "pool");
             ds.pool.start(ds);
             ds.poolStarted = true;
@@ -160,7 +154,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         3: Pool clear(2)                                                      //
+    //                                         3: Pool clear(2)                                                       //
     //***************************************************************************************************************//
     public void restart(boolean forceRecycleBorrowed) throws SQLException {
         this.getPool().restart(forceRecycleBorrowed);
@@ -173,7 +167,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         4: Override methods of CommonDataSource                              //
+    //                                         4: Override methods of CommonDataSource                               //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
         return subDs != null ? subDs.getLogWriter() : null;
@@ -234,30 +228,34 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         6: jdbc event logs manager(5)                                          //
+    //                                         6: jdbc method logs cache(6)                                          //
     //***************************************************************************************************************//
-    public boolean isEnabledEventLogManager() throws SQLException {
-        return this.getPool().isEnabledEventLogManager();
+    public boolean isEnabledMethodLogCache() throws SQLException {
+        return this.getPool().isEnabledMethodLogCache();
     }
 
-    public void enableEventLogManager(boolean enable) throws SQLException {
-        this.getPool().enableEventLogManager(enable);
+    public void enableMethodLogCache(boolean enable) throws SQLException {
+        this.getPool().enableMethodLogCache(enable);
     }
 
-    public List<BeeJdbcEventLog> getEventLog(int type) throws SQLException {
-        return this.getPool().getEventLog(type);
+    public List<BeeMethodLog> getMethodLog(int type) throws SQLException {
+        return this.getPool().getMethodLog(type);
     }
 
-    public List<BeeJdbcEventLog> clearEventLog(int type) throws SQLException {
-        return this.getPool().clearEventLog(type);
+    public List<BeeMethodLog> clearMethodLog(int type) throws SQLException {
+        return this.getPool().clearMethodLog(type);
     }
 
     public boolean cancelStatement(Object logId) throws SQLException {
         return this.getPool().cancelStatement(logId);
     }
 
-    public void setEventLogHandledMode(boolean syncMode) throws SQLException {
-        this.getPool().setEventLogHandledMode(syncMode);
+    public void setMethodLogHandler(BeeMethodLogHandler handler) {
+        if (poolStarted) {
+            pool.setMethodLogHandler(handler);//set to pool
+        } else {
+            super.setMethodLogHandler(handler);//as configuration item
+        }
     }
 
     //***************************************************************************************************************//
@@ -320,7 +318,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return this.getPool().getPoolMonitorVo();
     }
 
-    public List<Thread> interruptWaitingThreads() throws SQLException {
+    public List<Thread> interruptWaitingThreads() {
         if (pool != null) {
             return pool.interruptWaitingThreads();
         } else {

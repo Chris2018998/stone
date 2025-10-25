@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.beecp.BeeJdbcEventLog;
+import org.stone.beecp.BeeMethodLog;
 import org.stone.beecp.pool.exception.PoolInitializeFailedException;
 import org.stone.beecp.pool.exception.PoolNotCreatedException;
 import org.stone.test.beecp.driver.MockDriver;
@@ -66,35 +66,35 @@ public class Tc0031DsPoolNotReadyTest {
             }
 
             try {
-                ds.enableEventLogManager(false);
+                ds.enableMethodLogCache(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearMethodLog(BeeMethodLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.getEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.getMethodLog(BeeMethodLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearMethodLog(BeeMethodLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.isEnabledEventLogManager();
+                ds.isEnabledMethodLogCache();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
@@ -182,35 +182,35 @@ public class Tc0031DsPoolNotReadyTest {
             }
 
             try {
-                ds.enableEventLogManager(false);
+                ds.enableMethodLogCache(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearMethodLog(BeeMethodLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.getEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.getMethodLog(BeeMethodLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.clearEventLog(BeeJdbcEventLog.Type_Connection_Get);
+                ds.clearMethodLog(BeeMethodLog.Type_Connection_Get);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());
             }
 
             try {
-                ds.isEnabledEventLogManager();
+                ds.isEnabledMethodLogCache();
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (PoolNotCreatedException e) {
                 Assertions.assertEquals("Internal pool was not ready", e.getMessage());

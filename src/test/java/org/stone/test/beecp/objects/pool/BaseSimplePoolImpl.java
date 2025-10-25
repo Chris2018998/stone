@@ -63,15 +63,11 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         return false;
     }
 
-    public void enableEventLogManager(boolean enable) {
+    public void enableMethodLogCache(boolean enable) {
         //do nothing
     }
 
-    public void enableMethodLogCollector(BeeJdbcEventLogManager connectionTracker) {
-        //do nothing
-    }
-
-    public boolean isEnabledEventLogManager() {
+    public boolean isEnabledMethodLogCache() {
         return false;
     }
 
@@ -84,34 +80,28 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
      *
      * @param type is log type to query
      */
-    public List<BeeJdbcEventLog> getEventLog(int type) {
+    public List<BeeMethodLog> getMethodLog(int type) {
         return Collections.emptyList();
     }
 
     /**
      * Clear All logs in log collector.
      */
-    public List<BeeJdbcEventLog> clearEventLog(int type) {
+    public List<BeeMethodLog> clearMethodLog(int type) {
         return null;
     }
 
     /**
-     * Switch method to switch event handle mode.
+     * Set a new log handler to pool.
      *
-     * @param syncMode is a log type for logs being gotten
+     * @param handler to handle method logs
      */
-    public void setEventLogHandledMode(boolean syncMode){}
+    public void setMethodLogHandler(BeeMethodLogHandler handler) {
+
+    }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         return null;
-    }
-
-    public int getConnectionCreatingCount() {
-        return 0;
-    }
-
-    public int getConnectionCreatingTimeoutCount() {
-        return 0;
     }
 
     public List<Thread> interruptWaitingThreads() {

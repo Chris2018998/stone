@@ -9,18 +9,18 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeJdbcEventLog;
+import org.stone.beecp.BeeMethodLog;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 
 /**
- * Default implementation of {@link BeeJdbcEventLog}
+ * Default implementation of {@link BeeMethodLog}
  *
  * @author Chris Liao
  */
-public class DefaultJdbcEventLog implements BeeJdbcEventLog {
+public class DefaultMethodLog implements BeeMethodLog {
     //Method call is in executing
     static final int Status_Running = 0;
     //Method call is successful
@@ -64,10 +64,8 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
     private boolean removed;
     //Flag of handled by Handler
     private boolean slow;
-    //Flag of handled by Handler
-    private boolean handled;
 
-    public DefaultJdbcEventLog(int type, String method, Object[] parameters) {
+    public DefaultMethodLog(int type, String method, Object[] parameters) {
         this.type = type;
         this.method = method;
         this.parameters = parameters;
@@ -119,7 +117,7 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.slow = true;
     }
 
-    public Object getResultObject() {
+    public Object getResult() {
         return resultObject;
     }
 
@@ -160,37 +158,25 @@ public class DefaultJdbcEventLog implements BeeJdbcEventLog {
         this.removed = removed;
     }
 
-    public boolean isHandled() {
-        return handled;
-    }
-
-    void setHandled(boolean handled) {
-        this.handled = handled;
-    }
-
     void setStatement(Statement statement) {
         this.statement = statement;
     }
 
-    void setResult(Object callResult, long sqlPreparedTime, Object[] sqlPreparedParameters) {
-        this.resultObject = callResult;
+    void setResult(Object result, long sqlPreparedTime, Object[] sqlPreparedParameters) {
         this.sqlPreparedTime = sqlPreparedTime;
         this.sqlPreparedParameters = sqlPreparedParameters;
         this.statement = null;
         this.endTime = System.currentTimeMillis();
-        this.status = Status_Successful;
-    }
-
-    void setException(Throwable failCause, long sqlPreparedTime, Object[] sqlPreparedParameters) {
-        this.failCause = failCause;
-        this.sqlPreparedTime = sqlPreparedTime;
-        this.sqlPreparedParameters = sqlPreparedParameters;
-        this.statement = null;
-        this.endTime = System.currentTimeMillis();
-        this.status = Status_Failed;
+        if (result instanceof Throwable) {
+            this.failCause = (Throwable) result;
+            this.status = Status_Failed;
+        } else {
+            this.resultObject = result;
+            this.status = Status_Successful;
+        }
     }
 
     public boolean equals(Object v) {
-        return (v instanceof DefaultJdbcEventLog) && this.id.equals(((DefaultJdbcEventLog) v).id);
+        return (v instanceof DefaultMethodLog) && this.id.equals(((DefaultMethodLog) v).id);
     }
 }

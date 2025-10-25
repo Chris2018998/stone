@@ -15,15 +15,38 @@
  */
 package org.stone.test.beecp.objects.jdbclog;
 
-import org.stone.beecp.pool.DefaultJdbcEventLogHandler;
+import org.stone.beecp.BeeMethodLog;
+
+import java.util.List;
 
 /**
- * A method log handler.
+ * A method log listener.
  *
  * @author Chris Liao
  */
-public class MockJdbcEventLogHandler2 extends DefaultJdbcEventLogHandler {
-    public MockJdbcEventLogHandler2(String name) {
+public class MockJdbcMethodLogHandler extends DefaultMethodLogHandler {
+
+    private BeeMethodLog slowLog;
+
+    private BeeMethodLog exceptionLog;
+
+    public BeeMethodLog getSlowLog() {
+        return slowLog;
+    }
+
+    public BeeMethodLog getExceptionLog() {
+        return exceptionLog;
+    }
+
+    public void handleStartLog(BeeMethodLog log) {
+
+    }
+
+    public void handleEndLog(BeeMethodLog log) {
+
+    }
+
+    public void handleLongRunningLogs(List<BeeMethodLog> slowList) {
 
     }
 }

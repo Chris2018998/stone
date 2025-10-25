@@ -167,14 +167,6 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
             poolState.compareAndSet(POOL_READY, POOL_CLOSED);
     }
 
-    public int getConnectionCreatingCount() {
-        return 0;
-    }
-
-    public int getConnectionCreatingTimeoutCount() {
-        return 0;
-    }
-
     public List<Thread> interruptWaitingThreads() {
         return null;
     }
@@ -232,7 +224,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableEventLogManager(boolean enable) {
+    public void enableMethodLogCache(boolean enable) {
         //do nothing
     }
 
@@ -240,11 +232,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public List<BeeJdbcEventLog> getEventLog(int type) {
+    public List<BeeMethodLog> getMethodLog(int type) {
         return Collections.emptyList();
     }
 
-    public List<BeeJdbcEventLog> clearEventLog(int type) {
+    public List<BeeMethodLog> clearMethodLog(int type) {
         return null;
     }
 
@@ -252,11 +244,13 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public boolean isEnabledEventLogManager() {
+    public boolean isEnabledMethodLogCache() {
         return false;
     }
 
-    public void setEventLogHandledMode(boolean syncMode){}
+    public void setMethodLogHandler(BeeMethodLogHandler handler) {
+
+    }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() {
         monitorVo.setPoolName(this.poolName);
