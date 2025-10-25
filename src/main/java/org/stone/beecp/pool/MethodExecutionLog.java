@@ -9,18 +9,18 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeMethodLog;
+import org.stone.beecp.BeeMethodExecutionLog;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 
 /**
- * Default implementation of {@link BeeMethodLog}
+ * Default implementation of {@link BeeMethodExecutionLog}
  *
  * @author Chris Liao
  */
-public class DefaultMethodLog implements BeeMethodLog {
+public class MethodExecutionLog implements BeeMethodExecutionLog {
     //Method call is in executing
     static final int Status_Running = 0;
     //Method call is successful
@@ -65,7 +65,7 @@ public class DefaultMethodLog implements BeeMethodLog {
     //Flag of handled by Handler
     private boolean slow;
 
-    public DefaultMethodLog(int type, String method, Object[] parameters) {
+    public MethodExecutionLog(int type, String method, Object[] parameters) {
         this.type = type;
         this.method = method;
         this.parameters = parameters;
@@ -177,6 +177,6 @@ public class DefaultMethodLog implements BeeMethodLog {
     }
 
     public boolean equals(Object v) {
-        return (v instanceof DefaultMethodLog) && this.id.equals(((DefaultMethodLog) v).id);
+        return (v instanceof MethodExecutionLog) && this.id.equals(((MethodExecutionLog) v).id);
     }
 }

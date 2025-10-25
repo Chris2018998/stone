@@ -18,7 +18,7 @@ import java.io.Serializable;
  *
  * @author Chris Liao
  */
-public interface BeeObjectMethodLog<K, V> extends Serializable {
+public interface BeeMethodExecutionLog<K, V> extends Serializable {
     //All logs
     int Type_All = 0;
     //constants log type,objects borrow log
@@ -124,7 +124,7 @@ public interface BeeObjectMethodLog<K, V> extends Serializable {
      *
      * @return a result object
      */
-    V getResultObject();
+    V getResult();
 
     /**
      * Get fail cause of method call,this cause may be null.
@@ -132,13 +132,6 @@ public interface BeeObjectMethodLog<K, V> extends Serializable {
      * @return a result object
      */
     Throwable getFailCause();
-
-    /**
-     * Query log is whether handled by handler.
-     *
-     * @return a boolean,true is handled
-     */
-    boolean isHandled();
 
     /**
      * Query log is whether removed from log manager.

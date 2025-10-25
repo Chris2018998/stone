@@ -19,9 +19,9 @@ import java.sql.SQLException;
  */
 
 final class ProxyConnectionFactory4L extends ProxyConnectionFactory {
-    private final DefaultMethodLogCache logCache;
+    private final MethodExecutionLogCache logCache;
 
-    ProxyConnectionFactory4L(DefaultMethodLogCache logCache) {
+    ProxyConnectionFactory4L(MethodExecutionLogCache logCache) {
         this.logCache = logCache;
     }
 

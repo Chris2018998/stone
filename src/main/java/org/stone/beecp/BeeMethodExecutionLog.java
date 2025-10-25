@@ -13,11 +13,11 @@ import java.io.Serializable;
 import java.sql.SQLException;
 
 /**
- * Method call log interface.
+ * Method execution log interface.
  *
  * @author Chris Liao
  */
-public interface BeeMethodLog extends Serializable {
+public interface BeeMethodExecutionLog extends Serializable {
     //All logs
     int Type_All = 0;
     //Log type represent method call that connection get from pool
@@ -77,7 +77,7 @@ public interface BeeMethodLog extends Serializable {
     /**
      * Query log owner is whether running.
      *
-     * @return a boolean,true is slow
+     * @return a boolean,true is running
      */
     boolean isRunning();
 

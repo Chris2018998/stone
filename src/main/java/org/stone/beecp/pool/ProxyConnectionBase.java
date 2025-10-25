@@ -24,7 +24,7 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
  */
 public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Connection {
     protected Connection raw;
-    protected DefaultMethodLogCache logCache;
+    protected MethodExecutionLogCache logCache;
 
     ProxyConnectionBase(PooledConnection p) {
         super(p);
@@ -32,7 +32,7 @@ public abstract class ProxyConnectionBase extends ProxyBaseWrapper implements Co
         p.proxyInUsing = this;
     }
 
-    ProxyConnectionBase(PooledConnection p, DefaultMethodLogCache logCache) {
+    ProxyConnectionBase(PooledConnection p, MethodExecutionLogCache logCache) {
         super(p);
         raw = p.rawConn;
         p.proxyInUsing = this;

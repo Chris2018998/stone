@@ -13,36 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.stone.beeop;
+package org.stone.beecp;
 
+import java.sql.SQLException;
 import java.util.List;
 
 /**
- * A handler interface need be implemented by subClass
+ * Method execution listener interface.
  *
  * @author Chris Liao
  */
-public interface BeeObjectMethodLogHandler<K, V> {
+public interface BeeMethodExecutionListener {
 
     /**
      * Plugin method: Handles a log of method call.
      *
      * @param log to be handled
      */
-    void handleStartLog(BeeObjectMethodLog<K, V> log) throws Exception;
+    void onMethodStart(BeeMethodExecutionLog log) throws SQLException;
 
     /**
      * Plugin method: Handles a log of method call.
      *
      * @param log to be handled
      */
-    void handleEndLog(BeeObjectMethodLog<K, V> log) throws Exception;
+    void onMethodEnd(BeeMethodExecutionLog log) throws SQLException;
 
     /**
      * Handle a list of long-running logs
      *
-     * @param longRunningList to be handled
+     * @param logList to be handled
      */
-    void handleLongRunningLogs(List<BeeObjectMethodLog<K, V>> longRunningList);
+    void onLongRunningDetected(List<BeeMethodExecutionLog> logList);
 
 }

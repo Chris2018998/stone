@@ -9,28 +9,28 @@
  */
 package org.stone.test.beecp.objects.jdbclog;
 
-import org.stone.beecp.BeeMethodLog;
-import org.stone.beecp.BeeMethodLogHandler;
+import org.stone.beecp.BeeMethodExecutionLog;
+import org.stone.beecp.BeeMethodExecutionListener;
 
 import java.util.List;
 
 /**
- * Default implementation of {@link BeeMethodLogHandler} interface.
+ * Default implementation of {@link BeeMethodExecutionListener} interface.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class DefaultMethodLogHandler implements BeeMethodLogHandler {
+public class DefaultMethodLogHandler implements BeeMethodExecutionListener {
 
-    public void handleStartLog(BeeMethodLog log) {
-
-    }
-
-    public void handleEndLog(BeeMethodLog log) {
+    public void onMethodStart(BeeMethodExecutionLog log) {
 
     }
 
-    public void handleLongRunningLogs(List<BeeMethodLog> slowList) {
+    public void onMethodEnd(BeeMethodExecutionLog log) {
+
+    }
+
+    public void onLongRunningDetected(List<BeeMethodExecutionLog> slowList) {
 
     }
 }

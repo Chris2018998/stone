@@ -224,7 +224,7 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         //do nothing
     }
 
-    public void enableMethodLogCache(boolean enable) {
+    public void enableMethodExecutionLogCache(boolean enable) {
         //do nothing
     }
 
@@ -232,11 +232,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public List<BeeMethodLog> getMethodLog(int type) {
+    public List<BeeMethodExecutionLog> getMethodExecutionLog(int type) {
         return Collections.emptyList();
     }
 
-    public List<BeeMethodLog> clearMethodLog(int type) {
+    public List<BeeMethodExecutionLog> clearMethodExecutionLog(int type) {
         return null;
     }
 
@@ -244,11 +244,11 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public boolean isEnabledMethodLogCache() {
+    public boolean isEnabledMethodExecutionLogCache() {
         return false;
     }
 
-    public void setMethodLogHandler(BeeMethodLogHandler handler) {
+    public void setMethodExecutionListener(BeeMethodExecutionListener handler) {
 
     }
 

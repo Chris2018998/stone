@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.BeeMethodLog;
+import org.stone.beecp.BeeMethodExecutionLog;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 import org.stone.test.beecp.objects.jdbclog.DefaultMethodLogHandler;
@@ -24,8 +24,8 @@ import java.sql.Statement;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beecp.BeeMethodLog.Type_All;
-import static org.stone.beecp.BeeMethodLog.Type_Connection_Get;
+import static org.stone.beecp.BeeMethodExecutionLog.Type_All;
+import static org.stone.beecp.BeeMethodExecutionLog.Type_Connection_Get;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
 /**
@@ -38,42 +38,41 @@ public class Tc0082MethodLogCacheTest {
         BeeDataSourceConfig config1 = new BeeDataSourceConfig();
         config1.setConnectionFactory(new MockConnectionFactory());
         try (BeeDataSource ds = new BeeDataSource(config1)) {
-            Assertions.assertFalse(ds.isEnabledMethodLogCache());
+            Assertions.assertFalse(ds.isEnabledMethodExecutionLogCache());
             try (Connection ignore = ds.getConnection()) {
-                ds.setMethodLogHandler(new DefaultMethodLogHandler());
-                Assertions.assertTrue(ds.getMethodLog(Type_Connection_Get).isEmpty());
-                Assertions.assertTrue(ds.clearMethodLog(Type_All).isEmpty());
-                ds.enableMethodLogCache(true);
-                Assertions.assertTrue(ds.isEnabledMethodLogCache());
+                ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+                Assertions.assertTrue(ds.getMethodExecutionLog(Type_Connection_Get).isEmpty());
+                Assertions.assertTrue(ds.clearMethodExecutionLog(Type_All).isEmpty());
+                ds.enableMethodExecutionLogCache(true);
+                Assertions.assertTrue(ds.isEnabledMethodExecutionLogCache());
                 Assertions.assertFalse(ds.cancelStatement(new Object()));
-                ds.setMethodLogHandler(null);
+                ds.setMethodExecutionListener(null);
             }
         }
     }
-
 
     @Test
     public void testSmallLogCache() throws SQLException {
         String connectionFactoryClassName = "org.stone.test.beecp.objects.factory.MockConnectionFactory";
         BeeDataSourceConfig config1 = createDefault();
-        config1.setEnableMethodLogCache(true);
-        config1.setMethodLogTimeout(Long.MAX_VALUE);//1:milliseconds
-        config1.setMethodLogCacheSize(1);//test point
+        config1.setEnableMethodExecutionLogCache(true);
+        config1.setMethodExecutionLogTimeout(Long.MAX_VALUE);//1:milliseconds
+        config1.setMethodExecutionLogCacheSize(1);//test point
         config1.setConnectionFactoryClassName(connectionFactoryClassName);
 
         try (BeeDataSource ds = new BeeDataSource(config1)) {
-            Assertions.assertTrue(ds.isEnabledMethodLogCache());
+            Assertions.assertTrue(ds.isEnabledMethodExecutionLogCache());
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
-                Assertions.assertEquals(1, ds.getMethodLog(Type_Connection_Get).size());
+                Assertions.assertEquals(1, ds.getMethodExecutionLog(Type_Connection_Get).size());
                 st.execute("select * from test_user");
-                Assertions.assertEquals(1, ds.getMethodLog(BeeMethodLog.Type_SQL_Execution).size());
+                Assertions.assertEquals(1, ds.getMethodExecutionLog(BeeMethodExecutionLog.Type_SQL_Execution).size());
             }
 
             //twice
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
-                Assertions.assertEquals(1, ds.getMethodLog(Type_Connection_Get).size());
+                Assertions.assertEquals(1, ds.getMethodExecutionLog(Type_Connection_Get).size());
                 st.execute("select * from test_user");
-                Assertions.assertEquals(1, ds.getMethodLog(BeeMethodLog.Type_SQL_Execution).size());
+                Assertions.assertEquals(1, ds.getMethodExecutionLog(BeeMethodExecutionLog.Type_SQL_Execution).size());
             }
         }
     }
@@ -81,13 +80,13 @@ public class Tc0082MethodLogCacheTest {
     @Test
     public void testTimeoutClear() throws SQLException {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        config.setEnableMethodLogCache(true);
-        config.setMethodLogHandler(new DefaultMethodLogHandler());
+        config.setEnableMethodExecutionLogCache(true);
+        config.setMethodExecutionListener(new DefaultMethodLogHandler());
         config.setSlowSQLThreshold(1L);
         config.setSlowConnectionThreshold(1L);
 
-        config.setMethodLogTimeout(1L);//1:milliseconds
-        config.setIntervalOfClearTimeoutMethodLogs(100L);//500:milliseconds
+        config.setMethodExecutionLogTimeout(1L);//1:milliseconds
+        config.setIntervalOfClearTimeoutExecutionLogs(100L);//500:milliseconds
 
         MockConnectionProperties connectionProperties = new MockConnectionProperties();
         connectionProperties.setParkNanos(200L);
@@ -103,7 +102,7 @@ public class Tc0082MethodLogCacheTest {
 
         //1: clear type test(for sync mode)
         try (BeeDataSource ds = new BeeDataSource(config)) {
-            Assertions.assertTrue(ds.isEnabledMethodLogCache());
+            Assertions.assertTrue(ds.isEnabledMethodExecutionLogCache());
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
                 st.executeUpdate("update test_user set name ='chris' where id=1");
                 try {
@@ -113,7 +112,7 @@ public class Tc0082MethodLogCacheTest {
                     Assertions.assertEquals(failException, e);
                 }
                 LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000L));//wait pool timer to clear timeout logs
-                Assertions.assertEquals(0, ds.getMethodLog(Type_All).size());
+                Assertions.assertEquals(0, ds.getMethodExecutionLog(Type_All).size());
             }
         }
     }

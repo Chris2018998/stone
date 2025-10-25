@@ -108,27 +108,27 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //32: Class name of predicate
     private String predicateClassName;
 
-    //********************************************** method call logs **************************************************//
+    //********************************************** method Execution logs **************************************************//
     //33: A flag to enable method log cache
-    private boolean enableMethodLogCache;
+    private boolean enableMethodExecutionLogCache;
     //34: Capacity of method logs cache，default is 1000
-    private int methodLogCacheSize = 1000;
+    private int methodExecutionLogCacheSize = 1000;
     //35: Log timeout in manager,default is 3 minutes
-    private long methodLogTimeout = 180000L;
+    private long methodExecutionLogTimeout = 180000L;
     //36: Timer interval to clear timeout logs,default is 3 minutes
-    private long intervalOfClearTimeoutMethodLogs = methodLogTimeout;
+    private long intervalOfClearTimeoutExecutionLogs = methodExecutionLogTimeout;
 
     //37: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
     private long slowObjectGetThreshold = 30000L;
     //38: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
-    private long slowObjectCallThreshold = 30000L;
+    private long slowObjectExecutionThreshold = 30000L;
 
-    //39: Object call log handler,priority order: instance > class > class name
-    private BeeObjectMethodLogHandler<K, V> methodLogHandler;
-    //40: Class of object call log handler,default is none
-    private Class<? extends BeeObjectMethodLogHandler<K, V>> methodLogHandlerClass;
-    //40: Class name of log handler,default is none
-    private String methodLogHandlerClassName;
+    //39: method execution listener: instance > class > class name
+    private BeeMethodExecutionListener<K, V> methodExecutionListener;
+    //40: Class of method execution listener,default is none
+    private Class<? extends BeeMethodExecutionListener<K, V>> methodExecutionListenerClass;
+    //41: Class name of method execution listener,default is none
+    private String methodExecutionListenerClassName;
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
@@ -481,22 +481,22 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    5: Log manager(18)                                                        //
     //****************************************************************************************************************//
-    public boolean isEnableMethodLogCache() {
-        return enableMethodLogCache;
+    public boolean isEnableMethodExecutionLogCache() {
+        return enableMethodExecutionLogCache;
     }
 
-    public void setEnableMethodLogCache(boolean enableMethodLogCache) {
-        this.enableMethodLogCache = enableMethodLogCache;
+    public void setEnableMethodExecutionLogCache(boolean enableMethodExecutionLogCache) {
+        this.enableMethodExecutionLogCache = enableMethodExecutionLogCache;
     }
 
-    public int getMethodLogCacheSize() {
-        return methodLogCacheSize;
+    public int getMethodExecutionLogCacheSize() {
+        return methodExecutionLogCacheSize;
     }
 
-    public void setMethodLogCacheSize(int methodLogCacheSize) {
-        if (methodLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'method-log-cache-size' must be greater than zero");
-        this.methodLogCacheSize = methodLogCacheSize;
+    public void setMethodExecutionLogCacheSize(int methodExecutionLogCacheSize) {
+        if (methodExecutionLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
+        this.methodExecutionLogCacheSize = methodExecutionLogCacheSize;
     }
 
     public long getSlowObjectGetThreshold() {
@@ -510,60 +510,59 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.slowObjectGetThreshold = slowObjectGetThreshold;
     }
 
-    public long getSlowObjectCallThreshold() {
-        return slowObjectCallThreshold;
+    public long getSlowObjectExecutionThreshold() {
+        return slowObjectExecutionThreshold;
     }
 
-    public void setSlowObjectCallThreshold(long slowObjectCallThreshold) {
-        if (slowObjectCallThreshold < 0L)
-            throw new InvalidParameterException("The given value for configuration item 'slow-object-call-threshold' must be greater than zero");
+    public void setSlowObjectExecutionThreshold(long slowObjectExecutionThreshold) {
+        if (slowObjectExecutionThreshold < 0L)
+            throw new InvalidParameterException("The given value for configuration item 'slow-object-execution-threshold' must be greater than zero");
 
-        this.slowObjectCallThreshold = slowObjectCallThreshold;
+        this.slowObjectExecutionThreshold = slowObjectExecutionThreshold;
     }
 
-
-    public long getMethodLogTimeout() {
-        return methodLogTimeout;
+    public long getMethodExecutionLogTimeout() {
+        return methodExecutionLogTimeout;
     }
 
-    public void setMethodLogTimeout(long methodLogTimeout) {
-        if (methodLogTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'method-log-timeout' must be greater than zero");
-        this.methodLogTimeout = methodLogTimeout;
+    public void setMethodExecutionLogTimeout(long methodExecutionLogTimeout) {
+        if (methodExecutionLogTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
+        this.methodExecutionLogTimeout = methodExecutionLogTimeout;
     }
 
-    public long getIntervalOfClearTimeoutMethodLogs() {
-        return intervalOfClearTimeoutMethodLogs;
+    public long getIntervalOfClearTimeoutExecutionLogs() {
+        return intervalOfClearTimeoutExecutionLogs;
     }
 
-    public void setIntervalOfClearTimeoutMethodLogs(long intervalOfClearTimeoutMethodLogs) {
-        if (intervalOfClearTimeoutMethodLogs <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-method-logs' must be greater than zero");
-        this.intervalOfClearTimeoutMethodLogs = intervalOfClearTimeoutMethodLogs;
+    public void setIntervalOfClearTimeoutExecutionLogs(long intervalOfClearTimeoutExecutionLogs) {
+        if (intervalOfClearTimeoutExecutionLogs <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
+        this.intervalOfClearTimeoutExecutionLogs = intervalOfClearTimeoutExecutionLogs;
     }
 
-    public BeeObjectMethodLogHandler<K, V> getMethodLogHandler() {
-        return methodLogHandler;
+    public BeeMethodExecutionListener<K, V> getMethodExecutionListener() {
+        return methodExecutionListener;
     }
 
-    public void setMethodLogHandler(BeeObjectMethodLogHandler<K, V> methodLogHandler) {
-        this.methodLogHandler = methodLogHandler;
+    public void setMethodExecutionListener(BeeMethodExecutionListener<K, V> methodExecutionListener) {
+        this.methodExecutionListener = methodExecutionListener;
     }
 
-    public Class<? extends BeeObjectMethodLogHandler<K, V>> getMethodLogHandlerClass() {
-        return methodLogHandlerClass;
+    public Class<? extends BeeMethodExecutionListener<K, V>> getMethodExecutionListenerClass() {
+        return methodExecutionListenerClass;
     }
 
-    public void setMethodLogHandlerClass(Class<? extends BeeObjectMethodLogHandler<K, V>> methodLogHandlerClass) {
-        this.methodLogHandlerClass = methodLogHandlerClass;
+    public void setMethodExecutionListenerClass(Class<? extends BeeMethodExecutionListener<K, V>> methodExecutionListenerClass) {
+        this.methodExecutionListenerClass = methodExecutionListenerClass;
     }
 
-    public String getMethodLogHandlerClassName() {
-        return methodLogHandlerClassName;
+    public String getMethodExecutionListenerClassName() {
+        return methodExecutionListenerClassName;
     }
 
-    public void setMethodLogHandlerClassName(String methodLogHandlerClassName) {
-        this.methodLogHandlerClassName = methodLogHandlerClassName;
+    public void setMethodExecutionListenerClassName(String methodExecutionListenerClassName) {
+        this.methodExecutionListenerClassName = methodExecutionListenerClassName;
     }
 
     //***************************************************************************************************************//
@@ -726,7 +725,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
         //4: create a method log handler
-        BeeObjectMethodLogHandler<K, V> logHandler = this.createLogHandler();
+        BeeMethodExecutionListener<K, V> logHandler = this.createLogHandler();
         //5: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
@@ -735,7 +734,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         checkedConfig.objectFactory = objectFactory;
         if (predicate != null) checkedConfig.predicate = predicate;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
-        if (logHandler != null) checkedConfig.methodLogHandler = logHandler;
+        if (logHandler != null) checkedConfig.methodExecutionListener = logHandler;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
         return checkedConfig;
@@ -854,18 +853,18 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //create object call log handler
-    private BeeObjectMethodLogHandler<K, V> createLogHandler() {
+    private BeeMethodExecutionListener<K, V> createLogHandler() {
         //step1:if exists handler,then return it
-        if (this.methodLogHandler != null) return this.methodLogHandler;
+        if (this.methodExecutionListener != null) return this.methodExecutionListener;
 
         //step2: create a handler
-        if (this.methodLogHandlerClass != null || isNotBlank(this.methodLogHandlerClassName)) {
+        if (this.methodExecutionListenerClass != null || isNotBlank(this.methodExecutionListenerClassName)) {
             Class<?> handlerClass = null;
             try {
-                handlerClass = methodLogHandlerClass != null ? methodLogHandlerClass : loadClass(methodLogHandlerClassName);
-                return (BeeObjectMethodLogHandler<K, V>) createClassInstance(handlerClass, BeeObjectMethodLogHandler.class, "object call log handler");
+                handlerClass = methodExecutionListenerClass != null ? methodExecutionListenerClass : loadClass(methodExecutionListenerClassName);
+                return (BeeMethodExecutionListener<K, V>) createClassInstance(handlerClass, BeeMethodExecutionListener.class, "object call log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + methodLogHandlerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + methodExecutionListenerClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + handlerClass + "]", e);
             }

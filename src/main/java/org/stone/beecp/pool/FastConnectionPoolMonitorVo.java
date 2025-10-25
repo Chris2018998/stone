@@ -36,7 +36,7 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     private int creatingTimeoutSize;
 
     private boolean enabledLogPrint;
-    private boolean enabledJdbcEventLogManager;
+    private boolean enableMethodExecutionLogCache;
 
     public FastConnectionPoolMonitorVo(String poolName, String poolMode, int maxSize, int semaphoreSize) {
         this.poolName = poolName;
@@ -158,11 +158,11 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public boolean isEnabledEventLogManager() {
-        return enabledJdbcEventLogManager;
+    public boolean isEnabledMethodExecutionLogCache() {
+        return enableMethodExecutionLogCache;
     }
 
-    public void setEnabledJdbcEventLogManager(boolean enabledJdbcEventLogManager) {
-        this.enabledJdbcEventLogManager = enabledJdbcEventLogManager;
+    public void setEnableMethodExecutionLogCache(boolean enableMethodExecutionLogCache) {
+        this.enableMethodExecutionLogCache = enableMethodExecutionLogCache;
     }
 }

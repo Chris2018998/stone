@@ -161,27 +161,27 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //51: Class name of Jdbc info decoder(url,username password),default is none
     private String linkInfoDecoderClassName;
 
-    //********************************************** method call logs ************************************************//
-    //52: A flag to enable method log cache
-    private boolean enableMethodLogCache;
+    //********************************************** method Execution logs ************************************************//
+    //52: A flag to enable method execution log cache
+    private boolean enableMethodExecutionLogCache;
     //53: Capacity of logs cache size,default is 1000
-    private int methodLogCacheSize = 1000;
+    private int methodExecutionLogCacheSize = 1000;
     //54: Logs timeout,default is 3 minutes
-    private long methodLogTimeout = 180000L;
+    private long methodExecutionLogTimeout = 180000L;
     //55: interval time to clear timeout logs,default is 3 minutes
-    private long intervalOfClearTimeoutMethodLogs = methodLogTimeout;
+    private long intervalOfClearTimeoutExecutionLogs = methodExecutionLogTimeout;
 
     //56: Slow threshold for connection acquisition,default is 30 seconds,time unit:milliseconds
     private long slowConnectionThreshold = 30000L;
     //57: Slow threshold for sql execution,default is 30 seconds,time unit:milliseconds
     private long slowSQLThreshold = 30000L;
 
-    //58: log handler: instance > class > class name
-    private BeeMethodLogHandler methodLogHandler;
-    //59: Class of slow logs handler,default is none
-    private Class<? extends BeeMethodLogHandler> methodLogHandlerClass;
-    //60: Class name of log handler,default is none
-    private String methodLogHandlerClassName;
+    //58: method execution listener: instance > class > class name
+    private BeeMethodExecutionListener methodExecutionListener;
+    //59: Class of method execution listener,default is none
+    private Class<? extends BeeMethodExecutionListener> methodExecutionListenerClass;
+    //60: Class name of method execution listener,default is none
+    private String methodExecutionListenerClassName;
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                                         //
@@ -726,42 +726,42 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    9: Log Manager(18)[50 --- 52]                                                          //
     //****************************************************************************************************************//
-    public boolean isEnableMethodLogCache() {
-        return enableMethodLogCache;
+    public boolean isEnableMethodExecutionLogCache() {
+        return enableMethodExecutionLogCache;
     }
 
-    public void setEnableMethodLogCache(boolean enableMethodLogCache) {
-        this.enableMethodLogCache = enableMethodLogCache;
+    public void setEnableMethodExecutionLogCache(boolean enableMethodExecutionLogCache) {
+        this.enableMethodExecutionLogCache = enableMethodExecutionLogCache;
     }
 
-    public int getMethodLogCacheSize() {
-        return methodLogCacheSize;
+    public int getMethodExecutionLogCacheSize() {
+        return methodExecutionLogCacheSize;
     }
 
-    public void setMethodLogCacheSize(int methodLogCacheSize) {
-        if (methodLogCacheSize <= 0)
-            throw new InvalidParameterException("The given value for configuration item 'method-log-cache-size' must be greater than zero");
-        this.methodLogCacheSize = methodLogCacheSize;
+    public void setMethodExecutionLogCacheSize(int methodExecutionLogCacheSize) {
+        if (methodExecutionLogCacheSize <= 0)
+            throw new InvalidParameterException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
+        this.methodExecutionLogCacheSize = methodExecutionLogCacheSize;
     }
 
-    public long getMethodLogTimeout() {
-        return methodLogTimeout;
+    public long getMethodExecutionLogTimeout() {
+        return methodExecutionLogTimeout;
     }
 
-    public void setMethodLogTimeout(long methodLogTimeout) {
-        if (methodLogTimeout <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'method-log-timeout' must be greater than zero");
-        this.methodLogTimeout = methodLogTimeout;
+    public void setMethodExecutionLogTimeout(long methodExecutionLogTimeout) {
+        if (methodExecutionLogTimeout <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
+        this.methodExecutionLogTimeout = methodExecutionLogTimeout;
     }
 
-    public long getIntervalOfClearTimeoutMethodLogs() {
-        return intervalOfClearTimeoutMethodLogs;
+    public long getIntervalOfClearTimeoutExecutionLogs() {
+        return intervalOfClearTimeoutExecutionLogs;
     }
 
-    public void setIntervalOfClearTimeoutMethodLogs(long intervalOfClearTimeoutMethodLogs) {
-        if (intervalOfClearTimeoutMethodLogs <= 0L)
-            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-method-logs' must be greater than zero");
-        this.intervalOfClearTimeoutMethodLogs = intervalOfClearTimeoutMethodLogs;
+    public void setIntervalOfClearTimeoutExecutionLogs(long intervalOfClearTimeoutExecutionLogs) {
+        if (intervalOfClearTimeoutExecutionLogs <= 0L)
+            throw new InvalidParameterException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
+        this.intervalOfClearTimeoutExecutionLogs = intervalOfClearTimeoutExecutionLogs;
     }
 
     public long getSlowConnectionThreshold() {
@@ -784,28 +784,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.slowSQLThreshold = slowSQLThreshold;
     }
 
-    public BeeMethodLogHandler getMethodLogHandler() {
-        return methodLogHandler;
+    public BeeMethodExecutionListener getMethodExecutionListener() {
+        return methodExecutionListener;
     }
 
-    public void setMethodLogHandler(BeeMethodLogHandler methodLogHandler) {
-        this.methodLogHandler = methodLogHandler;
+    public void setMethodExecutionListener(BeeMethodExecutionListener methodExecutionListener) {
+        this.methodExecutionListener = methodExecutionListener;
     }
 
-    public Class<? extends BeeMethodLogHandler> getMethodLogHandlerClass() {
-        return methodLogHandlerClass;
+    public Class<? extends BeeMethodExecutionListener> getMethodExecutionListenerClass() {
+        return methodExecutionListenerClass;
     }
 
-    public void setMethodLogHandlerClass(Class<? extends BeeMethodLogHandler> methodLogHandlerClass) {
-        this.methodLogHandlerClass = methodLogHandlerClass;
+    public void setMethodExecutionListenerClass(Class<? extends BeeMethodExecutionListener> methodExecutionListenerClass) {
+        this.methodExecutionListenerClass = methodExecutionListenerClass;
     }
 
-    public String getMethodLogHandlerClassName() {
-        return methodLogHandlerClassName;
+    public String getMethodExecutionListenerClassName() {
+        return methodExecutionListenerClassName;
     }
 
-    public void setMethodLogHandlerClassName(String methodLogHandlerClassName) {
-        this.methodLogHandlerClassName = methodLogHandlerClassName;
+    public void setMethodExecutionListenerClassName(String methodExecutionListenerClassName) {
+        this.methodExecutionListenerClassName = methodExecutionListenerClassName;
     }
 
     //****************************************************************************************************************//
@@ -949,7 +949,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeMethodLogHandler logHandler = createJdbcMethodLogHandler();
+        BeeMethodExecutionListener logHandler = createJdbcMethodLogHandler();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -967,7 +967,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.predicate = predicate;
-        checkedConfig.methodLogHandler = logHandler;
+        checkedConfig.methodExecutionListener = logHandler;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
 
@@ -1046,18 +1046,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     }
 
     //create method log handler
-    private BeeMethodLogHandler createJdbcMethodLogHandler() {
+    private BeeMethodExecutionListener createJdbcMethodLogHandler() {
         //step1:if exists handler,then return it
-        if (this.methodLogHandler != null) return this.methodLogHandler;
+        if (this.methodExecutionListener != null) return this.methodExecutionListener;
 
         //step2: create a handler
-        if (this.methodLogHandlerClass != null || isNotBlank(this.methodLogHandlerClassName)) {
+        if (this.methodExecutionListenerClass != null || isNotBlank(this.methodExecutionListenerClassName)) {
             Class<?> handlerClass = null;
             try {
-                handlerClass = methodLogHandlerClass != null ? methodLogHandlerClass : loadClass(methodLogHandlerClassName);
-                return (BeeMethodLogHandler) createClassInstance(handlerClass, BeeMethodLogHandler.class, "method log handler");
+                handlerClass = methodExecutionListenerClass != null ? methodExecutionListenerClass : loadClass(methodExecutionListenerClassName);
+                return (BeeMethodExecutionListener) createClassInstance(handlerClass, BeeMethodExecutionListener.class, "method log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create method log handler with class[" + methodLogHandlerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create method log handler with class[" + methodExecutionListenerClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create method log handler with class[" + handlerClass + "]", e);
             }

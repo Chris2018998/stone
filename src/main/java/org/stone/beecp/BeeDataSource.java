@@ -230,31 +230,31 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                         6: jdbc method logs cache(6)                                          //
     //***************************************************************************************************************//
-    public boolean isEnabledMethodLogCache() throws SQLException {
-        return this.getPool().isEnabledMethodLogCache();
+    public boolean isEnabledMethodExecutionLogCache() throws SQLException {
+        return this.getPool().isEnabledMethodExecutionLogCache();
     }
 
-    public void enableMethodLogCache(boolean enable) throws SQLException {
-        this.getPool().enableMethodLogCache(enable);
+    public void enableMethodExecutionLogCache(boolean enable) throws SQLException {
+        this.getPool().enableMethodExecutionLogCache(enable);
     }
 
-    public List<BeeMethodLog> getMethodLog(int type) throws SQLException {
-        return this.getPool().getMethodLog(type);
+    public List<BeeMethodExecutionLog> getMethodExecutionLog(int type) throws SQLException {
+        return this.getPool().getMethodExecutionLog(type);
     }
 
-    public List<BeeMethodLog> clearMethodLog(int type) throws SQLException {
-        return this.getPool().clearMethodLog(type);
+    public List<BeeMethodExecutionLog> clearMethodExecutionLog(int type) throws SQLException {
+        return this.getPool().clearMethodExecutionLog(type);
     }
 
     public boolean cancelStatement(Object logId) throws SQLException {
         return this.getPool().cancelStatement(logId);
     }
 
-    public void setMethodLogHandler(BeeMethodLogHandler handler) {
+    public void setMethodExecutionListener(BeeMethodExecutionListener listener) {
         if (poolStarted) {
-            pool.setMethodLogHandler(handler);//set to pool
+            pool.setMethodExecutionListener(listener);//set to pool
         } else {
-            super.setMethodLogHandler(handler);//as configuration item
+            super.setMethodExecutionListener(listener);//as configuration item
         }
     }
 

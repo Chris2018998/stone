@@ -15,7 +15,7 @@
  */
 package org.stone.test.beecp.objects.jdbclog;
 
-import org.stone.beecp.BeeMethodLog;
+import org.stone.beecp.BeeMethodExecutionLog;
 
 import java.util.List;
 
@@ -26,27 +26,27 @@ import java.util.List;
  */
 public class MockJdbcMethodLogHandler extends DefaultMethodLogHandler {
 
-    private BeeMethodLog slowLog;
+    private BeeMethodExecutionLog slowLog;
 
-    private BeeMethodLog exceptionLog;
+    private BeeMethodExecutionLog exceptionLog;
 
-    public BeeMethodLog getSlowLog() {
+    public BeeMethodExecutionLog getSlowLog() {
         return slowLog;
     }
 
-    public BeeMethodLog getExceptionLog() {
+    public BeeMethodExecutionLog getExceptionLog() {
         return exceptionLog;
     }
 
-    public void handleStartLog(BeeMethodLog log) {
+    public void onMethodStart(BeeMethodExecutionLog log) {
 
     }
 
-    public void handleEndLog(BeeMethodLog log) {
+    public void onMethodEnd(BeeMethodExecutionLog log) {
 
     }
 
-    public void handleLongRunningLogs(List<BeeMethodLog> slowList) {
+    public void onLongRunningDetected(List<BeeMethodExecutionLog> slowList) {
 
     }
 }

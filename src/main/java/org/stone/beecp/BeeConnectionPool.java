@@ -123,7 +123,7 @@ public interface BeeConnectionPool extends Closeable {
 
 
     //***************************************************************************************************************//
-    //                                         3: method logs                                                          //
+    //                                         3: method execution logs                                              //
     //***************************************************************************************************************//
 
     /**
@@ -131,35 +131,35 @@ public interface BeeConnectionPool extends Closeable {
      *
      * @return boolean true is enabled,false is disabled
      */
-    boolean isEnabledMethodLogCache();
+    boolean isEnabledMethodExecutionLogCache();
 
     /**
      * A switch method to enable or disable method log cache
      *
      * @param enable is true that make cache to collect method logs;false that make it to stop work
      */
-    void enableMethodLogCache(boolean enable);
+    void enableMethodExecutionLogCache(boolean enable);
 
     /**
      * Gets logs from pool with specified type.
      *
-     * @param type should be one of[BeeMethodLog.Type_Connection_Get,BeeMethodLog.Type_SQL_Execution];if not,then return all logs
+     * @param type should be one of[BeeMethodExecutionLog.Type_Connection_Get,BeeMethodExecutionLog.Type_SQL_Execution];if not,then return all logs
      */
-    List<BeeMethodLog> getMethodLog(int type);
+    List<BeeMethodExecutionLog> getMethodExecutionLog(int type);
 
     /**
      * Clears logs from pool with specified type.
      *
-     * @param type should be one of[BeeMethodLog.Type_Connection_Get,BeeMethodLog.Type_SQL_Execution];if not,then clear all logs
+     * @param type should be one of[BeeMethodExecutionLog.Type_Connection_Get,BeeMethodExecutionLog.Type_SQL_Execution];if not,then clear all logs
      */
-    List<BeeMethodLog> clearMethodLog(int type);
+    List<BeeMethodExecutionLog> clearMethodExecutionLog(int type);
 
     /**
      * Set a new log handler to pool.
      *
-     * @param handler to handle method logs
+     * @param listener to handle method logs
      */
-    void setMethodLogHandler(BeeMethodLogHandler handler);
+    void setMethodExecutionListener(BeeMethodExecutionListener listener);
 
     /**
      * Cancel statement in executing,this method may be support distribution network.

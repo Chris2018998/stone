@@ -9,8 +9,8 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeMethodLog;
-import org.stone.beecp.BeeMethodLogHandler;
+import org.stone.beecp.BeeMethodExecutionListener;
+import org.stone.beecp.BeeMethodExecutionLog;
 
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -19,24 +19,24 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static org.stone.beecp.BeeMethodLog.*;
+import static org.stone.beecp.BeeMethodExecutionLog.*;
 
 /**
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class DefaultMethodLogCache {
+public class MethodExecutionLogCache {
     //slow threshold value of connection get,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowConnectionGetThreshold}
     private final long slowConnectionGetThreshold;
     //slow threshold of sql execution,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
     private final long slowSQLExecutionThreshold;
     private final int maxSize;
     //logs queue of connection get
-    private final LinkedBlockingQueue<DefaultMethodLog> conLogQueue;
+    private final LinkedBlockingQueue<MethodExecutionLog> conLogQueue;
     //logs queue of sql execution
-    private final LinkedBlockingQueue<DefaultMethodLog> sqlLogQueue;
-    private BeeMethodLogHandler logHandler;
+    private final LinkedBlockingQueue<MethodExecutionLog> sqlLogQueue;
+    private BeeMethodExecutionListener logHandler;
 
     //***************************************************************************************************************//
     //                                         1: initialization                                                     //
@@ -50,7 +50,7 @@ public class DefaultMethodLogCache {
      * @param slowExec   is slow threshold of sql execution,time unit:milliseconds
      * @param logHandler is a log handler
      */
-    DefaultMethodLogCache(int cacheSize, long slowGet, long slowExec, BeeMethodLogHandler logHandler) {
+    MethodExecutionLogCache(int cacheSize, long slowGet, long slowExec, BeeMethodExecutionListener logHandler) {
         this.logHandler = logHandler;
         this.slowConnectionGetThreshold = slowGet;
         this.slowSQLExecutionThreshold = slowExec;
@@ -60,7 +60,7 @@ public class DefaultMethodLogCache {
         this.sqlLogQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
-    public void setLogHandler(BeeMethodLogHandler handler) {
+    public void setMethodExecutionListener(BeeMethodExecutionListener handler) {
         this.logHandler = handler;
     }
 
@@ -75,21 +75,21 @@ public class DefaultMethodLogCache {
      * @param method     is method name,for example:getConnection()
      * @param parameters is an array of method parameters
      */
-    public BeeMethodLog beforeCall(int type, String method, Object[] parameters, String sql, Statement statement) throws SQLException {
-        DefaultMethodLog log = new DefaultMethodLog(type, method, parameters);
+    public BeeMethodExecutionLog beforeCall(int type, String method, Object[] parameters, String sql, Statement statement) throws SQLException {
+        MethodExecutionLog log = new MethodExecutionLog(type, method, parameters);
         log.setStatement(statement);
         if (type != Type_SQL_Preparation) {
-            if (logHandler != null) logHandler.handleStartLog(log);
+            if (logHandler != null) logHandler.onMethodStart(log);
             offerQueue(log, type, parameters, sql);
         }
         return log;
     }
 
-    private void offerQueue(DefaultMethodLog log, int type, Object[] parameters, String sql) {
+    private void offerQueue(MethodExecutionLog log, int type, Object[] parameters, String sql) {
         if (type == Type_Connection_Get) {
             while (!conLogQueue.offer(log)) {
                 if (conLogQueue.size() == this.maxSize) {
-                    DefaultMethodLog other = conLogQueue.poll();
+                    MethodExecutionLog other = conLogQueue.poll();
                     if (other != null) other.setRemoved(true);
                 }
             }
@@ -102,7 +102,7 @@ public class DefaultMethodLogCache {
 
             while (!sqlLogQueue.offer(log)) {
                 if (sqlLogQueue.size() == this.maxSize) {
-                    DefaultMethodLog other = sqlLogQueue.poll();
+                    MethodExecutionLog other = sqlLogQueue.poll();
                     if (other != null) other.setRemoved(true);
                 }
             }
@@ -116,8 +116,8 @@ public class DefaultMethodLogCache {
      * @param log        generated from startCall method
      * @preparedParameters is a parameter array of PreparedSQL or CallableSQL
      */
-    public void afterCall(Object callResult, long preparationTookTime, Object[] preparedParameters, BeeMethodLog log) throws SQLException {
-        DefaultMethodLog defaultTypeLog = (DefaultMethodLog) log;
+    public void afterCall(Object callResult, long preparationTookTime, Object[] preparedParameters, BeeMethodExecutionLog log) throws SQLException {
+        MethodExecutionLog defaultTypeLog = (MethodExecutionLog) log;
         defaultTypeLog.setResult(callResult, preparationTookTime, preparedParameters);
 
         if (log.getType() != Type_SQL_Preparation && log.isRemoved()) {
@@ -130,14 +130,14 @@ public class DefaultMethodLogCache {
             defaultTypeLog.setAsSlow();
         }
 
-        if (logHandler != null) logHandler.handleEndLog(log);
+        if (logHandler != null) logHandler.onMethodEnd(log);
     }
 
     //***************************************************************************************************************//
     //                                         1: Logs maintain                                                      //
     //***************************************************************************************************************//
-    public List<BeeMethodLog> getLog(int type) {
-        List<BeeMethodLog> logList = new LinkedList<>();
+    public List<BeeMethodExecutionLog> getLog(int type) {
+        List<BeeMethodExecutionLog> logList = new LinkedList<>();
         switch (type) {
             case Type_Connection_Get: {
                 logList.addAll(this.conLogQueue);
@@ -156,8 +156,8 @@ public class DefaultMethodLogCache {
         return logList;
     }
 
-    public List<BeeMethodLog> clear(int type) {
-        List<BeeMethodLog> removedLogList = new LinkedList<>();
+    public List<BeeMethodExecutionLog> clear(int type) {
+        List<BeeMethodExecutionLog> removedLogList = new LinkedList<>();
         switch (type) {
             case Type_Connection_Get: {
                 conLogQueue.drainTo(removedLogList);
@@ -174,8 +174,8 @@ public class DefaultMethodLogCache {
             }
         }
 
-        for (BeeMethodLog log : removedLogList)
-            ((DefaultMethodLog) log).setRemoved(true);
+        for (BeeMethodExecutionLog log : removedLogList)
+            ((MethodExecutionLog) log).setRemoved(true);
         return removedLogList;
     }
 
@@ -185,13 +185,13 @@ public class DefaultMethodLogCache {
      * @param timeout to check timeout logs
      */
     public void clearTimeout(long timeout) {
-        List<BeeMethodLog> longRunningLogList = new ArrayList<>(1);
-        List<BeeMethodLog> conPendingRemovalLogList = new LinkedList<>();
-        List<BeeMethodLog> sqlPendingRemovalLogList = new LinkedList<>();
+        List<BeeMethodExecutionLog> longRunningLogList = new ArrayList<>(1);
+        List<BeeMethodExecutionLog> conPendingRemovalLogList = new LinkedList<>();
+        List<BeeMethodExecutionLog> sqlPendingRemovalLogList = new LinkedList<>();
         long currentTime = System.currentTimeMillis();
 
         //1: scan log list to find out all timeout logs to be removed
-        for (DefaultMethodLog log : conLogQueue) {
+        for (MethodExecutionLog log : conLogQueue) {
             if (currentTime - log.getStartTime() >= timeout) {
                 conPendingRemovalLogList.add(log);
             }
@@ -203,7 +203,7 @@ public class DefaultMethodLogCache {
         }
 
         //2: timeout check on sql execution logs
-        for (DefaultMethodLog log : sqlLogQueue) {
+        for (MethodExecutionLog log : sqlLogQueue) {
             if (currentTime - log.getStartTime() >= timeout) {
                 sqlPendingRemovalLogList.add(log);
             }
@@ -217,23 +217,23 @@ public class DefaultMethodLogCache {
         //3: remove timeout logs from connection log list
         if (!conPendingRemovalLogList.isEmpty()) {
             conLogQueue.removeAll(conPendingRemovalLogList);
-            for (BeeMethodLog log : conPendingRemovalLogList) {
-                ((DefaultMethodLog) log).setRemoved(true);
+            for (BeeMethodExecutionLog log : conPendingRemovalLogList) {
+                ((MethodExecutionLog) log).setRemoved(true);
             }
         }
 
         //4: remove timeout logs from sql execution log list
         if (!sqlPendingRemovalLogList.isEmpty()) {
             sqlLogQueue.removeAll(sqlPendingRemovalLogList);
-            for (BeeMethodLog log : sqlPendingRemovalLogList) {
-                ((DefaultMethodLog) log).setRemoved(true);
+            for (BeeMethodExecutionLog log : sqlPendingRemovalLogList) {
+                ((MethodExecutionLog) log).setRemoved(true);
             }
         }
 
         //5: handle slow log list
         if (logHandler != null) {
             try {
-                logHandler.handleLongRunningLogs(longRunningLogList);
+                logHandler.onLongRunningDetected(longRunningLogList);
             } catch (Throwable e) {
                 //
             }
@@ -247,7 +247,7 @@ public class DefaultMethodLogCache {
      */
     public boolean cancelStatement(Object logId) throws SQLException {
         if (logId == null) return false;
-        for (BeeMethodLog log : sqlLogQueue) {
+        for (BeeMethodExecutionLog log : sqlLogQueue) {
             if (logId.equals(log.getId())) {
                 return log.cancelStatement();
             }

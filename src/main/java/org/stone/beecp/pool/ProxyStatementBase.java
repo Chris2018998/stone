@@ -28,7 +28,7 @@ abstract class ProxyStatementBase extends ProxyBaseWrapper implements Statement 
     protected String sql;
     protected Statement raw;
     protected long preparationTookTime;//ms
-    protected DefaultMethodLogCache logCache;
+    protected MethodExecutionLogCache logCache;
 
     boolean unregister;
     private ProxyResultSetBase curRe;

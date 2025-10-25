@@ -9,8 +9,8 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beecp.BeeMethodLogHandler;
-import org.stone.beeop.BeeObjectMethodLog;
+import org.stone.beecp.BeeMethodExecutionListener;
+import org.stone.beeop.BeeMethodExecutionLog;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ public interface BeeObjectEventLogManager<K, V> {
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
      * @param handler   is a log handler
      */
-    void init(int cacheSize, long slowGet, long slowExec, boolean listenInSync, BeeMethodLogHandler handler);
+    void init(int cacheSize, long slowGet, long slowExec, boolean listenInSync, BeeMethodExecutionListener handler);
 
     //***************************************************************************************************************//
     //                                         2: logs maintenance                                                      //
@@ -45,7 +45,7 @@ public interface BeeObjectEventLogManager<K, V> {
      *
      * @Param timeout is zero,then clear all logs;otherwise only clear timeout logs.
      */
-    List<BeeObjectMethodLog<K, V>> clear(long timeout);
+    List<BeeMethodExecutionLog<K, V>> clear(long timeout);
 
     /**
      * Query and get logs with given type.
@@ -53,7 +53,7 @@ public interface BeeObjectEventLogManager<K, V> {
      * @param type is log type
      * @return a list of logs
      */
-    List<BeeObjectMethodLog<K, V>> getLog(int type);
+    List<BeeMethodExecutionLog<K, V>> getLog(int type);
 
     //***************************************************************************************************************//
     //                                         3: logs collection                                                        //
@@ -67,7 +67,7 @@ public interface BeeObjectEventLogManager<K, V> {
      * @param method     is method name,for example:getConnection()
      * @param parameters is an array of method parameters
      */
-    BeeObjectMethodLog<K, V> startCall(K key, int type, String method, Object[] parameters);
+    BeeMethodExecutionLog<K, V> startCall(K key, int type, String method, Object[] parameters);
 
     /**
      * Plugin method is executed at end of proxy methods to update result and attach to a log object.
@@ -75,7 +75,7 @@ public interface BeeObjectEventLogManager<K, V> {
      * @param callResult is result of target method call
      * @param log        generated from {@link #startCall}method
      */
-    void endCall(Object callResult, BeeObjectMethodLog<K, V> log);
+    void endCall(Object callResult, BeeMethodExecutionLog<K, V> log);
 
     /**
      * Plugin method is executed at exception catch block of proxy methods to update exception and attach to a log object.
@@ -83,6 +83,6 @@ public interface BeeObjectEventLogManager<K, V> {
      * @param failCause is result of target method call
      * @param log       generated from startCall method
      */
-    void endOnException(Throwable failCause, BeeObjectMethodLog<K, V> log);
+    void endOnException(Throwable failCause, BeeMethodExecutionLog<K, V> log);
 
 }

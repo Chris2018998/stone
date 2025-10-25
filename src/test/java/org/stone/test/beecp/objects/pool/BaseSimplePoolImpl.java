@@ -63,11 +63,11 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
         return false;
     }
 
-    public void enableMethodLogCache(boolean enable) {
+    public void enableMethodExecutionLogCache(boolean enable) {
         //do nothing
     }
 
-    public boolean isEnabledMethodLogCache() {
+    public boolean isEnabledMethodExecutionLogCache() {
         return false;
     }
 
@@ -80,14 +80,14 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
      *
      * @param type is log type to query
      */
-    public List<BeeMethodLog> getMethodLog(int type) {
+    public List<BeeMethodExecutionLog> getMethodExecutionLog(int type) {
         return Collections.emptyList();
     }
 
     /**
      * Clear All logs in log collector.
      */
-    public List<BeeMethodLog> clearMethodLog(int type) {
+    public List<BeeMethodExecutionLog> clearMethodExecutionLog(int type) {
         return null;
     }
 
@@ -96,7 +96,7 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
      *
      * @param handler to handle method logs
      */
-    public void setMethodLogHandler(BeeMethodLogHandler handler) {
+    public void setMethodExecutionListener(BeeMethodExecutionListener handler) {
 
     }
 

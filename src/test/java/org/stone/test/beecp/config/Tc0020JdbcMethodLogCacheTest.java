@@ -26,27 +26,27 @@ public class Tc0020JdbcMethodLogCacheTest {
     @Test
     public void testSetAndGet() {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
-        Assertions.assertFalse(config.isEnableMethodLogCache());//default check
-        config.setEnableMethodLogCache(true);
-        Assertions.assertTrue(config.isEnableMethodLogCache());//default check
+        Assertions.assertFalse(config.isEnableMethodExecutionLogCache());//default check
+        config.setEnableMethodExecutionLogCache(true);
+        Assertions.assertTrue(config.isEnableMethodExecutionLogCache());//default check
 
         //jdbcCallLogCacheSize
-        Assertions.assertEquals(1000, config.getMethodLogCacheSize());//default check
-        config.setMethodLogCacheSize(500);
-        Assertions.assertEquals(500, config.getMethodLogCacheSize());
+        Assertions.assertEquals(1000, config.getMethodExecutionLogCacheSize());//default check
+        config.setMethodExecutionLogCacheSize(500);
+        Assertions.assertEquals(500, config.getMethodExecutionLogCacheSize());
         try {
-            config.setMethodLogCacheSize(0);
+            config.setMethodExecutionLogCacheSize(0);
             fail("[testSetAndGet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'method-log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero", e.getMessage());
         }
         try {
-            config.setMethodLogCacheSize(-1);
+            config.setMethodExecutionLogCacheSize(-1);
             fail("[testSetAndGet]Setting test failed on configuration item[log-cache-size]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'method-log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(500, config.getMethodLogCacheSize());//not changed check
+        Assertions.assertEquals(500, config.getMethodExecutionLogCacheSize());//not changed check
 
         //slowConnectionGetThreshold
         Assertions.assertEquals(30000L, config.getSlowConnectionThreshold());//default check
@@ -77,41 +77,41 @@ public class Tc0020JdbcMethodLogCacheTest {
         Assertions.assertEquals(0L, config.getSlowSQLThreshold());//not changed check
 
         //jdbcCallLogTimeout
-        Assertions.assertEquals(180000L, config.getMethodLogTimeout());//default check
-        config.setMethodLogTimeout(5000L);
-        Assertions.assertEquals(5000L, config.getMethodLogTimeout());
+        Assertions.assertEquals(180000L, config.getMethodExecutionLogTimeout());//default check
+        config.setMethodExecutionLogTimeout(5000L);
+        Assertions.assertEquals(5000L, config.getMethodExecutionLogTimeout());
         try {
-            config.setMethodLogTimeout(0L);
+            config.setMethodExecutionLogTimeout(0L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'method-log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'method-execution-log-timeout' must be greater than zero", e.getMessage());
         }
         try {
-            config.setMethodLogTimeout(-1L);
+            config.setMethodExecutionLogTimeout(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-timeout]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'method-log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'method-execution-log-timeout' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(5000L, config.getMethodLogTimeout());//not changed check
+        Assertions.assertEquals(5000L, config.getMethodExecutionLogTimeout());//not changed check
 
 
         //jdbcCallLogTimeoutInterval
-        Assertions.assertEquals(180000L, config.getIntervalOfClearTimeoutMethodLogs());//default check
-        config.setIntervalOfClearTimeoutMethodLogs(5000L);
-        Assertions.assertEquals(5000L, config.getIntervalOfClearTimeoutMethodLogs());
+        Assertions.assertEquals(180000L, config.getIntervalOfClearTimeoutExecutionLogs());//default check
+        config.setIntervalOfClearTimeoutExecutionLogs(5000L);
+        Assertions.assertEquals(5000L, config.getIntervalOfClearTimeoutExecutionLogs());
         try {
-            config.setIntervalOfClearTimeoutMethodLogs(0L);
+            config.setIntervalOfClearTimeoutExecutionLogs(0L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-method-logs' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero", e.getMessage());
         }
         try {
-            config.setIntervalOfClearTimeoutMethodLogs(-1L);
+            config.setIntervalOfClearTimeoutExecutionLogs(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[log-clear-interval]");
         } catch (InvalidParameterException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-method-logs' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(5000L, config.getIntervalOfClearTimeoutMethodLogs());//not changed check
+        Assertions.assertEquals(5000L, config.getIntervalOfClearTimeoutExecutionLogs());//not changed check
     }
 
 //    @Test
