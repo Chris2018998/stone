@@ -1,5 +1,9 @@
 stone changes
 
+stone-2.0.2
+-----------------------------------------------------
+[beecp]
+1: refactor method execution logs feature(from event log collection)
 
 stone-2.0.1
 -----------------------------------------------------
