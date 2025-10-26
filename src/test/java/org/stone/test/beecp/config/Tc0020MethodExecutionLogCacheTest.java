@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author Chris Liao
  */
 
-public class Tc0020JdbcMethodLogCacheTest {
+public class Tc0020MethodExecutionLogCacheTest {
 
     @Test
     public void testSetAndGet() {

@@ -16,7 +16,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 /**
  * @author Chris Liao
  */
-public class Tc0022OtherConfigurationTest {
+public class Tc0023OtherConfigurationTest {
 
     @Test
     public void testConfigurationSet() {

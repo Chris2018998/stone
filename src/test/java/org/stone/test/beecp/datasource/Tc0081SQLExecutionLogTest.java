@@ -16,7 +16,7 @@ import org.stone.beecp.BeeMethodExecutionLog;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
-import org.stone.test.beecp.objects.jdbclog.DefaultMethodLogHandler;
+import org.stone.test.beecp.objects.listener.MockMethodExecutionListener1;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -36,7 +36,7 @@ public class Tc0081SQLExecutionLogTest {
     public void testExceptionLog() throws SQLException {
         try (BeeDataSource ds = new BeeDataSource()) {
             //ds.setEventLogManager(new MethodLogCache());
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             ds.setEnableMethodExecutionLogCache(true);//sync mode
 
             MockConnectionProperties connectionProperties = new MockConnectionProperties();
@@ -87,7 +87,7 @@ public class Tc0081SQLExecutionLogTest {
     public void testSlowLog() throws Exception {
         try (BeeDataSource ds = new BeeDataSource()) {
             //ds.setEventLogManager(new MethodLogCache());
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             ds.setEnableMethodExecutionLogCache(true);//sync mode
             ds.setSlowSQLThreshold(50L);
 
@@ -165,7 +165,7 @@ public class Tc0081SQLExecutionLogTest {
     public void testCancelStatement() throws Exception {
         try (BeeDataSource ds = new BeeDataSource()) {
             //ds.setEventLogManager(new MethodLogCache());
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             ds.setEnableMethodExecutionLogCache(true);//sync mode
             ds.setSlowSQLThreshold(50L);
 

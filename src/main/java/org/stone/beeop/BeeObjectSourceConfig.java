@@ -9,7 +9,6 @@
  */
 package org.stone.beeop;
 
-import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beeop.pool.KeyedObjectPool;
 import org.stone.tools.CommonUtil;
 import org.stone.tools.exception.BeanException;
@@ -129,6 +128,13 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private Class<? extends BeeMethodExecutionListener<K, V>> methodExecutionListenerClass;
     //41: Class name of method execution listener,default is none
     private String methodExecutionListenerClassName;
+
+    //42: method execution listener factory: instance > class > class name
+    private org.stone.beeop.BeeMethodExecutionListenerFactory<K, V> methodExecutionListenerFactory;
+    //43: Class of method execution listener factory ,default is none
+    private Class<? extends BeeMethodExecutionListenerFactory> methodExecutionListenerFactoryClass;
+    //44: Class name of method execution listener factory,default is none
+    private String methodExecutionListenerFactoryClassName;
 
     //***************************************************************************************************************//
     //                                     1: constructors(4)                                                        //
@@ -473,13 +479,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         }
     }
 
-    //***************************************************************************************************************//
-    //                                     4: pool work configuration(2)                                             //
-    //***************************************************************************************************************//
-
-
     //****************************************************************************************************************//
-    //                                    5: Log manager(18)                                                        //
+    //                                    5: method execution logs (24)                                               //
     //****************************************************************************************************************//
     public boolean isEnableMethodExecutionLogCache() {
         return enableMethodExecutionLogCache;
@@ -563,6 +564,30 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMethodExecutionListenerClassName(String methodExecutionListenerClassName) {
         this.methodExecutionListenerClassName = methodExecutionListenerClassName;
+    }
+
+    public org.stone.beeop.BeeMethodExecutionListenerFactory<K, V> getMethodExecutionListenerFactory() {
+        return methodExecutionListenerFactory;
+    }
+
+    public void setMethodExecutionListenerFactory(org.stone.beeop.BeeMethodExecutionListenerFactory<K, V> methodExecutionListenerFactory) {
+        this.methodExecutionListenerFactory = methodExecutionListenerFactory;
+    }
+
+    public Class<? extends BeeMethodExecutionListenerFactory> getMethodExecutionListenerFactoryClass() {
+        return methodExecutionListenerFactoryClass;
+    }
+
+    public void setMethodExecutionListenerFactoryClass(Class<? extends BeeMethodExecutionListenerFactory> methodExecutionListenerFactoryClass) {
+        this.methodExecutionListenerFactoryClass = methodExecutionListenerFactoryClass;
+    }
+
+    public String getMethodExecutionListenerFactoryClassName() {
+        return methodExecutionListenerFactoryClassName;
+    }
+
+    public void setMethodExecutionListenerFactoryClassName(String methodExecutionListenerFactoryClassName) {
+        this.methodExecutionListenerFactoryClassName = methodExecutionListenerFactoryClassName;
     }
 
     //***************************************************************************************************************//
@@ -725,7 +750,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
         //4: create a method log handler
-        BeeMethodExecutionListener<K, V> logHandler = this.createLogHandler();
+        BeeMethodExecutionListener<K, V> methodExecutionListener = this.createMethodExecutionListener();
         //5: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
@@ -734,7 +759,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         checkedConfig.objectFactory = objectFactory;
         if (predicate != null) checkedConfig.predicate = predicate;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
-        if (logHandler != null) checkedConfig.methodExecutionListener = logHandler;
+        if (methodExecutionListener != null) checkedConfig.methodExecutionListener = methodExecutionListener;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
         return checkedConfig;
@@ -853,20 +878,49 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     }
 
     //create object call log handler
-    private BeeMethodExecutionListener<K, V> createLogHandler() {
+    private BeeMethodExecutionListener<K, V> createMethodExecutionListener() {
         //step1:if exists handler,then return it
         if (this.methodExecutionListener != null) return this.methodExecutionListener;
 
-        //step2: create a handler
+        //step2:if exists listener factory,then use it to create one
+        if (this.methodExecutionListenerFactory != null) {
+            try {
+                return methodExecutionListenerFactory.create();
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create method execution listener by listener factory", e);
+            }
+        }
+
+        //step3: create listener factory and let it create a listener
+        if (this.methodExecutionListenerFactoryClass != null || isNotBlank(this.methodExecutionListenerFactoryClassName)) {
+            Class<?> listenerFactoryClass = null;
+            BeeMethodExecutionListenerFactory<K, V> factory;
+            try {
+                listenerFactoryClass = methodExecutionListenerFactoryClass != null ? methodExecutionListenerFactoryClass : loadClass(methodExecutionListenerFactoryClassName);
+                factory = ((BeeMethodExecutionListenerFactory<K, V>) createClassInstance(listenerFactoryClass, BeeMethodExecutionListenerFactory.class, "method execution listener factory"));
+            } catch (ClassNotFoundException e) {
+                throw new BeeObjectSourceConfigException("Failed to create method execution listener factory with class[" + methodExecutionListenerClassName + "]", e);
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create method execution listener factory with class[" + listenerFactoryClass + "]", e);
+            }
+
+            try {
+                return factory.create();
+            } catch (Throwable e) {
+                throw new BeeObjectSourceConfigException("Failed to create method execution listener by listener factory", e);
+            }
+        }
+
+        //step4: create a handler
         if (this.methodExecutionListenerClass != null || isNotBlank(this.methodExecutionListenerClassName)) {
             Class<?> handlerClass = null;
             try {
                 handlerClass = methodExecutionListenerClass != null ? methodExecutionListenerClass : loadClass(methodExecutionListenerClassName);
                 return (BeeMethodExecutionListener<K, V>) createClassInstance(handlerClass, BeeMethodExecutionListener.class, "object call log handler");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + methodExecutionListenerClassName + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create object call log handler with class[" + methodExecutionListenerClassName + "]", e);
             } catch (Throwable e) {
-                throw new BeeDataSourceConfigException("Failed to create object call log handler with class[" + handlerClass + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create object call log handler with class[" + handlerClass + "]", e);
             }
         }
         return null;

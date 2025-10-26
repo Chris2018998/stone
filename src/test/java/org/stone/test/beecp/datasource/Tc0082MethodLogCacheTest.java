@@ -16,7 +16,7 @@ import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeMethodExecutionLog;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
-import org.stone.test.beecp.objects.jdbclog.DefaultMethodLogHandler;
+import org.stone.test.beecp.objects.listener.MockMethodExecutionListener1;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -34,17 +34,20 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 public class Tc0082MethodLogCacheTest {
 
     @Test
-    public void testLogManagerNotSet() throws SQLException {
+    public void testCacheEnableAndDisable() throws SQLException {
         BeeDataSourceConfig config1 = new BeeDataSourceConfig();
         config1.setConnectionFactory(new MockConnectionFactory());
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertFalse(ds.isEnabledMethodExecutionLogCache());
             try (Connection ignore = ds.getConnection()) {
-                ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+                ds.setMethodExecutionListener(new MockMethodExecutionListener1());
                 Assertions.assertTrue(ds.getMethodExecutionLog(Type_Connection_Get).isEmpty());
                 Assertions.assertTrue(ds.clearMethodExecutionLog(Type_All).isEmpty());
                 ds.enableMethodExecutionLogCache(true);
+                ds.enableMethodExecutionLogCache(true);
                 Assertions.assertTrue(ds.isEnabledMethodExecutionLogCache());
+                ds.enableMethodExecutionLogCache(false);
+                ds.enableMethodExecutionLogCache(false);
                 Assertions.assertFalse(ds.cancelStatement(new Object()));
                 ds.setMethodExecutionListener(null);
             }
@@ -81,7 +84,7 @@ public class Tc0082MethodLogCacheTest {
     public void testTimeoutClear() throws SQLException {
         BeeDataSourceConfig config = new BeeDataSourceConfig();
         config.setEnableMethodExecutionLogCache(true);
-        config.setMethodExecutionListener(new DefaultMethodLogHandler());
+        config.setMethodExecutionListener(new MockMethodExecutionListener1());
         config.setSlowSQLThreshold(1L);
         config.setSlowConnectionThreshold(1L);
 

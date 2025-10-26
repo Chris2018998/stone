@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.stone.beecp;
+package org.stone.test.beecp.objects.listener;
+
+import org.stone.beecp.BeeMethodExecutionListener;
+import org.stone.beecp.BeeMethodExecutionListenerFactory;
 
 /**
- * Method execution listener interface factory
+ * Method execution listener factory, for success test
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionListenerFactory {
+public class MockMethodExecutionListenerFactory1 implements BeeMethodExecutionListenerFactory {
 
     /**
      * Creates method execution listener.
      *
      * @return created Listener instance
      */
-    BeeMethodExecutionListener create() throws Exception;
-
+    public BeeMethodExecutionListener create() throws Exception {
+        return new MockMethodExecutionListener1();
+    }
 }

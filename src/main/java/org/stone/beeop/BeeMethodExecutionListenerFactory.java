@@ -13,15 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.stone.test.beecp.objects.jdbclog;
+package org.stone.beeop;
 
 /**
- * A method log handler.
+ * Method execution listener interface factory
  *
  * @author Chris Liao
  */
-public class MockJdbcMethodLogHandler2 extends DefaultMethodLogHandler {
-    public MockJdbcMethodLogHandler2(String name) {
+public interface BeeMethodExecutionListenerFactory<K, V> {
 
-    }
+    /**
+     * Create method execution listener.
+     *
+     * @return created Listener instance
+     */
+    BeeMethodExecutionListener<K, V> create() throws Exception;
 }
+
+

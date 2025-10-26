@@ -13,18 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.stone.test.beecp.objects.jdbclog;
+package org.stone.test.beecp.objects.listener;
 
+import org.stone.beecp.BeeMethodExecutionListener;
 import org.stone.beecp.BeeMethodExecutionLog;
 
 import java.util.List;
 
 /**
- * A method log listener.
+ * Method execution listener
  *
  * @author Chris Liao
  */
-public class MockJdbcMethodLogHandler extends DefaultMethodLogHandler {
+public class MockMethodExecutionListener1 implements BeeMethodExecutionListener {
 
     private BeeMethodExecutionLog slowLog;
 
@@ -43,7 +44,11 @@ public class MockJdbcMethodLogHandler extends DefaultMethodLogHandler {
     }
 
     public void onMethodEnd(BeeMethodExecutionLog log) {
-
+        if (log.isException()) {
+            exceptionLog = log;
+        } else if (log.isSlow()) {
+            this.slowLog = log;
+        }
     }
 
     public void onLongRunningDetected(List<BeeMethodExecutionLog> slowList) {

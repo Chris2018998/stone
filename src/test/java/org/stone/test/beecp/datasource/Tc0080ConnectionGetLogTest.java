@@ -15,7 +15,7 @@ import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeMethodExecutionLog;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 import org.stone.test.beecp.objects.factory.MockXaConnectionFactory;
-import org.stone.test.beecp.objects.jdbclog.DefaultMethodLogHandler;
+import org.stone.test.beecp.objects.listener.MockMethodExecutionListener1;
 import org.stone.test.beecp.objects.threads.BorrowThread;
 
 import javax.sql.XAConnection;
@@ -37,7 +37,7 @@ public class Tc0080ConnectionGetLogTest {
         try (BeeDataSource ds = new BeeDataSource()) {
 
             ds.setEnableMethodExecutionLogCache(true);
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             MockConnectionFactory connectionFactory = new MockConnectionFactory();
             connectionFactory.setFailCause(new SQLException("Failed to connect database"));
             ds.setConnectionFactory(connectionFactory);
@@ -46,6 +46,7 @@ public class Tc0080ConnectionGetLogTest {
                 Assertions.fail("[testConnectionExceptionLog]Test failed");
             } catch (SQLException e) {
                 Assertions.assertTrue(ds.isEnabledMethodExecutionLogCache());
+                Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
                 List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLog(Type_Connection_Get);
                 Assertions.assertEquals(1, logList.size());
                 BeeMethodExecutionLog log = logList.get(0);
@@ -68,7 +69,7 @@ public class Tc0080ConnectionGetLogTest {
         //2: get XA connection
         try (BeeDataSource ds = new BeeDataSource()) {
             //ds.setEventLogManager(new MethodLogCache());
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             ds.setEnableMethodExecutionLogCache(true);//sync mode
             MockXaConnectionFactory xaConnectionFactory = new MockXaConnectionFactory();
             xaConnectionFactory.setFailCause(new SQLException("Failed to connect database"));
@@ -107,7 +108,7 @@ public class Tc0080ConnectionGetLogTest {
         //1: get connection
         try (BeeDataSource ds = new BeeDataSource()) {
             //ds.setEventLogManager(new MethodLogCache());
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             ds.setEnableMethodExecutionLogCache(true);//sync mode
             ds.setSlowConnectionThreshold(100L);
             MockConnectionFactory connectionFactory = new MockConnectionFactory();
@@ -133,7 +134,7 @@ public class Tc0080ConnectionGetLogTest {
         //2: get XA connection
         try (BeeDataSource ds = new BeeDataSource()) {
             //ds.setEventLogManager(new MethodLogCache());
-            ds.setMethodExecutionListener(new DefaultMethodLogHandler());
+            ds.setMethodExecutionListener(new MockMethodExecutionListener1());
             ds.setEnableMethodExecutionLogCache(true);//sync mode
             ds.setSlowConnectionThreshold(100L);
             MockXaConnectionFactory xaConnectionFactory = new MockXaConnectionFactory();
