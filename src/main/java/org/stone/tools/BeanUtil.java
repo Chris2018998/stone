@@ -220,13 +220,15 @@ public class BeanUtil {
     }
 
     /**
-     * attempt to load class with a class name
+     * attempt to create an instance by class name
      *
      * @param className to be loaded
      * @return a loaded class
      * @throws ClassNotFoundException when class not found
-     * @throws InstantiationException when class not found
-     * @throws IllegalAccessException when class not found
+     * @throws NoSuchMethodException  when method not found
+     * @throws InstantiationException if the class that declares the
+     *                                *              underlying constructor represents an abstract class.
+     * @throws IllegalAccessException when illegal access
      */
     public static Object createClassInstance(String className) throws ClassNotFoundException,
             NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException,
@@ -241,7 +243,8 @@ public class BeanUtil {
      * @param parentClass     is parent class for type check(it may be an interface should be implemented by bean class)
      * @param objectClassType is a desc of bean class
      * @return an instance of bean class
-     * @throws BeanException when create failed
+     * @throws BeanException          when create failed
+     * @throws ClassNotFoundException when class not found
      */
     public static Object createClassInstance(String beanClassName, Class<?> parentClass, String objectClassType)
             throws ClassNotFoundException, BeanException {
