@@ -40,7 +40,7 @@ public class Tc0032ObjectSourceClearTest {
         try {
             os.restart(true, null);
         } catch (Exception e) {
-            Assertions.assertTrue(e.getMessage().contains("Configuration can't be null"));
+            Assertions.assertTrue(e.getMessage().contains("Object source configuration can't be null"));
         }
         BeeObjectSourceConfig config2 = new BeeObjectSourceConfig();
         config2.setObjectFactory(new JavaBookFactory());

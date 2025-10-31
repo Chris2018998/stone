@@ -13,7 +13,7 @@ import org.stone.beeop.*;
 import org.stone.beeop.pool.exception.*;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
-import org.stone.tools.extension.InterruptionSemaphore;
+import org.stone.tools.extension.InterruptableSemaphore;
 import org.stone.tools.logger.LogPrinter;
 import org.stone.tools.logger.LogPrinterFactory;
 
@@ -95,7 +95,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
     //pool state
     private volatile int poolState;
     //pool semaphore
-    private InterruptionSemaphore semaphore;
+    private InterruptableSemaphore semaphore;
     //thread local to cache last borrowed objects for borrowers
     private ThreadLocal<WeakReference<ObjectBorrower<K, V>>> threadLocal;
     //pool monitor vo
@@ -158,7 +158,7 @@ final class ObjectInstancePool<K, V> implements Runnable, Cloneable {
 
         if (initSize > 0 && !async) this.createInitObjects(initSize, true);
         if (this.enableThreadLocal) this.threadLocal = new BorrowerThreadLocal<>();
-        this.semaphore = new InterruptionSemaphore(semaphoreSize, isFairMode);
+        this.semaphore = new InterruptableSemaphore(semaphoreSize, isFairMode);
         this.waitQueue = new ConcurrentLinkedQueue<>();
 
         this.servantTryCount = 0;

@@ -27,7 +27,7 @@ public class Tc0051KeyPoolInitTest {
         try {
             pool.start(null);
         } catch (Exception e) {
-            Assertions.assertEquals("Configuration can't be null", e.getMessage());
+            Assertions.assertEquals("Object source configuration can't be null", e.getMessage());
         }
     }
 

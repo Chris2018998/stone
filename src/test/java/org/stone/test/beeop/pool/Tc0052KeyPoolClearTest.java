@@ -34,7 +34,7 @@ public class Tc0052KeyPoolClearTest {
         try {
             pool.restart(true, null);
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("Configuration can't be null", e.getMessage());
+            Assertions.assertEquals("Object source configuration can't be null", e.getMessage());
         }
     }
 

@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.test.beeop.objects.JavaBookFactory;
 
-import java.security.InvalidParameterException;
+import java.lang.IllegalArgumentException;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -41,13 +41,13 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setSemaphoreSize(-1);
             fail("Setting test failed on configuration item[borrow-semaphore-size]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'borrow-semaphore-size' must be greater than zero", e.getMessage());
         }
         try {
             config.setSemaphoreSize(0);
             fail("Setting test failed on configuration item[borrow-semaphore-size]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'borrow-semaphore-size' must be greater than zero", e.getMessage());
         }
         config.setSemaphoreSize(1);
@@ -57,13 +57,13 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setMaxWait(-1L);
             fail("Setting test failed on configuration item[max-wait]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'max-wait' must be greater than zero", e.getMessage());
         }
         try {
             config.setMaxWait(0L);
             fail("Setting test failed on configuration item[max-wait]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'max-wait' must be greater than zero", e.getMessage());
         }
         config.setMaxWait(5000L);
@@ -73,13 +73,13 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setIdleTimeout(-1L);
             fail("Setting test failed on configuration item[idle-timeout]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'idle-timeout' must be greater than zero", e.getMessage());
         }
         try {
             config.setIdleTimeout(0L);
             fail("Setting test failed on configuration item[idle-timeout]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'idle-timeout' must be greater than zero", e.getMessage());
         }
         config.setIdleTimeout(3000L);
@@ -89,7 +89,7 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setHoldTimeout(-1L);
             fail("Setting test failed on configuration item[hold-timeout]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'hold-timeout' cannot be less than zero", e.getMessage());
         }
         config.setHoldTimeout(0);
@@ -101,7 +101,7 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setAliveTestTimeout(-1);
             fail("Setting test failed on configuration item[alive-test-timeout]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'alive-test-timeout' cannot  be less than zero", e.getMessage());
         }
         config.setAliveTestTimeout(0);
@@ -113,7 +113,7 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setAliveAssumeTime(-1L);
             fail("Setting test failed on configuration item[alive-assume-time]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'alive-assume-time' cannot be less than zero", e.getMessage());
         }
         config.setAliveAssumeTime(0L);
@@ -125,13 +125,13 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setIntervalOfClearTimeout(-1L);
             fail("Setting test failed on configuration item[timer-check-interval]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero", e.getMessage());
         }
         try {
             config.setIntervalOfClearTimeout(0L);
             fail("Setting test failed on configuration item[timer-check-interval]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero", e.getMessage());
         }
         config.setIntervalOfClearTimeout(3000L);
@@ -145,7 +145,7 @@ public class Tc0004ConfigSetAndGetTest {
         try {
             config.setParkTimeForRetry(-1L);
             fail("Setting test failed on configuration item[park-time-for-retry]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'park-time-for-retry' cannot be less than zero", e.getMessage());
         }
         config.setParkTimeForRetry(3000L);

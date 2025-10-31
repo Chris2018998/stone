@@ -41,8 +41,8 @@ final class PooledConnection {
     String defaultCatalog;
     String defaultSchema;
     int defaultNetworkTimeout;
-    boolean forceDirtyOnSchemaAfterSet;
-    boolean forceDirtyOnCatalogAfterSet;
+    boolean forceDirtyWhenSetSchema;
+    boolean forceDirtyWhenSetCatalog;
     //***************************************************************************************************************//
     //                                     section-B: runtime change fields                                          //                                                                                  //
     //***************************************************************************************************************//
@@ -64,11 +64,11 @@ final class PooledConnection {
     //***************************************************************************************************************//
     //                                     section-C: some switch fields and others                                  //                                                                                  //
     //***************************************************************************************************************//
-    private boolean useDefaultOnCatalog;
-    private boolean enableDefaultOnSchema;
-    private boolean useDefaultOnReadOnly;
-    private boolean useDefaultOnAutoCommit;
-    private boolean useDefaultOnTransactionIsolation;
+    private boolean useDefaultCatalog;
+    private boolean useDefaultSchema;
+    private boolean useDefaultReadOnly;
+    private boolean useDefaultAutoCommit;
+    private boolean useDefaultTransactionIsolation;
     private boolean supportNetworkTimeoutInd;
     private ThreadPoolExecutor networkTimeoutExecutor;
     private List<Integer> sqlExceptionCodeList;
@@ -85,49 +85,50 @@ final class PooledConnection {
     //***************************************************************************************************************//
     //                                      2: init method                                                           //                                                                                  //
     //***************************************************************************************************************//
-    void init(//1:defaultAutoCommit
-              boolean useDefaultOnAutoCommit,
-              boolean defaultAutoCommit,
-              //2:defaultTransactionIsolation
-              boolean useDefaultOnTransactionIsolation,
-              int defaultTransactionIsolation,
-              //3:defaultReadOnly
-              boolean useDefaultOnReadOnly,
-              boolean defaultReadOnly,
-              //4:defaultCatalog
-              boolean useDefaultOnCatalog,
-              String defaultCatalog,
-              boolean forceDirtyOnCatalogAfterSet,
-              //5:defaultSchema
-              boolean useDefaultOnSchema,
-              String defaultSchema,
-              boolean forceDirtyOnSchemaAfterSet,
-              //6:defaultNetworkTimeout
-              boolean supportNetworkTimeoutInd,
-              int defaultNetworkTimeout,
-              ThreadPoolExecutor networkTimeoutExecutor,
-              //7:others
-              List<Integer> sqlExceptionCodeList,
-              List<String> sqlExceptionStateList,
-              BeeConnectionPredicate predicate) {
+    void init(
+            //1:defaultAutoCommit
+            boolean useDefaultAutoCommit,
+            boolean defaultAutoCommit,
+            //2:defaultTransactionIsolation
+            boolean useDefaultTransactionIsolation,
+            int defaultTransactionIsolation,
+            //3:defaultReadOnly
+            boolean useDefaultReadOnly,
+            boolean defaultReadOnly,
+            //4:defaultCatalog
+            boolean useDefaultCatalog,
+            String defaultCatalog,
+            boolean forceDirtyWhenSetCatalog,
+            //5:defaultSchema
+            boolean useDefaultSchema,
+            String defaultSchema,
+            boolean forceDirtyWhenSetSchema,
+            //6:defaultNetworkTimeout
+            boolean supportNetworkTimeoutInd,
+            int defaultNetworkTimeout,
+            ThreadPoolExecutor networkTimeoutExecutor,
+            //7:others
+            List<Integer> sqlExceptionCodeList,
+            List<String> sqlExceptionStateList,
+            BeeConnectionPredicate predicate) {
 
         //1:defaultAutoCommit
-        this.useDefaultOnAutoCommit = useDefaultOnAutoCommit;
+        this.useDefaultAutoCommit = useDefaultAutoCommit;
         this.defaultAutoCommit = defaultAutoCommit;
         //2:defaultTransactionIsolation
-        this.useDefaultOnTransactionIsolation = useDefaultOnTransactionIsolation;
+        this.useDefaultTransactionIsolation = useDefaultTransactionIsolation;
         this.defaultTransactionIsolation = defaultTransactionIsolation;
         //3:defaultReadOnly
-        this.useDefaultOnReadOnly = useDefaultOnReadOnly;
+        this.useDefaultReadOnly = useDefaultReadOnly;
         this.defaultReadOnly = defaultReadOnly;
         //4:defaultCatalog
-        this.useDefaultOnCatalog = useDefaultOnCatalog;
+        this.useDefaultCatalog = useDefaultCatalog;
         this.defaultCatalog = defaultCatalog;
-        this.forceDirtyOnCatalogAfterSet = forceDirtyOnCatalogAfterSet;
+        this.forceDirtyWhenSetCatalog = forceDirtyWhenSetCatalog;
         //5:defaultSchema
-        this.enableDefaultOnSchema = useDefaultOnSchema;
+        this.useDefaultSchema = useDefaultSchema;
         this.defaultSchema = defaultSchema;
-        this.forceDirtyOnSchemaAfterSet = forceDirtyOnSchemaAfterSet;
+        this.forceDirtyWhenSetSchema = forceDirtyWhenSetSchema;
         //6:defaultNetworkTimeout
         this.supportNetworkTimeoutInd = supportNetworkTimeoutInd;
         this.defaultNetworkTimeout = defaultNetworkTimeout;
@@ -142,23 +143,20 @@ final class PooledConnection {
     //                                      3: set a created connection and set default on it                        //                                                                                  //
     //***************************************************************************************************************//
     void setRawConnection(int state, Connection rawConn, XAResource rawXaRes) throws SQLException {
-        if (useDefaultOnAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
+        if (useDefaultAutoCommit && defaultAutoCommit != rawConn.getAutoCommit())
             rawConn.setAutoCommit(defaultAutoCommit);
-        if (useDefaultOnTransactionIsolation && defaultTransactionIsolation - rawConn.getTransactionIsolation() != 0)
+        if (useDefaultTransactionIsolation && defaultTransactionIsolation - rawConn.getTransactionIsolation() != 0)
             rawConn.setTransactionIsolation(defaultTransactionIsolation);
-        if (useDefaultOnReadOnly && defaultReadOnly != rawConn.isReadOnly())
+        if (useDefaultReadOnly && defaultReadOnly != rawConn.isReadOnly())
             rawConn.setReadOnly(defaultReadOnly);
-        if (useDefaultOnCatalog && !Objects.equals(defaultCatalog, rawConn.getCatalog()))
+        if (useDefaultCatalog && !Objects.equals(defaultCatalog, rawConn.getCatalog()))
             rawConn.setCatalog(defaultCatalog);
-        if (enableDefaultOnSchema && !Objects.equals(defaultSchema, rawConn.getSchema()))
+        if (useDefaultSchema && !Objects.equals(defaultSchema, rawConn.getSchema()))
             rawConn.setSchema(defaultSchema);
 
-        setRawConnection2(state, rawConn, rawXaRes);
+        this.setRawConnection2(state, rawConn, rawXaRes);
     }
 
-    //***************************************************************************************************************//
-    //                                      4: set a created connection without setting default                      //                                                                                  //
-    //***************************************************************************************************************//
     void setRawConnection2(int state, Connection rawConn, XAResource rawXaRes) {
         this.rawConn = rawConn;
         this.rawXaRes = rawXaRes;

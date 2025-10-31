@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.test.beeop.objects.JavaBookFactory;
 
-import java.security.InvalidParameterException;
+import java.lang.IllegalArgumentException;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -31,13 +31,13 @@ public class Tc0034ObjectSourceOtherTest {
         try {
             os.setMaxWait(-1L);
             fail("Setting test failed on configuration item[max-wait]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'max-wait' must be greater than zero", e.getMessage());
         }
         try {
             os.setMaxWait(0L);
             fail("Setting test failed on configuration item[max-wait]");
-        } catch (InvalidParameterException e) {
+        } catch (IllegalArgumentException e) {
             Assertions.assertEquals("The given value for configuration item 'max-wait' must be greater than zero", e.getMessage());
         }
         os.setMaxWait(10L);

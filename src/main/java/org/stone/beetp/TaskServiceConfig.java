@@ -15,7 +15,6 @@ import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.InvalidParameterException;
 import java.util.concurrent.TimeUnit;
 
 import static org.stone.tools.BeanUtil.createClassInstance;
@@ -102,7 +101,7 @@ public class TaskServiceConfig {
             this.maxOnceTaskSize = maxOnceTaskSize;
             this.onceWorkerCount = Math.min(maxOnceTaskSize, Runtime.getRuntime().availableProcessors());
         } else {
-            throw new InvalidParameterException("The given value of item 'max-once-task-size' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'max-once-task-size' cannot be less than zero");
         }
     }
 
@@ -114,7 +113,7 @@ public class TaskServiceConfig {
         if (onceWorkerCount > 0) {
             this.onceWorkerCount = onceWorkerCount;
         } else {
-            throw new InvalidParameterException("The given value of item 'once-worker-count' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'once-worker-count' cannot be less than zero");
         }
     }
 
@@ -126,7 +125,7 @@ public class TaskServiceConfig {
         if (onceWorkerKeepAliveTime > 0L) {
             this.onceWorkerKeepAliveTime = onceWorkerKeepAliveTime;
         } else {
-            throw new InvalidParameterException("The given value of item 'once-worker-keep-alive-time' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'once-worker-keep-alive-time' cannot be less than zero");
         }
     }
 
@@ -144,7 +143,7 @@ public class TaskServiceConfig {
                 this.timerWorkerCount = Math.min(maxTimerTaskSize, Runtime.getRuntime().availableProcessors());
             if (this.timerWorkerKeepAliveTime == 0) this.timerWorkerKeepAliveTime = TimeUnit.SECONDS.toMillis(15L);
         } else {
-            throw new InvalidParameterException("The given value of item 'max-once-task-size' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'max-once-task-size' cannot be less than zero");
         }
     }
 
@@ -157,7 +156,7 @@ public class TaskServiceConfig {
         if (timerWorkerCount > 0) {
             this.timerWorkerCount = timerWorkerCount;
         } else {
-            throw new InvalidParameterException("The given value of item 'timer-worker-count' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'timer-worker-count' cannot be less than zero");
         }
     }
 
@@ -169,7 +168,7 @@ public class TaskServiceConfig {
         if (timerWorkerKeepAliveTime > 0L) {
             this.timerWorkerKeepAliveTime = timerWorkerKeepAliveTime;
         } else {
-            throw new InvalidParameterException("The given value of item 'timer-worker-keep-alive-time' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'timer-worker-keep-alive-time' cannot be less than zero");
         }
     }
 
@@ -188,7 +187,7 @@ public class TaskServiceConfig {
             if (this.joinWorkerKeepAliveTime == 0) this.timerWorkerKeepAliveTime = TimeUnit.SECONDS.toMillis(15L);
 
         } else {
-            throw new InvalidParameterException("The given value of item 'max-join-task-size' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'max-join-task-size' cannot be less than zero");
         }
     }
 
@@ -200,7 +199,7 @@ public class TaskServiceConfig {
         if (joinWorkerCount > 0) {
             this.joinWorkerCount = joinWorkerCount;
         } else {
-            throw new InvalidParameterException("The given value of item 'join-worker-count' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'join-worker-count' cannot be less than zero");
         }
     }
 
@@ -212,7 +211,7 @@ public class TaskServiceConfig {
         if (joinWorkerKeepAliveTime > 0L) {
             this.joinWorkerKeepAliveTime = joinWorkerKeepAliveTime;
         } else {
-            throw new InvalidParameterException("The given value of item 'join-worker-keep-alive-time' cannot be less than zero");
+            throw new IllegalArgumentException("The given value of item 'join-worker-keep-alive-time' cannot be less than zero");
         }
     }
 
@@ -225,7 +224,7 @@ public class TaskServiceConfig {
 
     public void setThreadFactory(TaskPoolThreadFactory threadFactory) {
         if (threadFactory == null)
-            throw new InvalidParameterException("The given value of item 'thread-factory' cannot be null");
+            throw new IllegalArgumentException("The given value of item 'thread-factory' cannot be null");
         this.threadFactory = threadFactory;
     }
 
@@ -235,7 +234,7 @@ public class TaskServiceConfig {
 
     public void setThreadFactoryClass(Class<TaskPoolThreadFactory> threadFactoryClass) {
         if (threadFactoryClass == null)
-            throw new InvalidParameterException("The given value of item 'thread-factory-class' cannot be null");
+            throw new IllegalArgumentException("The given value of item 'thread-factory-class' cannot be null");
         this.threadFactoryClass = threadFactoryClass;
     }
 
@@ -245,7 +244,7 @@ public class TaskServiceConfig {
 
     public void setThreadFactoryClassName(String threadFactoryClassName) {
         if (isBlank(threadFactoryClassName))
-            throw new InvalidParameterException("The given value of item 'thread-factory-class name' cannot be null and blank");
+            throw new IllegalArgumentException("The given value of item 'thread-factory-class name' cannot be null and blank");
         this.threadFactoryClassName = trimString(threadFactoryClassName);
     }
 
@@ -258,7 +257,7 @@ public class TaskServiceConfig {
 
     public void setPoolImplementClassName(String poolImplementClassName) {
         if (isBlank(poolImplementClassName))
-            throw new InvalidParameterException("The given value of item 'pool-implement-class-name' cannot be null and blank");
+            throw new IllegalArgumentException("The given value of item 'pool-implement-class-name' cannot be null and blank");
         this.poolImplementClassName = poolImplementClassName;
     }
 

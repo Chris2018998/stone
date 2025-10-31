@@ -80,34 +80,34 @@ public class Tc0010ConfigInfoLogPrintTest {
 
         config.setObjectInterfaces(new Class[]{Book.class});
         config.setObjectInterfaceNames(new String[]{Book.class.getName()});
-        config.addFactoryProperty("name", "Edition of Java world");
+        config.addObjectFactoryProperty("name", "Edition of Java world");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.contains(".objectInterfaces"));
         Assertions.assertTrue(logs.contains(".objectInterfaceNames"));
-        Assertions.assertTrue(logs.contains(".factoryProperties"));
+        Assertions.assertTrue(logs.contains(".objectFactoryProperties"));
 
         config.setObjectInterfaces(new Class[]{Book.class, BookMarket.class});
         config.setObjectInterfaceNames(new String[]{Book.class.getName(), BookMarket.class.getName()});
-        config.addFactoryProperty("name", "Edition of Java world");
+        config.addObjectFactoryProperty("name", "Edition of Java world");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
         Assertions.assertTrue(logs.contains(".objectInterfaces"));
         Assertions.assertTrue(logs.contains(".objectInterfaceNames"));
-        Assertions.assertTrue(logs.contains(".factoryProperties"));
+        Assertions.assertTrue(logs.contains(".objectFactoryProperties"));
 
 
         config.addExclusionNameOfPrint("objectInterfaces");
         config.addExclusionNameOfPrint("objectInterfaceNames");
-        config.addExclusionNameOfPrint("factoryProperties");
+        config.addExclusionNameOfPrint("objectFactoryProperties");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains(".objectInterfaces"));
         Assertions.assertFalse(logs.contains(".objectInterfaceNames"));
-        Assertions.assertFalse(logs.contains(".factoryProperties"));
+        Assertions.assertFalse(logs.contains(".objectobjectFactoryProperties"));
 
         config.setObjectInterfaces(new Class[0]);
         config.setObjectInterfaceNames(new String[0]);
@@ -116,6 +116,6 @@ public class Tc0010ConfigInfoLogPrintTest {
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains(".objectInterfaces"));
         Assertions.assertFalse(logs.contains(".objectInterfaceNames"));
-        Assertions.assertFalse(logs.contains(".factoryProperties"));
+        Assertions.assertFalse(logs.contains(".objectFactoryProperties"));
     }
 }

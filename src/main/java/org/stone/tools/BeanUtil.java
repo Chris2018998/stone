@@ -344,7 +344,7 @@ public class BeanUtil {
         text = text.trim();
 
         if (targetType == char.class || targetType == Character.class) {
-            return text.charAt(0);
+            return Character.valueOf(text.charAt(0));
         } else if (targetType == boolean.class || targetType == Boolean.class) {
             return Boolean.valueOf(text);
         } else if (targetType == byte.class || targetType == Byte.class) {

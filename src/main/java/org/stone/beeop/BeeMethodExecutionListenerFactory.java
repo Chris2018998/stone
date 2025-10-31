@@ -21,7 +21,7 @@ public interface BeeMethodExecutionListenerFactory<K, V> {
      *
      * @return created Listener instance
      */
-    BeeMethodExecutionListener<K, V> create() throws Exception;
+    BeeMethodExecutionListener<K, V> create(BeeObjectSourceConfig<K, V> config) throws Exception;
 }
 
 

@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  */
 
-//VM Optionals: --add-exports=java.base/jdk.internal.misc=org.stone
+//VM Optionals: --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED
 public class ConnectionBench {
     private BeeDataSource ds;
 

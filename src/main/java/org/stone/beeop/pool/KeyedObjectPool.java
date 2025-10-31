@@ -77,7 +77,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //***************************************************************************************************************//
     //1.1: Pool initializes.
     public void start(BeeObjectSourceConfig<K, V> config) throws Exception {
-        if (config == null) throw new PoolInitializeFailedException("Configuration can't be null");
+        if (config == null) throw new PoolInitializeFailedException("Object source configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {
                 startup(config.check());
@@ -239,7 +239,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
     //3.3: Physically closes objects in all category pools
     private void restart(boolean forceRecycleBorrowed, boolean reinit, BeeObjectSourceConfig<K, V> config) throws Exception {
         if (reinit && config == null)
-            throw new BeeObjectSourceConfigException("Configuration can't be null");
+            throw new BeeObjectSourceConfigException("Object source configuration can't be null");
 
         //clean pool after cas pool state success
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {

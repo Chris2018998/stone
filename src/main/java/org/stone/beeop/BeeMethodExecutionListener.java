@@ -12,7 +12,7 @@ package org.stone.beeop;
 import java.util.List;
 
 /**
- * A handler interface need be implemented by subClass
+ * Methods execution listener interface.
  *
  * @author Chris Liao
  */
