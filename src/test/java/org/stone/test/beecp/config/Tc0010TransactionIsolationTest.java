@@ -44,7 +44,7 @@ public class Tc0010TransactionIsolationTest {
         try {
             config.setDefaultTransactionIsolationName(null);
             fail("[testConfigurationSet]not thew exception when set null isolation name");
-        } catch (IllegalArgumentException e) {
+        } catch (BeeDataSourceConfigException e) {
             String message = e.getMessage();
             Assertions.assertTrue(message != null && message.contains("The given value for configuration item 'default-transaction-isolation-name' cannot be null or empty"));
         }
@@ -52,7 +52,7 @@ public class Tc0010TransactionIsolationTest {
         try {
             config.setDefaultTransactionIsolationName("");
             fail("[testConfigurationSet]not thew exception when set blank isolation name");
-        } catch (IllegalArgumentException e) {
+        } catch (BeeDataSourceConfigException e) {
             String message = e.getMessage();
             Assertions.assertTrue(message != null && message.contains("The given value for configuration item 'default-transaction-isolation-name' cannot be null or empty"));
         }

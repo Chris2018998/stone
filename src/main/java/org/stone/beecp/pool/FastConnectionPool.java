@@ -375,8 +375,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private void initPooledConnectionArray(Connection firstConn) throws SQLException {
         //step1: initialization for auto-commit property of connection(default get and default set)
         boolean defaultAutoCommit = true;
-        boolean useDefaultAutoCommit = poolConfig.isUseDefaultAutoCommit();
-        if (useDefaultAutoCommit) {
+        boolean enableDefaultAutoCommit = poolConfig.isEnableDefaultAutoCommit();
+        if (enableDefaultAutoCommit) {
             if (poolConfig.isDefaultAutoCommit() == null) {
                 try {
                     defaultAutoCommit = firstConn.getAutoCommit();
@@ -396,8 +396,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step2: initialization for transaction-isolation property of connection(default get and default set)
         int defaultTransactionIsolation = Connection.TRANSACTION_READ_COMMITTED;
-        boolean useDefaultTransactionIsolation = poolConfig.isUseDefaultTransactionIsolation();
-        if (useDefaultTransactionIsolation) {
+        boolean enableDefaultTransactionIsolation = poolConfig.isEnableDefaultTransactionIsolation();
+        if (enableDefaultTransactionIsolation) {
             if (poolConfig.getDefaultTransactionIsolation() == null) {
                 try {
                     defaultTransactionIsolation = firstConn.getTransactionIsolation();
@@ -417,8 +417,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step3:get default value of property read-only from config or from first connection(default get and default set)
         boolean defaultReadOnly = false;
-        boolean useDefaultReadOnly = poolConfig.isUseDefaultReadOnly();
-        if (useDefaultReadOnly) {
+        boolean enableDefaultReadOnly = poolConfig.isEnableDefaultReadOnly();
+        if (enableDefaultReadOnly) {
             if (poolConfig.isDefaultReadOnly() == null) {
                 try {
                     defaultReadOnly = firstConn.isReadOnly();
@@ -438,8 +438,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step4: initialization for catalog property of connection(get default,test default)
         String defaultCatalog = poolConfig.getDefaultCatalog();
-        boolean useDefaultOnCatalog = poolConfig.isUseDefaultCatalog();
-        if (useDefaultOnCatalog) {
+        boolean enableDefaultOnCatalog = poolConfig.isEnableDefaultCatalog();
+        if (enableDefaultOnCatalog) {
             if (isBlank(defaultCatalog)) {
                 try {
                     defaultCatalog = firstConn.getCatalog();
@@ -459,8 +459,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step5: initialization for schema property of connection(get default,test default)
         String defaultSchema = poolConfig.getDefaultSchema();
-        boolean useDefaultOnSchema = poolConfig.isUseDefaultSchema();
-        if (useDefaultOnSchema) {
+        boolean enableDefaultSchema = poolConfig.isEnableDefaultSchema();
+        if (enableDefaultSchema) {
             if (isBlank(defaultSchema)) {
                 try {
                     defaultSchema = firstConn.getSchema();
@@ -484,11 +484,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 conValidTest = this;
             } else {
                 supportIsValid = false;
-                logPrinter.warn("BeeCP({})get false from call of isValid method on first connection object", this.poolName);
+                logPrinter.warn("BeeCP({})Driver not support 'isValid' method call on connection", this.poolName);
             }
         } catch (Throwable e) {
             supportIsValid = false;
-            logPrinter.warn("BeeCP({})isValid method tested failed on first connection object", this.poolName, e);
+            logPrinter.warn("BeeCP({})Exception occurred when call 'isValid' method on initial test connection", this.poolName, e);
         }
 
         //step7: second way: if isValid method is not supported, then execute alive test sql to validate it
@@ -505,7 +505,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             defaultNetworkTimeout = firstConn.getNetworkTimeout();
             if (defaultNetworkTimeout < 0) {
                 supportNetworkTimeoutInd = false;
-                logPrinter.warn("BeeCP({})networkTimeout property not supported by connections due to a negative number returned from first connection object", this.poolName);
+                logPrinter.warn("BeeCP({})Driver not support 'getNetworkTimeout()/setNetworkTimeout(time)' method call on connection", this.poolName);
             } else {//driver support networkTimeout
                 if (this.networkTimeoutExecutor == null) {
                     int poolMaxSize = poolConfig.getMaxActive();
@@ -517,7 +517,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             }
         } catch (Throwable e) {
             supportNetworkTimeoutInd = false;
-            logPrinter.warn("BeeCP({})networkTimeout property tested failed on first connection object", this.poolName, e);
+            logPrinter.warn("BeeCP({})Exception occurred when call 'getNetworkTimeout()/setNetworkTimeout(time)' method on initial test connection", this.poolName, e);
             if (networkTimeoutExecutor != null) {
                 networkTimeoutExecutor.shutdown();
                 networkTimeoutExecutor = null;
@@ -528,20 +528,20 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         for (int i = 0; i < connectionArrayLen; i++) {
             connectionArray[i].init(
                     //1:defaultAutoCommit
-                    useDefaultAutoCommit,
+                    enableDefaultAutoCommit,
                     defaultAutoCommit,
                     //2:defaultTransactionIsolation
-                    useDefaultTransactionIsolation,
+                    enableDefaultTransactionIsolation,
                     defaultTransactionIsolation,
                     //3:defaultReadOnly
-                    useDefaultReadOnly,
+                    enableDefaultReadOnly,
                     defaultReadOnly,
                     //4:defaultCatalog
-                    useDefaultOnCatalog,
+                    enableDefaultOnCatalog,
                     defaultCatalog,
                     poolConfig.isForceDirtyWhenSetCatalog(),
                     //5:defaultCatalog
-                    useDefaultOnSchema,
+                    enableDefaultSchema,
                     defaultSchema,
                     poolConfig.isForceDirtyWhenSetSchema(),
                     //6:defaultNetworkTimeout

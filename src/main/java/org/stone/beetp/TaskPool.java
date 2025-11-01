@@ -11,7 +11,6 @@ package org.stone.beetp;
 
 import org.stone.beetp.pool.exception.TaskException;
 import org.stone.beetp.pool.exception.TaskPoolException;
-import org.stone.beetp.pool.exception.TaskServiceConfigException;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,10 +20,9 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  * @version 1.0
  */
-public interface TaskPool {
+public interface TaskPool<V> {
 
-    void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException;
-
+    void init(TaskServiceConfig config) throws TaskPoolException;
 
     <V> TaskHandle<V> submit(Task<V> task) throws TaskException;
 

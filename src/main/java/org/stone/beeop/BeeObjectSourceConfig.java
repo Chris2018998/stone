@@ -182,7 +182,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize < 0)
-            throw new IllegalArgumentException("The given value for the configuration item 'initial-size' cannot be less than zero");
+            throw new BeeObjectSourceConfigException("The given value for the configuration item 'initial-size' cannot be less than zero");
         this.initialSize = initialSize;
     }
 
@@ -192,7 +192,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMaxKeySize(int maxKeySize) {
         if (maxKeySize <= 0)
-            throw new IllegalArgumentException("The given value for configuration item 'max-key-size' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'max-key-size' must be greater than zero");
         this.maxKeySize = maxKeySize;
     }
 
@@ -203,7 +203,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMaxActive(int maxActive) {
         if (maxActive <= 0)
-            throw new IllegalArgumentException("The given value for configuration item 'max-active' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'max-active' must be greater than zero");
         this.maxActive = maxActive;
         this.semaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, CommonUtil.NCPU) : 1;
     }
@@ -215,7 +215,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setSemaphoreSize(int semaphoreSize) {
         if (semaphoreSize <= 0)
-            throw new IllegalArgumentException("The given value for configuration item 'borrow-semaphore-size' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'borrow-semaphore-size' must be greater than zero");
         this.semaphoreSize = semaphoreSize;
     }
 
@@ -234,7 +234,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMaxWait(long maxWait) {
         if (maxWait <= 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'max-wait' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'max-wait' must be greater than zero");
         this.maxWait = maxWait;
     }
 
@@ -253,7 +253,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setIdleTimeout(long idleTimeout) {
         if (idleTimeout <= 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'idle-timeout' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'idle-timeout' must be greater than zero");
         this.idleTimeout = idleTimeout;
     }
 
@@ -264,7 +264,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setHoldTimeout(long holdTimeout) {
         if (holdTimeout < 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'hold-timeout' cannot be less than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'hold-timeout' cannot be less than zero");
         this.holdTimeout = holdTimeout;
     }
 
@@ -275,7 +275,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setIntervalOfClearTimeout(long intervalOfClearTimeout) {
         if (intervalOfClearTimeout <= 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero");
         this.intervalOfClearTimeout = intervalOfClearTimeout;
     }
 
@@ -286,7 +286,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setAliveTestTimeout(int aliveTestTimeout) {
         if (aliveTestTimeout < 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'alive-test-timeout' cannot  be less than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'alive-test-timeout' cannot  be less than zero");
         this.aliveTestTimeout = aliveTestTimeout;
     }
 
@@ -297,7 +297,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setAliveAssumeTime(long aliveAssumeTime) {
         if (aliveAssumeTime < 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'alive-assume-time' cannot be less than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'alive-assume-time' cannot be less than zero");
         this.aliveAssumeTime = aliveAssumeTime;
     }
 
@@ -325,7 +325,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setParkTimeForRetry(long parkTimeForRetry) {
         if (parkTimeForRetry < 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
         this.parkTimeForRetry = parkTimeForRetry;
     }
 
@@ -496,7 +496,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMethodExecutionLogCacheSize(int methodExecutionLogCacheSize) {
         if (methodExecutionLogCacheSize <= 0)
-            throw new IllegalArgumentException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
         this.methodExecutionLogCacheSize = methodExecutionLogCacheSize;
     }
 
@@ -506,7 +506,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setSlowObjectGetThreshold(long slowObjectGetThreshold) {
         if (slowObjectGetThreshold < 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'slow-object-get-threshold' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-object-get-threshold' must be greater than zero");
 
         this.slowObjectGetThreshold = slowObjectGetThreshold;
     }
@@ -517,7 +517,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setSlowObjectExecutionThreshold(long slowObjectExecutionThreshold) {
         if (slowObjectExecutionThreshold < 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'slow-object-execution-threshold' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-object-execution-threshold' must be greater than zero");
 
         this.slowObjectExecutionThreshold = slowObjectExecutionThreshold;
     }
@@ -528,13 +528,13 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setMethodExecutionLogTimeout(long methodExecutionLogTimeout) {
         if (methodExecutionLogTimeout <= 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
         this.methodExecutionLogTimeout = methodExecutionLogTimeout;
     }
 
     public void addListenMethodName(String methodName) {
         if (isBlank(methodName))
-            throw new IllegalArgumentException("The given value for configuration item 'method-name' can't be null or blank");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'method-name' can't be null or blank");
         if (this.methodNameListOnListen == null) this.methodNameListOnListen = new ArrayList<>(1);
         if (!methodNameListOnListen.contains(methodName)) methodNameListOnListen.add(methodName);
     }
@@ -549,7 +549,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void setIntervalOfClearTimeoutExecutionLogs(long intervalOfClearTimeoutExecutionLogs) {
         if (intervalOfClearTimeoutExecutionLogs <= 0L)
-            throw new IllegalArgumentException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
         this.intervalOfClearTimeoutExecutionLogs = intervalOfClearTimeoutExecutionLogs;
     }
 
@@ -618,10 +618,10 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
 
     public void loadFromPropertiesFile(String filename, String keyPrefix) {
         if (isBlank(filename))
-            throw new IllegalArgumentException("Configuration file name can't be null or empty");
+            throw new BeeObjectSourceConfigException("Configuration file name can't be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
         if (!fileLowerCaseName.endsWith(".properties"))
-            throw new IllegalArgumentException("Configuration file name file must be end with '.properties'");
+            throw new BeeObjectSourceConfigException("Configuration file name file must be end with '.properties'");
 
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());
@@ -633,32 +633,32 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
             loadFromProperties(fileProperties, keyPrefix);
         } else {//load a real path
             File file = new File(filename);
-            if (!file.exists()) throw new IllegalArgumentException("Not found configuration file:" + filename);
+            if (!file.exists()) throw new BeeObjectSourceConfigException("Not found configuration file:" + filename);
             if (!file.isFile())
-                throw new IllegalArgumentException("Target object is a valid configuration file," + filename);
+                throw new BeeObjectSourceConfigException("Target object is a valid configuration file," + filename);
             loadFromPropertiesFile(file, keyPrefix);
         }
     }
 
     public void loadFromPropertiesFile(File file, String keyPrefix) {
-        if (file == null) throw new IllegalArgumentException("Configuration properties file can't be null");
-        if (!file.exists()) throw new IllegalArgumentException("Configuration properties file not found:" + file);
-        if (!file.isFile()) throw new IllegalArgumentException("Target object is not a valid file");
+        if (file == null) throw new BeeObjectSourceConfigException("Configuration properties file can't be null");
+        if (!file.exists()) throw new BeeObjectSourceConfigException("Configuration properties file not found:" + file);
+        if (!file.isFile()) throw new BeeObjectSourceConfigException("Target object is not a valid file");
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
-            throw new IllegalArgumentException("Target file is not a properties file");
+            throw new BeeObjectSourceConfigException("Target file is not a properties file");
 
         try (InputStream stream = Files.newInputStream(file.toPath())) {
             Properties configProperties = new Properties();
             configProperties.load(stream);
             this.loadFromProperties(configProperties, keyPrefix);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to load configuration file:" + file, e);
+            throw new BeeObjectSourceConfigException("Failed to load configuration file:" + file, e);
         }
     }
 
     public void loadFromProperties(Properties configProperties, String keyPrefix) {
         if (configProperties == null || configProperties.isEmpty())
-            throw new IllegalArgumentException("Configuration properties can't be null or empty");
+            throw new BeeObjectSourceConfigException("Configuration properties can't be null or empty");
 
         //1: load configuration item values from outside properties
         HashMap<String, String> setValueMap;

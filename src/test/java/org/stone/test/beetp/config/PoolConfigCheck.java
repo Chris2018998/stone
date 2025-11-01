@@ -7,7 +7,7 @@
 package org.stone.test.beetp.config;
 
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.pool.exception.TaskServiceConfigException;
+import org.stone.beetp.TaskServiceConfigException;
 import org.stone.test.base.TestCase;
 
 import java.lang.reflect.Field;

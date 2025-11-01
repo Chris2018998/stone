@@ -10,7 +10,10 @@
 package org.stone.beetp.pool;
 
 import org.stone.beetp.*;
-import org.stone.beetp.pool.exception.*;
+import org.stone.beetp.pool.exception.PoolInitializedException;
+import org.stone.beetp.pool.exception.TaskException;
+import org.stone.beetp.pool.exception.TaskPoolException;
+import org.stone.beetp.pool.exception.TaskRejectedException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.List;
@@ -30,7 +33,7 @@ import static org.stone.tools.CommonUtil.maxUntimedSpins;
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolTaskCenter implements TaskPool {
+public final class PoolTaskCenter<V> implements TaskPool<V> {
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "poolState");
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> TaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "taskCount");
     private static final AtomicIntegerFieldUpdater<PoolTaskCenter> ScheduledTaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "scheduledTaskCount");
@@ -58,7 +61,7 @@ public final class PoolTaskCenter implements TaskPool {
     //***************************************************************************************************************//
     //                                          1: pool initialization(1+1)                                          //
     //***************************************************************************************************************//
-    public void init(TaskServiceConfig config) throws TaskPoolException, TaskServiceConfigException {
+    public void init(TaskServiceConfig config) throws TaskPoolException {
         if (config == null) throw new PoolInitializedException("Pool configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {
             try {

@@ -12,6 +12,7 @@ package org.stone.test.beecp.config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSourceConfig;
+import org.stone.beecp.BeeDataSourceConfigException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -31,28 +32,28 @@ public class Tc0007ConnectionAliveSqlTest {
         try {
             config.setAliveTestSql(null);
             fail("[testOnSetAndGet]Setting test failed on configuration item[alive-test-sql]");
-        } catch (IllegalArgumentException e) {
+        } catch (BeeDataSourceConfigException e) {
             Assertions.assertEquals("The given value for configuration item 'alive-test-sql' cannot be null or empty", e.getMessage());
         }
 
         try {
             config.setAliveTestSql("");
             fail("[testOnSetAndGet]Setting test failed on configuration item[alive-test-sql]");
-        } catch (IllegalArgumentException e) {
+        } catch (BeeDataSourceConfigException e) {
             Assertions.assertEquals("The given value for configuration item 'alive-test-sql' cannot be null or empty", e.getMessage());
         }
 
         try {
             config.setAliveTestSql(" ");
             fail("[testOnSetAndGet]Setting test failed on configuration item[alive-test-sql]");
-        } catch (IllegalArgumentException e) {
+        } catch (BeeDataSourceConfigException e) {
             Assertions.assertEquals("The given value for configuration item 'alive-test-sql' cannot be null or empty", e.getMessage());
         }
 
         try {
             config.setAliveTestSql("SELECT1");
             fail("[testInvalidConfigTestSQL]Setting test failed on configuration item[alive-test-sql]");
-        } catch (IllegalArgumentException e) {
+        } catch (BeeDataSourceConfigException e) {
             assertEquals("The given value for configuration item 'alive-test-sql' must start with 'select '", e.getMessage());
         }
 

@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.beeop;
+package org.stone.beetp;
 
 /**
  * configuration exception.
@@ -15,17 +15,17 @@ package org.stone.beeop;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourceConfigException extends RuntimeException {
+public class TaskServiceConfigException extends RuntimeException {
 
-    public BeeObjectSourceConfigException(String s) {
+    public TaskServiceConfigException(String s) {
         super(s);
     }
 
-    public BeeObjectSourceConfigException(Throwable cause) {
+    public TaskServiceConfigException(Throwable cause) {
         super(cause);
     }
 
-    public BeeObjectSourceConfigException(String message, Throwable cause) {
+    public TaskServiceConfigException(String message, Throwable cause) {
         super(message, cause);
     }
 }

@@ -9,7 +9,10 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.exception.*;
+import org.stone.beetp.pool.exception.TaskException;
+import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.beetp.pool.exception.TaskPoolException;
+import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -69,7 +72,7 @@ public final class TaskService extends TaskServiceConfig {
         if (tasks == null) throw new NullPointerException();
         if (unit == null) throw new NullPointerException();
         int totalSize = tasks.size();
-        if (totalSize == 0) throw new IllegalArgumentException();
+        if (totalSize == 0) throw new TaskServiceConfigException("");
         return totalSize;
     }
 
