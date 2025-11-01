@@ -1,5 +1,12 @@
 stone changes
 
+stone-2.0.3
+-----------------------------------------------------
+[beecp]
+1: Exception replacement in BeeDataSourceConfig(IllegalArgumentException ---> BeeDataSourceConfigException)
+2: Add two Exceptions for default value set/get on initial test connection(ConnectionDefaultValueGetException,ConnectionDefaultValueSetException)
+3: Rename some configuration items
+
 stone-2.0.2
 -----------------------------------------------------
 [beecp]
