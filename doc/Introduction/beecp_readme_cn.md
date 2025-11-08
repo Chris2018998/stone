@@ -1,3 +1,4 @@
+
 [🏠](../../README.md) [English](beecp_readme_eng.md)|[中文](beecp_readme_cn.md)
 
 BeeCP是一款轻量级JDBC连接池，具有代码少，依赖少，性能高，覆盖率高等特点；技术优点：单连接缓存，固定长度数组，非移动等待，异步加法等.
@@ -43,6 +44,52 @@ _温馨提示：如果您的项目是基于springboot框架构建，且有意向
 | 支持XAConnection    | 不支持                  | 支持                     |
 
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优秀的开源作品，它由美国资深专家brettwooldridge开发_
+
+
+*********************************************************************
+
+⏰***敏捷性测试***
+
+正如著名的[池5秒超时测试](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down)所示，HikariCP作者Brettwooldridge曾通过四个连接池验证数据库宕机场景下的超时响应能力，结果仅有HikariCP能在5秒内作出反应。我们针对BeeCP进行了相同测试。[查看测试源码](../beecp/test/src/main/java/org/stone/beecp/other/DbDownTest.java)
+
+|     Requirement          | Settig                                                         |  Remark                                                                                             |
+|--------------------------|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------- |
+| database                 | mysql-8.4.3                                                    |                                                                                                      |
+| driver                   | mysql-connector-j-8.3.0.jar                                    |                                                                                                      |
+| url                      | jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100   |the connectTimeout is socket level parameter of mysql jdbc driver                                     |
+| timeout                  | **5000** milliseconds                                          |HikariConfig.setConnectionTimeout(5000); BeeDataSourceConfig.setMaxWait(5000);                        |
+| Pool version             | HikariCP-6.2.1, stone-1.4.6                                    |                                                                                                      |
+| Java version             | Java-22.0.2                                                    |                                                                                                      |
+
+![image](https://github.com/user-attachments/assets/4cca47e0-04d2-4792-a070-1bf9f1bd0306)
+
+**使用18000毫秒重测**
+|     Requirement          | Settig                                                         |  Remark                                                                                             |
+|--------------------------|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------- |
+| timeout                  | **18000** milliseconds                                         |HikariConfig.setConnectionTimeout(18000); BeeDataSourceConfig.setMaxWait(18000);                     |
+| Others                   | No Change                                                      |                                                                                                     |
+ 
+![image](https://github.com/user-attachments/assets/4e0d70b4-e68a-4b28-b1c8-bfb0a949e401)
+
+
+*^-^ 如果设置一个更大时间，会怎么样?*
+
+**Pool Grading**
+
+| Pool	        |Grade   | Reason                                      |
+|--------------|--------|---------------------------------------------|
+| HikariCP     | A      |由超时参数决定                                |
+| BeeCP        | A+     |Socket级反应                                 |
+
+
+
+✈️**PreparedStatement关闭性测试**
+
+我相信很多人都知道Connection、PreparedStatement和ResultSet之间存在依赖关系。如果关闭所有者对象，其打开的对象将自动关闭，但是，有一个例外，让我们做一个测试来验证它。[查看测试源代码](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
+
+![image](https://github.com/user-attachments/assets/f75d5684-ff4f-4ad9-b88e-f453e833ea69)
+
+*^-^ 这是一个问题吗，如何解决?*
 
 *********************************************************************
 
@@ -294,4 +341,3 @@ public class MyConnectionDemo {
 ```
 
 _温馨提示：若同时设置连接工厂和驱动类参数（driver,url,user,password)，那么连接工厂被优先使用。_
-
