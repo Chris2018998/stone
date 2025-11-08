@@ -173,7 +173,7 @@ public class Tc0081SQLExecutionLogTest {
                 }
 
                 Assertions.assertFalse(ds.cancelStatement(null));
-                Assertions.assertFalse(ds.cancelStatement(new Object()));
+                Assertions.assertFalse(ds.cancelStatement("Test"));
                 PrepareStatementThread statementThread2 = new PrepareStatementThread(con, sqlMap);
                 statementThread2.start();
                 if (TestUtil.waitUtilWaiting(statementThread2)) {

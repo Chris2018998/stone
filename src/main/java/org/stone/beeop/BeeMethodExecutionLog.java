@@ -27,6 +27,13 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
     int Type_Object_Call = 2;
 
     /**
+     * Get pool name of current log
+     *
+     * @return pool name
+     */
+    String getPoolName();
+
+    /**
      * Get log type.
      *
      * @return type value,which is one of [Type_Get_Connection,Type_Execution_SQL]
@@ -45,7 +52,7 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
      *
      * @return log id
      */
-    Object getId();
+    String getId();
 
     /**
      * Get method name of method call
