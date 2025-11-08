@@ -1,28 +1,24 @@
 [🏠](../../README.md) [English](beecp_readme_eng.md)|[中文](beecp_readme_cn.md)
 
-![](https://img.shields.io/badge/Java-8+-green.svg)
-![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
-[![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
-
-BeeCP是一款轻量级JDBC连接池，其技术亮点：单连接缓存，非移动等待，固定长度数组
+BeeCP是一款轻量级JDBC连接池，具有代码少，依赖少，性能高，覆盖率高等特点；技术优点：单连接缓存，固定长度数组，非移动等待，异步加法等.
 
 ##
-✨**亮点feature**
+✨**亮点功能**
 
-* 提供中断处理
-* 支持清理与重启
-* 支持配置文件载入
-* 提供扩展性接口
+* 支持阻塞中断操作
+* 支持重启和配置重载
+* 提供接口支持扩展
 * 支持虚拟线程应用
-* [提供Web监控页面](https://github.com/Chris2018998/beecp-starter)
+* [提供内外置监控功能](https://github.com/Chris2018998/beecp-starter)
 
 ![image](https://github.com/user-attachments/assets/e0684ff2-8a7e-4a20-ab68-69c7b2f30bfa)<br/>
 
 ![image](https://github.com/user-attachments/assets/b59dbac9-a3b3-4173-9ff5-845783691e0d)
 
-_温馨提示：如果您的项目是基于springboot框架构建，且有兴趣应用BeeCP或已在使用它，那么推荐[beecp-starter](https://github.com/Chris2018998/beecp-starter)(个人的另一个项目)_
+_温馨提示：如果您的项目是基于springboot框架构建，且有意向使用BeeCP连接池，那么推荐[beecp-starter](https://github.com/Chris2018998/beecp-starter)
 
-##
+*********************************************************************
+
 📊***性能对比***
 
 ![image](https://github.com/user-attachments/assets/65260ea7-a27a-412d-a3c4-62fc50d6070a)
@@ -31,119 +27,84 @@ _温馨提示：如果您的项目是基于springboot框架构建，且有兴趣
 </sup>
 
 
-🍒***对比HikariCP***
+🍒***差异对比***
 
-| 对比项               | HikariCP                | BeeCP                   |
+| 对比项               | HikariCP               | BeeCP                   |
 |---------------------|-------------------------|-------------------------|
 | 连接缓存             | 多个                    | 单个                    |
 | 连接存储             | CopyOnWriteArrayList   | 固定长度数组              |
 | 等待队列             | SynchronousQueue       | ConcurrentLinkedQueue   |
 | 连接补充             | 线程池                  | 单线程                   |
-| 并发创建             | 不支持                  | 支持                    |
-| 清理重启             | 不支持                  | 支持                    |
+| 并行创建             | 不支持                  | 支持                    |
+| 重启与重载           | 不支持                  | 支持                    |
 | 提供中断             | 未提供                  | 提供                    |
-| 连接工厂扩展         | 未提供                  | 提供                    |
-| 可禁用ThreadLocal   | 不可                    | 可                     |
+| 扩展接口             | 1                      | 6                       |
+| 可禁用ThreadLocal   | 不可                    | 可                       |
 | 支持XAConnection    | 不支持                  | 支持                     |
 
-_[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优秀的开源作品，在Java领域广泛使用，它由美国资深专家brettwooldridge开发_
+_[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优秀的开源作品，它由美国资深专家brettwooldridge开发_
 
-##
-👉**如何使用**
+*********************************************************************
 
-与当前流行的一些连接池产品相似，大体为三种，也可参照随后一些代码片段
+🔡**配置列表**
 
-* _方式一：直接使用_，类似传统的DBC方式
-
-```java
-
-//step1: 设置参数和创建数据源
-BeeDataSourceConfig config = new BeeDataSourceConfig();
-config.setDriverClassName("com.mysql.cj.jdbc.Driver");//驱动类
-config.setJdbcUrl("jdbc:mysql://localhost/test");//设置url，也可这样：setUrl("jdbc:mysql://localhost/test");
-config.setUsername("root");//用户名
-config.setPassword("root");//密码
-BeeDataSource ds = new BeeDataSource(config);//new数据源对象
-
-//step2：获取连接并使用
-try(Connection con = ds.getConnection()){
-  //......省略具体代码
-}
-```
-
-* _方式二：间接方式_，注册为Spring Bean，供持久化框架使用
-
-```java
-@Configuration
-public class DataSourceConfiguration{
-
-  @Bean
-  @ConfigurationProperties(prefix="spring.datasource")
-  public DataSource ds1(){
-     return new BeeDataSource();
-  }
-
-  @Bean
-  public DataSource ds2(){
-    BeeDataSourceConfig config = new BeeDataSourceConfig();
-    //.......设置各种参数,参照方式一
-    return new BeeDataSource(config);
-  }
-}
-```
-
-* _方式三：[beecp-starter](https://github.com/Chris2018998/beecp-starter)_，文件配置，支持多源
-
-##
-🔡**参数配置**
-
-BeeCP使用的参数信息来自其配置对象（BeeDataSourceConfig），下面列表为主要的参数属性名
-| 属性                              | 描述                                                                  | 默认值                    |
+| 属性                              | 描述                                                                 | 默认值                    |
 |----------------------------------|----------------------------------------------------------------------|--------------------------|
 | username                         | 连接数据库的用户名                                                     |空                         |
 | password                         | 连接数据库的密码                                                       |空                         |
 | jdbcUrl                          | 连接数据库的url                                                        |空                        |
-| driverClassName                  | 数据库的Jdbc驱动类名                                                    |空                        |
-| poolName	                   | 连接池名                                                               |空                        |
-| fairMode                         | 是否使用公平模式                                                        |false（非公平模式）         | 
-| initialSize                      | 连接池初始化时创建连接的数量                                             |0                         |
-| maxActive                        | 池内最大连接数                                                         |10                        | 
-| borrowSemaphoreSize              | 池内信号量最大许可数(借用线程最大并发数）                                 |min(最大连接数/2,CPU核心数） |
-| defaultAutoCommit                | Connection.setAutoComit(defaultAutoCommit)                          |空                          |
-| defaultTransactionIsolationCode  | Connection.setTransactionIsolation(defaultTransactionIsolationCode) |空                          |
-| defaultCatalog                   | Connection.setCatalog(defaultCatalog)                               |空                          |
-| defaultSchema                    | Connection.setSchema(defaultSchema)                                 |空                          |
-| defaultReadOnly                  | Connection.setReadOnly(defaultReadOnly)                             |空                          |
+| driverClassName                  | 连接数据库的Jdbc驱动类名                                                |空                        |
+| poolName	                       | 连接池名，若未设置，则自动产生                                           |空                        |
+| fairMode                         | 连接池是否使用公平模式                                                  |false（非公平模式）         | 
+| initialSize                      | 池初始化的连接数                                                       |0                         |
+| maxActive                        | 池内最大允许连接数                                                     |10                        | 
+| semaphoreSize                    | 池内信号量最大许可数                                                   |min(最大连接数/2,CPU核心数） |
+| defaultAutoCommit                | autoCommit默认值                                                     |空                          |
+| defaultTransactionIsolation      | transactionIsolation默认值                                           |空                          |
+| defaultCatalog                   | catalog默认值                                                        |空                          |
+| defaultSchema                    | schema默认值                                                        |空                          |
+| defaultReadOnly                  | readOnly默认值                                                      |空                          |
 | maxWait                          | 借用连接时的最大等待时间(毫秒)                                         |8000                |
 | idleTimeout                      | 未借连接闲置超时时间(毫秒)，不可大于数据库最大闲置时间                    |18000               |  
 | holdTimeout                      | 已借连接闲置超时时间(毫秒)，不可大于数据库最大闲置时间                    |0                   |  
-| aliveTestSql                     | 连接存活检查sql                                                      |SELECT 1            |  
+| aliveTestSql                     | 连接活性检查sql                                                      |SELECT 1            |  
 | aliveTestTimeout                 | 连接存活检测结果的等待最大时间(秒)                                      |3                   |  
 | aliveAssumeTime                  | 存活检测阈值时间差，小于则假定为活动连接，大于则检测                       |500                 |  
-| forceCloseUsingOnClear           | 清理时，是否强制回收已借连接                                            |false               |
+| forceRecycleBorrowedOnClose      | 清理时，是否强制回收已借连接                                            |false               |
 | parkTimeForRetry                 | 清理时，等待已借连接返回池中的时间(毫秒)                                 |3000                |             
-| timerCheckInterval               | 池内定时线程工作隔时间(毫秒)                                            |18000               |
-| forceDirtyOnSchemaAfterSet       | 连接归还时，Schema属性是否强制重置标记(PG可设置）                         |false               |
-| forceDirtyOnCatalogAfterSet      | 连接归还时，Catalog属性是否强制重置标记(PG可设置）                        |false               |
-| enableThreadLocal                | ThreadLocal是否启用（false时可支持虚拟线程）                             |true                | 
-| enableJmx                        | JMX监控支持开关                                                           |false            | 
-| printConfigInfo                  | 是否打印配置信息                                                           |false               | 
-| printRuntimeLog                  | 是否打印运行时日志                                                         |false               | 
+| intervalOfClearTimeout           | 池内定时线程工作隔时间(毫秒)                                            |18000               |
+| forceDirtyWhenSetSchema          | schema属性是否强制重置标记(PG可设置）                                   |false               |
+| forceDirtyWhenSetCatalog         | catalog属性是否强制重置标记(PG可设置）                                  |false               |
+| useThreadLocal                   | ThreadLocal是否启用（false时可支持虚拟线程）                             |true                | 
+| registerMbeans                   | JMX监控支持开关                                                           |false            | 
+| printConfiguration               | 是否打印配置信息                                                           |false               | 
+| printRuntimeLogs                 | 是否打印运行时日志                                                         |false               | 
 | **connectionFactory**            | 连接工厂实例                                                              |空                   |
 | **connectionFactoryClass**       | 连接工厂类                                                               |空                   |
 | **connectionFactoryClassName**   | 连接工厂类名                                                              |空                   |
-| **evictPredicate**               | 异常断言实例                                                              |空                   |
-| **evictPredicateClass**          | 异常断言类                                                                |空                   |
-| **evictPredicateClassName**      | 异常断言类名                                                              |空                   |
-| **jdbcLinkInfoDecoder**          | 连接信息解码器                                                             |空                   |
-| **jdbcLinkInfoDecoderClass**     | 连接信息解码器类                                                            |空                   |
-| **jdbcLinkInfoDecoderClassName** | 连接信息解码器类名                                                           |空                   |
+| **predicate**                    | 异常断言实例                                                              |空                   |
+| **predicateClass**               | 异常断言类                                                                |空                   |
+| **predicateClassName**           | 异常断言类名                                                              |空                   |
+| **linkInfoDecoder**              | 连接信息解码器                                                             |空                   |
+| **linkInfoDecoderClass**         | 连接信息解码器类                                                            |空                   |
+| **linkInfoDecoderClassName**     | 连接信息解码器类名                                                           |空                   |
+| enableMethodExecutionLogCache    | 方法执行日志缓存开关,默认不打开                                               |false                 |
+| methodExecutionLogCacheSize      | 方法执行日志缓存大小                                                         |1000                   |
+| methodExecutionLogTimeout        | 方法执行日志缓存超时时间(毫秒)                                                |180000             |
+| intervalOfClearTimeoutExecutionLogs | 方法执行日志缓存清理间隔时间(毫秒)                                         |180000               |
+| slowConnectionThreshold             | 慢连接的阈值(毫秒)                                                        |30000                 |
+| slowSQLThreshold                    | 慢SQL的阈值(毫秒)                                                        |30000                 |
+| **methodExecutionListener**         | 方法执行监听器                                                            | 空                      |
+| **methodExecutionListenerClass**    | 方法执行监听器类                                                           | 空                      |
+| **methodExecutionListenerClassName** | 方法执行监听器类名                                                         | 空                      |
+| **methodExecutionListenerFactory**          |方法执行监听器工厂                                                   | 空                      |
+| **methodExecutionListenerFactoryClass**     |方法执行监听器工厂类                                                  | 空                      |
+| **methodExecutionListenerFactoryClassName** | 方法执行监听器工厂类名                                               | 空                      |
 
-*_**对象级属性**，生效选择次序：实例 > 类 > 类名_
+*_**对象级属性**，设置的是类或类名时，须存在无参构造器，生效选择次序：实例 > 类 > 类名_  
 
-*_**对象级属性**，若设置的是类或类名时，须非抽象且存在无参构造函数_
+*********************************************************************
 
-*_**五个defaultxxx属性**(defaultAutoCommit,defaultTransactionIsolationCode,defaultCatalog,defaultSchema,defaultReadOnly)的默认值若未设置，则从第一个成功创建的连接上读取_
 
 ##
 📝**文件配置**
