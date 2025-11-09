@@ -253,6 +253,13 @@ connectionFactoryProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
 
 *_**对象级属性**，设置的是类或类名时，须存在无参构造器，生效选择次序：实例 > 类 > 类名_  
 
+## 🐝 关于BeeCP
+
+BeeCP发布支持两条路线
+
+* 独立版: 用于支持低版本Java，如Java7,Java8等，当前高版本Java也可使用，[最新版本](https://github.com/Chris2018998/beecp)
+  
+* 组合版: 组合连接池，对象池，任务池，适用Java17起步的高版本，使用时VM参数需要引入: --add-exports java.base/jdk.internal.misc=ALL-UNNAMED
 
 ## 👦 关于作者
 
