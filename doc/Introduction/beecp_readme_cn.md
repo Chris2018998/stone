@@ -1,26 +1,25 @@
+# 🌿 BeeCP
 
-[🏠](../../README.md) [English](beecp_readme_eng.md)|[中文](beecp_readme_cn.md)
+一款JDBC连接池，具有代码少，依赖少，性能高，覆盖率高等特点；技术优点：单连接缓存，固定长度数组，非移动等待，异步加法等.
 
-BeeCP是一款轻量级JDBC连接池，具有代码少，依赖少，性能高，覆盖率高等特点；技术优点：单连接缓存，固定长度数组，非移动等待，异步加法等.
+<br>
 
-##
-✨**亮点功能**
-
+## 🌼 特色功能
+ 
 * 支持阻塞中断操作
 * 支持重启和配置重载
 * 提供接口支持扩展
 * 支持虚拟线程应用
-* [提供内外置监控功能](https://github.com/Chris2018998/beecp-starter)
+* [自带监控功能](https://github.com/Chris2018998/beecp-starter)
 
 ![image](https://github.com/user-attachments/assets/e0684ff2-8a7e-4a20-ab68-69c7b2f30bfa)<br/>
 
 ![image](https://github.com/user-attachments/assets/b59dbac9-a3b3-4173-9ff5-845783691e0d)
 
-_温馨提示：如果您的项目是基于springboot框架构建，且有意向使用BeeCP连接池，那么推荐[beecp-starter](https://github.com/Chris2018998/beecp-starter)
+_*温馨提示：如果您的项目是基于springboot框架构建，且有意向使用BeeCP连接池，那么推荐[beecp-starter](https://github.com/Chris2018998/beecp-starter)_
 
-*********************************************************************
 
-📊***性能对比***
+## 📊 性能对比
 
 ![image](https://github.com/user-attachments/assets/65260ea7-a27a-412d-a3c4-62fc50d6070a)
 
@@ -28,7 +27,7 @@ _温馨提示：如果您的项目是基于springboot框架构建，且有意向
 </sup>
 
 
-🍒***差异对比***
+## 🍒 差异对比
 
 | 对比项               | HikariCP               | BeeCP                   |
 |---------------------|-------------------------|-------------------------|
@@ -46,62 +45,166 @@ _温馨提示：如果您的项目是基于springboot框架构建，且有意向
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优秀的开源作品，它由美国资深专家brettwooldridge开发_
 
 
-*********************************************************************
+## ⏰ 数据库Down机测试
 
-⏰***敏捷性测试***
+Brettwooldridge曾在HikariCP项目的WiKi上发布过一篇文章：[《Bad Behavior: Handling Database Down》](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down) ，该文主要讲述了一次数据库Down机模拟测试，
+用于验证4个知名连接池在该场景下反应情况，测试结果：只有HikariCP在5秒做出反应。那么我们同样对BeeCP也做一次这样的测试。
 
-正如著名的[池5秒超时测试](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down)所示，HikariCP作者Brettwooldridge曾通过四个连接池验证数据库宕机场景下的超时响应能力，结果仅有HikariCP能在5秒内作出反应。我们针对BeeCP进行了相同测试。[查看测试源码](../beecp/test/src/main/java/org/stone/beecp/other/DbDownTest.java)
-
-|     Requirement          | Settig                                                         |  Remark                                                                                             |
+|     环境或参数项          | 环境或参数值                                                   |  备注                                                                                           |
 |--------------------------|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------- |
 | database                 | mysql-8.4.3                                                    |                                                                                                      |
 | driver                   | mysql-connector-j-8.3.0.jar                                    |                                                                                                      |
-| url                      | jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100   |the connectTimeout is socket level parameter of mysql jdbc driver                                     |
-| timeout                  | **5000** milliseconds                                          |HikariConfig.setConnectionTimeout(5000); BeeDataSourceConfig.setMaxWait(5000);                        |
+| url                      | jdbc:mysql://hostIP/test?connectTimeout=50&socketTimeout=100   |connectTimeout，socketTimeout是mySQL JDBC驱动参数                                                      |
+| timeout                  | **5000** 毫秒                                                   |HikariConfig.setConnectionTimeout(5000); BeeDataSourceConfig.setMaxWait(5000);                       |
 | Pool version             | HikariCP-6.2.1, stone-1.4.6                                    |                                                                                                      |
 | Java version             | Java-22.0.2                                                    |                                                                                                      |
 
+测试原图如下
+
 ![image](https://github.com/user-attachments/assets/4cca47e0-04d2-4792-a070-1bf9f1bd0306)
 
-**使用18000毫秒重测**
-|     Requirement          | Settig                                                         |  Remark                                                                                             |
+**18000毫秒重测**
+|     环境或参数项          | 环境或参数值                                                   |  备注                                                                                            |
 |--------------------------|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------- |
-| timeout                  | **18000** milliseconds                                         |HikariConfig.setConnectionTimeout(18000); BeeDataSourceConfig.setMaxWait(18000);                     |
-| Others                   | No Change                                                      |                                                                                                     |
+| timeout                  | **18000** 毫秒                                                 |HikariConfig.setConnectionTimeout(18000); BeeDataSourceConfig.setMaxWait(18000);                     |
+| 其他配置                  | 无变化                                                         |                                                                                                     |
  
 ![image](https://github.com/user-attachments/assets/4e0d70b4-e68a-4b28-b1c8-bfb0a949e401)
 
+*^-^ 如果设置一个更大的时间，会怎么样?*
 
-*^-^ 如果设置一个更大时间，会怎么样?*
+**连接池评级**
 
-**Pool Grading**
-
-| Pool	        |Grade   | Reason                                      |
+| Pool	        |等级    | 评级描述                                     |
 |--------------|--------|---------------------------------------------|
 | HikariCP     | A      |由超时参数决定                                |
 | BeeCP        | A+     |Socket级反应                                 |
 
+<br/>
 
+## ✈️ 连接关闭性测试
 
-✈️**PreparedStatement关闭性测试**
-
-我相信很多人都知道Connection、PreparedStatement和ResultSet之间存在依赖关系。如果关闭所有者对象，其打开的对象将自动关闭，但是，有一个例外，让我们做一个测试来验证它。[查看测试源代码](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
+我们在使用JDBC时，通常会接触到三类对象：Connection、PreparedStatement、ResultSet，它们之间通常存在依存级关系，即关闭一个Connection时，那么由该它打开的PreparedStatement也应该自动关闭，为了避免资源泄露，连接池实现时通常是需要考虑这点，
+但是在使用MySQL的时候，我们发现一个例外情况，即在cachePrepStmts=true & useServerPrepStmts=true时，在Connection已关闭的情况下PreparedStatement依然可继续使用，[查看测试源代码](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
 
 ![image](https://github.com/user-attachments/assets/f75d5684-ff4f-4ad9-b88e-f453e833ea69)
 
-*^-^ 这是一个问题吗，如何解决?*
+_*测试结论：BeeCP在Connection关闭后，PreparedStatement是不可用的_
 
-*********************************************************************
+_*感谢JetBrains公司提供的社区版IDEA工具_
 
-🔡**配置列表**
+## 🔌 扩展接口
 
-| 属性                              | 描述                                                                 | 默认值                    |
+BeeCP预留一些接口可供外部扩展
+
+| 接口类                                                 | 作用                  |      备注                                                                         
+|-------------------------------------------------------|-----------------------|--------------------------|
+|   org.stone.beecp.BeeConnectionFactory                |创建Connetion          | |
+|   org.stone.beecp.BeeXaConnectionFactory              |创建XAConnetion        | |
+|   org.stone.beecp.BeeConnectionPredicate              |驱逐测试               | |                 
+|   org.stone.beecp.BeeJdbcLinkInfoDecoder              |连接信息解码器          | |                      
+|   org.stone.beecp.BeeMethodExecutionListener          |方法执行监听器          | |                   
+|   org.stone.beecp.BeeMethodExecutionListenerFactory   |方法执行监听器工厂      |用于支持监听器的灵活性创建，比如工厂读取外部参数等 |   
+
+## ⚙️ 运行时设置
+
+| 方法                                                                    | 作用                  |      备注                                                                         
+|------------------------------------------------------------------------|-----------------------|--------------------------|
+|   BeeDataSource.enableLogPrint(boolean)                                |连接池工作日志输出开关   | |
+|   BeeDataSource.enableMethodExecutionLogCache(boolean)                 |方法执行日志缓存开关     | |
+|   BeeDataSource.setMethodExecutionListener(BeeMethodExecutionListener) |方法执行监听器设置      |日志缓存开关打开时才有效|                 
+|   BeeDataSource.setUsername(String)                                    |数据库连接用户名        | |                      
+|   BeeDataSource.setPassword(String)                                    |数据库连接用户密码      | |                   
+|   BeeDataSource.setJdbcUrl(String)                                     |数据库连接Url          |  |  
+|   BeeDataSource.setUrl(String)                                         |数据库连接Url          |  |   
+
+##  🔚 连接驱逐
+
+在用连接的时候，可能会因为某些意外情况或严重性错误时，需要彻底物理性关闭连接，BeeCP连接池提供了两类驱逐性功能
+
+1. 手工驱逐，调用连接上的abort方法（connecton.abort(null)），连接池立即对它们进行物理关闭，并从池中移除
+
+2. 配置驱逐，用于帮助连接池识别需要驱逐发生SQL异常的连接，三种配置
+
+* A. 异常代码配置：``` BeeDataSourceConfig.addSqlExceptionCode(int code)；//对应SQLException.vendorCode ```
+
+* B. 异常状态配置：``` BeeDataSourceConfig.addSqlExceptionState(String state)；/对应SQLException.SQLState ```
+
+* C. 异常断言配置：``` BeeDataSourceConfig.setPredicate(BeeConnectionPredicate p);BeeDataSourceConfig.setPredicateClass(Clas c); BeeDataSourceConfig.setPredicateClassName(String n); ```
+
+## 🏭 工厂属性设置
+
+BeeCP可通过以下方法设置连接工厂属性，在连接池初始化的时候，这些属性将会被注入到连接工厂中
+
+| 方法                                                                          | 作用                  |      备注                                                                         
+|-------------------------------------------------------------------------------|-----------------------|--------------------------|
+|  BeeDataSourceConfig.addConnectionFactoryProperty(String name,Object value)   |增加属性值              ||
+|  BeeDataSourceConfig.addConnectionFactoryProperty(String name);               |增加字符性属性值，支持=和:作为分割符号|p1=v1&p2=v2&p3=v3 或 p1:v1&p2:v2&p3:v3|
+
+_*以上两个方法也适用于动态增加驱动扩展性参数_
+
+
+## 📜 属性文件配置
+ BeeCP支持从属性文件（*.properities）或属性对象（java.util.properities）中读取参数信息到配置对象上，参考例子如下
+
+```java
+BeeDataSourceConfig config = new BeeDataSourceConfig();
+config.loadFromPropertiesFile("D:\beecp\config.properties");
+```
+
+config.properties
+
+```properties
+username=root
+password=root
+jdbcUrl=jdbc:mysql://localhost/test
+driverClassName=com.mysql.cj.jdbc.Driver
+
+initial-size=1
+max-active=10
+
+#连接工厂实现类名
+connectionFactoryClassName=x1
+#jdbc link信息的解码器实现类名
+linkInfoDecoderClassName=x2
+#测试性断言实现类名
+predicateClassName=x3
+#方法执行监听器类名
+methodExecutionListenerClassName=x4
+#方法执行监听器工厂类名
+methodExecutionListenerFactoryClassName=x5
+
+#驱逐测试异常代码
+sqlExceptionCodeList=500150,2399
+#驱逐测试异常状态
+sqlExceptionStateList=0A000,57P01
+
+#工厂属性配置1(参数不多时推荐使用)
+connectionFactoryProperties=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true&prepStmtCacheSize=50
+
+#工厂属性配置2(参数个数比较多时)
+connectionFactoryProperties.size=2
+connectionFactoryProperties.1=prepStmtCacheSize=50
+connectionFactoryProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
+
+```
+*_温馨提示：属性名配置支持：驼峰，中划线，下划线_
+
+
+## 💻 运行时监控
+
+
+
+
+## 🛠️ 属性参考列表
+
+| 属性                             | 描述                                                                 | 默认值                    |
 |----------------------------------|----------------------------------------------------------------------|--------------------------|
 | username                         | 连接数据库的用户名                                                     |空                         |
 | password                         | 连接数据库的密码                                                       |空                         |
 | jdbcUrl                          | 连接数据库的url                                                        |空                        |
 | driverClassName                  | 连接数据库的Jdbc驱动类名                                                |空                        |
-| poolName	                       | 连接池名，若未设置，则自动产生                                           |空                        |
+| poolName	                        | 连接池名，若未设置，则自动产生                                           |空                        |
 | fairMode                         | 连接池是否使用公平模式                                                  |false（非公平模式）         | 
 | initialSize                      | 池初始化的连接数                                                       |0                         |
 | maxActive                        | 池内最大允许连接数                                                     |10                        | 
@@ -150,194 +253,9 @@ _[**HikariCP**](https://github.com/brettwooldridge/HikariCP)是一款非常优�
 
 *_**对象级属性**，设置的是类或类名时，须存在无参构造器，生效选择次序：实例 > 类 > 类名_  
 
-*********************************************************************
+
+## 👦 关于作者
+
+Chris2018998，[中国开源社区](https://www.oschina.net/)一名Java技术爱好者。
 
 
-##
-📝**文件配置**
-
-BeeCP支持从属性文件（*.properities）或属性对象（java.util.properities）中读取参数信息到配置对象上，参考例子如下
-
-```java
-BeeDataSourceConfig config = new BeeDataSourceConfig();
-config.loadFromPropertiesFile("d:\beecp\config.properties");
-```
-
-config.properties
-
-```properties
-username=root
-password=root
-jdbcUrl=jdbc:mysql://localhost/test
-driverClassName=com.mysql.cj.jdbc.Driver
-
-initial-size=1
-max-active=10
-
-#连接工厂实现的类名
-connectionFactoryClassName=org.stone.beecp.objects.MockCommonConnectionFactory
-#jdbc link信息的解码器实现的类名
-jdbcLinkInfoDecoderClassName=org.stone.beecp.objects.SampleMockJdbcLinkInfoDecoder
-
-```
-_温馨提示：属性名配置方式目前支持：驼峰，中划线，下划线_
-
-##
-⚙**驱动参数**
-
-BeeCP内部是使用驱动或连接工厂创建连接对象，它们可能依赖一些参数，在配置对象(BeeDataSourceConfig)提供了两个方法
-
-* ```addConnectProperty(String,Object);//添加单个参数 ```
-
-* ```addConnectProperty(String);//以字符串的方式添加参数，可一次配置多个，如：cachePrepStmts=true&prepStmtCacheSize=250```
-
-<br/>
-
-_参考代码_
-
-```java
- BeeDataSourceConfig config = new BeeDataSourceConfig();
- config.addConnectProperty("cachePrepStmts", "true");
- config.addConnectProperty("prepStmtCacheSize", "250");
- config.addConnectProperty("prepStmtCacheSqlLimit", "2048");
-
- //或者
- config.addConnectProperty("cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048");
-
- //或者
- config.addConnectProperty("cachePrepStmts:true&prepStmtCacheSize:250&prepStmtCacheSqlLimit:2048");
-```
-
-* _文件配置1_
-```properties
-
-connectProperties=cachePrepStmts=true&prepStmtCacheSize=50
-
-```
-
-* _文件配置2(多项参数时推荐)_
-```properties
-connectProperties.size=2
-connectProperties.1=prepStmtCacheSize=50
-connectProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
-```
-
-## 
-🔚**连接驱逐**
-
-BeeCP提供了两种方式
-
-1. 手工驱逐，调用连接上的abort方法（connecton.abort(null)），连接池立即对它们进行物理关闭，并从池中移除
-
-2. 配置驱逐，用于帮助连接池识别需要驱逐发生SQL异常的连接，三种配置
-
-* A. 异常代码配置：``` addSqlExceptionCode(int code)；//对应SQLException.vendorCode ```
-
-* B. 异常状态配置：``` addSqlExceptionState(String state)；/对应SQLException.SQLState```
-
-* C. 异常断言配置：``` setEvictPredicate(BeeConnectionPredicate p);setEvictPredicateClass(Clas c); setEvictPredicateClassName(String n); ```
- 
-<br/>
-
-_文件配置_
-```properties
-
-sqlExceptionCodeList=500150,2399,1105
-sqlExceptionStateList=0A000,57P01,57P02,57P03,01002,JZ0C0,JZ0C1
-
-//或者
-evictPredicateClassName=org.stone.beecp.objects.MockEvictConnectionPredicate
-
-```
-
-_补充说明_
-
-* 1：断言驱逐用于自定义性实现，当其验证结果非空（Not Null and Not Empty）则驱逐连接
-* 2：断言配置的使用优先于代码配置和状态配置，若存在断言配置，自动忽略其他两项配置
-* 3：异常代码检查优先于异常状态检查
-* 4：驱逐后，若池种存在等待者，自动候补一个新连接
-
-##
-✂**中断处理**
-
-连接创建是连接池内一项目重要活动，但是由于服务器或网络或其他原因，可能导致创建过程处于阻塞状态，为解决这一问题，BeeCP提供了两种方式
-
-1. 外部方式，在数据源对象（BeeDataSource）提供两个方法：查询方法：getPoolMonitorVo()；中断方法：interruptConnectionCreating(boolean)；
-
-2. 内部方式，内部工作线程定时识别阻塞，并中断它们<br/>
-
-<br/>
-
-_补充说明_
-
-* 1：创建时间超过maxwait的值时，连接池则判断定为创建阻塞
-* 2：中断的是借用者线程，getConnection上会抛出中断异常；若是候补线程，它会尝试将异常传递给等待者
-* 3: BeeCP监控页面上也可查看到相关信息，如创建数，创建超时数，如超时则显示出中断按钮
-
-##
-🛒**清理与重启**
-
-BeeCP支持重置操作，让连接池恢复到初始状态，清理过程中不接受外部请求，它主要完成两个事项
-
-* A: 清除池内所有的连接和等待者
-* B: 重新初始化连接池（也可是使用新配置）
-
-<br/>
-
-_主要有两个方法_
-
-* ```BeeDataSource.clear(boolean forceCloseUsing);//使用原配置重新初始化 ```
-
-* ```BeeDataSource.clear(boolean forceCloseUsing, BeeDataSourceConfig newConfig);//使用新配置重新初始化```
-
-
-##
-🏭**连接工厂接口**
-
-在BeeCP内部定义了连接工厂接口，并内置两种基本实现（对驱动和数据源的封装），工厂接口是允许外部自定义实现，有4个相关配置方法（etConnectionFactory，setXaConnectionFactory，setConnectionFactoryClass，setConnectionFactoryClassName）分别设置工厂实例，工厂类，工厂类名，下面是一个参考例子
-
-```java
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.SQLException;
-import java.util.Properties;
-import org.stone.beecp.BeeConnectionFactory;
-
-public class MyConnectionFactory implements BeeConnectionFactory {
-    private final String url;
-    private final Driver driver;
-    private final Properties connectInfo;
-
-    public MyConnectionFactory(String url, Properties connectInfo, Driver driver) {
-        this.url = url;
-        this.driver= driver;
-        this.connectInfo = connectInfo;
-    }
-
-    public Connection create() throws SQLException {
-        return driver.connect(url, connectInfo);
-    }
-}
-
-
-public class MyConnectionDemo {
-    public static void main(String[] args) throws SQLException {
-        final String url = "jdbc:mysql://localhost:3306/test";
-        final Driver driver = DriverManager.getDriver(url);
-        final Properties connectInfo = new Properties();
-        connectInfo.put("user","root");
-        connectInfo.put("password","root");
-
-        BeeDataSourceConfig config = new BeeDataSourceConfig();
-        config.setConnectionFactory(new MyConnectionFactory(url, connectInfo, driver));
-        BeeDataSource ds = new BeeDataSource(config);
-
-        try (Connection con = ds.getConnection()) {
-            //put your code here
-        }
-    }
-}
-
-```
-
-_温馨提示：若同时设置连接工厂和驱动类参数（driver,url,user,password)，那么连接工厂被优先使用。_
