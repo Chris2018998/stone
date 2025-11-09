@@ -256,6 +256,6 @@ connectionFactoryProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
 
 ## 👦 关于作者
 
-Chris2018998，[中国开源社区](https://www.oschina.net/)一名Java技术爱好者。
+Chris2018998，一名中国Java技术爱好者
 
 
