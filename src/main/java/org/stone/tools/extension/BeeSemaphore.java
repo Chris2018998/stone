@@ -37,17 +37,29 @@ public final class BeeSemaphore implements BeeInterruptable {
         }
     }
 
+    private final boolean fair;
     //Fixed length of Array
     private final BeeSemaphorePermit[] permits;
     //Customization wait queue
     private final BeeTransferQueue waitQueue;
 
     /**
-     * Construct a semaphore with permit size,only support unfair mode at present(maybe support fair mode in future).
+     * Construct a semaphore with permit size.
      *
      * @param size to be created fixed length array
      */
     public BeeSemaphore(int size) {
+        this(size,false);
+    }
+
+    /**
+     * Construct a semaphore with permit size and specified mode
+     *
+     * @param size to be created fixed length array
+     * @param fair is true that fair mode
+     */
+    public BeeSemaphore(int size,boolean fair) {
+        this.fair = fair;
         this.waitQueue = new BeeTransferQueue();
         this.permits = new BeeSemaphorePermit[size];
         for (int i = 0; i < size; i++) {
@@ -63,10 +75,12 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @throws InterruptedException when interruption occurred during waiting for a released permit
      */
     public BeeSemaphorePermit tryAcquire(long deadlineNanos, BeeTransferQueueNode node) throws InterruptedException {
-        //1: search an idle permit from permit array
-        for (BeeSemaphorePermit permit : permits) {
-            if (permitStateHandle.compareAndSet(permit, 0, 1)) {
-                return permit;
+        if(!fair || waitQueue.existWaiters()) {
+            //1: search an idle permit from permit array
+            for (BeeSemaphorePermit permit : permits) {
+                if (permitStateHandle.compareAndSet(permit, 0, 1)) {
+                    return permit;
+                }
             }
         }
 
