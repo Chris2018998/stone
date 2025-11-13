@@ -116,6 +116,44 @@ public final class BeeTransferQueue implements BeeInterruptable {
         } while (true);
     }
 
+
+    /**
+     * Find the first undeleted node from chain
+     *
+     * @return BeeTransferQueueNode when success
+     */
+    public BeeTransferQueueNode peek() {
+        //1: get first node as a start node
+        BeeTransferQueueNode curNode = head.next;
+        //2: if first node is null,is that the queue is empty
+        if (curNode == null) return null;
+
+        //3: get head node as prev node of first node
+        BeeTransferQueueNode prevNode = head;
+        //4: prev node of first deletion node of some segment
+        BeeTransferQueueNode prevOfFirstDeleted = null;
+
+        //5: loop to search first node not removed
+        do {
+            if (curNode.item != REMOVED) {//OK,found a removed node
+                if (prevOfFirstDeleted != null) {
+                    BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
+                    if (prevOfFirstDeleted != curNode && deletedNext != curNode)
+                        NEXT.weakCompareAndSet(prevOfFirstDeleted, deletedNext, curNode);
+                }
+                return curNode;
+            } else {//mark as removed
+                if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
+            }
+
+            //move current node to next
+            prevNode = curNode;
+            curNode = curNode.next;
+            if (curNode == null) return null;
+        } while (true);
+
+    }
+
     /**
      * ** Key Method **:Attempt to transfer given value object to waiter in queue.
      *
