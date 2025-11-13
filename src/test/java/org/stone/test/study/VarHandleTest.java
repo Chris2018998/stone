@@ -4,21 +4,22 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
 public class VarHandleTest {
-    private Integer age;
+    private volatile int age;
 
     public static void main(String[] ars) throws Exception {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        VarHandle handle = l.findVarHandle(VarHandleTest.class, "age", Integer.class);
+        VarHandle handle = l.findVarHandle(VarHandleTest.class, "age", int.class);
 
         VarHandleTest test = new VarHandleTest();
         VarHandleTest test2 = new VarHandleTest();
 
-        if (handle.compareAndSet(test, null, 1)) {
+        if (handle.compareAndSet(test, 0, 1)) {
             System.out.println("compareAndSet-success:" + handle.get(test));
         }
 
         //1:compareAndSet return success or fail
         //2:compareAndExchange return current value,don't care success or fail
+        System.out.println("compareAndExchange(1->2):" + handle.compareAndSet(test, 1, 2));
         System.out.println("compareAndExchange(1->2):" + handle.compareAndExchange(test, 1, 2));
         System.out.println("compareAndExchange(2->3):" + handle.compareAndExchange(test, 2, 3));
         System.out.println("compareAndExchange(2->3):" + handle.compareAndExchange(test, 2, 3));
