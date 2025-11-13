@@ -116,7 +116,6 @@ public final class BeeTransferQueue implements BeeInterruptable {
         } while (true);
     }
 
-
     /**
      * Find the first undeleted node from chain
      *
@@ -135,7 +134,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
 
         //5: loop to search first node not removed
         do {
-            if (curNode.item != REMOVED) {//OK,found a removed node
+            if (curNode.item != REMOVED) {//OK,found a node not removed
                 if (prevOfFirstDeleted != null) {
                     BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
                     if (prevOfFirstDeleted != curNode && deletedNext != curNode)
@@ -152,6 +151,15 @@ public final class BeeTransferQueue implements BeeInterruptable {
             if (curNode == null) return null;
         } while (true);
 
+    }
+
+    /**
+     * Check exist waiter in chain
+     *
+     * @return true if {@code tail.item !=REMOVED}
+     */
+    public boolean existWaiters() {
+        return tail.item != REMOVED;
     }
 
     /**
