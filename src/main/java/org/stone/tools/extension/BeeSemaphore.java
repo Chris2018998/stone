@@ -45,7 +45,7 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @param fair is true that fair mode
      */
     public BeeSemaphore(int size, boolean fair) {
-        this.synchronizer = fair ? new FairSemaphore(size) : new NonFairSemaphore(size);
+        this.synchronizer = fair ? new FairSemaphore(size) : new SemaphoreSynchronizer(size);
     }
 
     /**
@@ -80,7 +80,6 @@ public final class BeeSemaphore implements BeeInterruptable {
     //                                        Synchronizer classes                                                    //
     //****************************************************************************************************************//
     private static class SemaphoreSynchronizer {
-        // VarHandle mechanics
         protected static final VarHandle permitStateHandle;
 
         static {
@@ -125,7 +124,6 @@ public final class BeeSemaphore implements BeeInterruptable {
             permitStateHandle.setVolatile(permit, 0);//set to idle state
             waitQueue.tryTransfer(permit);
         }
-
 
         /**
          * Attempt to acquire a permit.
@@ -217,13 +215,5 @@ public final class BeeSemaphore implements BeeInterruptable {
                 permitStateHandle.setVolatile(permit, 0);//set to idle state
             }
         }
-    }
-
-    private static class NonFairSemaphore extends SemaphoreSynchronizer {//NonFair Implementation
-
-        NonFairSemaphore(int size) {
-            super(size);
-        }
-
     }
 }
