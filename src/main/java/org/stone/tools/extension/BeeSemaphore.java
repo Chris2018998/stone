@@ -30,15 +30,15 @@ public final class BeeSemaphore implements BeeInterruptable {
 
     static {
         try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            permitStateHandle = l.findVarHandle(BeeSemaphorePermit.class, "state", int.class);
+            permitStateHandle = MethodHandles.lookup().findVarHandle(BeeSemaphorePermit.class, "state", int.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
 
-    private final boolean fair;
-    //Fixed length of Array
+    //
+    private final boolean unFair;
+    //Permits Array
     private final BeeSemaphorePermit[] permits;
     //Customization wait queue
     private final BeeTransferQueue waitQueue;
@@ -49,7 +49,7 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @param size to be created fixed length array
      */
     public BeeSemaphore(int size) {
-        this(size,false);
+        this(size, false);
     }
 
     /**
@@ -58,8 +58,8 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @param size to be created fixed length array
      * @param fair is true that fair mode
      */
-    public BeeSemaphore(int size,boolean fair) {
-        this.fair = fair;
+    public BeeSemaphore(int size, boolean fair) {
+        this.unFair = !fair;
         this.waitQueue = new BeeTransferQueue();
         this.permits = new BeeSemaphorePermit[size];
         for (int i = 0; i < size; i++) {
@@ -75,10 +75,10 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @throws InterruptedException when interruption occurred during waiting for a released permit
      */
     public BeeSemaphorePermit tryAcquire(long deadlineNanos, BeeTransferQueueNode node) throws InterruptedException {
-        if(!fair || waitQueue.existWaiters()) {
+        if (unFair || waitQueue.existWaiters()) {
             //1: search an idle permit from permit array
             for (BeeSemaphorePermit permit : permits) {
-                if (permitStateHandle.compareAndSet(permit, 0, 1)) {
+                if (permit.state == 0 && permitStateHandle.compareAndSet(permit, 0, 1)) {
                     return permit;
                 }
             }
@@ -142,7 +142,7 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @param permit to recycled
      */
     public void release(BeeSemaphorePermit permit) {
-        permit.state = 0;//set to idle state
+        permitStateHandle.setVolatile(permit, 0);//set to idle state
         waitQueue.tryTransfer(permit);
     }
 

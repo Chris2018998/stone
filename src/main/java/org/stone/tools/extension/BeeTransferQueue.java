@@ -44,7 +44,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
         }
     }
 
-    //Head node is not movable node in chain *
+    //Not movable
     private final BeeTransferQueueNode head;
     //Tail node of chain
     private volatile BeeTransferQueueNode tail;
@@ -63,11 +63,27 @@ public final class BeeTransferQueue implements BeeInterruptable {
     public boolean offer(BeeTransferQueueNode node) {
         node.item = null;
         do {
-            if (NEXT.compareAndSet(tail, null, node)) {//append to tail.next
+            if (NEXT.compareAndSet(this.tail, null, node)) {//append to tail.next
                 this.tail = node;
                 return true;
             }
         } while (true);
+    }
+
+    /**
+     * Clear All nodes
+     */
+    public void clear() {
+        this.tail = this.head;
+    }
+
+    /**
+     * Check exist waiters in chain
+     *
+     * @return true if {@code tail.item !=REMOVED}
+     */
+    public boolean existWaiters() {
+        return tail.item != REMOVED;
     }
 
     /**
@@ -77,39 +93,36 @@ public final class BeeTransferQueue implements BeeInterruptable {
      * @return true when success
      */
     public boolean remove(BeeTransferQueueNode node) {
-        //1: set deleted statue to node
+        //1: mark as removed status
         node.item = REMOVED;
 
-        //2: get first node as a start node
-        BeeTransferQueueNode curNode = head.next;
-        //3: if first node is null,is that the queue is empty
-        if (curNode == null) return false;
-
-        //4: get head node as prev node of first node
+        //2: get head node as prev node of first node
         BeeTransferQueueNode prevNode = head;
-        //5: prev node of first deletion node of some segment
+        BeeTransferQueueNode curNode = prevNode.next;
+
+        //3: prev node of first removed flag node of some segment
         BeeTransferQueueNode prevOfFirstDeleted = null;
 
-        //6: loop to search the specified node
+        //4: loop to search the specified node
         do {
             if (curNode == node) {//OK,found you,abandon you
-                BeeTransferQueueNode linkTo = curNode.next;//plan to skip over you,link to your next node
-                if (linkTo == null) linkTo = prevNode;//At tail,so lucky,remain you,then link to your prev node.
-
-                if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
-                BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
-                if (prevOfFirstDeleted != linkTo && deletedNext != linkTo)
-                    NEXT.weakCompareAndSet(prevOfFirstDeleted, deletedNext, linkTo);
-
+                BeeTransferQueueNode linkTo = curNode.next;
+                if (linkTo != null) {//plan to skip over you,link to your next node
+                    if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
+                    NEXT.weakCompareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, linkTo);
+                } else if (prevOfFirstDeleted != null && prevOfFirstDeleted != prevNode) {
+                    BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
+                    if (deletedNext != prevNode) NEXT.weakCompareAndSet(prevOfFirstDeleted, deletedNext, prevNode);
+                }
                 return true;
-            } else if (curNode.item == REMOVED) {//mark as removed
+            } else if (curNode.item == REMOVED) {//a deletion node
                 if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
-            } else if (prevOfFirstDeleted != null) {//Not deleted
+            } else if (prevOfFirstDeleted != null) {//Not removed
                 NEXT.weakCompareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, curNode);
                 prevOfFirstDeleted = null;
             }
 
-            //move current node to next
+            //move to next node
             prevNode = curNode;
             curNode = curNode.next;
             if (curNode == null) return false;
@@ -122,17 +135,17 @@ public final class BeeTransferQueue implements BeeInterruptable {
      * @return BeeTransferQueueNode when success
      */
     public BeeTransferQueueNode peek() {
-        //1: get first node as a start node
-        BeeTransferQueueNode curNode = head.next;
+        //1: read head and set it as start node
+        BeeTransferQueueNode prevNode = head;
+        BeeTransferQueueNode curNode = prevNode.next;
+
         //2: if first node is null,is that the queue is empty
         if (curNode == null) return null;
 
-        //3: get head node as prev node of first node
-        BeeTransferQueueNode prevNode = head;
-        //4: prev node of first deletion node of some segment
+        //3: prev node of first deletion node of some segment
         BeeTransferQueueNode prevOfFirstDeleted = null;
 
-        //5: loop to search first node not removed
+        //4: loop to search first node not removed
         do {
             if (curNode.item != REMOVED) {//OK,found a node not removed
                 if (prevOfFirstDeleted != null) {
@@ -141,25 +154,16 @@ public final class BeeTransferQueue implements BeeInterruptable {
                         NEXT.weakCompareAndSet(prevOfFirstDeleted, deletedNext, curNode);
                 }
                 return curNode;
-            } else {//mark as removed
-                if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
+            } else if (prevOfFirstDeleted == null) {
+                prevOfFirstDeleted = prevNode;
             }
 
-            //move current node to next
+            //move to next node
             prevNode = curNode;
             curNode = curNode.next;
             if (curNode == null) return null;
         } while (true);
 
-    }
-
-    /**
-     * Check exist waiter in chain
-     *
-     * @return true if {@code tail.item !=REMOVED}
-     */
-    public boolean existWaiters() {
-        return tail.item != REMOVED;
     }
 
     /**

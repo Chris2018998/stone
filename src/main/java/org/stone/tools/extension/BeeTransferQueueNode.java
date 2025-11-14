@@ -17,13 +17,17 @@ package org.stone.tools.extension;
  */
 public final class BeeTransferQueueNode {
     //Node thread
-    public final Thread thread;
+    public Thread thread;
     //Node value,its initial value is null
     public volatile Object item;
-    //next node
+    //Next node
     volatile BeeTransferQueueNode next;
 
     public BeeTransferQueueNode(Thread thread) {
         this.thread = thread;
+    }
+
+    public void clearThread() {
+        this.thread = null;
     }
 }
