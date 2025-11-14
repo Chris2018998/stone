@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.tools.extension;
+package org.stone.test.study.queue2;
 
 /**
  * Thread wait node,which is sharable class node to cross Semaphore to Transfer queue
@@ -25,6 +25,11 @@ public final class BeeTransferQueueNode {
 
     public BeeTransferQueueNode(Thread thread) {
         this.thread = thread;
+    }
+
+    BeeTransferQueueNode(Thread thread, Object item) {
+        this.thread = thread;
+        this.item = item;
     }
 
     public void clearThread() {

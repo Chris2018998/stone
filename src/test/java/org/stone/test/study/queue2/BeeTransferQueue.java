@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.tools.extension;
+package org.stone.test.study.queue2;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -16,14 +16,7 @@ import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * {@link #BeeTransferQueue} is a customization queue for stone project to improve pool performance.
- * <p>
- * its implementation is a unique technical of stone project,feature is below
- * 1: This queue chain has a fixed head node,which is not moved when queue method operation
- * 2: Head node and tail node is same when queue instantiated (initial state)
- * 3: Tail node is remained in chain when all nodes are removed(two nodes exists in chain)
- * <p>
- * Note: It is a private tool,Forbidden to copy its logic or apply it in other projects.
+ * {@link #BeeTransferQueue} is a customization queue.
  *
  * @author Chris Liao
  * @version 1.0
@@ -51,7 +44,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
 
     //constructor to create head node
     public BeeTransferQueue() {
-        this.tail = this.head = new BeeTransferQueueNode(null);
+        this.tail = this.head = new BeeTransferQueueNode(null, REMOVED);
     }
 
     /**
@@ -109,16 +102,16 @@ public final class BeeTransferQueue implements BeeInterruptable {
                 BeeTransferQueueNode linkTo = curNode.next;
                 if (linkTo != null) {//plan to skip over you,link to your next node
                     if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
-                    NEXT.weakCompareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, linkTo);
+                    NEXT.compareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, linkTo);
                 } else if (prevOfFirstDeleted != null && prevOfFirstDeleted != prevNode) {
                     BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
-                    if (deletedNext != prevNode) NEXT.weakCompareAndSet(prevOfFirstDeleted, deletedNext, prevNode);
+                    if (deletedNext != prevNode) NEXT.compareAndSet(prevOfFirstDeleted, deletedNext, prevNode);
                 }
                 return true;
             } else if (curNode.item == REMOVED) {//a deletion node
                 if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
             } else if (prevOfFirstDeleted != null) {//Not removed
-                NEXT.weakCompareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, curNode);
+                NEXT.compareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, curNode);
                 prevOfFirstDeleted = null;
             }
 

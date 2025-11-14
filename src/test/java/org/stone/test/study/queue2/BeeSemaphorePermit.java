@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.tools.extension;
+package org.stone.test.study.queue2;
 
 /**
  * Semaphore Permit

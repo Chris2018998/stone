@@ -7,19 +7,15 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.tools.extension;
+package org.stone.test.study.queue2;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.tools.CommonUtil.SPIN_FOR_TIMEOUT_THRESHOLD;
-
 /**
- * {@link #BeeSemaphore} is a customization semaphore implementation for stone project to improve pool performance.
- * <p>
- * Note: It is a private tool,Forbidden to copy its logic or apply it in other projects.
+ * {@link #BeeSemaphore} is a customization semaphore implementation
  *
  * @author Chris Liao
  * @version 1.0
@@ -112,8 +108,13 @@ public final class BeeSemaphore implements BeeInterruptable {
         }
 
 
-        protected boolean allowTrySearch() {
-            return true;
+        protected BeeSemaphorePermit search() {
+            for (BeeSemaphorePermit permit : permits) {
+                if (permit.state == 0 && permitStateHandle.compareAndSet(permit, 0, 1)) {
+                    return permit;
+                }
+            }
+            return null;
         }
 
         protected boolean hold(BeeSemaphorePermit permit) {
@@ -121,7 +122,7 @@ public final class BeeSemaphore implements BeeInterruptable {
         }
 
         protected void release(BeeSemaphorePermit permit) {
-            permitStateHandle.setVolatile(permit, 0);//set to idle state
+            permit.state = 0;
             waitQueue.tryTransfer(permit);
         }
 
@@ -133,19 +134,16 @@ public final class BeeSemaphore implements BeeInterruptable {
          * @throws InterruptedException when interruption occurred during waiting for a released permit
          */
         public BeeSemaphorePermit tryAcquire(long deadlineNanos, BeeTransferQueueNode node) throws InterruptedException {
-            if (allowTrySearch()) {
-                //1: search an idle permit from permit array
-                for (BeeSemaphorePermit permit : permits) {
-                    if (permit.state == 0 && permitStateHandle.compareAndSet(permit, 0, 1)) {
-                        return permit;
-                    }
-                }
-            }
+            BeeSemaphorePermit permit1 = search();
+            if (permit1 != null) return permit1;
 
             //2: Offer node to wait queue
-            node.item = null;//set to null to accept a transferred value
+            //node.item = null;//set to null to accept a transferred value
+            Thread thread = Thread.currentThread();
+            node = new BeeTransferQueueNode(thread);
             waitQueue.offer(node);
-            Thread thread = node.thread;
+            deadlineNanos = System.nanoTime() + deadlineNanos;
+
 
             //3:self-spin
             do {
@@ -160,7 +158,7 @@ public final class BeeSemaphore implements BeeInterruptable {
 
                 //3.2 block thread via park
                 long remainTime = deadlineNanos - System.nanoTime();
-                if (remainTime > SPIN_FOR_TIMEOUT_THRESHOLD) {//park node thread
+                if (remainTime > 0L) {//park node thread
                     if (value != null) node.item = null;//set value to null to be filled by a releaser
                     LockSupport.parkNanos(remainTime);
                     if (thread.isInterrupted() && Thread.interrupted()) {//handle interruption
@@ -174,10 +172,11 @@ public final class BeeSemaphore implements BeeInterruptable {
                         }
                         throw new InterruptedException();
                     }
-                } else if (remainTime > 0L) {//remain time is too short then use Thread.onSpinWait()
-                    if (value != null) node.item = null;//set to null for be filled
-                    Thread.onSpinWait();//spin wait
+//                } else if (remainTime > 0L) {//remain time is too short then use Thread.onSpinWait()
+//                    if (value != null) node.item = null;//set to null for be filled
+//                    Thread.onSpinWait();//spin wait
                 } else {//timeout
+                    System.out.println("timeout...");
                     this.waitQueue.remove(node);//remove node at first.
                     if (value != null) return null;//if value read out at step3.1,so can't be filled by releaser
 
@@ -202,8 +201,15 @@ public final class BeeSemaphore implements BeeInterruptable {
             super(size);
         }
 
-        protected boolean allowTrySearch() {
-            return !waitQueue.existWaiters();
+        protected BeeSemaphorePermit search() {
+            if (waitQueue.existWaiters()) return null;
+
+            for (BeeSemaphorePermit permit : permits) {
+                if (permit.state == 0 && permitStateHandle.compareAndSet(permit, 0, 1)) {
+                    return permit;
+                }
+            }
+            return null;
         }
 
         protected boolean hold(BeeSemaphorePermit permit) {
