@@ -30,7 +30,7 @@ import java.util.concurrent.locks.LockSupport;
  */
 public final class BeeTransferQueue implements BeeInterruptable {
     //Special Value of node marked as deleted status
-    public static final Object REMOVED = new Object();
+    private static final Object REMOVED = new Object();
     private static final VarHandle NEXT;
     private static final VarHandle ITEM;
 
@@ -174,6 +174,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
      */
     public boolean tryTransfer(Object value) {//need to locate the first node in chain.
         for (BeeTransferQueueNode p = head.next; p != null; ) {
+            if (p.item == REMOVED) continue;
             if (ITEM.compareAndSet(p, null, value)) {
                 LockSupport.unpark(p.thread);
                 return true;
@@ -190,7 +191,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
     public List<Thread> getQueuedThreads() {
         List<Thread> threadList = new LinkedList<>();
         for (BeeTransferQueueNode p = head.next; p != null; p = p.next) {
-            threadList.add(p.thread);
+            if (p.item != REMOVED) threadList.add(p.thread);
         }
         return threadList;
     }
@@ -198,8 +199,10 @@ public final class BeeTransferQueue implements BeeInterruptable {
     public List<Thread> interruptQueuedWaitThreads() {
         List<Thread> threadList = new LinkedList<>();
         for (BeeTransferQueueNode p = head.next; p != null; p = p.next) {
-            p.thread.interrupt();
-            threadList.add(p.thread);
+            if (p.item != REMOVED) {
+                p.thread.interrupt();
+                threadList.add(p.thread);
+            }
         }
         return threadList;
     }
