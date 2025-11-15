@@ -38,8 +38,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.stone.beecp.BeeMethodExecutionLog.Type_Connection_Get;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
-import static org.stone.tools.CommonUtil.isBlank;
-import static org.stone.tools.CommonUtil.isNotBlank;
+import static org.stone.tools.CommonUtil.*;
 
 /**
  * JDBC Connection Pool Implementation
