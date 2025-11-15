@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.test.study.queue2;
+package org.stone.tools.extension;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * {@link #BeeSemaphore} is a customization semaphore implementation
+ * {@link #BeeSemaphore} is a customization semaphore implementation.
  *
  * @author Chris Liao
  * @version 1.0

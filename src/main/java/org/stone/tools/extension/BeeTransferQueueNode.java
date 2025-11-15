@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.test.study.queue2;
+package org.stone.tools.extension;
 
 /**
  * Thread wait node,which is sharable class node to cross Semaphore to Transfer queue
