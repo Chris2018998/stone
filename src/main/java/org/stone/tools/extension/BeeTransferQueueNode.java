@@ -16,7 +16,6 @@ package org.stone.tools.extension;
  * @version 1.0
  */
 public final class BeeTransferQueueNode {
-    //Special Value of node marked as deleted status
     static final Object NULL = new Object();
 
     //Node thread
