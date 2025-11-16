@@ -1,20 +1,14 @@
-[🏠](../../README.md) [English](beecp_readme_eng.md)|[中文](beecp_readme_cn.md)
+# 🌿 BeeCP
+ 
+A JDBC connection pool with the characteristics of minimal code, few dependencies, high performance, and high coverage; Technical advantages: single-connection caching, fixed-length array, non-moving wait, asynchronous addition, etc.
 
-![](https://img.shields.io/badge/Java-8+-green.svg)
-![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
-[![License](https://img.shields.io/github/license/Chris2018998/stone?color=4D7A97&logo=apache)](https://github.com/Chris2018998/stone/blob/main/LICENSE)
+## 🌼 Key Features
 
-BeeCP is a fast JDBC connection pool has techology characteristics: caching single connection, not-moving waiting, fixed length array.
-
-##
-✨**Highlight Features**
-
-* Support clearing and reinitalizing
-* Support properties file configuration
-* Support virtual thread applications
-* Provide method to interrupt blocking
-* Provide interfaces to be customizated
-* [Provide starter and web monitor](https://github.com/Chris2018998/beecp-starter)
+* Supports blocking interruption operations‌
+* Supports restart and configuration reload‌
+* Provides interfaces for extensibility‌
+* Supports virtual thread applications‌
+* [Includes built-in monitoring capabilities‌](https://github.com/Chris2018998/beecp-starter)
 
 ![image](https://github.com/user-attachments/assets/d2753c33-e671-4d79-92e5-cfb4cae281e0)<br/>
 
