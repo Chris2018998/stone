@@ -123,7 +123,7 @@ public final class BeeSemaphore implements BeeInterruptable {
 
         protected void release(BeeSemaphorePermit permit) {
             permit.state = 0;
-            waitQueue.tryTransfer(permit);
+            waitQueue.tryTransfer(null,permit);
         }
 
         /**
@@ -217,7 +217,7 @@ public final class BeeSemaphore implements BeeInterruptable {
         }
 
         protected void release(BeeSemaphorePermit permit) {
-            if (!waitQueue.tryTransfer(permit)) {
+            if (!waitQueue.tryTransfer(null,permit)) {
                 permitStateHandle.setVolatile(permit, 0);//set to idle state
             }
         }

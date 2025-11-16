@@ -16,10 +16,13 @@ package org.stone.tools.extension;
  * @version 1.0
  */
 public final class BeeTransferQueueNode {
+    //Special Value of node marked as deleted status
+    static final Object NULL = new Object();
+
     //Node thread
     public Thread thread;
     //Node value,its initial value is null
-    public volatile Object item;
+    public volatile Object item = NULL;
     //Next node
     volatile BeeTransferQueueNode next;
 

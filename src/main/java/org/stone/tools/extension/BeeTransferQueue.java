@@ -15,21 +15,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.tools.extension.BeeTransferQueueNode.NULL;
+
 /**
  * {@link #BeeTransferQueue} is a customization queue implementation.
+ * <p>
+ * Class Logic copied from OPEN-JDK-25,Thank Doug Lee and all experts of Java concurrent package.
  *
  * @author Chris Liao
  * @version 1.0
  */
 public final class BeeTransferQueue implements BeeInterruptable {
-    //Special Value of node marked as deleted status
-    private static final Object REMOVED = new Object();
+    private static final VarHandle HEAD;
+    private static final VarHandle TAIL;
     private static final VarHandle NEXT;
     private static final VarHandle ITEM;
 
     static {
         try {
             MethodHandles.Lookup l = MethodHandles.lookup();
+            HEAD = l.findVarHandle(BeeTransferQueue.class, "head", BeeTransferQueueNode.class);
+            TAIL = l.findVarHandle(BeeTransferQueue.class, "tail", BeeTransferQueueNode.class);
+
             ITEM = l.findVarHandle(BeeTransferQueueNode.class, "item", Object.class);
             NEXT = l.findVarHandle(BeeTransferQueueNode.class, "next", BeeTransferQueueNode.class);
         } catch (ReflectiveOperationException e) {
@@ -37,31 +44,14 @@ public final class BeeTransferQueue implements BeeInterruptable {
         }
     }
 
-    //Not movable
-    private final BeeTransferQueueNode head;
+    //chain head
+    private transient volatile BeeTransferQueueNode head;
     //Tail node of chain
-    private volatile BeeTransferQueueNode tail;
+    private transient volatile BeeTransferQueueNode tail;
 
     //constructor to create head node
     public BeeTransferQueue() {
-        this.tail = this.head = new BeeTransferQueueNode(null);
-        this.tail.item = REMOVED;
-    }
-
-    /**
-     * Offers specified node to chain.
-     *
-     * @param node to be offered
-     * @return true when success
-     */
-    public boolean offer(BeeTransferQueueNode node) {
-        node.item = null;
-        do {
-            if (NEXT.compareAndSet(this.tail, null, node)) {//append to tail.next
-                this.tail = node;
-                return true;
-            }
-        } while (true);
+        this.tail = this.head = new BeeTransferQueueNode();
     }
 
     /**
@@ -77,7 +67,28 @@ public final class BeeTransferQueue implements BeeInterruptable {
      * @return true if {@code tail.item !=REMOVED}
      */
     public boolean existWaiters() {
-        return tail.item != REMOVED;
+        return tail.item != NULL;
+    }
+
+    /**
+     * Offers specified node to chain.
+     *
+     * @param newNode to be offered
+     * @return true when success
+     */
+    public boolean offer(BeeTransferQueueNode newNode) {// logic copy from OPEN-JDK
+        for (BeeTransferQueueNode t = tail, p = t; ; ) {
+            BeeTransferQueueNode q = p.next;
+            if (q == null) {
+                if (NEXT.compareAndSet(p, null, newNode)) {
+                    TAIL.weakCompareAndSet(this, t, newNode);
+                    return true;
+                }
+            } else if (p == q)
+                p = (t != (t = tail)) ? t : head;
+            else
+                p = (p != t && t != (t = tail)) ? t : q;
+        }
     }
 
     /**
@@ -88,73 +99,64 @@ public final class BeeTransferQueue implements BeeInterruptable {
      */
     public boolean remove(BeeTransferQueueNode node) {
         //1: mark as removed status
-        node.item = REMOVED;
+        node.item = NULL;//removed flag,borrower threads offer their nodes and remove them
 
-        //2: loop to search the specified node
-        for (BeeTransferQueueNode prevNode = head, curNode = prevNode.next; curNode != tail; ) {
-            if (curNode == node) {
-                BeeTransferQueueNode linkTo = curNode.next;
-                NEXT.compareAndSet(prevNode, curNode, linkTo);
-                return true;
-            } else if (curNode.item == REMOVED) {//a deletion node
-                BeeTransferQueueNode linkTo = curNode.next;
-                NEXT.compareAndSet(prevNode, curNode, linkTo);
-                curNode = linkTo;
-            } else {
-                prevNode = curNode;
-                curNode = curNode.next;
+        restartFromHead:
+        do {
+            for (BeeTransferQueueNode p = head, pred = null; p != null; ) {
+                BeeTransferQueueNode q = p.next;
+                if (p == node) {
+                    skipDeadNodes(pred, p, p, q);
+                    return true;
+                } else if (p.item != NULL) {
+                    pred = p;
+                    p = q;
+                } else {
+                    for (BeeTransferQueueNode c = p; ; q = p.next) {
+                        if (q == null || q.item != NULL) {
+                            pred = skipDeadNodes(pred, c, p, q);
+                            p = q;
+                            break;
+                        }
+                        if (p == (p = q)) continue restartFromHead;
+                    }
+                }
             }
+            return false;
+        } while (true);
+    }
+
+    private boolean tryCasSuccessor(BeeTransferQueueNode pred, BeeTransferQueueNode c, BeeTransferQueueNode p) {
+        if (pred != null)
+            return NEXT.compareAndSet(pred, c, p);
+        if (HEAD.compareAndSet(this, c, p)) {
+            NEXT.setRelease(c, c);
+            return true;
         }
         return false;
     }
 
-    /**
-     * Find the first undeleted node from chain
-     *
-     * @return BeeTransferQueueNode when success
-     */
-    public BeeTransferQueueNode peek() {
-        //1: read head and set it as start node
-        BeeTransferQueueNode prevNode = head;
-        BeeTransferQueueNode curNode = prevNode.next;
-
-        //2: if first node is null,is that the queue is empty
-        if (curNode == null) return null;
-
-        //3: prev node of first deletion node of some segment
-        BeeTransferQueueNode prevOfFirstDeleted = null;
-
-        //4: loop to search first node not removed
-        do {
-            if (curNode.item != REMOVED) {//OK,found a node not removed
-                if (prevOfFirstDeleted != null) {
-                    BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
-                    if (prevOfFirstDeleted != curNode && deletedNext != curNode)
-                        NEXT.weakCompareAndSet(prevOfFirstDeleted, deletedNext, curNode);
-                }
-                return curNode;
-            } else if (prevOfFirstDeleted == null) {
-                prevOfFirstDeleted = prevNode;
-            }
-
-            //move to next node
-            prevNode = curNode;
-            curNode = curNode.next;
-            if (curNode == null) return null;
-        } while (true);
-
+    private BeeTransferQueueNode skipDeadNodes(BeeTransferQueueNode pred, BeeTransferQueueNode c, BeeTransferQueueNode p, BeeTransferQueueNode q) {
+        if (q == null) {
+            if (c == p) return pred;
+            q = p;
+        }
+        return (tryCasSuccessor(pred, c, q)
+                && (pred == null || ITEM.get(pred) != NULL))
+                ? pred : p;
     }
 
     /**
      * ** Key Method **:Attempt to transfer given value object to waiter in queue.
      *
-     * @param value to be transferred
+     * @param expect   is cas expected value
+     * @param newValue to be transferred
      * @return true when success
      */
-    public boolean tryTransfer(Object value) {//need to locate the first node in chain.
+    public boolean tryTransfer(Object expect, Object newValue) {//need to locate the first node in chain.
         for (BeeTransferQueueNode p = head.next; p != null; ) {
-            if (p.item == REMOVED) continue;
-            if (ITEM.compareAndSet(p, null, value)) {
+            if (p.item == NULL) continue;
+            if (ITEM.compareAndSet(p, expect, newValue)) {
                 LockSupport.unpark(p.thread);
                 return true;
             } else {
@@ -170,7 +172,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
     public List<Thread> getQueuedThreads() {
         List<Thread> threadList = new LinkedList<>();
         for (BeeTransferQueueNode p = head.next; p != null; p = p.next) {
-            if (p.item != REMOVED) threadList.add(p.thread);
+            if (p.item != NULL) threadList.add(p.thread);
         }
         return threadList;
     }
@@ -178,7 +180,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
     public List<Thread> interruptQueuedWaitThreads() {
         List<Thread> threadList = new LinkedList<>();
         for (BeeTransferQueueNode p = head.next; p != null; p = p.next) {
-            if (p.item != REMOVED) {
+            if (p.item != NULL) {
                 p.thread.interrupt();
                 threadList.add(p.thread);
             }
