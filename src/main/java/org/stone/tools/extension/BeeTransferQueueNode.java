@@ -23,13 +23,11 @@ public final class BeeTransferQueueNode {
     //Next node
     volatile BeeTransferQueueNode next;
 
-    public BeeTransferQueueNode(Thread thread) {
-        this.thread = thread;
+    public BeeTransferQueueNode() {
     }
 
-    BeeTransferQueueNode(Thread thread, Object item) {
+    public BeeTransferQueueNode(Thread thread) {
         this.thread = thread;
-        this.item = item;
     }
 
     public void clearThread() {

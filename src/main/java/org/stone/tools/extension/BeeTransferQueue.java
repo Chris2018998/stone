@@ -44,7 +44,8 @@ public final class BeeTransferQueue implements BeeInterruptable {
 
     //constructor to create head node
     public BeeTransferQueue() {
-        this.tail = this.head = new BeeTransferQueueNode(null, REMOVED);
+        this.tail = this.head = new BeeTransferQueueNode(null);
+        this.tail.item = REMOVED;
     }
 
     /**
@@ -89,37 +90,22 @@ public final class BeeTransferQueue implements BeeInterruptable {
         //1: mark as removed status
         node.item = REMOVED;
 
-        //2: get head node as prev node of first node
-        BeeTransferQueueNode prevNode = head;
-        BeeTransferQueueNode curNode = prevNode.next;
-
-        //3: prev node of first removed flag node of some segment
-        BeeTransferQueueNode prevOfFirstDeleted = null;
-
-        //4: loop to search the specified node
-        do {
-            if (curNode == node) {//OK,found you,abandon you
+        //2: loop to search the specified node
+        for (BeeTransferQueueNode prevNode = head, curNode = prevNode.next; curNode != tail; ) {
+            if (curNode == node) {
                 BeeTransferQueueNode linkTo = curNode.next;
-                if (linkTo != null) {//plan to skip over you,link to your next node
-                    if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
-                    NEXT.compareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, linkTo);
-                } else if (prevOfFirstDeleted != null && prevOfFirstDeleted != prevNode) {
-                    BeeTransferQueueNode deletedNext = prevOfFirstDeleted.next;
-                    if (deletedNext != prevNode) NEXT.compareAndSet(prevOfFirstDeleted, deletedNext, prevNode);
-                }
+                NEXT.compareAndSet(prevNode, curNode, linkTo);
                 return true;
             } else if (curNode.item == REMOVED) {//a deletion node
-                if (prevOfFirstDeleted == null) prevOfFirstDeleted = prevNode;
-            } else if (prevOfFirstDeleted != null) {//Not removed
-                NEXT.compareAndSet(prevOfFirstDeleted, prevOfFirstDeleted.next, curNode);
-                prevOfFirstDeleted = null;
+                BeeTransferQueueNode linkTo = curNode.next;
+                NEXT.compareAndSet(prevNode, curNode, linkTo);
+                curNode = linkTo;
+            } else {
+                prevNode = curNode;
+                curNode = curNode.next;
             }
-
-            //move to next node
-            prevNode = curNode;
-            curNode = curNode.next;
-            if (curNode == null) return false;
-        } while (true);
+        }
+        return false;
     }
 
     /**
