@@ -77,34 +77,33 @@ public final class BeeTransferQueue2 implements BeeInterruptable {
      * @return true if {@code tail.item !=REMOVED}
      */
     public boolean existWaiters() {
-        BeeTransferQueueNode t = tail;
-        return t != head && t.item != NULL;
+        return tail.item != NULL;
     }
 
     /**
-     * Remove given node from chain. (End story of a node)
+     * Removes given node from chain.
      *
      * @param node to be removed
      * @return true when success
      */
     public boolean remove(BeeTransferQueueNode node) {
-        //1: mark as removed status
+        //1: set removed flag
         node.item = NULL;
 
         //2: loop to search the specified node
         for (BeeTransferQueueNode prevNode = head, curNode = prevNode.next; curNode != null; ) {
             if (curNode == node) {
                 BeeTransferQueueNode linkTo = curNode.next;
-                if (linkTo != null) NEXT.compareAndSet(prevNode, prevNode.next, linkTo);
+                if (linkTo != null) NEXT.weakCompareAndSet(prevNode, curNode, linkTo);
                 return true;
-            } else if (curNode.item == NULL) {//a deletion node
-                BeeTransferQueueNode linkTo = curNode.next;
-                if (linkTo == null) return false;
-                NEXT.compareAndSet(prevNode, prevNode.next, linkTo);
-                curNode = linkTo;
-            } else {
+            } else if (curNode.item != NULL) {
                 prevNode = curNode;
                 curNode = curNode.next;
+            } else {//a removed node
+                BeeTransferQueueNode linkTo = curNode.next;
+                if (linkTo == null) return false;
+                NEXT.compareAndSet(prevNode, curNode, linkTo);
+                curNode = linkTo;
             }
         }
         return false;

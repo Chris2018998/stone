@@ -14,6 +14,8 @@ import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.tools.CommonUtil.SPIN_FOR_TIMEOUT_THRESHOLD;
+
 /**
  * {@link #BeeSemaphore} is a customization semaphore implementation.
  *
@@ -123,7 +125,7 @@ public final class BeeSemaphore implements BeeInterruptable {
 
         protected void release(BeeSemaphorePermit permit) {
             permit.state = 0;
-            waitQueue.tryTransfer(null,permit);
+            waitQueue.tryTransfer(null, permit);
         }
 
         /**
@@ -141,6 +143,7 @@ public final class BeeSemaphore implements BeeInterruptable {
             //node.item = null;//set to null to accept a transferred value
             Thread thread = Thread.currentThread();
             node = new BeeTransferQueueNode(thread);
+            node.item = null;
             waitQueue.offer(node);
             deadlineNanos = System.nanoTime() + deadlineNanos;
 
@@ -158,7 +161,7 @@ public final class BeeSemaphore implements BeeInterruptable {
 
                 //3.2 block thread via park
                 long remainTime = deadlineNanos - System.nanoTime();
-                if (remainTime > 0L) {//park node thread
+                if (remainTime > SPIN_FOR_TIMEOUT_THRESHOLD) {//park node thread
                     if (value != null) node.item = null;//set value to null to be filled by a releaser
                     LockSupport.parkNanos(remainTime);
                     if (thread.isInterrupted() && Thread.interrupted()) {//handle interruption
@@ -172,11 +175,10 @@ public final class BeeSemaphore implements BeeInterruptable {
                         }
                         throw new InterruptedException();
                     }
-//                } else if (remainTime > 0L) {//remain time is too short then use Thread.onSpinWait()
-//                    if (value != null) node.item = null;//set to null for be filled
-//                    Thread.onSpinWait();//spin wait
+                } else if (remainTime > 0L) {//remain time is too short then use Thread.onSpinWait()
+                    if (value != null) node.item = null;//set to null for be filled
+                    Thread.onSpinWait();//spin wait
                 } else {//timeout
-                    System.out.println("timeout...");
                     this.waitQueue.remove(node);//remove node at first.
                     if (value != null) return null;//if value read out at step3.1,so can't be filled by releaser
 
@@ -217,7 +219,7 @@ public final class BeeSemaphore implements BeeInterruptable {
         }
 
         protected void release(BeeSemaphorePermit permit) {
-            if (!waitQueue.tryTransfer(null,permit)) {
+            if (!waitQueue.tryTransfer(null, permit)) {
                 permitStateHandle.setVolatile(permit, 0);//set to idle state
             }
         }

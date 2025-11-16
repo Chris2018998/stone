@@ -92,13 +92,13 @@ public final class BeeTransferQueue implements BeeInterruptable {
     }
 
     /**
-     * Remove given node from chain. (End story of a node)
+     * Removes given node from chain.
      *
      * @param node to be removed
      * @return true when success
      */
     public boolean remove(BeeTransferQueueNode node) {
-        //1: mark as removed status
+        //1: set removed flag
         node.item = NULL;//removed flag,borrower threads offer their nodes and remove them
 
         restartFromHead:

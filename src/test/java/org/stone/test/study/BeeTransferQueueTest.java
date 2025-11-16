@@ -10,9 +10,8 @@
 package org.stone.test.study;
 
 import org.stone.tools.extension.BeeTransferQueue;
+import org.stone.tools.extension.BeeTransferQueue2;
 import org.stone.tools.extension.BeeTransferQueueNode;
-
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Queue Test Case
@@ -22,62 +21,60 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class BeeTransferQueueTest {
 
     public static void main(String[] args) throws Exception {
-        int threadSize = 10000;
-        int loopSize = 100;
+        int threadSize = 1000;
+        int loopSize = 10000;
 
-        ConcurrentLinkedQueue queue2 = new ConcurrentLinkedQueue();
-        JDKQueueTestThread[] threads2 = new JDKQueueTestThread[threadSize];
+        BeeTransferQueue queue1 = new BeeTransferQueue();
+        BeeTransferQueue1TestThread[] threads1 = new BeeTransferQueue1TestThread[threadSize];
         for (int i = 0; i < threadSize; i++)
-            threads2[i] = new JDKQueueTestThread(queue2, loopSize);
+            threads1[i] = new BeeTransferQueue1TestThread(queue1, loopSize);
+        long startTime1 = System.currentTimeMillis();
+        for (int i = 0; i < threadSize; i++) threads1[i].start();
+        for (int i = 0; i < threadSize; i++) threads1[i].join();
+        System.out.println("Queue1 time:" + (System.currentTimeMillis() - startTime1) + "ms");
+
+        BeeTransferQueue2 queue = new BeeTransferQueue2();
+        BeeTransferQueue2TestThread[] threads = new BeeTransferQueue2TestThread[threadSize];
+        for (int i = 0; i < threadSize; i++)
+            threads[i] = new BeeTransferQueue2TestThread(queue, loopSize);
         long startTime2 = System.currentTimeMillis();
-        for (int i = 0; i < threadSize; i++) threads2[i].start();
-        for (int i = 0; i < threadSize; i++) threads2[i].join();
-        queue2.peek();
-        System.out.println("JDK time:" + (System.currentTimeMillis() - startTime2) + "ms");
-
-        BeeTransferQueue queue = new BeeTransferQueue();
-        QueueTestThread[] threads = new QueueTestThread[threadSize];
-        for (int i = 0; i < threadSize; i++)
-            threads[i] = new QueueTestThread(queue, loopSize);
-
-        long startTime = System.currentTimeMillis();
         for (int i = 0; i < threadSize; i++) threads[i].start();
         for (int i = 0; i < threadSize; i++) threads[i].join();
-        System.out.println("Bee time:" + (System.currentTimeMillis() - startTime) + "ms");
+        System.out.println("Queue2 time:" + (System.currentTimeMillis() - startTime2) + "ms");
     }
 
-    private static class QueueTestThread extends Thread {
+    private static class BeeTransferQueue1TestThread extends Thread {
         private final int loopSize;
         private final BeeTransferQueue queue;
 
-        public QueueTestThread(BeeTransferQueue queue, int size) {
+        public BeeTransferQueue1TestThread(BeeTransferQueue queue, int size) {
             this.queue = queue;
             this.loopSize = size;
         }
 
         public void run() {
             for (int i = 0; i < loopSize; i++) {
-                BeeTransferQueueNode node = new BeeTransferQueueNode(null);
+                BeeTransferQueueNode node = new BeeTransferQueueNode();
                 queue.offer(node);
                 queue.remove(node);
             }
         }
     }
 
-    private static class JDKQueueTestThread extends Thread {
+    private static class BeeTransferQueue2TestThread extends Thread {
         private final int loopSize;
-        private final ConcurrentLinkedQueue queue;
+        private final BeeTransferQueue2 queue;
 
-        public JDKQueueTestThread(ConcurrentLinkedQueue queue, int size) {
+        public BeeTransferQueue2TestThread(BeeTransferQueue2 queue, int size) {
             this.queue = queue;
             this.loopSize = size;
         }
 
         public void run() {
             for (int i = 0; i < loopSize; i++) {
-                Object value = new Object();
-                queue.offer(value);
-                queue.remove(value);
+                BeeTransferQueueNode node = new BeeTransferQueueNode();
+                queue.offer(node);
+                queue.remove(node);
             }
         }
     }
