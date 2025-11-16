@@ -145,6 +145,29 @@ public final class BeeTransferQueue implements BeeInterruptable {
                 && (pred == null || ITEM.get(pred) != NULL))
                 ? pred : p;
     }
+    
+    public boolean isEmpty() {
+        return first() == null;
+    }
+
+    BeeTransferQueueNode first() {
+        restartFromHead:
+        for (; ; ) {
+            for (BeeTransferQueueNode h = head, p = h, q; ; p = q) {
+                boolean hasItem = (p.item != NULL);
+                if (hasItem || (q = p.next) == null) {
+                    updateHead(h, p);
+                    return hasItem ? p : null;
+                } else if (p == q)
+                    continue restartFromHead;
+            }
+        }
+    }
+
+    void updateHead(BeeTransferQueueNode h, BeeTransferQueueNode p) {
+        if (h != p && HEAD.compareAndSet(this, h, p))
+            NEXT.setRelease(h, h);
+    }
 
     /**
      * ** Key Method **:Attempt to transfer given value object to waiter in queue.
