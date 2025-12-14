@@ -32,9 +32,9 @@ public class Tc0004ConfigSetAndGetTest {
         Assertions.assertTrue(config.isFairMode());
 
         //asyncCreateInitConnection
-        Assertions.assertFalse(config.isAsyncCreateInitObject());
-        config.setAsyncCreateInitObject(true);
-        Assertions.assertTrue(config.isAsyncCreateInitObject());
+        Assertions.assertFalse(config.isAsyncCreateInitObjects());
+        config.setAsyncCreateInitObjects(true);
+        Assertions.assertTrue(config.isAsyncCreateInitObjects());
 
         //borrowSemaphoreSize
         try {

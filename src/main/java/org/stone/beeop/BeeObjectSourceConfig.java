@@ -47,8 +47,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private boolean fairMode;
     //3: Object creation size during pool initialization,default is zero
     private int initialSize;
-    //4: Max reachable size of object categories in pool,default is 50
-    private int maxKeySize = 50;
+    //4: Max reachable size of object categories in pool,default is 10
+    private int maxKeySize = 10;
     //5: Max reachable size of pooled objects of per category,pool total capacity = maxObjectKeySize * maxActive
     private int maxActive = Math.min(Math.max(10, CommonUtil.NCPU), 50);
     //6: Permit size of semaphore for per object category
@@ -58,7 +58,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //8: Milliseconds,max wait time for a borrower to get a object from pool,default is 8000 milliseconds(8 seconds)
     private long maxWait = 8000L;
     //9: A flag of object creation,true that pool use a thread to create initial objects during initialization,default is false
-    private boolean asyncCreateInitObject;
+    private boolean asyncCreateInitObjects;
     //10: Milliseconds,max idle time of pooled objects stay in pool,default is 18000 milliseconds(3 minutes)
     private long idleTimeout = 180000L;
     //11: Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
@@ -105,7 +105,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //32: Class name of predicate
     private String predicateClassName;
 
-    //********************************************** method Execution logs **************************************************//
+    //********************************************** method Execution logs ********************************************//
     //33: A flag to enable method log cache
     private boolean enableMethodExecutionLogCache;
     //34: Capacity of method logs cache，default is 1000
@@ -115,7 +115,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //36: Timer interval to clear timeout logs,default is 3 minutes
     private long intervalOfClearTimeoutExecutionLogs = methodExecutionLogTimeout;
 
-    //37: A list of method names
+    //37: A name list of methods to be listened
     private List<String> methodNameListOnListen;
     //38: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
     private long slowObjectGetThreshold = 30000L;
@@ -130,7 +130,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     private String methodExecutionListenerClassName;
 
     //43: method execution listener factory: instance > class > class name
-    private org.stone.beeop.BeeMethodExecutionListenerFactory<K, V> methodExecutionListenerFactory;
+    private BeeMethodExecutionListenerFactory<K, V> methodExecutionListenerFactory;
     //44: Class of method execution listener factory ,default is none
     private Class<? extends BeeMethodExecutionListenerFactory<K, V>> methodExecutionListenerFactoryClass;
     //45: Class name of method execution listener factory,default is none
@@ -238,12 +238,12 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.maxWait = maxWait;
     }
 
-    public boolean isAsyncCreateInitObject() {
-        return asyncCreateInitObject;
+    public boolean isAsyncCreateInitObjects() {
+        return asyncCreateInitObjects;
     }
 
-    public void setAsyncCreateInitObject(boolean asyncCreateInitObject) {
-        this.asyncCreateInitObject = asyncCreateInitObject;
+    public void setAsyncCreateInitObjects(boolean asyncCreateInitObjects) {
+        this.asyncCreateInitObjects = asyncCreateInitObjects;
     }
 
     @Override
@@ -482,7 +482,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
     //****************************************************************************************************************//
     //                                    5: method execution logs (24)                                               //
     //****************************************************************************************************************//
-    public boolean isEnabledMethodExecutionLogCache() {
+    public boolean isEnableMethodExecutionLogCache() {
         return enableMethodExecutionLogCache;
     }
 
@@ -577,11 +577,11 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMBean {
         this.methodExecutionListenerClassName = methodExecutionListenerClassName;
     }
 
-    public org.stone.beeop.BeeMethodExecutionListenerFactory<K, V> getMethodExecutionListenerFactory() {
+    public BeeMethodExecutionListenerFactory<K, V> getMethodExecutionListenerFactory() {
         return methodExecutionListenerFactory;
     }
 
-    public void setMethodExecutionListenerFactory(org.stone.beeop.BeeMethodExecutionListenerFactory<K, V> methodExecutionListenerFactory) {
+    public void setMethodExecutionListenerFactory(BeeMethodExecutionListenerFactory<K, V> methodExecutionListenerFactory) {
         this.methodExecutionListenerFactory = methodExecutionListenerFactory;
     }
 

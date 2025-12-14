@@ -9,18 +9,35 @@
  */
 package org.stone.test.beeop.objects;
 
-import org.stone.beeop.BeeKeyedObjectPool;
-import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectPoolMonitorVo;
-import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.*;
 
 import java.util.List;
 
-public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
-    public void start(BeeObjectSourceConfig config) throws Exception {
+public class MockBlockPoolImplementation<K, V> implements BeeKeyedObjectPool<K, V> {
+
+    public void start(BeeObjectSourceConfig<K, V> config) throws Exception {
+
+    }
+
+    public void restart(boolean forceRecycleBorrowed) throws Exception {
+
+    }
+
+    public void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
+
+    }
+
+    public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
+        return null;
+    }
+
+
+    public BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception {
+        return null;
     }
 
     public void close() {
+
     }
 
     public boolean isClosed() {
@@ -35,39 +52,11 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return null;
     }
 
-    public void restart(boolean forceCloseUsing) throws Exception {
+    public void enableLogPrint(boolean enable) {
+
     }
 
-    public void restart(boolean forceCloseUsing, BeeObjectSourceConfig config) throws Exception {
-    }
-
-    public BeeObjectHandle getObjectHandle() {
-        return new MockObjectHandleImpl();
-    }
-
-    public BeeObjectHandle getObjectHandle(Object key) {
-        return new MockObjectHandleImpl();
-    }
-
-    public List<Thread> interruptWaitingThreads() {
-        return null;
-    }
-
-    public List<Thread> interruptWaitingThreads(Object key) {
-        return null;
-    }
-
-    public void enableLogPrint(boolean indicator) {
-    }
-
-    public boolean isEnabledLogPrint(Object key) {
-        return false;
-    }
-
-    public void enableLogPrint(Object key, boolean indicator) throws Exception {
-    }
-
-    public BeeObjectPoolMonitorVo getMonitorVo(Object key) {
+    public List<Thread> interruptWaitingThreads() throws Exception {
         return null;
     }
 
@@ -75,41 +64,68 @@ public class MockBlockPoolImplementation implements BeeKeyedObjectPool {
         return 1;
     }
 
-    public Object[] keys() {
-        return null;
-    }
-
-    public boolean exists(Object key) {
-        return true;
-    }
-
-    public void reset(Object key) {
-    }
-
-    public void reset(Object key, boolean forceCloseUsing) {
-    }
-
-    public void deleteKey(Object key) {
-    }
-
-    public void deleteKey(Object key, boolean forceCloseUsing) {
-    }
-
-    /**
-     * Queries logs collector in whether in being enabled.
-     *
-     * @return boolean true is enabled,false is disabled
-     */
-    public boolean isEnabledEventLogManager() {
+    public boolean exists(K key) {
         return false;
     }
 
-    /**
-     * A switch to enable or disable configured log collector in pool.
-     *
-     * @param enable is true that enable, false is disabled
-     */
-    public void enableEventLogManager(boolean enable) {
+    public void reset(K key) throws Exception {
 
+    }
+
+    public void reset(K key, boolean forceRecycleBorrowed) throws Exception {
+
+    }
+
+    public void deleteKey(K key) throws Exception {
+
+    }
+
+    public void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
+
+    }
+
+    public boolean isEnabledLogPrint(K key) throws Exception {
+        return false;
+    }
+
+    public void enableLogPrint(K key, boolean enable) throws Exception {
+
+    }
+
+    public List<Thread> interruptWaitingThreads(K key) throws Exception {
+        return null;
+    }
+
+    public BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception {
+        return null;
+    }
+
+
+    public boolean isEnabledMethodExecutionLogCache() {
+        return false;
+    }
+
+    public void enableMethodExecutionLogCache(boolean enable) {
+
+    }
+
+    public void setMethodExecutionListener(BeeMethodExecutionListener<K, V> listener) {
+
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> getMethodExecutionLog(K key,int type) {
+        return null;
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> clearMethodExecutionLog(K key,int type) {
+        return null;
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> getAllMethodExecutionLog(int type) {
+        return null;
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> clearAllMethodExecutionLog(int type) {
+        return null;
     }
 }

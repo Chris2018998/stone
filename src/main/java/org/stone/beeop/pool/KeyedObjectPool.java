@@ -24,7 +24,6 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 import static org.stone.tools.CommonUtil.getArrayIndex;
@@ -107,7 +106,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
         //step3: copy some field to local
         this.poolName = config.getPoolName();
         this.initialSize = config.getInitialSize();
-        this.asyncCreateInitObject = config.isAsyncCreateInitObject();
+        this.asyncCreateInitObject = config.isAsyncCreateInitObjects();
         this.forceRecycleBorrowedOnClose = config.isForceRecycleBorrowedOnClose();
         this.forceShutdownThreadPoolOnClose = config.isForceShutdownThreadPoolOnClose();
 
@@ -419,26 +418,41 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V> {
         return threadList;
     }
 
-    /**
-     * Queries logs collector in whether in being enabled.
-     *
-     * @return boolean true is enabled,false is disabled
-     */
-    public boolean isEnabledEventLogManager() {
-        return false;//@todo
+
+    //***************************************************************************************************************//
+    //                                         5: method execution logs                                              //
+    //***************************************************************************************************************//
+    public boolean isEnabledMethodExecutionLogCache() {
+        return true;//@todo
     }
 
-    /**
-     * A switch to enable or disable configured log collector in pool.
-     *
-     * @param enable is true that enable, false is disabled
-     */
-    public void enableEventLogManager(boolean enable) {
+    public void enableMethodExecutionLogCache(boolean enable) {
 
+    }
+
+    public void setMethodExecutionListener(BeeMethodExecutionListener<K, V> listener) {
+
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> getAllMethodExecutionLog(int type) {
+        return null;
+    }
+
+
+    public List<BeeMethodExecutionLog<K, V>> clearAllMethodExecutionLog(int type) {
+        return null;
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> getMethodExecutionLog(K key, int type) {
+        return null;
+    }
+
+    public List<BeeMethodExecutionLog<K, V>> clearMethodExecutionLog(K key, int type) {
+        return null;
     }
 
     //***************************************************************************************************************//
-    //                7: Private methods and friendly methods (4)                                                    //                                                                                  //
+    //                                         7: Private methods and friendly methods (4)                           //                                                                                  //
     //***************************************************************************************************************//
     void submitServantTask(Runnable task) {
         this.servantService.submit(task);

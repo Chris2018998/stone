@@ -1,5 +1,12 @@
 stone changes
 
+stone-2.0.5
+[beecp]
+1: Enhance method execution log cache to support sql preparation logs
+2: Change configuration item(asyncCreateInitConnection ---> asyncCreateInitConnections)
+[beeop]
+1: Add method execution cache to pool(in developing)
+
 stone-2.0.4
 -----------------------------------------------------
 [beecp]

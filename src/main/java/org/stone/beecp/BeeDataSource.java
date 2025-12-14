@@ -50,6 +50,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     private final InterruptableReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = 8000L;//default vale same to config
     private BeeConnectionPool pool;
+
     private CommonDataSource subDs;//used to set loginTimeout
     private boolean poolStarted;//true,means that inner pool has created
     private SQLException cause;//inner pool create failed cause

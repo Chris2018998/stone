@@ -209,4 +209,78 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
             pool.enableLogPrint(printRuntimeLogs);//set to pool
         }
     }
+
+    //***************************************************************************************************************//
+    //                                        9: object method execution logs cache(7)                               //
+    //***************************************************************************************************************//
+
+    /**
+     * Queries method log cache whether being enabled in pool.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    public boolean isEnabledMethodExecutionLogCache() throws Exception {
+        return this.getPool().isEnabledMethodExecutionLogCache();
+    }
+
+    /**
+     * A switch method to enable or disable method log cache
+     *
+     * @param enable is true that make cache to collect method logs;false that make it to stop work
+     */
+    public void enableMethodExecutionLogCache(boolean enable) throws Exception {
+        this.getPool().enableMethodExecutionLogCache(enable);
+    }
+
+    /**
+     * Set a new log listener to pool.
+     *
+     * @param listener to handle method logs
+     */
+    public void setMethodExecutionListener(BeeMethodExecutionListener<K, V> listener) {
+        if (poolStarted) {
+            pool.setMethodExecutionListener(listener);//set to pool
+        } else {
+            super.setMethodExecutionListener(listener);//as configuration item
+        }
+    }
+
+
+    /**
+     * Gets logs from pool with specified type.
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return a result list
+     */
+    public List<BeeMethodExecutionLog<K, V>> getMethodExecutionLog(K key, int type) throws Exception {
+        return this.getPool().getMethodExecutionLog(key, type);
+    }
+
+    /**
+     * Clears logs from pool with specified type.
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return a cleared list
+     */
+    public List<BeeMethodExecutionLog<K, V>> clearMethodExecutionLog(K key, int type) throws Exception {
+        return this.getPool().clearMethodExecutionLog(key, type);
+    }
+
+    /**
+     * Gets logs from pool with specified type.
+     *
+     * @return a result list
+     */
+    public List<BeeMethodExecutionLog<K, V>> getAllMethodExecutionLog(int type) throws Exception {
+        return this.getPool().getAllMethodExecutionLog(type);
+    }
+
+    /**
+     * Clears logs from pool with specified type.
+     *
+     * @return a cleared list
+     */
+    public List<BeeMethodExecutionLog<K, V>> clearAllMethodExecutionLog(int type) throws Exception {
+        return this.getPool().clearAllMethodExecutionLog(type);
+    }
 }

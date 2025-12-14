@@ -122,20 +122,6 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     void enableLogPrint(boolean enable);
 
     /**
-     * Queries logs manager in whether in being enabled.
-     *
-     * @return boolean true is enabled,false is disabled
-     */
-    boolean isEnabledEventLogManager();
-
-    /**
-     * A switch method to enable or disable configured log manager in pool.
-     *
-     * @param enable is true that enable, false is disabled
-     */
-    void enableEventLogManager(boolean enable);
-
-    /**
      * Interrupts waiting threads.
      *
      * @return interrupted threads
@@ -149,7 +135,7 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
     //***************************************************************************************************************//
 
     /**
-     * Query key size in pool.
+     * Query key size of pool.
      *
      * @return an integer number
      */
@@ -162,23 +148,6 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @return a keys array
      */
     boolean exists(K key);
-
-    /**
-     * Delete a pooled key.
-     *
-     * @param key is a key to remove
-     * @throws ObjectKeyException if key is null or default
-     */
-    void deleteKey(K key) throws Exception;
-
-    /**
-     * Delete a pooled key.
-     *
-     * @param key                  is a key may map to a sub pool
-     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
-     */
-    void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Only clear all pooled object related with given key and remain key in pool(different to {@link #deleteKey(Object)}).
@@ -196,6 +165,23 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @throws ObjectKeyException if key is null or default
      */
     void reset(K key, boolean forceRecycleBorrowed) throws Exception;
+
+    /**
+     * Delete a pooled key.
+     *
+     * @param key is a key to remove
+     * @throws ObjectKeyException if key is null or default
+     */
+    void deleteKey(K key) throws Exception;
+
+    /**
+     * Delete a pooled key.
+     *
+     * @param key                  is a key may map to a sub pool
+     * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
+     * @throws ObjectKeyException if key is null or default
+     */
+    void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * A switch call to enable or disable logs print of pool.
@@ -226,4 +212,59 @@ public interface BeeKeyedObjectPool<K, V> extends Cloneable {
      * @throws Exception when key is null or not exist key in pool
      */
     BeeObjectPoolMonitorVo getMonitorVo(K key) throws Exception;
+
+    //***************************************************************************************************************//
+    //                                         5: method execution logs                                              //
+    //***************************************************************************************************************//
+
+    /**
+     * Queries method log cache whether being enabled in pool.
+     *
+     * @return boolean true is enabled,false is disabled
+     */
+    boolean isEnabledMethodExecutionLogCache();
+
+    /**
+     * A switch method to enable or disable method log cache
+     *
+     * @param enable is true that make cache to collect method logs;false that make it to stop work
+     */
+    void enableMethodExecutionLogCache(boolean enable);
+
+    /**
+     * Set a new log handler to pool.
+     *
+     * @param listener to handle method logs
+     */
+    void setMethodExecutionListener(BeeMethodExecutionListener<K, V> listener);
+
+    /**
+     * Gets logs from pool with specified key.
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return a result list
+     */
+    List<BeeMethodExecutionLog<K, V>> getMethodExecutionLog(K key, int type);
+
+    /**
+     * Clears logs from pool with specified key.
+     *
+     * @param key may be mapping to a set of pooled objects
+     * @return a cleared list
+     */
+    List<BeeMethodExecutionLog<K, V>> clearMethodExecutionLog(K key, int type);
+
+    /**
+     * Gets All logs.
+     *
+     * @return a result list
+     */
+    List<BeeMethodExecutionLog<K, V>> getAllMethodExecutionLog(int type);
+
+    /**
+     * Clear All logs.
+     *
+     * @return a cleared list
+     */
+    List<BeeMethodExecutionLog<K, V>> clearAllMethodExecutionLog(int type);
 }

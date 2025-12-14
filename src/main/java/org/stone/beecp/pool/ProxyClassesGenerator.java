@@ -82,7 +82,7 @@ final class ProxyClassesGenerator {
         classPool.appendClassPath(new LoaderClassPath(BeeClassLoader));
 
         //************************************************************************************************************//
-        //              1: Create proxy Classes without log Manager                                                   //                                                                                  //
+        //              1: Create proxy Classes without log Cache                                                   //                                                                                  //
         //************************************************************************************************************//
 
         //class1: org.stone.beecp.pool.ProxyConnection
