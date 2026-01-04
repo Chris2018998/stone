@@ -11,7 +11,7 @@ package org.stone.test.beetp.once;
 
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.pool.exception.TaskRejectedException;
+import org.stone.beetp.exception.TaskRejectedException;
 import org.stone.test.base.TestCase;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beetp.HelloTask;

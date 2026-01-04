@@ -10,10 +10,10 @@
 package org.stone.beetp.pool;
 
 import org.stone.beetp.*;
-import org.stone.beetp.pool.exception.PoolInitializedException;
-import org.stone.beetp.pool.exception.TaskException;
-import org.stone.beetp.pool.exception.TaskPoolException;
-import org.stone.beetp.pool.exception.TaskRejectedException;
+import org.stone.beetp.exception.PoolInitializedException;
+import org.stone.beetp.exception.TaskException;
+import org.stone.beetp.exception.TaskPoolException;
+import org.stone.beetp.exception.TaskRejectedException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.List;

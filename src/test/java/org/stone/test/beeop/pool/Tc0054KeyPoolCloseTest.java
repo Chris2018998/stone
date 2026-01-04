@@ -12,8 +12,8 @@ package org.stone.test.beeop.pool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.exception.BeeObjectSourcePoolRejectedException;
 import org.stone.beeop.pool.KeyedObjectPool;
-import org.stone.beeop.pool.exception.ObjectGetForbiddenException;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.stone.test.beeop.config.OsConfigFactory.createDefault;
@@ -36,7 +36,7 @@ public class Tc0054KeyPoolCloseTest {
         try {
             pool.getObjectHandle();
             fail("Pool close test fail");
-        } catch (ObjectGetForbiddenException e) {
+        } catch (BeeObjectSourcePoolRejectedException e) {
             Assertions.assertEquals("Object Internal pool was not ready or closed", e.getMessage());
         }
         //nop

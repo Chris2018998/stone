@@ -183,9 +183,9 @@ public class BeeJtaDataSource extends TimerTask implements DataSource, AutoClose
     //***************************************************************************************************************//
     //                                         5: runtime logs print(4)                                              //
     //***************************************************************************************************************//
-    public boolean isEnabledLogPrint() throws SQLException {
+    public boolean isPrintRuntimeLogs() throws SQLException {
         checkDataSource();
-        return ds.isEnabledLogPrint();
+        return ds.isPrintRuntimeLogs();
     }
 
     public void enableLogPrint(boolean printRuntimeLog) throws SQLException {
@@ -196,11 +196,6 @@ public class BeeJtaDataSource extends TimerTask implements DataSource, AutoClose
     //***************************************************************************************************************//
     //                                         6: Method Execution Log Cache(6)                                      //
     //***************************************************************************************************************//
-    public boolean isEnabledMethodExecutionLogCache() throws SQLException {
-        checkDataSource();
-        return this.ds.isEnabledMethodExecutionLogCache();
-    }
-
     public void enableMethodExecutionLogCache(boolean enable) throws SQLException {
         checkDataSource();
         this.ds.enableMethodExecutionLogCache(enable);
@@ -208,12 +203,12 @@ public class BeeJtaDataSource extends TimerTask implements DataSource, AutoClose
 
     public List<BeeMethodExecutionLog> getMethodExecutionLog(int type) throws SQLException {
         checkDataSource();
-        return this.ds.getMethodExecutionLog(type);
+        return this.ds.getMethodExecutionLogs(type);
     }
 
     public List<BeeMethodExecutionLog> clearMethodExecutionLog(int type) throws SQLException {
         checkDataSource();
-        return this.ds.clearMethodExecutionLog(type);
+        return this.ds.clearMethodExecutionLogs(type);
     }
 
     public boolean cancelStatement(String logId) throws SQLException {

@@ -29,18 +29,18 @@ import static org.stone.beecp.BeeMethodExecutionLog.*;
  */
 final class MethodExecutionLogCache {
     //pool name
-    private final String poolName;
+    private String poolName;
     //cache size
-    private final int maxSize;
+    private int maxSize;
     //slow threshold value of connection get,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowConnectionGetThreshold}
-    private final long slowConnectionThreshold;
+    private long slowConnectionThreshold;
     //slow threshold of sql execution,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
-    private final long slowSQLThreshold;
+    private long slowSQLThreshold;
 
     //queue to store logs of connections getting
-    private final LinkedBlockingQueue<MethodExecutionLog> connectionGetLogsQueue;
+    private LinkedBlockingQueue<MethodExecutionLog> connectionGetLogsQueue;
     //queue to store logs of sql preparation and sql execution
-    private final LinkedBlockingQueue<MethodExecutionLog> sqlExecutionLogsQueue;
+    private LinkedBlockingQueue<MethodExecutionLog> sqlExecutionLogsQueue;
 
     private BeeMethodExecutionListener listener;
 
@@ -56,7 +56,7 @@ final class MethodExecutionLogCache {
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
      * @param listener  is an execution listener
      */
-    MethodExecutionLogCache(String poolName, int cacheSize, long slowGet, long slowExec, BeeMethodExecutionListener listener) {
+    void init(String poolName, int cacheSize, long slowGet, long slowExec, BeeMethodExecutionListener listener) {
         this.poolName = poolName;
         this.listener = listener;
         this.slowConnectionThreshold = slowGet;

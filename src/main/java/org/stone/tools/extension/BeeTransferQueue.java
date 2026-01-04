@@ -145,7 +145,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
                 && (pred == null || ITEM.get(pred) != NULL))
                 ? pred : p;
     }
-    
+
     public boolean isEmpty() {
         return first() == null;
     }

@@ -1,0 +1,79 @@
+/*
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Copyright(C) Chris2018998,All rights reserved.
+ *
+ * Project owner contact:Chris2018998@tom.com.
+ *
+ * Project Licensed under Apache License v2.0.
+ */
+package org.stone.beeop;
+
+import java.io.Serializable;
+
+/**
+ * A vo interface to represent monitoring info of pool.
+ *
+ * @author Chris Liao
+ * @version 1.0
+ */
+public interface BeeObjectKeyPoolMonitorVo<K> extends Serializable {
+
+    //***************************************************************************************************************//
+    //                                     1: Pool base                                                              //
+    //***************************************************************************************************************//
+    //return key pool name
+    String getPoolName();
+
+    //Query pool is whether fair mode
+    boolean isFairMode();
+
+    //return capacity size of keys in pool
+    int getMaxKeySize();
+
+    //***************************************************************************************************************//
+    //                                     2: Configuration on keys                                                  //
+    //***************************************************************************************************************//
+    //return max capacity size of key
+    int getMaxActiveSizeOfKey();
+
+    //return permit size of semaphore of key
+    int getSemaphoreSizeOfKey();
+
+    //Query pool is using ThreadLocal
+    boolean useThreadLocalOfKey();
+
+    //***************************************************************************************************************//
+    //                                     3: Pool State`methods                                                     //
+    //***************************************************************************************************************//
+    int getPoolState();
+
+    boolean isUncreated();
+
+    boolean isNew();
+
+    boolean isClosed();
+
+    boolean isReady();
+
+    boolean isStarting();
+
+    boolean isReStarting();
+
+    boolean isSuspended();
+
+    //***************************************************************************************************************//
+    //                                     4: Pool other                                                             //
+    //***************************************************************************************************************//
+    //Query log print is whether enabled
+    boolean isEnabledLogPrint();
+
+    //Query method execution log cache is whether enabled
+    boolean isEnabledMethodExecutionLogCache();
+
+    //return monitor vo with a key,return null if given key is not exists in pool
+    BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key);
+
+    //return monitor vos of pooled keys
+    BeeObjectKeyMonitorVo<K>[] getAllKeyMonitorVos();
+}

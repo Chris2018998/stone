@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.BeeDataSourceConfigException;
-import org.stone.beecp.pool.exception.PoolInClearingException;
+import org.stone.beecp.exception.BeeDataSourceConfigException;
+import org.stone.beecp.exception.BeeDataSourcePoolRestartedException;
 import org.stone.test.beecp.objects.threads.TimeDelayCloseConnectionThread;
 
 import java.sql.Connection;
@@ -59,11 +59,11 @@ public class Tc0044DataSourceRestartTest {
             thread2.join();
 
             if (thread1.getFailException() != null) {
-                Assertions.assertInstanceOf(PoolInClearingException.class, thread1.getFailException());
+                Assertions.assertInstanceOf(BeeDataSourcePoolRestartedException.class, thread1.getFailException());
                 Assertions.assertEquals("Pool has been closed or is restarting", thread1.getFailException().getMessage());
             }
             if (thread2.getFailException() != null) {
-                Assertions.assertInstanceOf(PoolInClearingException.class, thread2.getFailException());
+                Assertions.assertInstanceOf(BeeDataSourcePoolRestartedException.class, thread2.getFailException());
                 Assertions.assertEquals("Pool has been closed or is restarting", thread2.getFailException().getMessage());
             }
 

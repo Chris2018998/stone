@@ -9,25 +9,49 @@
  */
 package org.stone.beecp;
 
+import java.io.Serializable;
+
 /**
  * Pool monitoring interface.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeConnectionPoolMonitorVo {
+public interface BeeConnectionPoolMonitorVo extends Serializable {
+
+    //***************************************************************************************************************//
+    //                                        1: Unchangeable fields                                                 //
+    //***************************************************************************************************************//
 
     String getPoolName();
 
-    String getPoolMode();
+    boolean isFairMode();
+
+    boolean useThreadLocal();
+
+    //***************************************************************************************************************//
+    //                                     2: State`methods                                                           //
+    //***************************************************************************************************************//
 
     int getPoolState();
 
-    boolean isClosed();
+    boolean isUncreated();
+
+    boolean isNew();
 
     boolean isReady();
 
+    boolean isClosed();
+
     boolean isStarting();
+
+    boolean isReStarting();
+
+    boolean isSuspended();
+
+    //***************************************************************************************************************//
+    //                                     3: Other methods                                                          //
+    //***************************************************************************************************************//
 
     int getMaxSize();
 
@@ -41,7 +65,7 @@ public interface BeeConnectionPoolMonitorVo {
 
     int getSemaphoreSize();
 
-    int getSemaphoreAcquiredSize();
+    int getSemaphoreRemainSize();
 
     int getSemaphoreWaitingSize();
 

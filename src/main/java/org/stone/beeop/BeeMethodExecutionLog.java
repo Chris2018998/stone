@@ -9,22 +9,27 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.pool.BeeObjectEventLogManager;
-
 import java.io.Serializable;
 
 /**
- * Object event log interface,its instances generated from {@link BeeObjectEventLogManager#startCall(Object, int, String, Object[])}
+ * Object method log interface.
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionLog<K, V> extends Serializable {
+public interface BeeMethodExecutionLog<K> extends Serializable {
     //All logs
     int Type_All = 0;
     //constants log type,objects borrow log
     int Type_Object_Get = 1;
     //constants log type,object call logs
     int Type_Object_Call = 2;
+
+    /**
+     * Get pooled key id.
+     *
+     * @return log id
+     */
+    K getKey();
 
     /**
      * Get pool name of current log
@@ -36,16 +41,9 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
     /**
      * Get log type.
      *
-     * @return type value,which is one of [Type_Get_Connection,Type_Execution_SQL]
+     * @return type value,which is one of [Type_Object_Get,Type_Object_Call]
      */
     int getType();
-
-    /**
-     * Get Log id.
-     *
-     * @return log id
-     */
-    K getKey();
 
     /**
      * Get Log id.
@@ -62,13 +60,6 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
     String getMethod();
 
     /**
-     * Get desc info of data source(which may show on a distribution manager).
-     *
-     * @return desc
-     */
-    String getDatasourceInfo();
-
-    /**
      * Get method parameter values,which may be null.
      *
      * @return method name of method
@@ -76,7 +67,7 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
     Object[] getParameters();
 
     /**
-     * Get start time to call method.
+     * Get start time of method call.
      *
      * @return start time point,which is milliseconds
      */
@@ -97,7 +88,7 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
     /**
      * Query log owner is whether running.
      *
-     * @return a boolean,true is slow
+     * @return a boolean,true is running
      */
     boolean isRunning();
 
@@ -122,6 +113,27 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
      */
     boolean isSlow();
 
+    /**
+     * Query log is in long-running.
+     *
+     * @return a boolean,true is long-running
+     */
+    boolean isLongRunning();
+
+    /**
+     * Query log is whether handled by listener as a log of long-running.
+     *
+     * @return a boolean,true is that log has been handled
+     */
+    boolean hasHandledByListener();
+
+    /**
+     * Query log is whether removed from log cache.
+     *
+     * @return a boolean,true is removed,false is the log is still in log cache
+     */
+    boolean isRemoved();
+
     //***************************************************************************************************************//
     //                                         3: Result                                                             //
     //***************************************************************************************************************//
@@ -131,7 +143,7 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
      *
      * @return a result object
      */
-    V getResult();
+    Object getResult();
 
     /**
      * Get fail cause of method call,this cause may be null.
@@ -139,12 +151,5 @@ public interface BeeMethodExecutionLog<K, V> extends Serializable {
      * @return a result object
      */
     Throwable getFailCause();
-
-    /**
-     * Query log is whether removed from log manager.
-     *
-     * @return a boolean,true is removed,false is the log is still in log manager
-     */
-    boolean isRemoved();
 
 }

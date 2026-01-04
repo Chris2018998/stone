@@ -12,7 +12,7 @@ package org.stone.test.beeop.config;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.BeeObjectSourceConfigException;
+import org.stone.beeop.exception.BeeObjectSourceConfigException;
 import org.stone.test.beeop.objects.JavaBookPredicate;
 import org.stone.test.beeop.objects.JavaBookPredicate2;
 

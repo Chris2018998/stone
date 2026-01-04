@@ -10,73 +10,35 @@
 package org.stone.beeop;
 
 /**
- * Handle interface represents wrapper of borrowed object.
+ * Handle interface of borrowed object.
  *
  * @param <K> is pooled key
  * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectHandle<K, V> {
+public interface BeeObjectHandle<K, V> extends AutoCloseable {
 
     /**
-     * Get object
+     * Get pooled key.
      *
      * @return associated pooled key
+     * @throws Exception if handle is closed
+     */
+    K getKey() throws Exception;
+
+    /**
+     * Get wrapper object of borrowed object
+     *
+     * @return wrapper object,which maybe null when not
      * @throws Exception if handle is closed
      */
     V getObject() throws Exception;
 
     /**
-     * Get category key of object.
-     *
-     * @return associated pooled key
-     * @throws Exception if handle is closed
+     * Close handle
      */
-    K getObjectKey() throws Exception;
-
-    /**
-     * Get reflection proxy of pooled object.
-     *
-     * @return null when not configured interfaces in {@link BeeObjectSourceConfig}
-     * @throws Exception if handle is closed
-     */
-    V getObjectProxy() throws Exception;
-
-    /**
-     * Gets last accessed time of object.
-     *
-     * @return a nanoseconds time value
-     * @throws Exception if handle is closed
-     */
-    long getLastAccessedTime() throws Exception;
-
-    /**
-     * Sets last accessed time of object.
-     *
-     * @throws Exception if handle is closed
-     */
-    void setLastAccessedTime() throws Exception;
-
-    /**
-     * Call a method of object without parameter.
-     *
-     * @param methodName is name of invocation method
-     * @return result object of call
-     * @throws Exception when call fail
-     */
-    Object call(String methodName) throws Exception;
-
-    /**
-     * Call a method of object with array of parameters.
-     *
-     * @param methodName  is name of invocation method
-     * @param paramTypes  is array of parameter types
-     * @param paramValues is array of parameter values
-     * @return result object of call
-     * @throws Exception when call fail
-     */
-    Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
+    void close() throws Exception;
 
     /**
      * Query handle state whether is closed.
@@ -86,12 +48,36 @@ public interface BeeObjectHandle<K, V> {
     boolean isClosed();
 
     /**
-     * Closes this handle.
-     */
-    void close() throws Exception;
-
-    /**
      * Physically close pooled object and remove it from pool.
      */
     void abort() throws Exception;
+
+    /**
+     * Gets last accessed time of method call on object.
+     *
+     * @return a nanoseconds time value
+     * @throws Exception if handle is closed
+     */
+    long getLastAccessedTime() throws Exception;
+
+    /**
+     * Call a method on object.
+     *
+     * @param methodName is name of invocation method
+     * @return result object of call
+     * @throws Exception when call fail
+     */
+    Object call(String methodName) throws Exception;
+
+    /**
+     * Call a method on object with parameters.
+     *
+     * @param methodName  is name of invocation method
+     * @param paramTypes  is array of parameter types
+     * @param paramValues is array of parameter values
+     * @return result object of call
+     * @throws Exception when call fail
+     */
+    Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
+
 }

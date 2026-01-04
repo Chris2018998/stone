@@ -11,8 +11,8 @@ package org.stone.beetp.pool;
 
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TreeLayerTask;
-import org.stone.beetp.pool.exception.TaskCountExceededException;
-import org.stone.beetp.pool.exception.TaskExecutionException;
+import org.stone.beetp.exception.TaskCountExceededException;
+import org.stone.beetp.exception.TaskExecutionException;
 import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
 import java.util.Arrays;

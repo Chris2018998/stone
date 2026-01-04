@@ -14,8 +14,8 @@ import jakarta.transaction.TransactionManager;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeDataSourceConfigException;
 import org.stone.beecp.BeeDataSourceFactory;
+import org.stone.beecp.exception.BeeDataSourceConfigException;
 import org.stone.beecp.jta.BeeJtaDataSource;
 
 import javax.naming.InitialContext;

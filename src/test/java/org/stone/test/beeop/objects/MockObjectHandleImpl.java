@@ -36,7 +36,7 @@ public class MockObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
      * @return associated pooled key
      * @throws Exception if handle is closed
      */
-    public K getObjectKey() throws Exception {
+    public K getKey() throws Exception {
         return null;
     }
 

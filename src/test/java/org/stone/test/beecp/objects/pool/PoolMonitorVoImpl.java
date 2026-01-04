@@ -22,10 +22,11 @@ import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 
 public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     private String poolName;
-    private String poolMode;
+    private boolean poolMode;
     private int poolState;
     private int maxSize;
     private int semaphoreSize;
+    private boolean useThreadLocal;
 
     private int idleSize;
     private int borrowedSize;
@@ -48,11 +49,19 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public String getPoolMode() {
+    public boolean isFairMode() {
         return poolMode;
     }
 
-    public void setPoolMode(String poolMode) {
+    public boolean useThreadLocal() {
+        return useThreadLocal;
+    }
+
+    public void setUsingThreadLocal(boolean useThreadLocal) {
+        this.useThreadLocal = useThreadLocal;
+    }
+
+    public void setPoolMode(boolean poolMode) {
         this.poolMode = poolMode;
     }
 
@@ -62,6 +71,16 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
 
     public void setPoolState(int poolState) {
         this.poolState = poolState;
+    }
+
+    @Override
+    public boolean isUncreated() {
+        return poolState == POOL_UNCREATED;
+    }
+
+    @Override
+    public boolean isNew() {
+        return poolState == POOL_NEW;
     }
 
     @Override
@@ -76,7 +95,17 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
 
     @Override
     public boolean isStarting() {
-        return poolState == POOL_STARTING || poolState == POOL_RESTARTING;
+        return poolState == POOL_STARTING;
+    }
+
+    @Override
+    public boolean isReStarting() {
+        return poolState == POOL_RESTARTING;
+    }
+
+    @Override
+    public boolean isSuspended() {
+        return poolState == POOL_SUSPENDED;
     }
 
     @Override
@@ -116,7 +145,7 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public int getSemaphoreAcquiredSize() {
+    public int getSemaphoreRemainSize() {
         return semaphoreAcquiredSize;
     }
 

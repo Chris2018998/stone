@@ -12,7 +12,7 @@ package org.stone.test.beetp.once;
 import org.stone.beetp.TaskHandle;
 import org.stone.beetp.TaskService;
 import org.stone.beetp.TaskServiceConfig;
-import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
+import org.stone.beetp.exception.TaskResultGetTimeoutException;
 import org.stone.test.base.TestCase;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beetp.BlockTask;

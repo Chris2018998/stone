@@ -9,7 +9,7 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.exception.TaskException;
+import org.stone.beetp.exception.TaskException;
 
 /**
  * handle of a timed task scheduled in pool.

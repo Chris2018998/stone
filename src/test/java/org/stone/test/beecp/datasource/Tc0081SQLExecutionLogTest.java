@@ -72,14 +72,14 @@ public class Tc0081SQLExecutionLogTest {
                     //do nothing
                 }
 
-                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLog(Type_SQL_Execution);
+                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_SQL_Execution);
                 Assertions.assertEquals(4, logList.size());
                 for (BeeMethodExecutionLog log : logList) {
                     Assertions.assertNotNull(log.getParameters());
                     Assertions.assertNotNull(log.getSql());
                     Assertions.assertTrue(log.isException());
                 }
-                Assertions.assertEquals(4, ds.clearMethodExecutionLog(Type_SQL_Execution).size());
+                Assertions.assertEquals(4, ds.clearMethodExecutionLogs(Type_SQL_Execution).size());
             }
         }
     }
@@ -108,7 +108,7 @@ public class Tc0081SQLExecutionLogTest {
                 statementThread.start();
                 statementThread.join();
 
-                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLog(Type_SQL_Execution);
+                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_SQL_Execution);
                 Assertions.assertEquals(4, logList.size());
                 for (BeeMethodExecutionLog log : logList) {
                     Assertions.assertTrue(log.isSlow());
@@ -116,8 +116,8 @@ public class Tc0081SQLExecutionLogTest {
             }//execute statement sql
 
             //2: clear
-            ds.clearMethodExecutionLog(Type_SQL_Execution);
-            Assertions.assertTrue(ds.getMethodExecutionLog(Type_SQL_Execution).isEmpty());
+            ds.clearMethodExecutionLogs(Type_SQL_Execution);
+            Assertions.assertTrue(ds.getMethodExecutionLogs(Type_SQL_Execution).isEmpty());
 
             //3: test PreparedStatement
             try (Connection con = ds.getConnection()) {
@@ -127,7 +127,7 @@ public class Tc0081SQLExecutionLogTest {
                 preparedStatementThread.start();
                 preparedStatementThread.join();
 
-                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLog(Type_SQL_Execution);
+                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_SQL_Execution);
                 Assertions.assertEquals(2, logList.size());
                 for (BeeMethodExecutionLog log : logList) {
                     // Assertions.assertTrue(log.getSqlPreparedTime() > 0L);
@@ -165,7 +165,7 @@ public class Tc0081SQLExecutionLogTest {
                 statementThread1.start();
 
                 if (TestUtil.waitUtilWaiting(statementThread1)) {
-                    List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLog(Type_SQL_Execution);
+                    List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_SQL_Execution);
                     Assertions.assertEquals(2, logList.size());
                     BeeMethodExecutionLog log = logList.get(0);
                     if (log.isRunning()) Assertions.assertTrue(log.cancelStatement());
@@ -176,7 +176,7 @@ public class Tc0081SQLExecutionLogTest {
                 PrepareStatementThread statementThread2 = new PrepareStatementThread(con, sqlMap);
                 statementThread2.start();
                 if (TestUtil.waitUtilWaiting(statementThread2)) {
-                    List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLog(Type_SQL_Execution);
+                    List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_SQL_Execution);
                     Assertions.assertEquals(4, logList.size());
                     BeeMethodExecutionLog log = logList.get(0);
                     if (log.isRunning()) Assertions.assertTrue(ds.cancelStatement(log.getId()));

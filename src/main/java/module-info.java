@@ -9,21 +9,20 @@ module org.stone {
     exports org.stone.beecp;
     exports org.stone.beecp.jta;
     exports org.stone.beecp.pool;
-    exports org.stone.beecp.pool.exception;
+    exports org.stone.beecp.exception;
     opens org.stone.beecp.pool;
 
     exports org.stone.beeop;
     exports org.stone.beeop.pool;
-    exports org.stone.beeop.pool.exception;
+    exports org.stone.beeop.exception;
     opens org.stone.beeop.pool;
 
     exports org.stone.beetp;
     exports org.stone.beetp.pool;
-    exports org.stone.beetp.pool.exception;
+    exports org.stone.beetp.exception;
     opens org.stone.beetp.pool;
 
     exports org.stone.tools;
     exports org.stone.tools.exception;
     exports org.stone.tools.extension;
-    exports org.stone.tools.logger;
 }

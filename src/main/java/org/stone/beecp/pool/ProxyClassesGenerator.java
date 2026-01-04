@@ -412,7 +412,7 @@ final class ProxyClassesGenerator {
                     }
                 } else if (ctResultType == ctPreparedStatementClass) {//Connection.prepareStatement(...)
                     //2.1: add 'logCache.beforeCall'
-                    String methodSignature = getCtMethodSignature("Connection.", ctMethod);
+                    String methodSignature = getCtMethodSignature("Connection", ctMethod);
                     CtClass[] parameterTypes = ctMethod.getParameterTypes();
                     int methodParameterSize = parameterTypes.length;
                     if (methodParameterSize == 0) {
@@ -449,7 +449,7 @@ final class ProxyClassesGenerator {
 
                 } else if (ctResultType == ctCallableStatementClass) {//Connection.prepareCall(...)
                     //3.1: add 'logCache.beforeCall'
-                    String methodSignature = getCtMethodSignature("Connection.", ctMethod);
+                    String methodSignature = getCtMethodSignature("Connection", ctMethod);
                     CtClass[] parameterTypes = ctMethod.getParameterTypes();
                     int methodParameterSize = parameterTypes.length;
                     if (methodParameterSize == 0) {
@@ -557,19 +557,19 @@ final class ProxyClassesGenerator {
             String rawName = "raw.";
             String statementType;
             if ("java.sql.PreparedStatement".equals(ctStatementClass.getName())) {
-                statementType = "PreparedStatement.";
+                statementType = "PreparedStatement";
                 rawName = "((PreparedStatement)raw).";
             } else if ("java.sql.CallableStatement".equals(ctStatementClass.getName())) {
-                statementType = "CallableStatement.";
+                statementType = "CallableStatement";
                 rawName = "((CallableStatement)raw).";
             } else {
-                statementType = "Statement.";
+                statementType = "Statement";
             }
 
             for (CtMethod ctMethod : linkedList) {//all method names start with 'execute'
                 methodBuffer.delete(0, methodBuffer.length());
 
-                //method start
+                // start of method codes
                 methodBuffer.append("{");
                 String methodName = ctMethod.getName();
                 CtClass ctResultType = ctMethod.getReturnType();
@@ -789,7 +789,7 @@ final class ProxyClassesGenerator {
 
     private static String getCtMethodSignature(String methodOwer, CtMethod method) throws Exception {
         StringBuilder builder = new StringBuilder(20);
-        builder.append("\"").append(methodOwer).append(method.getName()).append("(");
+        builder.append("\"").append(methodOwer).append(".").append(method.getName()).append("(");
         CtClass[] paramTypes = method.getParameterTypes();
         for (int i = 0, l = paramTypes.length; i < l; i++) {
             if (i > 0) builder.append(",");

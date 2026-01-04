@@ -12,8 +12,8 @@ package org.stone.test.beeop.pool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.exception.ObjectKeyException;
 import org.stone.beeop.pool.KeyedObjectPool;
-import org.stone.beeop.pool.exception.ObjectKeyException;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.stone.test.beeop.config.OsConfigFactory.createDefault;

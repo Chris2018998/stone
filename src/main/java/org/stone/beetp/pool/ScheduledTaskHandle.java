@@ -12,8 +12,8 @@ package org.stone.beetp.pool;
 import org.stone.beetp.Task;
 import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TaskScheduledHandle;
-import org.stone.beetp.pool.exception.TaskCancelledException;
-import org.stone.beetp.pool.exception.TaskException;
+import org.stone.beetp.exception.TaskCancelledException;
+import org.stone.beetp.exception.TaskException;
 
 import static org.stone.beetp.pool.PoolConstants.*;
 

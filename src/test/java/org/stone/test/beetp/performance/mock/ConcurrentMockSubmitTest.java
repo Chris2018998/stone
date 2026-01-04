@@ -40,7 +40,7 @@ public class ConcurrentMockSubmitTest {
             String className = entry.getValue();
 
             try {
-                TimeMonitorTaskThreadsFactory factory = (TimeMonitorTaskThreadsFactory) createClassInstance(className);
+                TimeMonitorTaskThreadsFactory factory = createClassInstance(className);
                 TimeMonitorTaskSubmitThread[] threads = factory.create(config);
                 for (TimeMonitorTaskSubmitThread thread : threads) {
                     thread.start();

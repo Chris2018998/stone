@@ -17,15 +17,24 @@ import java.util.concurrent.locks.LockSupport;
 import static org.stone.tools.CommonUtil.SPIN_FOR_TIMEOUT_THRESHOLD;
 
 /**
- * {@link #BeeSemaphore} is a customization semaphore implementation.
+ * {@link #BeeSemaphore} is a customization semaphore implementation to only support one permit acquisition
+ * <p>
+ * JDK work mode：wakeup on first node's thread to get permit(one by one,serial mode to reduce concurrent on atomic state)
+ * <p>
+ * Transfer real permits to waiters with Parallel mode.
  *
  * @author Chris Liao
  * @version 1.0
  */
 public final class BeeSemaphore implements BeeInterruptable {
 
+    //****************************************************************************************************************//
+    //                                        Synchronizer classes                                                    //
+    //****************************************************************************************************************//
+    //special node value
+    static final Object NULL = new Object();
     //synchronizer
-    private final SemaphoreSynchronizer synchronizer;
+    private final UnfairSemaphore synchronizer;
 
     /**
      * Construct a semaphore with permit size.
@@ -43,7 +52,7 @@ public final class BeeSemaphore implements BeeInterruptable {
      * @param fair is true that fair mode
      */
     public BeeSemaphore(int size, boolean fair) {
-        this.synchronizer = fair ? new FairSemaphore(size) : new SemaphoreSynchronizer(size);
+        this.synchronizer = fair ? new FairSemaphore(size) : new UnfairSemaphore(size);
     }
 
     /**
@@ -75,9 +84,24 @@ public final class BeeSemaphore implements BeeInterruptable {
     }
 
     //****************************************************************************************************************//
+    //                                        CAS method                                                              //
+    //****************************************************************************************************************//
+    private boolean casTail(WaiterNode newTail) {
+        return true;
+    }
+
+    private boolean enqueue(WaiterNode node) {
+        return true;
+    }
+
+    private boolean denqueue(WaiterNode node) {
+        return true;
+    }
+
+    //****************************************************************************************************************//
     //                                        Synchronizer classes                                                    //
     //****************************************************************************************************************//
-    private static class SemaphoreSynchronizer {
+    private static class UnfairSemaphore {
         protected static final VarHandle permitStateHandle;
 
         static {
@@ -88,12 +112,12 @@ public final class BeeSemaphore implements BeeInterruptable {
             }
         }
 
-        //Permits Array
+        //Fixed length Array + Hash Index
         protected final BeeSemaphorePermit[] permits;
         //Customization wait queue
         protected final BeeTransferQueue waitQueue;
 
-        SemaphoreSynchronizer(int size) {
+        UnfairSemaphore(int size) {
             this.waitQueue = new BeeTransferQueue();
             this.permits = new BeeSemaphorePermit[size];
             for (int i = 0; i < size; i++) {
@@ -108,7 +132,6 @@ public final class BeeSemaphore implements BeeInterruptable {
         public List<Thread> interruptQueuedWaitThreads() {
             return waitQueue.interruptQueuedWaitThreads();
         }
-
 
         protected BeeSemaphorePermit search() {
             for (BeeSemaphorePermit permit : permits) {
@@ -197,7 +220,7 @@ public final class BeeSemaphore implements BeeInterruptable {
 
     }
 
-    private static class FairSemaphore extends SemaphoreSynchronizer {//Fair Implementation
+    private static class FairSemaphore extends UnfairSemaphore {//Fair Implementation
 
         FairSemaphore(int size) {
             super(size);
@@ -222,6 +245,24 @@ public final class BeeSemaphore implements BeeInterruptable {
             if (!waitQueue.tryTransfer(null, permit)) {
                 permitStateHandle.setVolatile(permit, 0);//set to idle state
             }
+        }
+    }
+
+    //Chain Node Class
+    private static class WaiterNode {
+        //previous node
+        public volatile WaiterNode prev;
+        //Next node
+        public volatile WaiterNode next;
+
+        //Set NULL when node leave from chain
+        public volatile Object item = NULL;
+
+        //Set null when node leave from chain
+        private Thread thread;
+
+        public WaiterNode(Thread thread) {
+            this.thread = thread;
         }
     }
 }

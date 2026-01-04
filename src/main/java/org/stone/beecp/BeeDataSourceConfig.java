@@ -9,6 +9,7 @@
  */
 package org.stone.beecp;
 
+import org.stone.beecp.exception.BeeDataSourceConfigException;
 import org.stone.beecp.pool.ConnectionFactoryByDriver;
 import org.stone.beecp.pool.ConnectionFactoryByDriverDs;
 import org.stone.beecp.pool.XaConnectionFactoryByDriverDs;
@@ -32,7 +33,7 @@ import static org.stone.beecp.BeeTransactionIsolationNames.TRANS_ISOLATION_CODE_
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.BeanUtil.*;
 import static org.stone.tools.CommonUtil.*;
-import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
+import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 
 /**
  * Bee data source configuration object,which is not thread-safe.
@@ -40,7 +41,7 @@ import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
+public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     //An atomic integer to generate sequence value append to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
     //A list of field name,not be log print during pool initialization, default that five field names in list
@@ -986,7 +987,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
         copyTo(checkedConfig);
         if (this.connectionFactory != null || connectionFactoryClass != null || isNotBlank(connectionFactoryClassName)) {
             if (isNotBlank(this.username) || isNotBlank(this.password) || isNotBlank(this.jdbcUrl) || isNotBlank(driverClassName)) {
-                CommonLogPrinter.info("BeeCP({})configured jdbc link info abandoned according that a connection factory has been existed", "...");
+                DefaultLogPrinter.info("BeeCP({})configured jdbc link info abandoned according that a connection factory has been existed", "...");
                 checkedConfig.username = null;
                 checkedConfig.password = null;
                 checkedConfig.jdbcUrl = null;
@@ -1292,7 +1293,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
     //print check passed configuration
     private void printConfiguration(BeeDataSourceConfig checkedConfig) {
         String poolName = checkedConfig.poolName;
-        CommonLogPrinter.info("................................................BeeCP({})configuration[start]................................................", poolName);
+        DefaultLogPrinter.info("................................................BeeCP({})configuration[start]................................................", poolName);
         try {
             for (Field field : BeeDataSourceConfig.class.getDeclaredFields()) {
                 if (Modifier.isStatic(field.getModifiers())) continue;
@@ -1306,23 +1307,23 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMBean {
                         if (!connectionFactoryProperties.isEmpty()) {
                             if (infoPrint) {
                                 for (Map.Entry<String, Object> entry : checkedConfig.connectionFactoryProperties.entrySet())
-                                    CommonLogPrinter.info("BeeCP({}).connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    DefaultLogPrinter.info("BeeCP({}).connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
                                 for (Map.Entry<String, Object> entry : checkedConfig.connectionFactoryProperties.entrySet())
-                                    CommonLogPrinter.debug("BeeCP({}).connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    DefaultLogPrinter.debug("BeeCP({}).connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;
                     default:
                         if (infoPrint)
-                            CommonLogPrinter.info("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            DefaultLogPrinter.info("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            CommonLogPrinter.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            DefaultLogPrinter.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
-            CommonLogPrinter.warn("BeeCP({})failed to print configuration", poolName, e);
+            DefaultLogPrinter.warn("BeeCP({})failed to print configuration", poolName, e);
         }
-        CommonLogPrinter.info("................................................BeeCP({})configuration[end]................................................", poolName);
+        DefaultLogPrinter.info("................................................BeeCP({})configuration[end]................................................", poolName);
     }
 }

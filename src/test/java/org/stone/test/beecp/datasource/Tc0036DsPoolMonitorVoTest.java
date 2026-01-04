@@ -36,11 +36,11 @@ public class Tc0036DsPoolMonitorVoTest {
         try (BeeDataSource ds = new BeeDataSource(config)) {
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
             Assertions.assertEquals("fastPool", vo.getPoolName());
-            Assertions.assertEquals("fair", vo.getPoolMode());
+            Assertions.assertTrue(vo.isFairMode());
             Assertions.assertTrue(vo.isReady());
             Assertions.assertEquals(20, vo.getMaxSize());
             Assertions.assertEquals(10, vo.getSemaphoreSize());
-            Assertions.assertEquals(0, vo.getSemaphoreAcquiredSize());
+            Assertions.assertEquals(10, vo.getSemaphoreRemainSize());
 
             Assertions.assertEquals(10, vo.getIdleSize());
             Assertions.assertEquals(0, vo.getSemaphoreWaitingSize());

@@ -10,7 +10,7 @@
 package org.stone.test.beecp.config;
 
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.BeeDataSourceConfigException;
+import org.stone.beecp.exception.BeeDataSourceConfigException;
 
 import java.io.IOException;
 import java.io.InputStream;

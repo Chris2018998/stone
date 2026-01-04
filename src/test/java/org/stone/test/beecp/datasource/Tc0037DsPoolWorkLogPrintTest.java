@@ -68,7 +68,7 @@ public class Tc0037DsPoolWorkLogPrintTest {
 
         try (BeeDataSource ds = new BeeDataSource(config)) {
             //1: not print runtime log
-            Assertions.assertFalse(ds.isEnabledLogPrint());
+            Assertions.assertFalse(ds.isPrintRuntimeLogs());
             LogCollector logCollector = LogCollector.startLogCollector();
             Connection con = ds.getConnection();
             String logContent = logCollector.endLogCollector();
@@ -79,7 +79,7 @@ public class Tc0037DsPoolWorkLogPrintTest {
             ds.enableLogPrint(true);
             Assertions.assertTrue(ds.isPrintRuntimeLogs());
             Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogPrint());
-            Assertions.assertTrue(ds.isEnabledLogPrint());
+            Assertions.assertTrue(ds.isPrintRuntimeLogs());
             logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {
                 logContent = logCollector.endLogCollector();

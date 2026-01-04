@@ -9,10 +9,10 @@
  */
 package org.stone.beetp;
 
-import org.stone.beetp.pool.exception.TaskCancelledException;
-import org.stone.beetp.pool.exception.TaskException;
-import org.stone.beetp.pool.exception.TaskExecutionException;
-import org.stone.beetp.pool.exception.TaskResultGetTimeoutException;
+import org.stone.beetp.exception.TaskCancelledException;
+import org.stone.beetp.exception.TaskException;
+import org.stone.beetp.exception.TaskExecutionException;
+import org.stone.beetp.exception.TaskResultGetTimeoutException;
 
 import java.util.concurrent.TimeUnit;
 

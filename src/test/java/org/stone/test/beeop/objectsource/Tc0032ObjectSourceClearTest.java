@@ -28,13 +28,13 @@ public class Tc0032ObjectSourceClearTest {
         config.setObjectFactory(new JavaBookFactory());
         config.setInitialSize(2);
         BeeObjectSource os = new BeeObjectSource(config);
-        Assertions.assertEquals(2, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+        Assertions.assertEquals(2, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
 
         BeeObjectHandle handle = os.getObjectHandle();
         handle.abort();
-        Assertions.assertEquals(1, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+        Assertions.assertEquals(1, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
         os.restart(true);
-        Assertions.assertEquals(0, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+        Assertions.assertEquals(0, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
 
         //2:with new config
         try {
@@ -46,6 +46,6 @@ public class Tc0032ObjectSourceClearTest {
         config2.setObjectFactory(new JavaBookFactory());
         config2.setInitialSize(3);
         os.restart(true, config2);
-        Assertions.assertEquals(3, os.getMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+        Assertions.assertEquals(3, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
     }
 }

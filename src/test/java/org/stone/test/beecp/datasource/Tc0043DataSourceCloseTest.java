@@ -30,13 +30,13 @@ public class Tc0043DataSourceCloseTest {
         Assertions.assertTrue(ds1.isClosed());
         ds1.close();//no impact
         Assertions.assertTrue(ds1.isClosed());
-        Assertions.assertFalse(ds1.isReady());
+        Assertions.assertFalse(ds1.getPoolMonitorVo().isReady());
 
         BeeDataSource ds2 = null;
         try {
             BeeDataSourceConfig config = createDefault();
             ds2 = new BeeDataSource(config);
-            Assertions.assertTrue(ds2.isReady());
+            Assertions.assertTrue(ds2.getPoolMonitorVo().isReady());
             Assertions.assertFalse(ds2.isClosed());
             Assertions.assertTrue(ds2.getPoolMonitorVo().isReady());
             Assertions.assertFalse(ds2.getPoolMonitorVo().isClosed());
@@ -46,7 +46,7 @@ public class Tc0043DataSourceCloseTest {
             }
             ds2.close();
             Assertions.assertTrue(ds2.isClosed());
-            Assertions.assertFalse(ds2.isReady());
+            Assertions.assertFalse(ds2.getPoolMonitorVo().isReady());
             Assertions.assertTrue(ds2.getPoolMonitorVo().isClosed());
             Assertions.assertFalse(ds2.getPoolMonitorVo().isReady());
 

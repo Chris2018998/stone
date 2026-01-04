@@ -16,27 +16,27 @@ import java.util.List;
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionListener<K, V> {
+public interface BeeMethodExecutionListener<K> {
 
     /**
      * Plugin method: Handles a log of method call.
      *
      * @param log to be handled
      */
-    void onMethodStart(BeeMethodExecutionLog<K, V> log) throws Exception;
+    void onMethodStart(BeeMethodExecutionLog<K> log) throws Exception;
 
     /**
      * Plugin method: Handles a log of method call.
      *
      * @param log to be handled
      */
-    void onMethodEnd(BeeMethodExecutionLog<K, V> log) throws Exception;
+    void onMethodEnd(BeeMethodExecutionLog<K> log) throws Exception;
 
     /**
      * Handle a list of long-running logs
      *
      * @param logList to be handled
      */
-    void onLongRunningDetected(List<BeeMethodExecutionLog<K, V>> logList);
+    List<Boolean> onLongRunningDetected(List<BeeMethodExecutionLog<K>> logList);
 
 }

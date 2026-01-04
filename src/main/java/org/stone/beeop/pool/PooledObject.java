@@ -10,7 +10,7 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectFactory;
-import org.stone.beeop.pool.exception.ObjectRecycleException;
+import org.stone.beeop.exception.ObjectRecycledException;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -27,8 +27,8 @@ import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
 final class PooledObject<K, V> {
     final K key;
     private final BeeObjectFactory<K, V> factory;
-    private final ObjectInstancePool<K, V> ownerPool;
-    private final Map<MethodCacheKey, Method> methodMap;
+    private final ObjectKeyCategoryPool<K, V> ownerPool;
+    private final Map<MethodCacheKey, Method> methodCacheMap;
 
     V raw;
     volatile int state;
@@ -41,12 +41,12 @@ final class PooledObject<K, V> {
     //                                  1: constructor                                                               //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(K key, BeeObjectFactory<K, V> factory,
-                 Map<MethodCacheKey, Method> methodMap,
-                 ObjectInstancePool<K, V> ownerPool) {
+                 Map<MethodCacheKey, Method> methodCacheMap,
+                 ObjectKeyCategoryPool<K, V> ownerPool) {
 
         this.key = key;
         this.factory = factory;
-        this.methodMap = methodMap;
+        this.methodCacheMap = methodCacheMap;
         this.ownerPool = ownerPool;
     }
 
@@ -90,7 +90,7 @@ final class PooledObject<K, V> {
             if (e instanceof Exception)
                 throw (Exception) e;
             else
-                throw new ObjectRecycleException(e);
+                throw new ObjectRecycledException(e);
         }
     }
 
@@ -116,11 +116,11 @@ final class PooledObject<K, V> {
     //handle call this method to get a method of object by parameter info
     Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
         MethodCacheKey key = new MethodCacheKey(name, types);
-        Method method = methodMap.get(key);
+        Method method = methodCacheMap.get(key);
 
         if (method == null) {
             method = rawType.getMethod(name, types);
-            methodMap.put(key, method);
+            methodCacheMap.put(key, method);
         }
         return method;
     }

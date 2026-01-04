@@ -10,6 +10,7 @@
 package org.stone.beeop.pool;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Pooled object method cache key
@@ -19,25 +20,23 @@ import java.util.Arrays;
  */
 
 final class MethodCacheKey {
+    private final int hashCode;
     private final String name;
     private final Class<?>[] types;
 
     MethodCacheKey(String name, Class<?>[] types) {
         this.name = name;
         this.types = types;
+        this.hashCode = 31 * this.name.hashCode() + Arrays.hashCode(this.types);
     }
 
     public int hashCode() {
-        int result = this.name.hashCode();
-        result = 31 * result + Arrays.hashCode(this.types);
-        return result;
+        return this.hashCode;
     }
 
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || this.getClass() != o.getClass()) return false;
         MethodCacheKey that = (MethodCacheKey) o;
-        return this.name.equals(that.name) &&
+        return Objects.equals(this.name, that.name) &&
                 Arrays.equals(this.types, that.types);
     }
 }

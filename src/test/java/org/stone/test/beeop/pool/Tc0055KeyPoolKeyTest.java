@@ -11,10 +11,10 @@ package org.stone.test.beeop.pool;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beeop.BeeObjectPoolMonitorVo;
+import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.exception.ObjectKeyException;
 import org.stone.beeop.pool.KeyedObjectPool;
-import org.stone.beeop.pool.exception.ObjectKeyException;
 import org.stone.test.beeop.objects.JavaBookFactory;
 import org.stone.test.beeop.objects.JavaBookTypeKey;
 
@@ -35,7 +35,7 @@ public class Tc0055KeyPoolKeyTest {
         pool.start(config);
 
         try {
-            pool.reset(null);
+            pool.clearObjects(null);
         } catch (ObjectKeyException e) {
             Assertions.assertTrue(e.getMessage().contains("Key can't be null"));
         }
@@ -61,9 +61,9 @@ public class Tc0055KeyPoolKeyTest {
         pool.start(config);
 
         //1: default key
-        Assertions.assertEquals(2, pool.getMonitorVo(defaultKey).getIdleSize());
-        pool.reset(defaultKey);
-        Assertions.assertEquals(0, pool.getMonitorVo(defaultKey).getIdleSize());
+        Assertions.assertEquals(2, pool.getKeyMonitorVo(defaultKey).getIdleSize());
+        pool.clearObjects(defaultKey);
+        Assertions.assertEquals(0, pool.getKeyMonitorVo(defaultKey).getIdleSize());
         try {
             pool.deleteKey(new JavaBookTypeKey());
         } catch (ObjectKeyException e) {
@@ -73,11 +73,11 @@ public class Tc0055KeyPoolKeyTest {
         //2: clear with new key
         Object simpleKey = "TestKey";
         pool.getObjectHandle(simpleKey);
-        BeeObjectPoolMonitorVo categoryMonitorVo = pool.getMonitorVo(simpleKey);
+        BeeObjectKeyMonitorVo categoryMonitorVo = pool.getKeyMonitorVo(simpleKey);
         Assertions.assertEquals(1, categoryMonitorVo.getIdleSize());
         Assertions.assertEquals(1, categoryMonitorVo.getBorrowedSize());
-        pool.reset(simpleKey, true);
-        categoryMonitorVo = pool.getMonitorVo(simpleKey);
+        pool.clearObjects(simpleKey, true);
+        categoryMonitorVo = pool.getKeyMonitorVo(simpleKey);
         Assertions.assertEquals(0, categoryMonitorVo.getIdleSize());
         Assertions.assertEquals(0, categoryMonitorVo.getBorrowedSize());
 

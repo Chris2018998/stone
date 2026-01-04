@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 
-import static org.stone.tools.logger.LogPrinterFactory.CommonLogPrinter;
+import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 
 /**
  * Pool Static Center
@@ -33,15 +33,18 @@ public class ObjectPoolStatics {
     //config name of exclusion list of config print
     public static final String CONFIG_EXCLUSION_LIST_OF_PRINT = "exclusionListOfPrint";
 
-    public static final Class[] EMPTY_CLASSES = new Class[0];
+    public static final Class<?>[] EMPTY_CLASSES = new Class[0];
     public static final String[] EMPTY_CLASS_NAMES = new String[0];
     //pool state
+    public static final int POOL_UNCREATED = -1;
     public static final int POOL_NEW = 0;
     public static final int POOL_STARTING = 1;
     public static final int POOL_READY = 2;
     public static final int POOL_CLOSING = 3;
     public static final int POOL_CLOSED = 4;
     public static final int POOL_RESTARTING = 5;
+    public static final int POOL_SUSPENDED = 6;
+
     //pool object state
     static final int OBJECT_CLOSED = 0;
     static final int OBJECT_IDLE = 1;
@@ -50,29 +53,21 @@ public class ObjectPoolStatics {
     //pool thread state
     static final int THREAD_WORKING = 0;
     static final int THREAD_WAITING = 1;
-    //static final int THREAD_EXIT = 2;
+    static final int THREAD_EXIT = 2;
 
     //remove reason
-    static final String DESC_RM_INIT = "init";
+    static final String DESC_RM_POOL_INIT = "init";
     static final String DESC_RM_BAD = "bad";
     static final String DESC_RM_ABORT = "abort";
     static final String DESC_RM_IDLE = "idle";
     static final String DESC_RM_CLOSED = "closed";
-    static final String DESC_RM_CLEAR = "clear";
-    static final String DESC_RM_DESTROY = "destroy";
-
-    //Spin Code
-    static final int SPIN_IN_WAIT_QUEUE = 1;
-    static final int SPIN_OBJECT_GET = 2;
-    static final int SPIN_INTERRUPTED = 3;
-    static final int SPIN_TIMEOUT = 4;
-    //pending removal
-    static final Object PendingRemoval = "Pending Removal";
+    static final String DESC_RM_POOL_CLEAR = "pool_restart";
+    static final String DESC_RM_POOL_SHUTDOWN = "pool_shutdown";
 
     //***************************************************************************************************************//
     //                               1: Handle close methods(1)                                                  //
     //***************************************************************************************************************//
-    static void tryCloseObjectHandle(BeeObjectHandle handle) {
+    static <K, V> void tryCloseObjectHandle(BeeObjectHandle<K, V> handle) {
         try {
             handle.close();
         } catch (Throwable e) {
@@ -80,11 +75,11 @@ public class ObjectPoolStatics {
         }
     }
 
-    public static void oclose(BeeObjectHandle h) {
+    public static <K, V> void oclose(BeeObjectHandle<K, V> h) {
         try {
             h.close();
         } catch (Throwable e) {
-            CommonLogPrinter.debug("Warning:Error at closing object handle", e);
+            DefaultLogPrinter.debug("Warning:Error at closing object handle", e);
         }
     }
 }
