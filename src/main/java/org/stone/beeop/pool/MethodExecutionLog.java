@@ -73,6 +73,10 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
         this.startTime = System.currentTimeMillis();
     }
 
+    public String getId() {
+        return id;
+    }
+
     public K getKey() {
         return key;
     }
@@ -83,10 +87,6 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
 
     public String getPoolName() {
         return this.poolName;
-    }
-
-    public String getId() {
-        return id;
     }
 
     public String getMethod() {
@@ -170,6 +170,6 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
     }
 
     public boolean equals(Object v) {
-        return (v instanceof MethodExecutionLog) && this.id.equals(((MethodExecutionLog) v).id);
+        return (v instanceof MethodExecutionLog) && this.id.equals(((MethodExecutionLog<?>) v).id);
     }
 }

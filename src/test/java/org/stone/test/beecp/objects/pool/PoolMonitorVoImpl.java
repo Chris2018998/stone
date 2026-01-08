@@ -84,6 +84,11 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
+    public boolean isClosing() {
+        return poolState == POOL_CLOSING;
+    }
+
+    @Override
     public boolean isClosed() {
         return poolState == POOL_CLOSED;
     }

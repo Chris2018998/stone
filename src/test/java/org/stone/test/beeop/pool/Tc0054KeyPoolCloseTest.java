@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourcePoolRejectedException;
-import org.stone.beeop.pool.KeyedObjectPool;
+import org.stone.beeop.pool.ObjectPool;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.stone.test.beeop.config.OsConfigFactory.createDefault;
@@ -28,7 +28,7 @@ public class Tc0054KeyPoolCloseTest {
         BeeObjectSourceConfig config = createDefault();
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
-        KeyedObjectPool pool = new KeyedObjectPool();
+        ObjectPool pool = new ObjectPool();
         pool.start(config);
 
         Assertions.assertNotNull(pool.getObjectHandle());

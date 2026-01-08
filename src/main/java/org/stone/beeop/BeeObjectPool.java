@@ -21,7 +21,7 @@ import java.util.List;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeKeyedObjectPool<K, V> extends AutoCloseable {
+public interface BeeObjectPool<K, V> extends AutoCloseable {
 
     //***************************************************************************************************************//
     //                                     1: Pooled objects get(2)                                                  //
@@ -61,7 +61,7 @@ public interface BeeKeyedObjectPool<K, V> extends AutoCloseable {
     int keySize() throws Exception;
 
     /**
-     * Query given key whether is pooled.
+     * Query given key whether exists in pool.
      *
      * @param key to locate related pooled objects
      * @return a keys array
@@ -83,7 +83,7 @@ public interface BeeKeyedObjectPool<K, V> extends AutoCloseable {
     boolean resumeKey(K key) throws Exception;
 
     /**
-     * Clears pooled objects with given key.
+     * Clears pooled objects mapping to given key.
      *
      * @param key is a key to search related pooled objects
      * @throws ObjectKeyException if key is null
@@ -91,7 +91,7 @@ public interface BeeKeyedObjectPool<K, V> extends AutoCloseable {
     void clearObjects(K key) throws Exception;
 
     /**
-     * Clears pooled objects with given key.
+     * Clears pooled objects mapping to given key.
      *
      * @param key                  to locate related pooled objects
      * @param forceRecycleBorrowed is true,close using objects directly;false that pool waiting using objects return to pool and then close it by physically.
@@ -187,7 +187,7 @@ public interface BeeKeyedObjectPool<K, V> extends AutoCloseable {
     /**
      * A switch method to enable or disable logs print flag on target pooled key.
      *
-     * @param enable is true that print, false not print
+     * @param enable is true that print, false disable print
      */
     void enableLogPrint(K key, boolean enable) throws Exception;
 
@@ -201,7 +201,7 @@ public interface BeeKeyedObjectPool<K, V> extends AutoCloseable {
      * @param keyMonitor is true,then get monitor info of keys
      * @return monitor of pool
      */
-    BeeObjectKeyPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor);
+    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor);
 
     /**
      * Get monitoring info by pooled key.

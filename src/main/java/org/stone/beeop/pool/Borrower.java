@@ -12,7 +12,7 @@ package org.stone.beeop.pool;
 /**
  * Pooled object borrower
  *
- * @param <K> is pooled key
+ * @param <K> is pooled key type
  * @param <V> is pooled object type
  * @author Chris Liao
  * @version 1.0

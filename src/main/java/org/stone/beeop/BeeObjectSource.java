@@ -13,7 +13,7 @@ import org.stone.beeop.exception.BeeObjectSourceCreatedException;
 import org.stone.beeop.exception.BeeObjectSourcePoolNotInstantiatedException;
 import org.stone.beeop.exception.ObjectGetInterruptedException;
 import org.stone.beeop.exception.ObjectGetTimeoutException;
-import org.stone.beeop.pool.KeyedObjectPool;
+import org.stone.beeop.pool.ObjectPool;
 import org.stone.tools.extension.InterruptableReentrantReadWriteLock;
 
 import java.util.List;
@@ -39,7 +39,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     private final InterruptableReentrantReadWriteLock lock = new InterruptableReentrantReadWriteLock();
     private final InterruptableReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     private long maxWaitNanos = 8000L;//default vale equals same item in config
-    private BeeKeyedObjectPool<K, V> pool;
+    private BeeObjectPool<K, V> pool;
     private boolean poolStarted;
     private Exception cause;
 
@@ -63,8 +63,8 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
 
     private void createPool(BeeObjectSource<K, V> os) throws Exception {
         String poolImplementClassName = os.getPoolImplementClassName();
-        if (isBlank(poolImplementClassName)) poolImplementClassName = KeyedObjectPool.class.getName();
-        os.pool = createClassInstance(poolImplementClassName, BeeKeyedObjectPool.class, "pool");
+        if (isBlank(poolImplementClassName)) poolImplementClassName = ObjectPool.class.getName();
+        os.pool = createClassInstance(poolImplementClassName, BeeObjectPool.class, "pool");
         os.pool.start(os);
         os.poolStarted = true;
     }
@@ -82,7 +82,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         return createPoolByLock().getObjectHandle(key);
     }
 
-    private BeeKeyedObjectPool<K, V> createPoolByLock() throws Exception {
+    private BeeObjectPool<K, V> createPoolByLock() throws Exception {
         if (!lock.isWriteLocked() && lock.writeLock().tryLock()) {
             try {
                 if (!poolStarted) {
@@ -187,7 +187,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     //                                     5: Pool Monitoring(2+0)                                                   //
     //***************************************************************************************************************//
-    public BeeObjectKeyPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) throws Exception {
+    public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) throws Exception {
         return getPool().getPoolMonitorVo(keyMonitor);
     }
 
@@ -297,7 +297,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     //                                     9: private methods(1+0)                                                   //
     //***************************************************************************************************************//
-    private BeeKeyedObjectPool<K, V> getPool() throws Exception {
+    private BeeObjectPool<K, V> getPool() throws Exception {
         if (!this.poolStarted)
             throw new BeeObjectSourcePoolNotInstantiatedException("Object source pool not instantiated");
         return this.pool;

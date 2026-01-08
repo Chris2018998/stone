@@ -10,11 +10,12 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectKeyMonitorVo;
-import org.stone.beeop.BeeObjectKeyPoolMonitorVo;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_CLOSING;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -23,7 +24,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectKeyPoolMonitorVo<K> implements BeeObjectKeyPoolMonitorVo<K> {
+public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     private final String poolName;
     private final boolean isFairMode;
     private final int maxKeySize;
@@ -35,15 +36,15 @@ public class ObjectKeyPoolMonitorVo<K> implements BeeObjectKeyPoolMonitorVo<K> {
     private final boolean usingThreadLocal;
     private final Map<K, BeeObjectKeyMonitorVo<K>> keyMonitorVoMap;
 
-    ObjectKeyPoolMonitorVo(String poolName,
-                           boolean useFairMode,
-                           boolean useThreadLocal,
-                           int maxKeySize,
-                           int maxActiveSizeOfKey,
-                           int semaphoreSizeOfKey,
-                           int poolState,
-                           boolean enabledLogPrint,
-                           boolean enabledMethodExecutionLogCache) {
+    ObjectPoolMonitorVo(String poolName,
+                        boolean useFairMode,
+                        boolean useThreadLocal,
+                        int maxKeySize,
+                        int maxActiveSizeOfKey,
+                        int semaphoreSizeOfKey,
+                        int poolState,
+                        boolean enabledLogPrint,
+                        boolean enabledMethodExecutionLogCache) {
         this.poolName = poolName;
         this.poolState = poolState;
         this.isFairMode = useFairMode;
@@ -93,11 +94,6 @@ public class ObjectKeyPoolMonitorVo<K> implements BeeObjectKeyPoolMonitorVo<K> {
     }
 
     @Override
-    public int getPoolState() {
-        return poolState;
-    }
-
-    @Override
     public boolean isUncreated() {
         return poolState == POOL_UNCREATED;
     }
@@ -105,6 +101,11 @@ public class ObjectKeyPoolMonitorVo<K> implements BeeObjectKeyPoolMonitorVo<K> {
     @Override
     public boolean isNew() {
         return poolState == POOL_NEW;
+    }
+
+    @Override
+    public boolean isClosing() {
+        return poolState == POOL_CLOSING;
     }
 
     @Override

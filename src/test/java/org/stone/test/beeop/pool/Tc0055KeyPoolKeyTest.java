@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.ObjectKeyException;
-import org.stone.beeop.pool.KeyedObjectPool;
+import org.stone.beeop.pool.ObjectPool;
 import org.stone.test.beeop.objects.JavaBookFactory;
 import org.stone.test.beeop.objects.JavaBookTypeKey;
 
@@ -31,7 +31,7 @@ public class Tc0055KeyPoolKeyTest {
         config.setInitialSize(2);
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
-        KeyedObjectPool pool = new KeyedObjectPool();
+        ObjectPool pool = new ObjectPool();
         pool.start(config);
 
         try {
@@ -57,7 +57,7 @@ public class Tc0055KeyPoolKeyTest {
         config.setInitialSize(2);
         config.setParkTimeForRetry(0L);
         config.setForceRecycleBorrowedOnClose(true);
-        KeyedObjectPool pool = new KeyedObjectPool();
+        ObjectPool pool = new ObjectPool();
         pool.start(config);
 
         //1: default key

@@ -9,6 +9,7 @@
  */
 package org.stone.beeop.pool;
 
+import jakarta.annotation.Nonnull;
 import org.stone.beeop.*;
 import org.stone.beeop.exception.*;
 import org.stone.tools.BeanUtil;
@@ -38,15 +39,15 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
  * @author Chris Liao
  * @version 1.0
  */
-public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, KeyedObjectPoolMXBean<K> {
-    private static final AtomicIntegerFieldUpdater<KeyedObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(KeyedObjectPool.class, "poolState");
+public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMXBean<K> {
+    private static final AtomicIntegerFieldUpdater<ObjectPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectPool.class, "poolState");
     private final ConcurrentHashMap<K, ObjectKeyCategoryPool<K, V>> categoryPoolMap = new ConcurrentHashMap<>(1);
 
     //1: Pool name
     private String poolName;
     //2: Pool state
     private volatile int poolState;
-    //3: Max size of key pooled in pool
+    //3: Max size of pooled keys
     private int maxKeySize;
 
     //4: Flag of using fair mode on key
@@ -64,7 +65,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
 
     //10: Policy flag to recycle borrowed objects when pool close
     private boolean forceRecycleBorrowedOnClose;
-    //11: Policy flag to shut down inner thread pools when pool close
+    //11: Policy flag to shut down internal thread pools when pool close
     private boolean forceShutdownThreadPoolOnClose;
 
     //12: A threads pool to search idle objects or create new objects for waiters
@@ -74,12 +75,12 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     //14: Schedule thread pool to execute time clear tasks
     private ScheduledThreadPoolExecutor scheduledService;
 
-    //15: A flag of MBean registered
+    //15: Pool name on MBean registered
     private String poolNameOfRegisteredMBean;
 
     //16: Flag to collect method execution logs
     private boolean collectMethodLogs;
-    //17: A inner container to cache methods execution logs
+    //17: A internal container to cache methods execution logs
     private MethodExecutionLogCache<K> methodLogCache;
 
     //18: Log printer of key pool
@@ -116,12 +117,13 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     }
 
     public BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception {
-        //1: Check inputted key
-        this.checkKey(key);
-
-        //2: Acquire an object from default category pool if is default key
+        //1: if key is default,then call the get method (** Avoid twice read on volatile field ** )
         if (isDefaultKey(key)) return getObjectHandle();
 
+        //2: Check parameter key(*** pool state check inside this method ***)
+        this.checkKey(key);
+
+        //3: Call internal get method
         if (this.collectMethodLogs) {
             BeeMethodExecutionLog<K> log = methodLogCache.beforeCall(key, Type_Object_Get, "KeyedObjectPool.getObjectHandle()", null);
             try {
@@ -138,33 +140,46 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     }
 
     private BeeObjectHandle<K, V> getObjectHandleByInternal(K key) throws Exception {
-        //1: Get category pool with key
+        //1: Get category pool by key
         ObjectKeyCategoryPool<K, V> categoryPool = categoryPoolMap.get(key);
+
+        //2:Call category pool to get pooled object if it exists
         if (categoryPool != null) return categoryPool.getObjectHandle();
 
-        //2: Check pool capacity before pooling key
+        //3: Check key size weather reach max capacity
         if (categoryPoolMap.size() == this.maxKeySize)
             throw new ObjectKeyException("Object key size of pool has reach max size:" + maxKeySize);
 
-        //3: Create category pool under object lock by synchronized keyword
+        //4: Create category pool under object lock by synchronized keyword
         synchronized (key.toString().intern()) {
-            //repeat check category pool whether exists in category pool map
             categoryPool = categoryPoolMap.get(key);
             if (categoryPool == null) {
                 if (categoryPoolMap.size() == maxKeySize)
-                    throw new ObjectKeyException("Object keys size reached max capacity:" + maxKeySize);
+                    throw new ObjectKeyException("Object key size of pool has reach max size:" + maxKeySize);
 
-                //Create a category pool by clone
+                //Create a new category pool by clone
                 categoryPool = defaultCategoryPool.createByClone();
-                //Run category pool by async mode
-                categoryPool.startup(poolName, key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
-                categoryPoolMap.put(key, categoryPool);
-                //Create time task to do timeout check on category pool
-                this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask<>(categoryPool), timerCheckInterval,
+
+                //Schedule a timeout task on the new category pool(maybe blocked in creation)
+                TimeoutObjectsClearTask<K, V> timeoutTask = new TimeoutObjectsClearTask<>(categoryPool);
+                ScheduledFuture<?> future = this.scheduledService.scheduleWithFixedDelay(timeoutTask, timerCheckInterval,
                         timerCheckInterval, MILLISECONDS);
+
+                //startup the category pool
+                try {
+                    categoryPool.startup(poolName, key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
+                } catch (Throwable e) {
+                    //if failed,then remove the scheduled task
+                    future.cancel(true);
+                    this.scheduledService.remove(timeoutTask);//cancel the timeout task
+                    throw e;
+                }
+
+                //put completed category pool into map
+                categoryPoolMap.put(key, categoryPool);
             }
 
-            //4: get handle from pool
+            // get handle from pool
             return categoryPool.getObjectHandle();
         }
     }
@@ -238,7 +253,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     private void startupInternal(BeeObjectSourceConfig<K, V> config) throws Exception {
         //step1: set log printer first
         this.poolName = config.getPoolName();
-        this.logPrinter = getLogPrinter(KeyedObjectPool.class, config.isPrintRuntimeLogs());
+        this.logPrinter = getLogPrinter(ObjectPool.class, config.isPrintRuntimeLogs());
 
         //step2: Create Proxy classes{@link org.stone.beeop#getObject()}
         Constructor<?> objectProxyClassConstructor = null;
@@ -262,29 +277,40 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
         this.scheduledService.setKeepAliveTime(10L, TimeUnit.SECONDS);
 
         //step5: launch a time task on default category pool before it start up(*** need add some check in task guarantee it initialization completed ***)
-        this.scheduledService.scheduleWithFixedDelay(new TimeoutScanTask<>(defaultCategoryPool), timerCheckInterval, timerCheckInterval, MILLISECONDS);
+        TimeoutObjectsClearTask<K, V> timeoutTask = new TimeoutObjectsClearTask<>(defaultCategoryPool);
+        ScheduledFuture<?> future = this.scheduledService.scheduleWithFixedDelay(timeoutTask, timerCheckInterval, timerCheckInterval, MILLISECONDS);
 
         //step6: Launch the default category pool
         this.defaultKey = config.getObjectFactory().getDefaultKey();
         this.initialSizeOfKey = config.getInitialSize();
         this.asyncCreateInitObjectsOfKey = config.isAsyncCreateInitObjects();
-        this.defaultCategoryPool.startup(poolName, defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
+        try {
+            this.defaultCategoryPool.startup(poolName, defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
+        } catch (Throwable e) {
+            //remove the scheduled task when fails to startup
+            future.cancel(true);
+            scheduledService.remove(timeoutTask);
+            throw e;
+        }
+
+        //step7: put default category pool into map
         this.categoryPoolMap.put(defaultKey, defaultCategoryPool);//put the default category pool to concurrent map
 
-        //step7: Create method execution log cache and schedule a timed task on it
+        //step8: Create method execution log cache and schedule a timed task on it
         this.collectMethodLogs = config.isEnableMethodExecutionLogCache();
-        this.methodLogCache = new MethodExecutionLogCache<>(this.poolName, config.getMethodExecutionLogCacheSize(),
+        this.methodLogCache = new MethodExecutionLogCache<>();
+        this.methodLogCache.initCache(this.poolName, config.getMethodExecutionLogCacheSize(),
                 config.getSlowObjectGetThreshold(), config.getSlowObjectExecutionThreshold(), config.getMethodExecutionListener());
-        this.scheduledService.scheduleWithFixedDelay(new MethodLogTimeoutClearTask<>(
+        this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(
                         this, config.getMethodExecutionLogTimeout(), this.methodLogCache),
                 config.getIntervalOfClearTimeoutExecutionLogs(), config.getIntervalOfClearTimeoutExecutionLogs(), MILLISECONDS);
 
-        //step8: Create a thread pool executor to get objects for sleeping waiters
+        //step9: Create a thread pool executor to get objects for sleeping waiters
         this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 10L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(maxKeySize), poolThreadFactory);
         this.servantService.allowCoreThreadTimeOut(true);
 
-        //step9: Copy some configuration items to pool local
+        //step10: Copy some configuration items to pool local
         this.useFairModeOfKey = config.isFairMode();
         this.useThreadLocalOfKey = config.isUseThreadLocal();
         this.maxActiveSizeOfKey = config.getMaxActive();
@@ -292,10 +318,10 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
         this.forceRecycleBorrowedOnClose = config.isForceRecycleBorrowedOnClose();
         this.forceShutdownThreadPoolOnClose = config.isForceShutdownThreadPoolOnClose();
 
-        //step10: Register MBeans rely on configuration
+        //step11: Register MBeans rely on configuration
         if (config.isRegisterMbeans()) registerMBeans(config);
 
-        //step11: Create a hook and register it,if not existed
+        //step12: Create a hook and register it,if not existed
         if (this.exitHook == null) {
             this.exitHook = new ObjectPoolHook<>(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
@@ -321,18 +347,18 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
             try {
                 if (reinit) {//restart with new configuration
                     BeeObjectSourceConfig<K, V> checkedConfig = config.check();
-                    logPrinter.info("BeeOP({})Begin to restart pool with new configuration", this.poolName);
+                    logPrinter.info("BeeOP({})-begin to restart pool with new configuration", this.poolName);
                     //1: Clear some fields of pool
                     this.clearPoolFields(false, forceRecycleBorrowed);
 
                     //2: startup pool
                     this.startupInternal(checkedConfig);
-                    logPrinter.info("BeeOP({})Finished pool restart", this.poolName);
+                    logPrinter.info("BeeOP({})-finished pool restart", this.poolName);
                 } else {//Only Clear all category pools
-                    logPrinter.info("BeeOP({})begin to restart key category pools", this.poolName);
+                    logPrinter.info("BeeOP({})-begin to restart key category pools", this.poolName);
                     for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values())
                         pool.restart(forceRecycleBorrowed);
-                    logPrinter.info("BeeOP({})completed to restart key category pools", this.poolName);
+                    logPrinter.info("BeeOP({})-completed to restart key category pools", this.poolName);
                 }
             } finally {
                 this.poolState = POOL_READY;//reset pool state to ready
@@ -353,7 +379,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//state must be one of(POOL_NEW,POOL_READY)
-                logPrinter.info("BeeOP({})Begin to shutdown", this.poolName);
+                logPrinter.info("BeeOP({})-begin to shutdown", this.poolName);
 
                 //1: Clear some fields of pool
                 this.clearPoolFields(true, this.forceRecycleBorrowedOnClose);
@@ -361,7 +387,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
                 //2: Set pool state to closed
                 this.poolState = POOL_CLOSED;
 
-                logPrinter.info("BeeOP({})has shutdown", this.poolName);
+                logPrinter.info("BeeOP({})-has shutdown", this.poolName);
                 break;
             } else {//pool State == POOL_CLOSING
                 break;
@@ -419,7 +445,7 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     //                                      4: Pool Log Print(2+0)                                                   //
     //***************************************************************************************************************//
     public void enableLogPrint(boolean enable) {
-        this.logPrinter = getLogPrinter(KeyedObjectPool.class, enable);
+        this.logPrinter = getLogPrinter(ObjectPool.class, enable);
         for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values()) {
             pool.enableLogPrint(enable);
         }
@@ -432,8 +458,8 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     //***************************************************************************************************************//
     //                                     5: Pool Monitoring(2+0)                                                   //
     //***************************************************************************************************************//
-    public BeeObjectKeyPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) {
-        ObjectKeyPoolMonitorVo<K> monitorVo = new ObjectKeyPoolMonitorVo<>(
+    public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) {
+        ObjectPoolMonitorVo<K> monitorVo = new ObjectPoolMonitorVo<>(
                 poolName,
                 this.useFairModeOfKey,
                 this.useThreadLocalOfKey,
@@ -507,14 +533,14 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
         try {
             BeanUtil.registerMBean(configMBeanName, poolConfig);
         } catch (Throwable e) {
-            logPrinter.warn("BeeOP({})failed to register a MBean with name:{}", this.poolName, configMBeanName, e);
+            logPrinter.warn("BeeOP({})-failed to register a MBean with name:{}", this.poolName, configMBeanName, e);
         }
 
         String poolMBeanName = String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", this.poolName);
         try {
             BeanUtil.registerMBean(poolMBeanName, this);
         } catch (Throwable e) {
-            logPrinter.warn("BeeOP({})failed to register a MBean with name:{}", this.poolName, poolMBeanName, e);
+            logPrinter.warn("BeeOP({})-failed to register a MBean with name:{}", this.poolName, poolMBeanName, e);
         }
 
         //Record pool name
@@ -526,14 +552,14 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
         try {
             BeanUtil.unregisterMBean(configMBeanName);
         } catch (Throwable e) {
-            logPrinter.warn("BeeOP({})failed to unregister a MBean with name:{}", this.poolName, configMBeanName, e);
+            logPrinter.warn("BeeOP({})-failed to unregister a MBean with name:{}", this.poolName, configMBeanName, e);
         }
 
         String poolMBeanName = String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", this.poolNameOfRegisteredMBean);
         try {
             BeanUtil.unregisterMBean(poolMBeanName);
         } catch (Throwable e) {
-            logPrinter.warn("BeeOP({})failed to unregister a MBean with name:{}", this.poolName, poolNameOfRegisteredMBean, e);
+            logPrinter.warn("BeeOP({})-failed to unregister a MBean with name:{}", this.poolName, poolNameOfRegisteredMBean, e);
         }
 
         //clear pool name for MBean
@@ -583,31 +609,29 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
     private record PoolThreadFactory(String threadName) implements ThreadFactory {
 
         @Override
-        public Thread newThread(Runnable runnable) {
-            Thread thread = new Thread(runnable, threadName);
-            thread.setDaemon(true);
-            return thread;
+        public Thread newThread(@Nonnull Runnable runnable) {
+            return new Thread(runnable, threadName);
         }
     }
 
     private static class ObjectPoolHook<K, V> extends Thread {
-        private final KeyedObjectPool<K, V> pool;
+        private final ObjectPool<K, V> pool;
 
-        ObjectPoolHook(KeyedObjectPool<K, V> pool) {
+        ObjectPoolHook(ObjectPool<K, V> pool) {
             this.pool = pool;
         }
 
         public void run() {
             try {
-                pool.logPrinter.info("BeeOP({})Object pool hook is running", this.pool.poolName);
+                pool.logPrinter.info("BeeOP({})-object pool hook is running", this.pool.poolName);
                 this.pool.close();
             } catch (Throwable e) {
-                pool.logPrinter.error("BeeOP({})Error occurred while pool hook running,cause:", this.pool.poolName, e);
+                pool.logPrinter.error("BeeOP({})-error occurred while pool hook running,cause:", this.pool.poolName, e);
             }
         }
     }
 
-    private record TimeoutScanTask<K, V>(ObjectKeyCategoryPool<K, V> pool) implements Runnable {
+    private record TimeoutObjectsClearTask<K, V>(ObjectKeyCategoryPool<K, V> pool) implements Runnable {
 
         public void run() {
             try {
@@ -618,14 +642,14 @@ public final class KeyedObjectPool<K, V> implements BeeKeyedObjectPool<K, V>, Ke
         }
     }
 
-    private record MethodLogTimeoutClearTask<K, V>(KeyedObjectPool<K, V> pool, long methodExecutionLogTimeout,
-                                                   MethodExecutionLogCache<K> methodExecutionLogCache) implements Runnable {
+    private record TimeoutMethodLogsClearTask<K, V>(ObjectPool<K, V> pool, long methodExecutionLogTimeout,
+                                                    MethodExecutionLogCache<K> methodExecutionLogCache) implements Runnable {
 
         public void run() {
             try {
                 methodExecutionLogCache.clearTimeout(methodExecutionLogTimeout);
             } catch (Throwable e) {
-                pool.logPrinter.warn("BeeOP({})an exception occurred while scanning timeout method logs", this.pool.poolName, e);
+                pool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.pool.poolName, e);
             }
         }
     }

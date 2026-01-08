@@ -10,7 +10,7 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectKeyMonitorVo;
-import org.stone.beeop.BeeObjectKeyPoolMonitorVo;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
 
 /**
  * Pool JMX Bean interface
@@ -18,11 +18,11 @@ import org.stone.beeop.BeeObjectKeyPoolMonitorVo;
  * @author Chris Liao
  * @version 1.0
  */
-public interface KeyedObjectPoolMXBean<K> {
+public interface ObjectPoolMXBean<K> {
 
     void enableLogPrint(boolean enable);
 
-    BeeObjectKeyPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor);
+    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor);
 
     BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) throws Exception;
 }

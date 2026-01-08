@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
+import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 import static org.stone.tools.LogPrinter.getLogPrinter;
 
 /**
@@ -38,13 +39,13 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
  * @author Chris Liao
  * @version 1.0
  */
-final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKeyCategoryPoolMXBean {
+final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> implements Runnable, Cloneable, ObjectKeyCategoryPoolMXBean<K> {
     static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "servantTryCount");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
-    final KeyedObjectPool<K, V> parentPool;
+    final ObjectPool<K, V> parentPool;
 
     //clone begin
     private final boolean isFairMode;
@@ -63,11 +64,12 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
     private final int validTestTimeout;//seconds
     private final long parkTimeForRetryNs;//nanoseconds
     private final boolean useThreadLocal;
-    private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
-    private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
     private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
     private final Map<MethodCacheKey, Method> methodCacheMap;//cache called methods
-    LogPrinter logPrinter;
+    private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
+
+    private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
+    LogPrinter logPrinter = DefaultLogPrinter;
     //clone end
 
     //category key
@@ -93,7 +95,7 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
     //***************************************************************************************************************//
     //                                         1: Pool Creation/Start(1+2)                                           //
     //***************************************************************************************************************//
-    ObjectKeyCategoryPool(KeyedObjectPool<K, V> parentPool, BeeObjectSourceConfig<K, V> config,
+    ObjectKeyCategoryPool(ObjectPool<K, V> parentPool, BeeObjectSourceConfig<K, V> config,
                           Constructor<?> objectProxyClassConstructor) {
         //step1: copy  primitive type field
         this.parentPool = parentPool;
@@ -154,7 +156,7 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
         if (initSize > 0 && asyncCreateInitObjects) new PoolInitAsyncCreateThread<>(initSize, this).start();
         String poolMode = this.isFairMode ? "fair" : "compete";
         this.poolState = POOL_READY;
-        logPrinter.info("BeeOP({})has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
+        logPrinter.info("BeeOP({})-has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
                 this.poolName,
                 poolMode,
                 initSize,
@@ -188,7 +190,7 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
 
     private PooledObject<K, V> fillRawObject(PooledObject<K, V> p, int state, Thread creatingThread) throws Exception {
         //1: print runtime log of object creation
-        logPrinter.info("BeeOP({}))begin to create a raw object", this.poolName);
+        logPrinter.info("BeeOP({})-begin to create a raw object", this.poolName);
 
         V rawObj = null;
         try {
@@ -203,7 +205,7 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
             objectFactory.setDefault(key, rawObj);
             p.setRawObject(state, rawObj);
 
-            logPrinter.info("BeeOP({})has created a new pooled object:{} with state:{}", this.poolName, p, state);
+            logPrinter.info("BeeOP({})-has created a new pooled object:{} with state:{}", this.poolName, p, state);
 
             return p;
         } catch (Throwable e) {
@@ -340,7 +342,7 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
                 return true;
             }
         } catch (Throwable e) {
-            logPrinter.warn("BeeOP({})alive test failed on a borrowed object", this.poolName, e);
+            logPrinter.warn("BeeOP({})-alive test failed on a borrowed object", this.poolName, e);
         }
         return false;
     }
@@ -421,11 +423,11 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
     //***************************************************************************************************************//
     boolean restart(boolean forceRecycleBorrowed) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
-            logPrinter.info("BeeOP({})begin to clear all objects", this.poolName);
+            logPrinter.info("BeeOP({})-begin to clear all objects", this.poolName);
             this.removeAllObjects(forceRecycleBorrowed, DESC_RM_POOL_CLEAR);
-            logPrinter.info("BeeOP({})has clear all objects", this.poolName);
+            logPrinter.info("BeeOP({})-has clear all objects", this.poolName);
             this.poolState = POOL_READY;// restore state;
-            logPrinter.info("BeeOP({})pool has cleared all objects", this.poolName);
+            logPrinter.info("BeeOP({})-pool has cleared all objects", this.poolName);
             return true;
         } else {
             return false;
@@ -464,7 +466,7 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
 
         if (logPrinter.isEnableLogOutput()) {
             BeeObjectKeyMonitorVo<K> vo = this.getKeyMonitorVo();
-            logPrinter.info("BeeOP({})idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
+            logPrinter.info("BeeOP({})-idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.poolName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
 
@@ -494,11 +496,11 @@ final class ObjectKeyCategoryPool<K, V> implements Runnable, Cloneable, ObjectKe
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
-                logPrinter.info("BeeOP({})begin to shutdown", this.poolName);
+                logPrinter.info("BeeOP({})-begin to shutdown", this.poolName);
                 this.removeAllObjects(forceRecycleBorrowed, DESC_RM_POOL_SHUTDOWN);
 
                 this.poolState = POOL_CLOSED;
-                logPrinter.info("BeeOP({})has shutdown", this.poolName);
+                logPrinter.info("BeeOP({})-has shutdown", this.poolName);
                 break;
             } else {//pool State == POOL_CLOSING
                 break;

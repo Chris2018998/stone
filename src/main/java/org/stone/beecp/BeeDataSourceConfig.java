@@ -1307,22 +1307,22 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
                         if (!connectionFactoryProperties.isEmpty()) {
                             if (infoPrint) {
                                 for (Map.Entry<String, Object> entry : checkedConfig.connectionFactoryProperties.entrySet())
-                                    DefaultLogPrinter.info("BeeCP({}).connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    DefaultLogPrinter.info("BeeCP({})-config.connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
                                 for (Map.Entry<String, Object> entry : checkedConfig.connectionFactoryProperties.entrySet())
-                                    DefaultLogPrinter.debug("BeeCP({}).connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    DefaultLogPrinter.debug("BeeCP({})-config.connectionFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;
                     default:
                         if (infoPrint)
-                            DefaultLogPrinter.info("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            DefaultLogPrinter.info("BeeCP({})-config.{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            DefaultLogPrinter.debug("BeeCP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            DefaultLogPrinter.debug("BeeCP({})-config.{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
-            DefaultLogPrinter.warn("BeeCP({})failed to print configuration", poolName, e);
+            DefaultLogPrinter.warn("BeeCP({})-failed to print configuration", poolName, e);
         }
         DefaultLogPrinter.info("................................................BeeCP({})configuration[end]................................................", poolName);
     }

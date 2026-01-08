@@ -17,7 +17,7 @@ import java.io.Serializable;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectKeyPoolMonitorVo<K> extends Serializable {
+public interface BeeObjectPoolMonitorVo<K> extends Serializable {
 
     //***************************************************************************************************************//
     //                                     1: Pool base                                                              //
@@ -46,11 +46,11 @@ public interface BeeObjectKeyPoolMonitorVo<K> extends Serializable {
     //***************************************************************************************************************//
     //                                     3: Pool State`methods                                                     //
     //***************************************************************************************************************//
-    int getPoolState();
-
     boolean isUncreated();
 
     boolean isNew();
+
+    boolean isClosing();
 
     boolean isClosed();
 

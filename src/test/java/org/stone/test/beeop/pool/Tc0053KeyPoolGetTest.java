@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.ObjectKeyException;
-import org.stone.beeop.pool.KeyedObjectPool;
+import org.stone.beeop.pool.ObjectPool;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.stone.test.beeop.config.OsConfigFactory.createDefault;
@@ -30,7 +30,7 @@ public class Tc0053KeyPoolGetTest {
         config.setParkTimeForRetry(0L);
         config.setMaxKeySize(2);
         config.setForceRecycleBorrowedOnClose(true);
-        KeyedObjectPool pool = new KeyedObjectPool();
+        ObjectPool pool = new ObjectPool();
         pool.start(config);
 
         String testKey = "pool2";

@@ -944,7 +944,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     private void printConfiguration(BeeObjectSourceConfig<K, V> checkedConfig) {
         String poolName = checkedConfig.poolName;
         List<String> exclusionList = checkedConfig.exclusionListOfPrint;
-        DefaultLogPrinter.info("................................................BeeOP({})configuration[start]................................................", poolName);
+        DefaultLogPrinter.info("................................................BeeOP({})-configuration[start]................................................", poolName);
 
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
@@ -961,9 +961,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                                 interfacesClassBuf.append(clazz);
                             }
                             if (infoPrint)
-                                DefaultLogPrinter.info("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
+                                DefaultLogPrinter.info("BeeOP({})-config.objectInterfaces=[{}]", poolName, interfacesClassBuf);
                             else
-                                DefaultLogPrinter.debug("BeeOP({}).objectInterfaces=[{}]", poolName, interfacesClassBuf);
+                                DefaultLogPrinter.debug("BeeOP({})-config.objectInterfaces=[{}]", poolName, interfacesClassBuf);
                         }
                         break;
                     }
@@ -975,9 +975,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                                 interfaceNameBuf.append(name);
                             }
                             if (infoPrint)
-                                DefaultLogPrinter.info("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
+                                DefaultLogPrinter.info("BeeOP({})-config.objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
                             else
-                                DefaultLogPrinter.debug("BeeOP({}).objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
+                                DefaultLogPrinter.debug("BeeOP({})-config.objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
                         }
                         break;
                     }
@@ -985,10 +985,10 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                         if (!this.objectFactoryProperties.isEmpty()) {
                             if (infoPrint) {
                                 for (Map.Entry<String, Object> entry : checkedConfig.objectFactoryProperties.entrySet())
-                                    DefaultLogPrinter.info("BeeOP({}).objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    DefaultLogPrinter.info("BeeOP({})-config.objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             } else {
                                 for (Map.Entry<String, Object> entry : checkedConfig.objectFactoryProperties.entrySet())
-                                    DefaultLogPrinter.debug("BeeOP({}).objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    DefaultLogPrinter.debug("BeeOP({})-config.objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
                             }
                         }
                         break;
@@ -997,15 +997,15 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                         break;
                     default:
                         if (infoPrint)
-                            DefaultLogPrinter.info("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            DefaultLogPrinter.info("BeeOP({})-config.{}={}", poolName, fieldName, field.get(checkedConfig));
                         else
-                            DefaultLogPrinter.debug("BeeOP({}).{}={}", poolName, fieldName, field.get(checkedConfig));
+                            DefaultLogPrinter.debug("BeeOP({})-config.{}={}", poolName, fieldName, field.get(checkedConfig));
                 }
             }
         } catch (Throwable e) {
-            DefaultLogPrinter.warn("BeeOP({})failed to print configuration", poolName, e);
+            DefaultLogPrinter.warn("BeeOP({})-failed to print configuration", poolName, e);
         }
-        DefaultLogPrinter.info("................................................BeeOP({})configuration[end]................................................", poolName);
+        DefaultLogPrinter.info("................................................BeeOP({})-configuration[end]................................................", poolName);
     }
 }
 

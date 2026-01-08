@@ -234,7 +234,7 @@ public final class ConnectionPoolStatics {
                 st.setQueryTimeout(validTestTimeout);
             } catch (Throwable e) {
                 supportQueryTimeout = false;
-                DefaultLogPrinter.warn("BeeCP({})driver not support 'queryTimeout'", poolName, e);
+                DefaultLogPrinter.warn("BeeCP({})-driver not support 'queryTimeout'", poolName, e);
             }
 
             //step3: execute test sql

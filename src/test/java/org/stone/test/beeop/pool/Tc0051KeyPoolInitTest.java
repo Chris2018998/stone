@@ -12,7 +12,7 @@ package org.stone.test.beeop.pool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.pool.KeyedObjectPool;
+import org.stone.beeop.pool.ObjectPool;
 
 import static org.stone.test.beeop.config.OsConfigFactory.createDefault;
 
@@ -23,7 +23,7 @@ public class Tc0051KeyPoolInitTest {
 
     @Test
     public void testNullConfig() {
-        KeyedObjectPool pool = new KeyedObjectPool();
+        ObjectPool pool = new ObjectPool();
         try {
             pool.start(null);
         } catch (Exception e) {
@@ -33,7 +33,7 @@ public class Tc0051KeyPoolInitTest {
 
     @Test
     public void testCasInitialize() throws Exception {
-        KeyedObjectPool pool = new KeyedObjectPool();
+        ObjectPool pool = new ObjectPool();
         BeeObjectSourceConfig config = createDefault();
 
         InitializeThread thread1 = new InitializeThread(pool, config);
@@ -53,11 +53,11 @@ public class Tc0051KeyPoolInitTest {
     }
 
     private static class InitializeThread extends Thread {
-        private final KeyedObjectPool pool;
+        private final ObjectPool pool;
         private final BeeObjectSourceConfig config;
         private Exception failureException;
 
-        public InitializeThread(KeyedObjectPool pool, BeeObjectSourceConfig config) {
+        public InitializeThread(ObjectPool pool, BeeObjectSourceConfig config) {
             this.pool = pool;
             this.config = config;
         }

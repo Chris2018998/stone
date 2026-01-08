@@ -93,11 +93,6 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     //                                     2: State methods                                                          //
     //***************************************************************************************************************//
     @Override
-    public int getPoolState() {
-        return poolState;
-    }
-
-    @Override
     public boolean isUncreated() {
         return poolState == POOL_UNCREATED;
     }
@@ -105,6 +100,11 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     @Override
     public boolean isNew() {
         return poolState == POOL_NEW;
+    }
+
+    @Override
+    public boolean isClosing() {
+        return poolState == POOL_CLOSING;
     }
 
     @Override

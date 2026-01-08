@@ -105,7 +105,6 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
         } catch (Exception e) {
             if (predicate != null && isNotBlank(predicate.evictionTest(e)))
                 p.abortSelf(DESC_RM_BAD);
-
             throw e;
         }
     }

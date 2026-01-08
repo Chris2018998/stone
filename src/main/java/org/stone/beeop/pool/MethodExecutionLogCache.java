@@ -26,20 +26,20 @@ import static org.stone.beeop.BeeMethodExecutionLog.Type_Object_Get;
  * @author Chris Liao
  * @version 1.0
  */
-final class MethodExecutionLogCache<K> {
+class MethodExecutionLogCache<K> {
     //pool name
-    private final String poolName;
+    private String poolName;
     //cache size
-    private final int maxSize;
+    private int maxSize;
     //slow threshold value of objects get,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowobjectGetThreshold}
-    private final long slowObjectGetThreshold;
+    private long slowObjectGetThreshold;
     //slow threshold of sql execution,time unit:milliseconds,refer to {@code BeeDataSourceConfig.slowSQLExecutionThreshold}
-    private final long slowMethodCallThreshold;
+    private long slowMethodCallThreshold;
 
     //queue to store logs of objects getting
-    private final LinkedBlockingQueue<MethodExecutionLog<K>> objectGetLogsQueue;
+    private LinkedBlockingQueue<MethodExecutionLog<K>> objectGetLogsQueue;
     //queue to store logs of methods call
-    private final LinkedBlockingQueue<MethodExecutionLog<K>> methodsCallLogsQueue;
+    private LinkedBlockingQueue<MethodExecutionLog<K>> methodsCallLogsQueue;
     //listener to process method execution logs
     private BeeMethodExecutionListener<K> listener;
 
@@ -55,8 +55,7 @@ final class MethodExecutionLogCache<K> {
      * @param slowExec  is slow threshold of sql execution,time unit:milliseconds
      * @param listener  is an execution listener
      */
-    MethodExecutionLogCache(String poolName, int cacheSize, long slowGet, long slowExec,
-                            BeeMethodExecutionListener<K> listener) {
+    void initCache(String poolName, int cacheSize, long slowGet, long slowExec, BeeMethodExecutionListener<K> listener) {
         this.poolName = poolName;
         this.listener = listener;
         this.slowObjectGetThreshold = slowGet;

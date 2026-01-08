@@ -105,8 +105,8 @@ public class Tc0035DsPoolMBeanTest {
                 Assertions.assertTrue(mBeanServer.isRegistered(jmxRegName2));
             }
             String logs = logCollector.endLogCollector();
-            String msg1 = "BeeCP(" + poolName + ")failed to register a MBean with name:" + name1;
-            String msg2 = "BeeCP(" + poolName + ")failed to register a MBean with name:" + name2;
+            String msg1 = "BeeCP(" + poolName + ")-failed to register a MBean with name:" + name1;
+            String msg2 = "BeeCP(" + poolName + ")-failed to register a MBean with name:" + name2;
 
             Assertions.assertTrue(logs.contains(msg1));
             Assertions.assertTrue(logs.contains(msg2));
@@ -141,8 +141,8 @@ public class Tc0035DsPoolMBeanTest {
             mBeanServer.unregisterMBean(jmxRegName2);
         }
         String logs = logCollector.endLogCollector();
-        String msg1 = "BeeCP(" + poolName + ")failed to unregister a MBean with name:" + name1;
-        String msg2 = "BeeCP(" + poolName + ")failed to unregister a MBean with name:" + name2;
+        String msg1 = "BeeCP(" + poolName + ")-failed to unregister a MBean with name:" + name1;
+        String msg2 = "BeeCP(" + poolName + ")-failed to unregister a MBean with name:" + name2;
         Assertions.assertTrue(logs.contains(msg1));
         Assertions.assertTrue(logs.contains(msg2));
     }

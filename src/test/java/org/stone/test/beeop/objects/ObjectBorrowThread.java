@@ -9,7 +9,7 @@
  */
 package org.stone.test.beeop.objects;
 
-import org.stone.beeop.BeeKeyedObjectPool;
+import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.test.base.TestUtil;
@@ -21,7 +21,7 @@ import org.stone.test.base.TestUtil;
  */
 public class ObjectBorrowThread extends Thread {
     private final BeeObjectSource os;
-    private final BeeKeyedObjectPool pool;
+    private final BeeObjectPool pool;
     private final Object objectKey;
     private BeeObjectHandle objectHale;
     private Exception failureCause;
@@ -30,11 +30,11 @@ public class ObjectBorrowThread extends Thread {
         this(os, null, null);
     }
 
-    public ObjectBorrowThread(BeeKeyedObjectPool pool) {
+    public ObjectBorrowThread(BeeObjectPool pool) {
         this(null, pool, null);
     }
 
-    public ObjectBorrowThread(BeeObjectSource os, BeeKeyedObjectPool pool, Object objectKey) {
+    public ObjectBorrowThread(BeeObjectSource os, BeeObjectPool pool, Object objectKey) {
         this.os = os;
         this.pool = pool;
         this.objectKey = objectKey;

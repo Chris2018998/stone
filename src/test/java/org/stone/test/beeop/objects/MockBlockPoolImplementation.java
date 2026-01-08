@@ -13,7 +13,7 @@ import org.stone.beeop.*;
 
 import java.util.List;
 
-public class MockBlockPoolImplementation<K, V> implements BeeKeyedObjectPool<K, V> {
+public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
 
     public void start(BeeObjectSourceConfig<K, V> config) throws Exception {
 
@@ -113,7 +113,7 @@ public class MockBlockPoolImplementation<K, V> implements BeeKeyedObjectPool<K, 
         return null;
     }
 
-    public BeeObjectKeyPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) {
+    public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) {
         return null;
     }
 

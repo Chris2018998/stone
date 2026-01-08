@@ -11,6 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_CLOSING;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -52,12 +53,6 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     }
 
     @Override
-    public int getState() {
-        return poolState;
-    }
-
-
-    @Override
     public boolean isUncreated() {
         return poolState == POOL_UNCREATED;
     }
@@ -65,6 +60,11 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     @Override
     public boolean isNew() {
         return poolState == POOL_NEW;
+    }
+
+    @Override
+    public boolean isClosing() {
+        return poolState == POOL_CLOSING;
     }
 
     @Override
