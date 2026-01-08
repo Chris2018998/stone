@@ -1,19 +1,19 @@
-# ?? BeeCP
+# 🌿 BeeCP
  
 A JDBC connection pool with the characteristics of minimal code, few dependencies, high performance, and high coverage; Technical advantages: single-connection caching, fixed-length array, non-moving wait, asynchronous addition, etc.
  
-* Supports blocking interruption operations?
-* Supports restart and configuration reload?
-* Provides interfaces for extensibility?
-* Supports virtual thread applications?
-* [Includes built-in monitoring capabilities?](https://github.com/Chris2018998/beecp-starter)
+* Supports blocking interruption operations‌
+* Supports restart and configuration reload‌
+* Provides interfaces for extensibility‌
+* Supports virtual thread applications‌
+* [Includes built-in monitoring capabilities‌](https://github.com/Chris2018998/beecp-starter)
 
 ![image](https://github.com/user-attachments/assets/d2753c33-e671-4d79-92e5-cfb4cae281e0)<br/>
 
 ![image](https://github.com/user-attachments/assets/31c37580-9cec-42fa-b56f-3421052ab3b8)
 
 ##
-??**Performance of Pools**
+📊**Performance of Pools**
 
 JMH Performance tested with HikariCP-benchmark.
 
@@ -23,7 +23,7 @@ JMH Performance tested with HikariCP-benchmark.
 </sup>
 
 ##
-??***Compare to HikariCP***
+🍒***Compare to HikariCP***
 
 | Item                                                                | HikariCP                                 | BeeCP                                      |
 |-------------------------------------------------------------------  |------------------------------------------|-------------------------------------------- |
@@ -55,7 +55,7 @@ JMH Performance tested with HikariCP-benchmark.
 _[**HikariCP**](https://github.com/brettwooldridge/HikariCP) is an excellent open source project and widely used in the Java world, it is developed by Brettwooldridge, a senior JDBC expert of United States_
 
 ## 
-?**DB Down Test**
+⏰**DB Down Test**
 
 As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/HikariCP/wiki/Bad-Behavior:-Handling-Database-Down), Brettwooldridge(the author of HikariCP) did a test with four pools to verify timeout reactivity on scenario of database down, but only HikariCP pool could respond within five seconds, so we do the same test with BeeCP. [View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/DbDownTest.java).
 
@@ -91,7 +91,7 @@ As famous [5 seconds timeout test on pools](https://github.com/brettwooldridge/H
 
 
 ## 
-??**Operation on closed Statement**
+✈️**Operation on closed Statement**
 
 I believe many people have known that there exists dependency relationship between JDBC connection, preparedStatement, and resultSet. If close owner object, its opened objects will automatically be closed, however, there is an exception to this, let us do a test to verify it.[View the test source code](../beecp/test/src/main/java/org/stone/beecp/other/MysqlClosedPreparedStatementTest.java).
 
@@ -100,7 +100,7 @@ I believe many people have known that there exists dependency relationship betwe
 *^-^ It is an issue? how to resolve it?*
 
 ## 
-??**How To Use It**
+👉**How To Use It**
 
 BeeCP provide datasource implementation wrap pool instance and its use is like other pools.
 
@@ -116,7 +116,7 @@ config.setUsername("root");
 config.setPassword("root");
 BeeDataSource ds = new BeeDataSource(config);
 
-//step2:get connection
+//step2：get connection
 try(Connection con = ds.getConnection()){
   //...... your code
 }
@@ -162,7 +162,7 @@ spring.datasource.maxWait=30000
 ```
 
 ##
-??**List Of Configuration Properties**
+🔡**List Of Configuration Properties**
 
 BeeCP provide a configuration object, which defines some properties to be set.
 
@@ -173,10 +173,10 @@ BeeCP provide a configuration object, which defines some properties to be set.
 | jdbcUrl                         | jdbc url link to database                                                            | none                                                |
 | driverClassName                 | jdbc driver class name                                                               | none                                                |
 | poolName	                      | If not set, a name generated for it                                                  | none                                                |
-| fairMode                        | Connection getting mode applied on semaphore and transfer                            | false(unfair mode)                                | 
+| fairMode                        | Connection getting mode applied on semaphore and transfer                            | false（unfair mode）                                | 
 | initialSize                     | Creation size of connections when pool initializes                                   | 0                                                   |
 | maxActive                       | Maximum of connections in pool                                                       | Math.min(Math.max(10, NCPU), 50)                    | 
-| borrowSemaphoreSize             | Max permit size of semaphore for conneciton getting                                  | min(maxActive/2,CPU size)                          |
+| borrowSemaphoreSize             | Max permit size of semaphore for conneciton getting                                  | min(maxActive/2,CPU size）                          |
 | defaultAutoCommit               | Connection.setAutoComit(defaultAutoCommit),if not set, read it from first connection | none                                                |
 | defaultTransactionIsolationCode | Connection.setTransactionIsolation(defaultTransactionIsolationCode), if not set, read it from first connection| none                        |
 | defaultCatalog                  | Connection.setCatalog(defaultCatalog), if not set, read it from first connection      | none                                                |
@@ -193,7 +193,7 @@ BeeCP provide a configuration object, which defines some properties to be set.
 | timerCheckInterval              | An interval time to scans out timeout connections(idle timeout and hold timeout) (ms)   | 18000                                            |
 | forceDirtyOnSchemaAfterSet      | An indicator of force dirty on schema property to support to be reset under transaction, for example:PG driver  | false                     |
 | forceDirtyOnCatalogAfterSet     | An indicator of force dirty on catalog property to support to be reset under transaction, for example:PG driver | false                     |
-| enableThreadLocal               | A indicator to enable or disable threadlocal in pool(false to support virtual threads) | true                                              | 
+| enableThreadLocal               | A indicator to enable or disable threadlocal in pool（false to support virtual threads) | true                                              | 
 | enableJmx                       | A indicator to enable or disable pool registeration to JMX                              | false                                            | 
 | printConfigInfo                 | A indicator to print configuration info by log when pool initializes                    | false                                            | 
 | printRuntimeLog                 | A indicator to print pool working logs, also pool provide method to support switch between print or not print| false                            | 
@@ -207,10 +207,10 @@ BeeCP provide a configuration object, which defines some properties to be set.
 | **jdbcLinkInfoDecoderClass**        | Decoder class of jdbc link info, a constructor without parameters is required       | none                                              |
 | **jdbcLinkInfoDecoderClassName**    | Decoder class name of jdbc link info, a constructor without parameters is required  | none                                              |
 
-***Object type properties**,effective order:instance > class > class name
+***Object type properties**，effective order：instance > class > class name
 
 ##
-??**Configuration Loading**
+📝**Configuration Loading**
 
 BeeCP supports loading configuration properties from properties files and properties object(*java.util.Properties*), a reference example is below
 
@@ -245,7 +245,7 @@ config.loadFromPropertiesFile("d:\beecp\config.properties");
 ```
 
 ##
-?**Driver Parameters Setting**
+⚙**Driver Parameters Setting**
 
 BeeCP pool uses a driver, a datasource or a connection factory to create connections,whose work may depend some parameters need be set from outside. BeeCP has defined two methods[**addConnectProperty(String,Object); addConnectProperty(String)**] in its configuration object(*org.stone.beecp.BeeDataSourceConfig*) to add those parameters injected to 
 driver/datasource/connection factory during pool initializing. Three segment blocks are blow for reference.
@@ -269,7 +269,7 @@ driver/datasource/connection factory during pool initializing. Three segment blo
 ```properties
 connectProperties=cachePrepStmts=true&prepStmtCacheSize=50
 ```
-***Reference 3**(properties file to configure them,recommand this way if multiple parameters)*
+***Reference 3**(properties file to configure them，recommand this way if multiple parameters)*
 
 ```properties
 connectProperties.size=2
@@ -278,7 +278,7 @@ connectProperties.2=prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
 ```
 
 ##
-??**Connection Eviction**
+📤**Connection Eviction**
 
  BeeCP provides three ways to evict connections from pool: *method call(1)* and *configuration match check(2,3)* and *predicate check(4)*
 
@@ -313,7 +313,7 @@ evictPredicateClassName=org.stone.beecp.objects.MockEvictConnectionPredicate
 * Priority order: Predicate check > error code check > sql state check
 
 ##
-???**Interrupt blocking**
+🛤️**Interrupt blocking**
 
 Maybe database overhead too heavy, or maybe network issues, or other reasons, sometime the creation of connections blocking in JDBC Pools, BeeDatasource provides a method to attempt to interrupt blocking.
 
@@ -327,19 +327,19 @@ beeDs.interruptConnectionCreating(true);
 ```
 
 ##
-??**Clean and Reinitialization**
+🛒**Clean and Reinitialization**
 
 BeeCP provides two clear methods on the data source (BeeDataSource) to clean up the connections created in the pool and restore the pool to its initial state,not accept external requests during clean
 
 * ```clear(boolean forceCloseUsing);//forceCloseUsing is true,then recyle borrowed conenction by force ```
 
-* ```clear(boolean forceCloseUsing, BeeDataSourceConfig config);//forceCloseUsing is true,then recyle borrowed conenction by force;then reinitiaize pool with new configuration```
+* ```clear(boolean forceCloseUsing, BeeDataSourceConfig config);//forceCloseUsing is true,then recyle borrowed conenction by force；then reinitiaize pool with new configuration```
 
 *_Interrupt them if connection creation exist druing clean process;let waiters to exit waiting for ending request of connection getting_
 
 
 ##
-??**Factory customization**
+🏭**Factory customization**
 
 Beecp provides factory interfaces (BeeConnectFactory, BeeXaConnectFactory) for custom implementation of connection
 creation, and there are four methods on the BeeDataSourceConfig object (setConnectFactory, setXaConnectFactory,
