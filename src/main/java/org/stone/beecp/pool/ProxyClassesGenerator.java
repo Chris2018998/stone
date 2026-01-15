@@ -416,7 +416,7 @@ final class ProxyClassesGenerator {
                     CtClass[] parameterTypes = ctMethod.getParameterTypes();
                     int methodParameterSize = parameterTypes.length;
                     if (methodParameterSize == 0) {
-                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_SQL_Preparation,").append(methodSignature).append(",null,null,null);");
+                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_Statement_Log,").append(methodSignature).append(",null,null,null);");
                     } else {
                         methodBuffer.append("Object[]parameters = new Object[]{");
                         for (int i = 0; i < methodParameterSize; i++) {
@@ -424,7 +424,7 @@ final class ProxyClassesGenerator {
                             methodBuffer.append(getConvertType("$" + (i + 1), parameterTypes[i]));
                         }
                         methodBuffer.append("};");
-                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_SQL_Preparation,").append(methodSignature).append(",parameters,null,null);");
+                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_Statement_Log,").append(methodSignature).append(",parameters,null,null);");
                     }
 
                     //2.2: add 'try'
@@ -453,7 +453,7 @@ final class ProxyClassesGenerator {
                     CtClass[] parameterTypes = ctMethod.getParameterTypes();
                     int methodParameterSize = parameterTypes.length;
                     if (methodParameterSize == 0) {
-                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_SQL_Preparation,").append(methodSignature).append(",null,null,null);");
+                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_Connection_Log,").append(methodSignature).append(",null,null,null);");
                     } else {
                         methodBuffer.append("Object[]parameters = new Object[]{");
                         for (int i = 0; i < methodParameterSize; i++) {
@@ -461,7 +461,7 @@ final class ProxyClassesGenerator {
                             methodBuffer.append(getConvertType("$" + (i + 1), parameterTypes[i]));
                         }
                         methodBuffer.append("};");
-                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_SQL_Preparation,").append(methodSignature).append(",parameters,null,null);");
+                        methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_Connection_Log,").append(methodSignature).append(",parameters,null,null);");
                     }
 
                     //3.2: add 'try'
@@ -579,7 +579,7 @@ final class ProxyClassesGenerator {
 
                 //1: add start log
                 if (methodParameterSize == 0) {
-                    methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_SQL_Execution,").append(methodSignature).append(",null,preparedSql,this);");
+                    methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_Statement_Log,").append(methodSignature).append(",null,preparedSql,this);");
                 } else {
                     methodBuffer.append("Object[]parameters = new Object[]{");
                     for (int i = 0; i < methodParameterSize; i++) {
@@ -587,7 +587,7 @@ final class ProxyClassesGenerator {
                         methodBuffer.append(getConvertType("$" + (i + 1), parameterTypes[i]));
                     }
                     methodBuffer.append("};");
-                    methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_SQL_Execution,").append(methodSignature).append(",parameters,preparedSql,this);");
+                    methodBuffer.append("BeeMethodExecutionLog log = logCache.beforeCall(BeeMethodExecutionLog.Type_Statement_Log,").append(methodSignature).append(",parameters,preparedSql,this);");
                 }
 
                 //2: add 'try' code snippet

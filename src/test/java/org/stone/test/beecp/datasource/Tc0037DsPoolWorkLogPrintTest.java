@@ -41,15 +41,13 @@ public class Tc0037DsPoolWorkLogPrintTest {
 
             //print log
             Connection con = ds.getConnection();
-            Assertions.assertTrue(ds.isPrintRuntimeLogs());
             Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogPrint());
             String logContent = logCollector.endLogCollector();
             Assertions.assertTrue(logContent.contains("start to create a connection"));
             con.abort(null);
 
             //2: not print log
-            ds.setPrintRuntimeLogs(false);
-            Assertions.assertFalse(ds.isPrintRuntimeLogs());
+            ds.enableLogPrinter(false);
             Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledLogPrint());
             logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {
@@ -68,7 +66,7 @@ public class Tc0037DsPoolWorkLogPrintTest {
 
         try (BeeDataSource ds = new BeeDataSource(config)) {
             //1: not print runtime log
-            Assertions.assertFalse(ds.isPrintRuntimeLogs());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledLogPrint());
             LogCollector logCollector = LogCollector.startLogCollector();
             Connection con = ds.getConnection();
             String logContent = logCollector.endLogCollector();
@@ -76,10 +74,8 @@ public class Tc0037DsPoolWorkLogPrintTest {
             con.abort(null);
 
             //2: print runtime log
-            ds.enableLogPrint(true);
-            Assertions.assertTrue(ds.isPrintRuntimeLogs());
+            ds.enableLogPrinter(true);
             Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogPrint());
-            Assertions.assertTrue(ds.isPrintRuntimeLogs());
             logCollector = LogCollector.startLogCollector();
             try (Connection ignored = ds.getConnection()) {
                 logContent = logCollector.endLogCollector();

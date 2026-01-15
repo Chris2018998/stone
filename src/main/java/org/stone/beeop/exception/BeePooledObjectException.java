@@ -10,15 +10,17 @@
 package org.stone.beeop.exception;
 
 /**
- * object call exception
+ * Base exception for pooled objects.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectCalledException extends BeeObjectException {
-
-    public ObjectCalledException(String message) {
+public class BeePooledObjectException extends Exception {
+    public BeePooledObjectException(String message) {
         super(message);
     }
 
+    public BeePooledObjectException(Throwable cause) {
+        super(cause);
+    }
 }

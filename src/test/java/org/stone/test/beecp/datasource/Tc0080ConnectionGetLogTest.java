@@ -24,7 +24,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.stone.beecp.BeeMethodExecutionLog.Type_Connection_Get;
+import static org.stone.beecp.BeeMethodExecutionLog.Type_Pool_Log;
 
 /**
  * @author Chris Liao
@@ -46,11 +46,11 @@ public class Tc0080ConnectionGetLogTest {
                 Assertions.fail("[testConnectionExceptionLog]Test failed");
             } catch (SQLException e) {
                 Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
-                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_Connection_Get);
+                List<BeeMethodExecutionLog> logList = ds.getLogs(Type_Pool_Log);
                 Assertions.assertEquals(1, logList.size());
                 BeeMethodExecutionLog log = logList.get(0);
                 Assertions.assertNotNull(log.getId());
-                Assertions.assertEquals(Type_Connection_Get, log.getType());
+                Assertions.assertEquals(Type_Pool_Log, log.getType());
 
                 Assertions.assertEquals("FastConnectionPool.getConnection()", log.getMethod());
                 Assertions.assertFalse(log.isSuccessful());
@@ -80,11 +80,11 @@ public class Tc0080ConnectionGetLogTest {
                 }
             } catch (SQLException e) {
                 Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
-                List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_Connection_Get);
+                List<BeeMethodExecutionLog> logList = ds.getLogs(Type_Pool_Log);
                 Assertions.assertEquals(1, logList.size());
                 BeeMethodExecutionLog log = logList.get(0);
                 Assertions.assertNotNull(log.getId());
-                Assertions.assertEquals(Type_Connection_Get, log.getType());
+                Assertions.assertEquals(Type_Pool_Log, log.getType());
 
                 Assertions.assertEquals("FastConnectionPool.getXAConnection()", log.getMethod());
                 Assertions.assertTrue(log.isException());
@@ -95,8 +95,8 @@ public class Tc0080ConnectionGetLogTest {
                 Assertions.assertTrue(log.getEndTime() != 0);
                 Assertions.assertTrue(log.getEndTime() >= log.getStartTime());
 
-                logList = ds.clearMethodExecutionLogs(Type_Connection_Get);
-                Assertions.assertEquals(1, logList.size());
+                Assertions.assertEquals(1, ds.getLogs(Type_Pool_Log).size());
+                ds.clearLogs(Type_Pool_Log);
             }
         }
     }
@@ -117,11 +117,11 @@ public class Tc0080ConnectionGetLogTest {
             borrowThread.start();
             borrowThread.join();
             Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
-            List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_Connection_Get);
+            List<BeeMethodExecutionLog> logList = ds.getLogs(Type_Pool_Log);
             Assertions.assertEquals(1, logList.size());
             BeeMethodExecutionLog log = logList.get(0);
             Assertions.assertNotNull(log.getId());
-            Assertions.assertEquals(Type_Connection_Get, log.getType());
+            Assertions.assertEquals(Type_Pool_Log, log.getType());
             Assertions.assertTrue(log.isSlow());
             Assertions.assertTrue(log.isSuccessful());
             Assertions.assertFalse(log.isException());
@@ -141,9 +141,9 @@ public class Tc0080ConnectionGetLogTest {
             borrowThread.start();
             borrowThread.join();
 
-            List<BeeMethodExecutionLog> logList = ds.getMethodExecutionLogs(Type_Connection_Get);
+            List<BeeMethodExecutionLog> logList = ds.getLogs(Type_Pool_Log);
             BeeMethodExecutionLog log = logList.get(0);
-            Assertions.assertEquals(Type_Connection_Get, log.getType());
+            Assertions.assertEquals(Type_Pool_Log, log.getType());
             Assertions.assertTrue(log.isSlow());
         }
     }

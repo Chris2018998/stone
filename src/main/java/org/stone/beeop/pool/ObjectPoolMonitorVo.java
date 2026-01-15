@@ -15,7 +15,6 @@ import org.stone.beeop.BeeObjectPoolMonitorVo;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_CLOSING;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -36,15 +35,15 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     private final boolean usingThreadLocal;
     private final Map<K, BeeObjectKeyMonitorVo<K>> keyMonitorVoMap;
 
-    ObjectPoolMonitorVo(String poolName,
-                        boolean useFairMode,
-                        boolean useThreadLocal,
-                        int maxKeySize,
-                        int maxActiveSizeOfKey,
-                        int semaphoreSizeOfKey,
-                        int poolState,
-                        boolean enabledLogPrint,
-                        boolean enabledMethodExecutionLogCache) {
+    public ObjectPoolMonitorVo(String poolName,
+                               boolean useFairMode,
+                               boolean useThreadLocal,
+                               int maxKeySize,
+                               int maxActiveSizeOfKey,
+                               int semaphoreSizeOfKey,
+                               int poolState,
+                               boolean enabledLogPrint,
+                               boolean enabledMethodExecutionLogCache) {
         this.poolName = poolName;
         this.poolState = poolState;
         this.isFairMode = useFairMode;
@@ -134,7 +133,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     }
 
     //Query log print is whether enabled
-    public boolean isEnabledLogPrint() {
+    public boolean isEnabledLogPrinter() {
         return this.enabledLogPrint;
     }
 
@@ -149,7 +148,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     }
 
     //return monitor vos of pooled keys
-    public BeeObjectKeyMonitorVo<K>[] getAllKeyMonitorVos() {
+    public BeeObjectKeyMonitorVo<K>[] getKeyMonitorVos() {
         return keyMonitorVoMap.values().toArray(new BeeObjectKeyMonitorVo[keyMonitorVoMap.size()]);
     }
 

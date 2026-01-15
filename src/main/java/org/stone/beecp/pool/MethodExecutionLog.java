@@ -22,11 +22,11 @@ import java.util.UUID;
  */
 public class MethodExecutionLog implements BeeMethodExecutionLog {
     //Method call is in executing
-    static final int Status_Running = 0;
+    static final int State_Running = 0;
     //Method call is successful
-    static final int Status_Successful = 1;
+    static final int State_Successful = 1;
     //Method call is failed
-    static final int Status_Failed = 2;
+    static final int State_Failed = 2;
 
     //Log type
     private final int type;
@@ -45,7 +45,7 @@ public class MethodExecutionLog implements BeeMethodExecutionLog {
     //End time of method call,time unit:milliseconds
     private long endTime;
     //End time of method call,time unit:milliseconds
-    private int status = Status_Running;
+    private int status = State_Running;
 
     //Result object of method call
     private transient Object resultObject;
@@ -109,15 +109,15 @@ public class MethodExecutionLog implements BeeMethodExecutionLog {
     }
 
     public boolean isRunning() {
-        return this.status == Status_Running;
+        return this.status == State_Running;
     }
 
     public boolean isSuccessful() {
-        return this.status == Status_Successful;
+        return this.status == State_Successful;
     }
 
     public boolean isException() {
-        return this.status == Status_Failed;
+        return this.status == State_Failed;
     }
 
     public boolean isSlow() {
@@ -196,10 +196,10 @@ public class MethodExecutionLog implements BeeMethodExecutionLog {
         this.endTime = System.currentTimeMillis();
         if (result instanceof Throwable) {
             this.failCause = (Throwable) result;
-            this.status = Status_Failed;
+            this.status = State_Failed;
         } else {
             this.resultObject = result;
-            this.status = Status_Successful;
+            this.status = State_Successful;
         }
     }
 

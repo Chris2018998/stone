@@ -7,20 +7,17 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.beeop.exception;
+package org.stone.beecp.exception;
 
 /**
- * Base exception for pooled objects.
+ * Throws this exception when datasource pool rejects methods call.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectException extends Exception {
-    public BeeObjectException(String message) {
-        super(message);
-    }
+public class BeeDataSourcePoolNotReadyException extends ConnectionGetException {
 
-    public BeeObjectException(Throwable cause) {
-        super(cause);
+    public BeeDataSourcePoolNotReadyException(String s) {
+        super(s);
     }
 }

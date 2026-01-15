@@ -15,8 +15,8 @@ import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeMethodExecutionLog;
 import org.stone.beecp.exception.BeeDataSourceConfigException;
-import org.stone.beecp.exception.BeeDataSourcePoolNotInstantiatedException;
-import org.stone.beecp.exception.BeeDataSourcePoolStartedException;
+import org.stone.beecp.exception.BeeDataSourcePoolLazyInitializationException;
+import org.stone.beecp.exception.BeeDataSourcePoolStartedFailureException;
 import org.stone.test.beecp.driver.MockDriver;
 
 import javax.sql.XAConnection;
@@ -39,64 +39,64 @@ public class Tc0031DsPoolNotReadyTest {
             try {
                 ds.restart(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
                 ds.restart(false, new BeeDataSourceConfig());
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
 
             try {
-                ds.enableLogPrint(false);
+                ds.enableLogPrinter(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
 //            try {
 //                ds.isEnabledLogPrint();
 //                Assertions.fail("[testPoolNotCreatedException]test failed");
 //            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-//                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+//                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
 //            }
 
             try {
-                ds.enableMethodExecutionLogCache(false);
+                ds.enableLogCache(false);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.clearMethodExecutionLogs(BeeMethodExecutionLog.Type_Connection_Get);
+                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.getMethodExecutionLogs(BeeMethodExecutionLog.Type_Connection_Get);
+                ds.getLogs(BeeMethodExecutionLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.clearMethodExecutionLogs(BeeMethodExecutionLog.Type_Connection_Get);
+                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
                 ds.getConnection();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Throwable cause = e.getCause();
                 Assertions.assertInstanceOf(BeeDataSourceConfigException.class, cause);
                 Assertions.assertEquals("jdbcUrl must not be null or blank", cause.getMessage());
@@ -104,7 +104,7 @@ public class Tc0031DsPoolNotReadyTest {
             try {
                 ds.getConnection("root", "root");
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Throwable cause = e.getCause();
                 Assertions.assertInstanceOf(BeeDataSourceConfigException.class, cause);
                 Assertions.assertEquals("jdbcUrl must not be null or blank", cause.getMessage());
@@ -113,7 +113,7 @@ public class Tc0031DsPoolNotReadyTest {
             try {
                 ds.getXAConnection();
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Throwable cause = e.getCause();
                 Assertions.assertInstanceOf(BeeDataSourceConfigException.class, cause);
                 Assertions.assertEquals("jdbcUrl must not be null or blank", cause.getMessage());
@@ -122,7 +122,7 @@ public class Tc0031DsPoolNotReadyTest {
             try {
                 ds.getXAConnection("root", "root");
                 Assertions.fail("[testPoolNotCreatedException]test failed");
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Throwable cause = e.getCause();
                 Assertions.assertInstanceOf(BeeDataSourceConfigException.class, cause);
                 Assertions.assertEquals("jdbcUrl must not be null or blank", cause.getMessage());
@@ -142,63 +142,63 @@ public class Tc0031DsPoolNotReadyTest {
             try {
                 ds.restart(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
                 ds.restart(false, new BeeDataSourceConfig());
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.enableLogPrint(false);
+                ds.enableLogPrinter(false);
                 Assertions.assertFalse(ds.isPrintRuntimeLogs());
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.enableMethodExecutionLogCache(false);
+                ds.enableLogCache(false);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.clearMethodExecutionLogs(BeeMethodExecutionLog.Type_Connection_Get);
+                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.getMethodExecutionLogs(BeeMethodExecutionLog.Type_Connection_Get);
+                ds.getLogs(BeeMethodExecutionLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.clearMethodExecutionLogs(BeeMethodExecutionLog.Type_Connection_Get);
+                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
-            } catch (BeeDataSourcePoolNotInstantiatedException e) {
-                Assertions.assertEquals("Datasource pool not instantiated", e.getMessage());
+            } catch (BeeDataSourcePoolLazyInitializationException e) {
+                Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             //pool created during getConnection() method call
             try (Connection ignored = ds.getConnection()) {
                 Assertions.assertNotNull(ignored);
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             }
 
             try (Connection ignored = ds.getConnection("root", "root")) {
                 Assertions.assertNotNull(ignored);
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             }
 
@@ -207,7 +207,7 @@ public class Tc0031DsPoolNotReadyTest {
                 try (Connection ignored = xaConnection1.getConnection()) {
                     Assertions.assertNotNull(ignored);
                 }
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             }
 
@@ -216,7 +216,7 @@ public class Tc0031DsPoolNotReadyTest {
                 try (Connection ignored = xaConnection2.getConnection()) {
                     Assertions.assertNotNull(ignored);
                 }
-            } catch (BeeDataSourcePoolStartedException e) {
+            } catch (BeeDataSourcePoolStartedFailureException e) {
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             }
         }

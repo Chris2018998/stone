@@ -19,6 +19,7 @@ import org.stone.tools.extension.InterruptableSemaphore;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static org.stone.beeop.BeeMethodExecutionLog.Type_Key_Log;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 import static org.stone.tools.LogPrinter.getLogPrinter;
@@ -39,7 +41,7 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
  * @author Chris Liao
  * @version 1.0
  */
-final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> implements Runnable, Cloneable, ObjectKeyCategoryPoolMXBean<K> {
+final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> implements Runnable, Cloneable {
     static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "poolState");
@@ -82,6 +84,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     private volatile int servantState;
     //represents retry count to get pooled objects
     private volatile int servantTryCount;
+    private boolean collectMethodLogs;
 
     //category pool semaphore
     private InterruptableSemaphore semaphore;
@@ -199,7 +202,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
             if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
                 if (creatingThread.isInterrupted() && Thread.interrupted())
                     throw new ObjectGetInterruptedException("Interrupted on creating a raw object by factory");
-                throw new ObjectCreatedException("Internal error occurred in object factory");
+                throw new BeePooledObjectCreatedException("Internal error occurred in object factory");
             }
 
             objectFactory.setDefault(key, rawObj);
@@ -211,7 +214,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
         } catch (Throwable e) {
             p.state = OBJECT_CLOSED;//reset to closed state
             if (rawObj != null) this.objectFactory.destroy(key, rawObj);
-            throw new ObjectCreatedException(e);
+            throw new BeePooledObjectCreatedException(e);
         } finally {
             p.creatingInfo = null;
         }
@@ -220,10 +223,26 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     //***************************************************************************************************************//
     //                                         3: Pooled objects get(1+3)                                            //                                                                                  //
     //***************************************************************************************************************//
+    public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
+        if (this.collectMethodLogs) {
+            BeeMethodExecutionLog<K> log = this.beforeCall(this.key, Type_Key_Log, "ObjectKeyCategoryPool.getObjectHandle()", new Object[]{startTime});
+            try {
+                BeeObjectHandle<K, V> handle = this.getObjectHandleInternal(startTime);
+                this.afterCall(handle, log);
+                return handle;
+            } catch (SQLException e) {
+                this.afterCall(e, log);
+                throw e;
+            }
+        } else {
+            return this.getObjectHandleInternal(startTime);
+        }
+    }
+
     //*** Core method for get *****
-    public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
+    private BeeObjectHandle<K, V> getObjectHandleInternal(long startTime) throws Exception {
         if (this.poolState != POOL_READY)
-            throw new BeeObjectSourcePoolRejectedException("Pool has been closed or in clearing");
+            throw new BeeObjectSourcePoolNotReadyException("Pool has been closed or in clearing");
 
         //1: try to reuse object in thread local
         Borrower<K, V> b = null;
@@ -249,7 +268,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
 
         try {
             //2: try to acquire a permit from pool semaphore
-            long deadline = System.currentTimeMillis();
+            long deadline = startTime > 0L ? startTime : System.currentTimeMillis();
             if (this.semaphore.tryAcquire(this.maxWaitNs, TimeUnit.NANOSECONDS)) {
                 try {
                     //3: try to search idle one or create new one
@@ -288,7 +307,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
                             }
                         } else if (s instanceof Throwable) {//here: s must be throwable object
                             this.waitQueue.remove(b);
-                            throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
+                            throw s instanceof Exception ? (Exception) s : new BeePooledObjectGetException((Throwable) s);
                         }
 
                         long t = deadline - System.currentTimeMillis();
@@ -359,7 +378,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
                 if (!(this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)))
                     p = null;
             } else if (s instanceof Throwable) {
-                throw s instanceof Exception ? (Exception) s : new ObjectGetException((Throwable) s);
+                throw s instanceof Exception ? (Exception) s : new BeePooledObjectGetException((Throwable) s);
             }
         }
 
@@ -539,7 +558,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
 
         //2: transfer exception to waiter in queue
         if (!this.waitQueue.isEmpty()) {
-            BeeObjectSourcePoolRestartedException exception = new BeeObjectSourcePoolRestartedException("Pool has been closed or is restarting");
+            BeeObjectSourcePoolRestartedFailureException exception = new BeeObjectSourcePoolRestartedFailureException("Pool has been closed or is restarting");
             while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 

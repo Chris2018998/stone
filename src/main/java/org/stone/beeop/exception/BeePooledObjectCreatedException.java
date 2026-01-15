@@ -10,15 +10,18 @@
 package org.stone.beeop.exception;
 
 /**
- * object key exception
+ * object exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectKeyException extends BeeObjectException {
+public class BeePooledObjectCreatedException extends BeePooledObjectException {
 
-    public ObjectKeyException(String s) {
-        super(s);
+    public BeePooledObjectCreatedException(String message) {
+        super(message);
     }
 
+    public BeePooledObjectCreatedException(Throwable cause) {
+        super(cause);
+    }
 }

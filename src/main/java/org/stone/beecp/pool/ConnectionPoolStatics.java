@@ -9,7 +9,9 @@
  */
 package org.stone.beecp.pool;
 
+import org.stone.beecp.BeeConnectionPool;
 import org.stone.beecp.exception.BeeDataSourceConfigException;
+import org.stone.beecp.exception.BeeDataSourcePoolLazyInitializationException;
 import org.stone.beecp.exception.ConnectionTestSqlExecutedException;
 
 import javax.sql.CommonDataSource;
@@ -80,7 +82,32 @@ public final class ConnectionPoolStatics {
     public static final int POOL_CLOSED = 4;
     public static final int POOL_RESTARTING = 5;
     public static final int POOL_SUSPENDED = 6;
-
+    public static final BeeConnectionPool CLOSED_POOL = (BeeConnectionPool) Proxy.newProxyInstance(
+            ConnectionPoolStatics.class.getClassLoader(),
+            new Class[]{BeeConnectionPool.class},
+            (proxy, method, args) -> {
+                if ("isClosed".equals(method.getName())) {
+                    return true;
+                } else if ("toString".equals(method.getName())) {
+                    return "Pool has been closed";
+                } else {
+                    throw new SQLException("No operations allowed on closed pool");
+                }
+            }
+    );
+    public static final BeeConnectionPool LAZY_POOL = (BeeConnectionPool) Proxy.newProxyInstance(
+            ConnectionPoolStatics.class.getClassLoader(),
+            new Class[]{BeeConnectionPool.class},
+            (proxy, method, args) -> {
+                if ("isClosed".equals(method.getName())) {
+                    return true;
+                } else if ("toString".equals(method.getName())) {
+                    return "Pool not initialized";
+                } else {
+                    throw new BeeDataSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
+                }
+            }
+    );
     //pool thread state
     static final int THREAD_WORKING = 0;
     static final int THREAD_WAITING = 1;
@@ -99,7 +126,6 @@ public final class ConnectionPoolStatics {
     static final String DESC_RM_CON_IDLE = "idle";
     static final String DESC_RM_POOL_RESTART = "pool_restart";
     static final String DESC_RM_POOL_SHUTDOWN = "pool_shutdown";
-
     //***************************************************************************************************************//
     //                                1: jdbc global proxy (3)                                                       //
     //***************************************************************************************************************//

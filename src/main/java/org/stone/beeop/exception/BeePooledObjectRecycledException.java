@@ -10,14 +10,15 @@
 package org.stone.beeop.exception;
 
 /**
- * pool exception
+ * object exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourcePoolNotInstantiatedException extends BeeObjectPoolException {
 
-    public BeeObjectSourcePoolNotInstantiatedException(String s) {
-        super(s);
+public class BeePooledObjectRecycledException extends BeePooledObjectException {
+
+    public BeePooledObjectRecycledException(Throwable cause) {
+        super(cause);
     }
 }

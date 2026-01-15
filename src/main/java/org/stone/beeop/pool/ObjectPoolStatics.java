@@ -10,6 +10,11 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.BeeObjectPool;
+import org.stone.beeop.exception.BeeObjectSourcePoolHasClosedException;
+import org.stone.beeop.exception.BeeObjectSourcePoolLazyInitializationException;
+
+import java.lang.reflect.Proxy;
 
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 
@@ -63,6 +68,34 @@ public class ObjectPoolStatics {
     static final String DESC_RM_CLOSED = "closed";
     static final String DESC_RM_POOL_CLEAR = "pool_restart";
     static final String DESC_RM_POOL_SHUTDOWN = "pool_shutdown";
+
+    @SuppressWarnings("unchecked")
+    public static <K, V> BeeObjectPool<K, V> createDummyPoolImpl(boolean closedPool) {
+        if (closedPool)
+            return (BeeObjectPool<K, V>) Proxy.newProxyInstance(
+                    BeeObjectPool.class.getClassLoader(),
+                    new Class[]{BeeObjectPool.class},
+                    (proxy, method, args) -> {
+                        if ("toString".equals(method.getName())) {
+                            return "Pool has been closed";
+                        } else {
+                            throw new BeeObjectSourcePoolHasClosedException("No operations allowed on closed pool");
+                        }
+                    }
+            );
+        else
+            return (BeeObjectPool<K, V>) Proxy.newProxyInstance(
+                    BeeObjectPool.class.getClassLoader(),
+                    new Class[]{BeeObjectPool.class},
+                    (proxy, method, args) -> {
+                        if ("toString".equals(method.getName())) {
+                            return "Pool not initialized";
+                        } else {
+                            throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
+                        }
+                    }
+            );
+    }
 
     //***************************************************************************************************************//
     //                               1: Handle close methods(1)                                                  //

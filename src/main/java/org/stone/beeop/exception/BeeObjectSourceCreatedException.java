@@ -12,7 +12,8 @@ package org.stone.beeop.exception;
 import org.stone.beeop.BeeObjectSource;
 
 /**
- * A runtime exception thrown when fail to create {@link BeeObjectSource}
+ * Throws this runtime exception when failed to create internal pool or failed to start up its internal pool
+ * in constructor of {@link BeeObjectSource}.
  *
  * @author Chris Liao
  * @version 1.0

@@ -10,7 +10,7 @@
 package org.stone.beeop.exception;
 
 /**
- * configuration exception.
+ * Throws this runtime exception when set invalid values to {@link org.stone.beeop.BeeObjectSourceConfig} or it checks failed.
  *
  * @author Chris Liao
  * @version 1.0

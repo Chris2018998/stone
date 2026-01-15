@@ -20,9 +20,9 @@ package org.stone.beecp.exception;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeDataSourcePoolNotInstantiatedException extends BeeConnectionPoolException {
+public class BeeDataSourcePoolLazyInitializationException extends BeeDataSourcePoolException {
 
-    public BeeDataSourcePoolNotInstantiatedException(String s) {
+    public BeeDataSourcePoolLazyInitializationException(String s) {
         super(s);
     }
 }

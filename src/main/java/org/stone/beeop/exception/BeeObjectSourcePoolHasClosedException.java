@@ -10,15 +10,15 @@
 package org.stone.beeop.exception;
 
 /**
- * object exception
+ * Throws this exception when operation on closed pool.
  *
  * @author Chris Liao
  * @version 1.0
  */
+public class BeeObjectSourcePoolHasClosedException extends BeeObjectSourcePoolException {
 
-public class ObjectRecycledException extends BeeObjectException {
-
-    public ObjectRecycledException(Throwable cause) {
-        super(cause);
+    public BeeObjectSourcePoolHasClosedException(String s) {
+        super(s);
     }
+
 }

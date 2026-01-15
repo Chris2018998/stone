@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPredicate;
-import org.stone.beeop.exception.ObjectCalledException;
+import org.stone.beeop.exception.BeePooledObjectCalledException;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.isNotBlank;
@@ -110,6 +110,6 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
     }
 
     void checkClosed() throws Exception {
-        if (isClosed) throw new ObjectCalledException("No operations allowed after object handle closed");
+        if (isClosed) throw new BeePooledObjectCalledException("No operations allowed after object handle closed");
     }
 }

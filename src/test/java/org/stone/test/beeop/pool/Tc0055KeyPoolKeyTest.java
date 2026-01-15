@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.ObjectKeyException;
+import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.test.beeop.objects.JavaBookFactory;
 import org.stone.test.beeop.objects.JavaBookTypeKey;
@@ -35,14 +35,14 @@ public class Tc0055KeyPoolKeyTest {
         pool.start(config);
 
         try {
-            pool.clearObjects(null);
-        } catch (ObjectKeyException e) {
+            pool.clearKeyObjects(null);
+        } catch (BeePooledObjectKeyException e) {
             Assertions.assertTrue(e.getMessage().contains("Key can't be null"));
         }
 
         try {
             pool.deleteKey(null);
-        } catch (ObjectKeyException e) {
+        } catch (BeePooledObjectKeyException e) {
             Assertions.assertTrue(e.getMessage().contains("Key can't be null"));
         }
     }
@@ -62,11 +62,11 @@ public class Tc0055KeyPoolKeyTest {
 
         //1: default key
         Assertions.assertEquals(2, pool.getKeyMonitorVo(defaultKey).getIdleSize());
-        pool.clearObjects(defaultKey);
+        pool.clearKeyObjects(defaultKey);
         Assertions.assertEquals(0, pool.getKeyMonitorVo(defaultKey).getIdleSize());
         try {
             pool.deleteKey(new JavaBookTypeKey());
-        } catch (ObjectKeyException e) {
+        } catch (BeePooledObjectKeyException e) {
             Assertions.assertTrue(e.getMessage().contains("Default key is forbidden to delete"));
         }
 
@@ -76,13 +76,13 @@ public class Tc0055KeyPoolKeyTest {
         BeeObjectKeyMonitorVo categoryMonitorVo = pool.getKeyMonitorVo(simpleKey);
         Assertions.assertEquals(1, categoryMonitorVo.getIdleSize());
         Assertions.assertEquals(1, categoryMonitorVo.getBorrowedSize());
-        pool.clearObjects(simpleKey, true);
+        pool.clearKeyObjects(simpleKey, true);
         categoryMonitorVo = pool.getKeyMonitorVo(simpleKey);
         Assertions.assertEquals(0, categoryMonitorVo.getIdleSize());
         Assertions.assertEquals(0, categoryMonitorVo.getBorrowedSize());
 
-        Assertions.assertTrue(pool.exists(simpleKey));
+        Assertions.assertTrue(pool.existsKey(simpleKey));
         pool.deleteKey(simpleKey);
-        Assertions.assertFalse(pool.exists(simpleKey));
+        Assertions.assertFalse(pool.existsKey(simpleKey));
     }
 }

@@ -7,19 +7,18 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.beeop.pool;
-
-import org.stone.beeop.BeeObjectKeyMonitorVo;
+package org.stone.beeop.exception;
 
 /**
- * Key JMX Bean interface
+ * object call exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface ObjectKeyCategoryPoolMXBean<K> {
+public class BeePooledObjectCalledException extends BeePooledObjectException {
 
-    void enableLogPrint(boolean enable);
+    public BeePooledObjectCalledException(String message) {
+        super(message);
+    }
 
-    BeeObjectKeyMonitorVo<K> getKeyMonitorVo() throws Exception;
 }

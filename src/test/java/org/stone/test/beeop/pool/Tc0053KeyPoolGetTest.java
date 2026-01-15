@@ -12,7 +12,7 @@ package org.stone.test.beeop.pool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.ObjectKeyException;
+import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.beeop.pool.ObjectPool;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -34,7 +34,7 @@ public class Tc0053KeyPoolGetTest {
         pool.start(config);
 
         String testKey = "pool2";
-        Assertions.assertFalse(pool.exists(testKey));
+        Assertions.assertFalse(pool.existsKey(testKey));
         Assertions.assertNotNull(pool.getObjectHandle(testKey));
         Assertions.assertNotNull(pool.getObjectHandle(testKey));
 
@@ -42,7 +42,7 @@ public class Tc0053KeyPoolGetTest {
             String testKey2 = "pool3";
             Assertions.assertNotNull(pool.getObjectHandle(testKey2));
             fail("Object get test failed");
-        } catch (ObjectKeyException e) {
+        } catch (BeePooledObjectKeyException e) {
             Assertions.assertEquals("Object category capacity of pool has reach max size:2", e.getMessage());
         }
     }

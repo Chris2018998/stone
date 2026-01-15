@@ -20,11 +20,11 @@ import java.util.UUID;
  */
 public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
     //Method call is in executing
-    static final int Status_Running = 0;
+    static final int State_Running = 0;
     //Method call is successful
-    static final int Status_Successful = 1;
+    static final int State_Successful = 1;
     //Method call is failed
-    static final int Status_Failed = 2;
+    static final int State_Failed = 2;
 
     //pooled key
     private final K key;
@@ -45,7 +45,7 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
     //End time of method call,time unit:milliseconds
     private long endTime;
     //End time of method call,time unit:milliseconds
-    private int status = Status_Running;
+    private int status = State_Running;
 
     //Result object of method call
     private transient Object resultObject;
@@ -61,8 +61,8 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
     //handled flag
     private boolean handled;
 
-    public MethodExecutionLog(K key, String poolName,
-                              int type, String method, Object[] parameters) {
+    public MethodExecutionLog(String poolName, K key, int type,
+                              String method, Object[] parameters) {
 
         this.key = key;
         this.poolName = poolName;
@@ -106,15 +106,15 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
     }
 
     public boolean isRunning() {
-        return this.status == Status_Running;
+        return this.status == State_Running;
     }
 
     public boolean isSuccessful() {
-        return this.status == Status_Successful;
+        return this.status == State_Successful;
     }
 
     public boolean isException() {
-        return this.status == Status_Failed;
+        return this.status == State_Failed;
     }
 
     public boolean isSlow() {
@@ -150,10 +150,10 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
         this.endTime = System.currentTimeMillis();
         if (result instanceof Throwable) {
             this.failCause = (Throwable) result;
-            this.status = Status_Failed;
+            this.status = State_Failed;
         } else {
             this.resultObject = result;
-            this.status = Status_Successful;
+            this.status = State_Successful;
         }
     }
 

@@ -83,7 +83,7 @@ final class MethodExecutionLogCache {
 
     private void offerQueue(MethodExecutionLog log, int type, Object[] parameters, String sql) {
         LinkedBlockingQueue<MethodExecutionLog> queue;
-        if (type == Type_Connection_Get) {//connection logs
+        if (type == Type_Pool_Log) {//connection logs
             queue = connectionGetLogsQueue;
         } else {//sql execution logs
             queue = sqlExecutionLogsQueue;
@@ -112,7 +112,7 @@ final class MethodExecutionLogCache {
             offerQueue(defaultTypeLog, logType, defaultTypeLog.getParameters(), defaultTypeLog.getSql());
         }
 
-        defaultTypeLog.setAsSlow(0L, Type_Connection_Get == logType ? this.slowConnectionThreshold : this.slowSQLThreshold);
+        defaultTypeLog.setAsSlow(0L, Type_Pool_Log == logType ? this.slowConnectionThreshold : this.slowSQLThreshold);
         if (listener != null) listener.onMethodEnd(log);
     }
 
@@ -122,18 +122,18 @@ final class MethodExecutionLogCache {
     public List<BeeMethodExecutionLog> getLog(int type) {
         List<BeeMethodExecutionLog> logList = new LinkedList<>();
         switch (type) {
-            case Type_Connection_Get: {
+            case Type_Pool_Log: {
                 logList.addAll(this.connectionGetLogsQueue);
                 break;
             }
-            case Type_SQL_Preparation: {
+            case Type_Connection_Log: {
                 for (BeeMethodExecutionLog log : this.sqlExecutionLogsQueue) {
-                    if (log.getType() == Type_SQL_Preparation)
+                    if (log.getType() == Type_Connection_Log)
                         logList.add(log);
                 }
                 break;
             }
-            case Type_SQL_Execution: {
+            case Type_Statement_Log: {
                 logList.addAll(this.sqlExecutionLogsQueue);
                 break;
             }
@@ -149,13 +149,13 @@ final class MethodExecutionLogCache {
     public List<BeeMethodExecutionLog> clear(int type) {
         List<BeeMethodExecutionLog> removedLogList = new LinkedList<>();
         switch (type) {
-            case Type_Connection_Get: {
+            case Type_Pool_Log: {
                 connectionGetLogsQueue.drainTo(removedLogList);
                 break;
             }
-            case Type_SQL_Preparation: {
+            case Type_Connection_Log: {
                 for (BeeMethodExecutionLog log : sqlExecutionLogsQueue) {
-                    if (log.getType() == Type_SQL_Preparation) {
+                    if (log.getType() == Type_Connection_Log) {
                         removedLogList.add(log);
                     }
                 }
@@ -164,7 +164,7 @@ final class MethodExecutionLogCache {
                     sqlExecutionLogsQueue.removeAll(removedLogList);
                 break;
             }
-            case Type_SQL_Execution: {
+            case Type_Statement_Log: {
                 sqlExecutionLogsQueue.drainTo(removedLogList);
                 break;
             }

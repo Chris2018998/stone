@@ -10,14 +10,15 @@
 package org.stone.beeop.exception;
 
 /**
- * exception on getting
+ * object key exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourcePoolRejectedException extends BeeObjectPoolException {
+public class BeePooledObjectKeyException extends BeePooledObjectException {
 
-    public BeeObjectSourcePoolRejectedException(String s) {
+    public BeePooledObjectKeyException(String s) {
         super(s);
     }
+
 }

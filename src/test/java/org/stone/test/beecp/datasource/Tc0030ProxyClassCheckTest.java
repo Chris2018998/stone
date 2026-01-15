@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.exception.BeeDataSourceCreatedException;
-import org.stone.beecp.exception.BeeDataSourcePoolStartedException;
+import org.stone.beecp.exception.BeeDataSourcePoolStartedFailureException;
 import org.stone.test.base.TestUtil;
 
 import java.io.File;
@@ -44,8 +44,8 @@ public class Tc0030ProxyClassCheckTest {
                 Assertions.fail("[testJdbcProxyClassMissedCheck]Test failed");
             }
         } catch (BeeDataSourceCreatedException e) {
-            assertInstanceOf(BeeDataSourcePoolStartedException.class, e.getCause());
-            BeeDataSourcePoolStartedException failedException = (BeeDataSourcePoolStartedException) e.getCause();
+            assertInstanceOf(BeeDataSourcePoolStartedFailureException.class, e.getCause());
+            BeeDataSourcePoolStartedFailureException failedException = (BeeDataSourcePoolStartedFailureException) e.getCause();
             assertInstanceOf(ClassNotFoundException.class, failedException.getCause());
         } finally {
             assertTrue(proxyClassFile2.renameTo(proxyClassFile));

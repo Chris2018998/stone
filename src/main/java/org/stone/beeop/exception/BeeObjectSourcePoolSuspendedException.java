@@ -16,7 +16,7 @@ package org.stone.beeop.exception;
  * @version 1.0
  */
 
-public class BeeObjectSourcePoolSuspendedException extends BeeObjectPoolException {
+public class BeeObjectSourcePoolSuspendedException extends BeeObjectSourcePoolException {
 
     public BeeObjectSourcePoolSuspendedException(String s) {
         super(s);

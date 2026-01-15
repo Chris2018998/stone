@@ -68,14 +68,14 @@ public interface BeeConnectionPool extends AutoCloseable {
      *
      * @return true when success
      */
-    boolean suspendPool();
+    boolean suspendPool() throws SQLException;
 
     /**
      * resume pool when pool is suspended
      *
      * @return true when success
      */
-    boolean resumePool();
+    boolean resumePool() throws SQLException;
 
     /**
      * Pool startup with a configuration object.
@@ -115,30 +115,29 @@ public interface BeeConnectionPool extends AutoCloseable {
      *
      * @param enable is true that make cache to collect method logs;false that make it to stop work
      */
-    void enableMethodExecutionLogCache(boolean enable);
-
-    /**
-     * Gets logs from pool with specified type.
-     *
-     * @param type should be one of[BeeMethodExecutionLog.Type_Connection_Get,BeeMethodExecutionLog.Type_SQL_Preparation,BeeMethodExecutionLog.Type_SQL_Execution];if not,then return all logs
-     * @return a result list
-     */
-    List<BeeMethodExecutionLog> getMethodExecutionLogs(int type);
-
-    /**
-     * Clears logs from pool with specified type.
-     *
-     * @param type should be one of[BeeMethodExecutionLog.Type_Connection_Get,BeeMethodExecutionLog.Type_SQL_Preparation,BeeMethodExecutionLog.Type_SQL_Execution];if not,then clear all logs
-     * @return a list of cleared logs
-     */
-    List<BeeMethodExecutionLog> clearMethodExecutionLogs(int type);
+    void enableLogCache(boolean enable) throws SQLException;
 
     /**
      * Set a new listener to pool.
      *
      * @param listener to handle method logs
      */
-    void setMethodExecutionListener(BeeMethodExecutionListener listener);
+    void changeLogListener(BeeMethodExecutionListener listener) throws SQLException;
+
+    /**
+     * Gets logs from pool with specified type.
+     *
+     * @param type should be one of[BeeMethodExecutionLog.Type_Pool_Log,BeeMethodExecutionLog.Type_Connection_Log,BeeMethodExecutionLog.Type_Statement_Log];if not,then return all logs
+     * @return a result list
+     */
+    List<BeeMethodExecutionLog> getLogs(int type) throws SQLException;
+
+    /**
+     * Clears logs from pool with specified type.
+     *
+     * @param type should be one of[BeeMethodExecutionLog.Type_Pool_Log,BeeMethodExecutionLog.Type_Connection_Log,BeeMethodExecutionLog.Type_Statement_Log];if not,then clear all logs
+     */
+    void clearLogs(int type) throws SQLException;
 
     /**
      * Cancel statement in executing.
@@ -159,21 +158,21 @@ public interface BeeConnectionPool extends AutoCloseable {
      *
      * @param enable is true that log print is enabled, false is not print
      */
-    void enableLogPrint(boolean enable);
+    void enableLogPrinter(boolean enable) throws SQLException;
 
     /**
      * Interrupts all threads in waiting.
      *
      * @return a list of interrupted threads
      */
-    List<Thread> interruptWaitingThreads();
+    List<Thread> interruptWaitingThreads() throws SQLException;
 
     /**
      * Gets runtime monitoring object of pool,refer to {@link BeeConnectionPoolMonitorVo}.
      *
      * @return monitoring object of pool
      */
-    BeeConnectionPoolMonitorVo getPoolMonitorVo();
+    BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException;
 
 }
 	

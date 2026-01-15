@@ -10,14 +10,22 @@
 package org.stone.beecp.exception;
 
 /**
- * Throws this exception when datasource pool rejects methods call.
+ * Pool base exception.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeDataSourcePoolRejectedException extends ConnectionGetException {
+public class BeeDataSourcePoolException extends BeeSQLException {
 
-    public BeeDataSourcePoolRejectedException(String s) {
+    public BeeDataSourcePoolException(String s) {
         super(s);
+    }
+
+    public BeeDataSourcePoolException(Throwable cause) {
+        super(cause);
+    }
+
+    public BeeDataSourcePoolException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beecp.BeeMethodExecutionLog.Type_All;
-import static org.stone.beecp.BeeMethodExecutionLog.Type_Connection_Get;
+import static org.stone.beecp.BeeMethodExecutionLog.Type_Pool_Log;
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
 /**
@@ -41,13 +41,14 @@ public class Tc0082MethodLogCacheTest {
             Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
             try (Connection ignore = ds.getConnection()) {
                 ds.setMethodExecutionListener(new MockMethodExecutionListener1());
-                Assertions.assertTrue(ds.getMethodExecutionLogs(Type_Connection_Get).isEmpty());
-                Assertions.assertTrue(ds.clearMethodExecutionLogs(Type_All).isEmpty());
-                ds.enableMethodExecutionLogCache(true);
-                ds.enableMethodExecutionLogCache(true);
+                Assertions.assertTrue(ds.getLogs(Type_Pool_Log).isEmpty());
+                ds.clearLogs(Type_All);
+                Assertions.assertTrue(ds.getLogs(Type_All).isEmpty());
+                ds.enableLogCache(true);
+                ds.enableLogCache(true);
                 Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
-                ds.enableMethodExecutionLogCache(false);
-                ds.enableMethodExecutionLogCache(false);
+                ds.enableLogCache(false);
+                ds.enableLogCache(false);
                 Assertions.assertFalse(ds.cancelStatement("Teat"));
                 ds.setMethodExecutionListener(null);
             }
@@ -66,16 +67,16 @@ public class Tc0082MethodLogCacheTest {
         try (BeeDataSource ds = new BeeDataSource(config1)) {
             Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
-                Assertions.assertEquals(1, ds.getMethodExecutionLogs(Type_Connection_Get).size());
+                Assertions.assertEquals(1, ds.getLogs(Type_Pool_Log).size());
                 st.execute("select * from test_user");
-                Assertions.assertEquals(1, ds.getMethodExecutionLogs(BeeMethodExecutionLog.Type_SQL_Execution).size());
+                Assertions.assertEquals(1, ds.getLogs(BeeMethodExecutionLog.Type_Statement_Log).size());
             }
 
             //twice
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
-                Assertions.assertEquals(1, ds.getMethodExecutionLogs(Type_Connection_Get).size());
+                Assertions.assertEquals(1, ds.getLogs(Type_Pool_Log).size());
                 st.execute("select * from test_user");
-                Assertions.assertEquals(1, ds.getMethodExecutionLogs(BeeMethodExecutionLog.Type_SQL_Execution).size());
+                Assertions.assertEquals(1, ds.getLogs(BeeMethodExecutionLog.Type_Statement_Log).size());
             }
         }
     }
@@ -115,7 +116,7 @@ public class Tc0082MethodLogCacheTest {
                     Assertions.assertEquals(failException, e);
                 }
                 LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000L));//wait pool timer to clear timeout logs
-                Assertions.assertEquals(0, ds.getMethodExecutionLogs(Type_All).size());
+                Assertions.assertEquals(0, ds.getLogs(Type_All).size());
             }
         }
     }

@@ -10,22 +10,17 @@
 package org.stone.beecp.exception;
 
 /**
- * Pool base exception.
+ * Throws this exception when data source pool startup fail.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeConnectionPoolException extends BeeSQLException {
-
-    public BeeConnectionPoolException(String s) {
+public class BeeDataSourcePoolStartedFailureException extends BeeDataSourcePoolException {
+    public BeeDataSourcePoolStartedFailureException(String s) {
         super(s);
     }
 
-    public BeeConnectionPoolException(Throwable cause) {
-        super(cause);
-    }
-
-    public BeeConnectionPoolException(String message, Throwable cause) {
-        super(message, cause);
+    public BeeDataSourcePoolStartedFailureException(String s, Throwable cause) {
+        super(s, cause);
     }
 }

@@ -19,7 +19,7 @@ import org.stone.beecp.BeeConnectionPoolMonitorVo;
  */
 public interface FastConnectionPoolMXBean {
 
-    void enableLogPrint(boolean enable);
+    void enableLogPrinter(boolean enable);
 
     BeeConnectionPoolMonitorVo getPoolMonitorVo();
 }

@@ -15,138 +15,120 @@ import java.util.List;
 
 public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
 
-    public void start(BeeObjectSourceConfig<K, V> config) throws Exception {
-
-    }
-
-    public void restart(boolean forceRecycleBorrowed) throws Exception {
-
-    }
-
-    public void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
-
-    }
-
     public BeeObjectHandle<K, V> getObjectHandle() throws Exception {
         return null;
     }
-
 
     public BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception {
         return null;
     }
 
+    public int keySize() {
+        return 0;
+    }
 
-    public boolean suspendKey(K key) throws Exception {
+    public boolean existsKey(K key) throws Exception {
         return false;
     }
 
+    public boolean suspendKey(K key) {
+        return true;
+    }
 
-    public boolean resumeKey(K key) throws Exception {
-        return false;
+    public boolean resumeKey(K key) {
+        return true;
+    }
+
+    public void clearKeyObjects(K key) {
+    }
+
+    public void clearKeyObjects(K key, boolean forceRecycleBorrowed) {
+    }
+
+    public boolean deleteKey(K key) {
+        return true;
+    }
+
+    public boolean deleteKey(K key, boolean forceRecycleBorrowed) {
+        return true;
     }
 
     public void close() {
-    }
-
-    public boolean suspendPool() {
-        return false;
-    }
-
-    public boolean resumePool() {
-        return false;
     }
 
     public boolean isClosed() {
         return false;
     }
 
-    public boolean isReady() {
-        return false;
+    public boolean suspendPool() {
+        return true;
     }
 
-    public void enableLogPrint(boolean enable) {
-
+    public boolean resumePool() {
+        return true;
     }
 
-    public boolean isEnabledLogPrint() {
-        return false;
+    public void start(BeeObjectSourceConfig<K, V> config) throws Exception {
     }
 
-    public List<Thread> interruptWaitingThreads() {
+    public void restart(boolean forceRecycleBorrowed) {
+    }
+
+    public void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) {
+    }
+
+    public void enableLogPrinter(boolean enable) {
+    }
+
+    public void enableLogPrinter(K key, boolean enable) {
+    }
+
+    public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean includeKeys) throws Exception {
         return null;
     }
 
-    public int keySize() {
-        return 1;
+    public BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) {
+        return null;
     }
 
-    public boolean exists(K key) {
-        return false;
-    }
 
-    public void clearObjects(K key) throws Exception {
-
-    }
-
-    public void clearObjects(K key, boolean forceRecycleBorrowed) throws Exception {
-
-    }
-
-    public void deleteKey(K key) throws Exception {
-
-    }
-
-    public void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
-
-    }
-
-    public boolean isEnabledLogPrint(K key) throws Exception {
-        return false;
-    }
-
-    public void enableLogPrint(K key, boolean enable) throws Exception {
-
+    public List<Thread> interruptWaitingThreads() throws Exception {
+        return null;
     }
 
     public List<Thread> interruptWaitingThreads(K key) throws Exception {
         return null;
     }
 
-    public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) {
-        return null;
-    }
-
-    public BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) throws Exception {
-        return null;
-    }
-
-
-    public boolean isEnabledMethodExecutionLogCache() {
-        return false;
-    }
-
-    public void enableMethodExecutionLogCache(boolean enable) {
+    public void enableLogCache(boolean enable) throws Exception {
 
     }
 
-    public void setMethodExecutionListener(BeeMethodExecutionListener<K> listener) {
+    public void changeLogListener(BeeMethodExecutionListener<K> listener) throws Exception {
 
     }
 
-    public List<BeeMethodExecutionLog<K>> getMethodExecutionLogs(K key, int type) {
-        return null;
+    public void clearPoolLogs() throws Exception {
+        //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> clearMethodExecutionLogs(K key, int type) {
-        return null;
+    public List<BeeMethodExecutionLog<K>> getPoolLogs() throws Exception {
+        return null;//@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getMethodExecutionLogs(int type) {
-        return null;
+    public void clearKeyLogs(K key) throws Exception {
+        //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> clearMethodExecutionLogs(int type) {
-        return null;
+    public List<BeeMethodExecutionLog<K>> getKeyLogs(K key) throws Exception {
+        return null;//@todo
+    }
+
+    public void clearKeyedObjectCallLogs(K key) throws Exception {
+        //@todo
+    }
+
+    public List<BeeMethodExecutionLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
+        return null;//@todo
     }
 }

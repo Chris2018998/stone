@@ -34,7 +34,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.beecp.BeeMethodExecutionLog.Type_Connection_Get;
+import static org.stone.beecp.BeeMethodExecutionLog.Type_Pool_Log;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.CommonUtil.*;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
@@ -101,19 +101,24 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //                                         1: Pool Startup(1+1)                                                  //
     //***************************************************************************************************************//
     public void start(BeeDataSourceConfig config) throws SQLException {
-        if (config == null) throw new BeeDataSourcePoolStartedException("Data source configuration can't be null");
+        if (config == null)
+            throw new BeeDataSourcePoolStartedFailureException("Data source configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {//initializes after cas success to change pool state
             try {
                 checkJdbcProxyClass();
                 startupInternal(POOL_STARTING, config.check());
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
             } catch (Throwable e) {
-                logPrinter.info("BeeCP({})-initialized failed", this.poolName, e);
+                logPrinter.info("BeeCP({})-started failure", this.poolName, e);
                 this.poolState = POOL_NEW;//reset state to new after failure
-                throw e instanceof SQLException ? (SQLException) e : new BeeDataSourcePoolStartedException(e);
+                if (e instanceof BeeDataSourcePoolException) {
+                    throw (BeeDataSourcePoolException) e;
+                } else {
+                    throw new BeeDataSourcePoolStartedFailureException("Data source pool started failure", e);
+                }
             }
         } else {
-            throw new BeeDataSourcePoolStartedException("Pool has already initialized or in initializing");
+            throw new BeeDataSourcePoolStartedFailureException("Data source pool is starting or already started up");
         }
     }
 
@@ -529,7 +534,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
         if (this.collectMethodLogs) {
-            BeeMethodExecutionLog log = methodLogCache.beforeCall(Type_Connection_Get, "FastConnectionPool.getConnection()", null, null, null);
+            BeeMethodExecutionLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getConnection()", null, null, null);
             try {
                 Connection con = this.conProxyFactory.createProxyConnection(this.getPooledConnection());
                 methodLogCache.afterCall(con, 0L, null, log);
@@ -545,7 +550,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
     public XAConnection getXAConnection() throws SQLException {
         if (this.collectMethodLogs) {
-            BeeMethodExecutionLog log = methodLogCache.beforeCall(Type_Connection_Get, "FastConnectionPool.getXAConnection()", null, null, null);
+            BeeMethodExecutionLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getXAConnection()", null, null, null);
             try {
                 PooledConnection p = this.getPooledConnection();
                 ProxyConnectionBase proxyConn = this.conProxyFactory.createProxyConnection(p);
@@ -568,7 +573,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //******* Core method for get *****
     private PooledConnection getPooledConnection() throws SQLException {
         if (this.poolState != POOL_READY)
-            throw new BeeDataSourcePoolRejectedException("Pool has been closed or is restarting");
+            throw new BeeDataSourcePoolNotReadyException("Pool has been closed or is restarting");
 
         //1: try to reuse last used connection
         Borrower b = null;
@@ -803,21 +808,29 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 logPrinter.info("BeeCP({})-completed to remove all connections", this.poolName);
 
                 if (reinit) {
-                    logPrinter.info("BeeCP({})-start to reinitialize pool", this.poolName);
+                    logPrinter.info("BeeCP({})-begin to restart pool", this.poolName);
 
                     //2: destroy some fields
                     this.clearPoolFields(false);
 
                     //3: Rerun pool
                     startupInternal(POOL_RESTARTING, checkedConfig);//throws SQLException only fail to create initial connections or fail to set default
+
                     //note: if failed,this method may be recalled with correct configuration
-                    logPrinter.info("BeeCP({})-pool restart successful", this.poolName);
+                    logPrinter.info("BeeCP({})-restart pool successful", this.poolName);
+                }
+            } catch (Throwable e) {
+                logPrinter.error("BeeCP({})-restarted failure", this.poolName, e);
+                if (e instanceof BeeDataSourcePoolException) {
+                    throw (BeeDataSourcePoolException) e;
+                } else {
+                    throw new BeeDataSourcePoolRestartedFailureException("Data source pool restarted failure", e);
                 }
             } finally {
                 this.poolState = POOL_READY;
             }
         } else {
-            throw new BeeDataSourcePoolRestartedException("Pool has been closed or is restarting");
+            throw new BeeDataSourcePoolRestartedFailureException("Pool has been closed or is restarting");
         }
     }
 
@@ -944,15 +957,19 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     //                                  8: Pool method execution logs (5+1)                                          //
     //***************************************************************************************************************//
-    public List<BeeMethodExecutionLog> getMethodExecutionLogs(int type) {
+    public void changeLogListener(BeeMethodExecutionListener listener) {
+        methodLogCache.setMethodExecutionListener(listener);
+    }
+
+    public List<BeeMethodExecutionLog> getLogs(int type) {
         return this.methodLogCache.getLog(type);
     }
 
-    public List<BeeMethodExecutionLog> clearMethodExecutionLogs(int type) {
-        return methodLogCache.clear(type);
+    public void clearLogs(int type) {
+        methodLogCache.clear(type);
     }
 
-    public void enableMethodExecutionLogCache(boolean enable) {
+    public void enableLogCache(boolean enable) {
         if (enable) {//enable
             if (!collectMethodLogs) {//re-enable
                 this.conProxyFactory = new ProxyConnectionFactory4L(methodLogCache);
@@ -962,10 +979,6 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             this.conProxyFactory = new ProxyConnectionFactory();
             this.collectMethodLogs = false;
         }
-    }
-
-    public void setMethodExecutionListener(BeeMethodExecutionListener listener) {
-        methodLogCache.setMethodExecutionListener(listener);
     }
 
     public boolean cancelStatement(String id) throws SQLException {
@@ -1015,7 +1028,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     //                                  10: other methods (3+0)                                                      //
     //***************************************************************************************************************//
-    public void enableLogPrint(boolean enable) {
+    public void enableLogPrinter(boolean enable) {
         this.logPrinter = getLogPrinter(FastConnectionPool.class, enable);
     }
 
@@ -1026,7 +1039,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //2: transfer exception to waiter in queue
         if (this.waitQueue != null && !this.waitQueue.isEmpty()) {
-            BeeDataSourcePoolRestartedException exception = new BeeDataSourcePoolRestartedException("Pool has been closed or is restarting");
+            BeeDataSourcePoolRestartedFailureException exception = new BeeDataSourcePoolRestartedFailureException("Pool has been closed or is restarting");
             while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 

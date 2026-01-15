@@ -9,8 +9,8 @@
  */
 package org.stone.test.beeop.objects;
 
-import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectHandle;
+import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.test.base.TestUtil;
 

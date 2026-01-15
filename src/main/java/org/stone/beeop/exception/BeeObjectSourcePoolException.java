@@ -10,18 +10,18 @@
 package org.stone.beeop.exception;
 
 /**
- * object exception
+ * Pool base exception.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectCreatedException extends BeeObjectException {
+public class BeeObjectSourcePoolException extends Exception {
 
-    public ObjectCreatedException(String message) {
-        super(message);
+    public BeeObjectSourcePoolException(String s) {
+        super(s);
     }
 
-    public ObjectCreatedException(Throwable cause) {
-        super(cause);
+    public BeeObjectSourcePoolException(String s, Throwable cause) {
+        super(s, cause);
     }
 }

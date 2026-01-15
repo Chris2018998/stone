@@ -10,14 +10,14 @@
 package org.stone.beeop.exception;
 
 /**
- * pool already closed exception
+ * Throws this exception when attempt to get objects from a not ready pool.
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourcePoolRestartedException extends BeeObjectPoolException {
+public class BeeObjectSourcePoolNotReadyException extends BeeObjectSourcePoolException {
 
-    public BeeObjectSourcePoolRestartedException(String s) {
+    public BeeObjectSourcePoolNotReadyException(String s) {
         super(s);
     }
 

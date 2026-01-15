@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.exception.BeeDataSourceCreatedException;
-import org.stone.beecp.exception.BeeDataSourcePoolStartedException;
+import org.stone.beecp.exception.BeeDataSourcePoolStartedFailureException;
 import org.stone.beecp.pool.FastConnectionPool;
 import org.stone.test.base.LogCollector;
 import org.stone.test.beecp.objects.factory.ExceptionConnectionFactory;
@@ -46,8 +46,9 @@ public class Tc0034DsPoolStartFailTest {
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testInitializationFail]Test failed");
         } catch (BeeDataSourceCreatedException e) {
-            Assertions.assertInstanceOf(SQLException.class, e.getCause());
-            SQLException failCause = (SQLException) e.getCause();
+            Assertions.assertInstanceOf(BeeDataSourcePoolStartedFailureException.class, e.getCause());
+            BeeDataSourcePoolStartedFailureException poolFailureException = (BeeDataSourcePoolStartedFailureException) e.getCause();
+            SQLException failCause = (SQLException) poolFailureException.getCause();
             Assertions.assertEquals(errorMsg1, failCause.getMessage());
         }
 
@@ -58,8 +59,9 @@ public class Tc0034DsPoolStartFailTest {
         try (BeeDataSource ignored = new BeeDataSource(config)) {
             Assertions.fail("[testInitializationFail]Test failed");
         } catch (BeeDataSourceCreatedException e) {
-            Assertions.assertInstanceOf(SQLException.class, e.getCause());
-            SQLException failCause = (SQLException) e.getCause();
+            Assertions.assertInstanceOf(BeeDataSourcePoolStartedFailureException.class, e.getCause());
+            BeeDataSourcePoolStartedFailureException poolFailureException = (BeeDataSourcePoolStartedFailureException) e.getCause();
+            SQLException failCause = (SQLException) poolFailureException.getCause();
             Assertions.assertEquals(errorMsg2, failCause.getMessage());
         }
 
@@ -84,7 +86,7 @@ public class Tc0034DsPoolStartFailTest {
             pool.start(null);
             Assertions.fail("[testNullConfig]Test failed");
         } catch (SQLException e) {
-            Assertions.assertInstanceOf(BeeDataSourcePoolStartedException.class, e);
+            Assertions.assertInstanceOf(BeeDataSourcePoolStartedFailureException.class, e);
             Assertions.assertEquals("Data source configuration can't be null", e.getMessage());
         }
     }
@@ -105,11 +107,11 @@ public class Tc0034DsPoolStartFailTest {
             thread2.join();
 
             if (thread1.getFailCause() != null && thread2.getFailCause() == null) {
-                Assertions.assertInstanceOf(BeeDataSourcePoolStartedException.class, thread1.getFailCause());
-                Assertions.assertEquals("Pool has already initialized or in initializing", thread1.getFailCause().getMessage());
+                Assertions.assertInstanceOf(BeeDataSourcePoolStartedFailureException.class, thread1.getFailCause());
+                Assertions.assertEquals("Data source pool is starting or already started up", thread1.getFailCause().getMessage());
             } else if (thread1.getFailCause() == null && thread2.getFailCause() != null) {
-                Assertions.assertInstanceOf(BeeDataSourcePoolStartedException.class, thread2.getFailCause());
-                Assertions.assertEquals("Pool has already initialized or in initializing", thread2.getFailCause().getMessage());
+                Assertions.assertInstanceOf(BeeDataSourcePoolStartedFailureException.class, thread2.getFailCause());
+                Assertions.assertEquals("Data source pool is starting or already started up", thread2.getFailCause().getMessage());
             }
         }
     }

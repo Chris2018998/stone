@@ -19,10 +19,13 @@ import java.io.Serializable;
 public interface BeeMethodExecutionLog<K> extends Serializable {
     //All logs
     int Type_All = 0;
-    //constants log type,objects borrow log
-    int Type_Object_Get = 1;
-    //constants log type,object call logs
-    int Type_Object_Call = 2;
+
+    //Key creation log of pool
+    int Type_Pool_Log = 1;
+    //Object borrowing log on key
+    int Type_Key_Log = 2;
+    //Method call logs on pooled objects
+    int Type_Object_Log = 3;
 
     /**
      * Get pooled key id.

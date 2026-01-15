@@ -15,13 +15,13 @@ package org.stone.beeop.exception;
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectGetException extends BeeObjectException {
+public class BeePooledObjectGetException extends BeePooledObjectException {
 
-    public ObjectGetException(String message) {
+    public BeePooledObjectGetException(String message) {
         super(message);
     }
 
-    public ObjectGetException(Throwable cause) {
+    public BeePooledObjectGetException(Throwable cause) {
         super(cause);
     }
 }

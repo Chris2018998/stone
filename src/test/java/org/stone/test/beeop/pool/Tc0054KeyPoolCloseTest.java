@@ -12,7 +12,7 @@ package org.stone.test.beeop.pool;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.BeeObjectSourcePoolRejectedException;
+import org.stone.beeop.exception.BeeObjectSourcePoolNotReadyException;
 import org.stone.beeop.pool.ObjectPool;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -36,7 +36,7 @@ public class Tc0054KeyPoolCloseTest {
         try {
             pool.getObjectHandle();
             fail("Pool close test fail");
-        } catch (BeeObjectSourcePoolRejectedException e) {
+        } catch (BeeObjectSourcePoolNotReadyException e) {
             Assertions.assertEquals("Object Internal pool was not ready or closed", e.getMessage());
         }
         //nop

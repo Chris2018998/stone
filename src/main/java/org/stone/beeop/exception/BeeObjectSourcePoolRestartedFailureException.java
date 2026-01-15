@@ -10,17 +10,19 @@
 package org.stone.beeop.exception;
 
 /**
- * pool keyed exception
+ * pool already closed exception
  *
  * @author Chris Liao
  * @version 1.0
  */
+public class BeeObjectSourcePoolRestartedFailureException extends BeeObjectSourcePoolException {
 
-public class ObjectKeyNotExistsException extends ObjectKeyException {
-
-    public ObjectKeyNotExistsException(String s) {
+    public BeeObjectSourcePoolRestartedFailureException(String s) {
         super(s);
     }
 
-}
+    public BeeObjectSourcePoolRestartedFailureException(String s, Throwable cause) {
+        super(s, cause);
+    }
 
+}

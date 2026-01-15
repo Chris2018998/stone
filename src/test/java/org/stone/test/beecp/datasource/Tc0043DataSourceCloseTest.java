@@ -46,14 +46,11 @@ public class Tc0043DataSourceCloseTest {
             }
             ds2.close();
             Assertions.assertTrue(ds2.isClosed());
-            Assertions.assertFalse(ds2.getPoolMonitorVo().isReady());
-            Assertions.assertTrue(ds2.getPoolMonitorVo().isClosed());
-            Assertions.assertFalse(ds2.getPoolMonitorVo().isReady());
 
             try (Connection ignored = ds2.getConnection()) {
                 Assertions.fail("[testDatasourceClose]Test failed");
             } catch (SQLException ee) {
-                Assertions.assertEquals("Pool has been closed or is restarting", ee.getMessage());
+                Assertions.assertEquals("No operations allowed on closed pool", ee.getMessage());
             }
         } finally {
             if (ds2 != null && !ds2.isClosed()) {

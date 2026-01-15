@@ -69,47 +69,47 @@
 //    }
 //
 //
-////    public void testCasFail() throws Exception {
-////        BeeObjectSourceConfig config = createDefault();
-////        KeyedObjectPool pool = new KeyedObjectPool();
-////        pool.init(config);
-////        long time = System.nanoTime() + TimeUnit.SECONDS.toNanos(2L);
-////        ClearThread thread1 = new ClearThread(pool, time);
-////        ClearThread thread2 = new ClearThread(pool, time);
-////        thread1.start();
-////        thread2.start();
-////        thread1.join();
-////        thread2.join();
-////        String errorMessage = null;
-////        if (thread1.getfailureException() != null)
-////            errorMessage = thread1.getfailureException().getMessage();
-////        if (errorMessage == null && thread2.getfailureException() != null)
-////            errorMessage = thread2.getfailureException().getMessage();
-////
-////        if (errorMessage != null) Assertions.assertEquals("Object Pool has been closed or is restarting", errorMessage);
-////    }
-////
-////    private static class ClearThread extends Thread {
-////        private final KeyedObjectPool pool;
-////        private final long timePoint;
-////        private Exception failureException;
-////
-////        public ClearThread(KeyedObjectPool pool, long timePoint) {
-////            this.pool = pool;
-////            this.timePoint = timePoint;
-////        }
-////
-////        public Exception getfailureException() {
-////            return failureException;
-////        }
-////
-////        public void run() {
-////            try {
-////                LockSupport.parkNanos(timePoint - System.nanoTime());
-////                pool.clear(true);
-////            } catch (Exception e) {
-////                this.failureException = e;
-////            }
-////        }
-////    }
+/// /    public void testCasFail() throws Exception {
+/// /        BeeObjectSourceConfig config = createDefault();
+/// /        KeyedObjectPool pool = new KeyedObjectPool();
+/// /        pool.init(config);
+/// /        long time = System.nanoTime() + TimeUnit.SECONDS.toNanos(2L);
+/// /        ClearThread thread1 = new ClearThread(pool, time);
+/// /        ClearThread thread2 = new ClearThread(pool, time);
+/// /        thread1.start();
+/// /        thread2.start();
+/// /        thread1.join();
+/// /        thread2.join();
+/// /        String errorMessage = null;
+/// /        if (thread1.getfailureException() != null)
+/// /            errorMessage = thread1.getfailureException().getMessage();
+/// /        if (errorMessage == null && thread2.getfailureException() != null)
+/// /            errorMessage = thread2.getfailureException().getMessage();
+/// /
+/// /        if (errorMessage != null) Assertions.assertEquals("Object Pool has been closed or is restarting", errorMessage);
+/// /    }
+/// /
+/// /    private static class ClearThread extends Thread {
+/// /        private final KeyedObjectPool pool;
+/// /        private final long timePoint;
+/// /        private Exception failureException;
+/// /
+/// /        public ClearThread(KeyedObjectPool pool, long timePoint) {
+/// /            this.pool = pool;
+/// /            this.timePoint = timePoint;
+/// /        }
+/// /
+/// /        public Exception getfailureException() {
+/// /            return failureException;
+/// /        }
+/// /
+/// /        public void run() {
+/// /            try {
+/// /                LockSupport.parkNanos(timePoint - System.nanoTime());
+/// /                pool.clear(true);
+/// /            } catch (Exception e) {
+/// /                this.failureException = e;
+/// /            }
+/// /        }
+/// /    }
 //}

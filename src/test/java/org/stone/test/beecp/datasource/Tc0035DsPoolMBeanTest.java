@@ -66,7 +66,7 @@ public class Tc0035DsPoolMBeanTest {
             Assertions.assertEquals(initialSize, vo.getIdleSize());
             Assertions.assertEquals(0, vo.getBorrowedSize());
             Assertions.assertFalse(vo.isEnabledLogPrint());
-            mbean.enableLogPrint(true);
+            mbean.enableLogPrinter(true);
 
             vo = mbean.getPoolMonitorVo();
             Assertions.assertTrue(vo.isEnabledLogPrint());

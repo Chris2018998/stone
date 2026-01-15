@@ -10,18 +10,18 @@
 package org.stone.beeop.exception;
 
 /**
- * Base exception for object pool
+ * pool initialize failed exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectPoolException extends Exception {
+public class BeeObjectSourcePoolStartedFailureException extends BeeObjectSourcePoolException {
 
-    public BeeObjectPoolException(String s) {
+    public BeeObjectSourcePoolStartedFailureException(String s) {
         super(s);
     }
 
-    public BeeObjectPoolException(Throwable cause) {
-        super(cause);
+    public BeeObjectSourcePoolStartedFailureException(String s, Throwable cause) {
+        super(s, cause);
     }
 }

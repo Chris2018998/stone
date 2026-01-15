@@ -15,7 +15,7 @@ package org.stone.beecp.exception;
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeDataSourcePoolInstantiatedException extends BeeConnectionPoolException {
+public class BeeDataSourcePoolInstantiatedException extends BeeDataSourcePoolException {
     public BeeDataSourcePoolInstantiatedException(String s, Throwable e) {
         super(s, e);
     }

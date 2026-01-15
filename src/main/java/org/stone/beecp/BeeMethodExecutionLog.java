@@ -18,14 +18,10 @@ import java.sql.SQLException;
  * @author Chris Liao
  */
 public interface BeeMethodExecutionLog extends Serializable {
-    //All logs
     int Type_All = 0;
-    //Log type represent method call that connection get from pool
-    int Type_Connection_Get = 1;
-    //Log type represent method call that sql preparation on pooled connections
-    int Type_SQL_Preparation = 2;
-    //Log type represent method call that sql execution on (Statement,PreparedStatement,CallableStatement)
-    int Type_SQL_Execution = 3;
+    int Type_Pool_Log = 1;
+    int Type_Connection_Log = 2;
+    int Type_Statement_Log = 3;
 
     /**
      * Get pool name of current log
@@ -37,7 +33,7 @@ public interface BeeMethodExecutionLog extends Serializable {
     /**
      * Get log type.
      *
-     * @return type value,which is one of [Type_Connection_Get,Type_SQL_Preparation,Type_SQL_Execution]
+     * @return type value,which is one of [Pool_Logs,Connection_Logs,Statement_Logs]
      */
     int getType();
 
@@ -155,7 +151,7 @@ public interface BeeMethodExecutionLog extends Serializable {
     /**
      * Get execution sql.
      *
-     * @return log sql,return null if log type is not {@link #Type_SQL_Execution}.
+     * @return log sql,return null if log type is not {@link #Type_Statement_Log}.
      */
     String getSql();
 

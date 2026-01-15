@@ -7,18 +7,20 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.beecp.exception;
+package org.stone.beeop.exception;
 
 /**
- * Throws this exception when data source pool re-startup fail.
+ * pool keyed exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeDataSourcePoolRestartedException extends BeeConnectionPoolException {
 
-    public BeeDataSourcePoolRestartedException(String s) {
+public class BeePooledObjectKeyNotFoundException extends BeePooledObjectKeyException {
+
+    public BeePooledObjectKeyNotFoundException(String s) {
         super(s);
     }
 
 }
+

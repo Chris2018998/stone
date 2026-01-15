@@ -20,9 +20,11 @@ import org.stone.beeop.BeeObjectPoolMonitorVo;
  */
 public interface ObjectPoolMXBean<K> {
 
-    void enableLogPrint(boolean enable);
+    void enableLogPrinter(boolean enable) throws Exception;
 
-    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor);
+    void enableLogPrinter(K key, boolean enable) throws Exception;
+
+    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) throws Exception;
 
     BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) throws Exception;
 }

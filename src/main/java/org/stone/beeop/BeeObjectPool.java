@@ -14,7 +14,7 @@ import org.stone.beeop.exception.*;
 import java.util.List;
 
 /**
- * Object keyed pool interface.
+ * Object keyed pool interface,whose instance works as an internal pool in {@link BeeObjectSource}.
  *
  * @param <K> is pooled key type
  * @param <V> is pooled object type
@@ -31,9 +31,9 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * Attempts to get an object of default category from pool.
      *
      * @return handle of borrowed object
-     * @throws ObjectCreatedException        when fail to create an object instance
-     * @throws ObjectGetTimeoutException     when wait timeout in pool
-     * @throws ObjectGetInterruptedException while waiting is interrupted
+     * @throws BeePooledObjectCreatedException when fail to create an object instance
+     * @throws ObjectGetTimeoutException       when wait timeout in pool
+     * @throws ObjectGetInterruptedException   while waiting is interrupted
      */
     BeeObjectHandle<K, V> getObjectHandle() throws Exception;
 
@@ -42,10 +42,10 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @param key is a category key which maybe mapping to a pooled objects or a group of objects
      * @return handle of borrowed object
-     * @throws ObjectKeyException            when key is null or invalid, or category capacity is full
-     * @throws ObjectCreatedException        when fail to create an object instance
-     * @throws ObjectGetTimeoutException     when wait timeout in pool
-     * @throws ObjectGetInterruptedException while waiting is interrupted
+     * @throws BeePooledObjectKeyException     when key is null or invalid, or category capacity is full
+     * @throws BeePooledObjectCreatedException when fail to create an object instance
+     * @throws ObjectGetTimeoutException       when wait timeout in pool
+     * @throws ObjectGetInterruptedException   while waiting is interrupted
      */
     BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
 
@@ -66,17 +66,17 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @param key to locate related pooled objects
      * @return a keys array
      */
-    boolean exists(K key) throws Exception;
+    boolean existsKey(K key) throws Exception;
 
     /**
-     * Suspend key when key is ready,all borrow requests on key rejects
+     * Suspend key when it is ready, pool rejects all borrow requests to key
      *
-     * @return true when success
+     * @return true when suspend successful
      */
     boolean suspendKey(K key) throws Exception;
 
     /**
-     * resume key when key is suspended
+     * Resume key when it is suspended
      *
      * @return true when success
      */
@@ -86,35 +86,37 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * Clears pooled objects mapping to given key.
      *
      * @param key is a key to search related pooled objects
-     * @throws ObjectKeyException if key is null
+     * @throws BeePooledObjectKeyException if key is null
      */
-    void clearObjects(K key) throws Exception;
+    void clearKeyObjects(K key) throws Exception;
 
     /**
      * Clears pooled objects mapping to given key.
      *
      * @param key                  to locate related pooled objects
      * @param forceRecycleBorrowed is true,close using objects directly;false that pool waiting using objects return to pool and then close it by physically.
-     * @throws ObjectKeyException if key is null or default
+     * @throws BeePooledObjectKeyException if key is null or default
      */
-    void clearObjects(K key, boolean forceRecycleBorrowed) throws Exception;
+    void clearKeyObjects(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Deletes given pooled key from pool.
      *
      * @param key is a key to remove
-     * @throws ObjectKeyException if key is null or default
+     * @return true when delete successful,otherwise return false
+     * @throws BeePooledObjectKeyException if key is null or default
      */
-    void deleteKey(K key) throws Exception;
+    boolean deleteKey(K key) throws Exception;
 
     /**
      * Deletes given pooled key from pool.
      *
      * @param key                  is a key may map to a sub pool
      * @param forceRecycleBorrowed is true,objects in using are closed directly;is false,they are closed when return to pool
-     * @throws ObjectKeyException if key is null or default
+     * @return true when delete successful,otherwise return false
+     * @throws BeePooledObjectKeyException if key is null or default
      */
-    void deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
+    boolean deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
     //***************************************************************************************************************//
     //                                     3: Pool maintenance (7)                                                   //
@@ -135,22 +137,23 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     /**
      * Suspend pool when pool is ready,then pool rejects all borrow requests.
      *
-     * @return true when success
+     * @return true when pool suspend successful
      */
-    boolean suspendPool();
+    boolean suspendPool() throws Exception;
 
     /**
      * resume pool when pool is suspended
      *
-     * @return true when success
+     * @return true when pool resume to ready from suspended state
      */
-    boolean resumePool();
+    boolean resumePool() throws Exception;
 
     /**
-     * Pool start with a configuration object.
+     * Pool starts with a configuration object.
      *
      * @param config is a configuration object defines some items can be applied in pool
-     * @throws Exception when fail to initialize
+     * @throws BeeObjectSourceConfigException             when parameter config is null or it checks failed
+     * @throws BeeObjectSourcePoolStartedFailureException when pool starts failed
      */
     void start(BeeObjectSourceConfig<K, V> config) throws Exception;
 
@@ -158,18 +161,17 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * Pool restart with last used configuration.
      *
      * @param forceRecycleBorrowed is true that force borrowed objects return to pool immediately; false that wait them return to pool
-     * @throws BeeObjectSourcePoolRestartedException when pool is closed or in clearing
+     * @throws BeeObjectSourcePoolStartedFailureException when pool restarts failed
      */
     void restart(boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Pool restart with a new configuration.
      *
-     * @param forceRecycleBorrowed is true that force borrowed objects return to pool immediately; false that wait them return to pool
-     * @param config               is a configuration object for pool reinitialize
-     * @throws BeeObjectSourceConfigException        when config is null
-     * @throws BeeObjectSourcePoolRestartedException when pool is closed or in clearing
-     * @throws BeeObjectSourcePoolStartedException   when fail to reinitialize
+     * @param forceRecycleBorrowed is true that pool physically closes all pooled objects,false that pool wait borrowed objects return to pool
+     * @param config               is a new configuration for pool restarting
+     * @throws BeeObjectSourceConfigException             when parameter config is null or it checks failed
+     * @throws BeeObjectSourcePoolStartedFailureException when pool restarts failed
      */
     void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
 
@@ -182,14 +184,15 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @param enable is true that print, false not print
      */
-    void enableLogPrint(boolean enable);
+    void enableLogPrinter(boolean enable) throws Exception;
 
     /**
-     * A switch method to enable or disable logs print flag on target pooled key.
+     * A switch method to enable or disable logs print flag in target pooled key.
      *
+     * @param key    is target pooled key
      * @param enable is true that print, false disable print
      */
-    void enableLogPrint(K key, boolean enable) throws Exception;
+    void enableLogPrinter(K key, boolean enable) throws Exception;
 
     //***************************************************************************************************************//
     //                                     5: Pool Monitoring(2)                                                     //
@@ -198,13 +201,13 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     /**
      * Gets runtime monitoring object of pool,refer to {@link BeeObjectKeyMonitorVo}.
      *
-     * @param keyMonitor is true,then get monitor info of keys
+     * @param includeKeys is true,include keys monitor info
      * @return monitor of pool
      */
-    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor);
+    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean includeKeys) throws Exception;
 
     /**
-     * Get monitoring info by pooled key.
+     * Get monitoring of given key.
      *
      * @param key may be mapping to a set of pooled objects
      * @return monitor of an object group
@@ -221,10 +224,10 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @return interrupted threads
      */
-    List<Thread> interruptWaitingThreads();
+    List<Thread> interruptWaitingThreads() throws Exception;
 
     /**
-     * Interrupts waiting threads on pooled key.
+     * Interrupts waiting threads on given pooled key.
      *
      * @param key may be mapping to a set of pooled objects
      * @return interrupted threads
@@ -233,54 +236,59 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     List<Thread> interruptWaitingThreads(K key) throws Exception;
 
     //***************************************************************************************************************//
-    //                                     7: Method execution logs(7)                                               //
+    //                                     7: Method execution logs(8)                                               //
     //***************************************************************************************************************//
 
     /**
      * A switch method to enable or disable method log cache.
      *
-     * @param enable is true that make cache to collect method logs;false that make it to stop work
+     * @param enable is true that cache collect method logs;false that cache stop works
      */
-    void enableMethodExecutionLogCache(boolean enable);
+    void enableLogCache(boolean enable) throws Exception;
 
     /**
-     * Set a new log listener to pool.
+     * Set a new log listener to pool,null listener is acceptable.
      *
      * @param listener to handle method logs
      */
-    void setMethodExecutionListener(BeeMethodExecutionListener<K> listener);
+    void changeLogListener(BeeMethodExecutionListener<K> listener) throws Exception;
+
 
     /**
-     * Gets logs with given type.
+     * Clears logs from pool
+     **/
+    void clearPoolLogs() throws Exception;
+
+    /**
+     * Gets logs from pool
      *
-     * @param type should be one of[BeeMethodExecutionLog.Type_Object_Get,BeeMethodExecutionLog.Type_Object_Call];if not,then clear all logs
      * @return a result list
      */
-    List<BeeMethodExecutionLog<K>> getMethodExecutionLogs(int type);
+    List<BeeMethodExecutionLog<K>> getPoolLogs() throws Exception;
+
 
     /**
-     * Clear logs with given type.
-     *
-     * @param type should be one of[BeeMethodExecutionLog.Type_Object_Get,BeeMethodExecutionLog.Type_Object_Call];if not,then clear all logs
-     * @return a cleared list
-     */
-    List<BeeMethodExecutionLog<K>> clearMethodExecutionLogs(int type);
+     * Clears logs from pool with specified type.
+     **/
+    void clearKeyLogs(K key) throws Exception;
 
     /**
-     * Gets logs from pool with specified key.
+     * Gets logs from pool with specified type.
      *
-     * @param key  is category key,null value is not acceptable
-     * @param type should be one of[BeeMethodExecutionLog.Type_Object_Get,BeeMethodExecutionLog.Type_Object_Call];if not,then get all logs
      * @return a result list
      */
-    List<BeeMethodExecutionLog<K>> getMethodExecutionLogs(K key, int type);
+    List<BeeMethodExecutionLog<K>> getKeyLogs(K key) throws Exception;
 
     /**
-     * Clears logs from pool with specified key.
+     * Clears logs from pool with specified type.
+     **/
+    void clearKeyedObjectCallLogs(K key) throws Exception;
+
+    /**
+     * Gets logs from pool with specified type.
      *
-     * @param key  is category key,null value is not acceptable
-     * @param type should be one of[BeeMethodExecutionLog.Type_Object_Get,BeeMethodExecutionLog.Type_Object_Call];if not,then clear all logs
-     * @return a cleared list
+     * @return a result list
      */
-    List<BeeMethodExecutionLog<K>> clearMethodExecutionLogs(K key, int type);
+    List<BeeMethodExecutionLog<K>> getKeyedObjectCallLogs(K key) throws Exception;
+
 }

@@ -11,7 +11,6 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_CLOSING;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -33,8 +32,16 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     private final int transferWaitingSize;
     private final boolean enabledLogPrint;
 
-    ObjectKeyMonitorVo(K key, int poolState, int idleSize, int borrowedSize, int creatingSize, int creatingTimeoutSize,
-                       int semaphoreRemainSize, int semaphoreWaitingSize, int transferWaitingSize, boolean enabledLogPrint) {
+    public ObjectKeyMonitorVo(K key,
+                              int poolState,
+                              int idleSize,
+                              int borrowedSize,
+                              int creatingSize,
+                              int creatingTimeoutSize,
+                              int semaphoreRemainSize,
+                              int semaphoreWaitingSize,
+                              int transferWaitingSize,
+                              boolean enabledLogPrint) {
         this.key = key;
         this.poolState = poolState;
         this.idleSize = idleSize;
@@ -129,7 +136,7 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     }
 
     @Override
-    public boolean isEnabledLogPrint() {
+    public boolean isEnabledLogPrinter() {
         return enabledLogPrint;
     }
 }
