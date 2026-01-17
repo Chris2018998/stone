@@ -34,7 +34,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.stone.beecp.BeeMethodExecutionLog.Type_Pool_Log;
+import static org.stone.beecp.BeeMethodLog.Type_Pool_Log;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.CommonUtil.*;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
@@ -198,7 +198,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         this.aliveAssumeTimeMs = poolConfig.getAliveAssumeTime();
         this.aliveTestTimeout = poolConfig.getAliveTestTimeout();
         this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(poolConfig.getParkTimeForRetry());
-        this.methodLogTimeoutMs = poolConfig.getMethodExecutionLogTimeout();
+        this.methodLogTimeoutMs = poolConfig.getLogTimeout();
 
         //step10: Crete pool semaphore and thread local
         this.semaphoreSize = poolConfig.getSemaphoreSize();
@@ -226,11 +226,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         //step12: initialize method execution log cache
         this.methodLogCache.init(
                 poolName,
-                poolConfig.getMethodExecutionLogCacheSize(),
+                poolConfig.getLogCacheSize(),
                 poolConfig.getSlowConnectionThreshold(),
                 poolConfig.getSlowSQLThreshold(),
-                poolConfig.getMethodExecutionListener());
-        if (poolConfig.isEnableMethodExecutionLogCache()) {
+                poolConfig.getLogListener());
+        if (poolConfig.isEnableLogCache()) {
             this.conProxyFactory = new ProxyConnectionFactory4L(methodLogCache);
             this.collectMethodLogs = true;
         } else {
@@ -240,7 +240,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //step13: schedule two timed tasks to clear timeout objects(Connections and
         this.scheduledThreadPoolExecutor.scheduleWithFixedDelay(new MethodLogTimeoutTask(this),
-                poolConfig.getIntervalOfClearTimeoutExecutionLogs(), poolConfig.getIntervalOfClearTimeoutExecutionLogs(),
+                poolConfig.getIntervalOfClearTimeoutLogs(), poolConfig.getIntervalOfClearTimeoutLogs(),
                 TimeUnit.MILLISECONDS);
 
         //step14: create a thread to do pool initialization(create initial connections and fill them to array)
@@ -534,7 +534,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     public Connection getConnection() throws SQLException {
         if (this.collectMethodLogs) {
-            BeeMethodExecutionLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getConnection()", null, null, null);
+            BeeMethodLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getConnection()", null, null, null);
             try {
                 Connection con = this.conProxyFactory.createProxyConnection(this.getPooledConnection());
                 methodLogCache.afterCall(con, 0L, null, log);
@@ -550,7 +550,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
     public XAConnection getXAConnection() throws SQLException {
         if (this.collectMethodLogs) {
-            BeeMethodExecutionLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getXAConnection()", null, null, null);
+            BeeMethodLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getXAConnection()", null, null, null);
             try {
                 PooledConnection p = this.getPooledConnection();
                 ProxyConnectionBase proxyConn = this.conProxyFactory.createProxyConnection(p);
@@ -949,7 +949,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         this.threadLocal = null;
         //6: Clear wait queue and log cache
         if (this.waitQueue != null) this.waitQueue.clear();//clear for gc
-        if (this.methodLogCache != null) this.methodLogCache.clear(BeeMethodExecutionLog.Type_All);
+        if (this.methodLogCache != null) this.methodLogCache.clear(BeeMethodLog.Type_All);
         //7: Unregister MBeans
         if (poolConfig.isRegisterMbeans()) this.unregisterMBeans();
     }
@@ -957,11 +957,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     //                                  8: Pool method execution logs (5+1)                                          //
     //***************************************************************************************************************//
-    public void changeLogListener(BeeMethodExecutionListener listener) {
+    public void changeLogListener(BeeMethodLogListener listener) {
         methodLogCache.setMethodExecutionListener(listener);
     }
 
-    public List<BeeMethodExecutionLog> getLogs(int type) {
+    public List<BeeMethodLog> getLogs(int type) {
         return this.methodLogCache.getLog(type);
     }
 

@@ -9,18 +9,18 @@
  */
 package org.stone.beecp.pool;
 
-import org.stone.beecp.BeeMethodExecutionLog;
+import org.stone.beecp.BeeMethodLog;
 
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 
 /**
- * Default implementation of {@link BeeMethodExecutionLog}
+ * Default implementation of {@link BeeMethodLog}
  *
  * @author Chris Liao
  */
-public class MethodExecutionLog implements BeeMethodExecutionLog {
+public class MethodExecutionLog implements BeeMethodLog {
     //Method call is in executing
     static final int State_Running = 0;
     //Method call is successful

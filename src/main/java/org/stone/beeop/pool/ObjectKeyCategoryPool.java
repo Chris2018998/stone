@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
-import static org.stone.beeop.BeeMethodExecutionLog.Type_Key_Log;
+import static org.stone.beeop.BeeMethodLog.Type_Key_Log;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 import static org.stone.tools.LogPrinter.getLogPrinter;
@@ -67,8 +67,9 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     private final long parkTimeForRetryNs;//nanoseconds
     private final boolean useThreadLocal;
     private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
-    private final Map<MethodCacheKey, Method> methodCacheMap;//cache called methods
     private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
+    private final List<String> objectMethodNameList;
+    private final Map<MethodCacheKey, Method> objectMethodCacheMap;//cache called methods
 
     private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
     LogPrinter logPrinter = DefaultLogPrinter;
@@ -120,7 +121,8 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
 
         //step2:object type field setting
         this.objectFactory = config.getObjectFactory();
-        this.methodCacheMap = new ConcurrentHashMap<>(1);
+        this.objectMethodNameList = config.getObjectMethodNameList();
+        this.objectMethodCacheMap = new ConcurrentHashMap<>(1);
 
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
@@ -139,6 +141,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
         return (ObjectKeyCategoryPool<K, V>) clone();
     }
 
+    @SuppressWarnings("uncheck")
     void startup(String parentName, K key, int initSize, boolean asyncCreateInitObjects, boolean isPrintRuntimeLogs) throws Exception {
         this.key = key;
         this.poolName = parentName + "-[" + key + "]";
@@ -146,7 +149,11 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
 
         this.objectArray = new PooledObject[maxActiveSize];
         for (int i = 0; i < maxActiveSize; i++)
-            objectArray[i] = new PooledObject(key, objectFactory, methodCacheMap, this);
+            objectArray[i] = new PooledObject<>(key,
+                    this,
+                    this.objectFactory,
+                    this.objectMethodNameList,
+                    this.objectMethodCacheMap);
 
         if (initSize > 0 && !asyncCreateInitObjects) this.createInitObjects(initSize, true);
         if (this.useThreadLocal) this.threadLocal = new BorrowerThreadLocal<>();
@@ -225,13 +232,13 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
         if (this.collectMethodLogs) {
-            BeeMethodExecutionLog<K> log = this.beforeCall(this.key, Type_Key_Log, "ObjectKeyCategoryPool.getObjectHandle()", new Object[]{startTime});
+            BeeMethodLog<K> log = this.beforeCall(this.key, Type_Key_Log, "ObjectKeyCategoryPool.getObjectHandle()", new Object[]{startTime}, startTime);
             try {
                 BeeObjectHandle<K, V> handle = this.getObjectHandleInternal(startTime);
-                this.afterCall(handle, log);
+                this.afterCall(handle, log, System.currentTimeMillis());
                 return handle;
             } catch (SQLException e) {
-                this.afterCall(e, log);
+                this.afterCall(e, log, System.currentTimeMillis());
                 throw e;
             }
         } else {
@@ -691,7 +698,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
         }
 
         BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
-            return new PooledObjectPlainHandle<>(p, predicate);
+            return new ObjectHandleImpl<>(p, predicate);
         }
     }
 
@@ -705,7 +712,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
         }
 
         BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
-            return new PooledObjectProxyHandle<>(p, predicate, objectProxyClassConstructor);
+            return new ObjectHandleImpl.ObjectHandleImpl2<>(p, predicate, objectProxyClassConstructor);
         }
     }
 

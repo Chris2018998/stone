@@ -251,44 +251,44 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @param listener to handle method logs
      */
-    void changeLogListener(BeeMethodExecutionListener<K> listener) throws Exception;
+    void changeLogListener(BeeMethodLogListener<K> listener) throws Exception;
 
 
     /**
-     * Clears logs from pool
+     * Clears logs of pool
      **/
     void clearPoolLogs() throws Exception;
 
     /**
-     * Gets logs from pool
+     * Gets logs of pool
      *
      * @return a result list
      */
-    List<BeeMethodExecutionLog<K>> getPoolLogs() throws Exception;
+    List<BeeMethodLog<K>> getPoolLogs() throws Exception;
 
 
     /**
-     * Clears logs from pool with specified type.
+     * Clears logs of given pooled key
      **/
     void clearKeyLogs(K key) throws Exception;
 
     /**
-     * Gets logs from pool with specified type.
+     * Gets logs of given pooled key
      *
      * @return a result list
      */
-    List<BeeMethodExecutionLog<K>> getKeyLogs(K key) throws Exception;
+    List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception;
 
     /**
-     * Clears logs from pool with specified type.
+     * Clears object call logs of given key.
      **/
     void clearKeyedObjectCallLogs(K key) throws Exception;
 
     /**
-     * Gets logs from pool with specified type.
+     * Gets object call logs of given key.
      *
      * @return a result list
      */
-    List<BeeMethodExecutionLog<K>> getKeyedObjectCallLogs(K key) throws Exception;
+    List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception;
 
 }

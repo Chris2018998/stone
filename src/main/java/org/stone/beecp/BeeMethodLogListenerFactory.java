@@ -14,7 +14,7 @@ package org.stone.beecp;
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionListenerFactory {
+public interface BeeMethodLogListenerFactory {
 
     /**
      * Creates method execution listener.
@@ -23,6 +23,6 @@ public interface BeeMethodExecutionListenerFactory {
      * @return created listener instance
      * @throws Exception when failed to create listener
      */
-    BeeMethodExecutionListener create(BeeDataSourceConfig config) throws Exception;
+    BeeMethodLogListener create(BeeDataSourceConfig config) throws Exception;
 
 }

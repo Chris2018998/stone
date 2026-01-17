@@ -9,8 +9,8 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeMethodExecutionListener;
-import org.stone.beeop.BeeMethodExecutionLog;
+import org.stone.beeop.BeeMethodLog;
+import org.stone.beeop.BeeMethodLogListener;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -35,7 +35,7 @@ class MethodExecutionLogCache<K> {
     //Logs queue(ConcurrentLinkedQueue is better than it?)
     private LinkedBlockingQueue<MethodExecutionLog<K>> logsQueue;
     //Log listener
-    private BeeMethodExecutionListener<K> listener;
+    private BeeMethodLogListener<K> listener;
 
     //***************************************************************************************************************//
     //                                         1: initialization                                                     //
@@ -45,29 +45,27 @@ class MethodExecutionLogCache<K> {
      * initialize log cache.
      *
      * @param poolName      pool name
-     * @param logType       is type of log
      * @param cacheSize     is capacity of logs cache
      * @param slowThreshold is slow threshold value,time unit:milliseconds
      * @param listener      is an execution listener
      */
-    void initCache(String poolName, int logType, int cacheSize, long slowThreshold, BeeMethodExecutionListener<K> listener) {
+    void initCache(String poolName, int cacheSize, long slowThreshold, BeeMethodLogListener<K> listener) {
         this.poolName = poolName;
-        this.logType = logType;
         this.maxSize = cacheSize;
         this.listener = listener;
         this.slowThreshold = slowThreshold;
         this.logsQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
-    public void setMethodExecutionListener(BeeMethodExecutionListener<K> listener) {
+    public void setMethodExecutionListener(BeeMethodLogListener<K> listener) {
         this.listener = listener;
     }
 
     //***************************************************************************************************************//
     //                                         2: logs record                                                        //
     //***************************************************************************************************************//
-    public BeeMethodExecutionLog<K> beforeCall(K key, int logType, String method, Object[] parameters) throws Exception {
-        MethodExecutionLog<K> log = new MethodExecutionLog<>(poolName, key, logType, method, parameters);
+    public BeeMethodLog<K> beforeCall(K key, int logType, String method, Object[] parameters, long startTime) throws Exception {
+        MethodExecutionLog<K> log = new MethodExecutionLog<>(poolName, key, logType, method, parameters, startTime);
         this.offerQueue(log);
         if (listener != null) listener.onMethodStart(log);
         return log;
@@ -82,9 +80,9 @@ class MethodExecutionLogCache<K> {
         }
     }
 
-    public void afterCall(Object callResult, BeeMethodExecutionLog<K> log) throws Exception {
+    public void afterCall(Object callResult, BeeMethodLog<K> log, long endTime) throws Exception {
         MethodExecutionLog<K> defaultTypeLog = (MethodExecutionLog<K>) log;
-        defaultTypeLog.setResult(callResult);
+        defaultTypeLog.setResult(callResult, endTime);
 
         if (defaultTypeLog.isRemoved()) {
             defaultTypeLog.setRemoved(false);
@@ -98,7 +96,7 @@ class MethodExecutionLogCache<K> {
     //***************************************************************************************************************//
     //                                         1: Logs maintain                                                      //
     //***************************************************************************************************************//
-    public List<BeeMethodExecutionLog<K>> getLogs() {
+    public List<BeeMethodLog<K>> getLogs() {
         return new LinkedList<>(this.logsQueue);
     }
 
@@ -112,7 +110,7 @@ class MethodExecutionLogCache<K> {
     }
 
     public void clearTimeoutLogs(long timeout) {
-        List<BeeMethodExecutionLog<K>> longRunningLogList = new ArrayList<>(1);
+        List<BeeMethodLog<K>> longRunningLogList = new ArrayList<>(1);
         List<MethodExecutionLog<K>> pendingRemovalLogList = new LinkedList<>();
         long currentTime = System.currentTimeMillis();
 

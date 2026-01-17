@@ -163,13 +163,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     //********************************************** method Execution logs ************************************************//
     //52: A flag to enable method execution log cache
-    private boolean enableMethodExecutionLogCache;
+    private boolean enableLogCache;
     //53: Capacity of logs cache size,default is 1000
-    private int methodExecutionLogCacheSize = 1000;
+    private int logCacheSize = 1000;
     //54: Logs timeout in cache,default is 180000 milliseconds(3 minutes)
-    private long methodExecutionLogTimeout = 180000L;
+    private long logTimeout = 180000L;
     //55: Interval time to clear timeout logs,default is 180000 milliseconds(3 minutes)
-    private long intervalOfClearTimeoutExecutionLogs = methodExecutionLogTimeout;
+    private long intervalOfClearTimeoutLogs = logTimeout;
 
     //56: Milliseconds,slow threshold for connection acquisition,default is 30000(30 seconds)
     private long slowConnectionThreshold = 30000L;
@@ -177,18 +177,18 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     private long slowSQLThreshold = 30000L;
 
     //58: Method execution listener,priority order:instance > class > class name
-    private BeeMethodExecutionListener methodExecutionListener;
+    private BeeMethodLogListener logListener;
     //59: Class of method execution listener,default is none
-    private Class<? extends BeeMethodExecutionListener> methodExecutionListenerClass;
+    private Class<? extends BeeMethodLogListener> logListenerClass;
     //60: Class name of method execution listener,default is none
-    private String methodExecutionListenerClassName;
+    private String logListenerClassName;
 
     //61: Method execution listener factory, instance > class > class name
-    private BeeMethodExecutionListenerFactory methodExecutionListenerFactory;
+    private BeeMethodLogListenerFactory logListenerFactory;
     //62: Class of method execution listener factory ,default is none
-    private Class<? extends BeeMethodExecutionListenerFactory> methodExecutionListenerFactoryClass;
+    private Class<? extends BeeMethodLogListenerFactory> logListenerFactoryClass;
     //63: Class name of method execution listener factory,default is none
-    private String methodExecutionListenerFactoryClassName;
+    private String logListenerFactoryClassName;
 
     //****************************************************************************************************************//
     //                                     1: constructors(5)                                                         //
@@ -733,42 +733,42 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     //****************************************************************************************************************//
     //                                    9: Log Cache(24)[52 --- 63]                                                //
     //****************************************************************************************************************//
-    public boolean isEnableMethodExecutionLogCache() {
-        return enableMethodExecutionLogCache;
+    public boolean isEnableLogCache() {
+        return enableLogCache;
     }
 
-    public void setEnableMethodExecutionLogCache(boolean enableMethodExecutionLogCache) {
-        this.enableMethodExecutionLogCache = enableMethodExecutionLogCache;
+    public void setEnableLogCache(boolean enableLogCache) {
+        this.enableLogCache = enableLogCache;
     }
 
-    public int getMethodExecutionLogCacheSize() {
-        return methodExecutionLogCacheSize;
+    public int getLogCacheSize() {
+        return logCacheSize;
     }
 
-    public void setMethodExecutionLogCacheSize(int methodExecutionLogCacheSize) {
-        if (methodExecutionLogCacheSize <= 0)
+    public void setLogCacheSize(int logCacheSize) {
+        if (logCacheSize <= 0)
             throw new BeeDataSourceConfigException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
-        this.methodExecutionLogCacheSize = methodExecutionLogCacheSize;
+        this.logCacheSize = logCacheSize;
     }
 
-    public long getMethodExecutionLogTimeout() {
-        return methodExecutionLogTimeout;
+    public long getLogTimeout() {
+        return logTimeout;
     }
 
-    public void setMethodExecutionLogTimeout(long methodExecutionLogTimeout) {
-        if (methodExecutionLogTimeout <= 0L)
+    public void setLogTimeout(long logTimeout) {
+        if (logTimeout <= 0L)
             throw new BeeDataSourceConfigException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
-        this.methodExecutionLogTimeout = methodExecutionLogTimeout;
+        this.logTimeout = logTimeout;
     }
 
-    public long getIntervalOfClearTimeoutExecutionLogs() {
-        return intervalOfClearTimeoutExecutionLogs;
+    public long getIntervalOfClearTimeoutLogs() {
+        return intervalOfClearTimeoutLogs;
     }
 
-    public void setIntervalOfClearTimeoutExecutionLogs(long intervalOfClearTimeoutExecutionLogs) {
-        if (intervalOfClearTimeoutExecutionLogs <= 0L)
+    public void setIntervalOfClearTimeoutLogs(long intervalOfClearTimeoutLogs) {
+        if (intervalOfClearTimeoutLogs <= 0L)
             throw new BeeDataSourceConfigException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
-        this.intervalOfClearTimeoutExecutionLogs = intervalOfClearTimeoutExecutionLogs;
+        this.intervalOfClearTimeoutLogs = intervalOfClearTimeoutLogs;
     }
 
     public long getSlowConnectionThreshold() {
@@ -791,53 +791,53 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         this.slowSQLThreshold = slowSQLThreshold;
     }
 
-    public BeeMethodExecutionListener getMethodExecutionListener() {
-        return methodExecutionListener;
+    public BeeMethodLogListener getLogListener() {
+        return logListener;
     }
 
-    public void setMethodExecutionListener(BeeMethodExecutionListener methodExecutionListener) {
-        this.methodExecutionListener = methodExecutionListener;
+    public void setLogListener(BeeMethodLogListener logListener) {
+        this.logListener = logListener;
     }
 
-    public Class<? extends BeeMethodExecutionListener> getMethodExecutionListenerClass() {
-        return methodExecutionListenerClass;
+    public Class<? extends BeeMethodLogListener> getLogListenerClass() {
+        return logListenerClass;
     }
 
-    public void setMethodExecutionListenerClass(Class<? extends BeeMethodExecutionListener> methodExecutionListenerClass) {
-        this.methodExecutionListenerClass = methodExecutionListenerClass;
+    public void setLogListenerClass(Class<? extends BeeMethodLogListener> logListenerClass) {
+        this.logListenerClass = logListenerClass;
     }
 
-    public String getMethodExecutionListenerClassName() {
-        return methodExecutionListenerClassName;
+    public String getLogListenerClassName() {
+        return logListenerClassName;
     }
 
-    public void setMethodExecutionListenerClassName(String methodExecutionListenerClassName) {
-        this.methodExecutionListenerClassName = methodExecutionListenerClassName;
+    public void setLogListenerClassName(String logListenerClassName) {
+        this.logListenerClassName = logListenerClassName;
     }
 
 
-    public Class<? extends BeeMethodExecutionListenerFactory> getMethodExecutionListenerFactoryClass() {
-        return methodExecutionListenerFactoryClass;
+    public Class<? extends BeeMethodLogListenerFactory> getLogListenerFactoryClass() {
+        return logListenerFactoryClass;
     }
 
-    public void setMethodExecutionListenerFactoryClass(Class<? extends BeeMethodExecutionListenerFactory> methodExecutionListenerFactoryClass) {
-        this.methodExecutionListenerFactoryClass = methodExecutionListenerFactoryClass;
+    public void setLogListenerFactoryClass(Class<? extends BeeMethodLogListenerFactory> logListenerFactoryClass) {
+        this.logListenerFactoryClass = logListenerFactoryClass;
     }
 
-    public BeeMethodExecutionListenerFactory getMethodExecutionListenerFactory() {
-        return methodExecutionListenerFactory;
+    public BeeMethodLogListenerFactory getLogListenerFactory() {
+        return logListenerFactory;
     }
 
-    public void setMethodExecutionListenerFactory(BeeMethodExecutionListenerFactory methodExecutionListenerFactory) {
-        this.methodExecutionListenerFactory = methodExecutionListenerFactory;
+    public void setLogListenerFactory(BeeMethodLogListenerFactory logListenerFactory) {
+        this.logListenerFactory = logListenerFactory;
     }
 
-    public String getMethodExecutionListenerFactoryClassName() {
-        return methodExecutionListenerFactoryClassName;
+    public String getLogListenerFactoryClassName() {
+        return logListenerFactoryClassName;
     }
 
-    public void setMethodExecutionListenerFactoryClassName(String methodExecutionListenerFactoryClassName) {
-        this.methodExecutionListenerFactoryClassName = methodExecutionListenerFactoryClassName;
+    public void setLogListenerFactoryClassName(String logListenerFactoryClassName) {
+        this.logListenerFactoryClassName = logListenerFactoryClassName;
     }
 
     //****************************************************************************************************************//
@@ -981,7 +981,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
         Object connectionFactory = createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeMethodExecutionListener methodExecutionListener = createMethodExecutionListener();
+        BeeMethodLogListener methodExecutionListener = createMethodExecutionListener();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -999,7 +999,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         this.connectionFactory = connectionFactory;
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.predicate = predicate;
-        checkedConfig.methodExecutionListener = methodExecutionListener;
+        checkedConfig.logListener = methodExecutionListener;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
 
@@ -1078,28 +1078,28 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     }
 
     //create method log handler
-    private BeeMethodExecutionListener createMethodExecutionListener() {
+    private BeeMethodLogListener createMethodExecutionListener() {
         //step1:if exists listener,then return it
-        if (this.methodExecutionListener != null) return this.methodExecutionListener;
+        if (this.logListener != null) return this.logListener;
 
         //step2:if exists listener factory,then use it to create one
-        if (this.methodExecutionListenerFactory != null) {
+        if (this.logListenerFactory != null) {
             try {
-                return methodExecutionListenerFactory.create(this);
+                return logListenerFactory.create(this);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create method execution listener by listener factory", e);
             }
         }
 
         //step3: create listener factory and let it create a listener
-        if (this.methodExecutionListenerFactoryClass != null || isNotBlank(this.methodExecutionListenerFactoryClassName)) {
+        if (this.logListenerFactoryClass != null || isNotBlank(this.logListenerFactoryClassName)) {
             Class<?> listenerFactoryClass = null;
-            BeeMethodExecutionListenerFactory factory;
+            BeeMethodLogListenerFactory factory;
             try {
-                listenerFactoryClass = methodExecutionListenerFactoryClass != null ? methodExecutionListenerFactoryClass : loadClass(methodExecutionListenerFactoryClassName);
-                factory = ((BeeMethodExecutionListenerFactory) createClassInstance(listenerFactoryClass, BeeMethodExecutionListenerFactory.class, "method execution listener factory"));
+                listenerFactoryClass = logListenerFactoryClass != null ? logListenerFactoryClass : loadClass(logListenerFactoryClassName);
+                factory = ((BeeMethodLogListenerFactory) createClassInstance(listenerFactoryClass, BeeMethodLogListenerFactory.class, "method execution listener factory"));
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create method execution listener factory with class[" + methodExecutionListenerFactoryClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create method execution listener factory with class[" + logListenerFactoryClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create method execution listener factory with class[" + listenerFactoryClass + "]", e);
             }
@@ -1112,13 +1112,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         }
 
         //step4: create a listener
-        if (this.methodExecutionListenerClass != null || isNotBlank(this.methodExecutionListenerClassName)) {
+        if (this.logListenerClass != null || isNotBlank(this.logListenerClassName)) {
             Class<?> listenerClass = null;
             try {
-                listenerClass = methodExecutionListenerClass != null ? methodExecutionListenerClass : loadClass(methodExecutionListenerClassName);
-                return (BeeMethodExecutionListener) createClassInstance(listenerClass, BeeMethodExecutionListener.class, "method execution listener");
+                listenerClass = logListenerClass != null ? logListenerClass : loadClass(logListenerClassName);
+                return (BeeMethodLogListener) createClassInstance(listenerClass, BeeMethodLogListener.class, "method execution listener");
             } catch (ClassNotFoundException e) {
-                throw new BeeDataSourceConfigException("Failed to create method execution listener with class[" + methodExecutionListenerClassName + "]", e);
+                throw new BeeDataSourceConfigException("Failed to create method execution listener with class[" + logListenerClassName + "]", e);
             } catch (Throwable e) {
                 throw new BeeDataSourceConfigException("Failed to create method execution listener with class[" + listenerClass + "]", e);
             }

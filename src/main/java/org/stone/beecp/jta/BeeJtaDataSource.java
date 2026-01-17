@@ -15,8 +15,8 @@ import jakarta.transaction.Transaction;
 import jakarta.transaction.TransactionManager;
 import org.stone.beecp.BeeConnectionPoolMonitorVo;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeMethodExecutionListener;
-import org.stone.beecp.BeeMethodExecutionLog;
+import org.stone.beecp.BeeMethodLog;
+import org.stone.beecp.BeeMethodLogListener;
 
 import javax.sql.DataSource;
 import javax.sql.XAConnection;
@@ -196,12 +196,12 @@ public class BeeJtaDataSource extends TimerTask implements DataSource, AutoClose
         this.ds.enableLogCache(enable);
     }
 
-    public void changeLogListener(BeeMethodExecutionListener listener) throws SQLException {
+    public void changeLogListener(BeeMethodLogListener listener) throws SQLException {
         checkDataSource();
         this.ds.changeLogListener(listener);
     }
 
-    public List<BeeMethodExecutionLog> getLogs(int type) throws SQLException {
+    public List<BeeMethodLog> getLogs(int type) throws SQLException {
         checkDataSource();
         return this.ds.getLogs(type);
     }

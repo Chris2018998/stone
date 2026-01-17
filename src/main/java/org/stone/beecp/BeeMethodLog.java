@@ -17,7 +17,7 @@ import java.sql.SQLException;
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionLog extends Serializable {
+public interface BeeMethodLog extends Serializable {
     int Type_All = 0;
     int Type_Pool_Log = 1;
     int Type_Connection_Log = 2;

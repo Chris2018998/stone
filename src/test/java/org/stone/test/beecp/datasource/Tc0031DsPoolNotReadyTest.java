@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
-import org.stone.beecp.BeeMethodExecutionLog;
+import org.stone.beecp.BeeMethodLog;
 import org.stone.beecp.exception.BeeDataSourceConfigException;
 import org.stone.beecp.exception.BeeDataSourcePoolLazyInitializationException;
 import org.stone.beecp.exception.BeeDataSourcePoolStartedFailureException;
@@ -73,21 +73,21 @@ public class Tc0031DsPoolNotReadyTest {
             }
 
             try {
-                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
+                ds.clearLogs(BeeMethodLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (BeeDataSourcePoolLazyInitializationException e) {
                 Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.getLogs(BeeMethodExecutionLog.Type_Pool_Log);
+                ds.getLogs(BeeMethodLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (BeeDataSourcePoolLazyInitializationException e) {
                 Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
+                ds.clearLogs(BeeMethodLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException]test failed");
             } catch (BeeDataSourcePoolLazyInitializationException e) {
                 Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
@@ -169,21 +169,21 @@ public class Tc0031DsPoolNotReadyTest {
             }
 
             try {
-                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
+                ds.clearLogs(BeeMethodLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (BeeDataSourcePoolLazyInitializationException e) {
                 Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.getLogs(BeeMethodExecutionLog.Type_Pool_Log);
+                ds.getLogs(BeeMethodLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (BeeDataSourcePoolLazyInitializationException e) {
                 Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());
             }
 
             try {
-                ds.clearLogs(BeeMethodExecutionLog.Type_Pool_Log);
+                ds.clearLogs(BeeMethodLog.Type_Pool_Log);
                 Assertions.fail("[testPoolNotCreatedException2]test failed");
             } catch (BeeDataSourcePoolLazyInitializationException e) {
                 Assertions.assertEquals("No operations allowed on uninitialization pool", e.getMessage());

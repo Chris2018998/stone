@@ -215,7 +215,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
                     this.getSemaphoreSize(),
                     ObjectPoolStatics.POOL_UNCREATED,
                     this.isPrintRuntimeLogs(),
-                    this.isEnableMethodExecutionLogCache());
+                    this.isEnableLogCache());
         }
     }
 
@@ -263,7 +263,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         pool.enableLogCache(enable);
     }
 
-    public void changeLogListener(BeeMethodExecutionListener<K> listener) throws Exception {
+    public void changeLogListener(BeeMethodLogListener<K> listener) throws Exception {
         pool.changeLogListener(listener);
     }
 
@@ -271,7 +271,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         pool.clearPoolLogs();
     }
 
-    public List<BeeMethodExecutionLog<K>> getPoolLogs() throws Exception {
+    public List<BeeMethodLog<K>> getPoolLogs() throws Exception {
         return pool.getPoolLogs();
     }
 
@@ -279,7 +279,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         pool.clearKeyLogs(key);
     }
 
-    public List<BeeMethodExecutionLog<K>> getKeyLogs(K key) throws Exception {
+    public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
         return pool.getKeyLogs(key);
     }
 
@@ -287,7 +287,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         pool.clearKeyedObjectCallLogs(key);
     }
 
-    public List<BeeMethodExecutionLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
+    public List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
         return pool.getKeyedObjectCallLogs(key);
     }
 

@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionListener {
+public interface BeeMethodLogListener {
 
     /**
      * Plugin method: Handles a log of method call.
@@ -25,7 +25,7 @@ public interface BeeMethodExecutionListener {
      * @param log to be handled
      * @throws SQLException when failure during onMethodStart call
      */
-    void onMethodStart(BeeMethodExecutionLog log) throws SQLException;
+    void onMethodStart(BeeMethodLog log) throws SQLException;
 
     /**
      * Plugin method: Handles a log of method call.
@@ -33,13 +33,13 @@ public interface BeeMethodExecutionListener {
      * @param log to be handled
      * @throws SQLException when failure during onMethodEnd call
      */
-    void onMethodEnd(BeeMethodExecutionLog log) throws SQLException;
+    void onMethodEnd(BeeMethodLog log) throws SQLException;
 
     /**
      * Handle a list of long-running logs
      *
      * @param logList to be handled
      */
-    List<Boolean> onLongRunningDetected(List<BeeMethodExecutionLog> logList);
+    List<Boolean> onLongRunningDetected(List<BeeMethodLog> logList);
 
 }

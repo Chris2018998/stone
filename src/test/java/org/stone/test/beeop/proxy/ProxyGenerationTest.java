@@ -9,7 +9,7 @@
  */
 package org.stone.test.beeop.proxy;
 
-import org.stone.beeop.pool.ProxyClassGenerator;
+import org.stone.beeop.pool.ObjectProxyGenerator;
 
 import java.util.List;
 
@@ -35,7 +35,7 @@ public class ProxyGenerationTest {
         }
 
         List<String> listenNameList = List.of("getName");
-        Class[] proxyClasses = ProxyClassGenerator.genProxyClassWithInterface(superClass, interfaceClasses, listenNameList);
+        Class[] proxyClasses = ObjectProxyGenerator.genProxyClassWithInterface(superClass, interfaceClasses, listenNameList);
 
         System.out.println("class0:" + proxyClasses[0].getName());
         System.out.println("class1:" + proxyClasses[1].getName());

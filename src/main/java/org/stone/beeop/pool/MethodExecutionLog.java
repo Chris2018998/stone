@@ -9,16 +9,16 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeMethodExecutionLog;
+import org.stone.beeop.BeeMethodLog;
 
 import java.util.UUID;
 
 /**
- * Default implementation of {@link BeeMethodExecutionLog}
+ * Default implementation of {@link BeeMethodLog}
  *
  * @author Chris Liao
  */
-public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
+public class MethodExecutionLog<K> implements BeeMethodLog<K> {
     //Method call is in executing
     static final int State_Running = 0;
     //Method call is successful
@@ -62,7 +62,7 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
     private boolean handled;
 
     public MethodExecutionLog(String poolName, K key, int type,
-                              String method, Object[] parameters) {
+                              String method, Object[] parameters, long startTime) {
 
         this.key = key;
         this.poolName = poolName;
@@ -70,7 +70,7 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
         this.method = method;
         this.parameters = parameters;
         this.id = UUID.randomUUID().toString();
-        this.startTime = System.currentTimeMillis();
+        this.startTime = startTime;
     }
 
     public String getId() {
@@ -146,8 +146,8 @@ public class MethodExecutionLog<K> implements BeeMethodExecutionLog<K> {
         return resultObject;
     }
 
-    void setResult(Object result) {
-        this.endTime = System.currentTimeMillis();
+    void setResult(Object result, long endTime) {
+        this.endTime = endTime;
         if (result instanceof Throwable) {
             this.failCause = (Throwable) result;
             this.status = State_Failed;

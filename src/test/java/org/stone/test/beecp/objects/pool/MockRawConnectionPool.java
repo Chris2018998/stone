@@ -229,14 +229,14 @@ public final class MockRawConnectionPool implements BeeConnectionPool {
         return false;
     }
 
-    public List<BeeMethodExecutionLog> getLogs(int type) {
+    public List<BeeMethodLog> getLogs(int type) {
         return Collections.emptyList();
     }
 
     public void clearLogs(int type) {
     }
 
-    public void changeLogListener(BeeMethodExecutionListener handler) {
+    public void changeLogListener(BeeMethodLogListener handler) {
 
     }
 

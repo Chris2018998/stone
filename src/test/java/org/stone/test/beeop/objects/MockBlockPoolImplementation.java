@@ -104,7 +104,7 @@ public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
 
     }
 
-    public void changeLogListener(BeeMethodExecutionListener<K> listener) throws Exception {
+    public void changeLogListener(BeeMethodLogListener<K> listener) throws Exception {
 
     }
 
@@ -112,7 +112,7 @@ public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
         //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getPoolLogs() throws Exception {
+    public List<BeeMethodLog<K>> getPoolLogs() throws Exception {
         return null;//@todo
     }
 
@@ -120,7 +120,7 @@ public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
         //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getKeyLogs(K key) throws Exception {
+    public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
         return null;//@todo
     }
 
@@ -128,7 +128,7 @@ public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
         //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
+    public List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
         return null;//@todo
     }
 }

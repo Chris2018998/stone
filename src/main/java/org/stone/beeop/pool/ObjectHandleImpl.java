@@ -13,6 +13,9 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPredicate;
 import org.stone.beeop.exception.BeePooledObjectCalledException;
 
+import java.lang.reflect.Constructor;
+import java.util.List;
+
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.isNotBlank;
 
@@ -24,18 +27,19 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @author Chris Liao
  * @version 1.0
  */
-public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
+public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     private final Object raw;
     private final PooledObject<K, V> p;
     private final BeeObjectPredicate predicate;
-
+    private final List<String> objectMethodNameList;
     private boolean isClosed;
 
-    PooledObjectPlainHandle(PooledObject<K, V> p, BeeObjectPredicate predicate) {
+    ObjectHandleImpl(PooledObject<K, V> p, BeeObjectPredicate predicate) {
         this.p = p;
         this.raw = p.raw;
         p.handleInUsing = this;
         this.predicate = predicate;
+        this.objectMethodNameList = p.objectMethodNameList;
     }
 
     //***************************************************************************************************************//
@@ -54,7 +58,7 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
         return p.lastAccessTime;
     }
 
-    public final void setLastAccessedTime() throws Exception {
+    final void setLastAccessedTime() throws Exception {
         checkClosed();
         p.lastAccessTime = System.currentTimeMillis();
     }
@@ -97,19 +101,37 @@ public class PooledObjectPlainHandle<K, V> implements BeeObjectHandle<K, V> {
 
     public Object call(String name, Class<?>[] types, Object[] params) throws Exception {
         checkClosed();
+        boolean existInList = objectMethodNameList == null || objectMethodNameList.contains(name);
 
         try {
             Object v = p.getMethod(name, types, params).invoke(raw, params);
-            p.updateAccessTime();
+            if (existInList) p.updateAccessTime();
+
             return v;
         } catch (Exception e) {
-            if (predicate != null && isNotBlank(predicate.evictionTest(e)))
+            if (existInList && predicate != null && isNotBlank(predicate.evictionTest(e)))
                 p.abortSelf(DESC_RM_BAD);
+
             throw e;
         }
     }
 
     void checkClosed() throws Exception {
         if (isClosed) throw new BeePooledObjectCalledException("No operations allowed after object handle closed");
+    }
+
+    static class ObjectHandleImpl2<K, V> extends ObjectHandleImpl<K, V> {
+        private final V objectProxy;
+
+        ObjectHandleImpl2(PooledObject<K, V> p, BeeObjectPredicate predicate, Constructor<?> proxyClassConstructor) throws Exception {
+            super(p, predicate);
+            this.objectProxy = (V) proxyClassConstructor.newInstance(p, this, predicate);
+        }
+
+        @Override
+        public V getObjectProxy() throws Exception {
+            this.checkClosed();
+            return objectProxy;
+        }
     }
 }

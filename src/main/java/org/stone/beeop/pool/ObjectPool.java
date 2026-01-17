@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.stone.beeop.BeeMethodExecutionLog.Type_Pool_Log;
+import static org.stone.beeop.BeeMethodLog.Type_Pool_Log;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 import static org.stone.tools.CommonUtil.isNotBlank;
@@ -128,12 +128,12 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
             categoryPool = categoryPoolMap.get(key);
             if (categoryPool == null) {
                 if (this.collectMethodLogs) {
-                    BeeMethodExecutionLog<K> log = this.newKeysLogCache.beforeCall(key, Type_Pool_Log, "ObjectPool.getObjectHandle", null);
+                    BeeMethodLog<K> log = this.newKeysLogCache.beforeCall(key, Type_Pool_Log, "ObjectPool.getObjectHandle", null, startTime);
                     try {
                         categoryPool = this.createObjectKeyCategoryPool(key);
-                        this.newKeysLogCache.afterCall(categoryPool, log);
+                        this.newKeysLogCache.afterCall(categoryPool, log, System.currentTimeMillis());
                     } catch (Throwable e) {
-                        this.newKeysLogCache.afterCall(e, log);
+                        this.newKeysLogCache.afterCall(e, log, System.currentTimeMillis());
                         throw e;
                     }
                 } else {
@@ -263,7 +263,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         Constructor<?> objectProxyClassConstructor = null;
         Class<?>[] interfaces = config.getObjectInterfaces();
         if (interfaces != null) {
-            Class<?>[] objectProxyClasses = ProxyClassGenerator.genProxyClassWithInterface(null, interfaces, config.getMethodNameListOnListen());
+            Class<?>[] objectProxyClasses = ObjectProxyGenerator.genProxyClassWithInterface(null, interfaces, config.getObjectMethodNameList());
             objectProxyClassConstructor = objectProxyClasses[0].getDeclaredConstructors()[0];
         }
 
@@ -303,16 +303,15 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.keyCounter.set(1);
 
         //step8: Create method execution log cache and schedule a timed task on it
-        this.collectMethodLogs = config.isEnableMethodExecutionLogCache();
+        this.collectMethodLogs = config.isEnableLogCache();
         this.newKeysLogCache = new MethodExecutionLogCache<>();
         this.newKeysLogCache.initCache(this.poolName,
-                Type_Pool_Log,
-                config.getMethodExecutionLogCacheSize(),
-                config.getSlowObjectGetThreshold(),
-                config.getMethodExecutionListener());
+                config.getLogCacheSize(),
+                config.getSlowGetThreshold(),
+                config.getLogListener());
         this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(
-                        this, config.getMethodExecutionLogTimeout(), this.newKeysLogCache),
-                config.getIntervalOfClearTimeoutExecutionLogs(), config.getIntervalOfClearTimeoutExecutionLogs(), MILLISECONDS);
+                        this, config.getLogTimeout(), this.newKeysLogCache),
+                config.getIntervalOfClearTimeoutLogs(), config.getIntervalOfClearTimeoutLogs(), MILLISECONDS);
 
         //step9: Create a thread pool executor to get objects for sleeping waiters
         this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 10L, TimeUnit.SECONDS,
@@ -520,7 +519,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.collectMethodLogs = enable;
     }
 
-    public void changeLogListener(BeeMethodExecutionListener<K> listener) {
+    public void changeLogListener(BeeMethodLogListener<K> listener) {
         this.newKeysLogCache.setMethodExecutionListener(listener);
         for (ObjectKeyCategoryPool<K, V> instance : categoryPoolMap.values())
             instance.setMethodExecutionListener(listener);
@@ -530,7 +529,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getPoolLogs() throws Exception {
+    public List<BeeMethodLog<K>> getPoolLogs() throws Exception {
         return null;//@todo
     }
 
@@ -538,7 +537,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getKeyLogs(K key) throws Exception {
+    public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
         return null;//@todo
     }
 
@@ -546,7 +545,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         //@todo
     }
 
-    public List<BeeMethodExecutionLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
+    public List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
         return null;//@todo
     }
 

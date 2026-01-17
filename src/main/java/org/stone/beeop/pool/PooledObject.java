@@ -13,6 +13,7 @@ import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.exception.BeePooledObjectRecycledException;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
@@ -25,29 +26,44 @@ import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
  * @version 1.0
  */
 final class PooledObject<K, V> {
+    //related key
     final K key;
-    private final BeeObjectFactory<K, V> factory;
-    private final ObjectKeyCategoryPool<K, V> ownerPool;
-    private final Map<MethodCacheKey, Method> methodCacheMap;
+    //method names to support accessed time update,eviction test,logs collection
+    final List<String> objectMethodNameList;
+    //Category pool,which collects method logs of object
+    private final ObjectKeyCategoryPool<K, V> pool;
+    //destroy objects,reset objects
+    private final BeeObjectFactory<K, V> objectFactory;
+    //sharable map to store method of object type
+    private final Map<MethodCacheKey, Method> objectMethodCacheMap;
 
+    //object
     V raw;
+    //state of pooled object
     volatile int state;
+    //creation info
     volatile ObjectCreatingInfo creatingInfo;
-    PooledObjectPlainHandle<K, V> handleInUsing;
-    volatile long lastAccessTime;//nanoSeconds;
+    //handle in using
+    ObjectHandleImpl<K, V> handleInUsing;
+    //last accessed time
+    volatile long lastAccessTime;
+    //class type of object
     private Class<V> rawType;
 
     //***************************************************************************************************************//
     //                                  1: constructor                                                               //                                                                                  //
     //***************************************************************************************************************//
-    PooledObject(K key, BeeObjectFactory<K, V> factory,
-                 Map<MethodCacheKey, Method> methodCacheMap,
-                 ObjectKeyCategoryPool<K, V> ownerPool) {
+    PooledObject(K key,
+                 ObjectKeyCategoryPool<K, V> pool,
+                 BeeObjectFactory<K, V> objectFactory,
+                 List<String> objectMethodNameList,
+                 Map<MethodCacheKey, Method> objectMethodCacheMap) {
 
         this.key = key;
-        this.factory = factory;
-        this.methodCacheMap = methodCacheMap;
-        this.ownerPool = ownerPool;
+        this.pool = pool;
+        this.objectFactory = objectFactory;
+        this.objectMethodNameList = objectMethodNameList;
+        this.objectMethodCacheMap = objectMethodCacheMap;
     }
 
     //***************************************************************************************************************//
@@ -76,17 +92,17 @@ final class PooledObject<K, V> {
     //***************************************************************************************************************//
     //handle call this method to abort this object
     void abortSelf(String reason) {
-        ownerPool.abort(this, reason);
+        pool.abort(this, reason);
     }
 
     //handle call this method to recycle this object
     void recycleSelf() throws Exception {
         try {
             this.handleInUsing = null;
-            this.factory.reset(key, raw);
-            this.ownerPool.recycle(this);
+            this.objectFactory.reset(key, raw);
+            this.pool.recycle(this);
         } catch (Throwable e) {
-            this.ownerPool.abort(this, DESC_RM_BAD);
+            this.pool.abort(this, DESC_RM_BAD);
             if (e instanceof Exception)
                 throw (Exception) e;
             else
@@ -96,17 +112,17 @@ final class PooledObject<K, V> {
 
     //pool call this method before this object removed
     void onRemove(String cause) {
-        ownerPool.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", ownerPool.getPoolName(), this, cause);
+        pool.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", pool.getPoolName(), this, cause);
 
         try {
-            this.factory.reset(key, raw);
+            this.objectFactory.reset(key, raw);
         } catch (Throwable e) {
-            ownerPool.logPrinter.warn("BeeOP({})-reset object failed", ownerPool.getPoolName(), e);
+            pool.logPrinter.warn("BeeOP({})-reset object failed", pool.getPoolName(), e);
         } finally {
             try {
-                this.factory.destroy(key, raw);
+                this.objectFactory.destroy(key, raw);
             } catch (Throwable e) {
-                ownerPool.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", ownerPool.getPoolName(), e);
+                pool.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", pool.getPoolName(), e);
             }
 
             this.state = OBJECT_CLOSED;
@@ -116,11 +132,11 @@ final class PooledObject<K, V> {
     //handle call this method to get a method of object by parameter info
     Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
         MethodCacheKey key = new MethodCacheKey(name, types);
-        Method method = methodCacheMap.get(key);
+        Method method = objectMethodCacheMap.get(key);
 
         if (method == null) {
             method = rawType.getMethod(name, types);
-            methodCacheMap.put(key, method);
+            objectMethodCacheMap.put(key, method);
         }
         return method;
     }

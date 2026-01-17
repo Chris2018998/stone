@@ -75,7 +75,7 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
      *
      * @param type is log type to query
      */
-    public List<BeeMethodExecutionLog> getLogs(int type) {
+    public List<BeeMethodLog> getLogs(int type) {
         return Collections.emptyList();
     }
 
@@ -90,7 +90,7 @@ public class BaseSimplePoolImpl implements BeeConnectionPool {
      *
      * @param handler to handle method logs
      */
-    public void changeLogListener(BeeMethodExecutionListener handler) {
+    public void changeLogListener(BeeMethodLogListener handler) {
 
     }
 

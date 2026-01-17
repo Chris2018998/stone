@@ -22,7 +22,7 @@ import java.util.List;
  * @author Chris Liao
  * @version 1.0
  */
-public class ProxyClassGenerator {
+public class ObjectProxyGenerator {
 
     /**
      * Generate two proxy classes for pooled object
@@ -37,7 +37,7 @@ public class ProxyClassGenerator {
         classPool.importPackage("org.stone.beeop");
         classPool.importPackage("org.stone.beeop.pool");
         classPool.importPackage("org.stone.tools");
-        classPool.appendClassPath(new LoaderClassPath(ProxyClassGenerator.class.getClassLoader()));
+        classPool.appendClassPath(new LoaderClassPath(ObjectProxyGenerator.class.getClassLoader()));
 
         //2: Create a list to collect methods to be overridden in proxy class
         List<CtMethod> methodList = new ArrayList<>(16);
@@ -101,7 +101,7 @@ public class ProxyClassGenerator {
         ctPooledObjectField.setModifiers(Modifier.PRIVATE | Modifier.FINAL);
         ctProxyObjectClass.addField(ctPooledObjectField);
         //field3(private final PooledObjectProxyHandle handle;)
-        CtClass ctProxyHandleClass = classPool.getCtClass(PooledObjectProxyHandle.class.getName());
+        CtClass ctProxyHandleClass = classPool.getCtClass(ObjectHandleImpl.ObjectHandleImpl2.class.getName());
         CtField ctHandleField = new CtField(ctProxyHandleClass, "handle", ctProxyObjectClass);
         ctHandleField.setModifiers(Modifier.PRIVATE | Modifier.FINAL);
         ctProxyObjectClass.addField(ctHandleField);

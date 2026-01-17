@@ -122,7 +122,7 @@ public interface BeeConnectionPool extends AutoCloseable {
      *
      * @param listener to handle method logs
      */
-    void changeLogListener(BeeMethodExecutionListener listener) throws SQLException;
+    void changeLogListener(BeeMethodLogListener listener) throws SQLException;
 
     /**
      * Gets logs from pool with specified type.
@@ -130,7 +130,7 @@ public interface BeeConnectionPool extends AutoCloseable {
      * @param type should be one of[BeeMethodExecutionLog.Type_Pool_Log,BeeMethodExecutionLog.Type_Connection_Log,BeeMethodExecutionLog.Type_Statement_Log];if not,then return all logs
      * @return a result list
      */
-    List<BeeMethodExecutionLog> getLogs(int type) throws SQLException;
+    List<BeeMethodLog> getLogs(int type) throws SQLException;
 
     /**
      * Clears logs from pool with specified type.

@@ -37,6 +37,8 @@ public class ObjectPoolStatics {
     public static final String CONFIG_OBJECT_INTERFACE_NAMES = "objectInterfaceNames";
     //config name of exclusion list of config print
     public static final String CONFIG_EXCLUSION_LIST_OF_PRINT = "exclusionListOfPrint";
+    //config name of exclusion list of config print
+    public static final String CONFIG_OBJECT_METHOD_LIST = "objectMethodNameList";
 
     public static final Class<?>[] EMPTY_CLASSES = new Class[0];
     public static final String[] EMPTY_CLASS_NAMES = new String[0];

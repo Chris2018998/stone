@@ -14,14 +14,14 @@ package org.stone.beeop;
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionListenerFactory<K> {
+public interface BeeMethodLogListenerFactory<K> {
 
     /**
      * Create method execution listener.
      *
      * @return created Listener instance
      */
-    BeeMethodExecutionListener<K> create(BeeObjectSourceConfig<K, ?> config) throws Exception;
+    BeeMethodLogListener<K> create(BeeObjectSourceConfig<K, ?> config) throws Exception;
 }
 
 

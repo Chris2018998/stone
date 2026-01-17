@@ -163,11 +163,11 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         pool.enableLogCache(enable);
     }
 
-    public void changeLogListener(BeeMethodExecutionListener listener) throws SQLException {
+    public void changeLogListener(BeeMethodLogListener listener) throws SQLException {
         pool.changeLogListener(listener);
     }
 
-    public List<BeeMethodExecutionLog> getLogs(int type) throws SQLException {
+    public List<BeeMethodLog> getLogs(int type) throws SQLException {
         return pool.getLogs(type);
     }
 
@@ -252,7 +252,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
                     0,
                     0,
                     this.isPrintRuntimeLogs(),
-                    this.isEnableMethodExecutionLogCache());
+                    this.isEnableLogCache());
         }
     }
 

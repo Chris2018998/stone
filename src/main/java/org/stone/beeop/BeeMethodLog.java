@@ -16,11 +16,11 @@ import java.io.Serializable;
  *
  * @author Chris Liao
  */
-public interface BeeMethodExecutionLog<K> extends Serializable {
+public interface BeeMethodLog<K> extends Serializable {
     //All logs
     int Type_All = 0;
 
-    //Key creation log of pool
+    //Key addition log of key
     int Type_Pool_Log = 1;
     //Object borrowing log on key
     int Type_Key_Log = 2;
