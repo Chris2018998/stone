@@ -23,7 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author Chris Liao
  * @version 1.0
  */
-class MethodExecutionLogCache<K> {
+final class ObjectPoolLogCache<K> implements MethodLogCache<K> {
     //Pool name
     private String poolName;
     //Cache size
@@ -33,55 +33,43 @@ class MethodExecutionLogCache<K> {
     //Slow Threshold
     private long slowThreshold;
     //Logs queue(ConcurrentLinkedQueue is better than it?)
-    private LinkedBlockingQueue<MethodExecutionLog<K>> logsQueue;
+    private LinkedBlockingQueue<MethodLog<K>> logsQueue;
     //Log listener
     private BeeMethodLogListener<K> listener;
 
     //***************************************************************************************************************//
-    //                                         1: initialization                                                     //
+    //                                         1: initialization(1+0)                                                //
     //***************************************************************************************************************//
-
-    /**
-     * initialize log cache.
-     *
-     * @param poolName      pool name
-     * @param cacheSize     is capacity of logs cache
-     * @param slowThreshold is slow threshold value,time unit:milliseconds
-     * @param listener      is an execution listener
-     */
-    void initCache(String poolName, int cacheSize, long slowThreshold, BeeMethodLogListener<K> listener) {
+    public void init(String poolName, int logTypeSize, int typeCacheSize, BeeMethodLogListener<K> listener) {
         this.poolName = poolName;
-        this.maxSize = cacheSize;
+        this.maxSize = typeCacheSize;
         this.listener = listener;
+        this.logsQueue = new LinkedBlockingQueue<>(typeCacheSize);
+    }
+
+    //***************************************************************************************************************//
+    //                                         2: set(2+0)                                                           //
+    //***************************************************************************************************************//
+    public void setSlowThreshold(int logType, long slowThreshold) {
         this.slowThreshold = slowThreshold;
-        this.logsQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
-    public void setMethodExecutionListener(BeeMethodLogListener<K> listener) {
+    public void setLogListener(BeeMethodLogListener<K> listener) {
         this.listener = listener;
     }
 
     //***************************************************************************************************************//
-    //                                         2: logs record                                                        //
+    //                                         3: Logs records(2+1)                                                  //
     //***************************************************************************************************************//
-    public BeeMethodLog<K> beforeCall(K key, int logType, String method, Object[] parameters, long startTime) throws Exception {
-        MethodExecutionLog<K> log = new MethodExecutionLog<>(poolName, key, logType, method, parameters, startTime);
+    public BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) {
+        MethodLog<K> log = new MethodLog<>(poolName, key, logType, method, parameters, startTime);
         this.offerQueue(log);
         if (listener != null) listener.onMethodStart(log);
         return log;
     }
 
-    private void offerQueue(MethodExecutionLog<K> log) {
-        while (!logsQueue.offer(log)) {
-            if (logsQueue.size() == this.maxSize) {
-                MethodExecutionLog<K> firstLog = logsQueue.poll();
-                if (firstLog != null) firstLog.setRemoved(true);
-            }
-        }
-    }
-
-    public void afterCall(Object callResult, BeeMethodLog<K> log, long endTime) throws Exception {
-        MethodExecutionLog<K> defaultTypeLog = (MethodExecutionLog<K>) log;
+    public void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) {
+        MethodLog<K> defaultTypeLog = (MethodLog<K>) log;
         defaultTypeLog.setResult(callResult, endTime);
 
         if (defaultTypeLog.isRemoved()) {
@@ -93,16 +81,25 @@ class MethodExecutionLogCache<K> {
         if (listener != null) listener.onMethodEnd(log);
     }
 
+    private void offerQueue(MethodLog<K> log) {
+        while (!logsQueue.offer(log)) {
+            if (logsQueue.size() == this.maxSize) {
+                MethodLog<K> firstLog = logsQueue.poll();
+                if (firstLog != null) firstLog.setRemoved(true);
+            }
+        }
+    }
+
     //***************************************************************************************************************//
-    //                                         1: Logs maintain                                                      //
+    //                                         4: Logs maintain(3+0)                                                 //
     //***************************************************************************************************************//
-    public List<BeeMethodLog<K>> getLogs() {
+    public List<BeeMethodLog<K>> getLogs(int logType) {
         return new LinkedList<>(this.logsQueue);
     }
 
-    public void clearLogs() {
-        List<MethodExecutionLog<K>> removedLogList = new LinkedList<>();
-        for (MethodExecutionLog<K> log : logsQueue) {
+    public void clearLogs(int logType) {
+        List<MethodLog<K>> removedLogList = new LinkedList<>();
+        for (MethodLog<K> log : logsQueue) {
             log.setRemoved(true);
             removedLogList.add(log);
         }
@@ -111,11 +108,11 @@ class MethodExecutionLogCache<K> {
 
     public void clearTimeoutLogs(long timeout) {
         List<BeeMethodLog<K>> longRunningLogList = new ArrayList<>(1);
-        List<MethodExecutionLog<K>> pendingRemovalLogList = new LinkedList<>();
+        List<MethodLog<K>> pendingRemovalLogList = new LinkedList<>();
         long currentTime = System.currentTimeMillis();
 
         //1: scan log list to find out all timeout logs to be removed
-        for (MethodExecutionLog<K> log : logsQueue) {
+        for (MethodLog<K> log : logsQueue) {
             if (currentTime - log.getStartTime() - timeout >= 0L) {//timeout
                 pendingRemovalLogList.add(log);
             }
@@ -129,7 +126,7 @@ class MethodExecutionLogCache<K> {
         //2: remove timeout logs from sql execution log list
         if (!pendingRemovalLogList.isEmpty()) {
             logsQueue.removeAll(pendingRemovalLogList);
-            for (MethodExecutionLog<K> log : pendingRemovalLogList) {
+            for (MethodLog<K> log : pendingRemovalLogList) {
                 log.setRemoved(true);
             }
         }
@@ -140,7 +137,7 @@ class MethodExecutionLogCache<K> {
                 List<Boolean> processFlags = listener.onLongRunningDetected(longRunningLogList);
                 if (processFlags != null && !processFlags.isEmpty()) {
                     for (int i = 0, l = processFlags.size(); i < l; i++) {
-                        ((MethodExecutionLog<K>) longRunningLogList.get(i)).setHandled(processFlags.get(i).booleanValue());
+                        ((MethodLog<K>) longRunningLogList.get(i)).setHandled(processFlags.get(i).booleanValue());
                     }
                 }
             } catch (Throwable e) {

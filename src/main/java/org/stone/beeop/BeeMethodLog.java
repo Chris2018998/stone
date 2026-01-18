@@ -72,14 +72,14 @@ public interface BeeMethodLog<K> extends Serializable {
     /**
      * Get start time of method call.
      *
-     * @return start time point,which is milliseconds
+     * @return start time,which is milliseconds
      */
     long getStartTime();
 
     /**
      * Get end time of method call.
      *
-     * @return end time point,which is milliseconds
+     * @return end time,which is milliseconds
      */
     long getEndTime();
 

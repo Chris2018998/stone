@@ -257,7 +257,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     //***************************************************************************************************************//
-    //                                     7: Method execution logs(8+0)                                             //
+    //                                     7: Method execution logs(4+0)                                             //
     //***************************************************************************************************************//
     public void enableLogCache(boolean enable) throws Exception {
         pool.enableLogCache(enable);
@@ -275,6 +275,17 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         return pool.getPoolLogs();
     }
 
+    //***************************************************************************************************************//
+    //                                     8: Key method logs(6+0)                                                     //
+    //***************************************************************************************************************//
+    public void enableLogCache(K key, boolean enable) throws Exception {
+        pool.enableLogCache(key, enable);
+    }
+
+    public void changeLogListener(K key, BeeMethodLogListener<K> listener) throws Exception {
+        pool.changeLogListener(key, listener);
+    }
+
     public void clearKeyLogs(K key) throws Exception {
         pool.clearKeyLogs(key);
     }
@@ -283,16 +294,16 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         return pool.getKeyLogs(key);
     }
 
-    public void clearKeyedObjectCallLogs(K key) throws Exception {
-        pool.clearKeyedObjectCallLogs(key);
+    public void clearKeyObjectLogs(K key) throws Exception {
+        pool.clearKeyObjectLogs(key);
     }
 
-    public List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
-        return pool.getKeyedObjectCallLogs(key);
+    public List<BeeMethodLog<K>> getKeyObjectLogs(K key) throws Exception {
+        return pool.getKeyObjectLogs(key);
     }
 
     //***************************************************************************************************************//
-    //                                     8: Override methods of configuration(1+0)                                 //
+    //                                     9: Override methods of configuration(1+0)                                 //
     //***************************************************************************************************************//
     public void setMaxWait(long maxWait) {
         super.setMaxWait(maxWait);

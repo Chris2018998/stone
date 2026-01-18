@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.stone.beeop.BeeMethodLog.Type_Pool_Log;
+import static org.stone.beeop.BeeMethodLog.*;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 import static org.stone.tools.CommonUtil.isNotBlank;
@@ -84,7 +84,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //16: Flag to collect method execution logs
     private boolean collectMethodLogs;
     //17: A internal container to cache new keys
-    private MethodExecutionLogCache<K> newKeysLogCache;
+    private ObjectPoolLogCache<K> newKeysLogCache;
 
     //18: Log printer of key pool
     private LogPrinter logPrinter = DefaultLogPrinter;
@@ -128,12 +128,12 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
             categoryPool = categoryPoolMap.get(key);
             if (categoryPool == null) {
                 if (this.collectMethodLogs) {
-                    BeeMethodLog<K> log = this.newKeysLogCache.beforeCall(key, Type_Pool_Log, "ObjectPool.getObjectHandle", null, startTime);
+                    BeeMethodLog<K> log = this.newKeysLogCache.beforeCall(startTime, key, Type_Pool_Log, "ObjectPool.getObjectHandle", null);
                     try {
                         categoryPool = this.createObjectKeyCategoryPool(key);
-                        this.newKeysLogCache.afterCall(categoryPool, log, System.currentTimeMillis());
+                        this.newKeysLogCache.afterCall(System.currentTimeMillis(), categoryPool, log);
                     } catch (Throwable e) {
-                        this.newKeysLogCache.afterCall(e, log, System.currentTimeMillis());
+                        this.newKeysLogCache.afterCall(System.currentTimeMillis(), e, log);
                         throw e;
                     }
                 } else {
@@ -304,11 +304,13 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
 
         //step8: Create method execution log cache and schedule a timed task on it
         this.collectMethodLogs = config.isEnableLogCache();
-        this.newKeysLogCache = new MethodExecutionLogCache<>();
-        this.newKeysLogCache.initCache(this.poolName,
+        this.newKeysLogCache = new ObjectPoolLogCache<>();
+        this.newKeysLogCache.setSlowThreshold(Type_Pool_Log, config.getSlowGetThreshold());
+        this.newKeysLogCache.init(this.poolName,
+                1,
                 config.getLogCacheSize(),
-                config.getSlowGetThreshold(),
                 config.getLogListener());
+
         this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(
                         this, config.getLogTimeout(), this.newKeysLogCache),
                 config.getIntervalOfClearTimeoutLogs(), config.getIntervalOfClearTimeoutLogs(), MILLISECONDS);
@@ -438,7 +440,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
 
         //5: Clear log cache of method execution
         if (this.newKeysLogCache != null) {
-            this.newKeysLogCache.clearLogs();
+            this.newKeysLogCache.clearTimeoutLogs(0L);//clear all logs
             this.newKeysLogCache = null;
         }
 
@@ -457,7 +459,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                      4: Pool Log Printer(2+0)                                                   //
+    //                                    4: Pool Log Printer(2+0)                                                   //
     //***************************************************************************************************************//
     public void enableLogPrinter(boolean enable) {
         this.logPrinter = getLogPrinter(ObjectPool.class, enable);
@@ -471,7 +473,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                     5: Pool Monitoring(2+0)                                                   //
+    //                                    5: Pool Monitoring(2+0)                                                    //
     //***************************************************************************************************************//
     public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) {
         ObjectPoolMonitorVo<K> monitorVo = new ObjectPoolMonitorVo<>(
@@ -499,7 +501,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                     6: Pool blocking interrupts(2+0)                                          //
+    //                                    6: Pool blocking interrupts(2+0)                                          //
     //***************************************************************************************************************//
     public List<Thread> interruptWaitingThreads() {
         List<Thread> threadList = new LinkedList<>();
@@ -513,44 +515,53 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                     7: method execution logs(8+0)                                             //
+    //                                    7: method execution logs(4+0)                                             //
     //***************************************************************************************************************//
     public void enableLogCache(boolean enable) {
         this.collectMethodLogs = enable;
     }
 
     public void changeLogListener(BeeMethodLogListener<K> listener) {
-        this.newKeysLogCache.setMethodExecutionListener(listener);
-        for (ObjectKeyCategoryPool<K, V> instance : categoryPoolMap.values())
-            instance.setMethodExecutionListener(listener);
+        this.newKeysLogCache.setLogListener(listener);
     }
 
-    public void clearPoolLogs() throws Exception {
-        //@todo
+    public void clearPoolLogs() {
+        this.newKeysLogCache.clearTimeoutLogs(0L);
     }
 
-    public List<BeeMethodLog<K>> getPoolLogs() throws Exception {
-        return null;//@todo
-    }
-
-    public void clearKeyLogs(K key) throws Exception {
-        //@todo
-    }
-
-    public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
-        return null;//@todo
-    }
-
-    public void clearKeyedObjectCallLogs(K key) throws Exception {
-        //@todo
-    }
-
-    public List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
-        return null;//@todo
+    public List<BeeMethodLog<K>> getPoolLogs() {
+        return this.newKeysLogCache.getLogs(Type_Pool_Log);
     }
 
     //***************************************************************************************************************//
-    //                                  8: MBean Registration (0+2)                                                  //
+    //                                    8: Key method logs(6+0)                                                    //
+    //***************************************************************************************************************//
+    public void enableLogCache(K key, boolean enable) throws Exception {
+        getObjectInstancePool(key).enableLogCache(enable);
+    }
+
+    public void changeLogListener(K key, BeeMethodLogListener<K> listener) throws Exception {
+        getObjectInstancePool(key).setLogListener(listener);
+    }
+
+    public void clearKeyLogs(K key) throws Exception {
+        getObjectInstancePool(key).clearLogs(Type_Key_Log);
+    }
+
+    public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
+        return getObjectInstancePool(key).getLogs(Type_Key_Log);
+    }
+
+    public void clearKeyObjectLogs(K key) throws Exception {
+        getObjectInstancePool(key).clearLogs(Type_Object_Log);
+    }
+
+    public List<BeeMethodLog<K>> getKeyObjectLogs(K key) throws Exception {
+        return getObjectInstancePool(key).getLogs(Type_Object_Log);
+    }
+
+    //***************************************************************************************************************//
+    //                                    9: MBean Registration (0+2)                                                //
     //***************************************************************************************************************//
     private void registerMBeans(BeeObjectSourceConfig<K, V> poolConfig) {
         String configMBeanName = String.format("org.stone.beeop.BeeObjectSourceConfig:type=BeeOP(%s)-config", this.poolName);
@@ -591,7 +602,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                  9: Private methods and friendly methods (5)                                  //                                                                                  //
+    //                                    10: Private methods and friendly methods (5)                               //                                                                                  //
     //***************************************************************************************************************//
     void submitServantTask(Runnable task) {
         this.servantService.submit(task);
@@ -624,7 +635,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                  10: Internal classes(4)                                                      //                                                                                  //
+    //                                    11: Internal classes(4)                                                    //                                                                                  //
     //***************************************************************************************************************//
     private record PoolThreadFactory(String threadName) implements ThreadFactory {
 
@@ -663,7 +674,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     private record TimeoutMethodLogsClearTask<K, V>(ObjectPool<K, V> pool, long methodExecutionLogTimeout,
-                                                    MethodExecutionLogCache<K> methodExecutionLogCache) implements Runnable {
+                                                    ObjectPoolLogCache<K> methodExecutionLogCache) implements Runnable {
 
         public void run() {
             try {

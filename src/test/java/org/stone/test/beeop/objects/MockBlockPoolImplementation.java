@@ -100,35 +100,49 @@ public class MockBlockPoolImplementation<K, V> implements BeeObjectPool<K, V> {
         return null;
     }
 
-    public void enableLogCache(boolean enable) throws Exception {
+
+    //***************************************************************************************************************//
+    //                                    7: method execution logs(4+0)                                             //
+    //***************************************************************************************************************//
+    public void enableLogCache(boolean enable) {
+    }
+
+    public void changeLogListener(BeeMethodLogListener<K> listener) {
 
     }
 
-    public void changeLogListener(BeeMethodLogListener<K> listener) throws Exception {
+    public void clearPoolLogs() {
 
     }
 
-    public void clearPoolLogs() throws Exception {
-        //@todo
+    public List<BeeMethodLog<K>> getPoolLogs() {
+        return null;
     }
 
-    public List<BeeMethodLog<K>> getPoolLogs() throws Exception {
-        return null;//@todo
+    //***************************************************************************************************************//
+    //                                    8: Key method logs(6+0)                                                    //
+    //***************************************************************************************************************//
+    public void enableLogCache(K key, boolean enable) throws Exception {
+
+    }
+
+    public void changeLogListener(K key, BeeMethodLogListener<K> listener) throws Exception {
+
     }
 
     public void clearKeyLogs(K key) throws Exception {
-        //@todo
+
     }
 
     public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
-        return null;//@todo
+        return null;
     }
 
-    public void clearKeyedObjectCallLogs(K key) throws Exception {
-        //@todo
+    public void clearKeyObjectLogs(K key) throws Exception {
+
     }
 
-    public List<BeeMethodLog<K>> getKeyedObjectCallLogs(K key) throws Exception {
-        return null;//@todo
+    public List<BeeMethodLog<K>> getKeyObjectLogs(K key) throws Exception {
+        return null;
     }
 }

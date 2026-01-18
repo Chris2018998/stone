@@ -18,7 +18,7 @@ import java.util.UUID;
  *
  * @author Chris Liao
  */
-public class MethodExecutionLog<K> implements BeeMethodLog<K> {
+public class MethodLog<K> implements BeeMethodLog<K> {
     //Method call is in executing
     static final int State_Running = 0;
     //Method call is successful
@@ -61,8 +61,8 @@ public class MethodExecutionLog<K> implements BeeMethodLog<K> {
     //handled flag
     private boolean handled;
 
-    public MethodExecutionLog(String poolName, K key, int type,
-                              String method, Object[] parameters, long startTime) {
+    public MethodLog(String poolName, K key, int type,
+                     String method, Object[] parameters, long startTime) {
 
         this.key = key;
         this.poolName = poolName;
@@ -170,6 +170,6 @@ public class MethodExecutionLog<K> implements BeeMethodLog<K> {
     }
 
     public boolean equals(Object v) {
-        return (v instanceof MethodExecutionLog) && this.id.equals(((MethodExecutionLog<?>) v).id);
+        return (v instanceof MethodLog) && this.id.equals(((MethodLog<?>) v).id);
     }
 }

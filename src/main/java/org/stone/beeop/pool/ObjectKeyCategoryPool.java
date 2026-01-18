@@ -41,7 +41,7 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
  * @author Chris Liao
  * @version 1.0
  */
-final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> implements Runnable, Cloneable {
+final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements Runnable, Cloneable {
     static final AtomicIntegerFieldUpdater<PooledObject> ObjStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledObject.class, "state");
     static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "poolState");
@@ -69,7 +69,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
     private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
     private final List<String> objectMethodNameList;
-    private final Map<MethodCacheKey, Method> objectMethodCacheMap;//cache called methods
+    private final Map<MethodKey, Method> objectMethodCacheMap;//cache called methods
 
     private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
     LogPrinter logPrinter = DefaultLogPrinter;
@@ -85,6 +85,7 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     private volatile int servantState;
     //represents retry count to get pooled objects
     private volatile int servantTryCount;
+    //An enable flag to collect method execution logs
     private boolean collectMethodLogs;
 
     //category pool semaphore
@@ -232,13 +233,13 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
         if (this.collectMethodLogs) {
-            BeeMethodLog<K> log = this.beforeCall(this.key, Type_Key_Log, "ObjectKeyCategoryPool.getObjectHandle()", new Object[]{startTime}, startTime);
+            BeeMethodLog<K> log = this.beforeCall(startTime, this.key, Type_Key_Log, "ObjectKeyCategoryPool.getObjectHandle()", new Object[]{startTime});
             try {
                 BeeObjectHandle<K, V> handle = this.getObjectHandleInternal(startTime);
-                this.afterCall(handle, log, System.currentTimeMillis());
+                this.afterCall(System.currentTimeMillis(), handle, log);
                 return handle;
             } catch (SQLException e) {
-                this.afterCall(e, log, System.currentTimeMillis());
+                this.afterCall(System.currentTimeMillis(), e, log);
                 throw e;
             }
         } else {
@@ -534,15 +535,13 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
         } while (true);
     }
 
-    //***************************************************************************************************************//
-    //                                         8: Pool method execution logs (5+1)                                   //
-    //***************************************************************************************************************//
-
 
     //***************************************************************************************************************//
-    //                                         9: MBean Registration (2+0)                                           //
+    //                                         8: Key method logs (2+0)                                              //
     //***************************************************************************************************************//
-
+    public void enableLogCache(boolean enable) {
+        this.collectMethodLogs = enable;
+    }
 
     //***************************************************************************************************************//
     //                                         10: other methods (2+2)                                               //
@@ -699,6 +698,16 @@ final class ObjectKeyCategoryPool<K, V> extends MethodExecutionLogCache<K> imple
 
         BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
             return new ObjectHandleImpl<>(p, predicate);
+        }
+    }
+
+    private static class ObjectHandle4LFactory<K, V> extends ObjectPlainHandleFactory<K, V> {
+        ObjectHandle4LFactory(BeeObjectPredicate predicate) {
+            super(predicate);
+        }
+
+        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
+            return new ObjectHandleImpl4L<>(p, predicate);
         }
     }
 

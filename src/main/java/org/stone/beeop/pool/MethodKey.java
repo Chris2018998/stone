@@ -19,12 +19,12 @@ import java.util.Objects;
  * @version 1.0
  */
 
-final class MethodCacheKey {
+final class MethodKey {
     private final int hashCode;
     private final String name;
     private final Class<?>[] types;
 
-    MethodCacheKey(String name, Class<?>[] types) {
+    MethodKey(String name, Class<?>[] types) {
         this.name = name;
         this.types = types;
         this.hashCode = 31 * this.name.hashCode() + Arrays.hashCode(this.types);
@@ -35,7 +35,7 @@ final class MethodCacheKey {
     }
 
     public boolean equals(Object o) {
-        MethodCacheKey that = (MethodCacheKey) o;
+        MethodKey that = (MethodKey) o;
         return Objects.equals(this.name, that.name) &&
                 Arrays.equals(this.types, that.types);
     }

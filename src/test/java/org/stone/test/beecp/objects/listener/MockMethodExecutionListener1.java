@@ -15,8 +15,8 @@
  */
 package org.stone.test.beecp.objects.listener;
 
-import org.stone.beecp.BeeMethodLogListener;
 import org.stone.beecp.BeeMethodLog;
+import org.stone.beecp.BeeMethodLogListener;
 
 import java.util.List;
 

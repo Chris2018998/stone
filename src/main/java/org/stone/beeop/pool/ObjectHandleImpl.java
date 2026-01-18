@@ -28,10 +28,10 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @version 1.0
  */
 public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
-    private final Object raw;
-    private final PooledObject<K, V> p;
-    private final BeeObjectPredicate predicate;
-    private final List<String> objectMethodNameList;
+    protected final Object raw;
+    protected final PooledObject<K, V> p;
+    protected final BeeObjectPredicate predicate;
+    protected final List<String> objectMethodNameList;
     private boolean isClosed;
 
     ObjectHandleImpl(PooledObject<K, V> p, BeeObjectPredicate predicate) {
@@ -43,24 +43,10 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     }
 
     //***************************************************************************************************************//
-    //                                  1: override methods(6)                                                       //                                                                                  //
+    //                                     1: Handle close(3+1)                                                      //                                                                                  //
     //***************************************************************************************************************//
     public boolean isClosed() {
         return isClosed;
-    }
-
-    public String toString() {
-        return p.toString();
-    }
-
-    public final long getLastAccessedTime() throws Exception {
-        checkClosed();
-        return p.lastAccessTime;
-    }
-
-    final void setLastAccessedTime() throws Exception {
-        checkClosed();
-        p.lastAccessTime = System.currentTimeMillis();
     }
 
     public void abort() throws Exception {
@@ -76,10 +62,25 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
         p.recycleSelf();
     }
 
-    //***************************************************************************************************************//
-    //                                 2: raw methods call methods(2)                                                //                                                                                  //
-    //***************************************************************************************************************//
+    void checkClosed() throws Exception {
+        if (isClosed) throw new BeePooledObjectCalledException("No operations allowed after object handle closed");
+    }
 
+    //***************************************************************************************************************//
+    //                                     2: handle accessed time(2+0)                                              //                                                                                  //
+    //***************************************************************************************************************//
+    final void setLastAccessedTime() {
+        p.lastAccessTime = System.currentTimeMillis();
+    }
+
+    public final long getLastAccessedTime() throws Exception {
+        checkClosed();
+        return p.lastAccessTime;
+    }
+
+    //***************************************************************************************************************//
+    //                                     3: Key and Proxy(2+0)                                                     //                                                                                  //
+    //***************************************************************************************************************//
     public K getKey() throws Exception {
         checkClosed();
         return p.key;
@@ -87,39 +88,47 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
 
     public V getObject() throws Exception {
         checkClosed();
-        return p.raw;
+        return null;//don't expose pooled object to outside
     }
 
-    public V getObjectProxy() throws Exception {
-        checkClosed();
-        return null;
-    }
-
+    //***************************************************************************************************************//
+    //                                     4: Object call(2+0)                                                       //                                                                                  //
+    //***************************************************************************************************************//
     public Object call(String methodName) throws Exception {
         return call(methodName, EMPTY_CLASSES, EMPTY_CLASS_NAMES);
     }
 
-    public Object call(String name, Class<?>[] types, Object[] params) throws Exception {
+    //call target object by reflection
+    public Object call(String methodName, Class<?>[] types, Object[] params) throws Exception {
         checkClosed();
-        boolean existInList = objectMethodNameList == null || objectMethodNameList.contains(name);
 
-        try {
-            Object v = p.getMethod(name, types, params).invoke(raw, params);
-            if (existInList) p.updateAccessTime();
-
-            return v;
-        } catch (Exception e) {
-            if (existInList && predicate != null && isNotBlank(predicate.evictionTest(e)))
-                p.abortSelf(DESC_RM_BAD);
-
-            throw e;
+        //if method name list is null or method name is in the list
+        if (objectMethodNameList == null || objectMethodNameList.contains(methodName)) {
+            try {
+                Object v = p.getMethod(methodName, types, params).invoke(raw, params);
+                p.updateAccessTime();
+                return v;
+            } catch (Throwable e) {
+                //if predicate is not null,then run eviction test
+                if (predicate != null && isNotBlank(predicate.evictionTest(e)))
+                    p.abortSelf(DESC_RM_BAD);
+                throw e;
+            }
+        } else {
+            return p.getMethod(methodName, types, params).invoke(raw, params);
         }
     }
 
-    void checkClosed() throws Exception {
-        if (isClosed) throw new BeePooledObjectCalledException("No operations allowed after object handle closed");
+    //***************************************************************************************************************//
+    //                                     5: Object override(1+0)                                                   //                                                                                  //
+    //***************************************************************************************************************//
+    public String toString() {
+        return isClosed ? "Object handle has been closed" : p.toString();
     }
 
+    //***************************************************************************************************************//
+    //                                     6: Handle Impl by proxy                                                   //                                                                                  //
+    //***************************************************************************************************************//
     static class ObjectHandleImpl2<K, V> extends ObjectHandleImpl<K, V> {
         private final V objectProxy;
 
@@ -129,7 +138,7 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
         }
 
         @Override
-        public V getObjectProxy() throws Exception {
+        public V getObject() throws Exception {
             this.checkClosed();
             return objectProxy;
         }

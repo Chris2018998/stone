@@ -127,7 +127,7 @@ public class ObjectProxyGenerator {
             ctProxyObjectClass.addField(ctKeyField);
 
             //field6(private final MethodExecutionLogCache<K> logCache;)
-            CtClass ctMethodExecutionLogCacheClass = classPool.getCtClass(MethodExecutionLogCache.class.getName());
+            CtClass ctMethodExecutionLogCacheClass = classPool.getCtClass(ObjectPoolLogCache.class.getName());
             CtField ctLogCacheField = new CtField(ctMethodExecutionLogCacheClass, "logCache", ctProxyObjectClass);
             ctLogCacheField.setModifiers(Modifier.PRIVATE | Modifier.FINAL);
             ctProxyObjectClass.addField(ctLogCacheField);

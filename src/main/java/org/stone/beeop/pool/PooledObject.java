@@ -26,27 +26,29 @@ import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
  * @version 1.0
  */
 final class PooledObject<K, V> {
-    //related key
+    //pooled key
     final K key;
     //method names to support accessed time update,eviction test,logs collection
     final List<String> objectMethodNameList;
     //Category pool,which collects method logs of object
-    private final ObjectKeyCategoryPool<K, V> pool;
+    final ObjectKeyCategoryPool<K, V> pool;
+
     //destroy objects,reset objects
     private final BeeObjectFactory<K, V> objectFactory;
     //sharable map to store method of object type
-    private final Map<MethodCacheKey, Method> objectMethodCacheMap;
+    private final Map<MethodKey, Method> objectMethodCacheMap;
 
     //object
     V raw;
     //state of pooled object
     volatile int state;
+    //last accessed time
+    volatile long lastAccessTime;
     //creation info
     volatile ObjectCreatingInfo creatingInfo;
     //handle in using
     ObjectHandleImpl<K, V> handleInUsing;
-    //last accessed time
-    volatile long lastAccessTime;
+
     //class type of object
     private Class<V> rawType;
 
@@ -57,7 +59,7 @@ final class PooledObject<K, V> {
                  ObjectKeyCategoryPool<K, V> pool,
                  BeeObjectFactory<K, V> objectFactory,
                  List<String> objectMethodNameList,
-                 Map<MethodCacheKey, Method> objectMethodCacheMap) {
+                 Map<MethodKey, Method> objectMethodCacheMap) {
 
         this.key = key;
         this.pool = pool;
@@ -85,6 +87,10 @@ final class PooledObject<K, V> {
 
     void updateAccessTime() {
         this.lastAccessTime = System.currentTimeMillis();
+    }
+
+    void updateAccessTime(long time) {
+        this.lastAccessTime = time;
     }
 
     //***************************************************************************************************************//
@@ -131,7 +137,7 @@ final class PooledObject<K, V> {
 
     //handle call this method to get a method of object by parameter info
     Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
-        MethodCacheKey key = new MethodCacheKey(name, types);
+        MethodKey key = new MethodKey(name, types);
         Method method = objectMethodCacheMap.get(key);
 
         if (method == null) {

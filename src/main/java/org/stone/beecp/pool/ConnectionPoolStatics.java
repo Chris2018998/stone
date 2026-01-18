@@ -108,6 +108,7 @@ public final class ConnectionPoolStatics {
                 }
             }
     );
+
     //pool thread state
     static final int THREAD_WORKING = 0;
     static final int THREAD_WAITING = 1;
