@@ -153,6 +153,6 @@ public interface BeeMethodLog<K> extends Serializable {
      *
      * @return a result object
      */
-    Throwable getFailCause();
+    Throwable getFailureCause();
 
 }

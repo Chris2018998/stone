@@ -22,16 +22,6 @@ import java.util.List;
 interface MethodLogCache<K> {
 
     /**
-     * Initializes log cache.
-     *
-     * @param poolName      is owner name
-     * @param logTypeSize   is size of log type
-     * @param typeCacheSize is cache size of per log type
-     * @param listener      is log listener
-     */
-    void init(String poolName, int logTypeSize, int typeCacheSize, BeeMethodLogListener<K> listener);
-
-    /**
      * Set a new threshold value for given log type
      *
      * @param logType       is target log type
@@ -45,7 +35,6 @@ interface MethodLogCache<K> {
      * @param listener to be set to cache
      */
     void setLogListener(BeeMethodLogListener<K> listener);
-
 
     /**
      * Plugin method: Handles a log of method call.

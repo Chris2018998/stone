@@ -108,11 +108,6 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     }
 
     @Override
-    public boolean isClosed() {
-        return poolState == POOL_CLOSED;
-    }
-
-    @Override
     public boolean isReady() {
         return poolState == POOL_READY;
     }
@@ -123,8 +118,13 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     }
 
     @Override
-    public boolean isReStarting() {
+    public boolean isRestarting() {
         return poolState == POOL_RESTARTING;
+    }
+
+    @Override
+    public boolean isRestartFailed() {
+        return poolState == POOL_RESTART_FAILED;
     }
 
     @Override

@@ -25,8 +25,15 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTARTING;
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTART_FAILED;
 import static org.stone.beeop.BeeMethodLog.*;
-import static org.stone.beeop.pool.ObjectPoolStatics.*;
+import static org.stone.beeop.pool.ObjectPoolStatics.POOL_CLOSED;
+import static org.stone.beeop.pool.ObjectPoolStatics.POOL_CLOSING;
+import static org.stone.beeop.pool.ObjectPoolStatics.POOL_NEW;
+import static org.stone.beeop.pool.ObjectPoolStatics.POOL_STARTING;
+import static org.stone.beeop.pool.ObjectPoolStatics.POOL_SUSPENDED;
 import static org.stone.tools.CommonUtil.NCPU;
 import static org.stone.tools.CommonUtil.isNotBlank;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
@@ -63,38 +70,42 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     private int maxActiveSizeOfKey;
     //9: Permit size of semaphore of category key
     private int semaphoreSizeOfKey;
-    //9: Creation mode of initial objects for category pools
+    //10: Creation mode of initial objects for category pools
     private boolean asyncCreateInitObjectsOfKey;
 
-    //10: Policy flag to recycle borrowed objects when pool close
+    //11: Policy flag to recycle borrowed objects when pool close
     private boolean forceRecycleBorrowedOnClose;
-    //11: Policy flag to shut down internal thread pools when pool close
+    //12: Policy flag to shut down internal thread pools when pool close
     private boolean forceShutdownThreadPoolOnClose;
-
-    //12: A threads pool to search idle objects or create new objects for waiters
+    //13: A threads pool to search idle objects or create new objects for waiters
     private ThreadPoolExecutor servantService;
-    //13: An interval time to clear timeout objects from category pools
-    private long timerCheckInterval;
-    //14: Schedule thread pool to execute time clear tasks
+
+    //14: Flag of pool logs cache
+    private boolean collectPoolLogs;
+    //15: Log cache of pool
+    private ObjectPoolLogCache<K> poolLogCache;
+
+    //16: Timeout value of method logs
+    private long methodLogsTimeout;
+    //17: Time interval of task to clear timeout logs of pool
+    private long intervalOfMethodLogsClearTask;
+    //18: Handle of scheduled task to clear logs
+    private ScheduledFuture<?> poolLogsScheduledFuture;
+    //19: Schedule thread pool to execute time clear tasks
     private ScheduledThreadPoolExecutor scheduledService;
 
-    //15: Pool name on MBean registered
+    //20: Pool name on MBean registered
     private String poolNameOfRegisteredMBean;
 
-    //16: Flag to collect method execution logs
-    private boolean collectMethodLogs;
-    //17: A internal container to cache new keys
-    private ObjectPoolLogCache<K> newKeysLogCache;
-
-    //18: Log printer of key pool
+    //21: Log printer of key pool
     private LogPrinter logPrinter = DefaultLogPrinter;
-    //19: JVM Hook to shut down pool
+    //22: JVM Hook to shut down pool
     private ObjectPoolHook<K, V> exitHook;
 
     //***************************************Some fields for default category pool ***********************************//
-    //20: Default Key
+    //23: Default Key
     private K defaultKey;
-    //21: Default category pool
+    //24: Default category pool
     private ObjectKeyCategoryPool<K, V> defaultCategoryPool;
 
     //***************************************************************************************************************//
@@ -127,13 +138,13 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         synchronized (key.toString().intern()) {
             categoryPool = categoryPoolMap.get(key);
             if (categoryPool == null) {
-                if (this.collectMethodLogs) {
-                    BeeMethodLog<K> log = this.newKeysLogCache.beforeCall(startTime, key, Type_Pool_Log, "ObjectPool.getObjectHandle", null);
+                if (this.collectPoolLogs) {
+                    BeeMethodLog<K> log = this.poolLogCache.beforeCall(startTime, key, Type_Pool_Log, "ObjectPool.getObjectHandle", null);
                     try {
                         categoryPool = this.createObjectKeyCategoryPool(key);
-                        this.newKeysLogCache.afterCall(System.currentTimeMillis(), categoryPool, log);
+                        this.poolLogCache.afterCall(System.currentTimeMillis(), categoryPool, log);
                     } catch (Throwable e) {
-                        this.newKeysLogCache.afterCall(System.currentTimeMillis(), e, log);
+                        this.poolLogCache.afterCall(System.currentTimeMillis(), e, log);
                         throw e;
                     }
                 } else {
@@ -158,23 +169,17 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         //2: clone a new instance with default pool
         ObjectKeyCategoryPool<K, V> categoryPool = defaultCategoryPool.createByClone();
 
-        //3: Schedule a timeout task on the new category pool(maybe blocked in creation)
-        TimeoutObjectsClearTask<K, V> timeoutTask = new TimeoutObjectsClearTask<>(categoryPool);
-        ScheduledFuture<?> future = this.scheduledService.scheduleWithFixedDelay(timeoutTask, timerCheckInterval,
-                timerCheckInterval, MILLISECONDS);
-
         try {
             //4: Attempt to start up the created pool
             categoryPool.startup(poolName, key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
 
             //5: put the started pool to concurrent map
             categoryPoolMap.put(key, categoryPool);
+
             return categoryPool;
         } catch (Throwable e) {
             //6: remove scheduled task when pool failed to start up
             keyCounter.decrementAndGet();//decrease
-            future.cancel(true);
-            this.scheduledService.remove(timeoutTask);
             throw e;
         }
     }
@@ -243,17 +248,14 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 this.poolState = POOL_READY;
             } catch (Throwable e) {
                 this.poolState = POOL_NEW;//reset to new state when fail
-                if (e instanceof BeeObjectSourcePoolException) {
-                    throw (BeeObjectSourcePoolException) e;
-                } else {
-                    throw new BeeObjectSourcePoolStartedFailureException("Object source pool started failure", e);
-                }
+                throw new BeeObjectSourcePoolStartedFailureException("Object source pool started failure", e);
             }
         } else {
             throw new BeeObjectSourcePoolStartedFailureException("Object source pool is starting or already started up");
         }
     }
 
+    //method call to start up key pool
     private void startupInternal(BeeObjectSourceConfig<K, V> config) throws Exception {
         //step1: set log printer first
         this.poolName = config.getPoolName();
@@ -267,58 +269,47 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
             objectProxyClassConstructor = objectProxyClasses[0].getDeclaredConstructors()[0];
         }
 
-        //step3: Create default category pool
-        this.keyCounter = new AtomicInteger();
-        this.defaultCategoryPool = new ObjectKeyCategoryPool<>(this, config, objectProxyClassConstructor);
-
-        //step4: Create scheduled thread pool before default category pool starts
+        //step3: Create pool schedule executor
         this.maxKeySize = config.getMaxKeySize();
-        int coreThreadSize = Math.min(NCPU, maxKeySize + 1);//1 is to run method execution log clear task
+        int coreThreadSizeOfScheduledThreadPool = Math.min(NCPU, (maxKeySize << 1) + 1);//1 is to run key pool logs clear task
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
-        this.timerCheckInterval = config.getIntervalOfClearTimeout();
-        this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSize, poolThreadFactory);
-        this.scheduledService.setMaximumPoolSize(coreThreadSize);
+        this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSizeOfScheduledThreadPool, poolThreadFactory);
+        this.scheduledService.setMaximumPoolSize(coreThreadSizeOfScheduledThreadPool);
         this.scheduledService.allowCoreThreadTimeOut(true);
         this.scheduledService.setKeepAliveTime(10L, TimeUnit.SECONDS);
 
-        //step5: launch a time task on default category pool before it start up(*** need add some check in task guarantee it initialization completed ***)
-        TimeoutObjectsClearTask<K, V> timeoutTask = new TimeoutObjectsClearTask<>(defaultCategoryPool);
-        ScheduledFuture<?> future = this.scheduledService.scheduleWithFixedDelay(timeoutTask, timerCheckInterval, timerCheckInterval, MILLISECONDS);
+        //step4: Create category Pool for default key by configuration
+        this.defaultCategoryPool = new ObjectKeyCategoryPool<>(this, config, objectProxyClassConstructor, this.scheduledService);
 
-        //step6: Launch the default category pool
+        //step5: Start the default category pool
         this.defaultKey = config.getObjectFactory().getDefaultKey();
         this.initialSizeOfKey = config.getInitialSize();
         this.asyncCreateInitObjectsOfKey = config.isAsyncCreateInitObjects();
-        try {
-            this.defaultCategoryPool.startup(poolName, defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
-        } catch (Throwable e) {
-            //remove the scheduled task when fails to startup
-            future.cancel(true);
-            scheduledService.remove(timeoutTask);
-            throw e;
-        }
+        this.defaultCategoryPool.startup(poolName, defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
 
-        //step7: put default category pool into map
-        this.categoryPoolMap.put(defaultKey, defaultCategoryPool);//put the default category pool to concurrent map
-        this.keyCounter.set(1);
+        //step6: put the created default pool to map
+        this.categoryPoolMap.put(defaultKey, defaultCategoryPool);
+        this.keyCounter = new AtomicInteger(1);
 
-        //step8: Create method execution log cache and schedule a timed task on it
-        this.collectMethodLogs = config.isEnableLogCache();
-        this.newKeysLogCache = new ObjectPoolLogCache<>();
-        this.newKeysLogCache.setSlowThreshold(Type_Pool_Log, config.getSlowGetThreshold());
-        this.newKeysLogCache.init(this.poolName,
-                1,
-                config.getLogCacheSize(),
-                config.getLogListener());
-
-        this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(
-                        this, config.getLogTimeout(), this.newKeysLogCache),
-                config.getIntervalOfClearTimeoutLogs(), config.getIntervalOfClearTimeoutLogs(), MILLISECONDS);
-
-        //step9: Create a thread pool executor to get objects for sleeping waiters
-        this.servantService = new ThreadPoolExecutor(coreThreadSize, coreThreadSize, 10L, TimeUnit.SECONDS,
+        //step7: Create thread executor pool to add
+        int threadPoolCoreThreadSize = Math.min(NCPU, maxKeySize);
+        this.servantService = new ThreadPoolExecutor(threadPoolCoreThreadSize, threadPoolCoreThreadSize, 10L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(maxKeySize), poolThreadFactory);
         this.servantService.allowCoreThreadTimeOut(true);
+
+        //step8: copy some reconfigured items to pool local
+        this.collectPoolLogs = config.isEnableLogCache();
+        this.methodLogsTimeout = config.getLogTimeout();
+        this.intervalOfMethodLogsClearTask = config.getIntervalOfClearTimeoutLogs();
+        //Create the log cache of key pool
+        this.poolLogCache = new ObjectPoolLogCache<>(this.poolName, config.getLogCacheSize(), config.getLogListener());
+        this.poolLogCache.setSlowThreshold(Type_Pool_Log, config.getSlowGetThreshold());
+
+        //step9: schedule task to clear timeout method logs
+        if (collectPoolLogs) {
+            this.poolLogsScheduledFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsOfPoolClearTask<>(this.poolLogCache, methodLogsTimeout, this),
+                    intervalOfMethodLogsClearTask, intervalOfMethodLogsClearTask, MILLISECONDS);
+        }
 
         //step10: Copy some configuration items to pool local
         this.useFairModeOfKey = config.isFairMode();
@@ -353,15 +344,18 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         if (reinit && config == null)
             throw new BeeObjectSourceConfigException("Object source configuration can't be null");
 
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
+        int poolState = this.poolState;
+        boolean hasRunToStartupInternal = false;
+        if ((poolState == POOL_READY || poolState == POOL_RESTART_FAILED) && PoolStateUpd.compareAndSet(this, poolState, POOL_RESTARTING)) {
             try {
                 if (reinit) {//restart with new configuration
                     BeeObjectSourceConfig<K, V> checkedConfig = config.check();
                     logPrinter.info("BeeOP({})-begin to restart pool with new configuration", this.poolName);
                     //1: Clear some fields of pool
-                    this.clearPoolFields(false, forceRecycleBorrowed);
+                    this.clearPoolInternalMembers(false, forceRecycleBorrowed);
 
                     //2: startup pool
+                    hasRunToStartupInternal = true;
                     this.startupInternal(checkedConfig);
                     logPrinter.info("BeeOP({})-finished pool restart", this.poolName);
                 } else {//Only Clear all category pools
@@ -370,15 +364,16 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                         pool.restart(forceRecycleBorrowed);
                     logPrinter.info("BeeOP({})-completed to restart key category pools", this.poolName);
                 }
+
+                this.poolState = POOL_READY;//reset pool state to ready
             } catch (Throwable e) {
                 logPrinter.error("BeeOP({})-restarted failure", this.poolName, e);
+                this.poolState = hasRunToStartupInternal ? POOL_RESTART_FAILED : POOL_READY;
                 if (e instanceof BeeObjectSourcePoolException) {
                     throw (BeeObjectSourcePoolException) e;
                 } else {
                     throw new BeeObjectSourcePoolRestartedFailureException("Object source pool restarted failure", e);
                 }
-            } finally {
-                this.poolState = POOL_READY;//reset pool state to ready
             }
         } else {
             throw new BeeObjectSourcePoolRestartedFailureException("Object source pool has been closed or is restarting");
@@ -399,7 +394,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 logPrinter.info("BeeOP({})-begin to shutdown", this.poolName);
 
                 //1: Clear some fields of pool
-                this.clearPoolFields(true, this.forceRecycleBorrowedOnClose);
+                this.clearPoolInternalMembers(true, this.forceRecycleBorrowedOnClose);
 
                 //2: Set pool state to closed
                 this.poolState = POOL_CLOSED;
@@ -412,44 +407,44 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         } while (true);
     }
 
-    private void clearPoolFields(boolean isCloseCall, boolean forceRecycleBorrowed) {
+    private void clearPoolInternalMembers(boolean isCloseCall, boolean forceRecycleBorrowed) {
         //NOTE: Safe shut down on pool,make sure pool threads dead before clear other fields
 
-        //1: Shut down schedule service
+        //1: Clear log cache
+        if (this.poolLogCache != null) poolLogCache.clearLogs(Type_Pool_Log);
+
+        //2: Shut down schedule executor pool
         if (this.scheduledService != null) {
-            this.scheduledService.getQueue().clear();
+            if (poolLogsScheduledFuture != null) {
+                poolLogsScheduledFuture.cancel(true);
+                poolLogsScheduledFuture = null;
+            }
+
             this.scheduledService.shutdownNow();
+            this.scheduledService.getQueue().clear();
             this.scheduledService = null;
         }
 
-        //2: Shut down servant thread executor pool
+        //3: Shut down servant thread executor pool
         if (this.servantService != null) {
-            this.servantService.getQueue().clear();
             this.servantService.shutdownNow();
+            this.servantService.getQueue().clear();
             this.servantService = null;
         }
 
-        //3: Clear default key and its pool
-        this.defaultKey = null;
-        this.defaultCategoryPool = null;
-
-        //4: Shut down all category pools and clear the map of them
+        //4: Clear all category pools
         for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values())
             categoryPool.close(forceRecycleBorrowed);
         this.categoryPoolMap.clear();
+        this.defaultKey = null;
+        this.defaultCategoryPool = null;
 
-        //5: Clear log cache of method execution
-        if (this.newKeysLogCache != null) {
-            this.newKeysLogCache.clearTimeoutLogs(0L);//clear all logs
-            this.newKeysLogCache = null;
-        }
-
-        //6: Unregister MBeans
+        //5: Unregister MBeans
         if (isNotBlank(this.poolNameOfRegisteredMBean))
             this.unregisterMBeans();
 
-        //7: unregister Pool hook
-        if (isCloseCall) {
+        //6: unregister Pool hook
+        if (isCloseCall) {//this method call is from pool close
             try {//remove Hook
                 Runtime.getRuntime().removeShutdownHook(this.exitHook);
             } catch (Throwable e) {
@@ -463,9 +458,6 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //***************************************************************************************************************//
     public void enableLogPrinter(boolean enable) {
         this.logPrinter = getLogPrinter(ObjectPool.class, enable);
-        for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values()) {
-            pool.enableLogPrint(enable);
-        }
     }
 
     public void enableLogPrinter(K key, boolean enable) throws Exception {
@@ -485,7 +477,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 this.semaphoreSizeOfKey,
                 this.poolState,
                 this.logPrinter.isEnableLogOutput(),
-                this.collectMethodLogs);
+                this.collectPoolLogs);
 
         if (keyMonitor) {
             for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values()) {
@@ -501,7 +493,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                    6: Pool blocking interrupts(2+0)                                          //
+    //                                    6: Pool blocking interrupts(2+0)                                           //
     //***************************************************************************************************************//
     public List<Thread> interruptWaitingThreads() {
         List<Thread> threadList = new LinkedList<>();
@@ -515,22 +507,32 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                    7: method execution logs(4+0)                                             //
+    //                                    7: method execution logs(4+0)                                              //
     //***************************************************************************************************************//
     public void enableLogCache(boolean enable) {
-        this.collectMethodLogs = enable;
+        if (this.collectPoolLogs != enable) {
+            this.collectPoolLogs = enable;
+            if (enable) {
+                this.poolLogsScheduledFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsOfPoolClearTask<>(this.poolLogCache, methodLogsTimeout, this),
+                        intervalOfMethodLogsClearTask, intervalOfMethodLogsClearTask, MILLISECONDS);
+            } else if (this.poolLogsScheduledFuture != null) {
+                this.poolLogCache.clearLogs(Type_Pool_Log);
+                this.poolLogsScheduledFuture.cancel(true);
+                this.poolLogsScheduledFuture = null;
+            }
+        }
     }
 
     public void changeLogListener(BeeMethodLogListener<K> listener) {
-        this.newKeysLogCache.setLogListener(listener);
+        this.poolLogCache.setLogListener(listener);
     }
 
     public void clearPoolLogs() {
-        this.newKeysLogCache.clearTimeoutLogs(0L);
+        this.poolLogCache.clearTimeoutLogs(0L);
     }
 
     public List<BeeMethodLog<K>> getPoolLogs() {
-        return this.newKeysLogCache.getLogs(Type_Pool_Log);
+        return this.poolLogCache.getLogs(Type_Pool_Log);
     }
 
     //***************************************************************************************************************//
@@ -635,7 +637,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     //***************************************************************************************************************//
-    //                                    11: Internal classes(4)                                                    //                                                                                  //
+    //                                    11: Internal classes(3)                                                    //                                                                                  //
     //***************************************************************************************************************//
     private record PoolThreadFactory(String threadName) implements ThreadFactory {
 
@@ -662,25 +664,15 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         }
     }
 
-    private record TimeoutObjectsClearTask<K, V>(ObjectKeyCategoryPool<K, V> pool) implements Runnable {
+    private record TimeoutMethodLogsOfPoolClearTask<K, V>(ObjectPoolLogCache<K> newKeysLogCache,
+                                                          long timeout,
+                                                          ObjectPool<K, V> objectPool) implements Runnable {
 
         public void run() {
             try {
-                this.pool.closeIdleTimeout();
+                newKeysLogCache.clearTimeoutLogs(timeout);
             } catch (Throwable e) {
-                //do nothing
-            }
-        }
-    }
-
-    private record TimeoutMethodLogsClearTask<K, V>(ObjectPool<K, V> pool, long methodExecutionLogTimeout,
-                                                    ObjectPoolLogCache<K> methodExecutionLogCache) implements Runnable {
-
-        public void run() {
-            try {
-                methodExecutionLogCache.clearTimeoutLogs(methodExecutionLogTimeout);
-            } catch (Throwable e) {
-                pool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.pool.poolName, e);
+                objectPool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.objectPool.poolName, e);
             }
         }
     }

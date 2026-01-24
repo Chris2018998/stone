@@ -52,13 +52,13 @@ public interface BeeObjectPoolMonitorVo<K> extends Serializable {
 
     boolean isClosing();
 
-    boolean isClosed();
-
     boolean isReady();
 
     boolean isStarting();
 
-    boolean isReStarting();
+    boolean isRestarting();
+
+    boolean isRestartFailed();
 
     boolean isSuspended();
 

@@ -23,13 +23,13 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static org.stone.beeop.BeeMethodLog.Type_All;
 import static org.stone.beeop.BeeMethodLog.Type_Key_Log;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
@@ -47,9 +47,9 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "poolState");
     private static final AtomicIntegerFieldUpdater<ObjectKeyCategoryPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(ObjectKeyCategoryPool.class, "servantTryCount");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
-    final ObjectPool<K, V> parentPool;
 
-    //clone begin
+    //Clone Start
+    private final ObjectPool<K, V> parentPool;
     private final boolean isFairMode;
     private final boolean isCompeteMode;
     private final int maxActiveSize;
@@ -60,48 +60,57 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private final long idleTimeoutMs;//milliseconds
     private final long holdTimeoutMs;//milliseconds
     private final boolean supportHoldTimeout;
-
     private final int stateCodeOnRelease;
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
     private final long parkTimeForRetryNs;//nanoseconds
     private final boolean useThreadLocal;
-    private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
-    private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
-    private final List<String> objectMethodNameList;
-    private final Map<MethodKey, Method> objectMethodCacheMap;//cache called methods
+    private final long methodLogsTimeoutMs;
+    private final long intervalOfMethodLogsClearTaskMs;
+    private final long intervalOfObjectsClearTask;
 
+    private final List<String> objectMethodNameList;
+    private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
+    private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
+    private final Map<MethodKey, Method> objectMethodCacheMap;//cache called methods
     private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
+    private final ScheduledThreadPoolExecutor scheduledService;
+
+    private final int methodLogCacheSize;
     LogPrinter logPrinter = DefaultLogPrinter;
-    //clone end
+    private boolean collectMethodLogs;//changeable
+    private BeeMethodLogListener<K> methodLogListener;//changeable
+    //Clone end
 
     //category key
     private K key;
-    //parent's name + key.string()
+    //Category name=parent's name + key.string()
     private String poolName;
-    //category pool state
+    //Category pool state
     private volatile int poolState;
     //State of category servant
     private volatile int servantState;
-    //represents retry count to get pooled objects
+    //Retry count to get idle object
     private volatile int servantTryCount;
-    //An enable flag to collect method execution logs
-    private boolean collectMethodLogs;
-
-    //category pool semaphore
+    //Semaphore of category pool
     private InterruptableSemaphore semaphore;
-    //fixed length array to store pooled objects
+    //Array store pooled objects
     private PooledObject<K, V>[] objectArray;
     //Wait queue
     private ConcurrentLinkedQueue<Borrower<K, V>> waitQueue;
-    //thread local to cache last borrowed objects for borrowers
+    //ThreadLocal caches last used pooled objects for borrowers
     private ThreadLocal<WeakReference<Borrower<K, V>>> threadLocal;
 
+    //Handle of scheduled task clear timeout logs
+    private ScheduledFuture<?> timeoutLogsClearTaskFuture;
+    //Handle of scheduled task clear timeout objects
+    private ScheduledFuture<?> timeoutObjectsClearTaskFuture;
+
     //***************************************************************************************************************//
-    //                                         1: Pool Creation/Start(1+2)                                           //
+    //                                     1: Pool Creation(1+1)                                                     //
     //***************************************************************************************************************//
     ObjectKeyCategoryPool(ObjectPool<K, V> parentPool, BeeObjectSourceConfig<K, V> config,
-                          Constructor<?> objectProxyClassConstructor) {
+                          Constructor<?> objectProxyClassConstructor, ScheduledThreadPoolExecutor scheduledService) {
         //step1: copy  primitive type field
         this.parentPool = parentPool;
         this.poolState = POOL_NEW;
@@ -111,19 +120,25 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         this.maxActiveSize = config.getMaxActive();
 
         this.maxWaitMs = config.getMaxWait();
-        this.maxWaitNs = TimeUnit.MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
+        this.maxWaitNs = MILLISECONDS.toNanos(maxWaitMs);//nanoseconds
         this.idleTimeoutMs = config.getIdleTimeout();
         this.holdTimeoutMs = config.getHoldTimeout();
 
         this.supportHoldTimeout = holdTimeoutMs > 0L;
-        this.parkTimeForRetryNs = TimeUnit.MILLISECONDS.toNanos(config.getParkTimeForRetry());
+        this.parkTimeForRetryNs = MILLISECONDS.toNanos(config.getParkTimeForRetry());
         this.validAssumeTime = config.getAliveAssumeTime();
         this.validTestTimeout = config.getAliveTestTimeout();
+        this.methodLogsTimeoutMs = config.getLogTimeout();
+        this.intervalOfMethodLogsClearTaskMs = config.getIntervalOfClearTimeoutLogs();
+        this.intervalOfObjectsClearTask = config.getIntervalOfClearTimeout();
 
         //step2:object type field setting
         this.objectFactory = config.getObjectFactory();
         this.objectMethodNameList = config.getObjectMethodNameList();
         this.objectMethodCacheMap = new ConcurrentHashMap<>(1);
+        this.scheduledService = scheduledService;
+        this.methodLogCacheSize = config.getLogCacheSize();
+        this.methodLogListener = config.getLogListener();
 
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
@@ -142,42 +157,77 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         return (ObjectKeyCategoryPool<K, V>) clone();
     }
 
+    //***************************************************************************************************************//
+    //                                     2: Pool Creation(0+1)                                                     //
+    //***************************************************************************************************************//
     @SuppressWarnings("uncheck")
     void startup(String parentName, K key, int initSize, boolean asyncCreateInitObjects, boolean isPrintRuntimeLogs) throws Exception {
-        this.key = key;
-        this.poolName = parentName + "-[" + key + "]";
-        this.logPrinter = getLogPrinter(ObjectKeyCategoryPool.class, isPrintRuntimeLogs);
 
-        this.objectArray = new PooledObject[maxActiveSize];
-        for (int i = 0; i < maxActiveSize; i++)
-            objectArray[i] = new PooledObject<>(key,
-                    this,
-                    this.objectFactory,
-                    this.objectMethodNameList,
-                    this.objectMethodCacheMap);
+        try {
+            //step1: set key and log printer
+            this.key = key;
+            this.poolName = parentName + "-[" + key + "]";
+            this.logPrinter = getLogPrinter(ObjectKeyCategoryPool.class, isPrintRuntimeLogs);
 
-        if (initSize > 0 && !asyncCreateInitObjects) this.createInitObjects(initSize, true);
-        if (this.useThreadLocal) this.threadLocal = new BorrowerThreadLocal<>();
-        this.semaphore = new InterruptableSemaphore(semaphoreSize, isFairMode);
-        this.waitQueue = new ConcurrentLinkedQueue<>();
+            //step2: Create array of pool objects and fill 'empty state' objects
+            this.objectArray = new PooledObject[maxActiveSize];
+            for (int i = 0; i < maxActiveSize; i++)
+                objectArray[i] = new PooledObject<>(key,
+                        this,
+                        this.objectFactory,
+                        this.objectMethodNameList,
+                        this.objectMethodCacheMap);
 
-        this.servantTryCount = 0;
-        this.servantState = THREAD_WAITING;//initial state
+            //step3: Schedule task to clear timeout objects(this task can interrupt blocking of objects creation)
+            this.timeoutObjectsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutObjectsClearTask<>(this),
+                    intervalOfObjectsClearTask, intervalOfObjectsClearTask, MILLISECONDS);
 
-        if (initSize > 0 && asyncCreateInitObjects) new PoolInitAsyncCreateThread<>(initSize, this).start();
-        String poolMode = this.isFairMode ? "fair" : "compete";
-        this.poolState = POOL_READY;
-        logPrinter.info("BeeOP({})-has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
-                this.poolName,
-                poolMode,
-                initSize,
-                this.maxActiveSize,
-                this.semaphoreSize,
-                this.maxWaitMs);
+            //step4: Create initial objects
+            if (initSize > 0 && !asyncCreateInitObjects) this.createInitObjects(initSize, true);
+
+            //step5: Creates pool some internal objects
+            if (this.useThreadLocal) this.threadLocal = new BorrowerThreadLocal<>();
+            this.semaphore = new InterruptableSemaphore(semaphoreSize, isFairMode);
+            this.waitQueue = new ConcurrentLinkedQueue<>();
+            this.servantTryCount = 0;
+            this.servantState = THREAD_WAITING;//initial state
+
+            //Step6: Create initial objects by async mode(startup a new thread to create initial objects)
+            if (initSize > 0 && asyncCreateInitObjects) new PoolInitAsyncCreateThread<>(initSize, this).start();
+
+            //step7: log cache initialize
+            this.init(poolName, this.methodLogCacheSize, this.methodLogListener);
+            if (this.collectMethodLogs) {
+                this.timeoutLogsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(this, methodLogsTimeoutMs),
+                        intervalOfMethodLogsClearTaskMs, intervalOfMethodLogsClearTaskMs, MILLISECONDS);
+            }
+
+            //step8: print completion message and set pool to ready state
+            String poolMode = this.isFairMode ? "fair" : "compete";
+            this.poolState = POOL_READY;
+            logPrinter.info("BeeOP({})-has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
+                    this.poolName,
+                    poolMode,
+                    initSize,
+                    this.maxActiveSize,
+                    this.semaphoreSize,
+                    this.maxWaitMs);
+        } catch (Throwable e) {
+            if (timeoutObjectsClearTaskFuture != null) {
+                timeoutObjectsClearTaskFuture.cancel(true);
+                timeoutObjectsClearTaskFuture = null;
+            }
+
+            if (timeoutLogsClearTaskFuture != null) {
+                timeoutLogsClearTaskFuture.cancel(true);
+                timeoutLogsClearTaskFuture = null;
+            }
+            throw e;
+        }
     }
 
     //***************************************************************************************************************//
-    //                                         2: Pooled Objects Creation(0+2)                                       //
+    //                                         3: Pooled Objects Creation(0+2)                                       //
     //***************************************************************************************************************//
     private void createInitObjects(int initSize, boolean syn) throws Exception {
         int index = 0;
@@ -229,7 +279,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                         3: Pooled objects get(1+3)                                            //                                                                                  //
+    //                                         4: Pooled objects get(1+4)                                            //                                                                                  //
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
         if (this.collectMethodLogs) {
@@ -323,7 +373,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                             if (s != null) b.state = null;
                             if (this.servantTryCount > 0 && this.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(this, THREAD_WAITING, THREAD_WORKING))
                                 parentPool.submitServantTask(this);
-                            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(t));//park exit:1:get transfer 2:timeout 3:interrupted
+                            LockSupport.parkNanos(MILLISECONDS.toNanos(t));//park exit:1:get transfer 2:timeout 3:interrupted
                             if (borrowThread.isInterrupted() && Thread.interrupted())
                                 this.handleTimeoutAndInterruption(false, null, b);
                         } else {//timeout
@@ -403,7 +453,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                         4: Pooled Objects recycle(0+4)                                        //
+    //                                         5: Pooled Objects recycle(0+4)                                        //
     //***************************************************************************************************************//
     void recycle(PooledObject<K, V> p) {
         if (isCompeteMode) p.state = OBJECT_IDLE;
@@ -526,6 +576,16 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                 logPrinter.info("BeeOP({})-begin to shutdown", this.poolName);
                 this.removeAllObjects(forceRecycleBorrowed, DESC_RM_POOL_SHUTDOWN);
 
+                if (timeoutObjectsClearTaskFuture != null) {
+                    timeoutObjectsClearTaskFuture.cancel(true);
+                    timeoutObjectsClearTaskFuture = null;
+                }
+
+                if (timeoutLogsClearTaskFuture != null) {
+                    timeoutLogsClearTaskFuture.cancel(true);
+                    timeoutLogsClearTaskFuture = null;
+                }
+
                 this.poolState = POOL_CLOSED;
                 logPrinter.info("BeeOP({})-has shutdown", this.poolName);
                 break;
@@ -539,12 +599,22 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     //***************************************************************************************************************//
     //                                         8: Key method logs (2+0)                                              //
     //***************************************************************************************************************//
-    public void enableLogCache(boolean enable) {
-        this.collectMethodLogs = enable;
+    public synchronized void enableLogCache(boolean enable) {
+        if (this.collectMethodLogs != enable) {
+            this.collectMethodLogs = enable;
+            if (enable) {
+                this.timeoutLogsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(this, methodLogsTimeoutMs),
+                        intervalOfMethodLogsClearTaskMs, intervalOfMethodLogsClearTaskMs, MILLISECONDS);
+            } else if (this.timeoutLogsClearTaskFuture != null) {
+                this.clearLogs(Type_All);
+                this.timeoutLogsClearTaskFuture.cancel(true);
+                this.timeoutLogsClearTaskFuture = null;
+            }
+        }
     }
 
     //***************************************************************************************************************//
-    //                                         10: other methods (2+2)                                               //
+    //                                         9: other methods (2+2)                                               //
     //***************************************************************************************************************//
     String getPoolName() {
         return poolName;
@@ -554,7 +624,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         return this.parkTimeForRetryNs;
     }
 
-    public void enableLogPrint(boolean enable) {
+    public synchronized void enableLogPrint(boolean enable) {
         this.logPrinter = LogPrinter.getLogPrinter(ObjectKeyCategoryPool.class, enable);
     }
 
@@ -624,7 +694,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     //***************************************************************************************************************//
     //                                         11: close objects(0+2)[Timer task call]                               //
     //***************************************************************************************************************//
-    void closeIdleTimeout() {
+    void clearIdleTimeoutObjects() {
         //step1: print pool info before clean
         if (logPrinter.isEnableLogOutput()) {
             BeeObjectKeyMonitorVo<K> vo = this.getKeyMonitorVo();
@@ -706,7 +776,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             super(predicate);
         }
 
-        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
+        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) {
             return new ObjectHandleImpl4L<>(p, predicate);
         }
     }
@@ -734,7 +804,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         }
     }
 
-    static final class FairTransferPolicy<K, V> implements ObjectTransferPolicy<K, V> {
+    private static final class FairTransferPolicy<K, V> implements ObjectTransferPolicy<K, V> {
         public int getStateCodeOnRelease() {
             return OBJECT_BORROWED;
         }
@@ -744,7 +814,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         }
     }
 
-    static final class CompeteTransferPolicy<K, V> implements ObjectTransferPolicy<K, V> {
+    private static final class CompeteTransferPolicy<K, V> implements ObjectTransferPolicy<K, V> {
         public int getStateCodeOnRelease() {
             return OBJECT_IDLE;
         }
@@ -773,6 +843,29 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                 }
             } catch (Throwable e) {
                 //do nothing
+            }
+        }
+    }
+
+    private record TimeoutObjectsClearTask<K, V>(ObjectKeyCategoryPool<K, V> categoryPool) implements Runnable {
+
+        public void run() {
+            try {
+                this.categoryPool.clearIdleTimeoutObjects();
+            } catch (Throwable e) {
+                categoryPool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.categoryPool.poolName, e);
+            }
+        }
+    }
+
+    private record TimeoutMethodLogsClearTask<K, V>(ObjectKeyCategoryPool<K, V> categoryPool,
+                                                    long timeout) implements Runnable {
+
+        public void run() {
+            try {
+                categoryPool.clearTimeoutLogs(timeout);
+            } catch (Throwable e) {
+                categoryPool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.categoryPool.poolName, e);
             }
         }
     }

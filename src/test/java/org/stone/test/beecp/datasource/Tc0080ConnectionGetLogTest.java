@@ -35,9 +35,9 @@ public class Tc0080ConnectionGetLogTest {
     public void testExceptionLog() throws SQLException {
         //1: get connection
         try (BeeDataSource ds = new BeeDataSource()) {
-
             ds.setEnableLogCache(true);
             ds.setLogListener(new MockMethodExecutionListener1());
+
             MockConnectionFactory connectionFactory = new MockConnectionFactory();
             connectionFactory.setFailCause(new SQLException("Failed to connect database"));
             ds.setConnectionFactory(connectionFactory);
@@ -45,7 +45,7 @@ public class Tc0080ConnectionGetLogTest {
             try (Connection ignored = ds.getConnection()) {
                 Assertions.fail("[testConnectionExceptionLog]Test failed");
             } catch (SQLException e) {
-                Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
+                Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
                 List<BeeMethodLog> logList = ds.getLogs(Type_Pool_Log);
                 Assertions.assertEquals(1, logList.size());
                 BeeMethodLog log = logList.get(0);
@@ -57,7 +57,7 @@ public class Tc0080ConnectionGetLogTest {
                 Assertions.assertTrue(log.isException());
                 Assertions.assertFalse(log.isRunning());
                 Assertions.assertNull(log.getResult());
-                Assertions.assertNotNull(log.getFailCause());
+                Assertions.assertNotNull(log.getFailureCause());
 
                 Assertions.assertTrue(log.getStartTime() != 0);
                 Assertions.assertTrue(log.getEndTime() != 0);
@@ -79,7 +79,7 @@ public class Tc0080ConnectionGetLogTest {
                     Assertions.fail("[testConnectionExceptionLog]Test failed");
                 }
             } catch (SQLException e) {
-                Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
+                Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
                 List<BeeMethodLog> logList = ds.getLogs(Type_Pool_Log);
                 Assertions.assertEquals(1, logList.size());
                 BeeMethodLog log = logList.get(0);
@@ -116,7 +116,7 @@ public class Tc0080ConnectionGetLogTest {
             BorrowThread borrowThread = new BorrowThread(ds);
             borrowThread.start();
             borrowThread.join();
-            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
             List<BeeMethodLog> logList = ds.getLogs(Type_Pool_Log);
             Assertions.assertEquals(1, logList.size());
             BeeMethodLog log = logList.get(0);

@@ -14,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
 import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeMethodLog;
+import org.stone.beecp.BeeMethodLogListener;
+import org.stone.test.base.LogCollector;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 import org.stone.test.beecp.objects.listener.MockMethodExecutionListener1;
@@ -35,25 +37,73 @@ public class Tc0082MethodLogCacheTest {
 
     @Test
     public void testCacheEnableAndDisable() throws SQLException {
-        BeeDataSourceConfig config1 = new BeeDataSourceConfig();
-        config1.setConnectionFactory(new MockConnectionFactory());
-        try (BeeDataSource ds = new BeeDataSource(config1)) {
-            Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
-            try (Connection ignore = ds.getConnection()) {
-                ds.setLogListener(new MockMethodExecutionListener1());
-                Assertions.assertTrue(ds.getLogs(Type_Pool_Log).isEmpty());
-                ds.clearLogs(Type_All);
-                Assertions.assertTrue(ds.getLogs(Type_All).isEmpty());
-                ds.enableLogCache(true);
-                ds.enableLogCache(true);
-                Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
-                ds.enableLogCache(false);
-                ds.enableLogCache(false);
-                Assertions.assertFalse(ds.cancelStatement("Teat"));
-                ds.setLogListener(null);
+        BeeDataSourceConfig config = createDefault();//log cache is disabled
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledLogCache());
+            try (Connection ignore = ds.getConnection()) {//first get
+                Assertions.assertTrue(ds.getLogs(Type_Pool_Log).isEmpty());//no logs
+            }
+
+            ds.enableLogCache(true);//enable
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
+            try (Connection ignore = ds.getConnection()) {//second get
+                Assertions.assertFalse(ds.getLogs(Type_Pool_Log).isEmpty());//exits logs
+            }
+
+            ds.enableLogCache(false);//disable
+            Assertions.assertFalse(ds.getPoolMonitorVo().isEnabledLogCache());
+            try (Connection ignore = ds.getConnection()) {//third get
+                Assertions.assertTrue(ds.getLogs(Type_Pool_Log).isEmpty());//no logs
             }
         }
     }
+
+    @Test
+    public void testLogListenerChange() throws SQLException {
+        BeeDataSourceConfig config = createDefault();
+        config.setEnableLogCache(true);
+
+        try (BeeDataSource ds = new BeeDataSource(config)) {
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
+            //1: no listener
+            try (Connection ignore = ds.getConnection()) {//first get
+                Assertions.assertEquals(1, ds.getLogs(Type_Pool_Log).size());
+            }
+
+            //2: set a log listener
+            BeeMethodLogListener logListener = new MockMethodExecutionListener1();
+            ds.changeLogListener(logListener);
+            LogCollector logCollector = LogCollector.startLogCollector();
+            try (Connection ignore = ds.getConnection()) {//second get
+                Assertions.assertEquals(2, ds.getLogs(Type_Pool_Log).size());
+                String logContent = logCollector.endLogCollector();
+                Assertions.assertNotNull(logContent);
+                Assertions.assertTrue(logContent.contains("onMethodStart"));
+                Assertions.assertTrue(logContent.contains("onMethodEnd"));
+            }
+
+            //3: set null log listener
+            ds.changeLogListener(null);
+            logCollector = LogCollector.startLogCollector();
+            try (Connection ignore = ds.getConnection()) {
+                Assertions.assertEquals(3, ds.getLogs(Type_Pool_Log).size());
+                String logContent = logCollector.endLogCollector();
+                Assertions.assertTrue(logContent.isEmpty());
+            }
+
+            //4: reset a log listener
+            ds.changeLogListener(logListener);
+            logCollector = LogCollector.startLogCollector();
+            try (Connection ignore = ds.getConnection()) {
+                Assertions.assertEquals(4, ds.getLogs(Type_Pool_Log).size());
+                String logContent = logCollector.endLogCollector();
+                Assertions.assertNotNull(logContent);
+                Assertions.assertTrue(logContent.contains("onMethodStart"));
+                Assertions.assertTrue(logContent.contains("onMethodEnd"));
+            }
+        }
+    }
+
 
     @Test
     public void testSmallLogCache() throws SQLException {
@@ -65,7 +115,7 @@ public class Tc0082MethodLogCacheTest {
         config1.setConnectionFactoryClassName(connectionFactoryClassName);
 
         try (BeeDataSource ds = new BeeDataSource(config1)) {
-            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
                 Assertions.assertEquals(1, ds.getLogs(Type_Pool_Log).size());
                 st.execute("select * from test_user");
@@ -106,7 +156,7 @@ public class Tc0082MethodLogCacheTest {
 
         //1: clear type test(for sync mode)
         try (BeeDataSource ds = new BeeDataSource(config)) {
-            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledMethodExecutionLogCache());
+            Assertions.assertTrue(ds.getPoolMonitorVo().isEnabledLogCache());
             try (Connection con = ds.getConnection(); Statement st = con.createStatement()) {
                 st.executeUpdate("update test_user set name ='chris' where id=1");
                 try {

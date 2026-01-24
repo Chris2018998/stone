@@ -108,11 +108,6 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public boolean isClosed() {
-        return poolState == POOL_CLOSED;
-    }
-
-    @Override
     public boolean isReady() {
         return poolState == POOL_READY;
     }
@@ -123,8 +118,13 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public boolean isReStarting() {
+    public boolean isRestarting() {
         return poolState == POOL_RESTARTING;
+    }
+
+    @Override
+    public boolean isRestartFailed() {
+        return poolState == POOL_RESTART_FAILED;
     }
 
     @Override
@@ -181,12 +181,12 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     }
 
     @Override
-    public boolean isEnabledLogPrint() {
+    public boolean isEnabledLogPrinter() {
         return enabledLogPrint;
     }
 
     @Override
-    public boolean isEnabledMethodExecutionLogCache() {
+    public boolean isEnabledLogCache() {
         return enableMethodExecutionLogCache;
     }
 }

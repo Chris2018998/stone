@@ -34,6 +34,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.stone.beecp.BeeMethodLog.Type_All;
 import static org.stone.beecp.BeeMethodLog.Type_Pool_Log;
 import static org.stone.beecp.pool.ConnectionPoolStatics.*;
 import static org.stone.tools.CommonUtil.*;
@@ -85,6 +86,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
     private ThreadPoolExecutor networkTimeoutExecutor;
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
+    private ScheduledFuture<?> timeoutLogsClearTaskFuture;
+    private ScheduledFuture<?> timeoutConnectionsClearTaskFuture;
 
     private long idleTimeoutMs;//milliseconds
     private long holdTimeoutMs;//milliseconds
@@ -95,6 +98,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
     private boolean useThreadLocal;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
+    private String poolNameOfRegisteredMBean;
     private ConnectionPoolHook exitHook;
 
     //***************************************************************************************************************//
@@ -110,12 +114,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
             } catch (Throwable e) {
                 logPrinter.info("BeeCP({})-started failure", this.poolName, e);
+                this.clearPoolFields(false);//clear some internal member
                 this.poolState = POOL_NEW;//reset state to new after failure
-                if (e instanceof BeeDataSourcePoolException) {
-                    throw (BeeDataSourcePoolException) e;
-                } else {
-                    throw new BeeDataSourcePoolStartedFailureException("Data source pool started failure", e);
-                }
+                throw new BeeDataSourcePoolStartedFailureException("Data source pool started failure", e);
             }
         } else {
             throw new BeeDataSourcePoolStartedFailureException("Data source pool is starting or already started up");
@@ -160,9 +161,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         this.scheduledThreadPoolExecutor.allowCoreThreadTimeOut(true);
         this.scheduledThreadPoolExecutor.setKeepAliveTime(10L, TimeUnit.SECONDS);
 
-        ConnectionTimeoutTask timeoutTask = new ConnectionTimeoutTask(this);
-        ScheduledFuture<?> future = this.scheduledThreadPoolExecutor.scheduleWithFixedDelay(timeoutTask,
-                poolConfig.getIntervalOfClearTimeout(), poolConfig.getIntervalOfClearTimeout(), TimeUnit.MILLISECONDS);
+        this.timeoutConnectionsClearTaskFuture = this.scheduledThreadPoolExecutor.scheduleWithFixedDelay(
+                new ConnectionTimeoutTask(this), poolConfig.getIntervalOfClearTimeout(),
+                poolConfig.getIntervalOfClearTimeout(), TimeUnit.MILLISECONDS);
 
         //step7: Create initial connections by synchronization mode(NOTE: this step maybe blocked during creation,so timeout task arranged before it)
         int initialSize = poolConfig.getInitialSize();
@@ -170,8 +171,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             try {
                 createInitConnections(initialSize, true);
             } catch (SQLException e) {
-                future.cancel(true);
-                scheduledThreadPoolExecutor.remove(timeoutTask);
+                this.timeoutConnectionsClearTaskFuture.cancel(true);
                 throw e;
             }
         }
@@ -239,9 +239,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
 
         //step13: schedule two timed tasks to clear timeout objects(Connections and
-        this.scheduledThreadPoolExecutor.scheduleWithFixedDelay(new MethodLogTimeoutTask(this),
-                poolConfig.getIntervalOfClearTimeoutLogs(), poolConfig.getIntervalOfClearTimeoutLogs(),
-                TimeUnit.MILLISECONDS);
+        this.timeoutLogsClearTaskFuture = this.scheduledThreadPoolExecutor.scheduleWithFixedDelay(
+                new MethodLogTimeoutTask(this), poolConfig.getIntervalOfClearTimeoutLogs(),
+                poolConfig.getIntervalOfClearTimeoutLogs(), TimeUnit.MILLISECONDS);
 
         //step14: create a thread to do pool initialization(create initial connections and fill them to array)
         if (initialSize > 0 && poolConfig.isAsyncCreateInitConnections())
@@ -794,11 +794,14 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         restart(forceRecycleBorrowed, true, config);
     }
 
+    //NOTE: If pool restarts failed with a new configuration,maybe its properties has been dirty during starting,So HOLD ITS STATE TO restart again
     private void restart(boolean forceRecycleBorrowed, boolean reinit, BeeDataSourceConfig config) throws SQLException {
         if (reinit && config == null)
             throw new BeeDataSourceConfigException("Data source configuration can't be null");
 
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
+        int poolState = this.poolState;
+        boolean hasRunToStartupInternal = false;
+        if ((poolState == POOL_READY || poolState == POOL_RESTART_FAILED) && PoolStateUpd.compareAndSet(this, poolState, POOL_RESTARTING)) {
             try {
                 BeeDataSourceConfig checkedConfig = null;
                 if (reinit) checkedConfig = config.check();
@@ -810,24 +813,27 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 if (reinit) {
                     logPrinter.info("BeeCP({})-begin to restart pool", this.poolName);
 
-                    //2: destroy some fields
+                    //2: destroy some fields for restart
                     this.clearPoolFields(false);
 
                     //3: Rerun pool
+                    hasRunToStartupInternal = true;
                     startupInternal(POOL_RESTARTING, checkedConfig);//throws SQLException only fail to create initial connections or fail to set default
 
                     //note: if failed,this method may be recalled with correct configuration
                     logPrinter.info("BeeCP({})-restart pool successful", this.poolName);
                 }
+                this.poolState = POOL_READY;
             } catch (Throwable e) {
                 logPrinter.error("BeeCP({})-restarted failure", this.poolName, e);
+                this.clearPoolFields(false);//clear some internal member
+                this.poolState = hasRunToStartupInternal ? POOL_RESTART_FAILED : POOL_READY;
+
                 if (e instanceof BeeDataSourcePoolException) {
                     throw (BeeDataSourcePoolException) e;
                 } else {
                     throw new BeeDataSourcePoolRestartedFailureException("Data source pool restarted failure", e);
                 }
-            } finally {
-                this.poolState = POOL_READY;
             }
         } else {
             throw new BeeDataSourcePoolRestartedFailureException("Pool has been closed or is restarting");
@@ -919,15 +925,23 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //1: Clear networkTimeoutExecutor
         if (this.networkTimeoutExecutor != null) {
-            this.networkTimeoutExecutor.getQueue().clear();
             this.networkTimeoutExecutor.shutdownNow();
+            this.networkTimeoutExecutor.getQueue().clear();
             this.networkTimeoutExecutor = null;
         }
 
         //2: Clear scheduledThreadPoolExecutor
         if (scheduledThreadPoolExecutor != null) {
-            scheduledThreadPoolExecutor.getQueue().clear();
+            if (this.timeoutLogsClearTaskFuture != null) {
+                this.timeoutLogsClearTaskFuture.cancel(true);
+                this.timeoutLogsClearTaskFuture = null;
+            }
+            if (this.timeoutConnectionsClearTaskFuture != null) {
+                this.timeoutConnectionsClearTaskFuture.cancel(true);
+                this.timeoutConnectionsClearTaskFuture = null;
+            }
             scheduledThreadPoolExecutor.shutdownNow();
+            scheduledThreadPoolExecutor.getQueue().clear();
             scheduledThreadPoolExecutor = null;
         }
 
@@ -949,9 +963,9 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         this.threadLocal = null;
         //6: Clear wait queue and log cache
         if (this.waitQueue != null) this.waitQueue.clear();//clear for gc
-        if (this.methodLogCache != null) this.methodLogCache.clear(BeeMethodLog.Type_All);
+        if (this.methodLogCache != null) this.methodLogCache.clear(Type_All);
         //7: Unregister MBeans
-        if (poolConfig.isRegisterMbeans()) this.unregisterMBeans();
+        if (this.poolNameOfRegisteredMBean != null) this.unregisterMBeans();
     }
 
     //***************************************************************************************************************//
@@ -969,24 +983,28 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         methodLogCache.clear(type);
     }
 
-    public void enableLogCache(boolean enable) {
-        if (enable) {//enable
-            if (!collectMethodLogs) {//re-enable
+    public synchronized void enableLogCache(boolean enable) {
+        if (enable != this.collectMethodLogs) {
+            if (enable) {//enable
                 this.conProxyFactory = new ProxyConnectionFactory4L(methodLogCache);
                 this.collectMethodLogs = true;
+                this.timeoutLogsClearTaskFuture = this.scheduledThreadPoolExecutor.scheduleWithFixedDelay(
+                        new MethodLogTimeoutTask(this), poolConfig.getIntervalOfClearTimeoutLogs(),
+                        poolConfig.getIntervalOfClearTimeoutLogs(), TimeUnit.MILLISECONDS);
+            } else {//disable
+                this.conProxyFactory = new ProxyConnectionFactory();
+                this.collectMethodLogs = false;
+                this.methodLogCache.clear(Type_All);
+                if (this.timeoutLogsClearTaskFuture != null) {
+                    this.timeoutLogsClearTaskFuture.cancel(true);
+                    this.timeoutLogsClearTaskFuture = null;
+                }
             }
-        } else if (collectMethodLogs) {//disable
-            this.conProxyFactory = new ProxyConnectionFactory();
-            this.collectMethodLogs = false;
         }
     }
 
     public boolean cancelStatement(String id) throws SQLException {
         return methodLogCache.cancelStatement(id);
-    }
-
-    private void clearMethodTimeoutLogs() {
-        methodLogCache.clearTimeout(this.methodLogTimeoutMs);
     }
 
     //***************************************************************************************************************//
@@ -1006,29 +1024,32 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         } catch (Throwable e) {
             logPrinter.warn("BeeCP({})-failed to register a MBean with name:{}", this.poolName, poolMBeanName, e);
         }
+        this.poolNameOfRegisteredMBean = this.poolName;
     }
 
     private void unregisterMBeans() {
-        String configMBeanName = String.format("org.stone.beecp.BeeDataSourceConfig:type=BeeCP(%s)-config", this.poolName);
+        String configMBeanName = String.format("org.stone.beecp.BeeDataSourceConfig:type=BeeCP(%s)-config", this.poolNameOfRegisteredMBean);
         try {
             BeanUtil.unregisterMBean(configMBeanName);
         } catch (Throwable e) {
-            logPrinter.warn("BeeCP({})-failed to unregister a MBean with name:{}", this.poolName, configMBeanName, e);
+            logPrinter.warn("BeeCP({})-failed to unregister a MBean with name:{}", this.poolNameOfRegisteredMBean, configMBeanName, e);
         }
 
-        String poolMBeanName = String.format("org.stone.beecp.pool.FastConnectionPool:type=BeeCP(%s)", this.poolName);
+        String poolMBeanName = String.format("org.stone.beecp.pool.FastConnectionPool:type=BeeCP(%s)", this.poolNameOfRegisteredMBean);
         try {
             BeanUtil.unregisterMBean(poolMBeanName);
         } catch (Throwable e) {
-            logPrinter.warn("BeeCP({})-failed to unregister a MBean with name:{}", this.poolName, poolMBeanName, e);
+            logPrinter.warn("BeeCP({})-failed to unregister a MBean with name:{}", this.poolNameOfRegisteredMBean, poolMBeanName, e);
         }
+
+        this.poolNameOfRegisteredMBean = null;
     }
 
 
     //***************************************************************************************************************//
     //                                  10: other methods (3+0)                                                      //
     //***************************************************************************************************************//
-    public void enableLogPrinter(boolean enable) {
+    public synchronized void enableLogPrinter(boolean enable) {
         this.logPrinter = getLogPrinter(FastConnectionPool.class, enable);
     }
 
@@ -1273,7 +1294,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         public void run() {
             try {
-                pool.clearMethodTimeoutLogs();
+                pool.methodLogCache.clearTimeout(pool.methodLogTimeoutMs);
             } catch (Throwable e) {
                 pool.logPrinter.warn("BeeCP({})-an exception occurred while scanning timeout method logs", this.pool.poolName, e);
             }

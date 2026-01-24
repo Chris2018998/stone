@@ -50,7 +50,7 @@ public class MethodLog<K> implements BeeMethodLog<K> {
     //Result object of method call
     private transient Object resultObject;
     //Fail exception when method call
-    private Throwable failCause;
+    private Throwable failureCause;
 
     //Removed flag
     private boolean removed;
@@ -149,7 +149,7 @@ public class MethodLog<K> implements BeeMethodLog<K> {
     void setResult(Object result, long endTime) {
         this.endTime = endTime;
         if (result instanceof Throwable) {
-            this.failCause = (Throwable) result;
+            this.failureCause = (Throwable) result;
             this.status = State_Failed;
         } else {
             this.resultObject = result;
@@ -157,8 +157,8 @@ public class MethodLog<K> implements BeeMethodLog<K> {
         }
     }
 
-    public Throwable getFailCause() {
-        return failCause;
+    public Throwable getFailureCause() {
+        return failureCause;
     }
 
     public boolean isRemoved() {

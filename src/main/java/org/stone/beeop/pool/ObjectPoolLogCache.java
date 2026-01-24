@@ -28,8 +28,6 @@ final class ObjectPoolLogCache<K> implements MethodLogCache<K> {
     private String poolName;
     //Cache size
     private int maxSize;
-    //Log type to be cached
-    private int logType;
     //Slow Threshold
     private long slowThreshold;
     //Logs queue(ConcurrentLinkedQueue is better than it?)
@@ -40,11 +38,11 @@ final class ObjectPoolLogCache<K> implements MethodLogCache<K> {
     //***************************************************************************************************************//
     //                                         1: initialization(1+0)                                                //
     //***************************************************************************************************************//
-    public void init(String poolName, int logTypeSize, int typeCacheSize, BeeMethodLogListener<K> listener) {
+    public ObjectPoolLogCache(String poolName, int cacheSize, BeeMethodLogListener<K> listener) {
         this.poolName = poolName;
-        this.maxSize = typeCacheSize;
+        this.maxSize = cacheSize;
         this.listener = listener;
-        this.logsQueue = new LinkedBlockingQueue<>(typeCacheSize);
+        this.logsQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
     //***************************************************************************************************************//

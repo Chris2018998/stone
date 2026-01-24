@@ -12,10 +12,9 @@ package org.stone.test.beecp.datasource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeDataSourceConfig;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 
@@ -25,37 +24,32 @@ import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
 public class Tc0043DataSourceCloseTest {
 
     @Test
-    public void testDatasourceClose() throws SQLException {
-        BeeDataSource ds1 = new BeeDataSource();
-        Assertions.assertTrue(ds1.isClosed());
-        ds1.close();//no impact
-        Assertions.assertTrue(ds1.isClosed());
-        Assertions.assertFalse(ds1.getPoolMonitorVo().isReady());
+    public void testDatasourceClose() throws Exception {
+        BeeDataSource ds = new BeeDataSource(createDefault());
+        long targetTime = System.nanoTime() + TimeUnit.SECONDS.toNanos(1L);
+        DsCloseThread thread1 = new DsCloseThread(ds, targetTime);
+        DsCloseThread thread2 = new DsCloseThread(ds, targetTime);
+        thread1.start();
+        thread2.start();
+        thread1.join();
+        thread2.join();
 
-        BeeDataSource ds2 = null;
-        try {
-            BeeDataSourceConfig config = createDefault();
-            ds2 = new BeeDataSource(config);
-            Assertions.assertTrue(ds2.getPoolMonitorVo().isReady());
-            Assertions.assertFalse(ds2.isClosed());
-            Assertions.assertTrue(ds2.getPoolMonitorVo().isReady());
-            Assertions.assertFalse(ds2.getPoolMonitorVo().isClosed());
+        Assertions.assertTrue(ds.isClosed());
+        Assertions.assertEquals("Pool has been closed", ds.toString());
+    }
 
-            try (Connection ignored = ds2.getConnection()) {
-                Assertions.assertFalse(ds2.isClosed());
-            }
-            ds2.close();
-            Assertions.assertTrue(ds2.isClosed());
+    private static class DsCloseThread extends Thread {
+        private BeeDataSource ds;
+        private long delayToTime;
 
-            try (Connection ignored = ds2.getConnection()) {
-                Assertions.fail("[testDatasourceClose]Test failed");
-            } catch (SQLException ee) {
-                Assertions.assertEquals("No operations allowed on closed pool", ee.getMessage());
-            }
-        } finally {
-            if (ds2 != null && !ds2.isClosed()) {
-                ds2.close();
-            }
+        public DsCloseThread(BeeDataSource ds, long delayToTime) {
+            this.ds = ds;
+            this.delayToTime = delayToTime;
+        }
+
+        public void run() {
+            LockSupport.parkNanos(System.nanoTime() - delayToTime);
+            ds.close();
         }
     }
 }

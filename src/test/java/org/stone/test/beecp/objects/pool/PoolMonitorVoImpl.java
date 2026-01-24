@@ -89,11 +89,6 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public boolean isClosed() {
-        return poolState == POOL_CLOSED;
-    }
-
-    @Override
     public boolean isReady() {
         return poolState == POOL_READY;
     }
@@ -104,8 +99,13 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public boolean isReStarting() {
+    public boolean isRestarting() {
         return poolState == POOL_RESTARTING;
+    }
+
+    @Override
+    public boolean isRestartFailed() {
+        return poolState == POOL_RESTART_FAILED;
     }
 
     @Override
@@ -195,7 +195,7 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public boolean isEnabledLogPrint() {
+    public boolean isEnabledLogPrinter() {
         return enabledLogPrint;
     }
 
@@ -204,7 +204,7 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public boolean isEnabledMethodExecutionLogCache() {
+    public boolean isEnabledLogCache() {
         return enabledJdbcEventLogManager;
     }
 

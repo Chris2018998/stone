@@ -138,11 +138,11 @@ public interface BeeMethodLog extends Serializable {
     Object getResult();
 
     /**
-     * Get fail cause of method call,this cause may be null.
+     * Get failure cause of method call,this cause may be null.
      *
      * @return a result object
      */
-    Throwable getFailCause();
+    Throwable getFailureCause();
 
     //***************************************************************************************************************//
     //                                         4: SQL Execution                                                      //

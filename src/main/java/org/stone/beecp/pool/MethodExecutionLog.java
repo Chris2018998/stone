@@ -50,7 +50,7 @@ public class MethodExecutionLog implements BeeMethodLog {
     //Result object of method call
     private transient Object resultObject;
     //Fail exception when method call
-    private Throwable failCause;
+    private Throwable failureCause;
 
     //A prepared sql or a statement sql.
     private String sql;
@@ -148,8 +148,8 @@ public class MethodExecutionLog implements BeeMethodLog {
         return resultObject;
     }
 
-    public Throwable getFailCause() {
-        return failCause;
+    public Throwable getFailureCause() {
+        return failureCause;
     }
 
     public String getSql() {
@@ -195,7 +195,7 @@ public class MethodExecutionLog implements BeeMethodLog {
         this.statement = null;
         this.endTime = System.currentTimeMillis();
         if (result instanceof Throwable) {
-            this.failCause = (Throwable) result;
+            this.failureCause = (Throwable) result;
             this.status = State_Failed;
         } else {
             this.resultObject = result;

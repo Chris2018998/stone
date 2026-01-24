@@ -22,7 +22,7 @@ import java.util.List;
  */
 class ObjectKeyLogCache<K> implements MethodLogCache<K> {
 
-    public void init(String poolName, int logTypeSize, int typeCacheSize, BeeMethodLogListener<K> listener) {
+    public void init(String poolName, int typeCacheSize, BeeMethodLogListener<K> listener) {
 
     }
 

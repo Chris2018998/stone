@@ -40,11 +40,11 @@ public interface BeeConnectionPoolMonitorVo extends Serializable {
 
     boolean isClosing();
 
-    boolean isClosed();
-
     boolean isStarting();
 
-    boolean isReStarting();
+    boolean isRestarting();
+
+    boolean isRestartFailed();
 
     boolean isSuspended();
 
@@ -70,7 +70,7 @@ public interface BeeConnectionPoolMonitorVo extends Serializable {
 
     int getTransferWaitingSize();
 
-    boolean isEnabledLogPrint();
+    boolean isEnabledLogPrinter();
 
-    boolean isEnabledMethodExecutionLogCache();
+    boolean isEnabledLogCache();
 }

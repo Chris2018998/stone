@@ -15,6 +15,8 @@
  */
 package org.stone.test.beecp.objects.listener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.stone.beecp.BeeMethodLog;
 import org.stone.beecp.BeeMethodLogListener;
 
@@ -26,6 +28,7 @@ import java.util.List;
  * @author Chris Liao
  */
 public class MockMethodExecutionListener1 implements BeeMethodLogListener {
+    private Logger logger = LoggerFactory.getLogger(MockMethodExecutionListener1.class);
 
     private BeeMethodLog slowLog;
 
@@ -40,10 +43,11 @@ public class MockMethodExecutionListener1 implements BeeMethodLogListener {
     }
 
     public void onMethodStart(BeeMethodLog log) {
-
+        logger.info("onMethodStart");
     }
 
     public void onMethodEnd(BeeMethodLog log) {
+        logger.info("onMethodEnd");
         if (log.isException()) {
             exceptionLog = log;
         } else if (log.isSlow()) {

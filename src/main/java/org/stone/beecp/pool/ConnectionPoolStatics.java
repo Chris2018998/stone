@@ -81,7 +81,9 @@ public final class ConnectionPoolStatics {
     public static final int POOL_CLOSING = 3;
     public static final int POOL_CLOSED = 4;
     public static final int POOL_RESTARTING = 5;
-    public static final int POOL_SUSPENDED = 6;
+    public static final int POOL_RESTART_FAILED = 6;
+    public static final int POOL_SUSPENDED = 7;
+
     public static final BeeConnectionPool CLOSED_POOL = (BeeConnectionPool) Proxy.newProxyInstance(
             ConnectionPoolStatics.class.getClassLoader(),
             new Class[]{BeeConnectionPool.class},

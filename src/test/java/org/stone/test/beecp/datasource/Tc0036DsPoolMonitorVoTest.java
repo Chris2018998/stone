@@ -26,6 +26,9 @@ public class Tc0036DsPoolMonitorVoTest {
 
     @Test
     public void testPoolMonitorVo() throws SQLException {
+        BeeDataSource ds1 = new BeeDataSource();
+        Assertions.assertTrue(ds1.getPoolMonitorVo().isUncreated());
+
         BeeDataSourceConfig config = createDefault();
         config.setPoolName("fastPool");
         config.setInitialSize(10);
@@ -35,6 +38,13 @@ public class Tc0036DsPoolMonitorVoTest {
 
         try (BeeDataSource ds = new BeeDataSource(config)) {
             BeeConnectionPoolMonitorVo vo = ds.getPoolMonitorVo();
+            Assertions.assertTrue(ds.getPoolMonitorVo().isReady());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isNew());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isStarting());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isRestarting());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isUncreated());
+            Assertions.assertFalse(ds.getPoolMonitorVo().isClosing());
+
             Assertions.assertEquals("fastPool", vo.getPoolName());
             Assertions.assertTrue(vo.isFairMode());
             Assertions.assertTrue(vo.isReady());
