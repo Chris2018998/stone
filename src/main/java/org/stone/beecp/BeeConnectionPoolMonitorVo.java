@@ -32,7 +32,7 @@ public interface BeeConnectionPoolMonitorVo extends Serializable {
     //***************************************************************************************************************//
     //                                     2: State`methods                                                           //
     //***************************************************************************************************************//
-    boolean isUncreated();
+    boolean isLazy();
 
     boolean isNew();
 

@@ -30,8 +30,11 @@ public class Tc0049DataSourceSuspendTest {
 
             Assertions.assertTrue(ds.suspend());
             Assertions.assertTrue(ds.getPoolMonitorVo().isSuspended());
+            Assertions.assertEquals("Pool has been suspended", ds.toString());
+
             Assertions.assertTrue(ds.resume());
             Assertions.assertTrue(ds.getPoolMonitorVo().isReady());
+            Assertions.assertEquals("Pool is ready", ds.toString());
         }
     }
 }

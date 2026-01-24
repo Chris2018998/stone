@@ -11,6 +11,7 @@ package org.stone.beecp.pool;
 
 import org.stone.beecp.BeeConnectionPool;
 import org.stone.beecp.exception.BeeDataSourceConfigException;
+import org.stone.beecp.exception.BeeDataSourcePoolHasClosedException;
 import org.stone.beecp.exception.BeeDataSourcePoolLazyInitializationException;
 import org.stone.beecp.exception.ConnectionTestSqlExecutedException;
 
@@ -84,29 +85,33 @@ public final class ConnectionPoolStatics {
     public static final int POOL_RESTART_FAILED = 6;
     public static final int POOL_SUSPENDED = 7;
 
-    public static final BeeConnectionPool CLOSED_POOL = (BeeConnectionPool) Proxy.newProxyInstance(
-            ConnectionPoolStatics.class.getClassLoader(),
-            new Class[]{BeeConnectionPool.class},
-            (proxy, method, args) -> {
-                if ("isClosed".equals(method.getName())) {
-                    return true;
-                } else if ("toString".equals(method.getName())) {
-                    return getPoolStateDesc(POOL_CLOSED);
-                } else {
-                    throw new SQLException("No operations allowed on closed pool");
-                }
-            }
-    );
+
     public static final BeeConnectionPool LAZY_POOL = (BeeConnectionPool) Proxy.newProxyInstance(
             ConnectionPoolStatics.class.getClassLoader(),
             new Class[]{BeeConnectionPool.class},
             (proxy, method, args) -> {
-                if ("isClosed".equals(method.getName())) {
+                String methodName = method.getName();
+                if ("isClosed".equals(methodName)) {
                     return true;
-                } else if ("toString".equals(method.getName())) {
+                } else if ("toString".equals(methodName)) {
                     return getPoolStateDesc(POOL_UNCREATED);
                 } else {
-                    throw new BeeDataSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
+                    throw new BeeDataSourcePoolLazyInitializationException("No operations allowed on lazy pool");
+                }
+            }
+    );
+
+    public static final BeeConnectionPool CLOSED_POOL = (BeeConnectionPool) Proxy.newProxyInstance(
+            ConnectionPoolStatics.class.getClassLoader(),
+            new Class[]{BeeConnectionPool.class},
+            (proxy, method, args) -> {
+                String methodName = method.getName();
+                if ("isClosed".equals(methodName)) {
+                    return true;
+                } else if ("toString".equals(methodName)) {
+                    return getPoolStateDesc(POOL_CLOSED);
+                } else {
+                    throw new BeeDataSourcePoolHasClosedException("No operations allowed on closed pool");
                 }
             }
     );
@@ -177,7 +182,7 @@ public final class ConnectionPoolStatics {
             case POOL_CLOSED -> "Pool has been closed";
             case POOL_RESTARTING -> "Pool is restarting";
             case POOL_RESTART_FAILED -> "Pool has restarted failed";
-            case POOL_SUSPENDED -> "Pool has suspended";
+            case POOL_SUSPENDED -> "Pool has been suspended";
             default -> "Unknown state of pool";
         };
     }

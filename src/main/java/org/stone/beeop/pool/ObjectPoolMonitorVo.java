@@ -93,7 +93,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     }
 
     @Override
-    public boolean isUncreated() {
+    public boolean isLazy() {
         return poolState == POOL_UNCREATED;
     }
 

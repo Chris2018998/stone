@@ -182,11 +182,11 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     //***************************************************************************************************************//
     //                                         3: Pool maintenance(5+0)                                              //
     //***************************************************************************************************************//
-    public boolean suspend() throws Exception {
+    public boolean suspend() throws SQLException {
         return pool.suspendPool();
     }
 
-    public boolean resume() throws Exception {
+    public boolean resume() throws SQLException {
         return pool.resumePool();
     }
 

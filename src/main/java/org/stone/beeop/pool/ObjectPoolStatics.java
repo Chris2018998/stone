@@ -79,7 +79,10 @@ public class ObjectPoolStatics {
                     BeeObjectPool.class.getClassLoader(),
                     new Class[]{BeeObjectPool.class},
                     (proxy, method, args) -> {
-                        if ("toString".equals(method.getName())) {
+                        String methodName = method.getName();
+                        if ("isClosed".equals(methodName)) {
+                            return true;
+                        } else if ("toString".equals(methodName)) {
                             return getPoolStateDesc(POOL_CLOSED);
                         } else {
                             throw new BeeObjectSourcePoolHasClosedException("No operations allowed on closed pool");
@@ -91,7 +94,10 @@ public class ObjectPoolStatics {
                     BeeObjectPool.class.getClassLoader(),
                     new Class[]{BeeObjectPool.class},
                     (proxy, method, args) -> {
-                        if ("toString".equals(method.getName())) {
+                        String methodName = method.getName();
+                        if ("isClosed".equals(methodName)) {
+                            return true;
+                        } else if ("toString".equals(methodName)) {
                             return getPoolStateDesc(POOL_UNCREATED);
                         } else {
                             throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");

@@ -74,7 +74,7 @@ public class PoolMonitorVoImpl implements BeeConnectionPoolMonitorVo {
     }
 
     @Override
-    public boolean isUncreated() {
+    public boolean isLazy() {
         return poolState == POOL_UNCREATED;
     }
 

@@ -46,7 +46,7 @@ public interface BeeObjectPoolMonitorVo<K> extends Serializable {
     //***************************************************************************************************************//
     //                                     3: Pool State`methods                                                     //
     //***************************************************************************************************************//
-    boolean isUncreated();
+    boolean isLazy();
 
     boolean isNew();
 
