@@ -189,4 +189,9 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     public boolean isEnabledLogCache() {
         return enableMethodExecutionLogCache;
     }
+
+    @Override
+    public String toString() {
+        return getPoolStateDesc(this.poolState);
+    }
 }

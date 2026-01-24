@@ -877,7 +877,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                         6: Pool Suspend (2)                                                   //
+    //                                         6: Pool Suspend(2+0)                                                  //
     //***************************************************************************************************************//
     public boolean suspendPool() {
         return PoolStateUpd.compareAndSet(this, POOL_READY, POOL_SUSPENDED);
@@ -888,10 +888,14 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                         7: Pool Close(2)                                                      //
+    //                                         7: Pool Close(3+1)                                                    //
     //***************************************************************************************************************//
     public boolean isClosed() {
         return this.poolState == POOL_CLOSED;
+    }
+
+    public String toString() {
+        return getPoolStateDesc(this.poolState);
     }
 
     public void close() {
@@ -969,7 +973,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                  8: Pool method execution logs (5+1)                                          //
+    //                                  8: Pool method execution logs(5+1)                                           //
     //***************************************************************************************************************//
     public void changeLogListener(BeeMethodLogListener listener) {
         methodLogCache.setMethodExecutionListener(listener);
@@ -1008,7 +1012,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                  9: MBean Registration (2+0)                                                  //
+    //                                  9: MBean Registration(0+2)                                                   //
     //***************************************************************************************************************//
     private void registerMBeans(BeeDataSourceConfig poolConfig) {
         String configMBeanName = String.format("org.stone.beecp.BeeDataSourceConfig:type=BeeCP(%s)-config", this.poolName);
@@ -1047,7 +1051,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
 
     //***************************************************************************************************************//
-    //                                  10: other methods (3+0)                                                      //
+    //                                  10: other methods(3+0)                                                       //
     //***************************************************************************************************************//
     public synchronized void enableLogPrinter(boolean enable) {
         this.logPrinter = getLogPrinter(FastConnectionPool.class, enable);
@@ -1133,7 +1137,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                  11: Override methods - completion transfer policy (2+0)                      //
+    //                                  11: Override methods - completion transfer policy(2+0)                       //
     //***************************************************************************************************************//
     public int getStateCodeOnRelease() {
         return CON_IDLE;
@@ -1144,7 +1148,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                  12: Override method - Alive test (1+0)                                       //
+    //                                  12: Override method - Alive test(1+0)                                        //
     //***************************************************************************************************************//
     public boolean isAlive(final PooledConnection p) {
         try {
@@ -1159,7 +1163,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                  13: Override method - servant thread (1+0)                                   //
+    //                                  13: Override method - servant thread(1+0)                                    //
     //***************************************************************************************************************//
     public void run() {
         Thread currentThread = Thread.currentThread();
@@ -1185,7 +1189,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     }
 
     //***************************************************************************************************************//
-    //                                  14: Help methods - timeout task call (0+1)                                   //
+    //                                  14: Help methods - timeout task call(0+1)                                    //
     //***************************************************************************************************************//
     private void closeIdleTimeoutConnections() {
         //step1:print pool info before clean

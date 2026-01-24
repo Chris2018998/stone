@@ -80,7 +80,7 @@ public class ObjectPoolStatics {
                     new Class[]{BeeObjectPool.class},
                     (proxy, method, args) -> {
                         if ("toString".equals(method.getName())) {
-                            return "Pool has been closed";
+                            return getPoolStateDesc(POOL_CLOSED);
                         } else {
                             throw new BeeObjectSourcePoolHasClosedException("No operations allowed on closed pool");
                         }
@@ -92,12 +92,28 @@ public class ObjectPoolStatics {
                     new Class[]{BeeObjectPool.class},
                     (proxy, method, args) -> {
                         if ("toString".equals(method.getName())) {
-                            return "Pool not initialized";
+                            return getPoolStateDesc(POOL_UNCREATED);
                         } else {
                             throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
                         }
                     }
             );
+    }
+
+
+    static String getPoolStateDesc(int state) {
+        return switch (state) {
+            case POOL_UNCREATED -> "Pool is lazy and initialized by calling its getObjectHandle method";
+            case POOL_NEW -> "Pool is new";
+            case POOL_STARTING -> "Pool is starting";
+            case POOL_READY -> "Pool is ready";
+            case POOL_CLOSING -> "Pool is closing";
+            case POOL_CLOSED -> "Pool has closed";
+            case POOL_RESTARTING -> "Pool is restarting";
+            case POOL_RESTART_FAILED -> "Pool has restarted failed";
+            case POOL_SUSPENDED -> "Pool has suspended";
+            default -> "Pool is unknown state";
+        };
     }
 
     //***************************************************************************************************************//

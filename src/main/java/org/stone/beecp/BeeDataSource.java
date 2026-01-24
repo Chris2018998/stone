@@ -180,30 +180,8 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         3: Pool maintenance(6+0)                                              //
+    //                                         3: Pool maintenance(5+0)                                              //
     //***************************************************************************************************************//
-    public void close() {
-        if (this.poolInitialized) {
-            synchronized (this) {
-                if (!pool.isClosed()) {
-                    try {
-                        pool.close();
-                    } finally {
-                        this.pool = CLOSED_POOL;
-                    }
-                }
-            }
-        }
-    }
-
-    public boolean isClosed() {
-        return pool.isClosed();
-    }
-
-    public String toString() {
-        return pool.toString();
-    }
-
     public boolean suspend() throws Exception {
         return pool.suspendPool();
     }
@@ -222,19 +200,29 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
     }
 
-    //***************************************************************************************************************//
-    //                                         4: Pool others(3+0)                                                     //
-    //***************************************************************************************************************//
-    public void enableLogPrinter(boolean enable) throws SQLException {
-        pool.enableLogPrinter(enable);
+    public void close() {
+        if (this.poolInitialized) {
+            synchronized (this) {
+                if (!pool.isClosed()) {
+                    try {
+                        pool.close();
+                    } finally {
+                        this.pool = CLOSED_POOL;
+                    }
+                }
+            }
+        }
     }
 
-    public List<Thread> interruptWaitingThreads() throws SQLException {
-        if (poolInitialized) {
-            return pool.interruptWaitingThreads();
-        } else {
-            return lock.interruptAllThreads();
-        }
+    //***************************************************************************************************************//
+    //                                         4: Pool monitoring(3+0)                                               //
+    //***************************************************************************************************************//
+    public String toString() {
+        return pool.toString();
+    }
+
+    public boolean isClosed() {
+        return pool.isClosed();
     }
 
     public BeeConnectionPoolMonitorVo getPoolMonitorVo() throws SQLException {
@@ -261,7 +249,22 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         5: Override methods of configuration (5+0)                            //
+    //                                         5: Pool others (2+0)                                                  //
+    //***************************************************************************************************************//
+    public void enableLogPrinter(boolean enable) throws SQLException {
+        pool.enableLogPrinter(enable);
+    }
+
+    public List<Thread> interruptWaitingThreads() throws SQLException {
+        if (poolInitialized) {
+            return pool.interruptWaitingThreads();
+        } else {
+            return lock.interruptAllThreads();
+        }
+    }
+
+    //***************************************************************************************************************//
+    //                                         6: Override methods of configuration (5+0)                            //
     //***************************************************************************************************************//
     public void setMaxWait(long maxWait) {
         super.setMaxWait(maxWait);
@@ -301,7 +304,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
     }
 
     //***************************************************************************************************************//
-    //                                         6: Override methods of CommonDataSource(7+0)                          //
+    //                                         7: Override methods of CommonDataSource(7+0)                          //
     //***************************************************************************************************************//
     public PrintWriter getLogWriter() throws SQLException {
         return subDs != null ? subDs.getLogWriter() : null;

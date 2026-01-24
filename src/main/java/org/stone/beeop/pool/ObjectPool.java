@@ -25,15 +25,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_READY;
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTARTING;
-import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTART_FAILED;
 import static org.stone.beeop.BeeMethodLog.*;
-import static org.stone.beeop.pool.ObjectPoolStatics.POOL_CLOSED;
-import static org.stone.beeop.pool.ObjectPoolStatics.POOL_CLOSING;
-import static org.stone.beeop.pool.ObjectPoolStatics.POOL_NEW;
-import static org.stone.beeop.pool.ObjectPoolStatics.POOL_STARTING;
-import static org.stone.beeop.pool.ObjectPoolStatics.POOL_SUSPENDED;
+import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.CommonUtil.NCPU;
 import static org.stone.tools.CommonUtil.isNotBlank;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
@@ -451,6 +444,10 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 //do nothing
             }
         }
+    }
+
+    public String toString() {
+        return getPoolStateDesc(this.poolState);
     }
 
     //***************************************************************************************************************//

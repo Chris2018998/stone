@@ -91,7 +91,7 @@ public final class ConnectionPoolStatics {
                 if ("isClosed".equals(method.getName())) {
                     return true;
                 } else if ("toString".equals(method.getName())) {
-                    return "Pool has been closed";
+                    return getPoolStateDesc(POOL_CLOSED);
                 } else {
                     throw new SQLException("No operations allowed on closed pool");
                 }
@@ -104,7 +104,7 @@ public final class ConnectionPoolStatics {
                 if ("isClosed".equals(method.getName())) {
                     return true;
                 } else if ("toString".equals(method.getName())) {
-                    return "Pool not initialized";
+                    return getPoolStateDesc(POOL_UNCREATED);
                 } else {
                     throw new BeeDataSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
                 }
@@ -165,6 +165,22 @@ public final class ConnectionPoolStatics {
                 }
             }
     );
+
+    static String getPoolStateDesc(int state) {
+        return switch (state) {
+            case POOL_UNCREATED ->
+                    "Pool is lazy and initialized by calling one of its methods:getObjectHandle or getXAConnection";
+            case POOL_NEW -> "Pool is new";
+            case POOL_STARTING -> "Pool is starting";
+            case POOL_READY -> "Pool is ready";
+            case POOL_CLOSING -> "Pool is closing";
+            case POOL_CLOSED -> "Pool has been closed";
+            case POOL_RESTARTING -> "Pool is restarting";
+            case POOL_RESTART_FAILED -> "Pool has restarted failed";
+            case POOL_SUSPENDED -> "Pool has suspended";
+            default -> "Unknown state of pool";
+        };
+    }
 
     //***************************************************************************************************************//
     //                               2: JDBC close methods(4)                                                        //
