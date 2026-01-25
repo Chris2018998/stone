@@ -235,7 +235,7 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
                     this.getMaxActive(),
                     this.getSemaphoreSize(),
                     this.isUseThreadLocal(),
-                    POOL_UNCREATED,
+                    POOL_LAZY,
                     0,
                     0,
                     this.getSemaphoreSize(),

@@ -43,7 +43,7 @@ public class ObjectPoolStatics {
     public static final Class<?>[] EMPTY_CLASSES = new Class[0];
     public static final String[] EMPTY_CLASS_NAMES = new String[0];
     //pool state
-    public static final int POOL_UNCREATED = -1;
+    public static final int POOL_LAZY = -1;
     public static final int POOL_NEW = 0;
     public static final int POOL_STARTING = 1;
     public static final int POOL_READY = 2;
@@ -98,7 +98,7 @@ public class ObjectPoolStatics {
                         if ("isClosed".equals(methodName)) {
                             return true;
                         } else if ("toString".equals(methodName)) {
-                            return getPoolStateDesc(POOL_UNCREATED);
+                            return getPoolStateDesc(POOL_LAZY);
                         } else {
                             throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
                         }
@@ -109,7 +109,7 @@ public class ObjectPoolStatics {
 
     static String getPoolStateDesc(int state) {
         return switch (state) {
-            case POOL_UNCREATED -> "Pool is lazy and initialized by calling its getObjectHandle method";
+            case POOL_LAZY -> "Pool is lazy and initialized by calling its getObjectHandle method";
             case POOL_NEW -> "Pool is new";
             case POOL_STARTING -> "Pool is starting";
             case POOL_READY -> "Pool is ready";

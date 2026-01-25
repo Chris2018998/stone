@@ -213,7 +213,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
                     this.getMaxKeySize(),
                     this.getMaxActive(),
                     this.getSemaphoreSize(),
-                    ObjectPoolStatics.POOL_UNCREATED,
+                    ObjectPoolStatics.POOL_LAZY,
                     this.isPrintRuntimeLogs(),
                     this.isEnableLogCache());
         }
@@ -225,7 +225,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         } else {
             return new ObjectKeyMonitorVo<>(
                     key,
-                    ObjectPoolStatics.POOL_UNCREATED,
+                    ObjectPoolStatics.POOL_LAZY,
                     0,
                     0,
                     0,

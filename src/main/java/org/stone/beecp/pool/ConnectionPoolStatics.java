@@ -75,7 +75,7 @@ public final class ConnectionPoolStatics {
     public static final int CON_BORROWED = 3;
 
     //pool state
-    public static final int POOL_UNCREATED = -1;
+    public static final int POOL_LAZY = -1;
     public static final int POOL_NEW = 0;
     public static final int POOL_STARTING = 1;
     public static final int POOL_READY = 2;
@@ -94,7 +94,7 @@ public final class ConnectionPoolStatics {
                 if ("isClosed".equals(methodName)) {
                     return true;
                 } else if ("toString".equals(methodName)) {
-                    return getPoolStateDesc(POOL_UNCREATED);
+                    return getPoolStateDesc(POOL_LAZY);
                 } else {
                     throw new BeeDataSourcePoolLazyInitializationException("No operations allowed on lazy pool");
                 }
@@ -173,7 +173,7 @@ public final class ConnectionPoolStatics {
 
     static String getPoolStateDesc(int state) {
         return switch (state) {
-            case POOL_UNCREATED ->
+            case POOL_LAZY ->
                     "Pool is lazy and initialized by calling one of its methods:getObjectHandle or getXAConnection";
             case POOL_NEW -> "Pool is new";
             case POOL_STARTING -> "Pool is starting";

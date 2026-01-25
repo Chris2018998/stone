@@ -61,7 +61,7 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
 
     @Override
     public boolean isUncreated() {
-        return poolState == POOL_UNCREATED;
+        return poolState == POOL_LAZY;
     }
 
     @Override

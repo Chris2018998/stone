@@ -94,7 +94,7 @@ public final class FastConnectionPoolMonitorVo implements BeeConnectionPoolMonit
     //***************************************************************************************************************//
     @Override
     public boolean isLazy() {
-        return poolState == POOL_UNCREATED;
+        return poolState == POOL_LAZY;
     }
 
     @Override
