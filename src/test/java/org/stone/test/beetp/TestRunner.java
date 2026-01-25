@@ -7,15 +7,15 @@
 package org.stone.test.beetp;
 
 public class TestRunner {
-    private static final String defaultFilename = "file/beetp/testCase.properties";
+    private static final String defaultFilename = "beetp/testCase.properties";
 
     public static void main(String[] ags) throws Throwable {
-        org.stone.test.base.TestRunner.main(new String[]{"file/beetp", defaultFilename});
+        org.stone.test.base.TestRunner.main(new String[]{"beetp", defaultFilename});
     }
 
     public void testRun() throws Throwable {
         long beginTime = System.currentTimeMillis();
-        org.stone.test.base.TestRunner.main(new String[]{"file/beetp", defaultFilename});
+        org.stone.test.base.TestRunner.main(new String[]{"beetp", defaultFilename});
         System.out.println("Took time:(" + (System.currentTimeMillis() - beginTime) + ")ms");
     }
 }

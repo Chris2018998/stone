@@ -37,7 +37,7 @@ public class DsConfigFactory {
     static int POOL_MAX_ACTIVE;
     static int POOL_INIT_SIZE;
     static int REQUEST_TIMEOUT = 8000;
-    static String CONFIG_FILE = "/file/beecp/jdbc.properties";
+    static String CONFIG_FILE = "/beecp/jdbc.properties";
 
     static {
         try {

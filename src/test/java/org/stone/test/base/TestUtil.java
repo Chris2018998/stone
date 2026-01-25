@@ -15,10 +15,13 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.tools.CommonUtil;
 
 import javax.sql.XAConnection;
+import java.io.DataInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -86,6 +89,19 @@ public class TestUtil {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public static int[] getClassVersion(File classFile) throws IOException {
+        try (DataInputStream in = new DataInputStream(Files.newInputStream(classFile.toPath()))) {
+            int magic = in.readInt();
+            if (magic != 0xcafebabe) {
+                System.out.println(classFile + " is not a valid class!");
+            }
+
+            int minor = in.readUnsignedShort();
+            int major = in.readUnsignedShort();
+            return new int[]{major, minor};
         }
     }
 

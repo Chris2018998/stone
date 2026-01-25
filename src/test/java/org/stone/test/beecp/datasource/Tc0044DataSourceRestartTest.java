@@ -21,6 +21,7 @@ import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -96,10 +97,18 @@ public class Tc0044DataSourceRestartTest {
             config2.setInitialSize(10);
             config2.setMaxActive(10);
             config2.setPoolName("BeeCP2");
+            config2.addSqlExceptionCode(500151);
+            config2.addSqlExceptionState("0A000");
+
             ds.restart(true, config2);
             Assertions.assertEquals(10, ds.getPoolMonitorVo().getIdleSize());
             Assertions.assertEquals("BeeCP2", ds.getPoolMonitorVo().getPoolName());//Great! success!
-
+            List<Integer> codeList2 = ds.getSqlExceptionCodeList();
+            List<String> stateList2 = ds.getSqlExceptionStateList();
+            Assertions.assertNotNull(codeList2);
+            Assertions.assertNotNull(stateList2);
+            Assertions.assertTrue(codeList2.contains(500151));
+            Assertions.assertTrue(stateList2.contains("0A000"));
 
             //mock restart failure
             MockConnectionFactory conFactory = new MockConnectionFactory();
@@ -124,9 +133,21 @@ public class Tc0044DataSourceRestartTest {
                 config4.setPoolName("BeeCP4");
                 config4.setInitialSize(5);
                 config4.setMaxActive(5);
+                config4.addSqlExceptionCode(500152);
+                config4.addSqlExceptionState("0B000");
+
                 ds.restart(true, config4);
                 Assertions.assertEquals(5, ds.getPoolMonitorVo().getIdleSize());
                 Assertions.assertEquals("BeeCP4", ds.getPoolMonitorVo().getPoolName());//Congratulation! success!
+
+                List<Integer> codeList4 = ds.getSqlExceptionCodeList();
+                List<String> stateList4 = ds.getSqlExceptionStateList();
+                Assertions.assertNotNull(codeList4);
+                Assertions.assertNotNull(stateList4);
+                Assertions.assertFalse(codeList4.contains(500151));
+                Assertions.assertFalse(stateList4.contains("0A000"));
+                Assertions.assertTrue(codeList4.contains(500152));
+                Assertions.assertTrue(stateList4.contains("0B000"));
             }
         }
     }

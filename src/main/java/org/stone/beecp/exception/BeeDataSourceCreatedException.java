@@ -9,12 +9,8 @@
  */
 package org.stone.beecp.exception;
 
-import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeDataSourceConfig;
-
 /**
- * Throws this exception when failed to create {@link BeeDataSource(BeeDataSourceConfig)}.
- *
+ * Throws this exception when failed to create Bee-DataSource
  * @author Chris Liao
  * @version 1.0
  */

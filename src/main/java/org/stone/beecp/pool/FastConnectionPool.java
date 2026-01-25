@@ -48,11 +48,10 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
  * @version 1.0
  */
 public class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMXBean, PooledConnectionAliveTest, PooledConnectionTransferPolicy {
+    static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
     private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
-
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
     private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
     LogPrinter logPrinter = DefaultLogPrinter;
 
@@ -63,13 +62,15 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     BeeDataSourceConfig poolConfig;
     PooledConnection[] connectionArray;//fixed len
     ConcurrentLinkedQueue<Borrower> waitQueue;
+    long methodLogTimeoutMs;//milliseconds
+    MethodExecutionLogCache methodLogCache;
+   
     private boolean isFairMode;
     private boolean isCompeteMode;
     private int semaphoreSize;
     private InterruptableSemaphore semaphore;
     private long maxWaitMs;//milliseconds
     private long maxWaitNs;//nanoseconds
-
     private long aliveAssumeTimeMs;//milliseconds
     private int aliveTestTimeout;//seconds
     private long parkTimeForRetryNs;//nanoseconds
@@ -83,19 +84,14 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     private BeeXaConnectionFactory rawXaConnFactory;
     private ProxyConnectionFactory conProxyFactory;
     private PooledConnectionAliveTest conValidTest;
-
     private ThreadPoolExecutor networkTimeoutExecutor;
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private ScheduledFuture<?> timeoutLogsClearTaskFuture;
     private ScheduledFuture<?> timeoutConnectionsClearTaskFuture;
-
     private long idleTimeoutMs;//milliseconds
     private long holdTimeoutMs;//milliseconds
     private boolean supportHoldTimeout;
-    private long methodLogTimeoutMs;//milliseconds
     private boolean collectMethodLogs;
-    private MethodExecutionLogCache methodLogCache;
-
     private boolean useThreadLocal;
     private ThreadLocal<WeakReference<Borrower>> threadLocal;
     private String poolNameOfRegisteredMBean;
@@ -485,7 +481,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             } else {//driver support networkTimeout
                 int threadSize = Math.min(connectionArrayLen, NCPU);
                 this.networkTimeoutExecutor = new ThreadPoolExecutor(threadSize, threadSize, 10L, SECONDS,
-                        new LinkedBlockingQueue<>(connectionArrayLen), this.scheduledThreadPoolExecutor.getThreadFactory());//When code reach here,pool scheduledThreadPoolExecutor is created absolutely.
+                        new LinkedBlockingQueue<Runnable>(connectionArrayLen), this.scheduledThreadPoolExecutor.getThreadFactory());//When code reach here,pool scheduledThreadPoolExecutor is created absolutely.
                 this.networkTimeoutExecutor.allowCoreThreadTimeOut(true);
                 firstConn.setNetworkTimeout(networkTimeoutExecutor, defaultNetworkTimeout);
             }
@@ -1191,7 +1187,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     //                                  14: Help methods - timeout task call(0+1)                                    //
     //***************************************************************************************************************//
-    private void closeIdleTimeoutConnections() {
+    void closeIdleTimeoutConnections() {
         //step1:print pool info before clean
         if (logPrinter.isEnableLogOutput()) {
             BeeConnectionPoolMonitorVo vo = getPoolMonitorVo();

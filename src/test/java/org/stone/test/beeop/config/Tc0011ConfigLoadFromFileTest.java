@@ -29,7 +29,7 @@ import static org.stone.tools.CommonUtil.loadPropertiesFromClassPathFile;
  * @version 1.0
  */
 public class Tc0011ConfigLoadFromFileTest {
-    private static final String filename = "file/beeop/config2.properties";
+    private static final String filename = "beeop/config2.properties";
     private static final Pattern PATTERN = Pattern.compile("/", Pattern.LITERAL);
 
     private static boolean check(BeeObjectSourceConfig config) {
@@ -95,7 +95,7 @@ public class Tc0011ConfigLoadFromFileTest {
 
         try {//failure test
             String fullFilename = Objects.requireNonNull(getClassPathFileAbsolutePath(filename)).toString();
-            String osFileName2 = PATTERN.matcher("file/beeop/invalid.properties").replaceAll(Matcher.quoteReplacement(File.separator));
+            String osFileName2 = PATTERN.matcher("beeop/invalid.properties").replaceAll(Matcher.quoteReplacement(File.separator));
             int lasIndex = fullFilename.lastIndexOf(PATTERN.matcher(filename).replaceAll(Matcher.quoteReplacement(File.separator)));
             String invalidFilePath = fullFilename.substring(0, lasIndex) + osFileName2;
             config1.loadFromPropertiesFile(invalidFilePath);//folder test
