@@ -37,7 +37,7 @@ public class DsConfigFactory {
     static int POOL_MAX_ACTIVE;
     static int POOL_INIT_SIZE;
     static int REQUEST_TIMEOUT = 8000;
-    static String CONFIG_FILE = "/beecp/jdbc.properties";
+    static String CONFIG_FILE = "beecp/jdbc.properties";
 
     static {
         try {
@@ -67,11 +67,7 @@ public class DsConfigFactory {
     }
 
     private static void loadConfig() throws Exception {
-        InputStream fileStream = null;
-
-        try {
-            fileStream = DsConfigFactory.class.getClassLoader().getResourceAsStream(CONFIG_FILE);
-            if (fileStream == null) fileStream = DsConfigFactory.class.getResourceAsStream(CONFIG_FILE);
+        try (InputStream fileStream = DsConfigFactory.class.getClassLoader().getResourceAsStream(CONFIG_FILE)) {
             if (fileStream == null) throw new IOException("Can't find file:'JdbcConfig.properties' in classpath");
             Properties prop = new Properties();
             prop.load(fileStream);
@@ -109,14 +105,7 @@ public class DsConfigFactory {
                 throw new BeeDataSourceConfigException("'POOL_INIT_SIZE' can't be less than zero");
             if (POOL_INIT_SIZE > POOL_MAX_ACTIVE)
                 throw new BeeDataSourceConfigException("'POOL_INIT_SIZE' must be less than 'POOL_MAX_ACTIVE'");
-        } finally {
-            if (fileStream != null) {
-                try {
-                    fileStream.close();
-                } catch (Exception e) {
-                    //nothing
-                }
-            }
         }
+        //nothing
     }
 }

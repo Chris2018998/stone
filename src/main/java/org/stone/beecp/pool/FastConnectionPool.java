@@ -64,7 +64,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     ConcurrentLinkedQueue<Borrower> waitQueue;
     long methodLogTimeoutMs;//milliseconds
     MethodExecutionLogCache methodLogCache;
-   
+
     private boolean isFairMode;
     private boolean isCompeteMode;
     private int semaphoreSize;
@@ -290,7 +290,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         }
     }
 
-    //Create connection and fill it to target pooled connection(wrapper)
+    //Create connection and fill it to given pooled connection(wrapper)
     private PooledConnection fillRawConnection(PooledConnection p, int state, Thread creatingThread) throws SQLException {
         //1: print info of creation starting
         logPrinter.info("BeeCP({})-start to create a connection", this.poolName);

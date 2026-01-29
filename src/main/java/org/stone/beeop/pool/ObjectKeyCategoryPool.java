@@ -79,7 +79,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private final int methodLogCacheSize;
     LogPrinter logPrinter = DefaultLogPrinter;
     private boolean collectMethodLogs;//changeable
-    private BeeMethodLogListener<K> methodLogListener;//changeable
+    private final BeeMethodLogListener<K> methodLogListener;//changeable
     //Clone end
 
     //category key

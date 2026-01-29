@@ -46,7 +46,7 @@ interface MethodLogCache<K> {
      * @param parameters is method parameters of call
      * @return a recorded log
      */
-    BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters);
+    BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception;
 
     /**
      * Plugin method: Handles a log of method call.
@@ -55,7 +55,7 @@ interface MethodLogCache<K> {
      * @param callResult is result of method call
      * @param log        is a log of method call
      */
-    void afterCall(long endTime, Object callResult, BeeMethodLog<K> log);
+    void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) throws Exception;
 
     /**
      * Clear cached logs of given type

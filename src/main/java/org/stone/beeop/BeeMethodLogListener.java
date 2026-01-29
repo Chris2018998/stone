@@ -23,14 +23,14 @@ public interface BeeMethodLogListener<K> {
      *
      * @param log to be handled
      */
-    void onMethodStart(BeeMethodLog<K> log);
+    void onMethodStart(BeeMethodLog<K> log) throws Exception;
 
     /**
      * Plugin method: Handles a log of method call.
      *
      * @param log to be handled
      */
-    void onMethodEnd(BeeMethodLog<K> log);
+    void onMethodEnd(BeeMethodLog<K> log) throws Exception;
 
     /**
      * Handle a list of long-running logs

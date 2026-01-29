@@ -25,13 +25,13 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 final class ObjectPoolLogCache<K> implements MethodLogCache<K> {
     //Pool name
-    private String poolName;
+    private final String poolName;
     //Cache size
-    private int maxSize;
+    private final int maxSize;
     //Slow Threshold
     private long slowThreshold;
     //Logs queue(ConcurrentLinkedQueue is better than it?)
-    private LinkedBlockingQueue<MethodLog<K>> logsQueue;
+    private final LinkedBlockingQueue<MethodLog<K>> logsQueue;
     //Log listener
     private BeeMethodLogListener<K> listener;
 
@@ -59,14 +59,14 @@ final class ObjectPoolLogCache<K> implements MethodLogCache<K> {
     //***************************************************************************************************************//
     //                                         3: Logs records(2+1)                                                  //
     //***************************************************************************************************************//
-    public BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) {
+    public BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception {
         MethodLog<K> log = new MethodLog<>(poolName, key, logType, method, parameters, startTime);
         this.offerQueue(log);
         if (listener != null) listener.onMethodStart(log);
         return log;
     }
 
-    public void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) {
+    public void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) throws Exception {
         MethodLog<K> defaultTypeLog = (MethodLog<K>) log;
         defaultTypeLog.setResult(callResult, endTime);
 
