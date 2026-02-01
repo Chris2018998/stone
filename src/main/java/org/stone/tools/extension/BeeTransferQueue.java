@@ -45,7 +45,7 @@ public final class BeeTransferQueue implements BeeInterruptable {
     }
 
     //chain head
-    private transient volatile BeeTransferQueueNode head;
+    private final transient BeeTransferQueueNode head;
     //Tail node of chain
     private transient volatile BeeTransferQueueNode tail;
 
