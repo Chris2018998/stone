@@ -11,6 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 
+import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTART_FAILED;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
 /**
@@ -60,7 +61,7 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     }
 
     @Override
-    public boolean isUncreated() {
+    public boolean isLazy() {
         return poolState == POOL_LAZY;
     }
 
@@ -92,6 +93,11 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     @Override
     public boolean isReStarting() {
         return poolState == POOL_RESTARTING;
+    }
+
+    @Override
+    public boolean isRestartFailed() {
+        return poolState == POOL_RESTART_FAILED;
     }
 
     @Override

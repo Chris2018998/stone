@@ -310,7 +310,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.maxActiveSizeOfKey = config.getMaxActive();
         this.semaphoreSizeOfKey = config.getSemaphoreSize();
         this.forceRecycleBorrowedOnClose = config.isForceRecycleBorrowedOnClose();
-        this.forceShutdownThreadPoolOnClose = config.isForceShutdownThreadPoolOnClose();
+        //this.forceShutdownThreadPoolOnClose = config.isForceShutdownThreadPoolOnClose();
 
         //step11: Register MBeans rely on configuration
         if (config.isRegisterMbeans()) registerMBeans(config);

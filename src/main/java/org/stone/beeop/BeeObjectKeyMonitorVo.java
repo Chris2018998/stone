@@ -26,7 +26,7 @@ public interface BeeObjectKeyMonitorVo<K> extends Serializable {
     //                                    2: Pool State`methods                                                      //
     //***************************************************************************************************************//
 
-    boolean isUncreated();
+    boolean isLazy();
 
     boolean isNew();
 
@@ -39,6 +39,8 @@ public interface BeeObjectKeyMonitorVo<K> extends Serializable {
     boolean isStarting();
 
     boolean isReStarting();
+
+    boolean isRestartFailed();
 
     boolean isSuspended();
 

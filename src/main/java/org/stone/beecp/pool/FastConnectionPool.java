@@ -112,7 +112,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 this.poolState = POOL_READY;//ready to accept coming requests(love u,my pool)
             } catch (Throwable e) {
                 logPrinter.info("BeeCP({})-started failure", this.poolName, e);
-                this.clearPoolFields(false);//clear some internal member
+                this.shutdownInternalThreads(false);//clear some internal member
                 this.poolState = POOL_NEW;//reset state to new after failure
                 throw new BeeDataSourcePoolStartedFailureException("Data source pool started failure", e);
             }
@@ -803,7 +803,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         if ((poolState == POOL_READY || poolState == POOL_RESTART_FAILED) && PoolStateUpd.compareAndSet(this, poolState, POOL_RESTARTING)) {
             try {
                 BeeDataSourceConfig checkedConfig = null;
-                if (reinit) checkedConfig = config.check();
+                if (reinit) {
+                    checkedConfig = config.check();
+                    this.shutdownInternalThreads(false);
+                }
 
                 logPrinter.info("BeeCP({})-begin to remove all connections", this.poolName);
                 this.removeAllConnections(forceRecycleBorrowed, DESC_RM_POOL_RESTART);
@@ -811,9 +814,6 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
                 if (reinit) {
                     logPrinter.info("BeeCP({})-begin to restart pool", this.poolName);
-
-                    //2: destroy some fields for restart
-                    this.clearPoolFields(false);
 
                     //3: Rerun pool
                     hasRunToStartupInternal = true;
@@ -825,9 +825,12 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 this.poolState = POOL_READY;
             } catch (Throwable e) {
                 logPrinter.error("BeeCP({})-restarted failure", this.poolName, e);
-                this.clearPoolFields(false);//clear some internal member
-                this.poolState = hasRunToStartupInternal ? POOL_RESTART_FAILED : POOL_READY;
-
+                if (hasRunToStartupInternal) {
+                    this.poolState = POOL_RESTART_FAILED;
+                    this.shutdownInternalThreads(false);//clear some internal member
+                } else {
+                    this.poolState = POOL_READY;
+                }
                 if (e instanceof BeeDataSourcePoolException) {
                     throw (BeeDataSourcePoolException) e;
                 } else {
@@ -907,11 +910,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 logPrinter.info("BeeCP({})-begin to shutdown pool", this.poolName);
 
-                //1: Close all pooled connections and remove them(*** important step ***)
-                this.removeAllConnections(this.poolConfig.isForceRecycleBorrowedOnClose(), DESC_RM_POOL_SHUTDOWN);
+                //1: Shutdown all internal threads(include thread pools)
+                this.shutdownInternalThreads(true);
 
-                //2: destroy some fields
-                this.clearPoolFields(true);
+                //2: Close all pooled connections and remove them(*** important step ***)
+                this.removeAllConnections(this.poolConfig.isForceRecycleBorrowedOnClose(), DESC_RM_POOL_SHUTDOWN);
 
                 //3: set pool state to closed
                 this.poolState = POOL_CLOSED;
@@ -923,9 +926,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         } while (true);
     }
 
-    private void clearPoolFields(boolean isCloseCall) {
-        //NOTE: Safe shut down on pool,make sure pool threads dead before clear other fields
-
+    private void shutdownInternalThreads(boolean isCloseCall) {
+        logPrinter.info("BeeCP({})-begin to shutdown pool internal threads", this.poolName);
         //1: Clear networkTimeoutExecutor
         if (this.networkTimeoutExecutor != null) {
             this.networkTimeoutExecutor.shutdownNow();
@@ -969,6 +971,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
         if (this.methodLogCache != null) this.methodLogCache.clear(Type_All);
         //7: Unregister MBeans
         if (this.poolNameOfRegisteredMBean != null) this.unregisterMBeans();
+        logPrinter.info("BeeCP({})-completed to shutdown pool internal threads", this.poolName);
     }
 
     //***************************************************************************************************************//

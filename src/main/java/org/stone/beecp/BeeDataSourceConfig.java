@@ -43,7 +43,7 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
  */
 public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     //An atomic integer to generate sequence value append to pool name as suffix,its value starts with 1
-    private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
+    private static final AtomicInteger PoolNameIndex = new AtomicInteger();
     //A list of field name,not be log print during pool initialization, default that five field names in list
     private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
     //23: An exclusion list of configuration print,default is copies from {@code DefaultExclusionList}
@@ -975,9 +975,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         if (initialSize > maxActive)
             throw new BeeDataSourceConfigException("The configured value of item 'initial-size' cannot be greater than the configured value of item 'max-active'");
 
-        Object connectionFactory = createConnectionFactory();
+        Object connectionFactory = this.createConnectionFactory();
         BeeConnectionPredicate predicate = this.createConnectionEvictPredicate();
-        BeeMethodLogListener methodExecutionListener = createMethodExecutionListener();
+        BeeMethodLogListener methodExecutionListener = this.createMethodExecutionListener();
 
         BeeDataSourceConfig checkedConfig = new BeeDataSourceConfig();
         copyTo(checkedConfig);
@@ -996,7 +996,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         checkedConfig.connectionFactory = connectionFactory;
         checkedConfig.predicate = predicate;
         checkedConfig.logListener = methodExecutionListener;
-        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.getAndIncrement();
+        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "FastPool-" + PoolNameIndex.incrementAndGet();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
 
         return checkedConfig;

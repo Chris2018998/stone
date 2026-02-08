@@ -44,7 +44,7 @@ public interface BeeMethodLog<K> extends Serializable {
     /**
      * Get log type.
      *
-     * @return type value,which is one of [Type_Object_Get,Type_Object_Call]
+     * @return type value,which is one of [Type_Pool_Log,Type_Key_Log,Type_Object_Log]
      */
     int getType();
 

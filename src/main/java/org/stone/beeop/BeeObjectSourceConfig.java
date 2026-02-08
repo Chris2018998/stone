@@ -36,9 +36,9 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
  */
 public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean {
     //An atomic integer to generate sequence value as suffix of a pool name,its value starts with 1
-    private static final AtomicInteger PoolNameIndex = new AtomicInteger(1);
+    private static final AtomicInteger PoolNameIndex = new AtomicInteger();
     //A map stores some properties of object factory,these properties injected to factory during pool initialization
-    private final Map<String, Object> objectFactoryProperties = new HashMap<>(0);
+    private final Map<String, Object> objectFactoryProperties = new HashMap<>();
 
     //1: Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
     private String poolName;
@@ -48,7 +48,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     private int initialSize;
     //4: Max reachable size of object categories in pool,default is 10
     private int maxKeySize = 10;
-    //5: Max reachable size of pooled objects of per category,pool total capacity = maxObjectKeySize * maxActive
+    //5: Max reachable size of pooled objects of per category,pool total capacity = maxKeySize * maxActive
     private int maxActive = Math.min(Math.max(10, NCPU), 50);
     //6: Permit size of semaphore for per object category
     private int semaphoreSize = Math.min(this.maxActive / 2, NCPU);
@@ -70,69 +70,67 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     private long aliveAssumeTime = 500L;
     //17: A flag that how to close borrowed objects when pool close or pool clean,true is that pool recycles them immediately,false that pool wait them return to pool,default is false.
     private boolean forceRecycleBorrowedOnClose;
-    //18: A flag that shutdown thread pool when restart or shutdown object pool.
-    private boolean forceShutdownThreadPoolOnClose;
-    //19: Milliseconds,wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
+    //18: Milliseconds,wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
     private long parkTimeForRetry = 3000L;
-    //20: A flag to enable Jmx registration,default is false
+    //19: A flag to enable Jmx registration,default is false
     private boolean registerMbeans;
-    //21: A flag to enable runtime log print in pool,default is false
+    //20: A flag to enable runtime log print in pool,default is false
     private boolean printRuntimeLogs;
-    //22: A flag to enable configuration log print during pool initializes,default is false
+    //21: A flag to enable configuration log print during pool initializes,default is false
     private boolean printConfiguration;
-    //23: An exclusion list of configuration print,default is null
+    //22: An exclusion list of configuration print,default is null
     private List<String> exclusionListOfPrint;
-    //24: A list of names of methods when them be called(last access time update,exception eviction test,method execution logs)
+    //23: A list of names of methods when them be called(last access time update,exception eviction test,method execution logs)
     private List<String> objectMethodNameList;
 
-    //25: Class name of pool implementation,default is {@code KeyedObjectPool}
+    //24: Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName;
-    //26: An array of interfaces implemented by object class
+    //25: An array of interfaces implemented by object class
     private Class<?>[] objectInterfaces;
-    //27: A class name array of interface implemented by object class
+    //26: A class name array of interface implemented by object class
     private String[] objectInterfaceNames;
 
-    //28: Object factory,priority order: instance > class > class name
+    //27: Object factory,priority order: instance > class > class name
     private BeeObjectFactory<K, V> objectFactory;
-    //29: Class of object factory
+    //28: Class of object factory
     private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
-    //30: Class name of object factory
+    //29: Class name of object factory
     private String objectFactoryClassName;
 
-    //31: Predicate to do eviction test on exception objects,priority order: instance > class > class name
+    //30: Predicate to do eviction test on exception objects,priority order: instance > class > class name
     private BeeObjectPredicate predicate;
-    //32: Class of predicate
+    //31: Class of predicate
     private Class<? extends BeeObjectPredicate> predicateClass;
-    //33: Class name of predicate
+    //32: Class name of predicate
     private String predicateClassName;
 
     //********************************************** method Execution logs ********************************************//
-    //34: A flag to enable method log cache
+    //33: A flag to enable method log cache
     private boolean enableLogCache;
-    //35: Capacity of method logs cache，default is 1000
+    //34: Capacity of method logs cache，default is 1000
     private int logCacheSize = 1000;
-    //36: Log timeout in manager,default is 3 minutes
+    //35: Log timeout in manager,default is 3 minutes
     private long logTimeout = 180000L;
-    //37: Timer interval to clear timeout logs,default is 3 minutes
+    //36: Timer interval to clear timeout logs,default is 3 minutes
     private long intervalOfClearTimeoutLogs = logTimeout;
 
-    //38: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
+    //37: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
     private long slowGetThreshold = 30000L;
-    //39: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    //38: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
     private long slowCallThreshold = 30000L;
 
-    //40: method execution listener: instance > class > class name
+    //39: method execution listener: instance > class > class name
     private BeeMethodLogListener<K> logListener;
-    //41: Class of method execution listener,default is none
+    //40: Class of method execution listener,default is none
     private Class<? extends BeeMethodLogListener<K>> logListenerClass;
-    //42: Class name of method execution listener,default is none
+    //41: Class name of method execution listener,default is none
     private String logListenerClassName;
 
-    //43: method execution listener factory: instance > class > class name
+    //42: method execution listener factory: instance > class > class name
     private BeeMethodLogListenerFactory<K> logListenerFactory;
-    //44: Class of method execution listener factory ,default is none
+    //43: Class of method execution listener factory ,default is none
     private Class<? extends BeeMethodLogListenerFactory<K>> logListenerFactoryClass;
-    //45: Class name of method execution listener factory,default is none
+    //44: Class name of method execution listener factory,default is none
     private String logListenerFactoryClassName;
 
     //***************************************************************************************************************//
@@ -307,14 +305,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
         this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
-    }
-
-    public boolean isForceShutdownThreadPoolOnClose() {
-        return forceShutdownThreadPoolOnClose;
-    }
-
-    public void setForceShutdownThreadPoolOnClose(boolean forceShutdownThreadPoolOnClose) {
-        this.forceShutdownThreadPoolOnClose = forceShutdownThreadPoolOnClose;
     }
 
     @Override
@@ -510,7 +500,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setLogCacheSize(int logCacheSize) {
         if (logCacheSize <= 0)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'log-cache-size' must be greater than zero");
         this.logCacheSize = logCacheSize;
     }
 
@@ -520,7 +510,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setSlowGetThreshold(long slowGetThreshold) {
         if (slowGetThreshold < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-object-get-threshold' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-get-threshold' must be greater than zero");
 
         this.slowGetThreshold = slowGetThreshold;
     }
@@ -531,7 +521,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setSlowCallThreshold(long slowCallThreshold) {
         if (slowCallThreshold < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-object-execution-threshold' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-call-threshold' must be greater than zero");
 
         this.slowCallThreshold = slowCallThreshold;
     }
@@ -542,7 +532,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setLogTimeout(long logTimeout) {
         if (logTimeout <= 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value for configuration item 'log-timeout' must be greater than zero");
         this.logTimeout = logTimeout;
     }
 
@@ -621,10 +611,10 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void loadFromPropertiesFile(String filename, String keyPrefix) {
         if (isBlank(filename))
-            throw new BeeObjectSourceConfigException("Configuration file name can't be null or empty");
+            throw new BeeObjectSourceConfigException("Load file name cannot be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
         if (!fileLowerCaseName.endsWith(".properties"))
-            throw new BeeObjectSourceConfigException("Configuration file name file must be end with '.properties'");
+            throw new BeeObjectSourceConfigException("Load file extension name must be 'properties':" + filename);
 
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());
@@ -634,21 +624,17 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
             String cpFileName = fileLowerCaseName.substring("classpath:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
             loadFromProperties(fileProperties, keyPrefix);
-        } else {//load a real path
-            File file = new File(filename);
-            if (!file.exists()) throw new BeeObjectSourceConfigException("Not found configuration file:" + filename);
-            if (!file.isFile())
-                throw new BeeObjectSourceConfigException("Target object is a valid configuration file," + filename);
-            loadFromPropertiesFile(file, keyPrefix);
+        } else {
+            loadFromPropertiesFile(new File(filename), keyPrefix);
         }
     }
 
     public void loadFromPropertiesFile(File file, String keyPrefix) {
-        if (file == null) throw new BeeObjectSourceConfigException("Configuration properties file can't be null");
-        if (!file.exists()) throw new BeeObjectSourceConfigException("Configuration properties file not found:" + file);
-        if (!file.isFile()) throw new BeeObjectSourceConfigException("Target object is not a valid file");
+        if (file == null) throw new BeeObjectSourceConfigException("Load file cannot be null");
+        if (!file.exists()) throw new BeeObjectSourceConfigException("Load file not found:(" + file + ")");
+        if (!file.isFile()) throw new BeeObjectSourceConfigException("Load file cannot be a folder:(" + file + ")");
         if (!file.getAbsolutePath().toLowerCase(Locale.US).endsWith(".properties"))
-            throw new BeeObjectSourceConfigException("Target file is not a properties file");
+            throw new BeeObjectSourceConfigException("Load file extension name must be 'properties':(" + file + ")");
 
         try (InputStream stream = Files.newInputStream(file.toPath())) {
             Properties configProperties = new Properties();
@@ -661,7 +647,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void loadFromProperties(Properties configProperties, String keyPrefix) {
         if (configProperties == null || configProperties.isEmpty())
-            throw new BeeObjectSourceConfigException("Configuration properties can't be null or empty");
+            throw new BeeObjectSourceConfigException("Load properties cannot be null or empty");
 
         //1: load configuration item values from outside properties
         HashMap<String, String> setValueMap;
@@ -685,6 +671,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         String objectInterfacesText = setValueMap.remove(CONFIG_OBJECT_INTERFACES);
         String objectInterfaceNamesText = setValueMap.remove(CONFIG_OBJECT_INTERFACE_NAMES);
         String exclusionListText = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
+        String objectMethodNameList = setValueMap.remove(CONFIG_OBJECT_METHOD_LIST);
 
         //3:inject item value from map to this dataSource config object
         try {
@@ -726,6 +713,13 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 this.addExclusionNameOfPrint(exclusion);
             }
         }
+
+        //8:object method name list
+        if (isNotBlank(objectMethodNameList)) {
+            for (String methodName : objectMethodNameList.trim().split(",")) {
+                this.addObjectMethodName(methodName);
+            }
+        }
     }
 
     //***************************************************************************************************************//
@@ -738,8 +732,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
         //1: try to create object factory
         BeeObjectFactory<K, V> objectFactory = this.createObjectFactory();
-        if (objectFactory.getDefaultKey() == null)
-            throw new BeeObjectSourceConfigException("Object factory must provide a non null default pooled key");
 
         //2: try to load interfaces
         Class<?>[] objectInterfaces = this.loadObjectInterfaces();
@@ -753,7 +745,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                     try {
                         clazz.getDeclaredConstructor();
                     } catch (NoSuchMethodException e) {
-                        throw new BeeObjectSourceConfigException("Not found a constructor without parameters in super class:" + clazz.getName());
+                        throw new BeeObjectSourceConfigException("Not found default constructor in super class:" + clazz.getName());
                     }
                 }
             }
@@ -764,7 +756,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         //3: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
         //4: create a method log listener
-        BeeMethodLogListener<K> methodExecutionListener = this.createMethodExecutionListener();
+        BeeMethodLogListener<K> methodExecutionListener = this.createLogListener();
         //5: create a copy from this current configuration object
         BeeObjectSourceConfig<K, V> checkedConfig = new BeeObjectSourceConfig<>();
         copyTo(checkedConfig);
@@ -774,7 +766,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         if (predicate != null) checkedConfig.predicate = predicate;
         if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
         if (methodExecutionListener != null) checkedConfig.logListener = methodExecutionListener;
-        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.getAndIncrement();
+        if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.incrementAndGet();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
         return checkedConfig;
     }
@@ -836,7 +828,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                         throw new BeeObjectSourceConfigException("Object interface class names[" + i + "]is empty or null");
                     objectInterfaces[i] = loadClass(this.objectInterfaceNames[i]);
                 } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Not found interface class with class names[" + i + "]", e);
+                    throw new BeeObjectSourceConfigException("Not found interface,index:" + i + ",name:" + this.objectInterfaceNames[i], e);
                 }
             }
             return objectInterfaces;
@@ -846,14 +838,14 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     private BeeObjectFactory<K, V> createObjectFactory() {
         //1: copy from member field of configuration
-        BeeObjectFactory<K, V> rawObjectFactory = this.objectFactory;
+        BeeObjectFactory<K, V> objectFactory = this.objectFactory;
 
         //2: create factory instance
-        if (rawObjectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
+        if (objectFactory == null && (objectFactoryClass != null || objectFactoryClassName != null)) {
             Class<? extends BeeObjectFactory<K, V>> factoryClass = null;
             try {
                 factoryClass = objectFactoryClass != null ? objectFactoryClass : loadClass(objectFactoryClassName);
-                rawObjectFactory = createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
+                objectFactory = createClassInstance(factoryClass, BeeObjectFactory.class, "object factory");
             } catch (ClassNotFoundException e) {
                 throw new BeeObjectSourceConfigException("Not found object factory class:" + objectFactoryClassName, e);
             } catch (Throwable e) {
@@ -861,19 +853,22 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
             }
         }
 
-        //3: throw check failure exception
-        if (rawObjectFactory == null)
+        //3: Throws exception if not configured factory
+        if (objectFactory == null)
             throw new BeeObjectSourceConfigException("Must provide one of config items[objectFactory,objectClassName,objectFactoryClassName]");
+        //4: Throws exception if default key is null
+        if (objectFactory.getDefaultKey() == null)
+            throw new BeeObjectSourceConfigException("Object factory must provide a non null default pooled key");
 
-        //4: inject properties to factory
+        //5: Injects properties to factory
         if (!objectFactoryProperties.isEmpty())
             try {
-                setPropertiesValue(rawObjectFactory, objectFactoryProperties);
+                setPropertiesValue(objectFactory, objectFactoryProperties);
             } catch (BeanException e) {
                 throw new BeeObjectSourceConfigException(e.getMessage(), e);
             }
 
-        return rawObjectFactory;
+        return objectFactory;
     }
 
     private BeeObjectPredicate createObjectPredicate() throws BeeObjectSourceConfigException {
@@ -896,7 +891,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //create object call log handler
-    private BeeMethodLogListener<K> createMethodExecutionListener() {
+    private BeeMethodLogListener<K> createLogListener() {
         //step1:if exists handler,then return it
         if (this.logListener != null) return this.logListener;
 
@@ -905,7 +900,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
             try {
                 return logListenerFactory.create(this);
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create method execution listener by listener factory", e);
+                throw new BeeObjectSourceConfigException("Failed to create log listener by factory", e);
             }
         }
 
@@ -917,15 +912,15 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 listenerFactoryClass = logListenerFactoryClass != null ? logListenerFactoryClass : loadClass(logListenerFactoryClassName);
                 factory = createClassInstance(listenerFactoryClass, BeeMethodLogListenerFactory.class, "method execution listener factory");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Failed to create method execution listener factory with class[" + logListenerClassName + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create log listener factory with class:" + logListenerClassName, e);
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create method execution listener factory with class[" + listenerFactoryClass + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create log listener factory with class:" + listenerFactoryClass, e);
             }
 
             try {
                 return factory.create(this);
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create method execution listener by listener factory", e);
+                throw new BeeObjectSourceConfigException("Failed to create log listener by factory", e);
             }
         }
 
@@ -936,9 +931,9 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 listenerClass = logListenerClass != null ? logListenerClass : loadClass(logListenerClassName);
                 return createClassInstance(listenerClass, BeeMethodLogListener.class, "object method execution listener");
             } catch (ClassNotFoundException e) {
-                throw new BeeObjectSourceConfigException("Failed to create object method execution listener with class[" + logListenerClassName + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create log listener with class:" + logListenerClassName, e);
             } catch (Throwable e) {
-                throw new BeeObjectSourceConfigException("Failed to create object method execution listener with class[" + listenerClass + "]", e);
+                throw new BeeObjectSourceConfigException("Failed to create log listener with class:" + listenerClass, e);
             }
         }
         return null;

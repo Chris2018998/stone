@@ -77,11 +77,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private final ScheduledThreadPoolExecutor scheduledService;
 
     private final int methodLogCacheSize;
+    private final BeeMethodLogListener<K> methodLogListener;//changeable
     LogPrinter logPrinter = DefaultLogPrinter;
     private boolean collectMethodLogs;//changeable
-    private final BeeMethodLogListener<K> methodLogListener;//changeable
     //Clone end
-
     //category key
     private K key;
     //Category name=parent's name + key.string()

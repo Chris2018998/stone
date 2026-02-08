@@ -10,7 +10,8 @@
 package org.stone.test.beeop.config;
 
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.test.beeop.objects.JavaBookFactory;
+import org.stone.test.beeop.objects.book.Book;
+import org.stone.test.beeop.objects.factory.TextBookFactory;
 
 /**
  * Config Factory
@@ -20,13 +21,13 @@ import org.stone.test.beeop.objects.JavaBookFactory;
 
 public class OsConfigFactory {
 
-    public static BeeObjectSourceConfig createEmpty() {
-        return new BeeObjectSourceConfig();
+    public static BeeObjectSourceConfig<String, Book> createEmpty() {
+        return new BeeObjectSourceConfig<>();
     }
 
-    public static BeeObjectSourceConfig createDefault() {
-        BeeObjectSourceConfig config = new BeeObjectSourceConfig();
-        config.setObjectFactory(new JavaBookFactory());
+    public static BeeObjectSourceConfig<String, Book> createDefault() {
+        BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
+        config.setObjectFactory(new TextBookFactory());
         return config;
     }
 }

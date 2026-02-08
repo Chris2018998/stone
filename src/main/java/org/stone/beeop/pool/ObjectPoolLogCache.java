@@ -28,10 +28,10 @@ final class ObjectPoolLogCache<K> implements MethodLogCache<K> {
     private final String poolName;
     //Cache size
     private final int maxSize;
-    //Slow Threshold
-    private long slowThreshold;
     //Logs queue(ConcurrentLinkedQueue is better than it?)
     private final LinkedBlockingQueue<MethodLog<K>> logsQueue;
+    //Slow Threshold
+    private long slowThreshold;
     //Log listener
     private BeeMethodLogListener<K> listener;
 

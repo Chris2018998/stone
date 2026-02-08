@@ -18,7 +18,6 @@ import java.io.*;
 import java.net.URL;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.stone.test.base.TestUtil.getClassVersion;
 
 /**
@@ -27,10 +26,10 @@ import static org.stone.test.base.TestUtil.getClassVersion;
  * @author chris liao
  */
 public class InitTest {
-    public static PrintStream systemOut;
-    public static PrintStream systemErr;
-    public static PrintStream systemTestOut;
-    public static PrintStream systemTestErr;
+    private static PrintStream systemOut;
+    private static PrintStream systemErr;
+    private static PrintStream systemTestOut;
+    private static PrintStream systemTestErr;
 
     public static void switchToSystemOut() {
         System.setOut(systemOut);
@@ -74,6 +73,5 @@ public class InitTest {
 
         systemTestOut = new PrintStream(new ByteArrayOutputStream());
         systemTestErr = new PrintStream(new ByteArrayOutputStream());
-        assertTrue(true);
     }
 }
