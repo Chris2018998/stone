@@ -316,7 +316,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         if (config.isRegisterMbeans()) registerMBeans(config);
 
         //step12: Create a hook and register it,if not existed
-        if (this.exitHook == null) {
+        if (config.isRegisterJvmHook()) {
             this.exitHook = new ObjectPoolHook<>(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
         }
@@ -437,11 +437,13 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
             this.unregisterMBeans();
 
         //6: unregister Pool hook
-        if (isCloseCall) {//this method call is from pool close
+        if (this.exitHook != null) {//this method call is from pool close
             try {//remove Hook
                 Runtime.getRuntime().removeShutdownHook(this.exitHook);
             } catch (Throwable e) {
                 //do nothing
+            } finally {
+                this.exitHook = null;
             }
         }
     }

@@ -74,63 +74,65 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     private long parkTimeForRetry = 3000L;
     //19: A flag to enable Jmx registration,default is false
     private boolean registerMbeans;
-    //20: A flag to enable runtime log print in pool,default is false
+    //20: A flag to register a jvm hook to close pool when JVM exits
+    private boolean registerJvmHook = true;
+    //21: A flag to enable runtime log print in pool,default is false
     private boolean printRuntimeLogs;
-    //21: A flag to enable configuration log print during pool initializes,default is false
+    //22: A flag to enable configuration log print during pool initializes,default is false
     private boolean printConfiguration;
-    //22: An exclusion list of configuration print,default is null
+    //23: An exclusion list of configuration print,default is null
     private List<String> exclusionListOfPrint;
-    //23: A list of names of methods when them be called(last access time update,exception eviction test,method execution logs)
+    //24: A list of names of methods when them be called(last access time update,exception eviction test,method execution logs)
     private List<String> objectMethodNameList;
 
-    //24: Class name of pool implementation,default is {@code KeyedObjectPool}
+    //25: Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName;
-    //25: An array of interfaces implemented by object class
+    //26: An array of interfaces implemented by object class
     private Class<?>[] objectInterfaces;
-    //26: A class name array of interface implemented by object class
+    //27: A class name array of interface implemented by object class
     private String[] objectInterfaceNames;
 
-    //27: Object factory,priority order: instance > class > class name
+    //28: Object factory,priority order: instance > class > class name
     private BeeObjectFactory<K, V> objectFactory;
-    //28: Class of object factory
+    //29: Class of object factory
     private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
-    //29: Class name of object factory
+    //30: Class name of object factory
     private String objectFactoryClassName;
 
-    //30: Predicate to do eviction test on exception objects,priority order: instance > class > class name
+    //31: Predicate to do eviction test on exception objects,priority order: instance > class > class name
     private BeeObjectPredicate predicate;
-    //31: Class of predicate
+    //32: Class of predicate
     private Class<? extends BeeObjectPredicate> predicateClass;
-    //32: Class name of predicate
+    //33: Class name of predicate
     private String predicateClassName;
 
     //********************************************** method Execution logs ********************************************//
-    //33: A flag to enable method log cache
+    //34: A flag to enable method log cache
     private boolean enableLogCache;
-    //34: Capacity of method logs cache，default is 1000
+    //35: Capacity of method logs cache，default is 1000
     private int logCacheSize = 1000;
-    //35: Log timeout in manager,default is 3 minutes
+    //36: Log timeout in manager,default is 3 minutes
     private long logTimeout = 180000L;
-    //36: Timer interval to clear timeout logs,default is 3 minutes
+    //37: Timer interval to clear timeout logs,default is 3 minutes
     private long intervalOfClearTimeoutLogs = logTimeout;
 
-    //37: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
+    //38: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
     private long slowGetThreshold = 30000L;
-    //38: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    //39: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
     private long slowCallThreshold = 30000L;
 
-    //39: method execution listener: instance > class > class name
+    //40: method execution listener: instance > class > class name
     private BeeMethodLogListener<K> logListener;
-    //40: Class of method execution listener,default is none
+    //41: Class of method execution listener,default is none
     private Class<? extends BeeMethodLogListener<K>> logListenerClass;
-    //41: Class name of method execution listener,default is none
+    //42: Class name of method execution listener,default is none
     private String logListenerClassName;
 
-    //42: method execution listener factory: instance > class > class name
+    //43: method execution listener factory: instance > class > class name
     private BeeMethodLogListenerFactory<K> logListenerFactory;
-    //43: Class of method execution listener factory ,default is none
+    //44: Class of method execution listener factory ,default is none
     private Class<? extends BeeMethodLogListenerFactory<K>> logListenerFactoryClass;
-    //44: Class name of method execution listener factory,default is none
+    //45: Class name of method execution listener factory,default is none
     private String logListenerFactoryClassName;
 
     //***************************************************************************************************************//
@@ -325,6 +327,14 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setRegisterMbeans(boolean registerMbeans) {
         this.registerMbeans = registerMbeans;
+    }
+
+    public boolean isRegisterJvmHook() {
+        return registerJvmHook;
+    }
+
+    public void setRegisterJvmHook(boolean registerJvmHook) {
+        this.registerJvmHook = registerJvmHook;
     }
 
     public boolean isPrintRuntimeLogs() {
@@ -595,7 +605,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //***************************************************************************************************************//
-    //                                     6: configuration file load(3)                                             //
+    //                                     6: configuration file load(6)                                             //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         loadFromPropertiesFile(filename, null);

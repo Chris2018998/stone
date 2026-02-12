@@ -68,9 +68,11 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     private void createPool(BeeObjectSource<K, V> os) throws Exception {
         String poolImplementClassName = os.getPoolImplementClassName();
         if (isBlank(poolImplementClassName)) poolImplementClassName = ObjectPool.class.getName();
-        os.pool = createClassInstance(poolImplementClassName, BeeObjectPool.class, "pool");
-        os.pool.start(os);
-        os.poolInitialized = true;
+
+        BeeObjectPool<K, V> pool = createClassInstance(poolImplementClassName, BeeObjectPool.class, "pool");
+        pool.start(os);
+        this.pool = pool;
+        this.poolInitialized = true;
     }
 
     //***************************************************************************************************************//
@@ -241,7 +243,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //                                     6: Pool blocking interrupts(2+0)                                          //
     //***************************************************************************************************************//
     public List<Thread> interruptWaitingThreads() throws Exception {
-        if (poolInitialized) {
+        if (pool != null) {
             return pool.interruptWaitingThreads();
         } else {
             return lock.interruptAllThreads();
@@ -249,7 +251,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     public List<Thread> interruptWaitingThreads(K key) throws Exception {
-        if (poolInitialized) {
+        if (this.poolInitialized) {
             return pool.interruptWaitingThreads(key);
         } else {
             return lock.interruptAllThreads();

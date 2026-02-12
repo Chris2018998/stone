@@ -218,8 +218,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             this.setName("BeeCP(" + poolName + ")" + "-asyncAdd");
             this.start();
 
-            this.exitHook = new ConnectionPoolHook(this);
-            Runtime.getRuntime().addShutdownHook(this.exitHook);//JVM Hool register on start
+            if (this.poolConfig.isRegisterJvmHook()) {
+                this.exitHook = new ConnectionPoolHook(this);
+                Runtime.getRuntime().addShutdownHook(this.exitHook);//JVM Hool register on start
+            }
         }
 
         //step12: initialize method execution log cache
@@ -950,18 +952,22 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             scheduledThreadPoolExecutor = null;
         }
 
-        if (isCloseCall) {
-            //3: Shut down servant thread
-            int curState = this.servantState;
-            this.servantState = THREAD_EXIT; //set exit state
-            if (curState == THREAD_WAITING) LockSupport.unpark(this);//signal the servant thread to exit
-
-            //4: unregister Pool hook
+        //3: unregister Pool hook
+        if (this.exitHook != null) {
             try {
                 Runtime.getRuntime().removeShutdownHook(this.exitHook);
             } catch (Throwable e) {
                 //do nothing
+            } finally {
+                this.exitHook = null;
             }
+        }
+
+        if (isCloseCall) {
+            //4: Shut down servant thread
+            int curState = this.servantState;
+            this.servantState = THREAD_EXIT; //set exit state
+            if (curState == THREAD_WAITING) LockSupport.unpark(this);//signal the servant thread to exit
         }
 
         //5: Clear thread local

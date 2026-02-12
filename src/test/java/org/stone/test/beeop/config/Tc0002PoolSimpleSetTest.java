@@ -103,6 +103,15 @@ public class Tc0002PoolSimpleSetTest {
     }
 
     @Test
+    public void testRegisterJvmHoo() {
+        Assertions.assertTrue(config.isRegisterJvmHook());//default check
+        config.setRegisterJvmHook(false);
+        Assertions.assertFalse(config.isRegisterJvmHook());
+        config.setRegisterJvmHook(true);
+        Assertions.assertTrue(config.isRegisterJvmHook());
+    }
+
+    @Test
     public void testLogsPrintSetting() {
         config.setPrintRuntimeLogs(true);
         Assertions.assertTrue(config.isPrintRuntimeLogs());
@@ -167,4 +176,6 @@ public class Tc0002PoolSimpleSetTest {
         checkedConfig = config.check();
         Assertions.assertNull(checkedConfig.getObjectMethodNameList());
     }
+
+
 }

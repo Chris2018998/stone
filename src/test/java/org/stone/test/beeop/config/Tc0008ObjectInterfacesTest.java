@@ -13,10 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourceConfigException;
-import org.stone.test.beeop.objects.book.Book;
-import org.stone.test.beeop.objects.book.BookBorrowInfo;
-import org.stone.test.beeop.objects.book.JournalBook;
-import org.stone.test.beeop.objects.book.TextBook;
+import org.stone.test.beeop.objects.book.*;
 
 import java.util.Properties;
 
@@ -61,7 +58,6 @@ public class Tc0008ObjectInterfacesTest {
             Assertions.assertTrue(message != null && message.contains("Class not found:"));
         }
     }
-
 
     @Test
     public void testCheckPassed() {
@@ -150,6 +146,15 @@ public class Tc0008ObjectInterfacesTest {
         } catch (BeeObjectSourceConfigException e) {
             String message = e.getMessage();
             Assertions.assertTrue(message != null && message.contains("The count of super class cannot be greater than 1"));
+        }
+
+        config = OsConfigFactory.createDefault();
+        config.setObjectInterfaces(new Class[]{Book.class, EBook.class});
+        try {
+            config.check();
+        } catch (BeeObjectSourceConfigException e) {
+            String message = e.getMessage();
+            Assertions.assertTrue(message != null && message.contains("Not found default constructor in super class:"));
         }
     }
 }
