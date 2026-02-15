@@ -49,4 +49,6 @@ public interface BeeObjectSourceConfigMXBean {
     String getObjectFactoryClassName();
 
     boolean isRegisterMbeans();
+
+    boolean isRegisterJvmHook();
 }

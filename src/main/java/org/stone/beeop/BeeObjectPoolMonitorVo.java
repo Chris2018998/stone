@@ -65,15 +65,11 @@ public interface BeeObjectPoolMonitorVo<K> extends Serializable {
     //***************************************************************************************************************//
     //                                     4: Pool other                                                             //
     //***************************************************************************************************************//
-    //Query log print is whether enabled
     boolean isEnabledLogPrinter();
 
-    //Query method execution log cache is whether enabled
-    boolean isEnabledMethodExecutionLogCache();
+    boolean isEnabledLogCache();
 
-    //return monitor vo with a key,return null if given key is not exists in pool
     BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key);
 
-    //return monitor vos of pooled keys
     BeeObjectKeyMonitorVo<K>[] getKeyMonitorVos();
 }

@@ -31,7 +31,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     private final int maxActiveSizeOfKey;
     private final int semaphoreSizeOfKey;
     private final boolean enabledLogPrint;
-    private final boolean enabledMethodExecutionLogCache;
+    private final boolean enabledLogCache;
     private final boolean usingThreadLocal;
     private final Map<K, BeeObjectKeyMonitorVo<K>> keyMonitorVoMap;
 
@@ -52,7 +52,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
         this.maxActiveSizeOfKey = maxActiveSizeOfKey;
         this.semaphoreSizeOfKey = semaphoreSizeOfKey;
         this.enabledLogPrint = enabledLogPrint;
-        this.enabledMethodExecutionLogCache = enabledMethodExecutionLogCache;
+        this.enabledLogCache = enabledMethodExecutionLogCache;
         this.keyMonitorVoMap = new HashMap<>(1);
     }
 
@@ -133,21 +133,25 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
     }
 
     //Query log print is whether enabled
+    @Override
     public boolean isEnabledLogPrinter() {
         return this.enabledLogPrint;
     }
 
     //Query method execution log cache is whether enabled
-    public boolean isEnabledMethodExecutionLogCache() {
-        return this.enabledMethodExecutionLogCache;
+    @Override
+    public boolean isEnabledLogCache() {
+        return this.enabledLogCache;
     }
 
     //return monitor vo with a key,return null if given key is not exists in pool
+    @Override
     public BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) {
         return keyMonitorVoMap.get(key);
     }
 
     //return monitor vos of pooled keys
+    @Override
     public BeeObjectKeyMonitorVo<K>[] getKeyMonitorVos() {
         return keyMonitorVoMap.values().toArray(new BeeObjectKeyMonitorVo[keyMonitorVoMap.size()]);
     }
