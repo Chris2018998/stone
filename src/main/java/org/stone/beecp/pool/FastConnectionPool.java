@@ -217,11 +217,6 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             this.setDaemon(true);
             this.setName("BeeCP(" + poolName + ")" + "-asyncAdd");
             this.start();
-
-            if (this.poolConfig.isRegisterJvmHook()) {
-                this.exitHook = new ConnectionPoolHook(this);
-                Runtime.getRuntime().addShutdownHook(this.exitHook);//JVM Hool register on start
-            }
         }
 
         //step12: initialize method execution log cache
@@ -249,9 +244,16 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             new PoolInitAsyncCreateThread(this, initialSize, "BeeCP(" + poolName + ")" + "-asyncInitialConnectionCreator").start();
 
         //step15: Register MXBean to Jmx server
-        if (poolConfig.isRegisterMbeans()) this.registerMBeans(poolConfig);
+        if (poolConfig.isRegisterMbeans())
+            this.registerMBeans(poolConfig);
 
-        //step16:Print completion info at end
+        //step16: Register JVM Hook
+        if (poolConfig.isRegisterJvmHook()) {
+            this.exitHook = new ConnectionPoolHook(this);
+            Runtime.getRuntime().addShutdownHook(this.exitHook);//JVM Hool register on start
+        }
+
+        //step17:Print completion info at end
         String poolInitInfo;
         String driverClassNameOrFactoryName = poolConfig.getDriverClassName();
         if (isNotBlank(driverClassNameOrFactoryName)) {

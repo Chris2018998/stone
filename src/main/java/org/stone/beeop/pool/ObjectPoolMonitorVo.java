@@ -43,7 +43,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
                                int semaphoreSizeOfKey,
                                int poolState,
                                boolean enabledLogPrint,
-                               boolean enabledMethodExecutionLogCache) {
+                               boolean enabledLogCache) {
         this.poolName = poolName;
         this.poolState = poolState;
         this.isFairMode = useFairMode;
@@ -52,7 +52,7 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
         this.maxActiveSizeOfKey = maxActiveSizeOfKey;
         this.semaphoreSizeOfKey = semaphoreSizeOfKey;
         this.enabledLogPrint = enabledLogPrint;
-        this.enabledLogCache = enabledMethodExecutionLogCache;
+        this.enabledLogCache = enabledLogCache;
         this.keyMonitorVoMap = new HashMap<>(1);
     }
 
