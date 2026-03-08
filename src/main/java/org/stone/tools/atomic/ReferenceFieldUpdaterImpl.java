@@ -9,6 +9,7 @@
  */
 package org.stone.tools.atomic;
 
+import jakarta.annotation.Nonnull;
 import jdk.internal.misc.Unsafe;
 import org.stone.tools.UnsafeHolder;
 import org.stone.tools.exception.ReflectionOperationException;
@@ -32,7 +33,7 @@ public final class ReferenceFieldUpdaterImpl<T, V> extends AtomicReferenceFieldU
         this.fieldType = fieldType;
     }
 
-    public static <U, W> AtomicReferenceFieldUpdater<U, W> newUpdater(Class<U> tclass, Class<W> vclass, String fieldName) {
+    public static <U, W> AtomicReferenceFieldUpdater<U, W> newUpdater(@Nonnull Class<U> tclass, @Nonnull Class<W> vclass, @Nonnull String fieldName) {
         try {
             return new ReferenceFieldUpdaterImpl<>(unsafe.objectFieldOffset(tclass.getDeclaredField(fieldName)), vclass);
         } catch (NoSuchFieldException e) {
@@ -45,26 +46,26 @@ public final class ReferenceFieldUpdaterImpl<T, V> extends AtomicReferenceFieldU
     }
 
 
-    public boolean compareAndSet(T bean, V expect, V update) {
+    public boolean compareAndSet(@Nonnull T bean, V expect, V update) {
         return unsafe.compareAndSetReference(bean, this.offset, expect, update);
     }
 
     @Override
-    public boolean weakCompareAndSet(T bean, V expect, V update) {
+    public boolean weakCompareAndSet(@Nonnull T bean, V expect, V update) {
         return unsafe.compareAndSetReference(bean, this.offset, expect, update);
     }
 
     @Override
-    public void set(T bean, V newValue) {
+    public void set(@Nonnull T bean, V newValue) {
         unsafe.putReferenceVolatile(bean, this.offset, newValue);
     }
 
     @Override
-    public void lazySet(T bean, V newValue) {
+    public void lazySet(@Nonnull T bean, V newValue) {
         unsafe.putReferenceRelease(bean, this.offset, newValue);
     }
 
-    public V get(T bean) {
+    public V get(@Nonnull T bean) {
         return fieldType.cast(unsafe.getReferenceVolatile(bean, this.offset));
     }
 }

@@ -23,73 +23,26 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
+public class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private final String poolName;
-    private final boolean isFairMode;
-    private final int maxKeySize;
     private final int poolState;
-    private final int maxActiveSizeOfKey;
-    private final int semaphoreSizeOfKey;
-    private final boolean enabledLogPrint;
+    private final boolean enabledLogPrinter;
     private final boolean enabledLogCache;
-    private final boolean usingThreadLocal;
-    private final Map<K, BeeObjectKeyMonitorVo<K>> keyMonitorVoMap;
+    private Map<String, BeeObjectKeyMonitorVo> keyMonitorVoMap;
 
     public ObjectPoolMonitorVo(String poolName,
-                               boolean useFairMode,
-                               boolean useThreadLocal,
-                               int maxKeySize,
-                               int maxActiveSizeOfKey,
-                               int semaphoreSizeOfKey,
                                int poolState,
                                boolean enabledLogPrint,
                                boolean enabledLogCache) {
         this.poolName = poolName;
         this.poolState = poolState;
-        this.isFairMode = useFairMode;
-        this.usingThreadLocal = useThreadLocal;
-        this.maxKeySize = maxKeySize;
-        this.maxActiveSizeOfKey = maxActiveSizeOfKey;
-        this.semaphoreSizeOfKey = semaphoreSizeOfKey;
-        this.enabledLogPrint = enabledLogPrint;
+        this.enabledLogPrinter = enabledLogPrint;
         this.enabledLogCache = enabledLogCache;
-        this.keyMonitorVoMap = new HashMap<>(1);
     }
 
-    //return key pool name
     @Override
     public String getPoolName() {
         return this.poolName;
-    }
-
-    //Query pool is whether fair mode
-    @Override
-    public boolean isFairMode() {
-        return this.isFairMode;
-    }
-
-    //return capacity size of keys in pool
-    @Override
-    public int getMaxKeySize() {
-        return this.maxKeySize;
-    }
-
-    //return capacity size in pool
-    @Override
-    public int getMaxActiveSizeOfKey() {
-        return this.maxActiveSizeOfKey;
-    }
-
-    //return capacity size in pool
-    @Override
-    public int getSemaphoreSizeOfKey() {
-        return this.semaphoreSizeOfKey;
-    }
-
-    //Query pool is using ThreadLocal
-    @Override
-    public boolean useThreadLocalOfKey() {
-        return this.usingThreadLocal;
     }
 
     @Override
@@ -132,31 +85,28 @@ public class ObjectPoolMonitorVo<K> implements BeeObjectPoolMonitorVo<K> {
         return poolState == POOL_SUSPENDED;
     }
 
-    //Query log print is whether enabled
     @Override
     public boolean isEnabledLogPrinter() {
-        return this.enabledLogPrint;
+        return this.enabledLogPrinter;
     }
 
-    //Query method execution log cache is whether enabled
     @Override
-    public boolean isEnabledLogCache() {
+    public boolean isEnabledMethodLogCache() {
         return this.enabledLogCache;
     }
 
-    //return monitor vo with a key,return null if given key is not exists in pool
     @Override
-    public BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) {
-        return keyMonitorVoMap.get(key);
+    public Map<String, BeeObjectKeyMonitorVo> getKeyMonitorVos() {
+        return keyMonitorVoMap;
     }
 
-    //return monitor vos of pooled keys
     @Override
-    public BeeObjectKeyMonitorVo<K>[] getKeyMonitorVos() {
-        return keyMonitorVoMap.values().toArray(new BeeObjectKeyMonitorVo[keyMonitorVoMap.size()]);
+    public BeeObjectKeyMonitorVo getKeyMonitorVo(String keyName) {
+        return keyMonitorVoMap == null ? null : keyMonitorVoMap.get(keyName);
     }
 
-    void pubKeyMonitorVo(K key, BeeObjectKeyMonitorVo<K> vo) {
-        this.keyMonitorVoMap.put(key, vo);
+    void pubKeyMonitorVo(String keyName, ObjectKeyMonitorVo keyMonitorVo) {
+        if (keyMonitorVoMap == null) this.keyMonitorVoMap = new HashMap<>(1);
+        this.keyMonitorVoMap.put(keyName, keyMonitorVo);
     }
 }

@@ -26,6 +26,8 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
  */
 public class ObjectPoolStatics {
     //config name of properties of object factory
+    public static final String CONFIG_POOL_NAME_INDEX = "PoolNameIndex";
+    //config name of properties of object factory
     public static final String CONFIG_FACTORY_PROP = "objectFactoryProperties";
     //config name of properties count of object factory
     public static final String CONFIG_FACTORY_PROP_SIZE = "objectFactoryProperties.size";
@@ -100,7 +102,7 @@ public class ObjectPoolStatics {
                         } else if ("toString".equals(methodName)) {
                             return getPoolStateDesc(POOL_LAZY);
                         } else {
-                            throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on uninitialization pool");
+                            throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on lazy pool");
                         }
                     }
             );

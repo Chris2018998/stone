@@ -176,6 +176,4 @@ public class Tc0002PoolSimpleSetTest {
         checkedConfig = config.check();
         Assertions.assertNull(checkedConfig.getObjectMethodNameList());
     }
-
-
 }

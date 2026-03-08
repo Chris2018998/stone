@@ -18,20 +18,20 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jmh.version>1.37</jmh.version>
-        <junit.version>6.0.1</junit.version>
-        <logback.version>1.5.23</logback.version>
+        <junit.version>6.1.0-M1</junit.version>
+        <logback.version>1.5.32</logback.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
         <javassist.version>3.30.2-GA</javassist.version>
         <jakarta.transaction-api.version>2.0.1</jakarta.transaction-api.version>
-        <jakarta.enterprise.cdi-api.version>4.1.0</jakarta.enterprise.cdi-api.version>
+        <jakarta.enterprise.cdi-api.version>5.0.0-M1</jakarta.enterprise.cdi-api.version>
 
         <!-- maven plugins-->
         <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version><!-- to generate proxy -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version><!-- test cover-->
 
-        <central-publishing.version>0.9.0</central-publishing.version>
-        <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
-        <maven-surefire-plugin.version>3.5.4</maven-surefire-plugin.version>
+        <central-publishing.version>0.10.0</central-publishing.version>
+        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.5.5</maven-surefire-plugin.version>
         <maven-source-plugin.version>3.4.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.12.0</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.2.8</maven-gpg-plugin.version>

@@ -23,6 +23,7 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
     protected String title;
     protected String author;
     protected int stockCount;
+    protected Exception exception;
 
     public TextBookFactory() {
         this("Thanking in Java", "Bruce Eckel");
@@ -40,6 +41,10 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
 
     public void setStockCount(int stockCount) {
         this.stockCount = stockCount;
+    }
+
+    public void setException(Exception exception) {
+        this.exception = exception;
     }
 
     @Override
@@ -75,6 +80,7 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
 
     @Override
     public Book create(String key) throws Exception {
+        if(this.exception!=null)throw this.exception;
         return new TextBook(this.title, this.author);
     }
 }

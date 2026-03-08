@@ -12,12 +12,16 @@ package org.stone.beeop.pool;
 import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.exception.BeePooledObjectRecycledException;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
 import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
+import static org.stone.tools.CommonUtil.isBlank;
 
 /**
  * Pooled object
@@ -26,6 +30,8 @@ import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
  * @version 1.0
  */
 final class PooledObject<K, V> {
+    private static final MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+
     //pooled key
     final K key;
     //method names to support accessed time update,eviction test,logs collection
@@ -36,7 +42,7 @@ final class PooledObject<K, V> {
     //destroy objects,reset objects
     private final BeeObjectFactory<K, V> objectFactory;
     //sharable map to store method of object type
-    private final Map<MethodKey, Method> objectMethodCacheMap;
+    private final Map<MethodKey, MethodHandle> objectMethodCacheMap;
 
     //object
     V raw;
@@ -59,7 +65,7 @@ final class PooledObject<K, V> {
                  ObjectKeyCategoryPool<K, V> pool,
                  BeeObjectFactory<K, V> objectFactory,
                  List<String> objectMethodNameList,
-                 Map<MethodKey, Method> objectMethodCacheMap) {
+                 Map<MethodKey, MethodHandle> objectMethodCacheMap) {
 
         this.key = key;
         this.pool = pool;
@@ -118,17 +124,17 @@ final class PooledObject<K, V> {
 
     //pool call this method before this object removed
     void onRemove(String cause) {
-        pool.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", pool.getPoolName(), this, cause);
+        pool.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", pool.getKeyName(), this, cause);
 
         try {
             this.objectFactory.reset(key, raw);
         } catch (Throwable e) {
-            pool.logPrinter.warn("BeeOP({})-reset object failed", pool.getPoolName(), e);
+            pool.logPrinter.warn("BeeOP({})-reset object failed", pool.getKeyName(), e);
         } finally {
             try {
                 this.objectFactory.destroy(key, raw);
             } catch (Throwable e) {
-                pool.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", pool.getPoolName(), e);
+                pool.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", pool.getKeyName(), e);
             }
 
             this.state = OBJECT_CLOSED;
@@ -136,14 +142,25 @@ final class PooledObject<K, V> {
     }
 
     //handle call this method to get a method of object by parameter info
-    Method getMethod(String name, Class<?>[] types, Object[] params) throws Exception {
+    Object callMethod(String name, Class<?>[] types, Object[] params) throws Throwable {
+        if (isBlank(name)) throw new IllegalArgumentException("Method name can't be null or be blank");
+        if (types == null) throw new IllegalArgumentException("Method parameter types cannot be null");
         MethodKey key = new MethodKey(name, types);
-        Method method = objectMethodCacheMap.get(key);
 
-        if (method == null) {
-            method = rawType.getMethod(name, types);
-            objectMethodCacheMap.put(key, method);
+        MethodHandle methodHandle = objectMethodCacheMap.get(key);
+        if (methodHandle == null) {
+            Method targetMethod = rawType.getMethod(name, types);
+            methodHandle = lookup.findVirtual(rawType, name, MethodType.methodType(targetMethod.getReturnType(), types));
+            objectMethodCacheMap.put(key, methodHandle);
         }
-        return method;
+
+        int parameterLen = types.length;
+        Object[] invokeParameters = new Object[parameterLen + 1];
+        invokeParameters[0] = raw;
+        if (params != null && params.length > 0) {
+            int copyLen = Math.min(parameterLen, params.length);
+            System.arraycopy(params, 0, invokeParameters, 1, copyLen);
+        }
+        return methodHandle.invokeWithArguments(invokeParameters);
     }
 }

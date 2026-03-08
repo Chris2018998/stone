@@ -14,13 +14,13 @@ import org.stone.beecp.*;
 import org.stone.beecp.exception.*;
 import org.stone.tools.BeanUtil;
 import org.stone.tools.LogPrinter;
-import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
-import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 import org.stone.tools.extension.InterruptableReentrantReadWriteLock;
 import org.stone.tools.extension.InterruptableSemaphore;
 
 import javax.sql.XAConnection;
 import javax.transaction.xa.XAResource;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -28,8 +28,6 @@ import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -48,17 +46,31 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
  * @version 1.0
  */
 public class FastConnectionPool extends Thread implements BeeConnectionPool, FastConnectionPoolMXBean, PooledConnectionAliveTest, PooledConnectionTransferPolicy {
-    static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantState");
-    private static final AtomicIntegerFieldUpdater<PooledConnection> ConStUpd = IntegerFieldUpdaterImpl.newUpdater(PooledConnection.class, "state");
-    private static final AtomicReferenceFieldUpdater<Borrower, Object> BorrowStUpd = ReferenceFieldUpdaterImpl.newUpdater(Borrower.class, Object.class, "state");
-    private static final AtomicIntegerFieldUpdater<FastConnectionPool> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<FastConnectionPool> ServantTryCountUpd = IntegerFieldUpdaterImpl.newUpdater(FastConnectionPool.class, "servantTryCount");
-    LogPrinter logPrinter = DefaultLogPrinter;
+    private static final VarHandle ConStUpd;
+    private static final VarHandle BorrowStUpd;
+    private static final VarHandle PoolStateUpd;
+    private static final VarHandle ServantStateUpd;
+    private static final VarHandle ServantTryCountUpd;
 
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            ConStUpd = l.findVarHandle(PooledConnection.class, "state", int.class);
+            BorrowStUpd = l.findVarHandle(Borrower.class, "state", Object.class);
+            PoolStateUpd = l.findVarHandle(FastConnectionPool.class, "poolState", int.class);
+            ServantStateUpd = l.findVarHandle(FastConnectionPool.class, "servantState", int.class);
+            ServantTryCountUpd = l.findVarHandle(FastConnectionPool.class, "servantTryCount", int.class);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+    }
+
+    LogPrinter logPrinter = DefaultLogPrinter;
     String poolName;
     volatile int poolState;
     volatile int servantState;
     volatile int servantTryCount;
+
     BeeDataSourceConfig poolConfig;
     PooledConnection[] connectionArray;//fixed len
     ConcurrentLinkedQueue<Borrower> waitQueue;
@@ -117,7 +129,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 throw new BeeDataSourcePoolStartedFailureException("Data source pool started failure", e);
             }
         } else {
-            throw new BeeDataSourcePoolStartedFailureException("Data source pool is starting or already started up");
+            throw new BeeDataSourcePoolStartedFailureException("Data source pool is starting up or already has started");
         }
     }
 
@@ -1207,16 +1219,18 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             if (servantState == THREAD_EXIT) break;
             if (servantState == THREAD_WORKING) {
                 if (servantTryCount > 0 && !waitQueue.isEmpty()) {
-                    ServantTryCountUpd.decrementAndGet(this);//only here to decrement
-                    try {
-                        PooledConnection p = searchOrCreate(currentThread);
-                        if (p != null) recycle(p);
-                    } catch (Throwable e) {
-                        this.transferException(e);
+                    if (ServantTryCountUpd.compareAndSet(this, servantTryCount, servantTryCount - 1)) {
+                        try {
+                            PooledConnection p = searchOrCreate(currentThread);
+                            if (p != null) recycle(p);
+                        } catch (Throwable e) {
+                            this.transferException(e);
+                        }
                     }
                 } else if (ServantStateUpd.compareAndSet(this, THREAD_WORKING, THREAD_WAITING)) {
                     LockSupport.park();
                 }
+
             } else {//THREAD_WAITING(maybe park fail)
                 this.servantState = THREAD_WORKING;
             }

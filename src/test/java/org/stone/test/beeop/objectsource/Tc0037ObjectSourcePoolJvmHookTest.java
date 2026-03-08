@@ -7,33 +7,34 @@
  *
  * Project Licensed under Apache License v2.0
  */
-package org.stone.test.beecp.datasource;
+package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeDataSourceConfig;
+import org.stone.beeop.BeeObjectSource;
+import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.test.base.TestUtil;
-
-import static org.stone.test.beecp.config.DsConfigFactory.createDefault;
+import org.stone.test.beeop.config.OsConfigFactory;
+import org.stone.test.beeop.objects.book.Book;
 
 /**
  * @author Chris Liao
  */
-public class Tc0042DsPoolJvmHookTest {
+public class Tc0037ObjectSourcePoolJvmHookTest {
+
     @Test
     public void testOnStart() throws Exception {
-        BeeDataSourceConfig config = createDefault();
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setRegisterJvmHook(true);
-        try (BeeDataSource ds = new BeeDataSource(config)) {
-            Object pool = TestUtil.getFieldValue(ds, "pool");
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
             Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
         }
 
         config.setRegisterJvmHook(false);
-        try (BeeDataSource ds = new BeeDataSource(config)) {
-            Object pool = TestUtil.getFieldValue(ds, "pool");
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
             Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
         }
@@ -42,29 +43,29 @@ public class Tc0042DsPoolJvmHookTest {
     @Test
     public void testOnRestart() throws Exception {
         //true ---> false
-        BeeDataSourceConfig config = createDefault();
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setRegisterJvmHook(true);
-        try (BeeDataSource ds = new BeeDataSource(config)) {
-            Object pool = TestUtil.getFieldValue(ds, "pool");
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
             Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
 
             config.setRegisterJvmHook(false);
-            ds.restart(true, config);
+            os.restart(true, config);
             Assertions.assertNotNull(pool);
             Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
         }
 
         //false-->true
-        BeeDataSourceConfig config2 = createDefault();
+        BeeObjectSourceConfig<String, Book> config2 = OsConfigFactory.createDefault();
         config2.setRegisterJvmHook(false);
-        try (BeeDataSource ds = new BeeDataSource(config2)) {
-            Object pool = TestUtil.getFieldValue(ds, "pool");
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config2)) {
+            Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
             Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
 
             config2.setRegisterJvmHook(true);
-            ds.restart(true, config2);
+            os.restart(true, config2);
             Assertions.assertNotNull(pool);
             Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
         }

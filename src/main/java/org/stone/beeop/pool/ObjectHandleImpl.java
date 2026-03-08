@@ -94,18 +94,17 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     //***************************************************************************************************************//
     //                                     4: Object call(2+0)                                                       //                                                                                  //
     //***************************************************************************************************************//
-    public Object call(String methodName) throws Exception {
+    public Object call(String methodName) throws Throwable {
         return call(methodName, EMPTY_CLASSES, EMPTY_CLASS_NAMES);
     }
 
     //call target object by reflection
-    public Object call(String methodName, Class<?>[] types, Object[] params) throws Exception {
+    public Object call(String methodName, Class<?>[] types, Object[] params) throws Throwable {
         checkClosed();
-
         //if method name list is null or method name is in the list
         if (objectMethodNameList == null || objectMethodNameList.contains(methodName)) {
             try {
-                Object v = p.getMethod(methodName, types, params).invoke(raw, params);
+                Object v = p.callMethod(methodName, types, params);
                 p.updateAccessTime();
                 return v;
             } catch (Throwable e) {
@@ -115,7 +114,7 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
                 throw e;
             }
         } else {
-            return p.getMethod(methodName, types, params).invoke(raw, params);
+            return p.callMethod(methodName, types, params);
         }
     }
 

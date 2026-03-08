@@ -10,9 +10,11 @@
 package org.stone.test.beeop.objects;
 
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.test.base.TestUtil;
+import org.stone.test.beeop.objects.book.Book;
+
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Object borrow thread
@@ -20,50 +22,42 @@ import org.stone.test.base.TestUtil;
  * @author Chris Liao
  */
 public class ObjectBorrowThread extends Thread {
-    private final BeeObjectSource os;
-    private final BeeObjectPool pool;
-    private final Object objectKey;
-    private BeeObjectHandle objectHale;
+    private final String objectKey;
+    private final BeeObjectSource<String, Book> os;
+    private long runTime;
+    private BeeObjectHandle<String, Book> objectHale;
     private Exception failureCause;
 
-    public ObjectBorrowThread(BeeObjectSource os) {
-        this(os, null, null);
+    public ObjectBorrowThread(BeeObjectSource<String, Book> os) {
+        this(os, null);
     }
 
-    public ObjectBorrowThread(BeeObjectPool pool) {
-        this(null, pool, null);
-    }
-
-    public ObjectBorrowThread(BeeObjectSource os, BeeObjectPool pool, Object objectKey) {
+    public ObjectBorrowThread(BeeObjectSource<String, Book> os, String objectKey) {
         this.os = os;
-        this.pool = pool;
         this.objectKey = objectKey;
         this.setDaemon(true);
+    }
+
+    public void setRunTime(long runTime) {
+        this.runTime = runTime;
     }
 
     public Exception getFailureCause() {
         return failureCause;
     }
 
-    public BeeObjectHandle getObjectHandle() {
+    public BeeObjectHandle<String, Book> getObjectHandle() {
         return objectHale;
     }
 
     public void run() {
-        try {
-            if (os != null) {
-                if (objectKey != null) {
-                    objectHale = os.getObjectHandle(objectKey);
-                } else {
-                    objectHale = os.getObjectHandle();
-                }
+        if (runTime > 0L) LockSupport.parkNanos(runTime - System.nanoTime());
 
+        try {
+            if (objectKey != null) {
+                objectHale = os.getObjectHandle(objectKey);
             } else {
-                if (objectKey != null) {
-                    objectHale = pool.getObjectHandle(objectKey);
-                } else {
-                    objectHale = pool.getObjectHandle();
-                }
+                objectHale = os.getObjectHandle();
             }
         } catch (Exception e) {
             this.failureCause = e;

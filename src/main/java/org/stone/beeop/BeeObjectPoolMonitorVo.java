@@ -10,6 +10,7 @@
 package org.stone.beeop;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * A vo interface to represent monitoring info of pool.
@@ -17,34 +18,15 @@ import java.io.Serializable;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectPoolMonitorVo<K> extends Serializable {
+public interface BeeObjectPoolMonitorVo extends Serializable {
 
     //***************************************************************************************************************//
-    //                                     1: Pool base                                                              //
+    //                                     1: Pool configuration                                                     //
     //***************************************************************************************************************//
-    //return key pool name
     String getPoolName();
 
-    //Query pool is whether fair mode
-    boolean isFairMode();
-
-    //return capacity size of keys in pool
-    int getMaxKeySize();
-
     //***************************************************************************************************************//
-    //                                     2: Configuration on keys                                                  //
-    //***************************************************************************************************************//
-    //return max capacity size of key
-    int getMaxActiveSizeOfKey();
-
-    //return permit size of semaphore of key
-    int getSemaphoreSizeOfKey();
-
-    //Query pool is using ThreadLocal
-    boolean useThreadLocalOfKey();
-
-    //***************************************************************************************************************//
-    //                                     3: Pool State`methods                                                     //
+    //                                     2: Pool State`methods                                                     //
     //***************************************************************************************************************//
     boolean isLazy();
 
@@ -63,13 +45,17 @@ public interface BeeObjectPoolMonitorVo<K> extends Serializable {
     boolean isSuspended();
 
     //***************************************************************************************************************//
-    //                                     4: Pool other                                                             //
+    //                                     3: Pool Log                                                               //
     //***************************************************************************************************************//
     boolean isEnabledLogPrinter();
 
-    boolean isEnabledLogCache();
+    boolean isEnabledMethodLogCache();
 
-    BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key);
+    //***************************************************************************************************************//
+    //                                     4: key MonitorVo                                                          //
+    //***************************************************************************************************************//
+    Map<String, BeeObjectKeyMonitorVo> getKeyMonitorVos();
 
-    BeeObjectKeyMonitorVo<K>[] getKeyMonitorVos();
+    BeeObjectKeyMonitorVo getKeyMonitorVo(String keyName);
+
 }

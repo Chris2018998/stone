@@ -29,7 +29,7 @@ public class BookPool implements BeeObjectPool<String, Book> {
     private boolean usePark;
     private long blockTime;
 
-    BookPool() {
+    public BookPool() {
         this.bookFactory = new TextBookFactory();
     }
 
@@ -115,11 +115,11 @@ public class BookPool implements BeeObjectPool<String, Book> {
         return this.closed;
     }
 
-    public boolean suspendPool() throws Exception {
+    public boolean suspend() throws Exception {
         return true;
     }
 
-    public boolean resumePool() throws Exception {
+    public boolean resume() throws Exception {
         return true;
     }
 
@@ -143,11 +143,11 @@ public class BookPool implements BeeObjectPool<String, Book> {
 
     }
 
-    public BeeObjectPoolMonitorVo<String> getPoolMonitorVo(boolean includekeys) throws Exception {
+    public BeeObjectPoolMonitorVo getPoolMonitorVo(boolean includekeys) throws Exception {
         return null;
     }
 
-    public BeeObjectKeyMonitorVo<String> getKeyMonitorVo(String key) throws Exception {
+    public BeeObjectKeyMonitorVo getKeyMonitorVo(String key) throws Exception {
         return null;
     }
 

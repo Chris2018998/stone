@@ -782,14 +782,13 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     void copyTo(BeeObjectSourceConfig<K, V> config) {
-        //1:copy primitive type fields
         String fieldName = "";
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
-                if (Modifier.isStatic(field.getModifiers())) continue;
-
                 fieldName = field.getName();
                 switch (fieldName) {
+                    case CONFIG_POOL_NAME_INDEX:
+                        break;
                     case CONFIG_OBJECT_INTERFACES:
                         if (objectInterfaces != null && objectInterfaces.length > 0)
                             config.objectInterfaces = objectInterfaces.clone();
@@ -957,11 +956,12 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
-                if (Modifier.isStatic(field.getModifiers())) continue;
                 String fieldName = field.getName();
                 boolean infoPrint = exclusionList == null || !exclusionList.contains(fieldName);
 
                 switch (fieldName) {
+                    case CONFIG_POOL_NAME_INDEX, CONFIG_EXCLUSION_LIST_OF_PRINT:
+                        break;
                     case CONFIG_OBJECT_INTERFACES: {
                         if (objectInterfaces != null && objectInterfaces.length > 0) {
                             StringBuilder interfacesClassBuf = new StringBuilder(20);
@@ -1002,8 +1002,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                         }
                         break;
                     }
-                    case CONFIG_EXCLUSION_LIST_OF_PRINT:
-                        break;
+
                     default:
                         if (infoPrint)
                             DefaultLogPrinter.info("BeeOP({})-config.{}={}", poolName, fieldName, field.get(checkedConfig));

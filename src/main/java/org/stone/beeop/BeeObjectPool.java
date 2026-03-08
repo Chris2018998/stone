@@ -24,7 +24,57 @@ import java.util.List;
 public interface BeeObjectPool<K, V> extends AutoCloseable {
 
     //***************************************************************************************************************//
-    //                                     1: Pooled objects get(2)                                                  //
+    //                                     1: Pool maintenance (6)                                                   //
+    //***************************************************************************************************************//
+
+    /**
+     * Shutdown pool.
+     */
+    void close();
+
+    /**
+     * Suspend pool when pool is ready,then pool rejects all borrow requests.
+     *
+     * @return true when pool suspend successful
+     */
+    boolean suspend() throws Exception;
+
+    /**
+     * resume pool when pool is suspended
+     *
+     * @return true when pool resume to ready from suspended state
+     */
+    boolean resume() throws Exception;
+
+    /**
+     * Pool starts with a configuration object.
+     *
+     * @param config is a configuration object defines some items can be applied in pool
+     * @throws BeeObjectSourceConfigException             when parameter config is null or it checks failed
+     * @throws BeeObjectSourcePoolStartedFailureException when pool starts failed
+     */
+    void start(BeeObjectSourceConfig<K, V> config) throws Exception;
+
+    /**
+     * Pool restart with last used configuration.
+     *
+     * @param forceRecycleBorrowed is true that force borrowed objects return to pool immediately; false that wait them return to pool
+     * @throws BeeObjectSourcePoolStartedFailureException when pool restarts failed
+     */
+    void restart(boolean forceRecycleBorrowed) throws Exception;
+
+    /**
+     * Pool restart with a new configuration.
+     *
+     * @param forceRecycleBorrowed is true that pool physically closes all pooled objects,false that pool wait borrowed objects return to pool
+     * @param config               is a new configuration for pool restarting
+     * @throws BeeObjectSourceConfigException             when parameter config is null or it checks failed
+     * @throws BeeObjectSourcePoolStartedFailureException when pool restarts failed
+     */
+    void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
+
+    //***************************************************************************************************************//
+    //                                     2: Pooled objects get(2)                                                  //
     //***************************************************************************************************************//
 
     /**
@@ -50,7 +100,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
 
     //***************************************************************************************************************//
-    //                                     2: Pooled keys maintenance(8)                                             //
+    //                                     3: Pooled keys maintenance(8)                                             //
     //***************************************************************************************************************//
 
     /**
@@ -119,63 +169,6 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     boolean deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
 
     //***************************************************************************************************************//
-    //                                     3: Pool maintenance (7)                                                   //
-    //***************************************************************************************************************//
-
-    /**
-     * Shutdown pool.
-     */
-    void close();
-
-    /**
-     * Queries pool whether is closed.
-     *
-     * @return true if pool closed,otherwise return false
-     */
-    boolean isClosed();
-
-    /**
-     * Suspend pool when pool is ready,then pool rejects all borrow requests.
-     *
-     * @return true when pool suspend successful
-     */
-    boolean suspendPool() throws Exception;
-
-    /**
-     * resume pool when pool is suspended
-     *
-     * @return true when pool resume to ready from suspended state
-     */
-    boolean resumePool() throws Exception;
-
-    /**
-     * Pool starts with a configuration object.
-     *
-     * @param config is a configuration object defines some items can be applied in pool
-     * @throws BeeObjectSourceConfigException             when parameter config is null or it checks failed
-     * @throws BeeObjectSourcePoolStartedFailureException when pool starts failed
-     */
-    void start(BeeObjectSourceConfig<K, V> config) throws Exception;
-
-    /**
-     * Pool restart with last used configuration.
-     *
-     * @param forceRecycleBorrowed is true that force borrowed objects return to pool immediately; false that wait them return to pool
-     * @throws BeeObjectSourcePoolStartedFailureException when pool restarts failed
-     */
-    void restart(boolean forceRecycleBorrowed) throws Exception;
-
-    /**
-     * Pool restart with a new configuration.
-     *
-     * @param forceRecycleBorrowed is true that pool physically closes all pooled objects,false that pool wait borrowed objects return to pool
-     * @param config               is a new configuration for pool restarting
-     * @throws BeeObjectSourceConfigException             when parameter config is null or it checks failed
-     * @throws BeeObjectSourcePoolStartedFailureException when pool restarts failed
-     */
-    void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception;
-
-    //***************************************************************************************************************//
     //                                     4: Pool Log Print(2)                                                      //
     //***************************************************************************************************************//
 
@@ -199,12 +192,19 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     //***************************************************************************************************************//
 
     /**
+     * Queries pool whether is closed.
+     *
+     * @return true if pool closed,otherwise return false
+     */
+    boolean isClosed();
+
+    /**
      * Gets runtime monitoring object of pool,refer to {@link BeeObjectKeyMonitorVo}.
      *
      * @param includeKeys is true,include keys monitor info
      * @return monitor of pool
      */
-    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean includeKeys) throws Exception;
+    BeeObjectPoolMonitorVo getPoolMonitorVo(boolean includeKeys) throws Exception;
 
     /**
      * Get monitoring of given key.
@@ -213,7 +213,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @return monitor of an object group
      * @throws Exception when key is null or not exist key in pool
      */
-    BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) throws Exception;
+    BeeObjectKeyMonitorVo getKeyMonitorVo(K key) throws Exception;
 
     //***************************************************************************************************************//
     //                                     6: Pool blocking interrupts(2)                                            //

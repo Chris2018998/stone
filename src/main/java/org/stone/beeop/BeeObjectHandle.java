@@ -67,7 +67,7 @@ public interface BeeObjectHandle<K, V> extends AutoCloseable {
      * @return result object of call
      * @throws Exception when call fail
      */
-    Object call(String methodName) throws Exception;
+    Object call(String methodName) throws Throwable;
 
     /**
      * Call a method on object with parameters.
@@ -78,6 +78,6 @@ public interface BeeObjectHandle<K, V> extends AutoCloseable {
      * @return result object of call
      * @throws Exception when call fail
      */
-    Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Exception;
+    Object call(String methodName, Class<?>[] paramTypes, Object[] paramValues) throws Throwable;
 
 }

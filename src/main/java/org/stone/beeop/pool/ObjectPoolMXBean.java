@@ -9,22 +9,23 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeObjectKeyMonitorVo;
-import org.stone.beeop.BeeObjectPoolMonitorVo;
-
 /**
  * Pool JMX Bean interface
  *
  * @author Chris Liao
  * @version 1.0
  */
-public interface ObjectPoolMXBean<K> {
+public interface ObjectPoolMXBean {
 
     void enableLogPrinter(boolean enable) throws Exception;
 
-    void enableLogPrinter(K key, boolean enable) throws Exception;
+    void enableLogCache(boolean enable) throws Exception;
 
-    BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean keyMonitor) throws Exception;
+    void enableLogPrinter2(String keyName, boolean enable) throws Exception;
 
-    BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) throws Exception;
+    void enableLogCache2(String keyName, boolean enable) throws Exception;
+
+    ObjectPoolMonitorVo getPoolMonitorVo2() throws Exception;
+
+    ObjectKeyMonitorVo getKeyMonitorVo2(String keyName) throws Exception;
 }

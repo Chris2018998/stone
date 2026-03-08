@@ -152,8 +152,26 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     //***************************************************************************************************************//
-    //                                     3: Pool Maintenance(6+0)                                                  //
+    //                                     3: Pool Maintenance(5+0)                                                  //
     //***************************************************************************************************************//
+    public boolean suspend() throws Exception {
+        return pool.suspend();
+    }
+
+    public boolean resume() throws Exception {
+        return pool.resume();
+    }
+
+    public void restart(boolean forceRecycleBorrowed) throws Exception {
+        pool.restart(forceRecycleBorrowed);
+    }
+
+    public void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
+        pool.restart(forceRecycleBorrowed, config);
+        config.copyTo(this);
+        this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
+    }
+
     public void close() {
         if (this.poolInitialized) {
             synchronized (this) {
@@ -168,28 +186,6 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         }
     }
 
-    public boolean isClosed() {
-        return pool.isClosed();
-    }
-
-    public boolean suspend() throws Exception {
-        return pool.suspendPool();
-    }
-
-    public boolean resume() throws Exception {
-        return pool.resumePool();
-    }
-
-    public void restart(boolean forceRecycleBorrowed) throws Exception {
-        pool.restart(forceRecycleBorrowed);
-    }
-
-    public void restart(boolean forceRecycleBorrowed, BeeObjectSourceConfig<K, V> config) throws Exception {
-        pool.restart(forceRecycleBorrowed, config);
-        config.copyTo(this);
-        this.maxWaitNanos = MILLISECONDS.toNanos(config.getMaxWait());
-    }
-
     //***************************************************************************************************************//
     //                                     4: Pool Log Print(2+0)                                                    //
     //***************************************************************************************************************//
@@ -202,31 +198,34 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     //***************************************************************************************************************//
-    //                                     5: Pool Monitoring(2+0)                                                   //
+    //                                     5: Pool Monitoring(3+0)                                                   //
     //***************************************************************************************************************//
-    public BeeObjectPoolMonitorVo<K> getPoolMonitorVo(boolean includeKeys) throws Exception {
+    public String toString() {
+        return pool.toString();
+    }
+
+    public boolean isClosed() {
+        return pool.isClosed();
+    }
+
+    public BeeObjectPoolMonitorVo getPoolMonitorVo(boolean includeKeys) throws Exception {
         if (poolInitialized) {
             return pool.getPoolMonitorVo(includeKeys);
         } else {
-            return new ObjectPoolMonitorVo<>(
+            return new ObjectPoolMonitorVo(
                     this.getPoolName(),
-                    this.isFairMode(),
-                    this.isUseThreadLocal(),
-                    this.getMaxKeySize(),
-                    this.getMaxActive(),
-                    this.getSemaphoreSize(),
                     ObjectPoolStatics.POOL_LAZY,
                     this.isPrintRuntimeLogs(),
                     this.isEnableLogCache());
         }
     }
 
-    public BeeObjectKeyMonitorVo<K> getKeyMonitorVo(K key) throws Exception {
+    public BeeObjectKeyMonitorVo getKeyMonitorVo(K key) throws Exception {
         if (poolInitialized) {
             return pool.getKeyMonitorVo(key);
         } else {
-            return new ObjectKeyMonitorVo<>(
-                    key,
+            return new ObjectKeyMonitorVo(
+                    String.valueOf(key),
                     ObjectPoolStatics.POOL_LAZY,
                     0,
                     0,
@@ -243,7 +242,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //                                     6: Pool blocking interrupts(2+0)                                          //
     //***************************************************************************************************************//
     public List<Thread> interruptWaitingThreads() throws Exception {
-        if (pool != null) {
+        if (this.poolInitialized) {
             return pool.interruptWaitingThreads();
         } else {
             return lock.interruptAllThreads();

@@ -32,7 +32,7 @@ public class ObjectHandleImpl4L<K, V> extends ObjectHandleImpl<K, V> {
     }
 
     //Override call method
-    public Object call(String methodName, Class<?>[] types, Object[] params) throws Exception {
+    public Object call(String methodName, Class<?>[] types, Object[] params) throws Throwable {
         checkClosed();
 
         //configured list is null or method name in configured list
@@ -41,7 +41,7 @@ public class ObjectHandleImpl4L<K, V> extends ObjectHandleImpl<K, V> {
             BeeMethodLog<K> log = pool.beforeCall(System.currentTimeMillis(), p.key, Type_Object_Log, "ObjectHandleImpl4L.call", params);
 
             try {
-                Object v = p.getMethod(methodName, types, params).invoke(raw, params);
+                Object v = p.callMethod(methodName, types, params);
                 long callEndTime = System.currentTimeMillis();
                 p.updateAccessTime(callEndTime);//update last accessed time
                 pool.afterCall(callEndTime, v, log);//fill successful result to log
@@ -51,7 +51,7 @@ public class ObjectHandleImpl4L<K, V> extends ObjectHandleImpl<K, V> {
                 throw e;
             }
         } else {
-            return p.getMethod(methodName, types, params).invoke(raw, params);
+            return p.callMethod(methodName, types, params);
         }
     }
 }

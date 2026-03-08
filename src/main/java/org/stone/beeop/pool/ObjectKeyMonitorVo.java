@@ -21,9 +21,9 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @version 1.0
  */
 
-public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
-    private final K key;
-    private final int poolState;
+public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
+    private final String keyName;
+    private final int keyState;
     private final int idleSize;
     private final int borrowedSize;
     private final int creatingSize;
@@ -33,8 +33,8 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     private final int transferWaitingSize;
     private final boolean enabledLogPrint;
 
-    public ObjectKeyMonitorVo(K key,
-                              int poolState,
+    public ObjectKeyMonitorVo(String keyName,
+                              int keyState,
                               int idleSize,
                               int borrowedSize,
                               int creatingSize,
@@ -43,8 +43,8 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
                               int semaphoreWaitingSize,
                               int transferWaitingSize,
                               boolean enabledLogPrint) {
-        this.key = key;
-        this.poolState = poolState;
+        this.keyName = keyName;
+        this.keyState = keyState;
         this.idleSize = idleSize;
         this.borrowedSize = borrowedSize;
         this.creatingSize = creatingSize;
@@ -56,53 +56,48 @@ public final class ObjectKeyMonitorVo<K> implements BeeObjectKeyMonitorVo<K> {
     }
 
     @Override
-    public K getKey() {
-        return key;
-    }
-
-    @Override
-    public boolean isLazy() {
-        return poolState == POOL_LAZY;
+    public String getKeyName() {
+        return this.keyName;
     }
 
     @Override
     public boolean isNew() {
-        return poolState == POOL_NEW;
+        return keyState == POOL_NEW;
     }
 
     @Override
     public boolean isClosing() {
-        return poolState == POOL_CLOSING;
+        return keyState == POOL_CLOSING;
     }
 
     @Override
     public boolean isClosed() {
-        return poolState == POOL_CLOSED;
+        return keyState == POOL_CLOSED;
     }
 
     @Override
     public boolean isReady() {
-        return poolState == POOL_READY;
+        return keyState == POOL_READY;
     }
 
     @Override
     public boolean isStarting() {
-        return poolState == POOL_STARTING;
+        return keyState == POOL_STARTING;
     }
 
     @Override
-    public boolean isReStarting() {
-        return poolState == POOL_RESTARTING;
+    public boolean isRestarting() {
+        return keyState == POOL_RESTARTING;
     }
 
     @Override
     public boolean isRestartFailed() {
-        return poolState == POOL_RESTART_FAILED;
+        return keyState == POOL_RESTART_FAILED;
     }
 
     @Override
     public boolean isSuspended() {
-        return poolState == POOL_SUSPENDED;
+        return keyState == POOL_SUSPENDED;
     }
 
 

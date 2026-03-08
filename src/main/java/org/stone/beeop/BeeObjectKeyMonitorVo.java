@@ -17,17 +17,16 @@ import java.io.Serializable;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectKeyMonitorVo<K> extends Serializable {
-
-    //return pooled key
-    K getKey();
+public interface BeeObjectKeyMonitorVo extends Serializable {
 
     //***************************************************************************************************************//
-    //                                    2: Pool State`methods                                                      //
+    //                                     1: Pool Key name                                                          //
     //***************************************************************************************************************//
+    String getKeyName();
 
-    boolean isLazy();
-
+    //***************************************************************************************************************//
+    //                                     2: Pool State`methods                                                      //
+    //***************************************************************************************************************//
     boolean isNew();
 
     boolean isReady();
@@ -38,14 +37,14 @@ public interface BeeObjectKeyMonitorVo<K> extends Serializable {
 
     boolean isStarting();
 
-    boolean isReStarting();
+    boolean isRestarting();
 
     boolean isRestartFailed();
 
     boolean isSuspended();
 
     //***************************************************************************************************************//
-    //                                    3: Size of objects(pooled objects, semaphore,waiter)                       //
+    //                                     3: Size of objects(pooled objects, semaphore,waiter)                       //
     //***************************************************************************************************************//
     //return size of idle objects related of pooled key
     int getIdleSize();
@@ -69,7 +68,7 @@ public interface BeeObjectKeyMonitorVo<K> extends Serializable {
     int getTransferWaitingSize();
 
     //***************************************************************************************************************//
-    //                                    4: Other                                                                   //
+    //                                     4: Other                                                                   //
     //***************************************************************************************************************//
     //Query log print is whether enabled on pooled key
     boolean isEnabledLogPrinter();
