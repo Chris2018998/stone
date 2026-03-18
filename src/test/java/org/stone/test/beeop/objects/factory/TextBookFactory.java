@@ -80,7 +80,7 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
 
     @Override
     public Book create(String key) throws Exception {
-        if(this.exception!=null)throw this.exception;
+        if (this.exception != null) throw this.exception;
         return new TextBook(this.title, this.author);
     }
 }

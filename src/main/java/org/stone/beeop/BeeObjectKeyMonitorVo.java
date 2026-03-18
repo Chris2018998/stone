@@ -72,4 +72,7 @@ public interface BeeObjectKeyMonitorVo extends Serializable {
     //***************************************************************************************************************//
     //Query log print is whether enabled on pooled key
     boolean isEnabledLogPrinter();
+
+    //Query log cache is whether enabled on pooled key
+    boolean isEnabledLogCache();
 }

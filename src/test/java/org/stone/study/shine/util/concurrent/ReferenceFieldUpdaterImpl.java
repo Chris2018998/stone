@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.tools.atomic;
+package org.stone.study.shine.util.concurrent;
 
 import jakarta.annotation.Nonnull;
 import jdk.internal.misc.Unsafe;

@@ -14,12 +14,12 @@ import org.stone.beetp.exception.PoolInitializedException;
 import org.stone.beetp.exception.TaskException;
 import org.stone.beetp.exception.TaskPoolException;
 import org.stone.beetp.exception.TaskRejectedException;
-import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -33,10 +33,22 @@ import static org.stone.tools.CommonUtil.maxUntimedSpins;
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolTaskCenter<V> implements TaskPool<V> {
-    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> PoolStateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "poolState");
-    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> TaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "taskCount");
-    private static final AtomicIntegerFieldUpdater<PoolTaskCenter> ScheduledTaskCountUpd = IntegerFieldUpdaterImpl.newUpdater(PoolTaskCenter.class, "scheduledTaskCount");
+public final class PoolTaskCenter implements TaskPool {
+    private static final VarHandle PoolStateUpd;
+    private static final VarHandle TaskCountUpd;
+    private static final VarHandle ScheduledTaskCountUpd;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            PoolStateUpd = l.findVarHandle(PoolTaskCenter.class, "poolState", int.class);
+            TaskCountUpd = l.findVarHandle(JoinTaskHandle.class, "taskCount", int.class);
+            ScheduledTaskCountUpd = l.findVarHandle(PoolTaskCenter.class, "scheduledTaskCount", int.class);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+    }
+
     private volatile int poolState;
     private PoolMonitorVo monitorVo;
 
@@ -142,7 +154,7 @@ public final class PoolTaskCenter<V> implements TaskPool<V> {
 
     private void checkSubmittedExecTask(Object task) throws TaskException {
         if (task == null) throw new TaskException("Task can't be null");
-        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool has been closed or in clearing");
+        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool was not ready");
 
         int curCount;
         do {
@@ -242,7 +254,7 @@ public final class PoolTaskCenter<V> implements TaskPool<V> {
 
     private <V> TaskScheduledHandle<V> addScheduleTask(Task<V> task, TimeUnit unit, long initialDelay, long intervalTime, boolean fixedDelay, TaskAspect<V> aspect, int scheduledType) throws TaskException {
         //1: check time
-        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool has been closed or in clearing");
+        if (poolState != POOL_RUNNING) throw new TaskRejectedException("Pool was not ready");
         if (task == null) throw new TaskException("Task can't be null");
         if (unit == null) throw new TaskException("Time unit can't be null");
         if (initialDelay < 0L)

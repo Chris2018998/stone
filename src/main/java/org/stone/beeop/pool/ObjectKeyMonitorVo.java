@@ -32,6 +32,7 @@ public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
     private final int semaphoreWaitingSize;
     private final int transferWaitingSize;
     private final boolean enabledLogPrint;
+    private final boolean enabledLogCache;
 
     public ObjectKeyMonitorVo(String keyName,
                               int keyState,
@@ -42,7 +43,8 @@ public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
                               int semaphoreRemainSize,
                               int semaphoreWaitingSize,
                               int transferWaitingSize,
-                              boolean enabledLogPrint) {
+                              boolean enabledLogPrint,
+                              boolean enabledLogCache) {
         this.keyName = keyName;
         this.keyState = keyState;
         this.idleSize = idleSize;
@@ -53,6 +55,7 @@ public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
         this.semaphoreWaitingSize = semaphoreWaitingSize;
         this.transferWaitingSize = transferWaitingSize;
         this.enabledLogPrint = enabledLogPrint;
+        this.enabledLogCache = enabledLogCache;
     }
 
     @Override
@@ -140,5 +143,11 @@ public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
     public boolean isEnabledLogPrinter() {
         return enabledLogPrint;
     }
+
+    @Override
+    public boolean isEnabledLogCache() {
+        return enabledLogCache;
+    }
+
 }
 

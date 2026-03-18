@@ -14,11 +14,11 @@ import org.stone.beetp.TaskAspect;
 import org.stone.beetp.TaskJoinOperator;
 import org.stone.beetp.exception.TaskCountExceededException;
 import org.stone.beetp.exception.TaskExecutionException;
-import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.stone.beetp.pool.PoolConstants.TASK_EXCEPTIONAL;
 import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
@@ -30,8 +30,18 @@ import static org.stone.beetp.pool.PoolConstants.TASK_SUCCEED;
  * @version 1.0
  */
 final class JoinTaskHandle<V> extends PoolTaskHandle<V> {
-    private static final AtomicIntegerFieldUpdater<JoinTaskHandle> exceptionIndUpd = IntegerFieldUpdaterImpl.newUpdater(JoinTaskHandle.class, "exceptionInd");
-    private static final AtomicIntegerFieldUpdater<JoinTaskHandle> unCompletedCountUpd = IntegerFieldUpdaterImpl.newUpdater(JoinTaskHandle.class, "subTaskHandleCount");
+    private static final VarHandle exceptionIndUpd;
+    private static final VarHandle unCompletedCountUpd;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            exceptionIndUpd = l.findVarHandle(JoinTaskHandle.class, "exceptionInd", int.class);
+            unCompletedCountUpd = l.findVarHandle(JoinTaskHandle.class, "subTaskHandleCount", int.class);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+    }
 
     private final JoinTaskHandle<V> root;
     private final JoinTaskHandle<V> parent;

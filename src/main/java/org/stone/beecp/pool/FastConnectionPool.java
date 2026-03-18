@@ -325,8 +325,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 rawXaConn = this.rawXaConnFactory.create();//this call may be blocked
                 if (rawXaConn == null) {
                     if (creatingThread.isInterrupted() && Thread.interrupted())
-                        throw new ConnectionGetInterruptedException("An interruption occurred when created an XA connection");
-                    throw new XaConnectionCreatedException("A unknown error occurred when created an XA connection");
+                        throw new ConnectionGetInterruptedException("An interruption occurred during creating an XA connection");
+                    throw new XaConnectionCreatedException("XA connection created failed,null returned from XAConnection factory");
                 }
                 rawConn = rawXaConn.getConnection();
                 rawXaRes = rawXaConn.getXAResource();
@@ -334,8 +334,8 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 rawConn = this.rawConnFactory.create();
                 if (rawConn == null) {
                     if (creatingThread.isInterrupted() && Thread.interrupted())
-                        throw new ConnectionGetInterruptedException("An interruption occurred when created a connection");
-                    throw new ConnectionCreatedException("A unknown error occurred when created a connection");
+                        throw new ConnectionGetInterruptedException("An interruption occurred during creating a connection");
+                    throw new ConnectionCreatedException("Connection created failed,null returned from connection factory");
                 }
             }
 
@@ -588,7 +588,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //******* Core method for get *****
     private PooledConnection getPooledConnection() throws SQLException {
         if (this.poolState != POOL_READY)
-            throw new BeeDataSourcePoolNotReadyException("Pool has been closed or is restarting");
+            throw new BeeDataSourcePoolNotReadyException("Pool was not ready");
 
         //1: try to reuse last used connection
         Borrower b = null;

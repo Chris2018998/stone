@@ -149,16 +149,16 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.defaultCategoryPool = new ObjectKeyCategoryPool<>(this, config, objectProxyClassConstructor, this.scheduledService);
 
         //step5: Start the default category pool
-        this.defaultKey = config.getObjectFactory().getDefaultKey();
         this.initialSizeOfKey = config.getInitialSize();
         this.asyncCreateInitObjectsOfKey = config.isAsyncCreateInitObjects();
-        this.defaultCategoryPool.startup(poolName, defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
+        this.defaultKey = config.getObjectFactory().getDefaultKey();
+        this.defaultCategoryPool.startup(defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
 
         //step6: put the created default pool to map
         this.categoryPoolMap.put(defaultKey, defaultCategoryPool);
         this.keyCounter = new AtomicInteger(1);
 
-        //step7: Create thread executor pool to add
+        //step7: Create thread executor pool to add objects to category pools
         int threadPoolCoreThreadSize = Math.min(NCPU, maxKeySize);
         this.servantService = new ThreadPoolExecutor(threadPoolCoreThreadSize, threadPoolCoreThreadSize, 10L, TimeUnit.SECONDS,
                 new LinkedBlockingQueue<>(maxKeySize), poolThreadFactory);
@@ -208,20 +208,21 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         if ((poolState == POOL_READY || poolState == POOL_RESTART_FAILED) && PoolStateUpd.compareAndSet(this, poolState, POOL_RESTARTING)) {
             try {
                 if (reinit) {//restart with new configuration
-                    BeeObjectSourceConfig<K, V> checkedConfig = config.check();
                     logPrinter.info("BeeOP({})-begin to restart pool with new configuration", this.poolName);
-                    //1: Clear some fields of pool
-                    this.clearPoolInternalMembers(false, forceRecycleBorrowed);
+                    BeeObjectSourceConfig<K, V> checkedConfig = config.check();
+
+                    //1: close category pools and remove them, reset some fields
+                    this.clearPoolInternalMembers(forceRecycleBorrowed);
 
                     //2: startup pool
                     hasRunToStartupInternal = true;
                     this.startupInternal(checkedConfig);
-                    logPrinter.info("BeeOP({})-finished pool restart", this.poolName);
+                    logPrinter.info("BeeOP({})-pool has restarted up", this.poolName);
                 } else {//Only Clear all category pools
-                    logPrinter.info("BeeOP({})-begin to restart key category pools", this.poolName);
+                    logPrinter.info("BeeOP({})-begin to restart", this.poolName);
                     for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values())
                         pool.restart(forceRecycleBorrowed);
-                    logPrinter.info("BeeOP({})-completed to restart key category pools", this.poolName);
+                    logPrinter.info("BeeOP({})-pool has restarted up", this.poolName);
                 }
 
                 this.poolState = POOL_READY;//reset pool state to ready
@@ -302,7 +303,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
 
         try {
             //4: Attempt to start up the created pool
-            categoryPool.startup(poolName, key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
+            categoryPool.startup(key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
 
             //5: put the started pool to concurrent map
             categoryPoolMap.put(key, categoryPool);
@@ -376,9 +377,11 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 this.poolState,
                 this.logPrinter.isEnableLogOutput(),
                 this.collectPoolLogs);
-        for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values()) {
-            ObjectKeyMonitorVo keyMonitorVo = pool.getKeyMonitorVo();
-            monitorVo.pubKeyMonitorVo(keyMonitorVo.getKeyName(), keyMonitorVo);
+        if (includeKeys) {
+            for (ObjectKeyCategoryPool<K, V> pool : categoryPoolMap.values()) {
+                ObjectKeyMonitorVo keyMonitorVo = pool.getKeyMonitorVo();
+                monitorVo.pubKeyMonitorVo(keyMonitorVo.getKeyName(), keyMonitorVo);
+            }
         }
         return monitorVo;
     }
@@ -416,7 +419,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 logPrinter.info("BeeOP({})-begin to shutdown", this.poolName);
 
                 //1: Clear some fields of pool
-                this.clearPoolInternalMembers(true, this.forceRecycleBorrowedOnClose);
+                this.clearPoolInternalMembers(this.forceRecycleBorrowedOnClose);
 
                 //2: Set pool state to closed
                 this.poolState = POOL_CLOSED;
@@ -429,7 +432,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         } while (true);
     }
 
-    private void clearPoolInternalMembers(boolean isCloseCall, boolean forceRecycleBorrowed) {
+    private void clearPoolInternalMembers(boolean forceRecycleBorrowed) {
         //NOTE: Safe shut down on pool,make sure pool threads dead before clear other fields
 
         //1: Clear log cache

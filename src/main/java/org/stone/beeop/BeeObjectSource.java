@@ -234,7 +234,8 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
                     0,
                     0,
                     0,
-                    this.isPrintRuntimeLogs());
+                    this.isPrintRuntimeLogs(),
+                    this.isEnableLogCache());
         }
     }
 

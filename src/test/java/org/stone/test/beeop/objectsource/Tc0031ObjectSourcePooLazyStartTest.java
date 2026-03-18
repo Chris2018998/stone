@@ -30,6 +30,7 @@ import static org.stone.test.base.TestUtil.waitUtilWaiting;
  * @author Chris Liao
  */
 public class Tc0031ObjectSourcePooLazyStartTest {
+
     @Test
     public void testLazyException() throws Exception {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
@@ -45,6 +46,7 @@ public class Tc0031ObjectSourcePooLazyStartTest {
             try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
                 Assertions.assertNotNull(handle);
             }
+
             Assertions.assertFalse(os.isClosed());
         }
     }

@@ -80,7 +80,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private final long intervalOfMethodLogsClearTaskMs;
     private final long intervalOfObjectsClearTask;
 
-    private final List<String> objectMethodNameList;
+    private final String[] configuredMethodNames;
+    private final boolean hasConfiguredMethodNames;
+
+    private final BeeObjectPredicate objectPredicate;
     private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
     private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
     private final Map<MethodKey, MethodHandle> objectMethodCacheMap;//cache called methods
@@ -90,7 +93,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private final int methodLogCacheSize;
     private final BeeMethodLogListener<K> methodLogListener;//changeable
     LogPrinter logPrinter = DefaultLogPrinter;
-    private boolean collectMethodLogs;//changeable
+    boolean collectMethodLogs;//changeable
     //Clone end
 
     //category key
@@ -144,8 +147,12 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         this.intervalOfObjectsClearTask = config.getIntervalOfClearTimeout();
 
         //step2:object type field setting
+        this.objectPredicate = config.getPredicate();
         this.objectFactory = config.getObjectFactory();
-        this.objectMethodNameList = config.getObjectMethodNameList();
+        List<String> methodNameList = config.getObjectMethodNameList();
+        this.configuredMethodNames = methodNameList == null ? null : methodNameList.toArray(new String[0]);
+        this.hasConfiguredMethodNames = configuredMethodNames != null && configuredMethodNames.length > 0;
+
         this.objectMethodCacheMap = new ConcurrentHashMap<>(1);
         this.scheduledService = scheduledService;
         this.methodLogCacheSize = config.getLogCacheSize();
@@ -169,11 +176,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                     2: Pool Creation(0+1)                                                     //
+    //                                     2: Pool start(0+1)                                                        //
     //***************************************************************************************************************//
     @SuppressWarnings("uncheck")
-    void startup(String parentName, K key, int initSize, boolean asyncCreateInitObjects, boolean isPrintRuntimeLogs) throws Exception {
-
+    void startup(K key, int initSize, boolean asyncCreateInitObjects, boolean isPrintRuntimeLogs) throws Exception {
         try {
             //step1: set key and log printer
             this.key = key;
@@ -186,7 +192,9 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                 objectArray[i] = new PooledObject<>(key,
                         this,
                         this.objectFactory,
-                        this.objectMethodNameList,
+                        this.objectPredicate,
+                        this.hasConfiguredMethodNames,
+                        this.configuredMethodNames,
                         this.objectMethodCacheMap);
 
             //step3: Schedule task to clear timeout objects(this task can interrupt blocking of objects creation)
@@ -215,7 +223,6 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
 
             //step8: print completion message and set pool to ready state
             String poolMode = this.isFairMode ? "fair" : "compete";
-            this.poolState = POOL_READY;
             logPrinter.info("BeeOP({})-has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
                     this.keyName,
                     poolMode,
@@ -223,6 +230,8 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                     this.maxActiveSize,
                     this.semaphoreSize,
                     this.maxWaitMs);
+
+            this.poolState = POOL_READY;
         } catch (Throwable e) {
             if (timeoutObjectsClearTaskFuture != null) {
                 timeoutObjectsClearTaskFuture.cancel(true);
@@ -247,7 +256,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             while (index < initSize) {
                 PooledObject<K, V> p = objectArray[index++];
                 p.state = OBJECT_CREATING;
-                this.fillRawObject(p, OBJECT_IDLE, creatingThread);
+                this.fillObjectInstance(p, OBJECT_IDLE, creatingThread);
             }
         } catch (Throwable e) {
             if (syn) {
@@ -260,29 +269,28 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         }
     }
 
-    private PooledObject<K, V> fillRawObject(PooledObject<K, V> p, int state, Thread creatingThread) throws Exception {
+    private PooledObject<K, V> fillObjectInstance(PooledObject<K, V> p, int state, Thread creatingThread) throws Exception {
         //1: print runtime log of object creation
         logPrinter.info("BeeOP({})-begin to create a raw object", this.keyName);
 
-        V rawObj = null;
+        V instance = null;
         try {
             p.creatingInfo = new ObjectCreatingInfo(creatingThread);
-            rawObj = this.objectFactory.create(this.key);
-            if (rawObj == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
+            instance = this.objectFactory.create(this.key);
+            if (instance == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
                 if (creatingThread.isInterrupted() && Thread.interrupted())
-                    throw new ObjectGetInterruptedException("Interrupted on creating a raw object by factory");
-                throw new BeePooledObjectCreatedException("Internal error occurred in object factory");
+                    throw new ObjectGetInterruptedException("An interruption occurred during creating object instance");
+                throw new BeePooledObjectCreatedException("Object instance created failed,null result returned from object factory");
             }
 
-            objectFactory.setDefault(key, rawObj);
-            p.setRawObject(state, rawObj);
+            objectFactory.setDefault(key, instance);//set default on created instance
+            p.setObjectInstance(state, instance);//fill the created instance to pooled wrapper
 
-            logPrinter.info("BeeOP({})-has created a new pooled object:{} with state:{}", this.keyName, p, state);
-
+            logPrinter.info("BeeOP({})-created a new object instance:{} to fill pooled wrapper:{}", this.keyName, instance, p);
             return p;
         } catch (Throwable e) {
             p.state = OBJECT_CLOSED;//reset to closed state
-            if (rawObj != null) this.objectFactory.destroy(key, rawObj);
+            if (instance != null) this.objectFactory.destroy(key, instance);
             throw new BeePooledObjectCreatedException(e);
         } finally {
             p.creatingInfo = null;
@@ -311,7 +319,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     //*** Core method for get *****
     private BeeObjectHandle<K, V> getObjectHandleInternal(long startTime) throws Exception {
         if (this.poolState != POOL_READY)
-            throw new BeeObjectSourcePoolNotReadyException("Pool has been closed or in clearing");
+            throw new BeeObjectSourcePoolNotReadyException("Pool was not ready");
 
         //1: try to reuse object in thread local
         Borrower<K, V> b = null;
@@ -326,10 +334,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                         if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
                             if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
                         } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                            return handleFactory.createHandle(this.fillRawObject(p, OBJECT_BORROWED, b.thread));
+                            return handleFactory.createHandle(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
                         }
                     } else if (state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                        return handleFactory.createHandle(this.fillRawObject(p, OBJECT_BORROWED, b.thread));
+                        return handleFactory.createHandle(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
                     }
                 }
             }
@@ -410,10 +418,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                 if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
                     if (this.testOnBorrow(p)) return p;
                 } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                    return this.fillRawObject(p, OBJECT_BORROWED, creatingThread);
+                    return this.fillObjectInstance(p, OBJECT_BORROWED, creatingThread);
                 }
             } else if (state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                return this.fillRawObject(p, OBJECT_BORROWED, creatingThread);
+                return this.fillObjectInstance(p, OBJECT_BORROWED, creatingThread);
             }
         }
         return null;
@@ -422,7 +430,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     /*** alive test on borrowed connection ***/
     private boolean testOnBorrow(PooledObject<K, V> p) {
         try {
-            if (System.currentTimeMillis() - p.lastAccessTime - this.validAssumeTime >= 0L && !this.objectFactory.isValid(key, p.raw, this.validTestTimeout)) {
+            if (System.currentTimeMillis() - p.lastAccessTime - this.validAssumeTime >= 0L && !this.objectFactory.isValid(key, p.objectInstance, this.validTestTimeout)) {
                 p.onRemove(DESC_RM_BAD);
                 this.tryWakeupServantThread();
                 return false;
@@ -507,7 +515,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                         5: Pool restart(0+2)                                                  //                                                                                  //
+    //                                         6: Pool restart(0+2)                                                  //                                                                                  //
     //***************************************************************************************************************//
     boolean restart(boolean forceRecycleBorrowed) {
         if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
@@ -625,7 +633,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                         9: other methods (2+2)                                               //
+    //                                         9: other methods (2+2)                                                //
     //***************************************************************************************************************//
     String getKeyName() {
         return keyName;
@@ -699,11 +707,11 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         return new ObjectKeyMonitorVo(this.keyName, poolState,
                 idleSize, borrowedSize, creatingCount, creatingTimeoutCount,
                 semaphoreRemainSize, semaphoreWaitingSize, transferWaitingSize,
-                this.logPrinter.isEnableLogOutput());
+                this.logPrinter.isEnableLogOutput(), this.collectMethodLogs);
     }
 
     //***************************************************************************************************************//
-    //                                         11: close objects(0+2)[Timer task call]                               //
+    //                                         10: close objects(0+2)[Timer task call]                               //
     //***************************************************************************************************************//
     void clearIdleTimeoutObjects() {
         //step1: print pool info before clean
@@ -749,7 +757,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                         12: Servant task method(1)                                            //                                                                              //
+    //                                         11: Servant task method(1)                                            //                                                                              //
     //***************************************************************************************************************//
     public void run() {
         Thread currentThread = Thread.currentThread();
@@ -769,7 +777,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     //***************************************************************************************************************//
-    //                                         13: Pool Internal classes(0+6)                                        //                                                                              //
+    //                                         12: Pool Internal classes(0+6)                                        //                                                                              //
     //***************************************************************************************************************//
     private static class ObjectPlainHandleFactory<K, V> {
         protected final BeeObjectPredicate predicate;
@@ -779,17 +787,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         }
 
         BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
-            return new ObjectHandleImpl<>(p, predicate);
-        }
-    }
-
-    private static class ObjectHandle4LFactory<K, V> extends ObjectPlainHandleFactory<K, V> {
-        ObjectHandle4LFactory(BeeObjectPredicate predicate) {
-            super(predicate);
-        }
-
-        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) {
-            return new ObjectHandleImpl4L<>(p, predicate);
+            return new ObjectHandleImpl<>(p);
         }
     }
 

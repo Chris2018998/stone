@@ -10,9 +10,9 @@
 package org.stone.beetp.pool;
 
 import org.stone.beetp.TaskPoolThreadFactory;
-import org.stone.tools.atomic.IntegerFieldUpdaterImpl;
 
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolConstants.*;
@@ -25,7 +25,16 @@ import static org.stone.beetp.pool.PoolConstants.*;
  */
 
 abstract class PoolBaseWorker implements Runnable {
-    protected static final AtomicIntegerFieldUpdater<PoolBaseWorker> StateUpd = IntegerFieldUpdaterImpl.newUpdater(PoolBaseWorker.class, "state");
+    static final VarHandle StateUpd;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            StateUpd = l.findVarHandle(PoolBaseWorker.class, "state", int.class);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+    }
 
     protected final int defaultSpins;
     protected final boolean useTimePark;

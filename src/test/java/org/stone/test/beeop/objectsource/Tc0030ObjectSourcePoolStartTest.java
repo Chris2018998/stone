@@ -45,6 +45,17 @@ public class Tc0030ObjectSourcePoolStartTest {
     }
 
     @Test
+    public void testNullConfig() {
+        try (ObjectPool<String, Book> pool = new ObjectPool<>()) {
+            pool.start(null);
+            Assertions.fail("[testNullConfig]Test failed");
+        } catch (Exception e) {
+            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
+            Assertions.assertEquals("Object source configuration can't be null", e.getMessage());
+        }
+    }
+
+    @Test
     public void testStartupFailure() {
         //1: invalid pool class
         BeeObjectSourceConfig<String, Book> config1 = OsConfigFactory.createDefault();
@@ -62,17 +73,6 @@ public class Tc0030ObjectSourcePoolStartTest {
             Assertions.fail("<testStartupFailure>test failed");
         } catch (Throwable e) {
             Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
-        }
-    }
-
-    @Test
-    public void testNullConfig() {
-        try (ObjectPool<String, Book> pool = new ObjectPool<>()) {
-            pool.start(null);
-            Assertions.fail("[testNullConfig]Test failed");
-        } catch (Exception e) {
-            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
-            Assertions.assertEquals("Object source configuration can't be null", e.getMessage());
         }
     }
 

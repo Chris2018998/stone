@@ -9,19 +9,22 @@
  */
 package org.stone.beeop.pool;
 
+import org.stone.beeop.BeeMethodLog;
 import org.stone.beeop.BeeObjectFactory;
+import org.stone.beeop.BeeObjectPredicate;
 import org.stone.beeop.exception.BeePooledObjectRecycledException;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Map;
 
+import static org.stone.beeop.BeeMethodLog.Type_Object_Log;
 import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_BAD;
 import static org.stone.beeop.pool.ObjectPoolStatics.OBJECT_CLOSED;
 import static org.stone.tools.CommonUtil.isBlank;
+import static org.stone.tools.CommonUtil.isNotBlank;
 
 /**
  * Pooled object
@@ -30,22 +33,16 @@ import static org.stone.tools.CommonUtil.isBlank;
  * @version 1.0
  */
 final class PooledObject<K, V> {
-    private static final MethodHandles.Lookup lookup = MethodHandles.publicLookup();
-
-    //pooled key
     final K key;
-    //method names to support accessed time update,eviction test,logs collection
-    final List<String> objectMethodNameList;
-    //Category pool,which collects method logs of object
-    final ObjectKeyCategoryPool<K, V> pool;
-
-    //destroy objects,reset objects
+    private final ObjectKeyCategoryPool<K, V> pool;
+    private final boolean hasConfiguredMethodNames;
+    private final String[] configuredMethodNames;
+    private final BeeObjectPredicate objectPredicate;
     private final BeeObjectFactory<K, V> objectFactory;
-    //sharable map to store method of object type
     private final Map<MethodKey, MethodHandle> objectMethodCacheMap;
 
-    //object
-    V raw;
+    //object instance
+    V objectInstance;
     //state of pooled object
     volatile int state;
     //last accessed time
@@ -54,67 +51,66 @@ final class PooledObject<K, V> {
     volatile ObjectCreatingInfo creatingInfo;
     //handle in using
     ObjectHandleImpl<K, V> handleInUsing;
-
     //class type of object
-    private Class<V> rawType;
+    private Class<V> objectType;
 
     //***************************************************************************************************************//
-    //                                  1: constructor                                                               //                                                                                  //
+    //                                  1: constructor(1+0)                                                           //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(K key,
-                 ObjectKeyCategoryPool<K, V> pool,
+                 ObjectKeyCategoryPool<K, V> ownerPool,
                  BeeObjectFactory<K, V> objectFactory,
-                 List<String> objectMethodNameList,
+                 BeeObjectPredicate objectPredicate,
+                 boolean hasConfiguredMethodNames,
+                 String[] configuredMethodNames,
                  Map<MethodKey, MethodHandle> objectMethodCacheMap) {
 
         this.key = key;
-        this.pool = pool;
+        this.pool = ownerPool;
         this.objectFactory = objectFactory;
-        this.objectMethodNameList = objectMethodNameList;
+        this.objectPredicate = objectPredicate;
         this.objectMethodCacheMap = objectMethodCacheMap;
+        this.hasConfiguredMethodNames = hasConfiguredMethodNames;
+        this.configuredMethodNames = configuredMethodNames;
     }
 
     //***************************************************************************************************************//
-    //                                  2: set raw object                                                            //                                                                                  //
+    //                                  2: set created object instance(1+0)                                          //                                                                                  //
     //***************************************************************************************************************//
-    void setRawObject(int state, V raw) {
-        this.raw = raw;
-        this.rawType = (Class<V>) raw.getClass();
+    void setObjectInstance(int state, V objectInstance) {
+        this.objectInstance = objectInstance;
+        this.objectType = (Class<V>) objectInstance.getClass();
         this.state = state;
         this.lastAccessTime = System.currentTimeMillis();
     }
 
     //***************************************************************************************************************//
-    //                               3: Pooled entry business methods(3)                                             //                                                                                  //
+    //                                  3: access time update(3+0)                                                   //                                                                                  //
     //***************************************************************************************************************//
     public String toString() {
-        return this.raw.toString();
+        return this.objectInstance.toString();
     }
 
-    void updateAccessTime() {
-        this.lastAccessTime = System.currentTimeMillis();
-    }
-
-    void updateAccessTime(long time) {
-        this.lastAccessTime = time;
+    long updateAccessTime() {
+        return this.lastAccessTime = System.currentTimeMillis();
     }
 
     //***************************************************************************************************************//
-    //                               4: Pooled entry business methods(4)                                             //                                                                                  //
+    //                                  4: Object recycle and destroy(0+3)                                            //                                                                                  //
     //***************************************************************************************************************//
-    //handle call this method to abort this object
+    //pool close related pooled object and remove it from pool when handle method 'abort' is called
     void abortSelf(String reason) {
         pool.abort(this, reason);
     }
 
-    //handle call this method to recycle this object
+    //pool recycle pooled object to be reused for other borrowers
     void recycleSelf() throws Exception {
         try {
             this.handleInUsing = null;
-            this.objectFactory.reset(key, raw);
-            this.pool.recycle(this);
+            this.objectFactory.reset(key, objectInstance);//reset dirty properties
+            this.pool.recycle(this);//assign it to one of waiters in pool
         } catch (Throwable e) {
-            this.pool.abort(this, DESC_RM_BAD);
+            this.pool.abort(this, DESC_RM_BAD);//remove it by force when exception occurred during recycle
             if (e instanceof Exception)
                 throw (Exception) e;
             else
@@ -122,17 +118,17 @@ final class PooledObject<K, V> {
         }
     }
 
-    //pool call this method before this object removed
+    //Clear pooled object before it is removed from pool
     void onRemove(String cause) {
         pool.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", pool.getKeyName(), this, cause);
 
         try {
-            this.objectFactory.reset(key, raw);
+            this.objectFactory.reset(key, objectInstance);
         } catch (Throwable e) {
             pool.logPrinter.warn("BeeOP({})-reset object failed", pool.getKeyName(), e);
         } finally {
             try {
-                this.objectFactory.destroy(key, raw);
+                this.objectFactory.destroy(key, objectInstance);
             } catch (Throwable e) {
                 pool.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", pool.getKeyName(), e);
             }
@@ -141,22 +137,55 @@ final class PooledObject<K, V> {
         }
     }
 
-    //handle call this method to get a method of object by parameter info
+    //***************************************************************************************************************//
+    //                                  5: Object method invocation(0+3)                                             //                                                                                  //
+    //***************************************************************************************************************//
     Object callMethod(String name, Class<?>[] types, Object[] params) throws Throwable {
         if (isBlank(name)) throw new IllegalArgumentException("Method name can't be null or be blank");
-        if (types == null) throw new IllegalArgumentException("Method parameter types cannot be null");
-        MethodKey key = new MethodKey(name, types);
+        if (types == null) throw new IllegalArgumentException("Method parameter types can't be null");
 
+        if (!this.hasConfiguredMethodNames || isInConfiguredMethodNames(name)) {
+            BeeMethodLog<K> log = null;
+            if (pool.collectMethodLogs)
+                log = pool.beforeCall(System.currentTimeMillis(), key, Type_Object_Log, "ObjectHandleImpl.call", params);
+
+            try {
+                Object v = callInternal(name, types, params);
+                long time = this.updateAccessTime();
+
+                if (log != null) pool.afterCall(time, v, log);//log of end call
+                return v;
+            } catch (Throwable e) {
+                if (objectPredicate != null && isNotBlank(objectPredicate.evictionTest(e)))
+                    this.abortSelf(DESC_RM_BAD);
+
+                if (log != null) pool.afterCall(System.currentTimeMillis(), e, log);//log of exception
+                throw e;
+            }
+        } else {
+            return callInternal(name, types, params);//method name not in configuredMethodNames
+        }
+    }
+
+    private boolean isInConfiguredMethodNames(String callMethodName) {
+        for (String configuredName : configuredMethodNames) {
+            if (callMethodName.equals(configuredName)) return true;
+        }
+        return false;
+    }
+
+    private Object callInternal(String name, Class<?>[] types, Object[] params) throws Throwable {
+        MethodKey key = new MethodKey(name, types);
         MethodHandle methodHandle = objectMethodCacheMap.get(key);
         if (methodHandle == null) {
-            Method targetMethod = rawType.getMethod(name, types);
-            methodHandle = lookup.findVirtual(rawType, name, MethodType.methodType(targetMethod.getReturnType(), types));
-            objectMethodCacheMap.put(key, methodHandle);
+            Method targetMethod = objectType.getMethod(name, types);
+            methodHandle = MethodHandles.publicLookup().findVirtual(objectType, name, MethodType.methodType(targetMethod.getReturnType(), types));
+            objectMethodCacheMap.putIfAbsent(key, methodHandle);
         }
 
         int parameterLen = types.length;
         Object[] invokeParameters = new Object[parameterLen + 1];
-        invokeParameters[0] = raw;
+        invokeParameters[0] = objectInstance;
         if (params != null && params.length > 0) {
             int copyLen = Math.min(parameterLen, params.length);
             System.arraycopy(params, 0, invokeParameters, 1, copyLen);

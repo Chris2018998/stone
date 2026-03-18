@@ -39,7 +39,7 @@ public class Tc0061ConnectionCreationTest {
                 Assertions.fail("[testConnectionCreateException]Test failed");
             } catch (SQLException e) {
                 Assertions.assertInstanceOf(ConnectionCreatedException.class, e);
-                Assertions.assertEquals("A unknown error occurred when created a connection", e.getMessage());
+                Assertions.assertEquals("Connection created failed,null returned from connection factory", e.getMessage());
             }
         }
 
@@ -51,7 +51,7 @@ public class Tc0061ConnectionCreationTest {
                 Assertions.fail("[testConnectionCreateException]Test failed");
             } catch (SQLException e) {
                 Assertions.assertInstanceOf(XaConnectionCreatedException.class, e);
-                Assertions.assertEquals("A unknown error occurred when created an XA connection", e.getMessage());
+                Assertions.assertEquals("XA connection created failed,null returned from XAConnection factory", e.getMessage());
             }
         }
     }
@@ -65,7 +65,7 @@ public class Tc0061ConnectionCreationTest {
             borrowThread.join();
             Assertions.assertNotNull(borrowThread.getFailureCause());
             Assertions.assertInstanceOf(ConnectionGetInterruptedException.class, borrowThread.getFailureCause());
-            Assertions.assertEquals("An interruption occurred when created a connection", borrowThread.getFailureCause().getMessage());
+            Assertions.assertEquals("An interruption occurred during creating a connection", borrowThread.getFailureCause().getMessage());
         }
 
         //2: fail to create xa-connection
@@ -76,7 +76,7 @@ public class Tc0061ConnectionCreationTest {
             borrowThread.join();
             Assertions.assertNotNull(borrowThread.getFailureCause());
             Assertions.assertInstanceOf(ConnectionGetInterruptedException.class, borrowThread.getFailureCause());
-            Assertions.assertEquals("An interruption occurred when created an XA connection", borrowThread.getFailureCause().getMessage());
+            Assertions.assertEquals("An interruption occurred during creating an XA connection", borrowThread.getFailureCause().getMessage());
         }
     }
 

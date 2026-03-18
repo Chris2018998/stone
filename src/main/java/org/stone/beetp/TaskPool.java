@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @author Chris Liao
  * @version 1.0
  */
-public interface TaskPool<V> {
+public interface TaskPool {
 
     void init(TaskServiceConfig config) throws TaskPoolException;
 

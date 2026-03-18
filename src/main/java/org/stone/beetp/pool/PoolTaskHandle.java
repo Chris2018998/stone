@@ -16,11 +16,11 @@ import org.stone.beetp.exception.TaskCancelledException;
 import org.stone.beetp.exception.TaskException;
 import org.stone.beetp.exception.TaskExecutionException;
 import org.stone.beetp.exception.TaskResultGetTimeoutException;
-import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.stone.beetp.pool.PoolConstants.*;
@@ -32,7 +32,17 @@ import static org.stone.beetp.pool.PoolConstants.*;
  * @version 1.0
  */
 class PoolTaskHandle<V> implements TaskHandle<V> {
-    protected static final AtomicReferenceFieldUpdater<PoolTaskHandle, Object> StateUpd = ReferenceFieldUpdaterImpl.newUpdater(PoolTaskHandle.class, Object.class, "state");
+    static final VarHandle StateUpd;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            StateUpd = l.findVarHandle(PoolTaskHandle.class, "state", Object.class);
+        } catch (Throwable e) {
+            throw new InternalError(e);
+        }
+    }
+
     protected final Task<V> task;
     protected final PoolTaskCenter pool;
     private final TaskAspect<V> callAspect;

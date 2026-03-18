@@ -86,7 +86,7 @@
 /// /        if (errorMessage == null && thread2.getfailureException() != null)
 /// /            errorMessage = thread2.getfailureException().getMessage();
 /// /
-/// /        if (errorMessage != null) Assertions.assertEquals("Object Pool has been closed or is restarting", errorMessage);
+/// /        if (errorMessage != null) Assertions.assertEquals("Object Pool was not ready", errorMessage);
 /// /    }
 /// /
 /// /    private static class ClearThread extends Thread {

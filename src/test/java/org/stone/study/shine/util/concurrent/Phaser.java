@@ -13,7 +13,6 @@ import org.stone.study.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.study.shine.util.concurrent.synchronizer.ResultWaitPool;
 import org.stone.study.shine.util.concurrent.synchronizer.SyncVisitConfig;
 import org.stone.tools.CommonUtil;
-import org.stone.tools.atomic.ReferenceFieldUpdaterImpl;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
