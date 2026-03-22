@@ -57,20 +57,20 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     private String poolName;
     //2: Pool state
     private volatile int poolState;
-    //3: Max size of pooled keys
-    private int maxKeySize;
-    //4: key counter
+    //3: key counter(decreasing)
     private AtomicInteger keyCounter;
 
-    //5: Initialization size of objects during category pool starting
+    //4: Initialization size of objects during category pool starting
     private int initialSizeOfKey;
-    //6: Creation mode of initial objects for category pools
+    //5: Creation mode of initial objects for category pools
     private boolean asyncCreateInitObjectsOfKey;
 
-    //7: Policy flag to recycle borrowed objects when pool close
+    //6: Policy flag to recycle borrowed objects when pool close
     private boolean forceRecycleBorrowedOnClose;
-    //8: A threads pool to search idle objects or create new objects for waiters
+    //7: A global thread executor pool to run tasks to help to get objects for borrowers in wait queue
     private ThreadPoolExecutor servantService;
+    //8: A global thread executor pool to run timed tasks(timeout objects clear,timeout method logs clear)
+    private ScheduledThreadPoolExecutor scheduledService;
 
     //9: Flag of pool logs cache
     private boolean collectPoolLogs;
@@ -83,23 +83,19 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     private long intervalOfMethodLogsClearTask;
     //13: Handle of scheduled task to clear logs
     private ScheduledFuture<?> poolLogsScheduledFuture;
-    //14: Schedule thread pool to execute time clear tasks
-    private ScheduledThreadPoolExecutor scheduledService;
 
-    //15: Pool name on MBean registered
+    //14: Pool name on MBean registered
     private String poolNameOfRegisteredMBean;
-
+    //15: JVM Hook to shut down pool
+    private ObjectPoolHook<K, V> exitHook;
     //16: Log printer of key pool
     private LogPrinter logPrinter = DefaultLogPrinter;
-    //17: JVM Hook to shut down pool
-    private ObjectPoolHook<K, V> exitHook;
 
     //***************************************Some fields for default category pool ***********************************//
-    //18: Default Key
+    //17: Default Key
     private K defaultKey;
-    //19: Default category pool
+    //18: Default category pool
     private ObjectKeyCategoryPool<K, V> defaultCategoryPool;
-
 
     //***************************************************************************************************************//
     //                                     1: Pool start(1+1)                                                        //
@@ -136,8 +132,8 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         }
 
         //step3: Create pool schedule executor
-        this.maxKeySize = config.getMaxKeySize();
-        int coreThreadSizeOfScheduledThreadPool = Math.min(NCPU, (maxKeySize << 1) + 1);//1 is to run key pool logs clear task
+        int maxKeySize = config.getMaxKeySize();
+        int coreThreadSizeOfScheduledThreadPool = Math.min(NCPU, (maxKeySize << 1) + 1);//1 is for clear timeout logs of key pool
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
         this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSizeOfScheduledThreadPool, poolThreadFactory);
         this.scheduledService.setMaximumPoolSize(coreThreadSizeOfScheduledThreadPool);
@@ -153,10 +149,10 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.asyncCreateInitObjectsOfKey = config.isAsyncCreateInitObjects();
         this.defaultKey = config.getObjectFactory().getDefaultKey();
         this.defaultCategoryPool.startup(defaultKey, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
-
         //step6: put the created default pool to map
+
         this.categoryPoolMap.put(defaultKey, defaultCategoryPool);
-        this.keyCounter = new AtomicInteger(1);
+        this.keyCounter = new AtomicInteger(maxKeySize - 1);//remained key capacity: max key size -1
 
         //step7: Create thread executor pool to add objects to category pools
         int threadPoolCoreThreadSize = Math.min(NCPU, maxKeySize);
@@ -164,24 +160,21 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 new LinkedBlockingQueue<>(maxKeySize), poolThreadFactory);
         this.servantService.allowCoreThreadTimeOut(true);
 
-        //step8: copy some reconfigured items to pool local
-        this.collectPoolLogs = config.isEnableLogCache();
-        this.methodLogsTimeout = config.getLogTimeout();
-        this.intervalOfMethodLogsClearTask = config.getIntervalOfClearTimeoutLogs();
-        //Create the log cache of key pool
+        //step8: Create a method log cache for key pool
         this.poolLogCache = new ObjectPoolLogCache<>(this.poolName, config.getLogCacheSize(), config.getLogListener());
         this.poolLogCache.setSlowThreshold(Type_Pool_Log, config.getSlowGetThreshold());
-
-        //step9: schedule task to clear timeout method logs
+        this.methodLogsTimeout = config.getLogTimeout();
+        this.intervalOfMethodLogsClearTask = config.getIntervalOfClearTimeoutLogs();
+        this.collectPoolLogs = config.isEnableLogCache();
         if (collectPoolLogs) {
             this.poolLogsScheduledFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsOfPoolClearTask<>(this.poolLogCache, methodLogsTimeout, this),
                     intervalOfMethodLogsClearTask, intervalOfMethodLogsClearTask, MILLISECONDS);
         }
 
-        //step10: Register MBeans
+        //step9: Register MBeans
         if (config.isRegisterMbeans()) registerMBeans(config);
 
-        //step11: Create a hook and register it,if not existed
+        //step10: Register JVM Hook
         if (config.isRegisterJvmHook()) {
             this.exitHook = new ObjectPoolHook<>(this);
             Runtime.getRuntime().addShutdownHook(this.exitHook);
@@ -229,11 +222,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
             } catch (Throwable e) {
                 logPrinter.error("BeeOP({})-restarted failure", this.poolName, e);
                 this.poolState = hasRunToStartupInternal ? POOL_RESTART_FAILED : POOL_READY;
-                if (e instanceof BeeObjectSourcePoolException) {
-                    throw (BeeObjectSourcePoolException) e;
-                } else {
-                    throw new BeeObjectSourcePoolRestartedFailureException("Object source pool restarted failure", e);
-                }
+                throw new BeeObjectSourcePoolRestartedFailureException("Object source pool restarted failure", e);
             }
         } else {
             throw new BeeObjectSourcePoolRestartedFailureException("Object source pool has been closed or is restarting");
@@ -262,8 +251,8 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         if (categoryPool != null) return categoryPool.getObjectHandle(0L);
 
         //4: Check key size of pool before add new key to pool
-        if (this.keyCounter.get() == this.maxKeySize)
-            throw new BeePooledObjectKeyException("Pooled key size has reach max capacity:" + maxKeySize);
+        if (this.keyCounter.get() == 0)//no remained capacity
+            throw new BeePooledObjectKeyException("Pooled key size has reach max capacity");
 
         //5: attempt to add key to pool
         long startTime = System.currentTimeMillis();
@@ -289,31 +278,32 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         return categoryPool.getObjectHandle(startTime);
     }
 
+
     private ObjectKeyCategoryPool<K, V> createObjectKeyCategoryPool(K key) throws Exception {
-        //1: increase atomic counter
+        //1: decrement key capacity
         int cur;
         do {
             cur = this.keyCounter.get();
-            if (cur == this.maxKeySize)
-                throw new BeePooledObjectKeyException("Pooled key size has reach max capacity:" + maxKeySize);
-        } while (!keyCounter.compareAndSet(cur, cur + 1));
+            if (cur == 0)
+                throw new BeePooledObjectKeyException("Pooled key size has reach max capacity");
+        } while (!keyCounter.compareAndSet(cur, cur - 1));
 
-        //2: clone a new instance with default pool
+        //2: Create a category pool(Object instances pool) by clone
         ObjectKeyCategoryPool<K, V> categoryPool = defaultCategoryPool.createByClone();
 
+        //3: Startup the created category pool()
         try {
-            //4: Attempt to start up the created pool
             categoryPool.startup(key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
-
-            //5: put the started pool to concurrent map
-            categoryPoolMap.put(key, categoryPool);
-
-            return categoryPool;
         } catch (Throwable e) {
-            //6: remove scheduled task when pool failed to start up
-            keyCounter.decrementAndGet();//decrease
+            keyCounter.incrementAndGet();
             throw e;
         }
+
+        //4: put the started pool to concurrent map(global)
+        categoryPoolMap.put(key, categoryPool);
+
+        //5: return the started pool to get objects
+        return categoryPool;
     }
 
     //***************************************************************************************************************//

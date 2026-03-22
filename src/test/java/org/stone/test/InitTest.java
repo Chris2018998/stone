@@ -45,7 +45,7 @@ public class InitTest {
     public void testPreparation() throws Exception {
         Class<?> currentClass = this.getClass();
         String init_file = currentClass.getSimpleName() + ".properties";
-        try (InputStream fileStream =currentClass.getClassLoader().getResourceAsStream(init_file)) {
+        try (InputStream fileStream = currentClass.getClassLoader().getResourceAsStream(init_file)) {
             if (fileStream == null) throw new IOException("Not found file:'" + init_file + "' in classpath");
             Properties prop = new Properties();
             prop.load(fileStream);

@@ -16,8 +16,6 @@ import org.stone.beeop.exception.BeePooledObjectRecycledException;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 import static org.stone.beeop.BeeMethodLog.Type_Object_Log;
@@ -33,6 +31,7 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @version 1.0
  */
 final class PooledObject<K, V> {
+    private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
     final K key;
     private final ObjectKeyCategoryPool<K, V> pool;
     private final boolean hasConfiguredMethodNames;
@@ -178,8 +177,7 @@ final class PooledObject<K, V> {
         MethodKey key = new MethodKey(name, types);
         MethodHandle methodHandle = objectMethodCacheMap.get(key);
         if (methodHandle == null) {
-            Method targetMethod = objectType.getMethod(name, types);
-            methodHandle = MethodHandles.publicLookup().findVirtual(objectType, name, MethodType.methodType(targetMethod.getReturnType(), types));
+            methodHandle = lookup.unreflect(objectType.getMethod(name, types));
             objectMethodCacheMap.putIfAbsent(key, methodHandle);
         }
 

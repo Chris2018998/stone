@@ -20,7 +20,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0037ObjectSourcePoolJvmHookTest {
+public class Tc0034ObjectSourcePoolJvmHookTest {
 
     @Test
     public void testOnStart() throws Exception {

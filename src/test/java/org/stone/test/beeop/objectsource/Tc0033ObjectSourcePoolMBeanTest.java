@@ -25,7 +25,7 @@ import java.lang.management.ManagementFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0036ObjectSourcePoolMBeanTest {
+public class Tc0033ObjectSourcePoolMBeanTest {
     @Test
     public void testRegisterSuccess() throws Exception {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();

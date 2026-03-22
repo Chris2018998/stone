@@ -97,13 +97,13 @@ public class ObjectPoolStatics {
                     new Class[]{BeeObjectPool.class},
                     (proxy, method, args) -> {
                         String methodName = method.getName();
-                        if ("isClosed".equals(methodName)) {
-                            return true;
-                        } else if ("toString".equals(methodName)) {
-                            return getPoolStateDesc(POOL_LAZY);
-                        } else {
-                            throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on lazy pool");
-                        }
+                        return switch (methodName) {
+                            case "keySize" -> 0;
+                            case "isClosed" -> true;
+                            case "toString" -> getPoolStateDesc(POOL_LAZY);
+                            default ->
+                                    throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on lazy pool");
+                        };
                     }
             );
     }

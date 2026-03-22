@@ -11,9 +11,7 @@ package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
-import org.stone.beeop.exception.BeeObjectSourcePoolLazyInitializationException;
 import org.stone.test.beeop.objects.ObjectBorrowThread;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
@@ -29,27 +27,8 @@ import static org.stone.test.base.TestUtil.waitUtilWaiting;
 /**
  * @author Chris Liao
  */
-public class Tc0031ObjectSourcePooLazyStartTest {
+public class Tc0032ObjectSourceLockTest {
 
-    @Test
-    public void testLazyException() throws Exception {
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            Assertions.assertTrue(os.isClosed());
-            try {
-                os.enableLogPrinter(true);
-                Assertions.fail("<ObjectSourceLazyTest>Test failed");
-            } catch (Exception e) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolLazyInitializationException.class, e);
-            }
-
-            os.setObjectFactory(new TextBookFactory());
-            try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
-                Assertions.assertNotNull(handle);
-            }
-
-            Assertions.assertFalse(os.isClosed());
-        }
-    }
 
     @Test
     public void testTimeoutOnReadLock() throws Exception {

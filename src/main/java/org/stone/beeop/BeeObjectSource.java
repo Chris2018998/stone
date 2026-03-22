@@ -12,7 +12,6 @@ package org.stone.beeop;
 import org.stone.beeop.exception.BeeObjectSourceCreatedException;
 import org.stone.beeop.exception.ObjectGetInterruptedException;
 import org.stone.beeop.exception.ObjectGetTimeoutException;
-import org.stone.beeop.pool.ObjectKeyMonitorVo;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.beeop.pool.ObjectPoolMonitorVo;
 import org.stone.beeop.pool.ObjectPoolStatics;
@@ -42,7 +41,7 @@ import static org.stone.tools.CommonUtil.isBlank;
 public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implements AutoCloseable {
     private final InterruptableReentrantReadWriteLock lock = new InterruptableReentrantReadWriteLock();
     private final InterruptableReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    private long maxWaitNanos = 8000L;//default vale equals same item in config
+    private long maxWaitNanos = 8000L;//default value equals same item in config
     private BeeObjectPool<K, V> pool = createDummyPoolImpl(false);
     private boolean poolInitialized;
     private Exception poolInitializedCause;
@@ -221,22 +220,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     public BeeObjectKeyMonitorVo getKeyMonitorVo(K key) throws Exception {
-        if (poolInitialized) {
-            return pool.getKeyMonitorVo(key);
-        } else {
-            return new ObjectKeyMonitorVo(
-                    String.valueOf(key),
-                    ObjectPoolStatics.POOL_LAZY,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    this.isPrintRuntimeLogs(),
-                    this.isEnableLogCache());
-        }
+        return pool.getKeyMonitorVo(key);
     }
 
     //***************************************************************************************************************//
