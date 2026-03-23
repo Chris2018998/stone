@@ -18,7 +18,16 @@ public class Tc0043ObjectCallTest {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try (BeeObjectHandle<String, Book> bookHandle = os.getObjectHandle()) {
+                long accessTime0 = bookHandle.getLastAccessedTime();
+
                 Assertions.assertEquals("Bruce Eckel", bookHandle.call("getAuthor"));
+                long accessTime1 = bookHandle.getLastAccessedTime();
+                Assertions.assertTrue(accessTime1 > 0);
+                Assertions.assertEquals("Bruce Eckel", bookHandle.call("getAuthor", new Class[0], new Object[0]));
+                long accessTime2 = bookHandle.getLastAccessedTime();
+                Assertions.assertTrue(accessTime2 > 0);
+                Assertions.assertTrue(accessTime1 >= accessTime0);
+                Assertions.assertTrue(accessTime2 >= accessTime1);
             }
         }
     }

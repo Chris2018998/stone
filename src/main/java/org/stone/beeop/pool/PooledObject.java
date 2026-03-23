@@ -32,6 +32,7 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  */
 final class PooledObject<K, V> {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
+
     final K key;
     private final ObjectKeyCategoryPool<K, V> pool;
     private final boolean hasConfiguredMethodNames;
