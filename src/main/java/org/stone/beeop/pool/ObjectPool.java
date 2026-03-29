@@ -544,19 +544,42 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //***************************************************************************************************************//
     //                                    9: MBean Registration (0+2)                                                //
     //***************************************************************************************************************//
-    public ObjectPoolMonitorVo getPoolMonitorVo2() throws Exception {
-        return null;
+    public ObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
+        return (ObjectPoolMonitorVo) this.getPoolMonitorVo(false);
     }
 
-    public void enableLogPrinter2(String keyName, boolean enable) throws Exception {
-
+    public List<String> getKeyNames() throws Exception {
+        List<String> keyNameList = new LinkedList<>();
+        for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
+            keyNameList.add(categoryPool.getKeyName());
+        }
+        return keyNameList;
     }
 
-    public void enableLogCache2(String keyName, boolean enable) throws Exception {
-
+    public void enableKeyLogPrinterByName(String keyName, boolean enable) throws Exception {
+        for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
+            if (categoryPool.getKeyName().equals(keyName)) {
+                categoryPool.enableLogPrint(enable);
+                break;
+            }
+        }
     }
 
-    public ObjectKeyMonitorVo getKeyMonitorVo2(String keyName) throws Exception {
+    public void enableKeyLogCacheByName(String keyName, boolean enable) throws Exception {
+        for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
+            if (categoryPool.getKeyName().equals(keyName)) {
+                categoryPool.enableLogCache(enable);
+                break;
+            }
+        }
+    }
+
+    public ObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception {
+        for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
+            if (categoryPool.getKeyName().equals(keyName)) {
+                return categoryPool.getKeyMonitorVo();
+            }
+        }
         return null;
     }
 

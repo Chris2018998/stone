@@ -96,7 +96,7 @@ public final class ConnectionPoolStatics {
             (proxy, method, args) -> {
                 String methodName = method.getName();
                 if ("isClosed".equals(methodName)) {
-                    return true;
+                    return Boolean.TRUE;
                 } else if ("toString".equals(methodName)) {
                     return getPoolStateDesc(POOL_LAZY);
                 } else {
@@ -111,7 +111,7 @@ public final class ConnectionPoolStatics {
             (proxy, method, args) -> {
                 String methodName = method.getName();
                 if ("isClosed".equals(methodName)) {
-                    return true;
+                    return Boolean.TRUE;
                 } else if ("toString".equals(methodName)) {
                     return getPoolStateDesc(POOL_CLOSED);
                 } else {

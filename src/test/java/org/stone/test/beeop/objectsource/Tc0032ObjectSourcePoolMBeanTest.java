@@ -25,62 +25,61 @@ import java.lang.management.ManagementFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0033ObjectSourcePoolMBeanTest {
+public class Tc0032ObjectSourcePoolMBeanTest {
+
     @Test
-    public void testRegisterSuccess() throws Exception {
-        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
-        config.setRegisterMbeans(false);
-        String poolName = "JMX-POOL";
-        config.setPoolName(poolName);
-        String name1 = String.format("org.stone.beeop.BeeObjectSourceConfig:type=BeeOP(%s)-config", poolName);
-        String name2 = String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", poolName);
-        ObjectName jmxRegName1 = new ObjectName(name1);
-        ObjectName jmxRegName2 = new ObjectName(name2);
+    public void testRegisterMXBean() throws Exception {
         MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+        String poolName = "JMX-BEEOP-POOL";
+        ObjectName jmxRegName1 = new ObjectName(String.format("org.stone.beeop.BeeObjectSourceConfig:type=BeeOP(%s)-config", poolName));
+        ObjectName jmxRegName2 = new ObjectName(String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", poolName));
 
-        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
-            Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName1));
-            Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName2));
-        }
-
+        //1:register bean/unRegister
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setRegisterMbeans(true);
+        config.setPoolName(poolName);
+        Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName1));
+        Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName2));
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.assertTrue(mBeanServer.isRegistered(jmxRegName1));
             Assertions.assertTrue(mBeanServer.isRegistered(jmxRegName2));
         }
         Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName1));
         Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName2));
+
+        //2: not register MXBean
+        config.setRegisterMbeans(false);
+        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
+            Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName1));
+            Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName2));
+        }
     }
 
     @Test
-    public void testRegisterFail() throws Exception {
-        String poolName = "JMX-POOL";
+    public void testRegisterMXBeaFailure() throws Exception {
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+        String poolName = "JMX-BEEOP-POOL";
         String name1 = String.format("org.stone.beeop.BeeObjectSourceConfig:type=BeeOP(%s)-config", poolName);
         String name2 = String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", poolName);
         ObjectName jmxRegName1 = new ObjectName(name1);
         ObjectName jmxRegName2 = new ObjectName(name2);
-        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
 
         try {
-            Assertions.assertNotNull(mBeanServer.registerMBean(new BeeCPHello(), jmxRegName1));
-            Assertions.assertNotNull(mBeanServer.registerMBean(new BeeCPHello(), jmxRegName2));
+            mBeanServer.registerMBean(new BeeCPHello(), jmxRegName1);//register a MXBean with name1 before pool startup
+            mBeanServer.registerMBean(new BeeCPHello(), jmxRegName2);//register a MXBean with name2 before pool startup
 
             BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
             config.setPoolName(poolName);
             config.setPrintRuntimeLogs(true);
             config.setRegisterMbeans(true);
-
             LogCollector logCollector = LogCollector.startLogCollector();
             try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
-                Assertions.assertTrue(mBeanServer.isRegistered(jmxRegName1));
-                Assertions.assertTrue(mBeanServer.isRegistered(jmxRegName2));
+                Assertions.assertNotNull(ignored);
             }
-            String logs = logCollector.endLogCollector();
-            String msg1 = "BeeOP(" + poolName + ")-failed to register a MBean with name:" + name1;
-            String msg2 = "BeeOP(" + poolName + ")-failed to register a MBean with name:" + name2;
 
-            Assertions.assertTrue(logs.contains(msg1));
-            Assertions.assertTrue(logs.contains(msg2));
+            String logs = logCollector.endLogCollector();
+            Assertions.assertTrue(logs.contains("BeeOP(" + poolName + ")-failed to register a MBean with name:" + name1));
+            Assertions.assertTrue(logs.contains("BeeOP(" + poolName + ")-failed to register a MBean with name:" + name2));
         } finally {
             if (mBeanServer.isRegistered(jmxRegName1))
                 mBeanServer.unregisterMBean(jmxRegName1);
@@ -90,20 +89,18 @@ public class Tc0033ObjectSourcePoolMBeanTest {
     }
 
     @Test
-    public void testUnRegisterFail() throws Exception {
+    public void testUnRegisterMXBeaFailure() throws Exception {
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+        String poolName = "JMX-BEEOP-POOL";
+        String name1 = String.format("org.stone.beeop.BeeObjectSourceConfig:type=BeeOP(%s)-config", poolName);
+        String name2 = String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", poolName);
+        ObjectName jmxRegName1 = new ObjectName(name1);
+        ObjectName jmxRegName2 = new ObjectName(name2);
+
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setPrintRuntimeLogs(true);
         config.setRegisterMbeans(true);
-        String poolName = "JMX-POOL";
         config.setPoolName(poolName);
-
-        String name1 = String.format("org.stone.beeop.BeeObjectSourceConfig:type=BeeOP(%s)-config", poolName);
-        String name2 = String.format("org.stone.beeop.pool.KeyedObjectPool:type=BeeOP(%s)", poolName);
-
-        ObjectName jmxRegName1 = new ObjectName(name1);
-        ObjectName jmxRegName2 = new ObjectName(name2);
-        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-
         LogCollector logCollector = LogCollector.startLogCollector();
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.assertTrue(mBeanServer.isRegistered(jmxRegName1));
@@ -113,9 +110,7 @@ public class Tc0033ObjectSourcePoolMBeanTest {
             mBeanServer.unregisterMBean(jmxRegName2);
         }
         String logs = logCollector.endLogCollector();
-        String msg1 = "BeeOP(" + poolName + ")-failed to unregister a MBean with name:" + name1;
-        String msg2 = "BeeOP(" + poolName + ")-failed to unregister a MBean with name:" + name2;
-        Assertions.assertTrue(logs.contains(msg1));
-        Assertions.assertTrue(logs.contains(msg2));
+        Assertions.assertTrue(logs.contains("BeeOP(" + poolName + ")-failed to unregister a MBean with name:" + name1));
+        Assertions.assertTrue(logs.contains("BeeOP(" + poolName + ")-failed to unregister a MBean with name:" + name2));
     }
 }

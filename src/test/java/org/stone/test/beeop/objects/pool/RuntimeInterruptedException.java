@@ -9,15 +9,14 @@
  */
 package org.stone.test.beeop.objects.pool;
 
-import java.util.concurrent.locks.LockSupport;
-
 /**
+ * A runtime exception
+ *
  * @author Chris Liao
  */
-public class BlockingPool_Park extends BookPool {
+public class RuntimeInterruptedException extends RuntimeException {
 
-    public BlockingPool_Park() {
-        LockSupport.park();
-        if (Thread.interrupted()) throw new RuntimeInterruptedException("Internal error");
+    public RuntimeInterruptedException(String message) {
+        super(message);
     }
 }

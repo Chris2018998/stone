@@ -16,9 +16,9 @@ package org.stone.beeop.exception;
  * @version 1.0
  */
 
-public class ObjectGetTimeoutException extends BeePooledObjectGetException {
+public class BeePooledObjectGetInterruptedException extends BeePooledObjectGetException {
 
-    public ObjectGetTimeoutException(String message) {
+    public BeePooledObjectGetInterruptedException(String message) {
         super(message);
     }
 

@@ -279,7 +279,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             instance = this.objectFactory.create(this.key);
             if (instance == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
                 if (creatingThread.isInterrupted() && Thread.interrupted())
-                    throw new ObjectGetInterruptedException("An interruption occurred during creating object instance");
+                    throw new BeePooledObjectGetInterruptedException("An interruption occurred during creating object instance");
                 throw new BeePooledObjectCreatedException("Object instance created failed,null result returned from object factory");
             }
 
@@ -403,10 +403,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                     semaphore.release();
                 }
             } else {
-                throw new ObjectGetTimeoutException("Waited timeout on pool semaphore");
+                throw new BeePooledObjectGetTimeoutException("Waited timeout on pool semaphore");
             }
         } catch (InterruptedException e) {
-            throw new ObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
+            throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
         }
     }
 
@@ -464,10 +464,10 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                 b.lastUsed = p;
                 return handleFactory.createHandle(p);
             }
-            throw new ObjectGetTimeoutException("Waited timeout for a released object");
+            throw new BeePooledObjectGetTimeoutException("Waited timeout for a released object");
         } else {
             if (p != null) this.recycle(p);
-            throw new ObjectGetInterruptedException("An interruption occurred while waiting for a released object");
+            throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting for a released object");
         }
     }
 

@@ -14,6 +14,8 @@ import org.stone.beeop.BeeObjectPool;
 import org.stone.beeop.exception.BeeObjectSourcePoolHasClosedException;
 import org.stone.beeop.exception.BeeObjectSourcePoolLazyInitializationException;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
@@ -76,42 +78,30 @@ public class ObjectPoolStatics {
 
     @SuppressWarnings("unchecked")
     public static <K, V> BeeObjectPool<K, V> createDummyPoolImpl(boolean closedPool) {
-        if (closedPool)
-            return (BeeObjectPool<K, V>) Proxy.newProxyInstance(
-                    BeeObjectPool.class.getClassLoader(),
-                    new Class[]{BeeObjectPool.class},
-                    (proxy, method, args) -> {
+        return (BeeObjectPool<K, V>) Proxy.newProxyInstance(
+                BeeObjectPool.class.getClassLoader(),
+                new Class[]{BeeObjectPool.class},
+                new InvocationHandler() {
+                    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                         String methodName = method.getName();
                         if ("isClosed".equals(methodName)) {
-                            return true;
+                            return Boolean.TRUE;
                         } else if ("toString".equals(methodName)) {
-                            return getPoolStateDesc(POOL_CLOSED);
-                        } else {
+                            return closedPool ? getPoolStateDesc(POOL_CLOSED) : getPoolStateDesc(POOL_LAZY);
+                        } else if (closedPool) {
                             throw new BeeObjectSourcePoolHasClosedException("No operations allowed on closed pool");
+                        } else {
+                            throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on lazy pool");
                         }
                     }
-            );
-        else
-            return (BeeObjectPool<K, V>) Proxy.newProxyInstance(
-                    BeeObjectPool.class.getClassLoader(),
-                    new Class[]{BeeObjectPool.class},
-                    (proxy, method, args) -> {
-                        String methodName = method.getName();
-                        return switch (methodName) {
-                            case "keySize" -> 0;
-                            case "isClosed" -> true;
-                            case "toString" -> getPoolStateDesc(POOL_LAZY);
-                            default ->
-                                    throw new BeeObjectSourcePoolLazyInitializationException("No operations allowed on lazy pool");
-                        };
-                    }
-            );
+                }
+        );
     }
-
 
     static String getPoolStateDesc(int state) {
         return switch (state) {
-            case POOL_LAZY -> "Pool is lazy and initialized by calling its getObjectHandle method";
+            case POOL_LAZY ->
+                    "Pool is lazy and it can be initialized by calling getObjectHandle method of objectSource";
             case POOL_NEW -> "Pool is new";
             case POOL_STARTING -> "Pool is starting";
             case POOL_READY -> "Pool is ready";

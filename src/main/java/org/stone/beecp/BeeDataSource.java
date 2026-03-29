@@ -221,6 +221,10 @@ public class BeeDataSource extends BeeDataSourceConfig implements DataSource, XA
         return pool.toString();
     }
 
+    public boolean isLazy() {
+        return !this.poolInitialized;
+    }
+
     public boolean isClosed() {
         return pool.isClosed();
     }

@@ -10,8 +10,8 @@
 package org.stone.beeop;
 
 import org.stone.beeop.exception.BeeObjectSourceCreatedException;
-import org.stone.beeop.exception.ObjectGetInterruptedException;
-import org.stone.beeop.exception.ObjectGetTimeoutException;
+import org.stone.beeop.exception.BeePooledObjectGetInterruptedException;
+import org.stone.beeop.exception.BeePooledObjectGetTimeoutException;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.beeop.pool.ObjectPoolMonitorVo;
 import org.stone.beeop.pool.ObjectPoolStatics;
@@ -103,9 +103,9 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         } else {
             try {
                 if (!readLock.tryLock(maxWaitNanos, TimeUnit.NANOSECONDS))
-                    throw new ObjectGetTimeoutException("Timeout on waiting for pool ready");
+                    throw new BeePooledObjectGetTimeoutException("Timeout on waiting for pool ready");
             } catch (InterruptedException e) {
-                throw new ObjectGetInterruptedException("An interruption occurred while waiting for pool ready");
+                throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting for pool ready");
             }
             readLock.unlock();
         }
@@ -201,6 +201,10 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     public String toString() {
         return pool.toString();
+    }
+
+    public boolean isLazy() {
+        return !this.poolInitialized;
     }
 
     public boolean isClosed() {

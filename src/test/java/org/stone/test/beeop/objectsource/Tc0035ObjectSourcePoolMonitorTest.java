@@ -18,7 +18,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0037ObjectSourceMonitorTest {
+public class Tc0035ObjectSourcePoolMonitorTest {
 
     @Test
     public void testGetMonitor() throws Exception {

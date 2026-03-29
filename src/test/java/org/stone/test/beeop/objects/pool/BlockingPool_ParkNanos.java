@@ -9,9 +9,6 @@
  */
 package org.stone.test.beeop.objects.pool;
 
-import org.stone.beecp.exception.BeeDataSourceCreatedException;
-import org.stone.beecp.exception.BeeDataSourcePoolInstantiatedException;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -21,7 +18,6 @@ import java.util.concurrent.locks.LockSupport;
 public class BlockingPool_ParkNanos extends BookPool {
     public BlockingPool_ParkNanos() {
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1L));
-        if (Thread.interrupted())
-            throw new BeeDataSourceCreatedException(new BeeDataSourcePoolInstantiatedException("Interruption occurred during pool being instantiated", new InterruptedException()));
+        if (Thread.interrupted()) if (Thread.interrupted()) throw new RuntimeInterruptedException("Internal error");
     }
 }

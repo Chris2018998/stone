@@ -11,9 +11,10 @@ package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beeop.BeeObjectFactory;
+import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.exception.BeeObjectSourceConfigException;
 import org.stone.beeop.exception.BeeObjectSourceCreatedException;
 import org.stone.beeop.exception.BeeObjectSourcePoolStartedFailureException;
 import org.stone.beeop.pool.ObjectPool;
@@ -31,98 +32,101 @@ import java.util.concurrent.locks.LockSupport;
 public class Tc0030ObjectSourcePoolStartTest {
 
     @Test
-    public void testLazyStartup() {
-        TextBookFactory factory = new TextBookFactory();
-        String defaultKey = factory.getDefaultKey();
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            os.setObjectFactory(new TextBookFactory());
-
-
-        }
-    }
-
-    @Test
-    public void testInvalidPoolClass() {
-        //1: null configuration
+    public void testNullConfiguration() {
         try (BeeObjectSource<String, Book> ignored1 = new BeeObjectSource<>(null)) {
-            Assertions.fail("[testNullConfig]Test failed");
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testNullConfiguration]test failed");
         } catch (RuntimeException e) {
             Assertions.assertInstanceOf(NullPointerException.class, e);
         }
+    }
 
-        //2: pool startup in object source constructor
+    @Test
+    public void testPoolClassNotFound() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setPoolImplementClassName(BookPool.class.getName() + "_NotFound");
+
+        //1: throw exception from Object source constructor
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
-            Assertions.fail("<testStartupFailure>test failed");
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolClassNotFound]test failed");
         } catch (Throwable e) {
             Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
+            Assertions.assertInstanceOf(ClassNotFoundException.class, e.getCause());
         }
 
-        //3: pool lazy startup
-        BeeObjectFactory<String, Book> objectFactory = config.getObjectFactory();
+        //2: throw exception from Object source method call(get)
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            os.setPoolImplementClassName(config.getPoolImplementClassName());
-            os.setObjectFactory(config.getObjectFactory());
-            try {
-                os.getObjectHandle();
-            } catch (Throwable e) {
-                Assertions.assertInstanceOf(ClassNotFoundException.class, e);//Pool class not found
-            }
+            os.setObjectFactory(new TextBookFactory());
+            os.setPoolImplementClassName(BookPool.class.getName() + "_NotFound");
 
-            try {
-                os.getObjectHandle(objectFactory.getDefaultKey());
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolClassNotFound]test failed");
             } catch (Throwable e) {
-                Assertions.assertInstanceOf(ClassNotFoundException.class, e);//Pool class not found
+                Assertions.assertInstanceOf(ClassNotFoundException.class, e);
             }
         }
     }
 
     @Test
-    public void testCheckFailed() {
-        //1: constructor
-        BeeObjectSourceConfig<String, Book> config1 = OsConfigFactory.createDefault();
-        config1.setInitialSize(10);
-        config1.setMaxActive(5);
-        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config1)) {
-            Assertions.fail("<testCheckFailed>test failed");
+    public void testIncorrectConfiguration() {
+        //1: failure check
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+        config.setInitialSize(10);
+        config.setMaxActive(5);
+        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
         } catch (Throwable e) {
             Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
-            BeeObjectSourceCreatedException ee = (BeeObjectSourceCreatedException) e;
-            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, ee.getCause());
+            BeeObjectSourceCreatedException e1 = (BeeObjectSourceCreatedException) e;
+            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
+            BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
+            Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e2.getCause());
         }
 
-        BeeObjectSourceConfig<String, Book> config2 = new BeeObjectSourceConfig<>();
-        config2.setObjectFactoryClassName(TextBookFactory.class.getName() + "_NotFound");
-        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config2)) {
-            Assertions.fail("<testStartupFailure>test failed");
+        //2: failure check
+        config = new BeeObjectSourceConfig<>();
+        config.setObjectFactoryClassName(TextBookFactory.class.getName() + "_NotFound");
+        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
         } catch (Throwable e) {
             Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
-            BeeObjectSourceCreatedException ee = (BeeObjectSourceCreatedException) e;
-            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, ee.getCause());
+            BeeObjectSourceCreatedException e1 = (BeeObjectSourceCreatedException) e;
+            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
+            BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
+            Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e2.getCause());
+
+            BeeObjectSourceConfigException e3 = (BeeObjectSourceConfigException) e2.getCause();
+            Assertions.assertInstanceOf(ClassNotFoundException.class, e3.getCause());
         }
 
-        //2: lazy creation
-        BeeObjectFactory<String, Book> objectFactory = config1.getObjectFactory();
+        //3: failure check(lazy)
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            os.setObjectFactory(objectFactory);
             os.setInitialSize(10);
             os.setMaxActive(5);
-            try {
-                os.getObjectHandle();
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
             } catch (Throwable e) {
                 Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
+                BeeObjectSourcePoolStartedFailureException e1 = (BeeObjectSourcePoolStartedFailureException) e;
+                Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e1.getCause());
             }
+        }
 
-            try {
-                os.getObjectHandle(objectFactory.getDefaultKey());
+        //4: failure check(lazy)
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            os.setObjectFactoryClassName(TextBookFactory.class.getName() + "_NotFound");
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
             } catch (Throwable e) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);//Pool class not found
+                Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
+                BeeObjectSourcePoolStartedFailureException e1 = (BeeObjectSourcePoolStartedFailureException) e;
+                Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e1.getCause());
+                BeeObjectSourceConfigException e2 = (BeeObjectSourceConfigException) e1.getCause();
+                Assertions.assertInstanceOf(ClassNotFoundException.class, e2.getCause());
             }
         }
     }
 
-
+    //************************************************* test on Pool  ************************************************//
     @Test
     public void testNullConfig() {
         try (ObjectPool<String, Book> pool = new ObjectPool<>()) {

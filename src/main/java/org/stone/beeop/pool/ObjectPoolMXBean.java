@@ -9,6 +9,8 @@
  */
 package org.stone.beeop.pool;
 
+import java.util.List;
+
 /**
  * Pool JMX Bean interface
  *
@@ -21,11 +23,14 @@ public interface ObjectPoolMXBean {
 
     void enableLogCache(boolean enable) throws Exception;
 
-    void enableLogPrinter2(String keyName, boolean enable) throws Exception;
+    ObjectPoolMonitorVo getPoolMonitorVo() throws Exception;
 
-    void enableLogCache2(String keyName, boolean enable) throws Exception;
 
-    ObjectPoolMonitorVo getPoolMonitorVo2() throws Exception;
+    List<String> getKeyNames() throws Exception;
 
-    ObjectKeyMonitorVo getKeyMonitorVo2(String keyName) throws Exception;
+    void enableKeyLogPrinterByName(String keyName, boolean enable) throws Exception;
+
+    void enableKeyLogCacheByName(String keyName, boolean enable) throws Exception;
+
+    ObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception;
 }

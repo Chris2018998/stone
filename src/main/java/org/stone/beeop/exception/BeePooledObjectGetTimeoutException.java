@@ -10,14 +10,16 @@
 package org.stone.beeop.exception;
 
 /**
- * pool exception
+ * exception on getting
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeeObjectSourcePoolInstantiatedException extends BeeObjectSourcePoolException {
 
-    public BeeObjectSourcePoolInstantiatedException(String s, Throwable e) {
-        super(s, e);
+public class BeePooledObjectGetTimeoutException extends BeePooledObjectGetException {
+
+    public BeePooledObjectGetTimeoutException(String message) {
+        super(message);
     }
+
 }

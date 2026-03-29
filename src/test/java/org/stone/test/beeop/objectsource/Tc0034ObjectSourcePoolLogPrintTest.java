@@ -21,7 +21,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0040ObjectSourcePoolLogPrintTest {
+public class Tc0034ObjectSourcePoolLogPrintTest {
 
     @Test
     public void test() throws Exception {

@@ -22,7 +22,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0035ObjectSourcePoolCloseTest {
+public class Tc0038ObjectSourcePoolCloseTest {
 
     @Test
     public void test() throws Exception {

@@ -1,4 +1,4 @@
-package org.stone.test.beeop.objectsource;
+package org.stone.test.beeop.poolkey;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0043ObjectCallTest {
+public class Tc0060ObjectCallTest {
 
     @Test
     public void testGetAuthor() throws Throwable {

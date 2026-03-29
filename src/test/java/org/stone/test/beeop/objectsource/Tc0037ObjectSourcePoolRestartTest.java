@@ -30,7 +30,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0031ObjectSourcePoolRestartTest {
+public class Tc0037ObjectSourcePoolRestartTest {
 
     @Test
     public void testRestart() throws Exception {

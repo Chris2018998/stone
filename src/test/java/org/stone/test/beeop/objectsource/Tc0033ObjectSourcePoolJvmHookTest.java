@@ -20,10 +20,11 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0034ObjectSourcePoolJvmHookTest {
+public class Tc0033ObjectSourcePoolJvmHookTest {
 
     @Test
-    public void testOnStart() throws Exception {
+    public void testRegistration() throws Exception {
+        //1: Register
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setRegisterJvmHook(true);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -32,6 +33,7 @@ public class Tc0034ObjectSourcePoolJvmHookTest {
             Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
         }
 
+        //2: Not Register
         config.setRegisterJvmHook(false);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object pool = TestUtil.getFieldValue(os, "pool");
@@ -42,7 +44,7 @@ public class Tc0034ObjectSourcePoolJvmHookTest {
 
     @Test
     public void testOnRestart() throws Exception {
-        //true ---> false
+        //Register ----> Not  Register
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setRegisterJvmHook(true);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -56,7 +58,7 @@ public class Tc0034ObjectSourcePoolJvmHookTest {
             Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
         }
 
-        //false-->true
+        //Not  Register  ---> Register
         BeeObjectSourceConfig<String, Book> config2 = OsConfigFactory.createDefault();
         config2.setRegisterJvmHook(false);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config2)) {

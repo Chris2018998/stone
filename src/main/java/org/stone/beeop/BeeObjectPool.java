@@ -81,9 +81,9 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * Attempts to get an object of default category from pool.
      *
      * @return handle of borrowed object
-     * @throws BeePooledObjectCreatedException when fail to create an object instance
-     * @throws ObjectGetTimeoutException       when wait timeout in pool
-     * @throws ObjectGetInterruptedException   while waiting is interrupted
+     * @throws BeePooledObjectCreatedException        when fail to create an object instance
+     * @throws BeePooledObjectGetTimeoutException     when wait timeout in pool
+     * @throws BeePooledObjectGetInterruptedException while waiting is interrupted
      */
     BeeObjectHandle<K, V> getObjectHandle() throws Exception;
 
@@ -92,10 +92,10 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @param key is a category key which maybe mapping to a pooled objects or a group of objects
      * @return handle of borrowed object
-     * @throws BeePooledObjectKeyException     when key is null or invalid, or category capacity is full
-     * @throws BeePooledObjectCreatedException when fail to create an object instance
-     * @throws ObjectGetTimeoutException       when wait timeout in pool
-     * @throws ObjectGetInterruptedException   while waiting is interrupted
+     * @throws BeePooledObjectKeyException            when key is null or invalid, or category capacity is full
+     * @throws BeePooledObjectCreatedException        when fail to create an object instance
+     * @throws BeePooledObjectGetTimeoutException     when wait timeout in pool
+     * @throws BeePooledObjectGetInterruptedException while waiting is interrupted
      */
     BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception;
 
