@@ -16,7 +16,7 @@ package org.stone.test.beeop.objects.book;
  */
 public class EBook implements Book, BookBorrowInfo {
     private final String title;
-    private final String author;
+    private String author;
 
     private String borrower;
     private long borrowedTime;
@@ -34,6 +34,11 @@ public class EBook implements Book, BookBorrowInfo {
     @Override
     public String getAuthor() {
         return author;
+    }
+
+    @Override
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     @Override

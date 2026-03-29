@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0.
  */
-package org.stone.tools;
+package org.stone.study.shine.util;
 
 import jdk.internal.misc.Unsafe;
 

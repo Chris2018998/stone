@@ -13,7 +13,7 @@ import jdk.internal.misc.Unsafe;
 import org.stone.study.shine.util.concurrent.synchronizer.ResultCall;
 import org.stone.study.shine.util.concurrent.synchronizer.ResultValidator;
 import org.stone.study.shine.util.concurrent.synchronizer.ResultWaitPool;
-import org.stone.tools.UnsafeHolder;
+import org.stone.study.shine.util.UnsafeHolder;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;

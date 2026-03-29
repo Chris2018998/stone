@@ -250,16 +250,14 @@ public final class BeeSemaphore implements BeeInterruptable {
 
     //Chain Node Class
     private static class WaiterNode {
+        //Set null when node leave from chain
+        private final Thread thread;
         //previous node
         public volatile WaiterNode prev;
         //Next node
         public volatile WaiterNode next;
-
         //Set NULL when node leave from chain
         public volatile Object item = NULL;
-
-        //Set null when node leave from chain
-        private final Thread thread;
 
         public WaiterNode(Thread thread) {
             this.thread = thread;

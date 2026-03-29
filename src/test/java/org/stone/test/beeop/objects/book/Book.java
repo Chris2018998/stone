@@ -20,4 +20,6 @@ public interface Book {
     String getTitle();
 
     String getAuthor();
+
+    void setAuthor(String author);
 }

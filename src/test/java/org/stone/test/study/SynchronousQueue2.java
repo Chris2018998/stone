@@ -10,7 +10,7 @@
 package org.stone.test.study;
 
 import jdk.internal.misc.Unsafe;
-import org.stone.tools.UnsafeHolder;
+import org.stone.study.shine.util.UnsafeHolder;
 
 import java.util.AbstractQueue;
 import java.util.Collection;

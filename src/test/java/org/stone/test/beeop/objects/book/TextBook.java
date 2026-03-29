@@ -40,6 +40,11 @@ public class TextBook implements Book, BookBorrowInfo {
     }
 
     @Override
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    @Override
     public String getBorrower() {
         return borrower;
     }

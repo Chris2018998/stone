@@ -10,7 +10,7 @@
 package org.stone.study.shine.util.concurrent.synchronizer.chain;
 
 import jdk.internal.misc.Unsafe;
-import org.stone.tools.UnsafeHolder;
+import org.stone.study.shine.util.UnsafeHolder;
 
 /**
  * node cas updater

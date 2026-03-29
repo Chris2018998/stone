@@ -9,6 +9,9 @@
  */
 package org.stone.beeop.pool;
 
+import org.stone.beeop.BeeObjectKeyMonitorVo;
+import org.stone.beeop.BeeObjectPoolMonitorVo;
+
 import java.util.List;
 
 /**
@@ -23,7 +26,7 @@ public interface ObjectPoolMXBean {
 
     void enableLogCache(boolean enable) throws Exception;
 
-    ObjectPoolMonitorVo getPoolMonitorVo() throws Exception;
+    BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception;
 
 
     List<String> getKeyNames() throws Exception;
@@ -32,5 +35,5 @@ public interface ObjectPoolMXBean {
 
     void enableKeyLogCacheByName(String keyName, boolean enable) throws Exception;
 
-    ObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception;
+    BeeObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception;
 }

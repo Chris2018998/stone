@@ -22,12 +22,17 @@ public class Tc0060ObjectCallTest {
 
                 Assertions.assertEquals("Bruce Eckel", bookHandle.call("getAuthor"));
                 long accessTime1 = bookHandle.getLastAccessedTime();
-                Assertions.assertTrue(accessTime1 > 0);
-                Assertions.assertEquals("Bruce Eckel", bookHandle.call("getAuthor", new Class[0], new Object[0]));
+
+                bookHandle.call("setAuthor", new Class[]{String.class}, new Object[]{"Bruce Eckel2"});
                 long accessTime2 = bookHandle.getLastAccessedTime();
+
+                Assertions.assertEquals("Bruce Eckel2", bookHandle.call("getAuthor"));
+                long accessTime3 = bookHandle.getLastAccessedTime();
+
                 Assertions.assertTrue(accessTime2 > 0);
                 Assertions.assertTrue(accessTime1 >= accessTime0);
                 Assertions.assertTrue(accessTime2 >= accessTime1);
+                Assertions.assertTrue(accessTime3 >= accessTime2);
             }
         }
     }
