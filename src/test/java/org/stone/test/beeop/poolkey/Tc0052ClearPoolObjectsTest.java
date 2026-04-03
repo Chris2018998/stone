@@ -16,6 +16,7 @@ import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourcePoolRestartedFailureException;
+import org.stone.beeop.exception.BeePooledObjectKeyNotFoundException;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
 
@@ -40,6 +41,15 @@ public class Tc0052ClearPoolObjectsTest {
         String key2 = "Thanking in Rust";
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Assertions.assertFalse(os.existsKey(key2));
+            try {
+                os.clearKeyObjects(key2);//key not found
+                Assertions.fail("Failed to run testcase:[testDeletePooledKey)");
+            } catch (Exception e) {
+                Assertions.assertInstanceOf(BeePooledObjectKeyNotFoundException.class, e);
+                Assertions.assertTrue(e.getMessage().startsWith("Not found category pool with key"));
+            }
+
             //test os.clearKeyObjects(Key);
             BeeObjectHandle<String, Book> handle1 = os.getObjectHandle();
             BeeObjectHandle<String, Book> handle2 = os.getObjectHandle(key2);

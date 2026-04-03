@@ -33,7 +33,7 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 import static org.stone.tools.LogPrinter.getLogPrinter;
 
 /**
- * A parent pool manage some category pools by keys
+ * A key pool manage some category pools by keys
  *
  * @param <K> is pooled key
  * @param <V> is pooled object type

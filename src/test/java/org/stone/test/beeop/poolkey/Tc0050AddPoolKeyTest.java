@@ -15,6 +15,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.exception.BeePooledObjectCreatedException;
 import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
@@ -28,7 +29,7 @@ import java.util.concurrent.locks.LockSupport;
 public class Tc0050AddPoolKeyTest {
 
     @Test
-    public void testAddNewKey() throws Exception {
+    public void testAddNewKeySuccess() throws Exception {
         //1: test add new key on initialized key pool
         BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
         config.setMaxKeySize(2);
@@ -40,6 +41,7 @@ public class Tc0050AddPoolKeyTest {
             Assertions.assertEquals(1, os.keySize());
             Assertions.assertTrue(os.existsKey(objectFactory.getDefaultKey()));
 
+            //new key
             String newKey = "Thanking in Rust";
             try (BeeObjectHandle<String, Book> bookHandle = os.getObjectHandle(newKey)) {
                 Assertions.assertNotNull(bookHandle);
@@ -77,6 +79,31 @@ public class Tc0050AddPoolKeyTest {
     }
 
     @Test
+    public void testKeyInitializeFailure() throws Exception {
+        BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
+        config.setMaxKeySize(2);
+        config.setInitialSize(1);
+        config.setMaxActive(1);
+        TextBookFactory objectFactory = new TextBookFactory();
+        config.setObjectFactory(objectFactory);
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Assertions.assertEquals(1, os.keySize());
+            Assertions.assertTrue(os.existsKey(objectFactory.getDefaultKey()));
+
+            //new key failed
+            String newKey = "Thanking in Rust";
+            objectFactory.setException(new Exception("Paper is not enough"));
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
+                Assertions.fail("[Tc0050AddPoolKeyTest.testKeyInitializeFailure]failed");
+            } catch (Exception e) {
+                Assertions.assertInstanceOf(BeePooledObjectCreatedException.class, e);
+                BeePooledObjectCreatedException e1 = (BeePooledObjectCreatedException) e;
+                Assertions.assertEquals("Paper is not enough", e1.getCause().getMessage());
+            }
+        }
+    }
+
+    @Test
     public void testKeyCapacity() throws Exception {
         BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
         TextBookFactory objectFactory = new TextBookFactory();
@@ -91,7 +118,7 @@ public class Tc0050AddPoolKeyTest {
 
             //Key capacity test(failed)
             String key2 = "Thanking in C++";
-            try (BeeObjectHandle<String, Book> bookHandle = os.getObjectHandle(key2)) {
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(key2)) {
                 Assertions.fail("Pooled key capacity test failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);

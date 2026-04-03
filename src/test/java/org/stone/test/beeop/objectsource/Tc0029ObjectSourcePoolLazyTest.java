@@ -50,6 +50,7 @@ public class Tc0029ObjectSourcePoolLazyTest {
             }
 
             //4: check pool status
+            Assertions.assertFalse(os.isLazy());
             Assertions.assertFalse((os.getPoolMonitorVo(false).isLazy()));
 
             //5: method call check

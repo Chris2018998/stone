@@ -34,12 +34,20 @@ public class Tc0051DeletePoolKeyTest {
         config.setParkTimeForRetry(1L);//import: time control
 
         String defaultKey = objectFactory.getDefaultKey();
-        String key2 = "Thanking in Rust";
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Assertions.assertEquals(1, os.keySize());
             Assertions.assertTrue(os.existsKey(defaultKey));
 
-            //1: try to delete default key
+            //1:delete null key
+            try {
+                os.deleteKey(null);//null key
+                Assertions.fail("Failed to run testcase:[testDeletePooledKey)");
+            } catch (Exception e) {
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
+                Assertions.assertEquals("Key can't be null", e.getMessage());
+            }
+
+            //2: Key not in
             try {
                 os.deleteKey(defaultKey);
                 Assertions.fail("Failed to run testcase:[testDeletePooledKey)");
@@ -49,6 +57,7 @@ public class Tc0051DeletePoolKeyTest {
             }
 
             //delete key
+            String key2 = "Thanking in Rust";
             Assertions.assertFalse(os.existsKey(key2));
             Assertions.assertFalse(os.deleteKey(key2));
 

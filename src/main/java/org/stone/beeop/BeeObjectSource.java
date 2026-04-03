@@ -234,16 +234,12 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         if (this.poolInitialized) {
             return pool.interruptWaitingThreads();
         } else {
-            return lock.interruptAllThreads();
+            return lock.interruptAllThreads();//maybe block in pool creation or block in default key startup
         }
     }
 
     public List<Thread> interruptWaitingThreads(K key) throws Exception {
-        if (this.poolInitialized) {
-            return pool.interruptWaitingThreads(key);
-        } else {
-            return lock.interruptAllThreads();
-        }
+        return pool.interruptWaitingThreads(key);
     }
 
     //***************************************************************************************************************//

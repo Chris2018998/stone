@@ -11,12 +11,14 @@ package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourceConfigException;
 import org.stone.beeop.exception.BeeObjectSourceCreatedException;
 import org.stone.beeop.exception.BeeObjectSourcePoolStartedFailureException;
+import org.stone.beeop.exception.BeePooledObjectCreatedException;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
@@ -30,6 +32,31 @@ import java.util.concurrent.locks.LockSupport;
  * @author Chris Liao
  */
 public class Tc0030ObjectSourcePoolStartTest {
+
+    @Test
+    public void testSuccessGet() {
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertNotNull(ignored);
+            } catch (Throwable e) {
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testSuccessGet]failed");
+            }
+
+            BeeObjectFactory<String, Book> objectFactory = os.getObjectFactory();
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(objectFactory.getDefaultKey())) {
+                Assertions.assertNotNull(ignored);
+            } catch (Throwable e) {
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testSuccessGet]failed");
+            }
+
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(new String(objectFactory.getDefaultKey()))) {
+                Assertions.assertNotNull(ignored);
+            } catch (Throwable e) {
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testSuccessGet]failed");
+            }
+        }
+    }
 
     @Test
     public void testNullConfiguration() {
@@ -123,6 +150,27 @@ public class Tc0030ObjectSourcePoolStartTest {
                 BeeObjectSourceConfigException e2 = (BeeObjectSourceConfigException) e1.getCause();
                 Assertions.assertInstanceOf(ClassNotFoundException.class, e2.getCause());
             }
+        }
+    }
+
+    @Test
+    public void testInitializedFailureOnDefaultKey() {//Initialized failure on default key during key pool startup
+        TextBookFactory factory = new TextBookFactory();
+        factory.setException(new Exception("Paper is not enough"));
+        BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
+        config.setObjectFactory(factory);
+        config.setInitialSize(1);
+        config.setMaxActive(1);
+        try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testInitializedFailureOnDefaultKey]failed");
+        } catch (Exception e) {
+            Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
+            BeeObjectSourceCreatedException e1 = (BeeObjectSourceCreatedException) e;
+            Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
+            BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
+            Assertions.assertInstanceOf(BeePooledObjectCreatedException.class, e2.getCause());
+            BeePooledObjectCreatedException e3 = (BeePooledObjectCreatedException) e2.getCause();
+            Assertions.assertEquals("Paper is not enough", e3.getCause().getMessage());
         }
     }
 
