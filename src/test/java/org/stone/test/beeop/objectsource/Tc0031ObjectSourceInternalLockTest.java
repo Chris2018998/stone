@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.BeeObjectSourceCreatedException;
+import org.stone.beeop.exception.BeeObjectSourceCreationException;
 import org.stone.beeop.exception.BeePooledObjectGetInterruptedException;
 import org.stone.test.beeop.objects.ObjectBorrowThread;
 import org.stone.test.beeop.objects.book.Book;
@@ -127,7 +127,7 @@ public class Tc0031ObjectSourceInternalLockTest {
             blockThread.interrupt();
         }
         blockThread.join();
-        Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, blockThread.failureCause);
+        Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, blockThread.failureCause);
     }
 
     private static class PoolCreatorMockBlockThread extends Thread {

@@ -47,15 +47,16 @@ public class Tc0029ObjectSourcePoolLazyTest {
             os.setObjectFactory(new TextBookFactory());
             try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
                 Assertions.assertNotNull(handle);
+
+                //4: check pool status
+                Assertions.assertFalse(os.isLazy());
+                Assertions.assertFalse((os.getPoolMonitorVo(false).isLazy()));
             }
 
-            //4: check pool status
-            Assertions.assertFalse(os.isLazy());
-            Assertions.assertFalse((os.getPoolMonitorVo(false).isLazy()));
-
-            //5: method call check
+            //5: enable log printer
             try {
                 os.enableLogPrinter(true);
+                Assertions.assertTrue(os.getPoolMonitorVo(false).isEnabledLogPrinter());
             } catch (Throwable e) {
                 Assertions.fail("Tc0029ObjectSourcePoolLazyTest.testLazyPool]test failed");
             }

@@ -13,12 +13,17 @@ import org.stone.beeop.BeeObjectFactory;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.book.TextBook;
 
+import java.util.concurrent.locks.LockSupport;
+
 /**
  * Book Factory
  *
  * @author Chris Liao
  */
 public class TextBookFactory implements BeeObjectFactory<String, Book> {
+    protected String blockType;
+    protected long blockTime;
+
     protected String defaultKey;
     protected String title;
     protected String author;
@@ -34,6 +39,7 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
         this.author = author;
         this.defaultKey = title;
     }
+
 
     public int getStockCount() {
         return stockCount;
@@ -80,7 +86,22 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
 
     @Override
     public Book create(String key) throws Exception {
+        if (BlockWayTypes.Type_Sleep.equals(blockType)) {
+            if (blockTime > 0L) Thread.sleep(blockTime);
+        } else if (BlockWayTypes.Type_park.equals(blockType)) {
+            if (blockTime > 0L) {
+                LockSupport.parkNanos(blockTime);
+            } else {
+                LockSupport.park();
+            }
+        }
+
         if (this.exception != null) throw this.exception;
         return new TextBook(this.title, this.author);
+    }
+
+    public void setBlock(String blockType, long blockTime) {
+        this.blockType = blockType;
+        this.blockTime = blockTime;
     }
 }

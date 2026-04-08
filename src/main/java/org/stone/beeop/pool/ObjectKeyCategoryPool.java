@@ -280,7 +280,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             if (instance == null) {//if blocking interrupt on LockSupport.park in factory,maybe just return a null object?
                 if (creatingThread.isInterrupted() && Thread.interrupted())
                     throw new BeePooledObjectGetInterruptedException("An interruption occurred during creating object instance");
-                throw new BeePooledObjectCreatedException("Object instance created failed,null result returned from object factory");
+                throw new BeePooledObjectCreationException("Object instance created failed,null result returned from object factory");
             }
 
             objectFactory.setDefault(key, instance);//set default on created instance
@@ -291,7 +291,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         } catch (Throwable e) {
             p.state = OBJECT_CLOSED;//reset to closed state
             if (instance != null) this.objectFactory.destroy(key, instance);
-            throw new BeePooledObjectCreatedException(e);
+            throw new BeePooledObjectCreationException(e);
         } finally {
             p.creatingInfo = null;
         }
@@ -319,7 +319,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     //*** Core method for get *****
     private BeeObjectHandle<K, V> getObjectHandleInternal(long startTime) throws Exception {
         if (this.poolState != POOL_READY)
-            throw new BeeObjectSourcePoolNotReadyException("Pool was not ready");
+            throw new BeePooledObjectKeyException("Key was not ready");
 
         //1: try to reuse object in thread local
         Borrower<K, V> b = null;

@@ -22,7 +22,7 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0051DeletePoolKeyTest {
+public class Tc0051DeletePooledKeyTest {
 
     @Test
     public void testDeleteKey() throws Exception {

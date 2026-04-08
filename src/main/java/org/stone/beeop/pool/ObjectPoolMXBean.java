@@ -12,8 +12,6 @@ package org.stone.beeop.pool;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 
-import java.util.List;
-
 /**
  * Pool JMX Bean interface
  *
@@ -29,7 +27,7 @@ public interface ObjectPoolMXBean {
     BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception;
 
 
-    List<String> getKeyNames() throws Exception;
+    String[] getKeyNames() throws Exception;
 
     void enableKeyLogPrinterByName(String keyName, boolean enable) throws Exception;
 

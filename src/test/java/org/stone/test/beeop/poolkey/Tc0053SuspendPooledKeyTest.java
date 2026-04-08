@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.BeeObjectSourcePoolNotReadyException;
+import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
 
@@ -47,7 +47,7 @@ public class Tc0053SuspendPooledKeyTest {
                 os.getObjectHandle();
                 Assertions.fail("testSuspendKey test failed");
             } catch (Exception e) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolNotReadyException.class, e);
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
             }
             Assertions.assertTrue(os.getKeyMonitorVo(defaultKey).isSuspended());
 
@@ -55,7 +55,7 @@ public class Tc0053SuspendPooledKeyTest {
                 os.getObjectHandle(key2);
                 Assertions.fail("testSuspendKey test failed");
             } catch (Exception e) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolNotReadyException.class, e);
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
             }
             Assertions.assertTrue(os.getKeyMonitorVo(key2).isSuspended());
 
@@ -69,7 +69,6 @@ public class Tc0053SuspendPooledKeyTest {
             handle2.close();
         }
     }
-
 }
 
 

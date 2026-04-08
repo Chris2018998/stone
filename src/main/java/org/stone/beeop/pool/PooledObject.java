@@ -12,7 +12,7 @@ package org.stone.beeop.pool;
 import org.stone.beeop.BeeMethodLog;
 import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.BeeObjectPredicate;
-import org.stone.beeop.exception.BeePooledObjectRecycledException;
+import org.stone.beeop.exception.BeePooledObjectRecycleException;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -114,7 +114,7 @@ final class PooledObject<K, V> {
             if (e instanceof Exception)
                 throw (Exception) e;
             else
-                throw new BeePooledObjectRecycledException(e);
+                throw new BeePooledObjectRecycleException(e);
         }
     }
 

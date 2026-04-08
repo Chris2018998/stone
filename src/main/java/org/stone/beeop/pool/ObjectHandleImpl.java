@@ -11,7 +11,7 @@ package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectPredicate;
-import org.stone.beeop.exception.BeePooledObjectCalledException;
+import org.stone.beeop.exception.BeePooledObjectCallException;
 
 import java.lang.reflect.Constructor;
 
@@ -98,7 +98,7 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     }
 
     void checkClosed() throws Exception {
-        if (isClosed) throw new BeePooledObjectCalledException("No operations allowed after object handle closed");
+        if (isClosed) throw new BeePooledObjectCallException("No operations allowed after object handle closed");
     }
 
     //***************************************************************************************************************//

@@ -15,7 +15,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.BeeObjectSourcePoolRestartedFailureException;
+import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.beeop.exception.BeePooledObjectKeyNotFoundException;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
@@ -26,7 +26,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0052ClearPoolObjectsTest {
+public class Tc0052ClearPooledObjectsTest {
 
     @Test
     public void testClearPooledObjects() throws Exception {
@@ -93,13 +93,13 @@ public class Tc0052ClearPoolObjectsTest {
             thread2.join();
 
             if (thread1.getFailException() != null) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolRestartedFailureException.class, thread1.getFailException());
-                Assertions.assertEquals("Pooled key size has reach max capacity", thread1.getFailException().getMessage());
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, thread1.getFailException());
+                Assertions.assertTrue(thread1.getFailException().getMessage().contains("pool has been closed or is clearing"));
             }
 
             if (thread2.getFailException() != null) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolRestartedFailureException.class, thread2.getFailException());
-                Assertions.assertEquals("Pooled key size has reach max capacity", thread2.getFailException().getMessage());
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, thread2.getFailException());
+                Assertions.assertTrue(thread2.getFailException().getMessage().contains("pool has been closed or is clearing"));
             }
         }
     }

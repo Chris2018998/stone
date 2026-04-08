@@ -18,7 +18,7 @@ import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourceConfigException;
 import org.stone.beeop.exception.BeeObjectSourcePoolNotReadyException;
 import org.stone.beeop.exception.BeeObjectSourcePoolRestartedFailureException;
-import org.stone.beeop.exception.BeePooledObjectCreatedException;
+import org.stone.beeop.exception.BeePooledObjectCreationException;
 import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
@@ -109,7 +109,7 @@ public class Tc0037ObjectSourcePoolRestartTest {
                 Assertions.fail("[os.restart]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeeObjectSourcePoolRestartedFailureException.class, e);
-                Assertions.assertInstanceOf(BeePooledObjectCreatedException.class, e.getCause());
+                Assertions.assertInstanceOf(BeePooledObjectCreationException.class, e.getCause());
                 Assertions.assertInstanceOf(SQLException.class, e.getCause().getCause());
 
                 Assertions.assertTrue(os.getPoolMonitorVo(false).isRestartFailed());

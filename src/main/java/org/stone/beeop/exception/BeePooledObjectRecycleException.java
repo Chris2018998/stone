@@ -16,9 +16,9 @@ package org.stone.beeop.exception;
  * @version 1.0
  */
 
-public class BeePooledObjectRecycledException extends BeePooledObjectException {
+public class BeePooledObjectRecycleException extends BeePooledObjectException {
 
-    public BeePooledObjectRecycledException(Throwable cause) {
+    public BeePooledObjectRecycleException(Throwable cause) {
         super(cause);
     }
 }

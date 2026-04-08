@@ -331,7 +331,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
 
     public void clearKeyObjects(K key, boolean forceRecycleBorrowed) throws Exception {
         if (!getObjectInstancePool(key).restart(forceRecycleBorrowed))
-            throw new BeeObjectSourcePoolRestartedFailureException("Target category(" + key + ") Pool has been closed or is restarting");
+            throw new BeePooledObjectKeyException("Target category(" + key + ") pool has been closed or is clearing");
     }
 
     public boolean deleteKey(K key) throws Exception {
@@ -544,19 +544,19 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //***************************************************************************************************************//
     //                                    9: MBean Registration (0+2)                                                //
     //***************************************************************************************************************//
-    public ObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
-        return (ObjectPoolMonitorVo) this.getPoolMonitorVo(false);
+    public BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception {
+        return this.getPoolMonitorVo(false);
     }
 
-    public List<String> getKeyNames() throws Exception {
+    public String[] getKeyNames() {
         List<String> keyNameList = new LinkedList<>();
         for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
             keyNameList.add(categoryPool.getKeyName());
         }
-        return keyNameList;
+        return keyNameList.toArray(new String[0]);
     }
 
-    public void enableKeyLogPrinterByName(String keyName, boolean enable) throws Exception {
+    public void enableKeyLogPrinterByName(String keyName, boolean enable) {
         for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
             if (categoryPool.getKeyName().equals(keyName)) {
                 categoryPool.enableLogPrint(enable);
@@ -565,7 +565,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         }
     }
 
-    public void enableKeyLogCacheByName(String keyName, boolean enable) throws Exception {
+    public void enableKeyLogCacheByName(String keyName, boolean enable) {
         for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
             if (categoryPool.getKeyName().equals(keyName)) {
                 categoryPool.enableLogCache(enable);
@@ -574,7 +574,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         }
     }
 
-    public ObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception {
+    public BeeObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception {
         for (ObjectKeyCategoryPool<K, V> categoryPool : this.categoryPoolMap.values()) {
             if (categoryPool.getKeyName().equals(keyName)) {
                 return categoryPool.getKeyMonitorVo();

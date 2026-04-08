@@ -9,7 +9,7 @@
  */
 package org.stone.beeop;
 
-import org.stone.beeop.exception.BeeObjectSourceCreatedException;
+import org.stone.beeop.exception.BeeObjectSourceCreationException;
 import org.stone.beeop.exception.BeePooledObjectGetInterruptedException;
 import org.stone.beeop.exception.BeePooledObjectGetTimeoutException;
 import org.stone.beeop.pool.ObjectPool;
@@ -60,7 +60,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         } catch (RuntimeException e) {
             throw e;
         } catch (Throwable e) {
-            throw new BeeObjectSourceCreatedException(e);
+            throw new BeeObjectSourceCreationException(e);
         }
     }
 
@@ -116,42 +116,7 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     }
 
     //***************************************************************************************************************//
-    //                                     2: Pooled Keys maintenance(8+0)                                           //
-    //***************************************************************************************************************//
-    public int keySize() throws Exception {
-        return pool.keySize();
-    }
-
-    public boolean existsKey(K key) throws Exception {
-        return pool.existsKey(key);
-    }
-
-    public boolean suspendKey(K key) throws Exception {
-        return pool.suspendKey(key);
-    }
-
-    public boolean resumeKey(K key) throws Exception {
-        return pool.resumeKey(key);
-    }
-
-    public void clearKeyObjects(K key) throws Exception {
-        pool.clearKeyObjects(key);
-    }
-
-    public void clearKeyObjects(K key, boolean forceRecycleBorrowed) throws Exception {
-        pool.clearKeyObjects(key, forceRecycleBorrowed);
-    }
-
-    public boolean deleteKey(K key) throws Exception {
-        return pool.deleteKey(key);
-    }
-
-    public boolean deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
-        return pool.deleteKey(key, forceRecycleBorrowed);
-    }
-
-    //***************************************************************************************************************//
-    //                                     3: Pool Maintenance(5+0)                                                  //
+    //                                     2: Pool Maintenance(5+0)                                                  //
     //***************************************************************************************************************//
     public boolean suspend() throws Exception {
         return pool.suspend();
@@ -183,6 +148,41 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
                 }
             }
         }
+    }
+
+    //***************************************************************************************************************//
+    //                                     3: Pooled Keys maintenance(8+0)                                           //
+    //***************************************************************************************************************//
+    public int keySize() throws Exception {
+        return pool.keySize();
+    }
+
+    public boolean existsKey(K key) throws Exception {
+        return pool.existsKey(key);
+    }
+
+    public boolean suspendKey(K key) throws Exception {
+        return pool.suspendKey(key);
+    }
+
+    public boolean resumeKey(K key) throws Exception {
+        return pool.resumeKey(key);
+    }
+
+    public void clearKeyObjects(K key) throws Exception {
+        pool.clearKeyObjects(key);
+    }
+
+    public void clearKeyObjects(K key, boolean forceRecycleBorrowed) throws Exception {
+        pool.clearKeyObjects(key, forceRecycleBorrowed);
+    }
+
+    public boolean deleteKey(K key) throws Exception {
+        return pool.deleteKey(key);
+    }
+
+    public boolean deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
+        return pool.deleteKey(key, forceRecycleBorrowed);
     }
 
     //***************************************************************************************************************//

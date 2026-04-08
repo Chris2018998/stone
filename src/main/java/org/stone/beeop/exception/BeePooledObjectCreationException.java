@@ -10,15 +10,18 @@
 package org.stone.beeop.exception;
 
 /**
- * object call exception
+ * object exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class BeePooledObjectCalledException extends BeePooledObjectException {
+public class BeePooledObjectCreationException extends BeePooledObjectException {
 
-    public BeePooledObjectCalledException(String message) {
+    public BeePooledObjectCreationException(String message) {
         super(message);
     }
 
+    public BeePooledObjectCreationException(Throwable cause) {
+        super(cause);
+    }
 }

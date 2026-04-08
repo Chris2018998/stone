@@ -11,14 +11,13 @@ package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beeop.BeeObjectFactory;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourceConfigException;
-import org.stone.beeop.exception.BeeObjectSourceCreatedException;
+import org.stone.beeop.exception.BeeObjectSourceCreationException;
 import org.stone.beeop.exception.BeeObjectSourcePoolStartedFailureException;
-import org.stone.beeop.exception.BeePooledObjectCreatedException;
+import org.stone.beeop.exception.BeePooledObjectCreationException;
 import org.stone.beeop.pool.ObjectPool;
 import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
@@ -34,29 +33,64 @@ import java.util.concurrent.locks.LockSupport;
 public class Tc0030ObjectSourcePoolStartTest {
 
     @Test
-    public void testSuccessGet() {
+    public void testPoolStartInOsConstructor() throws Exception {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
+
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 Assertions.assertNotNull(ignored);
             } catch (Throwable e) {
-                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testSuccessGet]failed");
-            }
-
-            BeeObjectFactory<String, Book> objectFactory = os.getObjectFactory();
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(objectFactory.getDefaultKey())) {
-                Assertions.assertNotNull(ignored);
-            } catch (Throwable e) {
-                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testSuccessGet]failed");
-            }
-
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(new String(objectFactory.getDefaultKey()))) {
-                Assertions.assertNotNull(ignored);
-            } catch (Throwable e) {
-                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testSuccessGet]failed");
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolStartInOsConstructor]failed");
             }
         }
     }
+
+    @Test
+    public void testPoolLazyStartByCallingGetObjectHandle() throws Exception {
+        //1: getObjectHandle()
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            Assertions.assertTrue(os.getPoolMonitorVo(false).isLazy());
+            Assertions.assertFalse(os.getPoolMonitorVo(false).isReady());
+            os.setObjectFactory(new TextBookFactory());
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertFalse(os.getPoolMonitorVo(false).isLazy());
+                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
+            }
+        }
+
+        //2:getObjectHandle(default key)
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            Assertions.assertTrue(os.getPoolMonitorVo(false).isLazy());
+            Assertions.assertFalse(os.getPoolMonitorVo(false).isReady());
+
+            TextBookFactory bookFactory = new TextBookFactory();
+            os.setObjectFactory(bookFactory);
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(bookFactory.getDefaultKey())) {
+                Assertions.assertFalse(os.getPoolMonitorVo(false).isLazy());
+                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
+            }
+        }
+
+
+        //3:getObjectHandle(new key)
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            Assertions.assertTrue(os.getPoolMonitorVo(false).isLazy());
+            Assertions.assertFalse(os.getPoolMonitorVo(false).isReady());
+
+            TextBookFactory bookFactory = new TextBookFactory();
+            os.setObjectFactory(bookFactory);
+
+            String newKey = "Thanking in Rust";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
+                Assertions.assertFalse(os.getPoolMonitorVo(false).isLazy());
+                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
+                Assertions.assertTrue(os.existsKey(bookFactory.getDefaultKey()));
+                Assertions.assertTrue(os.existsKey(newKey));
+            }
+        }
+    }
+
 
     @Test
     public void testNullConfiguration() {
@@ -76,7 +110,7 @@ public class Tc0030ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolClassNotFound]test failed");
         } catch (Throwable e) {
-            Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
+            Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
             Assertions.assertInstanceOf(ClassNotFoundException.class, e.getCause());
         }
 
@@ -102,8 +136,8 @@ public class Tc0030ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
         } catch (Throwable e) {
-            Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
-            BeeObjectSourceCreatedException e1 = (BeeObjectSourceCreatedException) e;
+            Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
+            BeeObjectSourceCreationException e1 = (BeeObjectSourceCreationException) e;
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
             BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
             Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e2.getCause());
@@ -115,8 +149,8 @@ public class Tc0030ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
         } catch (Throwable e) {
-            Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
-            BeeObjectSourceCreatedException e1 = (BeeObjectSourceCreatedException) e;
+            Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
+            BeeObjectSourceCreationException e1 = (BeeObjectSourceCreationException) e;
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
             BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
             Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e2.getCause());
@@ -164,12 +198,12 @@ public class Tc0030ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testInitializedFailureOnDefaultKey]failed");
         } catch (Exception e) {
-            Assertions.assertInstanceOf(BeeObjectSourceCreatedException.class, e);
-            BeeObjectSourceCreatedException e1 = (BeeObjectSourceCreatedException) e;
+            Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
+            BeeObjectSourceCreationException e1 = (BeeObjectSourceCreationException) e;
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
             BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
-            Assertions.assertInstanceOf(BeePooledObjectCreatedException.class, e2.getCause());
-            BeePooledObjectCreatedException e3 = (BeePooledObjectCreatedException) e2.getCause();
+            Assertions.assertInstanceOf(BeePooledObjectCreationException.class, e2.getCause());
+            BeePooledObjectCreationException e3 = (BeePooledObjectCreationException) e2.getCause();
             Assertions.assertEquals("Paper is not enough", e3.getCause().getMessage());
         }
     }

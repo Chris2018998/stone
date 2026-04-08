@@ -15,7 +15,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.BeePooledObjectCreatedException;
+import org.stone.beeop.exception.BeePooledObjectCreationException;
 import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
@@ -26,7 +26,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0050AddPoolKeyTest {
+public class Tc0050AddPooledKeyTest {
 
     @Test
     public void testAddNewKeySuccess() throws Exception {
@@ -96,8 +96,8 @@ public class Tc0050AddPoolKeyTest {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
                 Assertions.fail("[Tc0050AddPoolKeyTest.testKeyInitializeFailure]failed");
             } catch (Exception e) {
-                Assertions.assertInstanceOf(BeePooledObjectCreatedException.class, e);
-                BeePooledObjectCreatedException e1 = (BeePooledObjectCreatedException) e;
+                Assertions.assertInstanceOf(BeePooledObjectCreationException.class, e);
+                BeePooledObjectCreationException e1 = (BeePooledObjectCreationException) e;
                 Assertions.assertEquals("Paper is not enough", e1.getCause().getMessage());
             }
         }
