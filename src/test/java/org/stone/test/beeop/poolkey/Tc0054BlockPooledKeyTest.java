@@ -39,19 +39,32 @@ public class Tc0054BlockPooledKeyTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Assertions.assertTrue(os.existsKey(bookFactory.getDefaultKey()));
 
-            //test block on new key
+            //interruptWaitingThreads(key)
             bookFactory.setBlock(BlockWayTypes.Type_Sleep, Long.MAX_VALUE);
             String newKey = "Thinking in C++";
-            ObjectBorrowThread borrowThread = new ObjectBorrowThread(os, newKey);
-            borrowThread.start();
-            if (waitUtilWaiting(borrowThread)) {
+            ObjectBorrowThread firstThread = new ObjectBorrowThread(os, newKey);
+            firstThread.start();
+            if (waitUtilWaiting(firstThread)) {
                 Assertions.assertEquals(1, os.getKeyMonitorVo(newKey).getCreatingSize());
                 Assertions.assertEquals(0, os.getKeyMonitorVo(newKey).getCreatingTimeoutSize());
                 Thread.sleep(200L);
                 Assertions.assertEquals(1, os.getKeyMonitorVo(newKey).getCreatingSize());
                 Assertions.assertEquals(1, os.getKeyMonitorVo(newKey).getCreatingTimeoutSize());
                 List<Thread> threadList= os.interruptWaitingThreads(newKey);
-                Assertions.assertTrue(threadList.contains(borrowThread));
+                Assertions.assertTrue(threadList.contains(firstThread));
+            }
+
+            //interruptWaitingThreads()
+            firstThread = new ObjectBorrowThread(os, newKey);
+            String newKey2 = "Thinking in Rust";
+            ObjectBorrowThread secondThread = new ObjectBorrowThread(os, newKey2);
+            firstThread.start();
+            secondThread.start();
+            if (waitUtilWaiting(firstThread)) {
+                Thread.sleep(200L);
+                List<Thread> threadList= os.interruptWaitingThreads();
+                Assertions.assertTrue(threadList.contains(firstThread));
+                Assertions.assertTrue(threadList.contains(secondThread));
             }
         }
     }
