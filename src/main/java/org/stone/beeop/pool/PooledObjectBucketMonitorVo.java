@@ -21,7 +21,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @version 1.0
  */
 
-public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
+public final class PooledObjectBucketMonitorVo implements BeeObjectKeyMonitorVo {
     private final String keyName;
     private final int keyState;
     private final int idleSize;
@@ -34,17 +34,17 @@ public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
     private final boolean enabledLogPrint;
     private final boolean enabledLogCache;
 
-    public ObjectKeyMonitorVo(String keyName,
-                              int keyState,
-                              int idleSize,
-                              int borrowedSize,
-                              int creatingSize,
-                              int creatingTimeoutSize,
-                              int semaphoreRemainSize,
-                              int semaphoreWaitingSize,
-                              int transferWaitingSize,
-                              boolean enabledLogPrint,
-                              boolean enabledLogCache) {
+    public PooledObjectBucketMonitorVo(String keyName,
+                                       int keyState,
+                                       int idleSize,
+                                       int borrowedSize,
+                                       int creatingSize,
+                                       int creatingTimeoutSize,
+                                       int semaphoreRemainSize,
+                                       int semaphoreWaitingSize,
+                                       int transferWaitingSize,
+                                       boolean enabledLogPrint,
+                                       boolean enabledLogCache) {
         this.keyName = keyName;
         this.keyState = keyState;
         this.idleSize = idleSize;
@@ -148,6 +148,5 @@ public class ObjectKeyMonitorVo implements BeeObjectKeyMonitorVo {
     public boolean isEnabledLogCache() {
         return enabledLogCache;
     }
-
 }
 

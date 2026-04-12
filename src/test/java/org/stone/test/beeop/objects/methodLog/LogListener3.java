@@ -24,19 +24,14 @@ import org.stone.beeop.BeeMethodLog;
  *
  * @author Chris Liao
  */
-public class LogListener2 extends LogListener1 {
-    private final Logger logger = LoggerFactory.getLogger(LogListener2.class);
-
-    public LogListener2(String name) {
-
-    }
+public class LogListener3 extends LogListener1 {
+    private final Logger logger = LoggerFactory.getLogger(LogListener3.class);
 
     public void onMethodStart(BeeMethodLog<String> log) {
-        logger.info("LogListener2.onMethodStart");
+        logger.info("LogListener3.onMethodStart");
     }
 
     public void onMethodEnd(BeeMethodLog<String> log) {
-        logger.info("LogListener2.onMethodEnd");
+        logger.info("LogListener3.onMethodEnd");
     }
-
 }

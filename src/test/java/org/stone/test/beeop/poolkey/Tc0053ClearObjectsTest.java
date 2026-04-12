@@ -11,12 +11,10 @@ package org.stone.test.beeop.poolkey;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectKeyMonitorVo;
-import org.stone.beeop.BeeObjectSource;
-import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.*;
 import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.beeop.exception.BeePooledObjectKeyNotFoundException;
+import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
 
@@ -26,7 +24,40 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0052ClearPooledObjectsTest {
+public class Tc0053ClearObjectsTest {
+
+    @Test
+    public void testClearObjectWithDefaultKey() throws Exception {
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+        config.setInitialSize(1);
+        config.setMaxActive(1);
+        BeeObjectFactory<String, Book> factory = config.getObjectFactory();
+
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            BeeObjectKeyMonitorVo defaultKeyMonitor = os.getKeyMonitorVo(factory.getDefaultKey());
+            Assertions.assertEquals(1, defaultKeyMonitor.getIdleSize());
+            Assertions.assertEquals(0, defaultKeyMonitor.getBorrowedSize());
+
+            //clear1
+            os.clearKeyObjects(factory.getDefaultKey());
+            defaultKeyMonitor = os.getKeyMonitorVo(factory.getDefaultKey());
+            Assertions.assertEquals(0, defaultKeyMonitor.getIdleSize());
+            Assertions.assertEquals(0, defaultKeyMonitor.getBorrowedSize());
+
+            //add new object
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(factory.getDefaultKey())) {
+                Assertions.assertEquals(1, os.getKeyMonitorVo(factory.getDefaultKey()).getBorrowedSize());
+            }
+            Assertions.assertEquals(1, os.getKeyMonitorVo(factory.getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(0, os.getKeyMonitorVo(factory.getDefaultKey()).getBorrowedSize());
+
+            //clear2
+            os.clearKeyObjects(factory.getDefaultKey(), false);
+            defaultKeyMonitor = os.getKeyMonitorVo(factory.getDefaultKey());
+            Assertions.assertEquals(0, defaultKeyMonitor.getIdleSize());
+            Assertions.assertEquals(0, defaultKeyMonitor.getBorrowedSize());
+        }
+    }
 
     @Test
     public void testClearPooledObjects() throws Exception {

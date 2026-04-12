@@ -23,7 +23,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @author Chris Liao
  * @version 1.0
  */
-public class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
+public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private final String poolName;
     private final int poolState;
     private final boolean enabledLogPrinter;
@@ -105,7 +105,7 @@ public class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
         return keyMonitorVoMap == null ? null : keyMonitorVoMap.get(keyName);
     }
 
-    void pubKeyMonitorVo(String keyName, ObjectKeyMonitorVo keyMonitorVo) {
+    void pubKeyMonitorVo(String keyName, PooledObjectBucketMonitorVo keyMonitorVo) {
         if (keyMonitorVoMap == null) this.keyMonitorVoMap = new HashMap<>(1);
         this.keyMonitorVoMap.put(keyName, keyMonitorVo);
     }

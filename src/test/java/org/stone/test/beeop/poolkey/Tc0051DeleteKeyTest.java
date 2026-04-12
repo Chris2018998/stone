@@ -11,18 +11,41 @@ package org.stone.test.beeop.poolkey;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectKeyMonitorVo;
-import org.stone.beeop.BeeObjectSource;
-import org.stone.beeop.BeeObjectSourceConfig;
+import org.stone.beeop.*;
 import org.stone.beeop.exception.BeePooledObjectKeyException;
+import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
 
 /**
  * @author Chris Liao
  */
-public class Tc0051DeletePooledKeyTest {
+public class Tc0051DeleteKeyTest {
+
+    @Test
+    public void testDeleteDefaultKey() {
+        //default key forbidden to deleted
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+        BeeObjectFactory<String, Book> factory = config.getObjectFactory();
+
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            try {
+                os.deleteKey(factory.getDefaultKey());
+                Assertions.fail("[Tc0049DefaultKeyTest.testDeleteDefaultKey]failed");
+            } catch (Exception e) {
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
+                Assertions.assertEquals("Default key is forbidden to delete", e.getMessage());
+            }
+
+            try {
+                os.deleteKey(factory.getDefaultKey(), true);
+                Assertions.fail("[Tc0049DefaultKeyTest.testDeleteDefaultKey]failed");
+            } catch (Exception e) {
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
+                Assertions.assertEquals("Default key is forbidden to delete", e.getMessage());
+            }
+        }
+    }
 
     @Test
     public void testDeleteKey() throws Exception {

@@ -12,14 +12,45 @@ package org.stone.beeop.pool;
 import org.stone.beeop.BeeMethodLog;
 import org.stone.beeop.BeeMethodLogListener;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * Interface of log cache
+ * Abstract class of method log cache
  *
  * @author Chris Liao
  */
-interface MethodLogCache<K> {
+abstract class MethodLogCache<K> {
+    //name of key pool
+    protected String poolName;
+    //log cache size
+    protected int logCacheSize;
+    //listener of method execution logs
+    protected BeeMethodLogListener<K> listener;
+
+    //***************************************************************************************************************//
+    //                                         1: initialization(1+0)                                                //
+    //***************************************************************************************************************//
+    public void init(String poolName, int logCacheSize, BeeMethodLogListener<K> listener) {
+        this.poolName = poolName;
+        this.logCacheSize = logCacheSize;
+        this.listener = listener;
+    }
+
+    //***************************************************************************************************************//
+    //                                         2: field change(2+0)                                                  //
+    //***************************************************************************************************************//
+
+    /**
+     * Set a new log listener to cache.
+     *
+     * @param listener to be set to cache
+     */
+    public void setLogListener(BeeMethodLogListener<K> listener) {
+        this.listener = listener;
+    }
 
     /**
      * Set a new threshold value for given log type
@@ -27,14 +58,11 @@ interface MethodLogCache<K> {
      * @param logType       is target log type
      * @param slowThreshold is a slow threshold value
      */
-    void setSlowThreshold(int logType, long slowThreshold);
+    abstract void setSlowThreshold(int logType, long slowThreshold);
 
-    /**
-     * Set a new log listener to cache.
-     *
-     * @param listener to be set to cache
-     */
-    void setLogListener(BeeMethodLogListener<K> listener);
+    //***************************************************************************************************************//
+    //                                         3: plugin methods to listen (2+0)                                     //
+    //***************************************************************************************************************//
 
     /**
      * Plugin method: Handles a log of method call.
@@ -46,7 +74,7 @@ interface MethodLogCache<K> {
      * @param parameters is method parameters of call
      * @return a recorded log
      */
-    BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception;
+    abstract BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception;
 
     /**
      * Plugin method: Handles a log of method call.
@@ -55,15 +83,11 @@ interface MethodLogCache<K> {
      * @param callResult is result of method call
      * @param log        is a log of method call
      */
-    void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) throws Exception;
+    abstract void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) throws Exception;
 
-    /**
-     * Clear cached logs of given type
-     *
-     * @param logType is greater than zero,only clear timeout logs
-     */
-    void clearLogs(int logType);
-
+    //***************************************************************************************************************//
+    //                                         4: Maintenance on method logs (2+0)                                   //
+    //***************************************************************************************************************//
 
     /**
      * Retrieve cached logs by type.
@@ -71,13 +95,71 @@ interface MethodLogCache<K> {
      * @param logType is target type to retrieve
      * @return a log list
      */
-    List<BeeMethodLog<K>> getLogs(int logType);
+    abstract List<BeeMethodLog<K>> getLogs(int logType);
+
+    /**
+     * Clear cached logs of given type
+     *
+     * @param logType is greater than zero,only clear timeout logs
+     */
+    abstract void clearLogs(int logType);
 
     /**
      * Clear cached logs.
      *
      * @param timeout is greater than zero,only clear timeout logs
      */
-    void clearTimeoutLogs(long timeout);
+    abstract void clearTimeoutLogs(long timeout);
 
+    //***************************************************************************************************************//
+    //                                         5: Protected methods(0+2)                                             //
+    //***************************************************************************************************************//
+    protected void offerQueue(MethodLog<K> log, LinkedBlockingQueue<MethodLog<K>> logsQueue) {
+        while (!logsQueue.offer(log)) {
+            if (logsQueue.size() == this.logCacheSize) {
+                MethodLog<K> firstLog = logsQueue.poll();
+                if (firstLog != null) firstLog.setRemoved(true);
+            }
+        }
+    }
+
+    protected void clearTimeoutLogsByQueue(long timeout, long slowThreshold, LinkedBlockingQueue<MethodLog<K>> logsQueue) {
+        List<BeeMethodLog<K>> longRunningLogList = new ArrayList<>(1);
+        List<MethodLog<K>> pendingRemovalLogList = new LinkedList<>();
+        long currentTime = System.currentTimeMillis();
+
+        //1: scan log list to find out all timeout logs to be removed
+        for (MethodLog<K> log : logsQueue) {
+            if (currentTime - log.getStartTime() - timeout >= 0L) {//timeout
+                pendingRemovalLogList.add(log);
+            }
+
+            log.setAsSlow(currentTime, slowThreshold);
+            if (log.isLongRunning() && !log.hasHandledByListener()) {
+                longRunningLogList.add(log);
+            }
+        }
+
+        //2: remove timeout logs from sql execution log list
+        if (!pendingRemovalLogList.isEmpty()) {
+            logsQueue.removeAll(pendingRemovalLogList);
+            for (MethodLog<K> log : pendingRemovalLogList) {
+                log.setRemoved(true);
+            }
+        }
+
+        //3: handle long-running logs
+        if (!longRunningLogList.isEmpty() && listener != null) {
+            try {
+                List<Boolean> processFlags = listener.onLongRunningDetected(longRunningLogList);
+                if (processFlags != null && !processFlags.isEmpty()) {
+                    for (int i = 0, l = processFlags.size(); i < l; i++) {
+                        ((MethodLog<K>) longRunningLogList.get(i)).setHandled(processFlags.get(i).booleanValue());
+                    }
+                }
+            } catch (Throwable e) {
+                //log.error();
+            }
+        }
+    }
 }

@@ -27,19 +27,18 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.stone.beeop.BeeMethodLog.Type_All;
-import static org.stone.beeop.BeeMethodLog.Type_Key_Log;
+import static org.stone.beeop.BeeMethodLog.*;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 import static org.stone.tools.LogPrinter.getLogPrinter;
 
 /**
- * Category pool to maintain pooled objects by key.
+ * A pool impl to maintain pooled objects
  *
  * @author Chris Liao
  * @version 1.0
  */
-final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements Runnable, Cloneable {
+final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> implements Runnable, Cloneable {
     private static final VarHandle ObjStUpd;
     private static final VarHandle BorrowStUpd;
     private static final VarHandle PoolStateUpd;
@@ -51,9 +50,9 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             MethodHandles.Lookup l = MethodHandles.lookup();
             ObjStUpd = l.findVarHandle(PooledObject.class, "state", int.class);
             BorrowStUpd = l.findVarHandle(Borrower.class, "state", Object.class);
-            PoolStateUpd = l.findVarHandle(ObjectKeyCategoryPool.class, "poolState", int.class);
-            ServantStateUpd = l.findVarHandle(ObjectKeyCategoryPool.class, "servantState", int.class);
-            ServantTryCountUpd = l.findVarHandle(ObjectKeyCategoryPool.class, "servantTryCount", int.class);
+            PoolStateUpd = l.findVarHandle(PooledObjectBucket.class, "poolState", int.class);
+            ServantStateUpd = l.findVarHandle(PooledObjectBucket.class, "servantState", int.class);
+            ServantTryCountUpd = l.findVarHandle(PooledObjectBucket.class, "servantTryCount", int.class);
         } catch (Throwable e) {
             throw new InternalError(e);
         }
@@ -89,13 +88,13 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     private final Map<MethodKey, MethodHandle> objectMethodCacheMap;//cache called methods
     private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
     private final ScheduledThreadPoolExecutor scheduledService;
-
     private final int methodLogCacheSize;
     private final BeeMethodLogListener<K> methodLogListener;//changeable
+    private final long getSlowThreshold;
+    private final long callSlowThreshold;
     LogPrinter logPrinter = DefaultLogPrinter;
     boolean collectMethodLogs;//changeable
     //Clone end
-
     //category key
     private K key;
     //key name
@@ -123,8 +122,9 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     //***************************************************************************************************************//
     //                                     1: Pool Creation(1+1)                                                     //
     //***************************************************************************************************************//
-    ObjectKeyCategoryPool(ObjectPool<K, V> parentPool, BeeObjectSourceConfig<K, V> config,
-                          Constructor<?> objectProxyClassConstructor, ScheduledThreadPoolExecutor scheduledService) {
+    PooledObjectBucket(ObjectPool<K, V> parentPool, BeeObjectSourceConfig<K, V> config,
+                       Constructor<?> objectProxyClassConstructor, ScheduledThreadPoolExecutor scheduledService) {
+
         //step1: copy  primitive type field
         this.parentPool = parentPool;
         this.poolState = POOL_NEW;
@@ -157,6 +157,8 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         this.scheduledService = scheduledService;
         this.methodLogCacheSize = config.getLogCacheSize();
         this.methodLogListener = config.getLogListener();
+        this.getSlowThreshold = config.getSlowGetThreshold();
+        this.callSlowThreshold = config.getSlowCallThreshold();
 
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
@@ -171,8 +173,8 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     @SuppressWarnings("unchecked")
-    ObjectKeyCategoryPool<K, V> createByClone() throws Exception {
-        return (ObjectKeyCategoryPool<K, V>) clone();
+    PooledObjectBucket<K, V> createByClone() throws Exception {
+        return (PooledObjectBucket<K, V>) clone();
     }
 
     //***************************************************************************************************************//
@@ -184,7 +186,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             //step1: set key and log printer
             this.key = key;
             this.keyName = key.toString();
-            this.logPrinter = getLogPrinter(ObjectKeyCategoryPool.class, isPrintRuntimeLogs);
+            this.logPrinter = getLogPrinter(PooledObjectBucket.class, isPrintRuntimeLogs);
 
             //step2: Create array of pool objects and fill 'empty state' objects
             this.objectArray = new PooledObject[maxActiveSize];
@@ -215,7 +217,9 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
             if (initSize > 0 && asyncCreateInitObjects) new PoolInitAsyncCreateThread<>(initSize, this).start();
 
             //step7: log cache initialize
-            this.init(keyName, this.methodLogCacheSize, this.methodLogListener);
+            super.init(keyName, this.methodLogCacheSize, this.methodLogListener);
+            super.setSlowThreshold(Type_Key_Log, getSlowThreshold);
+            super.setSlowThreshold(Type_Object_Log, callSlowThreshold);
             if (this.collectMethodLogs) {
                 this.timeoutLogsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(this, methodLogsTimeoutMs),
                         intervalOfMethodLogsClearTaskMs, intervalOfMethodLogsClearTaskMs, MILLISECONDS);
@@ -644,7 +648,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
     }
 
     public synchronized void enableLogPrint(boolean enable) {
-        this.logPrinter = LogPrinter.getLogPrinter(ObjectKeyCategoryPool.class, enable);
+        this.logPrinter = LogPrinter.getLogPrinter(PooledObjectBucket.class, enable);
     }
 
     public List<Thread> interruptWaitingThreads() {
@@ -669,7 +673,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         return threads;
     }
 
-    public ObjectKeyMonitorVo getKeyMonitorVo() {
+    public PooledObjectBucketMonitorVo getKeyMonitorVo() {
         int borrowedSize = 0, idleSize = 0;
         int creatingCount = 0, creatingTimeoutCount = 0;
 
@@ -704,7 +708,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
                 if (borrower.state == null) transferWaitingSize++;
         }
 
-        return new ObjectKeyMonitorVo(this.keyName, poolState,
+        return new PooledObjectBucketMonitorVo(this.keyName, poolState,
                 idleSize, borrowedSize, creatingCount, creatingTimeoutCount,
                 semaphoreRemainSize, semaphoreWaitingSize, transferWaitingSize,
                 this.logPrinter.isEnableLogOutput(), this.collectMethodLogs);
@@ -836,9 +840,9 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
 
     private static final class PoolInitAsyncCreateThread<K, V> extends Thread {
         private final int initialSize;
-        private final ObjectKeyCategoryPool<K, V> pool;
+        private final PooledObjectBucket<K, V> pool;
 
-        PoolInitAsyncCreateThread(int initialSize, ObjectKeyCategoryPool<K, V> pool) {
+        PoolInitAsyncCreateThread(int initialSize, PooledObjectBucket<K, V> pool) {
             this.initialSize = initialSize;
             this.pool = pool;
         }
@@ -857,7 +861,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         }
     }
 
-    private record TimeoutObjectsClearTask<K, V>(ObjectKeyCategoryPool<K, V> categoryPool) implements Runnable {
+    private record TimeoutObjectsClearTask<K, V>(PooledObjectBucket<K, V> categoryPool) implements Runnable {
 
         public void run() {
             try {
@@ -868,7 +872,7 @@ final class ObjectKeyCategoryPool<K, V> extends ObjectKeyLogCache<K> implements 
         }
     }
 
-    private record TimeoutMethodLogsClearTask<K, V>(ObjectKeyCategoryPool<K, V> categoryPool,
+    private record TimeoutMethodLogsClearTask<K, V>(PooledObjectBucket<K, V> categoryPool,
                                                     long timeout) implements Runnable {
 
         public void run() {

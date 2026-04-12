@@ -43,11 +43,11 @@ public class LogListener1 implements BeeMethodLogListener<String> {
     }
 
     public void onMethodStart(BeeMethodLog<String> log) {
-        logger.info("onMethodStart");
+        logger.info("LogListener1.onMethodStart");
     }
 
     public void onMethodEnd(BeeMethodLog<String> log) {
-        logger.info("onMethodEnd");
+        logger.info("LogListener1.onMethodEnd");
         if (log.isException()) {
             exceptionLog = log;
         } else if (log.isSlow()) {

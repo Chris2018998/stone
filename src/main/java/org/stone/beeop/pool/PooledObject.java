@@ -30,11 +30,11 @@ import static org.stone.tools.CommonUtil.isNotBlank;
  * @author Chris Liao
  * @version 1.0
  */
-final class PooledObject<K, V> {
+public final class PooledObject<K, V> {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
     final K key;
-    private final ObjectKeyCategoryPool<K, V> pool;
+    private final PooledObjectBucket<K, V> pool;
     private final boolean hasConfiguredMethodNames;
     private final String[] configuredMethodNames;
     private final BeeObjectPredicate objectPredicate;
@@ -58,7 +58,7 @@ final class PooledObject<K, V> {
     //                                  1: constructor(1+0)                                                           //                                                                                  //
     //***************************************************************************************************************//
     PooledObject(K key,
-                 ObjectKeyCategoryPool<K, V> ownerPool,
+                 PooledObjectBucket<K, V> ownerPool,
                  BeeObjectFactory<K, V> objectFactory,
                  BeeObjectPredicate objectPredicate,
                  boolean hasConfiguredMethodNames,

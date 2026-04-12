@@ -30,67 +30,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0030ObjectSourcePoolStartTest {
-
-    @Test
-    public void testPoolStartInOsConstructor() throws Exception {
-        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
-
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.assertNotNull(ignored);
-            } catch (Throwable e) {
-                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolStartInOsConstructor]failed");
-            }
-        }
-    }
-
-    @Test
-    public void testPoolLazyStartByCallingGetObjectHandle() throws Exception {
-        //1: getObjectHandle()
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            Assertions.assertTrue(os.getPoolMonitorVo(false).isLazy());
-            Assertions.assertFalse(os.getPoolMonitorVo(false).isReady());
-            os.setObjectFactory(new TextBookFactory());
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.assertFalse(os.getPoolMonitorVo(false).isLazy());
-                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
-            }
-        }
-
-        //2:getObjectHandle(default key)
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            Assertions.assertTrue(os.getPoolMonitorVo(false).isLazy());
-            Assertions.assertFalse(os.getPoolMonitorVo(false).isReady());
-
-            TextBookFactory bookFactory = new TextBookFactory();
-            os.setObjectFactory(bookFactory);
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(bookFactory.getDefaultKey())) {
-                Assertions.assertFalse(os.getPoolMonitorVo(false).isLazy());
-                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
-            }
-        }
-
-
-        //3:getObjectHandle(new key)
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            Assertions.assertTrue(os.getPoolMonitorVo(false).isLazy());
-            Assertions.assertFalse(os.getPoolMonitorVo(false).isReady());
-
-            TextBookFactory bookFactory = new TextBookFactory();
-            os.setObjectFactory(bookFactory);
-
-            String newKey = "Thanking in Rust";
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
-                Assertions.assertFalse(os.getPoolMonitorVo(false).isLazy());
-                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
-                Assertions.assertTrue(os.existsKey(bookFactory.getDefaultKey()));
-                Assertions.assertTrue(os.existsKey(newKey));
-            }
-        }
-    }
-
+public class Tc0030ObjectSourceCreationTest {
 
     @Test
     public void testNullConfiguration() {
@@ -110,6 +50,7 @@ public class Tc0030ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
             Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolClassNotFound]test failed");
         } catch (Throwable e) {
+            //** check point
             Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
             Assertions.assertInstanceOf(ClassNotFoundException.class, e.getCause());
         }
@@ -128,14 +69,15 @@ public class Tc0030ObjectSourcePoolStartTest {
     }
 
     @Test
-    public void testIncorrectConfiguration() {
-        //1: failure check
+    public void testPoolConfigurationCheckFail() {
+        //1: ConfigException check failed
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setInitialSize(10);
         config.setMaxActive(5);
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
-            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolConfigurationCheckFail]test failed");
         } catch (Throwable e) {
+            //** check point
             Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
             BeeObjectSourceCreationException e1 = (BeeObjectSourceCreationException) e;
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
@@ -143,12 +85,13 @@ public class Tc0030ObjectSourcePoolStartTest {
             Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e2.getCause());
         }
 
-        //2: failure check
+        //2: Object factory class initialization fail
         config = new BeeObjectSourceConfig<>();
         config.setObjectFactoryClassName(TextBookFactory.class.getName() + "_NotFound");
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
-            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPoolConfigurationCheckFail]test failed");
         } catch (Throwable e) {
+            //** check point
             Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
             BeeObjectSourceCreationException e1 = (BeeObjectSourceCreationException) e;
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
@@ -158,50 +101,27 @@ public class Tc0030ObjectSourcePoolStartTest {
             BeeObjectSourceConfigException e3 = (BeeObjectSourceConfigException) e2.getCause();
             Assertions.assertInstanceOf(ClassNotFoundException.class, e3.getCause());
         }
-
-        //3: failure check(lazy)
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            os.setInitialSize(10);
-            os.setMaxActive(5);
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
-            } catch (Throwable e) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
-                BeeObjectSourcePoolStartedFailureException e1 = (BeeObjectSourcePoolStartedFailureException) e;
-                Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e1.getCause());
-            }
-        }
-
-        //4: failure check(lazy)
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
-            os.setObjectFactoryClassName(TextBookFactory.class.getName() + "_NotFound");
-            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testIncorrectConfiguration]test failed");
-            } catch (Throwable e) {
-                Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
-                BeeObjectSourcePoolStartedFailureException e1 = (BeeObjectSourcePoolStartedFailureException) e;
-                Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e1.getCause());
-                BeeObjectSourceConfigException e2 = (BeeObjectSourceConfigException) e1.getCause();
-                Assertions.assertInstanceOf(ClassNotFoundException.class, e2.getCause());
-            }
-        }
     }
 
     @Test
-    public void testInitializedFailureOnDefaultKey() {//Initialized failure on default key during key pool startup
+    public void testPooledObjectCreationException() {
         TextBookFactory factory = new TextBookFactory();
         factory.setException(new Exception("Paper is not enough"));
-        BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setObjectFactory(factory);
         config.setInitialSize(1);
         config.setMaxActive(1);
+
         try (BeeObjectSource<String, Book> ignored = new BeeObjectSource<>(config)) {
-            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testInitializedFailureOnDefaultKey]failed");
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testPooledObjectCreationException]failed");
         } catch (Exception e) {
+            //** check point
             Assertions.assertInstanceOf(BeeObjectSourceCreationException.class, e);
             BeeObjectSourceCreationException e1 = (BeeObjectSourceCreationException) e;
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e1.getCause());
             BeeObjectSourcePoolStartedFailureException e2 = (BeeObjectSourcePoolStartedFailureException) e1.getCause();
+
+            //** check point
             Assertions.assertInstanceOf(BeePooledObjectCreationException.class, e2.getCause());
             BeePooledObjectCreationException e3 = (BeePooledObjectCreationException) e2.getCause();
             Assertions.assertEquals("Paper is not enough", e3.getCause().getMessage());
@@ -213,7 +133,7 @@ public class Tc0030ObjectSourcePoolStartTest {
     public void testNullConfig() {
         try (ObjectPool<String, Book> pool = new ObjectPool<>()) {
             pool.start(null);
-            Assertions.fail("[testNullConfig]Test failed");
+            Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testNullConfig]Test failed");
         } catch (Exception e) {
             Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
             Assertions.assertEquals("Object source configuration can't be null", e.getMessage());
@@ -221,7 +141,7 @@ public class Tc0030ObjectSourcePoolStartTest {
     }
 
     @Test
-    public void testCasFailure() throws Exception {
+    public void testMockStartByTwoThreads() throws Exception {
         try (ObjectPool<String, Book> pool = new ObjectPool<>()) {
             BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
             long targetTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(500L);

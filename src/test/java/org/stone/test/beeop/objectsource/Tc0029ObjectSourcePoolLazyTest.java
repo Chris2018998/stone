@@ -24,16 +24,17 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
 public class Tc0029ObjectSourcePoolLazyTest {
 
     @Test
-    public void testLazyPool() throws Exception {
+    public void testCheckLazy() throws Exception {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
             //1: state check
             Assertions.assertTrue(os.isLazy());
             BeeObjectPoolMonitorVo poolMonitorVo = os.getPoolMonitorVo(true);
             Assertions.assertTrue(poolMonitorVo.isLazy());
+            Assertions.assertFalse(poolMonitorVo.isReady());
             Assertions.assertNull(poolMonitorVo.getKeyMonitorVos());//no keys
             Assertions.assertNull(poolMonitorVo.getKeyMonitorVo("Any"));
 
-            //2: method call check when os pool is lazy
+            //2: exception check when method call on os
             try {
                 os.enableLogPrinter(true);
                 Assertions.fail("<ObjectSourceLazyTest>Test failed");
@@ -42,24 +43,52 @@ public class Tc0029ObjectSourcePoolLazyTest {
                 Assertions.assertEquals("No operations allowed on lazy pool", e.getMessage());
                 Assertions.assertEquals("Pool is lazy and it can be initialized by calling getObjectHandle method of objectSource", os.toString());
             }
+        }
+    }
 
-            //3: initialize object source pool
+    @Test
+    public void testLazyPoolStart() throws Exception {
+        //1: startup by calling getObjectHandle()
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
             os.setObjectFactory(new TextBookFactory());
-            try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
-                Assertions.assertNotNull(handle);
-
-                //4: check pool status
-                Assertions.assertFalse(os.isLazy());
-                Assertions.assertFalse((os.getPoolMonitorVo(false).isLazy()));
+            Assertions.assertTrue(os.isLazy());
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertNotNull(ignored);
             }
+            Assertions.assertFalse(os.isLazy());
+        }
 
-            //5: enable log printer
-            try {
-                os.enableLogPrinter(true);
-                Assertions.assertTrue(os.getPoolMonitorVo(false).isEnabledLogPrinter());
-            } catch (Throwable e) {
-                Assertions.fail("Tc0029ObjectSourcePoolLazyTest.testLazyPool]test failed");
+        //2: startup by calling getObjectHandle(new key)
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            os.setObjectFactory(new TextBookFactory());
+            Assertions.assertTrue(os.isLazy());
+            String newKey = "Thanking in Rust";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
+                Assertions.assertNotNull(ignored);
             }
+            Assertions.assertFalse(os.isLazy());
+        }
+
+        //3: startup by calling getObjectHandle(default key)
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            TextBookFactory bookFactory = new TextBookFactory();
+            os.setObjectFactory(bookFactory);
+            Assertions.assertTrue(os.isLazy());
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(bookFactory.getDefaultKey())) {
+                Assertions.assertNotNull(ignored);
+            }
+            Assertions.assertFalse(os.isLazy());
+        }
+
+        //4: startup by calling getObjectHandle(default key)
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            TextBookFactory bookFactory = new TextBookFactory();
+            os.setObjectFactory(bookFactory);
+            Assertions.assertTrue(os.isLazy());
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(new String(bookFactory.getDefaultKey().getBytes()))) {
+                Assertions.assertNotNull(ignored);
+            }
+            Assertions.assertFalse(os.isLazy());
         }
     }
 }

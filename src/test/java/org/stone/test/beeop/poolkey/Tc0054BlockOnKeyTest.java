@@ -25,7 +25,7 @@ import static org.stone.test.base.TestUtil.waitUtilWaiting;
 /**
  * @author Chris Liao
  */
-public class Tc0054BlockPooledKeyTest {
+public class Tc0054BlockOnKeyTest {
 
     @Test
     public void testBlock() throws Exception {
@@ -50,7 +50,7 @@ public class Tc0054BlockPooledKeyTest {
                 Thread.sleep(200L);
                 Assertions.assertEquals(1, os.getKeyMonitorVo(newKey).getCreatingSize());
                 Assertions.assertEquals(1, os.getKeyMonitorVo(newKey).getCreatingTimeoutSize());
-                List<Thread> threadList= os.interruptWaitingThreads(newKey);
+                List<Thread> threadList = os.interruptWaitingThreads(newKey);
                 Assertions.assertTrue(threadList.contains(firstThread));
             }
 
@@ -62,7 +62,7 @@ public class Tc0054BlockPooledKeyTest {
             secondThread.start();
             if (waitUtilWaiting(firstThread)) {
                 Thread.sleep(200L);
-                List<Thread> threadList= os.interruptWaitingThreads();
+                List<Thread> threadList = os.interruptWaitingThreads();
                 Assertions.assertTrue(threadList.contains(firstThread));
                 Assertions.assertTrue(threadList.contains(secondThread));
             }
