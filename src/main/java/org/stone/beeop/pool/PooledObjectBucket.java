@@ -19,7 +19,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -155,6 +154,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
         this.objectMethodCacheMap = new ConcurrentHashMap<>(1);
         this.scheduledService = scheduledService;
+        this.collectMethodLogs = config.isEnableLogCache();
         this.methodLogCacheSize = config.getLogCacheSize();
         this.methodLogListener = config.getLogListener();
         this.getSlowThreshold = config.getSlowGetThreshold();
@@ -311,7 +311,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                 BeeObjectHandle<K, V> handle = this.getObjectHandleInternal(startTime);
                 this.afterCall(System.currentTimeMillis(), handle, log);
                 return handle;
-            } catch (SQLException e) {
+            } catch (Throwable e) {
                 this.afterCall(System.currentTimeMillis(), e, log);
                 throw e;
             }

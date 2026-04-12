@@ -87,7 +87,6 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
 
         if (logType == Type_Key_Log) {
             defaultTypeLog.setAsSlow(0L, getSlowThreshold);
-            this.offerQueue(defaultTypeLog, objectGetLogQueue);
         } else if (logType == Type_Object_Log) {
             defaultTypeLog.setAsSlow(0L, callSlowThreshold);
         }
