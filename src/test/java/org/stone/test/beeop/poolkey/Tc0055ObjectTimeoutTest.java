@@ -13,9 +13,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
-import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
+import org.stone.test.beeop.objects.factory.TextBookFactory;
 
 /**
  * @author Chris Liao
@@ -24,21 +23,57 @@ public class Tc0055ObjectTimeoutTest {
 
     @Test
     public void testIdleTimeout() throws Exception {
-        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
-        config.setInitialSize(2);
-        config.setMaxActive(2);
-        config.setIdleTimeout(1L);
-        config.setHoldTimeout(500L);
-        config.setIntervalOfClearTimeout(500L);
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertEquals(2, os.getKeyMonitorVo(config.getObjectFactory().getDefaultKey()).getIdleSize());
-            Thread.sleep(1000L);
-            Assertions.assertEquals(0, os.getKeyMonitorVo(config.getObjectFactory().getDefaultKey()).getIdleSize());
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            os.setInitialSize(0);
+            os.setMaxActive(1);
+            os.setIdleTimeout(1L);
+            os.setIntervalOfClearTimeout(100L);
+            os.setObjectFactory(new TextBookFactory());
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+            }
+            Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
+
+            //wait 1second
+            Thread.sleep(200L);
+            Assertions.assertEquals(0, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
+        }
+    }
+
+    @Test
+    public void testHoldTimeout() throws Exception {
+        //1: holdTimeout >0L
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            os.setInitialSize(0);
+            os.setMaxActive(1);
+            os.setHoldTimeout(1L);
+            os.setIntervalOfClearTimeout(100L);
+            os.setObjectFactory(new TextBookFactory());
 
             try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
-                Assertions.assertEquals(1, os.getKeyMonitorVo(config.getObjectFactory().getDefaultKey()).getBorrowedSize());
-                Thread.sleep(1000L);
-                Assertions.assertEquals(0, os.getKeyMonitorVo(config.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Thread.sleep(200L);
+                Assertions.assertEquals(0, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
+                Assertions.assertTrue(handle.isClosed());
+            }
+        }
+
+        //2: holdTimeout=0L
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            os.setInitialSize(0);
+            os.setMaxActive(1);
+            os.setHoldTimeout(0L);
+            os.setIntervalOfClearTimeout(100L);
+            os.setObjectFactory(new TextBookFactory());
+
+            try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
+                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Thread.sleep(200L);
+                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Thread.sleep(200L);
+                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertFalse(handle.isClosed());
             }
         }
     }

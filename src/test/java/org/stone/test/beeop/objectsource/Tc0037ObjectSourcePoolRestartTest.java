@@ -78,7 +78,7 @@ public class Tc0037ObjectSourcePoolRestartTest {
                 os.restart(true, null);
                 Assertions.fail("[os.restart]test failed");
             } catch (Exception e) {
-                Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e);
+                Assertions.assertInstanceOf(BeeObjectSourcePoolRestartedFailureException.class, e);
             }
 
             //2：check failed on configuration

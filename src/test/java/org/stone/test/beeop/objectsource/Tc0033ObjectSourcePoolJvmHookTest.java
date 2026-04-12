@@ -30,7 +30,7 @@ public class Tc0033ObjectSourcePoolJvmHookTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
-            Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
+            Assertions.assertNotNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
         }
 
         //2: Not Register
@@ -38,7 +38,7 @@ public class Tc0033ObjectSourcePoolJvmHookTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
-            Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
+            Assertions.assertNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
         }
     }
 
@@ -50,12 +50,12 @@ public class Tc0033ObjectSourcePoolJvmHookTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
-            Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
+            Assertions.assertNotNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
 
             config.setRegisterJvmHook(false);
             os.restart(true, config);
             Assertions.assertNotNull(pool);
-            Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
+            Assertions.assertNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
         }
 
         //Not  Register  ---> Register
@@ -64,12 +64,12 @@ public class Tc0033ObjectSourcePoolJvmHookTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config2)) {
             Object pool = TestUtil.getFieldValue(os, "pool");
             Assertions.assertNotNull(pool);
-            Assertions.assertNull(TestUtil.getFieldValue(pool, "exitHook"));
+            Assertions.assertNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
 
             config2.setRegisterJvmHook(true);
             os.restart(true, config2);
             Assertions.assertNotNull(pool);
-            Assertions.assertNotNull(TestUtil.getFieldValue(pool, "exitHook"));
+            Assertions.assertNotNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
         }
     }
 }

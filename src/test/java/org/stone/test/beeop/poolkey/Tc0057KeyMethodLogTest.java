@@ -69,6 +69,31 @@ public class Tc0057KeyMethodLogTest {
     }
 
     @Test
+    public void testLogCacheEnable() throws Exception {
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+        config.setMaxKeySize(10);
+        config.setInitialSize(1);
+        config.setMaxActive(1);
+        config.setEnableLogCache(true);//enable log cache
+
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertNotNull(ignored);
+            }
+            Assertions.assertEquals(1, os.getKeyLogs(config.getObjectFactory().getDefaultKey()).size());
+            os.clearKeyLogs(config.getObjectFactory().getDefaultKey());
+            Assertions.assertEquals(0, os.getKeyLogs(config.getObjectFactory().getDefaultKey()).size());
+
+            //disable LogCache
+            os.enableLogCache(config.getObjectFactory().getDefaultKey(), false);
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertNotNull(ignored);
+            }
+            Assertions.assertEquals(0, os.getKeyLogs(config.getObjectFactory().getDefaultKey()).size());
+        }
+    }
+
+    @Test
     public void testLogListenerChange() throws Exception {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setInitialSize(1);
