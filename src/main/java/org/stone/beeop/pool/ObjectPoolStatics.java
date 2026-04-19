@@ -35,10 +35,6 @@ public class ObjectPoolStatics {
     public static final String CONFIG_FACTORY_PROP_SIZE = "objectFactoryProperties.size";
     //properties prefix of object factory
     public static final String CONFIG_FACTORY_PROP_KEY_PREFIX = "objectFactoryProperties.";
-    //config name of object interfaces
-    public static final String CONFIG_OBJECT_INTERFACES = "objectInterfaces";
-    //config name of object interface class names
-    public static final String CONFIG_OBJECT_INTERFACE_NAMES = "objectInterfaceNames";
     //config name of exclusion list of config print
     public static final String CONFIG_EXCLUSION_LIST_OF_PRINT = "exclusionListOfPrint";
     //config name of exclusion list of config print

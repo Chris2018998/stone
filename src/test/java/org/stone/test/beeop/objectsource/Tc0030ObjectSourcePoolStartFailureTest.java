@@ -30,7 +30,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0030ObjectSourceCreationTest {
+public class Tc0030ObjectSourcePoolStartFailureTest {
 
     @Test
     public void testNullConfiguration() {

@@ -28,14 +28,6 @@ public interface BeeObjectHandle<K, V> extends AutoCloseable {
     K getKey() throws Exception;
 
     /**
-     * Get wrapper object of borrowed object
-     *
-     * @return wrapper object,which maybe null when not
-     * @throws Exception if handle is closed
-     */
-    V getObject() throws Exception;
-
-    /**
      * Close handle
      */
     void close() throws Exception;

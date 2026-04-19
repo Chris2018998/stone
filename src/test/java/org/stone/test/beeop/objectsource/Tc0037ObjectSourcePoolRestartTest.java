@@ -15,7 +15,6 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.beeop.exception.BeeObjectSourceConfigException;
 import org.stone.beeop.exception.BeeObjectSourcePoolNotReadyException;
 import org.stone.beeop.exception.BeeObjectSourcePoolRestartedFailureException;
 import org.stone.beeop.exception.BeePooledObjectCreationException;

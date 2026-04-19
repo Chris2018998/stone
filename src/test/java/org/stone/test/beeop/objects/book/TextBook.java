@@ -20,6 +20,7 @@ public class TextBook implements Book, BookBorrowInfo {
 
     private String borrower;
     private long borrowedTime;
+    private Exception failException;
 
     public TextBook() {
     }
@@ -29,18 +30,25 @@ public class TextBook implements Book, BookBorrowInfo {
         this.author = author;
     }
 
+    public void setFailException(Exception failException) {
+        this.failException = failException;
+    }
+
     @Override
-    public String getTitle() {
+    public String getTitle() throws Exception {
+        if (this.failException != null) throw failException;
         return title;
     }
 
     @Override
-    public String getAuthor() {
+    public String getAuthor() throws Exception {
+        if (this.failException != null) throw failException;
         return author;
     }
 
     @Override
-    public void setAuthor(String author) {
+    public void setAuthor(String author) throws Exception {
+        if (this.failException != null) throw failException;
         this.author = author;
     }
 

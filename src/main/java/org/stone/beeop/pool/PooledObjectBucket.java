@@ -18,7 +18,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Constructor;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +84,6 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
     private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
     private final Map<MethodKey, MethodHandle> objectMethodCacheMap;//cache called methods
-    private final ObjectPlainHandleFactory<K, V> handleFactory;//create object handle to borrowers
     private final ScheduledThreadPoolExecutor scheduledService;
     private final int methodLogCacheSize;
     private final BeeMethodLogListener<K> methodLogListener;//changeable
@@ -94,6 +92,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     LogPrinter logPrinter = DefaultLogPrinter;
     boolean collectMethodLogs;//changeable
     //Clone end
+
     //category key
     private K key;
     //key name
@@ -122,7 +121,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //                                     1: Pool Creation(1+1)                                                     //
     //***************************************************************************************************************//
     PooledObjectBucket(ObjectPool<K, V> parentPool, BeeObjectSourceConfig<K, V> config,
-                       Constructor<?> objectProxyClassConstructor, ScheduledThreadPoolExecutor scheduledService) {
+                       ScheduledThreadPoolExecutor scheduledService) {
 
         //step1: copy  primitive type field
         this.parentPool = parentPool;
@@ -149,8 +148,8 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         this.objectPredicate = config.getPredicate();
         this.objectFactory = config.getObjectFactory();
         List<String> methodNameList = config.getObjectMethodNameList();
-        this.configuredMethodNames = methodNameList == null ? null : methodNameList.toArray(new String[0]);
-        this.hasConfiguredMethodNames = configuredMethodNames != null && configuredMethodNames.length > 0;
+        this.configuredMethodNames = methodNameList == null || methodNameList.isEmpty() ? null : methodNameList.toArray(new String[0]);
+        this.hasConfiguredMethodNames = configuredMethodNames != null;
 
         this.objectMethodCacheMap = new ConcurrentHashMap<>(1);
         this.scheduledService = scheduledService;
@@ -166,10 +165,6 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
         BeeObjectPredicate predicate = config.getPredicate();
-        if (objectProxyClassConstructor != null)
-            this.handleFactory = new ObjectProxyHandleFactory<>(predicate, objectProxyClassConstructor);
-        else
-            this.handleFactory = new ObjectPlainHandleFactory<>(predicate);
     }
 
     @SuppressWarnings("unchecked")
@@ -295,7 +290,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         } catch (Throwable e) {
             p.state = OBJECT_CLOSED;//reset to closed state
             if (instance != null) this.objectFactory.destroy(key, instance);
-            throw new BeePooledObjectCreationException(e);
+            throw (e instanceof BeePooledObjectException) ? (BeePooledObjectException) e : new BeePooledObjectCreationException(e);
         } finally {
             p.creatingInfo = null;
         }
@@ -336,12 +331,12 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     int state = p.state;
                     if (state == OBJECT_IDLE) {
                         if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
-                            if (this.testOnBorrow(p)) return handleFactory.createHandle(p);
+                            if (this.testOnBorrow(p)) return new ObjectHandleImpl<>(p);
                         } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                            return handleFactory.createHandle(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
+                            return new ObjectHandleImpl<>(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
                         }
                     } else if (state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
-                        return handleFactory.createHandle(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
+                        return new ObjectHandleImpl<>(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
                     }
                 }
             }
@@ -362,7 +357,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                             else
                                 this.threadLocal.set(new WeakReference<>(new Borrower<>(borrowThread, p)));
                         }
-                        return handleFactory.createHandle(p);
+                        return new ObjectHandleImpl<>(p);
                     }
 
                     //4: add the borrower to wait queue
@@ -384,7 +379,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                             if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
                                 this.waitQueue.remove(b);
                                 b.lastUsed = p;
-                                return handleFactory.createHandle(p);
+                                return new ObjectHandleImpl<>(p);
                             }
                         } else if (s instanceof Throwable) {//here: s must be throwable object
                             this.waitQueue.remove(b);
@@ -466,7 +461,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         if (isTimeout) {
             if (p != null) {
                 b.lastUsed = p;
-                return handleFactory.createHandle(p);
+                return new ObjectHandleImpl<>(p);
             }
             throw new BeePooledObjectGetTimeoutException("Waited timeout for a released object");
         } else {
@@ -783,32 +778,6 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //***************************************************************************************************************//
     //                                         12: Pool Internal classes(0+6)                                        //                                                                              //
     //***************************************************************************************************************//
-    private static class ObjectPlainHandleFactory<K, V> {
-        protected final BeeObjectPredicate predicate;
-
-        ObjectPlainHandleFactory(BeeObjectPredicate predicate) {
-            this.predicate = predicate;
-        }
-
-        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
-            return new ObjectHandleImpl<>(p);
-        }
-    }
-
-    private static class ObjectProxyHandleFactory<K, V> extends ObjectPlainHandleFactory<K, V> {
-        private final Constructor<?> objectProxyClassConstructor;
-
-        ObjectProxyHandleFactory(BeeObjectPredicate predicate,
-                                 Constructor<?> objectProxyClassConstructor) {
-            super(predicate);
-            this.objectProxyClassConstructor = objectProxyClassConstructor;
-        }
-
-        BeeObjectHandle<K, V> createHandle(PooledObject<K, V> p) throws Exception {
-            return new ObjectHandleImpl.ObjectHandleImpl2<>(p, predicate, objectProxyClassConstructor);
-        }
-    }
-
     private static final class BorrowerThreadLocal<K, V> extends ThreadLocal<WeakReference<Borrower<K, V>>> {
         BorrowerThreadLocal() {
         }

@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0
  */
-package org.stone.test.beeop.poolkey;
+package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

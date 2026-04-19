@@ -9,6 +9,8 @@
  */
 package org.stone.test.beeop.objects.factory;
 
+import org.stone.test.beeop.objects.book.Book;
+
 /**
  * Book Factory
  *
@@ -18,5 +20,10 @@ public class TextBookFactory2 extends TextBookFactory {
 
     public TextBookFactory2(String title, String author) {
         super(title, author);
+    }
+
+    @Override
+    public Book create(String key) throws Exception {
+        return null;
     }
 }

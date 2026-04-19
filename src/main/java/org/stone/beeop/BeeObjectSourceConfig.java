@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,52 +86,48 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     //25: Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName;
-    //26: An array of interfaces implemented by object class
-    private Class<?>[] objectInterfaces;
-    //27: A class name array of interface implemented by object class
-    private String[] objectInterfaceNames;
 
-    //28: Object factory,priority order: instance > class > class name
+    //26: Object factory,priority order: instance > class > class name
     private BeeObjectFactory<K, V> objectFactory;
-    //29: Class of object factory
+    //27: Class of object factory
     private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
-    //30: Class name of object factory
+    //28: Class name of object factory
     private String objectFactoryClassName;
 
-    //31: Predicate to do eviction test on exception objects,priority order: instance > class > class name
+    //29: Predicate to do eviction test on exception objects,priority order: instance > class > class name
     private BeeObjectPredicate predicate;
-    //32: Class of predicate
+    //30: Class of predicate
     private Class<? extends BeeObjectPredicate> predicateClass;
-    //33: Class name of predicate
+    //31: Class name of predicate
     private String predicateClassName;
 
     //********************************************** method Execution logs ********************************************//
-    //34: A flag to enable method log cache
+    //32: A flag to enable method log cache
     private boolean enableLogCache;
-    //35: Capacity of method logs cache，default is 1000
+    //33: Capacity of method logs cache，default is 1000
     private int logCacheSize = 1000;
-    //36: Log timeout in manager,default is 3 minutes
+    //34: Log timeout in manager,default is 3 minutes
     private long logTimeout = 180000L;
-    //37: Timer interval to clear timeout logs,default is 3 minutes
+    //35: Timer interval to clear timeout logs,default is 3 minutes
     private long intervalOfClearTimeoutLogs = logTimeout;
 
-    //38: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
+    //36: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
     private long slowGetThreshold = 30000L;
-    //39: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    //37: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
     private long slowCallThreshold = 30000L;
 
-    //40: method execution listener: instance > class > class name
+    //38: method execution listener: instance > class > class name
     private BeeMethodLogListener<K> logListener;
-    //41: Class of method execution listener,default is none
+    //39: Class of method execution listener,default is none
     private Class<? extends BeeMethodLogListener<K>> logListenerClass;
-    //42: Class name of method execution listener,default is none
+    //40: Class name of method execution listener,default is none
     private String logListenerClassName;
 
-    //43: method execution listener factory: instance > class > class name
+    //41: method execution listener factory: instance > class > class name
     private BeeMethodLogListenerFactory<K> logListenerFactory;
-    //44: Class of method execution listener factory ,default is none
+    //42: Class of method execution listener factory ,default is none
     private Class<? extends BeeMethodLogListenerFactory<K>> logListenerFactoryClass;
-    //45: Class name of method execution listener factory,default is none
+    //43: Class name of method execution listener factory,default is none
     private String logListenerFactoryClassName;
 
     //***************************************************************************************************************//
@@ -400,22 +395,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     //***************************************************************************************************************//
     //                                     3: creation configuration(20)                                             //
     //***************************************************************************************************************//
-    public Class<?>[] getObjectInterfaces() {
-        return objectInterfaces;
-    }
-
-    public void setObjectInterfaces(Class<?>[] interfaces) {
-        this.objectInterfaces = interfaces;
-    }
-
-    public String[] getObjectInterfaceNames() {
-        return this.objectInterfaceNames;
-    }
-
-    public void setObjectInterfaceNames(String[] interfaceNames) {
-        this.objectInterfaceNames = interfaceNames;
-    }
-
     public BeeObjectFactory<K, V> getObjectFactory() {
         return this.objectFactory;
     }
@@ -678,8 +657,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         //2: remove some special keys in setValueMap
         String factoryPropertiesText = setValueMap.remove(CONFIG_FACTORY_PROP);
         String factoryPropertiesSizeText = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);
-        String objectInterfacesText = setValueMap.remove(CONFIG_OBJECT_INTERFACES);
-        String objectInterfaceNamesText = setValueMap.remove(CONFIG_OBJECT_INTERFACE_NAMES);
         String exclusionListText = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
         String objectMethodNameList = setValueMap.remove(CONFIG_OBJECT_METHOD_LIST);
 
@@ -696,24 +673,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
             int size = Integer.parseInt(factoryPropertiesSizeText.trim());
             for (int i = 1; i <= size; i++)//properties index begin with 1
                 this.addObjectFactoryProperty(getPropertyValue(setValueMap, CONFIG_FACTORY_PROP_KEY_PREFIX + i));
-        }
-
-        //5:try to find 'objectInterfaceNames' config value
-        if (isNotBlank(objectInterfaceNamesText))
-            this.objectInterfaceNames = objectInterfaceNamesText.split(",");
-
-        //6:try to find 'objectInterfaces' config value
-        if (isNotBlank(objectInterfacesText)) {
-            String[] objectInterfaceNameArray = objectInterfacesText.split(",");
-            Class<?>[] objectInterfaces = new Class[objectInterfaceNameArray.length];
-            for (int i = 0, l = objectInterfaceNameArray.length; i < l; i++) {
-                try {
-                    objectInterfaces[i] = loadClass(objectInterfaceNameArray[i]);
-                } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Class not found:" + objectInterfaceNameArray[i]);
-                }
-            }
-            this.objectInterfaces = objectInterfaces;
         }
 
         //7:try to load exclusion list on config print
@@ -743,27 +702,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         //1: try to create object factory
         BeeObjectFactory<K, V> objectFactory = this.createObjectFactory();
 
-        //2: try to load interfaces
-        Class<?>[] objectInterfaces = this.loadObjectInterfaces();
-        if (objectInterfaces != null) {
-            int superClassCount = 0;
-            for (Class<?> clazz : objectInterfaces) {
-                if (!clazz.isInterface()) {
-                    superClassCount++;
-                    if (Modifier.isFinal(clazz.getModifiers()))
-                        throw new BeeObjectSourceConfigException("Object supper class cannot be final type,class:" + clazz.getName());
-                    try {
-                        clazz.getDeclaredConstructor();
-                    } catch (NoSuchMethodException e) {
-                        throw new BeeObjectSourceConfigException("Not found default constructor in super class:" + clazz.getName());
-                    }
-                }
-            }
-            if (superClassCount > 1)
-                throw new BeeObjectSourceConfigException("The count of super class cannot be greater than 1");
-        }
-
-        //3: create predicate and filter
+        //2: create predicate and filter
         BeeObjectPredicate predicate = this.createObjectPredicate();
         //4: create a method log listener
         BeeMethodLogListener<K> methodExecutionListener = this.createLogListener();
@@ -774,7 +713,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         //6: assign above objects to the checked configuration object(such as factory,filter,predicate)
         checkedConfig.objectFactory = objectFactory;
         if (predicate != null) checkedConfig.predicate = predicate;
-        if (objectInterfaces != null) checkedConfig.objectInterfaces = objectInterfaces;
         if (methodExecutionListener != null) checkedConfig.logListener = methodExecutionListener;
         if (isBlank(checkedConfig.poolName)) checkedConfig.poolName = "KeyPool-" + PoolNameIndex.incrementAndGet();
         if (checkedConfig.printConfiguration) printConfiguration(checkedConfig);
@@ -788,14 +726,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 fieldName = field.getName();
                 switch (fieldName) {
                     case CONFIG_POOL_NAME_INDEX:
-                        break;
-                    case CONFIG_OBJECT_INTERFACES:
-                        if (objectInterfaces != null && objectInterfaces.length > 0)
-                            config.objectInterfaces = objectInterfaces.clone();
-                        break;
-                    case CONFIG_OBJECT_INTERFACE_NAMES:
-                        if (objectInterfaceNames != null && objectInterfaceNames.length > 0)
-                            config.objectInterfaceNames = objectInterfaceNames.clone();
                         break;
                     case CONFIG_FACTORY_PROP:
                         config.objectFactoryProperties.putAll(objectFactoryProperties);
@@ -815,34 +745,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         } catch (Throwable e) {
             throw new BeeObjectSourceConfigException("Failed to filled value on field[" + fieldName + "]", e);
         }
-    }
-
-    private Class<?>[] loadObjectInterfaces() throws BeeObjectSourceConfigException {
-        //1: if objectInterfaces field value is not null,then check it and return it
-        if (objectInterfaces != null && objectInterfaces.length > 0) {
-            for (int i = 0, l = objectInterfaces.length; i < l; i++) {
-                if (objectInterfaces[i] == null)
-                    throw new BeeObjectSourceConfigException("Object interfaces[" + i + "]is null");
-            }
-            return objectInterfaces.clone();
-        }
-
-        //2: try to load interfaces by names
-        final int objectInterfaceNameSize = this.objectInterfaceNames != null ? objectInterfaceNames.length : 0;
-        if (objectInterfaceNameSize > 0) {
-            Class<?>[] objectInterfaces = new Class[objectInterfaceNameSize];
-            for (int i = 0; i < objectInterfaceNameSize; i++) {
-                try {
-                    if (isBlank(this.objectInterfaceNames[i]))
-                        throw new BeeObjectSourceConfigException("Object interface class names[" + i + "]is empty or null");
-                    objectInterfaces[i] = loadClass(this.objectInterfaceNames[i]);
-                } catch (ClassNotFoundException e) {
-                    throw new BeeObjectSourceConfigException("Not found interface,index:" + i + ",name:" + this.objectInterfaceNames[i], e);
-                }
-            }
-            return objectInterfaces;
-        }
-        return null;
     }
 
     private BeeObjectFactory<K, V> createObjectFactory() {
@@ -962,34 +864,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 switch (fieldName) {
                     case CONFIG_POOL_NAME_INDEX, CONFIG_EXCLUSION_LIST_OF_PRINT:
                         break;
-                    case CONFIG_OBJECT_INTERFACES: {
-                        if (objectInterfaces != null && objectInterfaces.length > 0) {
-                            StringBuilder interfacesClassBuf = new StringBuilder(20);
-                            for (Class<?> clazz : objectInterfaces) {
-                                if (!interfacesClassBuf.isEmpty()) interfacesClassBuf.append(",");
-                                interfacesClassBuf.append(clazz);
-                            }
-                            if (infoPrint)
-                                DefaultLogPrinter.info("BeeOP({})-config.objectInterfaces=[{}]", poolName, interfacesClassBuf);
-                            else
-                                DefaultLogPrinter.debug("BeeOP({})-config.objectInterfaces=[{}]", poolName, interfacesClassBuf);
-                        }
-                        break;
-                    }
-                    case CONFIG_OBJECT_INTERFACE_NAMES: {
-                        if (objectInterfaceNames != null && objectInterfaceNames.length > 0) {
-                            StringBuilder interfaceNameBuf = new StringBuilder(20);
-                            for (String name : objectInterfaceNames) {
-                                if (!interfaceNameBuf.isEmpty()) interfaceNameBuf.append(",");
-                                interfaceNameBuf.append(name);
-                            }
-                            if (infoPrint)
-                                DefaultLogPrinter.info("BeeOP({})-config.objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
-                            else
-                                DefaultLogPrinter.debug("BeeOP({})-config.objectInterfaceNames=[{}]", poolName, interfaceNameBuf);
-                        }
-                        break;
-                    }
                     case CONFIG_FACTORY_PROP: {
                         if (!this.objectFactoryProperties.isEmpty()) {
                             if (infoPrint) {

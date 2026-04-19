@@ -10,10 +10,7 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectPredicate;
 import org.stone.beeop.exception.BeePooledObjectCallException;
-
-import java.lang.reflect.Constructor;
 
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
 
@@ -63,11 +60,6 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
         return p.key;
     }
 
-    public V getObject() throws Exception {
-        checkClosed();
-        return null;//don't expose pooled object to outside
-    }
-
     //***************************************************************************************************************//
     //                                     3: Method call(2+0)                                                       //                                                                                  //
     //***************************************************************************************************************//
@@ -99,23 +91,5 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
 
     void checkClosed() throws Exception {
         if (isClosed) throw new BeePooledObjectCallException("No operations allowed after object handle closed");
-    }
-
-    //***************************************************************************************************************//
-    //                                     5: Handle Impl by proxy                                                   //                                                                                  //
-    //***************************************************************************************************************//
-    static class ObjectHandleImpl2<K, V> extends ObjectHandleImpl<K, V> {
-        private final V objectProxy;
-
-        ObjectHandleImpl2(PooledObject<K, V> p, BeeObjectPredicate predicate, Constructor<?> proxyClassConstructor) throws Exception {
-            super(p);
-            this.objectProxy = (V) proxyClassConstructor.newInstance(p, this, predicate);
-        }
-
-        @Override
-        public V getObject() throws Exception {
-            this.checkClosed();
-            return objectProxy;
-        }
     }
 }

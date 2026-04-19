@@ -20,6 +20,7 @@ import org.stone.beeop.BeeObjectPredicate;
 public class JavaBookPredicate implements BeeObjectPredicate {
 
     public String evictionTest(Throwable e) {
+        if (e != null && "eviction".equals(e.getMessage())) return "eviction";
         return null;
     }
 }

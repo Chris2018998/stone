@@ -39,8 +39,6 @@ public class Tc0014ConfigLoadFromPropertiesTest {
         Assertions.assertNotNull(config.getObjectFactoryClassName());
         Assertions.assertNotNull(config.getPredicateClass());
         Assertions.assertNotNull(config.getPredicateClassName());
-        Assertions.assertNotNull(config.getObjectInterfaceNames());
-        Assertions.assertNotNull(config.getObjectInterfaces());
         Assertions.assertNotNull(config.getObjectMethodNameList());
     }
 
@@ -70,8 +68,6 @@ public class Tc0014ConfigLoadFromPropertiesTest {
         Assertions.assertNotNull(config1.getObjectFactoryClassName());
         Assertions.assertNotNull(config1.getPredicateClass());
         Assertions.assertNotNull(config1.getPredicateClassName());
-        Assertions.assertNotNull(config1.getObjectInterfaceNames());
-        Assertions.assertNotNull(config1.getObjectInterfaces());
         Assertions.assertNotNull(config1.getObjectMethodNameList());
 
         prefix1 = "beeop1";
@@ -81,8 +77,6 @@ public class Tc0014ConfigLoadFromPropertiesTest {
         Assertions.assertNotNull(config1.getObjectFactoryClassName());
         Assertions.assertNotNull(config1.getPredicateClass());
         Assertions.assertNotNull(config1.getPredicateClassName());
-        Assertions.assertNotNull(config1.getObjectInterfaceNames());
-        Assertions.assertNotNull(config1.getObjectInterfaces());
         Assertions.assertNotNull(config1.getObjectMethodNameList());
 
         String prefix2 = "beeop2.";
@@ -92,8 +86,6 @@ public class Tc0014ConfigLoadFromPropertiesTest {
         Assertions.assertNotNull(config2.getObjectFactoryClassName());
         Assertions.assertNotNull(config2.getPredicateClass());
         Assertions.assertNotNull(config2.getPredicateClassName());
-        Assertions.assertNotNull(config2.getObjectInterfaceNames());
-        Assertions.assertNotNull(config2.getObjectInterfaces());
         Assertions.assertNotNull(config2.getObjectMethodNameList());
     }
 }

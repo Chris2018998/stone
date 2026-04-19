@@ -38,6 +38,7 @@ public class Tc0031DsPoolLazyInitializationTest {
         String poolLazyDesc = "Pool is lazy and initialized by calling one of its methods:getObjectHandle or getXAConnection";
 
         try (BeeDataSource ds = new BeeDataSource(driver, url, user, password)) {
+            Assertions.assertTrue(ds.isLazy());
             BeeConnectionPoolMonitorVo poolMonitorVo = ds.getPoolMonitorVo();
             Assertions.assertTrue(poolMonitorVo.isLazy());
             Assertions.assertEquals(poolLazyDesc, poolMonitorVo.toString());
@@ -145,6 +146,7 @@ public class Tc0031DsPoolLazyInitializationTest {
                 Assertions.assertNotNull(ignored);
             }
 
+            Assertions.assertFalse(ds.isLazy());
             poolMonitorVo = ds.getPoolMonitorVo();
             Assertions.assertFalse(poolMonitorVo.isLazy());
             Assertions.assertEquals(poolReadyDesc, poolMonitorVo.toString());

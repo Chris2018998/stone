@@ -157,8 +157,7 @@ public final class PooledObject<K, V> {
                 return v;
             } catch (Throwable e) {
                 if (objectPredicate != null && isNotBlank(objectPredicate.evictionTest(e)))
-                    this.abortSelf(DESC_RM_BAD);
-
+                    handleInUsing.abort();
                 if (log != null) pool.afterCall(System.currentTimeMillis(), e, log);//log of exception
                 throw e;
             }

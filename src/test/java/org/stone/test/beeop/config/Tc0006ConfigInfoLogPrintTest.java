@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.test.base.LogCollector;
 import org.stone.test.beeop.objects.book.Book;
-import org.stone.test.beeop.objects.book.BookBorrowInfo;
 
 /**
  * @author Chris Liao
@@ -76,44 +75,27 @@ public class Tc0006ConfigInfoLogPrintTest {
         Assertions.assertFalse(logs.contains(".initialSize"));
         Assertions.assertFalse(logs.contains(".maxKeySize"));
 
-
-        config.setObjectInterfaces(new Class[]{Book.class});
-        config.setObjectInterfaceNames(new String[]{Book.class.getName()});
         config.addObjectFactoryProperty("name", "Edition of Java world");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
-        Assertions.assertTrue(logs.contains(".objectInterfaces"));
-        Assertions.assertTrue(logs.contains(".objectInterfaceNames"));
         Assertions.assertTrue(logs.contains(".objectFactoryProperties"));
 
-        config.setObjectInterfaces(new Class[]{Book.class, BookBorrowInfo.class});
-        config.setObjectInterfaceNames(new String[]{Book.class.getName(), BookBorrowInfo.class.getName()});
         config.addObjectFactoryProperty("name", "Edition of Java world");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
-        Assertions.assertTrue(logs.contains(".objectInterfaces"));
-        Assertions.assertTrue(logs.contains(".objectInterfaceNames"));
         Assertions.assertTrue(logs.contains(".objectFactoryProperties"));
 
-        config.addExclusionNameOfPrint("objectInterfaces");
-        config.addExclusionNameOfPrint("objectInterfaceNames");
         config.addExclusionNameOfPrint("objectFactoryProperties");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
-        Assertions.assertFalse(logs.contains(".objectInterfaces"));
-        Assertions.assertFalse(logs.contains(".objectInterfaceNames"));
-        Assertions.assertFalse(logs.contains(".objectobjectFactoryProperties"));
+        Assertions.assertFalse(logs.contains(".objectFactoryProperties"));
 
-        config.setObjectInterfaces(new Class[0]);
-        config.setObjectInterfaceNames(new String[0]);
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
-        Assertions.assertFalse(logs.contains(".objectInterfaces"));
-        Assertions.assertFalse(logs.contains(".objectInterfaceNames"));
         Assertions.assertFalse(logs.contains(".objectFactoryProperties"));
     }
 }

@@ -17,9 +17,9 @@ package org.stone.test.beeop.objects.book;
 
 public interface Book {
 
-    String getTitle();
+    String getTitle() throws Exception;
 
-    String getAuthor();
+    String getAuthor() throws Exception;
 
-    void setAuthor(String author);
+    void setAuthor(String author) throws Exception;
 }

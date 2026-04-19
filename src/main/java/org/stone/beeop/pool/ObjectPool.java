@@ -17,7 +17,6 @@ import org.stone.tools.LogPrinter;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.lang.reflect.Constructor;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -122,14 +121,6 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.poolName = config.getPoolName();
         this.logPrinter = getLogPrinter(ObjectPool.class, config.isPrintRuntimeLogs());
 
-        //step2: Generate proxy class(@deprecated)
-        Constructor<?> objectProxyClassConstructor = null;
-        Class<?>[] interfaces = config.getObjectInterfaces();
-        if (interfaces != null) {
-            Class<?>[] objectProxyClasses = ObjectProxyGenerator.genProxyClassWithInterface(null, interfaces, config.getObjectMethodNameList());
-            objectProxyClassConstructor = objectProxyClasses[0].getDeclaredConstructors()[0];
-        }
-
         //step3: Create pool schedule executor(** schedule a task on default category pool, the task can interrupt possible block during startup **)
         int maxKeySize = config.getMaxKeySize();
         int coreThreadSizeOfScheduledThreadPool = Math.min(NCPU, (maxKeySize << 1) + 1);//1 is for clear timeout logs of key pool
@@ -150,7 +141,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.initialSizeOfKey = config.getInitialSize();
         this.asyncCreateInitObjectsOfKey = config.isAsyncCreateInitObjects();
         this.forceRecycleBorrowedOnClose = config.isForceRecycleBorrowedOnClose();
-        this.defaultObjectBucket = new PooledObjectBucket<>(this, config, objectProxyClassConstructor, this.scheduledService);
+        this.defaultObjectBucket = new PooledObjectBucket<>(this, config, this.scheduledService);
         this.defaultKey = config.getObjectFactory().getDefaultKey();
         this.defaultObjectBucket = this.startKeyCategoryPool(defaultKey, System.currentTimeMillis());
 

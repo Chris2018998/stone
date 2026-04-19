@@ -7,7 +7,7 @@
  *
  * Project Licensed under Apache License v2.0
  */
-package org.stone.test.beeop.poolkey;
+package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -40,6 +40,7 @@ public class Tc0050NewKeyTest {
             //1: new key1
             String newKey1 = "Thanking in Rust";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
+                Assertions.assertEquals(newKey1, ignored.getKey());
                 Assertions.assertTrue(os.existsKey(newKey1));
                 Assertions.assertEquals(2, os.keySize());
             }
