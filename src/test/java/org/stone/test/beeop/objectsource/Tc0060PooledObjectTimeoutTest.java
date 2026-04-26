@@ -19,7 +19,7 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0055ObjectTimeoutTest {
+public class Tc0060PooledObjectTimeoutTest {
 
     @Test
     public void testIdleTimeout() throws Exception {

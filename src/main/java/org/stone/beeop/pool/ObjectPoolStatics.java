@@ -41,7 +41,7 @@ public class ObjectPoolStatics {
     public static final String CONFIG_OBJECT_METHOD_LIST = "objectMethodNameList";
 
     public static final Class<?>[] EMPTY_CLASSES = new Class[0];
-    public static final String[] EMPTY_CLASS_NAMES = new String[0];
+
     //pool state
     public static final int POOL_LAZY = -1;
     public static final int POOL_NEW = 0;

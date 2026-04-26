@@ -20,7 +20,7 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0051DeleteKeyTest {
+public class Tc0051PoolKeyDeletionTest {
 
     @Test
     public void testDeleteDefaultKey() {

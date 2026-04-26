@@ -25,7 +25,7 @@ import static org.stone.test.base.TestUtil.waitUtilWaiting;
 /**
  * @author Chris Liao
  */
-public class Tc0054BlockOnKeyTest {
+public class Tc0068PoolKeyBlockInObjectFactoryTest {
 
     @Test
     public void testBlock() throws Exception {

@@ -12,7 +12,6 @@ package org.stone.beeop.pool;
 import org.stone.beeop.BeeMethodLog;
 import org.stone.beeop.BeeMethodLogListener;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -124,24 +123,26 @@ abstract class MethodLogCache<K> {
     }
 
     protected void clearTimeoutLogsByQueue(long timeout, long slowThreshold, LinkedBlockingQueue<MethodLog<K>> logsQueue) {
-        List<BeeMethodLog<K>> longRunningLogList = new ArrayList<>(1);
-        List<MethodLog<K>> pendingRemovalLogList = new LinkedList<>();
+        List<MethodLog<K>> pendingRemovalLogList = null;
+        List<BeeMethodLog<K>> longRunningLogList = null;
         long currentTime = System.currentTimeMillis();
 
         //1: scan log list to find out all timeout logs to be removed
         for (MethodLog<K> log : logsQueue) {
             if (currentTime - log.getStartTime() - timeout >= 0L) {//timeout
+                if (pendingRemovalLogList == null) pendingRemovalLogList = new LinkedList<>();
                 pendingRemovalLogList.add(log);
             }
 
             log.setAsSlow(currentTime, slowThreshold);
-            if (log.isLongRunning() && !log.hasHandledByListener()) {
+            if (listener != null && log.isLongRunning() && !log.hasHandledByListener()) {
+                if (longRunningLogList == null) longRunningLogList = new LinkedList<>();
                 longRunningLogList.add(log);
             }
         }
 
         //2: remove timeout logs from sql execution log list
-        if (!pendingRemovalLogList.isEmpty()) {
+        if (pendingRemovalLogList != null) {
             logsQueue.removeAll(pendingRemovalLogList);
             for (MethodLog<K> log : pendingRemovalLogList) {
                 log.setRemoved(true);
@@ -149,7 +150,7 @@ abstract class MethodLogCache<K> {
         }
 
         //3: handle long-running logs
-        if (!longRunningLogList.isEmpty() && listener != null) {
+        if (longRunningLogList != null) {
             try {
                 List<Boolean> processFlags = listener.onLongRunningDetected(longRunningLogList);
                 if (processFlags != null && !processFlags.isEmpty()) {

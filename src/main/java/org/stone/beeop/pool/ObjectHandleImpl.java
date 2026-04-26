@@ -10,9 +10,9 @@
 package org.stone.beeop.pool;
 
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.exception.BeePooledObjectCallException;
+import org.stone.beeop.exception.BeePooledObjectException;
 
-import static org.stone.beeop.pool.ObjectPoolStatics.*;
+import static org.stone.beeop.pool.ObjectPoolStatics.DESC_RM_ABORT;
 
 /**
  * object Handle implement
@@ -65,7 +65,7 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     //***************************************************************************************************************//
     public Object call(String methodName) throws Throwable {
         checkClosed();
-        return p.callMethod(methodName, EMPTY_CLASSES, EMPTY_CLASS_NAMES);
+        return p.callMethod(methodName, null, null);
     }
 
     public Object call(String methodName, Class<?>[] types, Object[] params) throws Throwable {
@@ -90,6 +90,6 @@ public class ObjectHandleImpl<K, V> implements BeeObjectHandle<K, V> {
     }
 
     void checkClosed() throws Exception {
-        if (isClosed) throw new BeePooledObjectCallException("No operations allowed after object handle closed");
+        if (isClosed) throw new BeePooledObjectException("No operations allowed after object handle closed");
     }
 }

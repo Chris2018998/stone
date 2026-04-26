@@ -22,7 +22,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0052SuspendKeyTest {
+public class Tc0052PoolKeySuspensionTest {
 
     @Test
     public void testSuspendKey() throws Exception {
@@ -34,7 +34,7 @@ public class Tc0052SuspendKeyTest {
             os.suspendKey(bookFactory.getDefaultKey());
             Assertions.assertTrue(os.getKeyMonitorVo(bookFactory.getDefaultKey()).isSuspended());
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0052SuspendKeyTest.testSuspendKey]failed");
+                Assertions.fail("[Tc0052PoolKeySuspensionTest.testSuspendKey]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
                 Assertions.assertEquals("Key was not ready", e.getMessage());
@@ -46,7 +46,7 @@ public class Tc0052SuspendKeyTest {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 Assertions.assertNotNull(ignored);
             } catch (Exception e) {
-                Assertions.fail("[Tc0052SuspendKeyTest.testSuspendKey]failed");
+                Assertions.fail("[Tc0052PoolKeySuspensionTest.testSuspendKey]failed");
             }
         }
     }

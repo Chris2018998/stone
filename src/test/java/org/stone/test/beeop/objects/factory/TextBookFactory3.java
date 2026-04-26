@@ -15,7 +15,7 @@ public class TextBookFactory3 extends TextBookFactory {
     @Override
     public Book create(String key) throws Exception {
         TextBook book = new TextBook(this.title, this.author);
-        if (this.exception != null) book.setFailException(exception);
+        if (this.callException != null) book.setFailException(callException);
         return book;
     }
 }

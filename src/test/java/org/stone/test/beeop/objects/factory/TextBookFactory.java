@@ -28,7 +28,11 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
     protected String title;
     protected String author;
     protected int stockCount;
-    protected Exception exception;
+    protected Exception creationException;
+
+
+    protected long callSleepTimeMs;
+    protected Exception callException;
 
     public TextBookFactory() {
         this("Thanking in Java", "Bruce Eckel");
@@ -40,7 +44,6 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
         this.defaultKey = title;
     }
 
-
     public int getStockCount() {
         return stockCount;
     }
@@ -49,8 +52,16 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
         this.stockCount = stockCount;
     }
 
-    public void setException(Exception exception) {
-        this.exception = exception;
+    public void setCreationException(Exception creationException) {
+        this.creationException = creationException;
+    }
+
+    public void setCallException(Exception callException) {
+        this.callException = callException;
+    }
+
+    public void setCallSleepTimeMs(long callSleepTimeMs) {
+        this.callSleepTimeMs = callSleepTimeMs;
     }
 
     @Override
@@ -63,24 +74,24 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
     }
 
     @Override
-    public boolean isValid(String key, Book obj, int timeout) {
+    public boolean isValid(String key, Book obj, int timeout) throws Exception {
         return true;
     }
 
     @Override
-    public void setDefault(String key, Book obj) {
+    public void setDefault(String key, Book obj) throws Exception {
         TextBook book = (TextBook) obj;
         book.setBorrower(null);
         book.setBorrowedTime(0L);
     }
 
     @Override
-    public void reset(String key, Book obj) {
+    public void reset(String key, Book obj) throws Exception {
         this.setDefault(key, obj);
     }
 
     @Override
-    public void destroy(String key, Book obj) {
+    public void destroy(String key, Book obj) throws Exception {
         TextBook book = (TextBook) obj;
     }
 
@@ -96,8 +107,11 @@ public class TextBookFactory implements BeeObjectFactory<String, Book> {
             }
         }
 
-        if (this.exception != null) throw this.exception;
-        return new TextBook(this.title, this.author);
+        if (this.creationException != null) throw this.creationException;
+        TextBook book = new TextBook(this.title, this.author);
+        if (callException != null) book.setFailException(callException);
+        if (callSleepTimeMs > 0) book.setSleepTimeMs(callSleepTimeMs);
+        return book;
     }
 
     public void setBlock(String blockType, long blockTime) {

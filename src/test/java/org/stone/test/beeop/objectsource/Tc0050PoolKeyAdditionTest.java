@@ -26,7 +26,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0050NewKeyTest {
+public class Tc0050PoolKeyAdditionTest {
 
     @Test
     public void testAddNewKeySuccess() throws Exception {

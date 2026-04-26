@@ -24,7 +24,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0053ClearObjectsTest {
+public class Tc0053PoolKeyObjectsClearTest {
 
     @Test
     public void testClearObjectWithDefaultKey() throws Exception {

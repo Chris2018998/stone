@@ -122,7 +122,7 @@ public class Tc0040PoolKeyInitializationTest {
         }
 
         TextBookFactory bookFactory = new TextBookFactory();
-        bookFactory.setException(new Exception("Failed to create book"));
+        bookFactory.setCreationException(new Exception("Failed to create book"));
         config.setObjectFactory(bookFactory);
         config.setPrintRuntimeLogs(true);
         LogCollector logCollector = LogCollector.startLogCollector();

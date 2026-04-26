@@ -201,7 +201,6 @@
                         <!-- beeop cases -->
                         <include>org.stone.test.beeop.config.*Test</include>
                         <include>org.stone.test.beeop.objectsource.*Test</include>
-                        <include>org.stone.test.beeop.poolkey.*Test</include>
                     </includes>
                 </configuration>
             </plugin>

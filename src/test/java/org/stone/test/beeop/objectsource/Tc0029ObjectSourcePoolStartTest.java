@@ -49,7 +49,6 @@ public class Tc0029ObjectSourcePoolStartTest {
 
     @Test
     public void testLazyPool() throws Exception {
-
         //Not set configuration to os
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
             //1: check state of pool
@@ -110,6 +109,22 @@ public class Tc0029ObjectSourcePoolStartTest {
                 os.enableLogPrinter(true);
             } catch (Exception e) {
                 Assertions.fail("[Tc0029ObjectSourcePoolStartTest.testLazyPool]failed");
+            }
+        }
+    }
+
+    @Test
+    public void testLazyPoolByNewKey() throws Exception {
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
+            Assertions.assertTrue(os.isLazy());
+            TextBookFactory bookFactory = new TextBookFactory();
+            os.setObjectFactory(bookFactory);
+
+            String newKey = "Thinking in Rust";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
+                Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
+                Assertions.assertTrue(os.existsKey(bookFactory.getDefaultKey()));
+                Assertions.assertTrue(os.existsKey(newKey));
             }
         }
     }

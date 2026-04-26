@@ -89,6 +89,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     private final BeeMethodLogListener<K> methodLogListener;//changeable
     private final long getSlowThreshold;
     private final long callSlowThreshold;
+
     LogPrinter logPrinter = DefaultLogPrinter;
     boolean collectMethodLogs;//changeable
     //Clone end
@@ -162,9 +163,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
         this.transferPolicy = isFairMode ? new FairTransferPolicy<>() : new CompeteTransferPolicy<>();
-
         this.stateCodeOnRelease = transferPolicy.getStateCodeOnRelease();
-        BeeObjectPredicate predicate = config.getPredicate();
     }
 
     @SuppressWarnings("unchecked")
@@ -270,7 +269,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
     private PooledObject<K, V> fillObjectInstance(PooledObject<K, V> p, int state, Thread creatingThread) throws Exception {
         //1: print runtime log of object creation
-        logPrinter.info("BeeOP({})-begin to create a raw object", this.keyName);
+        logPrinter.info("BeeOP({})-begin to create a pooled object", this.keyName);
 
         V instance = null;
         try {
@@ -402,10 +401,10 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     semaphore.release();
                 }
             } else {
-                throw new BeePooledObjectGetTimeoutException("Waited timeout on pool semaphore");
+                throw new BeePooledObjectGetTimeoutException("Waited timeout on key semaphore");
             }
         } catch (InterruptedException e) {
-            throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting on pool semaphore");
+            throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting on key semaphore");
         }
     }
 
@@ -437,9 +436,11 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                 return true;
             }
         } catch (Throwable e) {
-            logPrinter.warn("BeeOP({})-alive test failed on a borrowed object", this.keyName, e);
+            logPrinter.warn("BeeOP({})-An exception thrown when alive test failed on a borrowed object", this.keyName, e);
+            p.onRemove(DESC_RM_BAD);
+            this.tryWakeupServantThread();
+            return false;
         }
-        return false;
     }
 
     /*** alive test on borrowed connection ***/

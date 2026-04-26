@@ -106,7 +106,7 @@ public class Tc0030ObjectSourcePoolStartFailureTest {
     @Test
     public void testPooledObjectCreationException() {
         TextBookFactory factory = new TextBookFactory();
-        factory.setException(new Exception("Paper is not enough"));
+        factory.setCreationException(new Exception("Paper is not enough"));
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setObjectFactory(factory);
         config.setInitialSize(1);

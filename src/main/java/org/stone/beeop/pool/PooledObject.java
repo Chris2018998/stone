@@ -142,12 +142,12 @@ public final class PooledObject<K, V> {
     //***************************************************************************************************************//
     Object callMethod(String name, Class<?>[] types, Object[] params) throws Throwable {
         if (isBlank(name)) throw new IllegalArgumentException("Method name can't be null or be blank");
-        if (types == null) throw new IllegalArgumentException("Method parameter types can't be null");
+        //if (types == null) throw new IllegalArgumentException("Method parameter types can't be null or empty");
 
         if (!this.hasConfiguredMethodNames || isInConfiguredMethodNames(name)) {
             BeeMethodLog<K> log = null;
             if (pool.collectMethodLogs)
-                log = pool.beforeCall(System.currentTimeMillis(), key, Type_Object_Log, "ObjectHandleImpl.call", params);
+                log = pool.beforeCall(System.currentTimeMillis(), key, Type_Object_Log, name, params);
 
             try {
                 Object v = callInternal(name, types, params);
@@ -181,7 +181,7 @@ public final class PooledObject<K, V> {
             objectMethodCacheMap.putIfAbsent(key, methodHandle);
         }
 
-        int parameterLen = types.length;
+        int parameterLen = types != null ? types.length : 0;
         Object[] invokeParameters = new Object[parameterLen + 1];
         invokeParameters[0] = objectInstance;
         if (params != null && params.length > 0) {

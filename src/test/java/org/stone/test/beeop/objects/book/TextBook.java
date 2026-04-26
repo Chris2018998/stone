@@ -20,6 +20,8 @@ public class TextBook implements Book, BookBorrowInfo {
 
     private String borrower;
     private long borrowedTime;
+
+    private long sleepTimeMs;
     private Exception failException;
 
     public TextBook() {
@@ -30,25 +32,38 @@ public class TextBook implements Book, BookBorrowInfo {
         this.author = author;
     }
 
+    public void setSleepTimeMs(long sleepTimeMs) {
+        this.sleepTimeMs = sleepTimeMs;
+    }
+
     public void setFailException(Exception failException) {
         this.failException = failException;
     }
 
+    private void block() throws Exception {
+        if (this.failException != null) throw failException;
+        if (sleepTimeMs > 0) Thread.sleep(sleepTimeMs);
+    }
+
     @Override
     public String getTitle() throws Exception {
-        if (this.failException != null) throw failException;
+        this.block();
         return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     @Override
     public String getAuthor() throws Exception {
-        if (this.failException != null) throw failException;
+        this.block();
         return author;
     }
 
     @Override
     public void setAuthor(String author) throws Exception {
-        if (this.failException != null) throw failException;
+        this.block();
         this.author = author;
     }
 

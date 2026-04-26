@@ -102,7 +102,7 @@ public class Tc0037ObjectSourcePoolRestartTest {
             Assertions.assertEquals(config.getPoolName(), os.getPoolName());
 
             //4: restart failure1
-            objectFactory.setException(new SQLException("Network error"));
+            objectFactory.setCreationException(new SQLException("Network error"));
             try {
                 os.restart(true, config);
                 Assertions.fail("[os.restart]failed");
@@ -118,7 +118,7 @@ public class Tc0037ObjectSourcePoolRestartTest {
                     Assertions.fail("[os.restart]failed");
                 } catch (Exception ee) {
                     Assertions.assertInstanceOf(BeeObjectSourcePoolNotReadyException.class, ee);
-                    objectFactory.setException(null);
+                    objectFactory.setCreationException(null);
                     os.restart(true, config);
                     try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
                         Assertions.assertNotNull(handle);

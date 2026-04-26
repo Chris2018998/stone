@@ -11,7 +11,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0060ObjectCallTest {
+public class Tc0064ObjectHandleTest {
 
     @Test
     public void testGetAuthor() throws Throwable {
@@ -19,6 +19,13 @@ public class Tc0060ObjectCallTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try (BeeObjectHandle<String, Book> bookHandle = os.getObjectHandle()) {
                 long accessTime0 = bookHandle.getLastAccessedTime();
+
+                try {
+                    bookHandle.call(null);
+                    Assertions.fail("[Tc0064ObjectHandleTest.testGetAuthor]failed");
+                } catch (Exception e) {
+                    Assertions.assertEquals("Method name can't be null or be blank", e.getMessage());
+                }
 
                 Assertions.assertEquals("Bruce Eckel", bookHandle.call("getAuthor"));
                 long accessTime1 = bookHandle.getLastAccessedTime();
@@ -34,6 +41,8 @@ public class Tc0060ObjectCallTest {
                 Assertions.assertTrue(accessTime2 >= accessTime1);
                 Assertions.assertTrue(accessTime3 >= accessTime2);
             }
+
+
         }
     }
 }

@@ -416,7 +416,7 @@ final class ProxyClassesGenerator {
                     CtClass[] parameterTypes = ctMethod.getParameterTypes();
                     int methodParameterSize = parameterTypes.length;
                     if (methodParameterSize == 0) {
-                        methodBuffer.append("BeeMethodLog log = logCache.beforeCall(BeeMethodLog.Type_Statement_Log,").append(methodSignature).append(",null,null,null);");
+                        methodBuffer.append("BeeMethodLog log = logCache.beforeCall(BeeMethodLog.Type_Connection_Log,").append(methodSignature).append(",null,null,null);");
                     } else {
                         methodBuffer.append("Object[]parameters = new Object[]{");
                         for (int i = 0; i < methodParameterSize; i++) {
@@ -424,7 +424,7 @@ final class ProxyClassesGenerator {
                             methodBuffer.append(getConvertType("$" + (i + 1), parameterTypes[i]));
                         }
                         methodBuffer.append("};");
-                        methodBuffer.append("BeeMethodLog log = logCache.beforeCall(BeeMethodLog.Type_Statement_Log,").append(methodSignature).append(",parameters,null,null);");
+                        methodBuffer.append("BeeMethodLog log = logCache.beforeCall(BeeMethodLog.Type_Connection_Log,").append(methodSignature).append(",parameters,null,null);");
                     }
 
                     //2.2: add 'try'

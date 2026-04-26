@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * @author Chris Liao
  */
-public class Tc0039ObjectSourcePoolMethodLogTest {
+public class Tc0039ObjectSourcePoolLogsTest {
 
     @Test
     public void testSuccessLogOnNewKey() throws Exception {
@@ -36,6 +36,7 @@ public class Tc0039ObjectSourcePoolMethodLogTest {
         config.setMaxKeySize(2);
         config.setInitialSize(1);
         config.setMaxActive(1);
+        config.setPrintRuntimeLogs(true);
         config.setEnableLogCache(true);
         config.setObjectFactory(new TextBookFactory());
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -60,6 +61,7 @@ public class Tc0039ObjectSourcePoolMethodLogTest {
         config.setMaxKeySize(2);
         config.setInitialSize(1);
         config.setMaxActive(1);
+        config.setPrintRuntimeLogs(true);
         config.setEnableLogCache(true);
 
         TextBookFactory bookFactory = new TextBookFactory();
@@ -69,7 +71,7 @@ public class Tc0039ObjectSourcePoolMethodLogTest {
 
             String newKey = "Thanking in Rust";
             Exception failureException = new Exception("unknown error");
-            bookFactory.setException(failureException);
+            bookFactory.setCreationException(failureException);
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
                 for (BeeMethodLog<String> log : os.getPoolLogs()) {
                     if (Objects.equals(newKey, log.getKey())) {
@@ -89,6 +91,7 @@ public class Tc0039ObjectSourcePoolMethodLogTest {
         config.setMaxKeySize(10);
         config.setInitialSize(1);
         config.setMaxActive(1);
+        config.setLogCacheSize(1);
         config.setEnableLogCache(true);//enable log cache
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -115,6 +118,49 @@ public class Tc0039ObjectSourcePoolMethodLogTest {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey2)) {
                 Assertions.assertTrue(os.existsKey(newKey2));
                 Assertions.assertEquals(1, os.getPoolLogs().size());//one log generated
+            }
+        }
+    }
+
+    @Test
+    public void testSmallLogCache() throws Exception {
+
+        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+        config.setLogCacheSize(1);
+        config.setEnableLogCache(true);
+
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Assertions.assertEquals(1, os.getPoolLogs().size());
+            Assertions.assertEquals(config.getObjectFactory().getDefaultKey(), os.getPoolLogs().get(0).getKey());
+
+            String newKey1 = "Thanking in Rust";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
+                Assertions.assertTrue(os.existsKey(newKey1));
+                Assertions.assertEquals(1, os.getPoolLogs().size());//no log generated
+                Assertions.assertEquals(newKey1, os.getPoolLogs().get(0).getKey());
+
+            }
+            String newKey2 = "Thanking in C++";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey2)) {
+                Assertions.assertTrue(os.existsKey(newKey2));
+                Assertions.assertEquals(1, os.getPoolLogs().size());//no log generated
+                Assertions.assertEquals(newKey2, os.getPoolLogs().get(0).getKey());
+
+            }
+        }
+
+        config.setLogCacheSize(3);
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            String newKey1 = "Thanking in Rust";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
+                Assertions.assertTrue(os.existsKey(newKey1));
+                Assertions.assertEquals(2, os.getPoolLogs().size());//no log generated
+            }
+
+            String newKey2 = "Thanking in C++";
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey2)) {
+                Assertions.assertTrue(os.existsKey(newKey2));
+                Assertions.assertEquals(3, os.getPoolLogs().size());//no log generated
             }
         }
     }

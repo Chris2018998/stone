@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * @author Chris Liao
  */
-public class Tc0057KeyMethodLogTest {
+public class Tc0067KeyMethodLogTest {
 
     @Test
     public void testSuccessLog() throws Exception {
@@ -49,12 +49,12 @@ public class Tc0057KeyMethodLogTest {
         config.setEnableLogCache(true);
         config.setInitialSize(0);
         TextBookFactory bookFactory = new TextBookFactory();
-        bookFactory.setException(new Exception("Paper is not enough"));
+        bookFactory.setCreationException(new Exception("Paper is not enough"));
         config.setObjectFactory(bookFactory);
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0057KeyMethodLogTest.testExceptionLog]failed");
+                Assertions.fail("[Tc0067KeyMethodLogTest.testExceptionLog]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectCreationException.class, e);
                 Assertions.assertEquals("Paper is not enough", e.getCause().getMessage());
