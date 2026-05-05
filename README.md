@@ -17,6 +17,6 @@ Stone is a Java toolkit package integrates three Java pools
 <dependency>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>2.1.0</version>
+    <version>2.2.0</version>
 </dependency>
 ```
