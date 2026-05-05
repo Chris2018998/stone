@@ -15,6 +15,7 @@ import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeePooledObjectGetTimeoutException;
+import org.stone.beeop.exception.BeePooledObjectKeyException;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.ObjectBorrowThread;
@@ -23,7 +24,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0057PoolKeyWaitQueueTest {
+public class Tc0067PooledBucketWaitQueueTest {
     @Test
     public void testTransfer() throws Exception {
         //1: wait timeout test
@@ -34,6 +35,7 @@ public class Tc0057PoolKeyWaitQueueTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 try (BeeObjectHandle<String, Book> ignored1 = os.getObjectHandle()) {
+                    Assertions.fail("[Tc0067PooledBucketWaitQueueTest.testTransfer]failed");
                 } catch (Exception e) {
                     Assertions.assertInstanceOf(BeePooledObjectGetTimeoutException.class, e);
                 }
@@ -55,6 +57,28 @@ public class Tc0057PoolKeyWaitQueueTest {
                     Thread.sleep(100L);
                     borrowThread.join();
                 }
+            } finally {
+                if (handle != null) {
+                    handle.close();
+                }
+            }
+        }
+
+        //3: interrupt waiter in queue
+        BeeObjectSourceConfig<String, Book> config3 = OsConfigFactory.createDefault();
+        config3.setInitialSize(1);
+        config3.setMaxActive(1);
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config2)) {
+            BeeObjectHandle<String, Book> handle = null;
+            try {
+                handle = os.getObjectHandle();
+                ObjectBorrowThread borrowThread = new ObjectBorrowThread(os);
+                borrowThread.start();
+                if (TestUtil.waitUtilWaiting(borrowThread)) {
+                    os.interruptWaitingThreadsInBucket(config3.getObjectFactory().getDefaultKey());
+                }
+                borrowThread.join();
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, borrowThread.getFailureCause());
             } finally {
                 if (handle != null) {
                     handle.close();

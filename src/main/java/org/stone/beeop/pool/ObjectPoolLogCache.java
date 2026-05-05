@@ -62,7 +62,7 @@ final class ObjectPoolLogCache<K> extends MethodLogCache<K> {
             offerQueue(defaultTypeLog, logsQueue);
         }
 
-        defaultTypeLog.setAsSlow(0L, slowThreshold);
+        defaultTypeLog.setAsSlow(0L, slowThreshold, false);
         if (listener != null) listener.onMethodEnd(log);
     }
 
@@ -83,6 +83,6 @@ final class ObjectPoolLogCache<K> extends MethodLogCache<K> {
     }
 
     public void clearTimeoutLogs(long timeout) {
-        clearTimeoutLogsByQueue(timeout, slowThreshold, logsQueue);
+        clearTimeoutLogsByQueue(timeout, slowThreshold, false, logsQueue);
     }
 }

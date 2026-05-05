@@ -24,7 +24,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0053PoolKeyObjectsClearTest {
+public class Tc0064PooledBucketObjectsClearTest {
 
     @Test
     public void testClearObjectWithDefaultKey() throws Exception {
@@ -34,26 +34,26 @@ public class Tc0053PoolKeyObjectsClearTest {
         BeeObjectFactory<String, Book> factory = config.getObjectFactory();
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            BeeObjectKeyMonitorVo defaultKeyMonitor = os.getKeyMonitorVo(factory.getDefaultKey());
+            BeeObjectBucketMonitorVo defaultKeyMonitor = os.getBucketMonitorVo(factory.getDefaultKey());
             Assertions.assertEquals(1, defaultKeyMonitor.getIdleSize());
             Assertions.assertEquals(0, defaultKeyMonitor.getBorrowedSize());
 
             //clear1
-            os.clearKeyObjects(factory.getDefaultKey());
-            defaultKeyMonitor = os.getKeyMonitorVo(factory.getDefaultKey());
+            os.clearBucketObjects(factory.getDefaultKey());
+            defaultKeyMonitor = os.getBucketMonitorVo(factory.getDefaultKey());
             Assertions.assertEquals(0, defaultKeyMonitor.getIdleSize());
             Assertions.assertEquals(0, defaultKeyMonitor.getBorrowedSize());
 
             //add new object
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(factory.getDefaultKey())) {
-                Assertions.assertEquals(1, os.getKeyMonitorVo(factory.getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(factory.getDefaultKey()).getBorrowedSize());
             }
-            Assertions.assertEquals(1, os.getKeyMonitorVo(factory.getDefaultKey()).getIdleSize());
-            Assertions.assertEquals(0, os.getKeyMonitorVo(factory.getDefaultKey()).getBorrowedSize());
+            Assertions.assertEquals(1, os.getBucketMonitorVo(factory.getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(0, os.getBucketMonitorVo(factory.getDefaultKey()).getBorrowedSize());
 
             //clear2
-            os.clearKeyObjects(factory.getDefaultKey(), false);
-            defaultKeyMonitor = os.getKeyMonitorVo(factory.getDefaultKey());
+            os.clearBucketObjects(factory.getDefaultKey(), false);
+            defaultKeyMonitor = os.getBucketMonitorVo(factory.getDefaultKey());
             Assertions.assertEquals(0, defaultKeyMonitor.getIdleSize());
             Assertions.assertEquals(0, defaultKeyMonitor.getBorrowedSize());
         }
@@ -72,13 +72,13 @@ public class Tc0053PoolKeyObjectsClearTest {
         String key2 = "Thanking in Rust";
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertFalse(os.existsKey(key2));
+            Assertions.assertFalse(os.existsBucket(key2));
             try {
-                os.clearKeyObjects(key2);//key not found
+                os.clearBucketObjects(key2);//key not found
                 Assertions.fail("Failed to run testcase:[testDeletePooledKey)");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyNotFoundException.class, e);
-                Assertions.assertTrue(e.getMessage().startsWith("Not found category pool with key"));
+                Assertions.assertTrue(e.getMessage().startsWith("Not found bucket with key"));
             }
 
             //test os.clearKeyObjects(Key);
@@ -86,30 +86,30 @@ public class Tc0053PoolKeyObjectsClearTest {
             BeeObjectHandle<String, Book> handle2 = os.getObjectHandle(key2);
             handle1.close();
             handle2.close();
-            BeeObjectKeyMonitorVo Key1MonitorVo = os.getKeyMonitorVo(defaultKey);
-            BeeObjectKeyMonitorVo key2MonitorVo = os.getKeyMonitorVo(key2);
+            BeeObjectBucketMonitorVo Key1MonitorVo = os.getBucketMonitorVo(defaultKey);
+            BeeObjectBucketMonitorVo key2MonitorVo = os.getBucketMonitorVo(key2);
             Assertions.assertEquals(1, Key1MonitorVo.getIdleSize());
             Assertions.assertEquals(1, key2MonitorVo.getIdleSize());
 
-            os.clearKeyObjects(defaultKey);
-            os.clearKeyObjects(key2);
-            Key1MonitorVo = os.getKeyMonitorVo(defaultKey);
-            key2MonitorVo = os.getKeyMonitorVo(key2);
+            os.clearBucketObjects(defaultKey);
+            os.clearBucketObjects(key2);
+            Key1MonitorVo = os.getBucketMonitorVo(defaultKey);
+            key2MonitorVo = os.getBucketMonitorVo(key2);
             Assertions.assertEquals(0, Key1MonitorVo.getIdleSize());
             Assertions.assertEquals(0, key2MonitorVo.getIdleSize());
 
             //test os.clearKeyObjects(Key,true);
             os.getObjectHandle();
             os.getObjectHandle(key2);
-            Key1MonitorVo = os.getKeyMonitorVo(defaultKey);
-            key2MonitorVo = os.getKeyMonitorVo(key2);
+            Key1MonitorVo = os.getBucketMonitorVo(defaultKey);
+            key2MonitorVo = os.getBucketMonitorVo(key2);
             Assertions.assertEquals(1, Key1MonitorVo.getBorrowedSize());
             Assertions.assertEquals(1, key2MonitorVo.getBorrowedSize());
 
-            os.clearKeyObjects(defaultKey, true);
-            os.clearKeyObjects(key2, true);
-            Key1MonitorVo = os.getKeyMonitorVo(defaultKey);
-            key2MonitorVo = os.getKeyMonitorVo(key2);
+            os.clearBucketObjects(defaultKey, true);
+            os.clearBucketObjects(key2, true);
+            Key1MonitorVo = os.getBucketMonitorVo(defaultKey);
+            key2MonitorVo = os.getBucketMonitorVo(key2);
             Assertions.assertEquals(0, Key1MonitorVo.getIdleSize());
             Assertions.assertEquals(0, key2MonitorVo.getIdleSize());
             Assertions.assertEquals(0, Key1MonitorVo.getBorrowedSize());
@@ -155,7 +155,7 @@ public class Tc0053PoolKeyObjectsClearTest {
             if (concurrentTime > 0L)
                 LockSupport.parkNanos(concurrentTime - System.nanoTime());
             try {
-                os.clearKeyObjects(key);
+                os.clearBucketObjects(key);
             } catch (Exception e) {
                 this.failException = e;
             }

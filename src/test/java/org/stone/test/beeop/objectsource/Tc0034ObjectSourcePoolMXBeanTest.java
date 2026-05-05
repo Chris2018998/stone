@@ -27,7 +27,7 @@ import java.lang.management.ManagementFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0032ObjectSourcePoolMXBeanTest {
+public class Tc0034ObjectSourcePoolMXBeanTest {
 
     @Test
     public void testRegisterMXBean() throws Exception {
@@ -50,7 +50,7 @@ public class Tc0032ObjectSourcePoolMXBeanTest {
 
             //1.1:attribute: KeyNames (getKeyNames())
             boolean existDefaultKey = false;
-            for (String name : (String[]) mBeanServer.getAttribute(jmxRegName2, "KeyNames")) {
+            for (String name : (String[]) mBeanServer.getAttribute(jmxRegName2, "BucketKeyNames")) {
                 if (name.equals(objectFactory.getDefaultKey())) {
                     existDefaultKey = true;
                     break;
@@ -63,24 +63,24 @@ public class Tc0032ObjectSourcePoolMXBeanTest {
             Assertions.assertEquals(poolName, poolMonitorVo.get("poolName"));
 
             //1.3: method call: getKeyMonitorVoByName
-            CompositeDataSupport attrKeyMonitorVoByName = (CompositeDataSupport) mBeanServer.invoke(jmxRegName2, "getKeyMonitorVoByName", new Object[]{objectFactory.getDefaultKey()}, new String[]{"java.lang.String"});
+            CompositeDataSupport attrKeyMonitorVoByName = (CompositeDataSupport) mBeanServer.invoke(jmxRegName2, "getBucketMonitorVoByName", new Object[]{objectFactory.getDefaultKey()}, new String[]{"java.lang.String"});
             Assertions.assertEquals(objectFactory.getDefaultKey(), attrKeyMonitorVoByName.get("keyName"));
             Assertions.assertEquals(objectFactory.getDefaultKey(), attrKeyMonitorVoByName.get("keyName"));
             Assertions.assertEquals(Boolean.FALSE, attrKeyMonitorVoByName.get("enabledLogPrinter"));
             Assertions.assertEquals(Boolean.FALSE, attrKeyMonitorVoByName.get("enabledLogCache"));
 
-            mBeanServer.invoke(jmxRegName2, "enableKeyLogPrinterByName", new Object[]{objectFactory.getDefaultKey(), Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
-            mBeanServer.invoke(jmxRegName2, "enableKeyLogCacheByName", new Object[]{objectFactory.getDefaultKey(), Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
-            attrKeyMonitorVoByName = (CompositeDataSupport) mBeanServer.invoke(jmxRegName2, "getKeyMonitorVoByName", new Object[]{objectFactory.getDefaultKey()}, new String[]{"java.lang.String"});
+            mBeanServer.invoke(jmxRegName2, "enableBucketLogPrinterByName", new Object[]{objectFactory.getDefaultKey(), Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
+            mBeanServer.invoke(jmxRegName2, "enableBucketLogCacheByName", new Object[]{objectFactory.getDefaultKey(), Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
+            attrKeyMonitorVoByName = (CompositeDataSupport) mBeanServer.invoke(jmxRegName2, "getBucketMonitorVoByName", new Object[]{objectFactory.getDefaultKey()}, new String[]{"java.lang.String"});
             Assertions.assertEquals(Boolean.TRUE, attrKeyMonitorVoByName.get("enabledLogPrinter"));
             Assertions.assertEquals(Boolean.TRUE, attrKeyMonitorVoByName.get("enabledLogCache"));
 
             //1.4：invalid key test
             String notRegisteredKeyName = "Test Key";
-            CompositeDataSupport attrKeyMonitorVoByName2 = (CompositeDataSupport) mBeanServer.invoke(jmxRegName2, "getKeyMonitorVoByName", new Object[]{notRegisteredKeyName}, new String[]{"java.lang.String"});
+            CompositeDataSupport attrKeyMonitorVoByName2 = (CompositeDataSupport) mBeanServer.invoke(jmxRegName2, "getBucketMonitorVoByName", new Object[]{notRegisteredKeyName}, new String[]{"java.lang.String"});
             Assertions.assertNull(attrKeyMonitorVoByName2);
-            mBeanServer.invoke(jmxRegName2, "enableKeyLogPrinterByName", new Object[]{notRegisteredKeyName, Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
-            mBeanServer.invoke(jmxRegName2, "enableKeyLogCacheByName", new Object[]{notRegisteredKeyName, Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
+            mBeanServer.invoke(jmxRegName2, "enableBucketLogPrinterByName", new Object[]{notRegisteredKeyName, Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
+            mBeanServer.invoke(jmxRegName2, "enableBucketLogCacheByName", new Object[]{notRegisteredKeyName, Boolean.TRUE}, new String[]{"java.lang.String", "boolean"});
         }
         Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName1));
         Assertions.assertFalse(mBeanServer.isRegistered(jmxRegName2));

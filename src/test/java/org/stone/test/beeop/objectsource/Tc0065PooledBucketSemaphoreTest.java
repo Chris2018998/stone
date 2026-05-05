@@ -16,7 +16,6 @@ import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.ObjectBorrowThread;
 import org.stone.test.beeop.objects.book.Book;
-import org.stone.test.beeop.objects.factory.BlockWayTypes;
 import org.stone.test.beeop.objects.factory.TextBookFactory;
 
 import java.util.List;
@@ -26,7 +25,7 @@ import static org.stone.test.base.TestUtil.waitUtilWaiting;
 /**
  * @author Chris Liao
  */
-public class Tc0054PoolKeySemaphoreTest {
+public class Tc0065PooledBucketSemaphoreTest {
 
     @Test
     public void testWaitTimeout() throws Exception {
@@ -38,7 +37,7 @@ public class Tc0054PoolKeySemaphoreTest {
         config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(1L);
         TextBookFactory factory = new TextBookFactory();
-        factory.setBlock(BlockWayTypes.Type_Sleep, 1000L);
+        factory.addFactoryMethodPauseTime("create", Long.valueOf(1000L));
         config.setObjectFactory(factory);
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -53,7 +52,7 @@ public class Tc0054PoolKeySemaphoreTest {
                 secondBorrower.start();
                 secondBorrower.join();
 
-                Assertions.assertTrue(secondBorrower.getFailureCause().getMessage().contains("Waited timeout on key semaphore"));
+                Assertions.assertTrue(secondBorrower.getFailureCause().getMessage().contains("Waited timeout on bucket semaphore"));
                 firstBorrower.interrupt();
             }
         }
@@ -69,7 +68,7 @@ public class Tc0054PoolKeySemaphoreTest {
         config.setForceRecycleBorrowedOnClose(true);
         config.setMaxWait(Long.MAX_VALUE);
         TextBookFactory factory = new TextBookFactory();
-        factory.setBlock(BlockWayTypes.Type_Sleep, Long.MAX_VALUE);
+        factory.addFactoryMethodPauseTime("create", Long.valueOf(Long.MAX_VALUE));
         config.setObjectFactory(factory);
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -82,7 +81,7 @@ public class Tc0054PoolKeySemaphoreTest {
                 ObjectBorrowThread secondBorrower = new ObjectBorrowThread(os);
                 secondBorrower.start();
                 if (waitUtilWaiting(secondBorrower)) {//block 1 second in pool instance creation
-                    List<Thread> interruptedThreads = os.interruptWaitingThreads(factory.getDefaultKey());
+                    List<Thread> interruptedThreads = os.interruptWaitingThreadsInBucket(factory.getDefaultKey());
                     Assertions.assertTrue(interruptedThreads.contains(firstBorrower));
                     Assertions.assertTrue(interruptedThreads.contains(secondBorrower));
                 }

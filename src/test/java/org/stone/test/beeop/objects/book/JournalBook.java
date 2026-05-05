@@ -9,13 +9,21 @@
  */
 package org.stone.test.beeop.objects.book;
 
+import org.stone.test.beeop.objects.factory.TextBookFactory;
+
 /**
  * Book Impl
  *
  * @author Chris Liao
  */
-public class JournalBook extends TextBook {
-    public JournalBook() {
+public class JournalBook extends BaseBook {
+
+    public JournalBook(TextBookFactory bookFactory) {
+        super(bookFactory);
+    }
+
+    public JournalBook(String title, String author, TextBookFactory bookFactory) {
+        super(title, author, bookFactory);
     }
 }
 

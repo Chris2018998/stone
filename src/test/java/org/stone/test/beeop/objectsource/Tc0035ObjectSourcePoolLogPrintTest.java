@@ -21,7 +21,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0034ObjectSourcePoolLogPrintTest {
+public class Tc0035ObjectSourcePoolLogPrintTest {
 
     @Test
     public void test() throws Exception {
@@ -45,13 +45,13 @@ public class Tc0034ObjectSourcePoolLogPrintTest {
 
             //3:disabled log printer of key
             LogCollector logCollector3 = LogCollector.startLogCollector();
-            os.clearKeyObjects(defaultKey);
+            os.clearBucketObjects(defaultKey);
             Assertions.assertTrue(logCollector3.endLogCollector().isEmpty());
 
             //4: enable log printer of key
-            os.enableLogPrinter(defaultKey, true);
+            os.enableBucketLogPrinter(defaultKey, true);
             LogCollector logCollector4 = LogCollector.startLogCollector();
-            os.clearKeyObjects(defaultKey);
+            os.clearBucketObjects(defaultKey);
             Assertions.assertFalse(logCollector4.endLogCollector().isEmpty());
         }
     }

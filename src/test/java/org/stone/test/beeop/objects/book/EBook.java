@@ -9,53 +9,21 @@
  */
 package org.stone.test.beeop.objects.book;
 
+import org.stone.test.beeop.objects.factory.TextBookFactory;
+
 /**
  * Book Impl
  *
  * @author Chris Liao
  */
-public class EBook implements Book, BookBorrowInfo {
-    private final String title;
-    private String author;
+public class EBook extends BaseBook {
 
-    private String borrower;
-    private long borrowedTime;
-
-    public EBook(String title, String author) {
-        this.title = title;
-        this.author = author;
+    public EBook(TextBookFactory bookFactory) {
+        super(bookFactory);
     }
 
-    @Override
-    public String getTitle() {
-        return title;
+    public EBook(String title, String author, TextBookFactory bookFactory) {
+        super(title, author, bookFactory);
     }
 
-    @Override
-    public String getAuthor() {
-        return author;
-    }
-
-    @Override
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-
-    @Override
-    public String getBorrower() {
-        return borrower;
-    }
-
-    public void setBorrower(String borrower) {
-        this.borrower = borrower;
-    }
-
-    @Override
-    public long getBorrowedTime() {
-        return borrowedTime;
-    }
-
-    public void setBorrowedTime(long borrowedTime) {
-        this.borrowedTime = borrowedTime;
-    }
 }

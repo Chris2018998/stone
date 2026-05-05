@@ -89,6 +89,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     private final BeeMethodLogListener<K> methodLogListener;//changeable
     private final long getSlowThreshold;
     private final long callSlowThreshold;
+    private final boolean interruptSlowCall;
 
     LogPrinter logPrinter = DefaultLogPrinter;
     boolean collectMethodLogs;//changeable
@@ -157,8 +158,9 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         this.collectMethodLogs = config.isEnableLogCache();
         this.methodLogCacheSize = config.getLogCacheSize();
         this.methodLogListener = config.getLogListener();
-        this.getSlowThreshold = config.getSlowGetThreshold();
+        this.getSlowThreshold = config.getMaxWait();
         this.callSlowThreshold = config.getSlowCallThreshold();
+        this.interruptSlowCall = config.isInterruptSlowCall();
 
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
@@ -212,8 +214,10 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
             //step7: log cache initialize
             super.init(keyName, this.methodLogCacheSize, this.methodLogListener);
-            super.setSlowThreshold(Type_Key_Log, getSlowThreshold);
-            super.setSlowThreshold(Type_Object_Log, callSlowThreshold);
+            super.setSlowThreshold(Type_Bucket_Log, this.getSlowThreshold);
+            super.setSlowThreshold(Type_Object_Log, this.callSlowThreshold);
+            super.setInterruptSlowCall(this.interruptSlowCall);
+
             if (this.collectMethodLogs) {
                 this.timeoutLogsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(this, methodLogsTimeoutMs),
                         intervalOfMethodLogsClearTaskMs, intervalOfMethodLogsClearTaskMs, MILLISECONDS);
@@ -221,7 +225,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
             //step8: print completion message and set pool to ready state
             String poolMode = this.isFairMode ? "fair" : "compete";
-            logPrinter.info("BeeOP({})-has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
+            logPrinter.info("BeeOP({})-object bucket has startup{mode:{},init size:{},max size:{},semaphore size:{},max wait:{}ms",
                     this.keyName,
                     poolMode,
                     initSize,
@@ -284,7 +288,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             objectFactory.setDefault(key, instance);//set default on created instance
             p.setObjectInstance(state, instance);//fill the created instance to pooled wrapper
 
-            logPrinter.info("BeeOP({})-created a new object instance:{} to fill pooled wrapper:{}", this.keyName, instance, p);
+            logPrinter.info("BeeOP({})-created a object instance:{} to fill pooled wrapper:{}", this.keyName, instance, p);
             return p;
         } catch (Throwable e) {
             p.state = OBJECT_CLOSED;//reset to closed state
@@ -300,7 +304,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
         if (this.collectMethodLogs) {
-            BeeMethodLog<K> log = this.beforeCall(startTime, this.key, Type_Key_Log, "ObjectKeyCategoryPool.getObjectHandle()", new Object[]{startTime});
+            BeeMethodLog<K> log = this.beforeCall(startTime, this.key, Type_Bucket_Log, "PooledObjectBucket.getObjectHandle()", new Object[]{startTime});
             try {
                 BeeObjectHandle<K, V> handle = this.getObjectHandleInternal(startTime);
                 this.afterCall(System.currentTimeMillis(), handle, log);
@@ -317,7 +321,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //*** Core method for get *****
     private BeeObjectHandle<K, V> getObjectHandleInternal(long startTime) throws Exception {
         if (this.poolState != POOL_READY)
-            throw new BeePooledObjectKeyException("Key was not ready");
+            throw new BeePooledObjectKeyException("Object bucket was not ready");
 
         //1: try to reuse object in thread local
         Borrower<K, V> b = null;
@@ -401,10 +405,10 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     semaphore.release();
                 }
             } else {
-                throw new BeePooledObjectGetTimeoutException("Waited timeout on key semaphore");
+                throw new BeePooledObjectGetTimeoutException("Waited timeout on bucket semaphore");
             }
         } catch (InterruptedException e) {
-            throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting on key semaphore");
+            throw new BeePooledObjectGetInterruptedException("An interruption occurred while waiting on bucket semaphore");
         }
     }
 
@@ -548,7 +552,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
                     if (handleInUsing != null) {
                         if (forceRecycleBorrowed || (supportHoldTimeout && System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L))
-                            tryCloseObjectHandle(handleInUsing);
+                            oclose(handleInUsing);
                     }
                 } else if (state == OBJECT_CLOSED) {
                     closedCount++;
@@ -561,7 +565,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         } // while
 
         if (logPrinter.isEnableLogOutput()) {
-            BeeObjectKeyMonitorVo vo = this.getKeyMonitorVo();
+            BeeObjectBucketMonitorVo vo = this.getBucketMonitorVo();
             logPrinter.info("BeeOP({})-idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.keyName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }
@@ -653,7 +657,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
         //2: transfer exception to waiter in queue
         if (!this.waitQueue.isEmpty()) {
-            BeeObjectSourcePoolRestartedFailureException exception = new BeeObjectSourcePoolRestartedFailureException("Pool has been closed or is restarting");
+            BeePooledObjectKeyException exception = new BeePooledObjectKeyException("Object bucket has been closed or is restarting");
             while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 
@@ -669,7 +673,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         return threads;
     }
 
-    public PooledObjectBucketMonitorVo getKeyMonitorVo() {
+    public PooledObjectBucketMonitorVo getBucketMonitorVo() {
         int borrowedSize = 0, idleSize = 0;
         int creatingCount = 0, creatingTimeoutCount = 0;
 
@@ -716,7 +720,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     void clearIdleTimeoutObjects() {
         //step1: print pool info before clean
         if (logPrinter.isEnableLogOutput()) {
-            BeeObjectKeyMonitorVo vo = this.getKeyMonitorVo();
+            BeeObjectBucketMonitorVo vo = this.getBucketMonitorVo();
             logPrinter.info("BeeOP({})-before idle clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.keyName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
 
@@ -735,14 +739,14 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             } else if (state == OBJECT_BORROWED && supportHoldTimeout) {
                 if (System.currentTimeMillis() - p.lastAccessTime - holdTimeoutMs >= 0L) {//hold timeout
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
-                    if (handleInUsing != null) tryCloseObjectHandle(handleInUsing);
+                    if (handleInUsing != null) oclose(handleInUsing);
                 }
             }
         }
 
         //step4: print pool info after idle clean
         if (logPrinter.isEnableLogOutput()) {
-            BeeObjectKeyMonitorVo vo = this.getKeyMonitorVo();
+            BeeObjectBucketMonitorVo vo = this.getBucketMonitorVo();
             logPrinter.info("BeeOP({})-after idle clear,idle:{},borrowed:{},semaphore-waiting:{},transfer-waiting:{}", this.keyName, vo.getIdleSize(), vo.getBorrowedSize(), vo.getSemaphoreWaitingSize(), vo.getTransferWaitingSize());
         }
     }

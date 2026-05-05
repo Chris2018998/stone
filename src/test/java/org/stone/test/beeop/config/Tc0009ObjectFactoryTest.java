@@ -59,6 +59,35 @@ public class Tc0009ObjectFactoryTest {
     }
 
     @Test
+    public void testFactoryPropertiesInjection() {
+        //test1:
+        BeeObjectSourceConfig<String, Book> config1 = OsConfigFactory.createEmpty();
+        config1.setObjectFactoryClassName(TextBookFactory.class.getName());
+        config1.addObjectFactoryProperty("factoryName", "Tech books of Computer");
+        BeeObjectSourceConfig<String, Book> newConfig = config1.check();
+        Assertions.assertInstanceOf(TextBookFactory.class, newConfig.getObjectFactory());
+        TextBookFactory bookFactory = (TextBookFactory) newConfig.getObjectFactory();
+        Assertions.assertEquals("Tech books of Computer", bookFactory.getFactoryName());
+
+        //test2:
+        BeeObjectSourceConfig<String, Book> config2 = OsConfigFactory.createEmpty();
+        config2.setObjectFactoryClassName(TextBookFactory.class.getName());
+        config2.addObjectFactoryProperty("factoryName=Tech books of Computer&factoryCountry=China");
+        BeeObjectSourceConfig<String, Book> newConfig2 = config2.check();
+        Assertions.assertInstanceOf(TextBookFactory.class, newConfig2.getObjectFactory());
+        TextBookFactory bookFactory2 = (TextBookFactory) newConfig2.getObjectFactory();
+        Assertions.assertEquals("Tech books of Computer", bookFactory2.getFactoryName());
+        Assertions.assertEquals("China", bookFactory2.getFactoryCountry());
+
+        config2.removeObjectFactoryProperty("factoryName");
+        config2.removeObjectFactoryProperty("factoryCountry");
+        BeeObjectSourceConfig<String, Book> newConfig3 = config2.check();
+        TextBookFactory bookFactory3 = (TextBookFactory) newConfig3.getObjectFactory();
+        Assertions.assertNull(bookFactory3.getFactoryName());
+        Assertions.assertNull(bookFactory3.getFactoryCountry());
+    }
+
+    @Test
     public void testCheckFailure() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createEmpty();
         try {
@@ -104,10 +133,9 @@ public class Tc0009ObjectFactoryTest {
         //incorrect factory properties configuration
         config = OsConfigFactory.createEmpty();
         config.setObjectFactoryClass(TextBookFactory.class);
-        config.addObjectFactoryProperty("stockCount", "ABC");//require an integer
+        config.addObjectFactoryProperty("nullResultFlag2", "false");//<!--injection skip invalid property
         try {
             config.check();
-            fail("Setting test failed on configuration item[object-factory]");
         } catch (BeeObjectSourceConfigException e) {
             Assertions.assertInstanceOf(BeanException.class, e.getCause());
         }
@@ -127,8 +155,9 @@ public class Tc0009ObjectFactoryTest {
     }
 
     @Test
-    public void testOnRemoval() {
+    public void testFactoryPropertiesRemoval() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createEmpty();
+        Assertions.assertNull(config.removeObjectFactoryProperty("prop1"));
         config.addObjectFactoryProperty("prop1", "value1");
         Assertions.assertEquals("value1", config.getObjectFactoryProperty("prop1"));
         Assertions.assertEquals("value1", config.removeObjectFactoryProperty("prop1"));

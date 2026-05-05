@@ -27,10 +27,10 @@ import java.util.List;
  * @author Chris Liao
  */
 public class SqlWallInterceptionListener implements BeeMethodLogListener {
-    private String targetSQL;
+    private final String targetSQL;
 
-    public SqlWallInterceptionListener( String targetSQL){
-        this.targetSQL= targetSQL;
+    public SqlWallInterceptionListener(String targetSQL) {
+        this.targetSQL = targetSQL;
     }
 
     public void onMethodStart(BeeMethodLog log) throws SQLException {

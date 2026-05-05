@@ -27,22 +27,24 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
  * 1: pool start in constructor of object source
  * 2: pool start by calling getObjectHandle() method or  getObjectHandle(Key) method
  */
-public class Tc0029ObjectSourcePoolStartTest {
+public class Tc0030ObjectSourcePoolStartTest {
 
     @Test
     public void testPoolStartWithConfigObject() throws Exception {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(OsConfigFactory.createDefault())) {
             Assertions.assertFalse(os.isLazy());
+
             BeeObjectPoolMonitorVo poolMonitorVo2 = os.getPoolMonitorVo(true);
             Assertions.assertFalse(poolMonitorVo2.isLazy());
             Assertions.assertTrue(poolMonitorVo2.isReady());
-            Assertions.assertNotNull(poolMonitorVo2.getKeyMonitorVos());
-            Assertions.assertNotNull(poolMonitorVo2.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()));
+            Assertions.assertEquals("Pool is ready", os.toString());
+            Assertions.assertNotNull(poolMonitorVo2.getBucketMonitorVos());
+            Assertions.assertNotNull(poolMonitorVo2.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()));
 
             try {
                 os.enableLogPrinter(true);
             } catch (Exception e) {
-                Assertions.fail("[Tc0029ObjectSourcePoolStartTest.testLazyPool]failed");
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testLazyPool]failed");
             }
         }
     }
@@ -53,13 +55,14 @@ public class Tc0029ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
             //1: check state of pool
             Assertions.assertTrue(os.isLazy());
+            Assertions.assertEquals("Pool is lazy and it can be initialized by calling getObjectHandle method of objectSource", os.toString());
 
             //2: monitor vo check
             BeeObjectPoolMonitorVo poolMonitorVo = os.getPoolMonitorVo(true);
             Assertions.assertTrue(poolMonitorVo.isLazy());
             Assertions.assertFalse(poolMonitorVo.isReady());
-            Assertions.assertNull(poolMonitorVo.getKeyMonitorVos());//no keys
-            Assertions.assertNull(poolMonitorVo.getKeyMonitorVo("Any"));
+            Assertions.assertNull(poolMonitorVo.getBucketMonitorVos());//no keys
+            Assertions.assertNull(poolMonitorVo.getBucketMonitorVo("Any"));
 
             //3: exception check when call method on os
             try {
@@ -73,7 +76,7 @@ public class Tc0029ObjectSourcePoolStartTest {
 
             //4: attempt to call getObjectHandle() when not fill Object factory
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0029ObjectSourcePoolStartTest.testLazyPool]failed");
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testLazyPool]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeeObjectSourcePoolStartedFailureException.class, e);
                 Assertions.assertInstanceOf(BeeObjectSourceConfigException.class, e.getCause());
@@ -88,12 +91,12 @@ public class Tc0029ObjectSourcePoolStartTest {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {//getObjectHandle()
                 Assertions.assertNotNull(ignored);
             } catch (Exception e) {
-                Assertions.fail("[Tc0029ObjectSourcePoolStartTest.testLazyPool]failed");
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testLazyPool]failed");
             }
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(bookFactory.getDefaultKey())) {//getObjectHandle(default key)
                 Assertions.assertNotNull(ignored);
             } catch (Exception e) {
-                Assertions.fail("[Tc0029ObjectSourcePoolStartTest.testLazyPool]failed");
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testLazyPool]failed");
             }
 
             //8.1: re-check state of pool
@@ -102,13 +105,13 @@ public class Tc0029ObjectSourcePoolStartTest {
             BeeObjectPoolMonitorVo poolMonitorVo2 = os.getPoolMonitorVo(true);
             Assertions.assertFalse(poolMonitorVo2.isLazy());
             Assertions.assertTrue(poolMonitorVo2.isReady());
-            Assertions.assertNotNull(poolMonitorVo2.getKeyMonitorVos());
-            Assertions.assertNotNull(poolMonitorVo2.getKeyMonitorVo(bookFactory.getDefaultKey()));
+            Assertions.assertNotNull(poolMonitorVo2.getBucketMonitorVos());
+            Assertions.assertNotNull(poolMonitorVo2.getBucketMonitorVo(bookFactory.getDefaultKey()));
             //8.3: exception check when call method on os
             try {
                 os.enableLogPrinter(true);
             } catch (Exception e) {
-                Assertions.fail("[Tc0029ObjectSourcePoolStartTest.testLazyPool]failed");
+                Assertions.fail("[Tc0030ObjectSourcePoolStartTest.testLazyPool]failed");
             }
         }
     }
@@ -123,8 +126,8 @@ public class Tc0029ObjectSourcePoolStartTest {
             String newKey = "Thinking in Rust";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
                 Assertions.assertTrue(os.getPoolMonitorVo(false).isReady());
-                Assertions.assertTrue(os.existsKey(bookFactory.getDefaultKey()));
-                Assertions.assertTrue(os.existsKey(newKey));
+                Assertions.assertTrue(os.existsBucket(bookFactory.getDefaultKey()));
+                Assertions.assertTrue(os.existsBucket(newKey));
             }
         }
     }

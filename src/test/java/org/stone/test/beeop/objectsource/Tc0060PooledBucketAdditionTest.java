@@ -26,7 +26,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0050PoolKeyAdditionTest {
+public class Tc0060PooledBucketAdditionTest {
 
     @Test
     public void testAddNewKeySuccess() throws Exception {
@@ -34,15 +34,15 @@ public class Tc0050PoolKeyAdditionTest {
         BeeObjectFactory<String, Book> bookFactory = config.getObjectFactory();
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertEquals(1, os.keySize());
-            Assertions.assertTrue(os.existsKey(bookFactory.getDefaultKey()));
+            Assertions.assertEquals(1, os.bucketSize());
+            Assertions.assertTrue(os.existsBucket(bookFactory.getDefaultKey()));
 
             //1: new key1
             String newKey1 = "Thanking in Rust";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
                 Assertions.assertEquals(newKey1, ignored.getKey());
-                Assertions.assertTrue(os.existsKey(newKey1));
-                Assertions.assertEquals(2, os.keySize());
+                Assertions.assertTrue(os.existsBucket(newKey1));
+                Assertions.assertEquals(2, os.bucketSize());
             }
 
             //2: mock two thread to get with same key
@@ -50,14 +50,14 @@ public class Tc0050PoolKeyAdditionTest {
             ObjectBorrowThread thread1 = new ObjectBorrowThread(os, newKey2);
             ObjectBorrowThread thread2 = new ObjectBorrowThread(os, newKey2);
             long concurrentTime = TimeUnit.MILLISECONDS.toNanos(500L) + System.nanoTime();
-            thread1.setRunTime(concurrentTime);
-            thread2.setRunTime(concurrentTime);
+            thread1.setTargetTimeToRun(concurrentTime);
+            thread2.setTargetTimeToRun(concurrentTime);
             thread1.start();
             thread2.start();
             thread1.join();
             thread2.join();
-            Assertions.assertTrue(os.existsKey(newKey2));
-            Assertions.assertEquals(3, os.keySize());
+            Assertions.assertTrue(os.existsBucket(newKey2));
+            Assertions.assertEquals(3, os.bucketSize());
 
             //3: mock two thread to get with different key
             String newKey3 = "Thanking in AI";
@@ -65,15 +65,15 @@ public class Tc0050PoolKeyAdditionTest {
             ObjectBorrowThread thread3 = new ObjectBorrowThread(os, newKey3);
             ObjectBorrowThread thread4 = new ObjectBorrowThread(os, newKey4);
             long concurrentTime2 = TimeUnit.MILLISECONDS.toNanos(500L) + System.nanoTime();
-            thread3.setRunTime(concurrentTime2);
-            thread4.setRunTime(concurrentTime2);
+            thread3.setTargetTimeToRun(concurrentTime2);
+            thread4.setTargetTimeToRun(concurrentTime2);
             thread3.start();
             thread4.start();
             thread3.join();
             thread4.join();
-            Assertions.assertTrue(os.existsKey(newKey3));
-            Assertions.assertTrue(os.existsKey(newKey4));
-            Assertions.assertEquals(5, os.keySize());
+            Assertions.assertTrue(os.existsBucket(newKey3));
+            Assertions.assertTrue(os.existsBucket(newKey4));
+            Assertions.assertEquals(5, os.bucketSize());
         }
     }
 
@@ -84,21 +84,21 @@ public class Tc0050PoolKeyAdditionTest {
 
         //1: test key size has reach max
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertEquals(1, os.keySize());
+            Assertions.assertEquals(1, os.bucketSize());
 
             String key2 = "Thanking in C++";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(key2)) {
                 Assertions.fail("[Tc0050NewKeyTest.testKeyCapacity]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
-                Assertions.assertEquals("Pooled key size has reach max capacity", e.getMessage());
+                Assertions.assertEquals("Bucket size has reach max capacity", e.getMessage());
             }
         }
 
         //2: mock two threads to add two different keys
         config.setMaxKeySize(2);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertEquals(1, os.keySize());
+            Assertions.assertEquals(1, os.bucketSize());
 
             long targetTime = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(500L);
             BookGetThread thread1 = new BookGetThread(os, "Thinking in C++", targetTime);
@@ -110,12 +110,12 @@ public class Tc0050PoolKeyAdditionTest {
 
             if (thread1.getFailException() != null) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, thread1.getFailException());
-                Assertions.assertEquals("Pooled key size has reach max capacity", thread1.getFailException().getMessage());
+                Assertions.assertEquals("Bucket size has reach max capacity", thread1.getFailException().getMessage());
             }
 
             if (thread2.getFailException() != null) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, thread2.getFailException());
-                Assertions.assertEquals("Pooled key size has reach max capacity", thread2.getFailException().getMessage());
+                Assertions.assertEquals("Bucket size has reach max capacity", thread2.getFailException().getMessage());
             }
         }
     }

@@ -16,7 +16,11 @@ package org.stone.test.beeop.objects.book;
  */
 public interface BookBorrowInfo {
 
-    String getBorrower();
+    String getBorrower() throws Exception;
 
-    long getBorrowedTime();
+    void setBorrower(String borrower) throws Exception;
+
+    long getBorrowedTime() throws Exception;
+
+    void setBorrowedTime(long borrowedTime) throws Exception;
 }

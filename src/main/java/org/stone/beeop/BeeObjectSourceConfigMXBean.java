@@ -20,6 +20,8 @@ public interface BeeObjectSourceConfigMXBean {
 
     String getPoolName();
 
+    int getMaxKeySize();
+
     boolean isFairMode();
 
     int getInitialSize();

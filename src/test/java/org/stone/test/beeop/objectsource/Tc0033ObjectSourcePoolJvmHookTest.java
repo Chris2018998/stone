@@ -72,4 +72,14 @@ public class Tc0033ObjectSourcePoolJvmHookTest {
             Assertions.assertNotNull(TestUtil.getFieldValue(pool, "jvmExitHook"));
         }
     }
+
+//    @Test
+//    public void testJvmExit() throws Exception {
+//        //1: Register
+//        BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
+//        config.setRegisterJvmHook(true);
+//        config.setPrintRuntimeLogs(true);
+//        BeeObjectSource<String, Book> os = new BeeObjectSource<>(config);
+//        System.exit(0);
+//    }
 }

@@ -34,7 +34,7 @@ public final class PooledObject<K, V> {
     private static final MethodHandles.Lookup lookup = MethodHandles.lookup();
 
     final K key;
-    private final PooledObjectBucket<K, V> pool;
+    private final PooledObjectBucket<K, V> bucket;
     private final boolean hasConfiguredMethodNames;
     private final String[] configuredMethodNames;
     private final BeeObjectPredicate objectPredicate;
@@ -66,7 +66,7 @@ public final class PooledObject<K, V> {
                  Map<MethodKey, MethodHandle> objectMethodCacheMap) {
 
         this.key = key;
-        this.pool = ownerPool;
+        this.bucket = ownerPool;
         this.objectFactory = objectFactory;
         this.objectPredicate = objectPredicate;
         this.objectMethodCacheMap = objectMethodCacheMap;
@@ -100,7 +100,7 @@ public final class PooledObject<K, V> {
     //***************************************************************************************************************//
     //pool close related pooled object and remove it from pool when handle method 'abort' is called
     void abortSelf(String reason) {
-        pool.abort(this, reason);
+        bucket.abort(this, reason);
     }
 
     //pool recycle pooled object to be reused for other borrowers
@@ -108,9 +108,9 @@ public final class PooledObject<K, V> {
         try {
             this.handleInUsing = null;
             this.objectFactory.reset(key, objectInstance);//reset dirty properties
-            this.pool.recycle(this);//assign it to one of waiters in pool
+            this.bucket.recycle(this);//assign it to one of waiters in pool
         } catch (Throwable e) {
-            this.pool.abort(this, DESC_RM_BAD);//remove it by force when exception occurred during recycle
+            this.bucket.abort(this, DESC_RM_BAD);//remove it by force when exception occurred during recycle
             if (e instanceof Exception)
                 throw (Exception) e;
             else
@@ -120,17 +120,17 @@ public final class PooledObject<K, V> {
 
     //Clear pooled object before it is removed from pool
     void onRemove(String cause) {
-        pool.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", pool.getKeyName(), this, cause);
+        bucket.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", bucket.getKeyName(), this, cause);
 
         try {
             this.objectFactory.reset(key, objectInstance);
         } catch (Throwable e) {
-            pool.logPrinter.warn("BeeOP({})-reset object failed", pool.getKeyName(), e);
+            bucket.logPrinter.warn("BeeOP({})-reset object failed", bucket.getKeyName(), e);
         } finally {
             try {
                 this.objectFactory.destroy(key, objectInstance);
             } catch (Throwable e) {
-                pool.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", pool.getKeyName(), e);
+                bucket.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", bucket.getKeyName(), e);
             }
 
             this.state = OBJECT_CLOSED;
@@ -146,20 +146,25 @@ public final class PooledObject<K, V> {
 
         if (!this.hasConfiguredMethodNames || isInConfiguredMethodNames(name)) {
             BeeMethodLog<K> log = null;
-            if (pool.collectMethodLogs)
-                log = pool.beforeCall(System.currentTimeMillis(), key, Type_Object_Log, name, params);
+            if (bucket.collectMethodLogs)
+                log = bucket.beforeCall(System.currentTimeMillis(), key, Type_Object_Log, name, params);
 
+            long updateTime = 0L;
+            Object callResult = null;
             try {
-                Object v = callInternal(name, types, params);
-                long time = this.updateAccessTime();
-
-                if (log != null) pool.afterCall(time, v, log);//log of end call
-                return v;
+                callResult = callInternal(name, types, params);
+                updateTime = this.updateAccessTime();
+                return callResult;
             } catch (Throwable e) {
+                callResult = e;
                 if (objectPredicate != null && isNotBlank(objectPredicate.evictionTest(e)))
                     handleInUsing.abort();
-                if (log != null) pool.afterCall(System.currentTimeMillis(), e, log);//log of exception
                 throw e;
+            } finally {
+                if (log != null) {
+                    if (updateTime == 0L) updateTime = System.currentTimeMillis();
+                    bucket.afterCall(updateTime, callResult, log);//log of exception
+                }
             }
         } else {
             return callInternal(name, types, params);//method name not in configuredMethodNames

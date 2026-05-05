@@ -37,13 +37,13 @@ public class Tc0010MethodLogCacheTest {
             config.setLogCacheSize(-1);
             fail("Setting test failed on configuration item[log-cache-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'log-cache-size' must be greater than zero", e.getMessage());
         }
         try {
             config.setLogCacheSize(0);
             fail("Setting test failed on configuration item[log-cache-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-cache-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'log-cache-size' must be greater than zero", e.getMessage());
         }
 
 
@@ -54,13 +54,13 @@ public class Tc0010MethodLogCacheTest {
             config.setLogTimeout(-1);
             fail("Setting test failed on configuration item[log-timeout]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'log-timeout' must be greater than zero", e.getMessage());
         }
         try {
             config.setLogTimeout(0);
             fail("Setting test failed on configuration item[log-timeout]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'log-timeout' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'log-timeout' must be greater than zero", e.getMessage());
         }
 
         //intervalOfClearTimeoutLogs
@@ -70,23 +70,13 @@ public class Tc0010MethodLogCacheTest {
             config.setIntervalOfClearTimeoutLogs(-1);
             fail("Setting test failed on configuration item[interval-of-clear-timeout-execution-logs]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'interval-of-clear-timeout-execution-logs' must be greater than zero", e.getMessage());
         }
         try {
             config.setIntervalOfClearTimeoutLogs(0);
             fail("Setting test failed on configuration item[interval-of-clear-timeout-logs]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero", e.getMessage());
-        }
-
-        //slowGetThreshold
-        config.setSlowGetThreshold(360000L);
-        Assertions.assertEquals(360000L, config.getSlowGetThreshold());
-        try {
-            config.setSlowGetThreshold(-1);
-            fail("Setting test failed on configuration item[slow-get-threshold]");
-        } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'slow-get-threshold' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'interval-of-clear-timeout-execution-logs' must be greater than zero", e.getMessage());
         }
 
         //slowCallThreshold
@@ -96,7 +86,7 @@ public class Tc0010MethodLogCacheTest {
             config.setSlowCallThreshold(-1);
             fail("Setting test failed on configuration item[interval-of-clear-timeout-logs]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'slow-call-threshold' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'slow-call-threshold' must be greater than zero", e.getMessage());
         }
     }
 }

@@ -9,7 +9,7 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeObjectKeyMonitorVo;
+import org.stone.beeop.BeeObjectBucketMonitorVo;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 
 import java.util.HashMap;
@@ -28,7 +28,7 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     private final int poolState;
     private final boolean enabledLogPrinter;
     private final boolean enabledLogCache;
-    private Map<String, BeeObjectKeyMonitorVo> keyMonitorVoMap;
+    private Map<String, BeeObjectBucketMonitorVo> keyMonitorVoMap;
 
     public ObjectPoolMonitorVo(String poolName,
                                int poolState,
@@ -96,16 +96,16 @@ public final class ObjectPoolMonitorVo implements BeeObjectPoolMonitorVo {
     }
 
     @Override
-    public Map<String, BeeObjectKeyMonitorVo> getKeyMonitorVos() {
+    public Map<String, BeeObjectBucketMonitorVo> getBucketMonitorVos() {
         return keyMonitorVoMap;
     }
 
     @Override
-    public BeeObjectKeyMonitorVo getKeyMonitorVo(String keyName) {
+    public BeeObjectBucketMonitorVo getBucketMonitorVo(String keyName) {
         return keyMonitorVoMap == null ? null : keyMonitorVoMap.get(keyName);
     }
 
-    void pubKeyMonitorVo(String keyName, PooledObjectBucketMonitorVo keyMonitorVo) {
+    void pubBucketMonitorVo(String keyName, PooledObjectBucketMonitorVo keyMonitorVo) {
         if (keyMonitorVoMap == null) this.keyMonitorVoMap = new HashMap<>(1);
         this.keyMonitorVoMap.put(keyName, keyMonitorVo);
     }

@@ -9,7 +9,7 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeObjectKeyMonitorVo;
+import org.stone.beeop.BeeObjectBucketMonitorVo;
 import org.stone.beeop.BeeObjectPoolMonitorVo;
 
 /**
@@ -22,16 +22,16 @@ public interface ObjectPoolMXBean {
 
     void enableLogPrinter(boolean enable) throws Exception;
 
-    void enableLogCache(boolean enable) throws Exception;
+    void enablePoolLogCache(boolean enable) throws Exception;
 
     BeeObjectPoolMonitorVo getPoolMonitorVo() throws Exception;
 
 
-    String[] getKeyNames() throws Exception;
+    String[] getBucketKeyNames() throws Exception;
 
-    void enableKeyLogPrinterByName(String keyName, boolean enable) throws Exception;
+    void enableBucketLogPrinterByName(String keyName, boolean enable) throws Exception;
 
-    void enableKeyLogCacheByName(String keyName, boolean enable) throws Exception;
+    void enableBucketLogCacheByName(String keyName, boolean enable) throws Exception;
 
-    BeeObjectKeyMonitorVo getKeyMonitorVoByName(String keyName) throws Exception;
+    BeeObjectBucketMonitorVo getBucketMonitorVoByName(String keyName) throws Exception;
 }

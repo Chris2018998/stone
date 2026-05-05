@@ -19,7 +19,7 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0060PooledObjectTimeoutTest {
+public class Tc0088PooledObjectTimeoutTest {
 
     @Test
     public void testIdleTimeout() throws Exception {
@@ -27,16 +27,17 @@ public class Tc0060PooledObjectTimeoutTest {
             os.setInitialSize(0);
             os.setMaxActive(1);
             os.setIdleTimeout(1L);
+            os.setPrintRuntimeLogs(true);
             os.setIntervalOfClearTimeout(100L);
             os.setObjectFactory(new TextBookFactory());
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
             }
-            Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
 
             //wait 1second
             Thread.sleep(200L);
-            Assertions.assertEquals(0, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(0, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
         }
     }
 
@@ -47,14 +48,15 @@ public class Tc0060PooledObjectTimeoutTest {
             os.setInitialSize(0);
             os.setMaxActive(1);
             os.setHoldTimeout(1L);
+            os.setPrintRuntimeLogs(true);
             os.setIntervalOfClearTimeout(100L);
             os.setObjectFactory(new TextBookFactory());
 
             try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
-                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
                 Thread.sleep(200L);
-                Assertions.assertEquals(0, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
-                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
+                Assertions.assertEquals(0, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getIdleSize());
                 Assertions.assertTrue(handle.isClosed());
             }
         }
@@ -68,11 +70,11 @@ public class Tc0060PooledObjectTimeoutTest {
             os.setObjectFactory(new TextBookFactory());
 
             try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
-                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
                 Thread.sleep(200L);
-                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
                 Thread.sleep(200L);
-                Assertions.assertEquals(1, os.getKeyMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
+                Assertions.assertEquals(1, os.getBucketMonitorVo(os.getObjectFactory().getDefaultKey()).getBorrowedSize());
                 Assertions.assertFalse(handle.isClosed());
             }
         }

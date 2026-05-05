@@ -26,6 +26,7 @@ public class MethodLog<K> implements BeeMethodLog<K> {
     //Method call is failed
     static final int State_Failed = 2;
 
+
     //pooled key
     private final K key;
     //Log type
@@ -34,6 +35,8 @@ public class MethodLog<K> implements BeeMethodLog<K> {
     private final String id;
     //pool name
     private final String poolName;
+    //thread of method call
+    private final Thread callThread;
 
     //Method name of pool or (Statement,PreparedStatement,CallableStatement)
     private final String method;
@@ -71,6 +74,7 @@ public class MethodLog<K> implements BeeMethodLog<K> {
         this.parameters = parameters;
         this.id = UUID.randomUUID().toString();
         this.startTime = startTime;
+        this.callThread = Thread.currentThread();
     }
 
     public String getId() {
@@ -87,6 +91,10 @@ public class MethodLog<K> implements BeeMethodLog<K> {
 
     public String getPoolName() {
         return this.poolName;
+    }
+
+    public Thread getCallThread() {
+        return this.callThread;
     }
 
     public String getMethod() {
@@ -134,11 +142,12 @@ public class MethodLog<K> implements BeeMethodLog<K> {
         this.handled = isHandled;
     }
 
-    void setAsSlow(long curTime, long slowThreshold) {
+    void setAsSlow(long curTime, long slowThreshold, boolean interruptLongLogs) {
         if (this.endTime != 0L) {
             this.slow = this.endTime - this.startTime - slowThreshold >= 0L;
         } else {
             this.slow = this.longRunning = curTime - this.startTime - slowThreshold >= 0L;
+            if (this.longRunning && interruptLongLogs) this.callThread.interrupt();
         }
     }
 

@@ -11,8 +11,8 @@ package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.stone.beeop.BeeObjectBucketMonitorVo;
 import org.stone.beeop.BeeObjectHandle;
-import org.stone.beeop.BeeObjectKeyMonitorVo;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.beeop.exception.BeeObjectSourcePoolNotReadyException;
@@ -29,7 +29,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0037ObjectSourcePoolRestartTest {
+public class Tc0039ObjectSourcePoolRestartTest {
 
     @Test
     public void testRestart() throws Exception {
@@ -38,16 +38,16 @@ public class Tc0037ObjectSourcePoolRestartTest {
         config.setObjectFactory(objectFactory);
         config.setInitialSize(1);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertEquals(1, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(1, os.getBucketMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
 
             //1: restart
             os.restart(false);
-            Assertions.assertEquals(0, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(0, os.getBucketMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
 
             //2: restart by force
             BeeObjectHandle<String, Book> handle = os.getObjectHandle();
             os.restart(true);
-            Assertions.assertEquals(0, os.getKeyMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
+            Assertions.assertEquals(0, os.getBucketMonitorVo(objectFactory.getDefaultKey()).getIdleSize());
             Assertions.assertTrue(handle.isClosed());
         }
     }
@@ -62,12 +62,10 @@ public class Tc0037ObjectSourcePoolRestartTest {
         String poolName = "BeeOP1";
         config.setPoolName(poolName);
         String defaultKey = objectFactory.getDefaultKey();
+        config.addObjectFactoryProperty("factoryName", "Factory of Java Books");
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            //get pool morning VO
-
-
-            BeeObjectKeyMonitorVo vo = os.getKeyMonitorVo(defaultKey);
+            BeeObjectBucketMonitorVo vo = os.getBucketMonitorVo(defaultKey);
             Assertions.assertEquals(2, vo.getIdleSize());
             Assertions.assertEquals(defaultKey, vo.getKeyName());
             Assertions.assertEquals(config.getPoolName(), os.getPoolName());
@@ -95,14 +93,15 @@ public class Tc0037ObjectSourcePoolRestartTest {
             config.setInitialSize(2);
             config.setMaxActive(2);
             config.setPoolName("BeeOP2");
+            config.addObjectFactoryProperty("factoryCountry", "China");
             os.restart(true, config);
-            vo = os.getKeyMonitorVo(defaultKey);
+            vo = os.getBucketMonitorVo(defaultKey);
             Assertions.assertEquals(2, vo.getIdleSize());
             Assertions.assertEquals(defaultKey, vo.getKeyName());
             Assertions.assertEquals(config.getPoolName(), os.getPoolName());
 
             //4: restart failure1
-            objectFactory.setCreationException(new SQLException("Network error"));
+            objectFactory.addFactoryMethodException("create", new SQLException("Network error"));
             try {
                 os.restart(true, config);
                 Assertions.fail("[os.restart]failed");
@@ -118,7 +117,7 @@ public class Tc0037ObjectSourcePoolRestartTest {
                     Assertions.fail("[os.restart]failed");
                 } catch (Exception ee) {
                     Assertions.assertInstanceOf(BeeObjectSourcePoolNotReadyException.class, ee);
-                    objectFactory.setCreationException(null);
+                    objectFactory.removeFactoryMethodException("create");
                     os.restart(true, config);
                     try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
                         Assertions.assertNotNull(handle);

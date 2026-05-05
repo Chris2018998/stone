@@ -30,7 +30,7 @@ import java.util.concurrent.locks.LockSupport;
 /**
  * @author Chris Liao
  */
-public class Tc0030ObjectSourcePoolStartFailureTest {
+public class Tc0032ObjectSourcePoolStartFailureTest {
 
     @Test
     public void testNullConfiguration() {
@@ -106,7 +106,7 @@ public class Tc0030ObjectSourcePoolStartFailureTest {
     @Test
     public void testPooledObjectCreationException() {
         TextBookFactory factory = new TextBookFactory();
-        factory.setCreationException(new Exception("Paper is not enough"));
+        factory.addFactoryMethodException("create", new Exception("Paper is not enough"));
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setObjectFactory(factory);
         config.setInitialSize(1);

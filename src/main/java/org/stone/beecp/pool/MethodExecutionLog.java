@@ -34,6 +34,8 @@ public class MethodExecutionLog implements BeeMethodLog {
     private final String id;
     //pool name
     private final String poolName;
+    //call thread
+    private final Thread callThread;
 
     //Method name of pool or (Statement,PreparedStatement,CallableStatement)
     private final String method;
@@ -78,10 +80,15 @@ public class MethodExecutionLog implements BeeMethodLog {
         this.statement = statement;
         this.id = UUID.randomUUID().toString();
         this.startTime = System.currentTimeMillis();
+        this.callThread = Thread.currentThread();
     }
 
     public String getPoolName() {
         return this.poolName;
+    }
+
+    public Thread getCallThread() {
+        return this.callThread;
     }
 
     public int getType() {

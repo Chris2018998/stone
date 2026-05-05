@@ -17,7 +17,7 @@ import java.io.Serializable;
  * @author Chris Liao
  * @version 1.0
  */
-public interface BeeObjectKeyMonitorVo extends Serializable {
+public interface BeeObjectBucketMonitorVo extends Serializable {
 
     //***************************************************************************************************************//
     //                                     1: Pool Key name                                                          //

@@ -41,7 +41,6 @@ public class Tc0006ConfigInfoLogPrintTest {
 
     @Test
     public void testOnExclusionConfigItems() {
-
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setPrintConfiguration(true);
 
@@ -75,13 +74,9 @@ public class Tc0006ConfigInfoLogPrintTest {
         Assertions.assertFalse(logs.contains(".initialSize"));
         Assertions.assertFalse(logs.contains(".maxKeySize"));
 
-        config.addObjectFactoryProperty("name", "Edition of Java world");
-        logCollector = LogCollector.startLogCollector();
-        config.check();
-        logs = logCollector.endLogCollector();
-        Assertions.assertTrue(logs.contains(".objectFactoryProperties"));
 
-        config.addObjectFactoryProperty("name", "Edition of Java world");
+        //print test(exclude 'objectFactoryProperties' test)
+        config.addObjectFactoryProperty("factoryName", "Factory of Java Books");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();
@@ -93,6 +88,20 @@ public class Tc0006ConfigInfoLogPrintTest {
         logs = logCollector.endLogCollector();
         Assertions.assertFalse(logs.contains(".objectFactoryProperties"));
 
+
+        //print test(exclude 'objectFactoryProperties' test)
+        config.removeExclusionNameOfPrint("objectFactoryProperties");
+        config.addObjectFactoryProperty("factoryCountry", "China");
+        config.addObjectFactoryProperty("factoryName", "Factory of Java Books");
+        config.addExclusionNameOfPrint("factoryName");
+        logCollector = LogCollector.startLogCollector();
+        config.check();
+        logs = logCollector.endLogCollector();
+        Assertions.assertTrue(logs.contains(".objectFactoryProperties.factoryCountry"));
+        Assertions.assertFalse(logs.contains(".objectFactoryProperties.factoryName"));//<!--exclusion
+
+        config.removeObjectFactoryProperty("factoryName");
+        config.removeObjectFactoryProperty("factoryCountry");
         logCollector = LogCollector.startLogCollector();
         config.check();
         logs = logCollector.endLogCollector();

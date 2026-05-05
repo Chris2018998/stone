@@ -18,7 +18,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0035ObjectSourcePoolMonitorTest {
+public class Tc0036ObjectSourcePoolMonitorTest {
 
     @Test
     public void testGetMonitor() throws Exception {
@@ -36,14 +36,14 @@ public class Tc0035ObjectSourcePoolMonitorTest {
             BeeObjectPoolMonitorVo poolMonitorVo = os.getPoolMonitorVo(false);
             Assertions.assertFalse(poolMonitorVo.isNew());
             Assertions.assertTrue(poolMonitorVo.isReady());
-            Assertions.assertNull(poolMonitorVo.getKeyMonitorVos());
-            Assertions.assertNull(poolMonitorVo.getKeyMonitorVo(defaultKey));
+            Assertions.assertNull(poolMonitorVo.getBucketMonitorVos());
+            Assertions.assertNull(poolMonitorVo.getBucketMonitorVo(defaultKey));
             Assertions.assertEquals(config.getPoolName(), poolMonitorVo.getPoolName());
 
             poolMonitorVo = os.getPoolMonitorVo(true);
-            Assertions.assertEquals(1, poolMonitorVo.getKeyMonitorVos().size());
+            Assertions.assertEquals(1, poolMonitorVo.getBucketMonitorVos().size());
 
-            BeeObjectKeyMonitorVo keyMonitorVo = poolMonitorVo.getKeyMonitorVo(defaultKey);
+            BeeObjectBucketMonitorVo keyMonitorVo = poolMonitorVo.getBucketMonitorVo(defaultKey);
             Assertions.assertNotNull(keyMonitorVo);
             Assertions.assertEquals(defaultKey, keyMonitorVo.getKeyName());
             Assertions.assertTrue(keyMonitorVo.isReady());

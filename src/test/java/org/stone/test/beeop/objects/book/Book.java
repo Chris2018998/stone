@@ -19,7 +19,11 @@ public interface Book {
 
     String getTitle() throws Exception;
 
+    void setTitle(String title) throws Exception;
+
     String getAuthor() throws Exception;
 
     void setAuthor(String author) throws Exception;
+
+    void setDefault(String title, String author) throws Exception;
 }

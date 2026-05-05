@@ -48,7 +48,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     //23: An exclusion list of configuration print,default is copies from {@code DefaultExclusionList}
     private final List<String> exclusionListOfPrint = new ArrayList<>(DefaultExclusionList);
     //24: A map stores some properties of connection provider,these properties are injected to provider during pool initialization
-    private final Map<String, Object> connectionFactoryProperties = new HashMap<>();
+    private final Map<String, Object> connectionFactoryProperties = new HashMap<>(0);
 
     //1: Username link to database,default is none
     private String username;
@@ -95,6 +95,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     private boolean printConfiguration;
     //22: Class name of pool implementation,default is {@code FastConnectionPool}
     private String poolImplementClassName;
+
+
 
     //25: Test sql on borrowed connections to check them whether alive,default is "SELECT 1"
     private String aliveTestSql = "SELECT 1";
@@ -287,7 +289,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setInitialSize(int initialSize) {
         if (initialSize < 0)
-            throw new BeeDataSourceConfigException("The given value for the configuration item 'initial-size' cannot be less than zero");
+            throw new BeeDataSourceConfigException("The given value of 'initial-size' cannot be less than zero");
         this.initialSize = initialSize;
     }
 
@@ -305,7 +307,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setMaxActive(int maxActive) {
         if (maxActive <= 0)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'max-active' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'max-active' must be greater than zero");
         this.maxActive = maxActive;
         //fix issue:#19 Chris-2020-08-16 begin
         this.semaphoreSize = maxActive > 1 ? Math.min(maxActive / 2, NCPU) : 1;
@@ -318,7 +320,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setSemaphoreSize(int semaphoreSize) {
         if (semaphoreSize <= 0)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'semaphore-size' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'semaphore-size' must be greater than zero");
         this.semaphoreSize = semaphoreSize;
     }
 
@@ -336,7 +338,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setMaxWait(long maxWait) {
         if (maxWait <= 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'max-wait' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'max-wait' must be greater than zero");
         this.maxWait = maxWait;
     }
 
@@ -346,7 +348,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setIdleTimeout(long idleTimeout) {
         if (idleTimeout <= 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'idle-timeout' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'idle-timeout' must be greater than zero");
         this.idleTimeout = idleTimeout;
     }
 
@@ -356,7 +358,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setHoldTimeout(long holdTimeout) {
         if (holdTimeout < 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'hold-timeout' cannot be less than zero");
+            throw new BeeDataSourceConfigException("The given value of 'hold-timeout' cannot be less than zero");
         this.holdTimeout = holdTimeout;
     }
 
@@ -366,7 +368,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setIntervalOfClearTimeout(long intervalOfClearTimeout) {
         if (intervalOfClearTimeout <= 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'interval-of-clear-timeout' must be greater than zero");
         this.intervalOfClearTimeout = intervalOfClearTimeout;
     }
 
@@ -384,7 +386,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setParkTimeForRetry(long parkTimeForRetry) {
         if (parkTimeForRetry < 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
+            throw new BeeDataSourceConfigException("The given value of 'park-time-for-retry' cannot be less than zero");
         this.parkTimeForRetry = parkTimeForRetry;
     }
 
@@ -482,11 +484,11 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setAliveTestSql(String aliveTestSql) {
         if (isBlank(aliveTestSql))
-            throw new BeeDataSourceConfigException("The given value for configuration item 'alive-test-sql' cannot be null or empty");
+            throw new BeeDataSourceConfigException("The given value of 'alive-test-sql' cannot be null or empty");
 
         aliveTestSql = trimString(aliveTestSql);
         if (!aliveTestSql.toUpperCase(Locale.US).startsWith("SELECT "))
-            throw new BeeDataSourceConfigException("The given value for configuration item 'alive-test-sql' must start with 'select '");
+            throw new BeeDataSourceConfigException("The given value of 'alive-test-sql' must start with 'select '");
 
         this.aliveTestSql = aliveTestSql;
     }
@@ -497,7 +499,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setAliveTestTimeout(int aliveTestTimeout) {
         if (aliveTestTimeout < 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'alive-test-timeout' cannot  be less than zero");
+            throw new BeeDataSourceConfigException("The given value of 'alive-test-timeout' cannot  be less than zero");
         this.aliveTestTimeout = aliveTestTimeout;
     }
 
@@ -507,7 +509,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setAliveAssumeTime(long aliveAssumeTime) {
         if (aliveAssumeTime < 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'alive-assume-time' cannot be less than zero");
+            throw new BeeDataSourceConfigException("The given value of 'alive-assume-time' cannot be less than zero");
         this.aliveAssumeTime = aliveAssumeTime;
     }
 
@@ -561,7 +563,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     public void setDefaultTransactionIsolationName(String transactionIsolationName) {
         String transactionIsolationNameTemp = trimString(transactionIsolationName);
         if (isBlank(transactionIsolationNameTemp))
-            throw new BeeDataSourceConfigException("The given value for configuration item 'default-transaction-isolation-name' cannot be null or empty");
+            throw new BeeDataSourceConfigException("The given value of 'default-transaction-isolation-name' cannot be null or empty");
 
         this.defaultTransactionIsolation = BeeTransactionIsolationNames.getTransactionIsolationCode(transactionIsolationNameTemp);
         if (this.defaultTransactionIsolation != null) {
@@ -756,7 +758,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setLogCacheSize(int logCacheSize) {
         if (logCacheSize <= 0)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'method-execution-log-cache-size' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'method-execution-log-cache-size' must be greater than zero");
         this.logCacheSize = logCacheSize;
     }
 
@@ -766,7 +768,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setLogTimeout(long logTimeout) {
         if (logTimeout <= 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'method-execution-log-timeout' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'method-execution-log-timeout' must be greater than zero");
         this.logTimeout = logTimeout;
     }
 
@@ -776,7 +778,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setIntervalOfClearTimeoutLogs(long intervalOfClearTimeoutLogs) {
         if (intervalOfClearTimeoutLogs <= 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'interval-of-clear-timeout-execution-logs' must be greater than zero");
         this.intervalOfClearTimeoutLogs = intervalOfClearTimeoutLogs;
     }
 
@@ -786,7 +788,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setSlowConnectionThreshold(long slowConnectionThreshold) {
         if (slowConnectionThreshold < 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'slow-connection-threshold' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'slow-connection-threshold' must be greater than zero");
         this.slowConnectionThreshold = slowConnectionThreshold;
     }
 
@@ -796,7 +798,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     public void setSlowSQLThreshold(long slowSQLThreshold) {
         if (slowSQLThreshold < 0L)
-            throw new BeeDataSourceConfigException("The given value for configuration item 'slow-SQL-threshold' must be greater than zero");
+            throw new BeeDataSourceConfigException("The given value of 'slow-SQL-threshold' must be greater than zero");
         this.slowSQLThreshold = slowSQLThreshold;
     }
 

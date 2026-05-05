@@ -14,37 +14,36 @@ import org.junit.jupiter.api.Test;
 import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
-import org.stone.test.base.TestUtil;
 import org.stone.test.beeop.config.OsConfigFactory;
 import org.stone.test.beeop.objects.book.Book;
 
 /**
  * @author Chris Liao
  */
-public class Tc0056PoolKeyThreadLocalTest {
+public class Tc0063PooledBucketWorkModeTest {
 
     @Test
-    public void testDisableThreadLocal() throws Exception {
+    public void testWorkMode() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
-        config.setUseThreadLocal(false);
+        config.setFairMode(true);
+        config.setInitialSize(1);
+        config.setMaxActive(1);
+
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
                 Assertions.assertNotNull(handle);
             }
+        } catch (Throwable e) {
+            Assertions.fail("[Tc0069PooledBucketAsyncInitTest.testWorkMode]test failed");
         }
 
-        BeeObjectSourceConfig<String, Book> config2 = OsConfigFactory.createDefault();
-        config2.setUseThreadLocal(true);
-        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config2)) {
-            Object object1, object2;
-            try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
-                object1 = TestUtil.getFieldValue(handle1, "p");
+        config.setFairMode(false);
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            try (BeeObjectHandle<String, Book> handle = os.getObjectHandle()) {
+                Assertions.assertNotNull(handle);
             }
-
-            try (BeeObjectHandle<String, Book> handle2 = os.getObjectHandle()) {
-                object2 = TestUtil.getFieldValue(handle2, "p");
-            }
-            Assertions.assertEquals(object1, object2);
+        } catch (Throwable e) {
+            Assertions.fail("[Tc0069PooledBucketAsyncInitTest.testWorkMode]test failed");
         }
     }
 }

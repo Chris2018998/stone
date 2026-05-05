@@ -23,7 +23,7 @@ public interface BeeMethodLog<K> extends Serializable {
     //Key addition log of key
     int Type_Pool_Log = 1;
     //Object borrowing log on key
-    int Type_Key_Log = 2;
+    int Type_Bucket_Log = 2;
     //Method call logs on pooled objects
     int Type_Object_Log = 3;
 
@@ -33,6 +33,13 @@ public interface BeeMethodLog<K> extends Serializable {
      * @return pool name
      */
     String getPoolName();
+
+    /**
+     * Get thread of method call
+     *
+     * @return call thread
+     */
+    Thread getCallThread();
 
     /**
      * Get pooled key id.

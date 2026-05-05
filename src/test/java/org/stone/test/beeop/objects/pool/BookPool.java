@@ -75,35 +75,35 @@ public class BookPool implements BeeObjectPool<String, Book> {
         }
     }
 
-    public int keySize() throws Exception {
+    public int bucketSize() throws Exception {
         return 10;
     }
 
-    public boolean existsKey(String key) throws Exception {
+    public boolean existsBucket(String key) throws Exception {
         return true;
     }
 
-    public boolean suspendKey(String key) throws Exception {
+    public boolean suspendBucket(String key) throws Exception {
         return true;
     }
 
-    public boolean resumeKey(String key) throws Exception {
+    public boolean resumeBucket(String key) throws Exception {
         return true;
     }
 
-    public void clearKeyObjects(String key) throws Exception {
+    public void clearBucketObjects(String key) throws Exception {
 
     }
 
-    public void clearKeyObjects(String key, boolean forceRecycleBorrowed) throws Exception {
+    public void clearBucketObjects(String key, boolean forceRecycleBorrowed) throws Exception {
 
     }
 
-    public boolean deleteKey(String key) throws Exception {
+    public boolean deleteBucket(String key) throws Exception {
         return true;
     }
 
-    public boolean deleteKey(String key, boolean forceRecycleBorrowed) throws Exception {
+    public boolean deleteBucket(String key, boolean forceRecycleBorrowed) throws Exception {
         return true;
     }
 
@@ -139,7 +139,7 @@ public class BookPool implements BeeObjectPool<String, Book> {
 
     }
 
-    public void enableLogPrinter(String key, boolean enable) throws Exception {
+    public void enableBucketLogPrinter(String key, boolean enable) throws Exception {
 
     }
 
@@ -147,24 +147,24 @@ public class BookPool implements BeeObjectPool<String, Book> {
         return null;
     }
 
-    public BeeObjectKeyMonitorVo getKeyMonitorVo(String key) throws Exception {
+    public BeeObjectBucketMonitorVo getBucketMonitorVo(String key) throws Exception {
         return null;
     }
 
-    public List<Thread> interruptWaitingThreads() throws Exception {
+    public List<Thread> interruptWaitingThreadsInBuckets() throws Exception {
         return null;
     }
 
 
-    public List<Thread> interruptWaitingThreads(String key) throws Exception {
+    public List<Thread> interruptWaitingThreadsInBucket(String key) throws Exception {
         return null;
     }
 
-    public void enableLogCache(boolean enable) throws Exception {
+    public void enablePoolLogCache(boolean enable) throws Exception {
 
     }
 
-    public void changeLogListener(BeeMethodLogListener<String> listener) throws Exception {
+    public void changePoolLogListener(BeeMethodLogListener<String> listener) throws Exception {
 
     }
 
@@ -176,27 +176,27 @@ public class BookPool implements BeeObjectPool<String, Book> {
         return null;
     }
 
-    public void enableLogCache(String key, boolean enable) throws Exception {
+    public void enableBucketLogCache(String key, boolean enable) throws Exception {
 
     }
 
-    public void changeLogListener(String key, BeeMethodLogListener<String> listener) throws Exception {
+    public void changeBucketLogListener(String key, BeeMethodLogListener<String> listener) throws Exception {
 
     }
 
-    public void clearKeyLogs(String key) throws Exception {
+    public void clearBucketLogs(String key) throws Exception {
 
     }
 
-    public List<BeeMethodLog<String>> getKeyLogs(String key) throws Exception {
+    public List<BeeMethodLog<String>> getBucketLogs(String key) throws Exception {
         return null;
     }
 
-    public void clearKeyObjectLogs(String key) throws Exception {
+    public void clearBucketObjectLogs(String key) throws Exception {
 
     }
 
-    public List<BeeMethodLog<String>> getKeyObjectLogs(String key) throws Exception {
+    public List<BeeMethodLog<String>> getBucketObjectLogs(String key) throws Exception {
         return null;
     }
 }

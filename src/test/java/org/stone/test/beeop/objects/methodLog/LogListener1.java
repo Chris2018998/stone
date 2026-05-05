@@ -15,10 +15,7 @@
  */
 package org.stone.test.beeop.objects.methodLog;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.stone.beeop.BeeMethodLog;
-import org.stone.beeop.BeeMethodLogListener;
 
 import java.util.List;
 
@@ -27,35 +24,17 @@ import java.util.List;
  *
  * @author Chris Liao
  */
-public class LogListener1 implements BeeMethodLogListener<String> {
-    private final Logger logger = LoggerFactory.getLogger(LogListener1.class);
+public class LogListener1 extends LogListener {
 
-    private BeeMethodLog<String> slowLog;
-
-    private BeeMethodLog<String> exceptionLog;
-
-    public BeeMethodLog<String> getSlowLog() {
-        return slowLog;
+    public void onMethodStart(BeeMethodLog<String> log) throws Exception {
+        beforeMethod("onMethodStart", log);
     }
 
-    public BeeMethodLog<String> getExceptionLog() {
-        return exceptionLog;
-    }
-
-    public void onMethodStart(BeeMethodLog<String> log) {
-        logger.info("LogListener1.onMethodStart");
-    }
-
-    public void onMethodEnd(BeeMethodLog<String> log) {
-        logger.info("LogListener1.onMethodEnd");
-        if (log.isException()) {
-            exceptionLog = log;
-        } else if (log.isSlow()) {
-            this.slowLog = log;
-        }
+    public void onMethodEnd(BeeMethodLog<String> log) throws Exception {
+        beforeMethod("onMethodEnd", log);
     }
 
     public List<Boolean> onLongRunningDetected(List<BeeMethodLog<String>> slowList) {
-        return null;
+        return getLongRunningDetected(slowList);
     }
 }

@@ -16,21 +16,24 @@ import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.test.base.TestUtil;
 import org.stone.test.beeop.objects.book.Book;
-import org.stone.test.beeop.objects.factory.TextBookFactory3;
+import org.stone.test.beeop.objects.factory.TextBookFactory;
 import org.stone.test.beeop.objects.predicate.JavaBookPredicate;
 
 /**
  * @author Chris Liao
  */
-public class Tc0061PooledObjectEvictionTest {
+public class Tc0085PooledObjectEvictionTest {
 
     @Test
     public void testNotSetPredicate() throws Exception {
         BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
         config.setInitialSize(1);
         config.setMaxActive(1);
-        TextBookFactory3 bookFactory = new TextBookFactory3();
-        bookFactory.setCallException(new Exception("eviction"));
+        TextBookFactory bookFactory = new TextBookFactory();
+
+        Exception evictException = new Exception("eviction");
+        bookFactory.addObjectMethodException("setAuthor", evictException);
+        bookFactory.addObjectMethodException("getAuthor", evictException);
         config.setObjectFactory(bookFactory);
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -40,7 +43,7 @@ public class Tc0061PooledObjectEvictionTest {
             try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
                 object1 = TestUtil.getFieldValue(handle1, "instance");
                 handle1.call("setAuthor", new Class[]{String.class}, new Object[]{"Bruce2"});
-                Assertions.fail("[Tc0061PooledObjectEvictionTest.testNoPredicate]failed");
+                Assertions.fail("[Tc0085PooledObjectEvictionTest.testNoPredicate]failed");
             } catch (Throwable e) {
                 Assertions.assertEquals("eviction", e.getMessage());
             }
@@ -50,7 +53,7 @@ public class Tc0061PooledObjectEvictionTest {
                 object2 = TestUtil.getFieldValue(handle2, "instance");
                 Assertions.assertEquals(object1, object2);
                 handle2.call("getAuthor");
-                Assertions.fail("[Tc0061PooledObjectEvictionTest.testNoPredicate]failed");
+                Assertions.fail("[Tc0085PooledObjectEvictionTest.testNoPredicate]failed");
             } catch (Throwable e) {
                 Assertions.assertEquals("eviction", e.getMessage());
             }
@@ -68,17 +71,18 @@ public class Tc0061PooledObjectEvictionTest {
         BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
         config.setInitialSize(1);
         config.setMaxActive(1);
-        TextBookFactory3 bookFactory = new TextBookFactory3();
-        bookFactory.setCallException(new Exception("eviction"));
+        TextBookFactory bookFactory = new TextBookFactory();
+        Exception evictException = new Exception("eviction");
+        bookFactory.addObjectMethodException("setAuthor", evictException);
         config.setObjectFactory(bookFactory);
         config.setPredicate(new JavaBookPredicate());
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Object object1 = null, object2 = null;
+            Object object1 = null, object2;
             try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
                 object1 = TestUtil.getFieldValue(handle1, "instance");
                 handle1.call("setAuthor", new Class[]{String.class}, new Object[]{"Bruce2"});
-                Assertions.fail("[Tc0061PooledObjectEvictionTest.testNoPredicate]failed");
+                Assertions.fail("[Tc0085PooledObjectEvictionTest.testNoPredicate]failed");
             } catch (Throwable e) {
                 Assertions.assertEquals("eviction", e.getMessage());
             }
@@ -95,8 +99,10 @@ public class Tc0061PooledObjectEvictionTest {
         BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
         config.setInitialSize(1);
         config.setMaxActive(1);
-        TextBookFactory3 bookFactory = new TextBookFactory3();
-        bookFactory.setCallException(new Exception("eviction"));//<-- evicted by exception message check
+        TextBookFactory bookFactory = new TextBookFactory();
+        Exception evictException = new Exception("eviction");
+        bookFactory.addObjectMethodException("setAuthor", evictException);
+        bookFactory.addObjectMethodException("getAuthor", evictException);
         config.setObjectFactory(bookFactory);
         config.setPredicate(new JavaBookPredicate());
         config.addObjectMethodName("setAuthor");//<---evict by method name
@@ -107,7 +113,7 @@ public class Tc0061PooledObjectEvictionTest {
             try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
                 object1 = TestUtil.getFieldValue(handle1, "instance");
                 handle1.call("setAuthor", new Class[]{String.class}, new Object[]{"Bruce2"});
-                Assertions.fail("[Tc0061PooledObjectEvictionTest.testNoPredicate]failed");
+                Assertions.fail("[Tc0085PooledObjectEvictionTest.testNoPredicate]failed");
             } catch (Throwable e) {
                 Assertions.assertEquals("eviction", e.getMessage());
             }
@@ -122,7 +128,7 @@ public class Tc0061PooledObjectEvictionTest {
             try (BeeObjectHandle<String, Book> handle3 = os.getObjectHandle()) {
                 object3 = TestUtil.getFieldValue(handle3, "instance");
                 handle3.call("getAuthor");
-                Assertions.fail("[Tc0061PooledObjectEvictionTest.testNoPredicate]failed");
+                Assertions.fail("[Tc0085PooledObjectEvictionTest.testNoPredicate]failed");
             } catch (Throwable e) {
                 Assertions.assertEquals("eviction", e.getMessage());
             }
@@ -134,13 +140,15 @@ public class Tc0061PooledObjectEvictionTest {
 
 
         //not evicted test
-        bookFactory.setCallException(new Exception("eviction2"));//not match exception message in predicate
+        Exception evictException2 = new Exception("eviction2");
+        bookFactory.addObjectMethodException("setAuthor", evictException2);
+        bookFactory.addObjectMethodException("setAuthor", evictException2);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object object1 = null;
             try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
                 object1 = TestUtil.getFieldValue(handle1, "instance");
                 handle1.call("setAuthor", new Class[]{String.class}, new Object[]{"Bruce2"});
-                Assertions.fail("[Tc0061PooledObjectEvictionTest.testNoPredicate]failed");
+                Assertions.fail("[Tc0085PooledObjectEvictionTest.testNoPredicate]failed");
             } catch (Throwable e) {
                 Assertions.assertEquals("eviction2", e.getMessage());
             }

@@ -65,13 +65,13 @@ public class Tc0002PoolSimpleSetTest {
             config.setSemaphoreSize(-1);
             fail("Setting test failed on configuration item[semaphore-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'borrow-semaphore-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'borrow-semaphore-size' must be greater than zero", e.getMessage());
         }
         try {
             config.setSemaphoreSize(0);
             fail("Setting test failed on configuration item[semaphore-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'borrow-semaphore-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'borrow-semaphore-size' must be greater than zero", e.getMessage());
         }
     }
 
@@ -145,13 +145,13 @@ public class Tc0002PoolSimpleSetTest {
             config.addObjectMethodName(null);
             fail("Setting test failed on configuration item[object-method-name-list]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'method-name' can't be null or blank", e.getMessage());
+            Assertions.assertEquals("The given value of 'method-name' can't be null or blank", e.getMessage());
         }
         try {
             config.addObjectMethodName("");
             fail("Setting test failed on configuration item[object-method-name-list]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'method-name' can't be null or blank", e.getMessage());
+            Assertions.assertEquals("The given value of 'method-name' can't be null or blank", e.getMessage());
         }
     }
 

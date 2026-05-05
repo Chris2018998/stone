@@ -15,28 +15,12 @@
  */
 package org.stone.test.beeop.objects.methodLog;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.stone.beeop.BeeMethodLog;
-
 /**
  * Method execution listener
  *
  * @author Chris Liao
  */
 public class LogListener2 extends LogListener1 {
-    private final Logger logger = LoggerFactory.getLogger(LogListener2.class);
-
     public LogListener2(String name) {
-
     }
-
-    public void onMethodStart(BeeMethodLog<String> log) {
-        logger.info("LogListener2.onMethodStart");
-    }
-
-    public void onMethodEnd(BeeMethodLog<String> log) {
-        logger.info("LogListener2.onMethodEnd");
-    }
-
 }

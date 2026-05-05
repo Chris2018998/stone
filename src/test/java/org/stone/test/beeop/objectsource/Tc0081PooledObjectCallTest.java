@@ -11,7 +11,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0064ObjectHandleTest {
+public class Tc0081PooledObjectCallTest {
 
     @Test
     public void testGetAuthor() throws Throwable {
@@ -22,7 +22,7 @@ public class Tc0064ObjectHandleTest {
 
                 try {
                     bookHandle.call(null);
-                    Assertions.fail("[Tc0064ObjectHandleTest.testGetAuthor]failed");
+                    Assertions.fail("[Tc0081PooledObjectCallTest.testGetAuthor]failed");
                 } catch (Exception e) {
                     Assertions.assertEquals("Method name can't be null or be blank", e.getMessage());
                 }

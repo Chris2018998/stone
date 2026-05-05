@@ -22,7 +22,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0052PoolKeySuspensionTest {
+public class Tc0062PooledBucketSuspensionTest {
 
     @Test
     public void testSuspendKey() throws Exception {
@@ -31,22 +31,22 @@ public class Tc0052PoolKeySuspensionTest {
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             //1: suspend key
-            os.suspendKey(bookFactory.getDefaultKey());
-            Assertions.assertTrue(os.getKeyMonitorVo(bookFactory.getDefaultKey()).isSuspended());
+            os.suspendBucket(bookFactory.getDefaultKey());
+            Assertions.assertTrue(os.getBucketMonitorVo(bookFactory.getDefaultKey()).isSuspended());
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0052PoolKeySuspensionTest.testSuspendKey]failed");
+                Assertions.fail("[Tc0062PooledBucketSuspensionTest.testSuspendKey]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
-                Assertions.assertEquals("Key was not ready", e.getMessage());
+                Assertions.assertEquals("Object bucket was not ready", e.getMessage());
             }
 
             //2: resume key
-            os.resumeKey(bookFactory.getDefaultKey());
-            Assertions.assertFalse(os.getKeyMonitorVo(bookFactory.getDefaultKey()).isSuspended());
+            os.resumeBucket(bookFactory.getDefaultKey());
+            Assertions.assertFalse(os.getBucketMonitorVo(bookFactory.getDefaultKey()).isSuspended());
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 Assertions.assertNotNull(ignored);
             } catch (Exception e) {
-                Assertions.fail("[Tc0052PoolKeySuspensionTest.testSuspendKey]failed");
+                Assertions.fail("[Tc0062PooledBucketSuspensionTest.testSuspendKey]failed");
             }
         }
     }

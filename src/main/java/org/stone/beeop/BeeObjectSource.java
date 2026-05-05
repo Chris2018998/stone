@@ -153,36 +153,36 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     //                                     3: Pooled Keys maintenance(8+0)                                           //
     //***************************************************************************************************************//
-    public int keySize() throws Exception {
-        return pool.keySize();
+    public int bucketSize() throws Exception {
+        return pool.bucketSize();
     }
 
-    public boolean existsKey(K key) throws Exception {
-        return pool.existsKey(key);
+    public boolean existsBucket(K key) throws Exception {
+        return pool.existsBucket(key);
     }
 
-    public boolean suspendKey(K key) throws Exception {
-        return pool.suspendKey(key);
+    public boolean suspendBucket(K key) throws Exception {
+        return pool.suspendBucket(key);
     }
 
-    public boolean resumeKey(K key) throws Exception {
-        return pool.resumeKey(key);
+    public boolean resumeBucket(K key) throws Exception {
+        return pool.resumeBucket(key);
     }
 
-    public void clearKeyObjects(K key) throws Exception {
-        pool.clearKeyObjects(key);
+    public void clearBucketObjects(K key) throws Exception {
+        pool.clearBucketObjects(key);
     }
 
-    public void clearKeyObjects(K key, boolean forceRecycleBorrowed) throws Exception {
-        pool.clearKeyObjects(key, forceRecycleBorrowed);
+    public void clearBucketObjects(K key, boolean forceRecycleBorrowed) throws Exception {
+        pool.clearBucketObjects(key, forceRecycleBorrowed);
     }
 
-    public boolean deleteKey(K key) throws Exception {
-        return pool.deleteKey(key);
+    public boolean deleteBucket(K key) throws Exception {
+        return pool.deleteBucket(key);
     }
 
-    public boolean deleteKey(K key, boolean forceRecycleBorrowed) throws Exception {
-        return pool.deleteKey(key, forceRecycleBorrowed);
+    public boolean deleteBucket(K key, boolean forceRecycleBorrowed) throws Exception {
+        return pool.deleteBucket(key, forceRecycleBorrowed);
     }
 
     //***************************************************************************************************************//
@@ -192,8 +192,8 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         pool.enableLogPrinter(printRuntimeLog);
     }
 
-    public void enableLogPrinter(K key, boolean enable) throws Exception {
-        pool.enableLogPrinter(key, enable);
+    public void enableBucketLogPrinter(K key, boolean enable) throws Exception {
+        pool.enableBucketLogPrinter(key, enable);
     }
 
     //***************************************************************************************************************//
@@ -223,34 +223,34 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
         }
     }
 
-    public BeeObjectKeyMonitorVo getKeyMonitorVo(K key) throws Exception {
-        return pool.getKeyMonitorVo(key);
+    public BeeObjectBucketMonitorVo getBucketMonitorVo(K key) throws Exception {
+        return pool.getBucketMonitorVo(key);
     }
 
     //***************************************************************************************************************//
     //                                     6: Pool blocking interrupts(2+0)                                          //
     //***************************************************************************************************************//
-    public List<Thread> interruptWaitingThreads() throws Exception {
+    public List<Thread> interruptWaitingThreadsInBuckets() throws Exception {
         if (this.poolInitialized) {
-            return pool.interruptWaitingThreads();
+            return pool.interruptWaitingThreadsInBuckets();
         } else {
             return lock.interruptAllThreads();//maybe block in pool creation or block in default key startup
         }
     }
 
-    public List<Thread> interruptWaitingThreads(K key) throws Exception {
-        return pool.interruptWaitingThreads(key);
+    public List<Thread> interruptWaitingThreadsInBucket(K key) throws Exception {
+        return pool.interruptWaitingThreadsInBucket(key);
     }
 
     //***************************************************************************************************************//
     //                                     7: Method execution logs(4+0)                                             //
     //***************************************************************************************************************//
-    public void enableLogCache(boolean enable) throws Exception {
-        pool.enableLogCache(enable);
+    public void enablePoolLogCache(boolean enable) throws Exception {
+        pool.enablePoolLogCache(enable);
     }
 
-    public void changeLogListener(BeeMethodLogListener<K> listener) throws Exception {
-        pool.changeLogListener(listener);
+    public void changePoolLogListener(BeeMethodLogListener<K> listener) throws Exception {
+        pool.changePoolLogListener(listener);
     }
 
     public void clearPoolLogs() throws Exception {
@@ -264,28 +264,28 @@ public class BeeObjectSource<K, V> extends BeeObjectSourceConfig<K, V> implement
     //***************************************************************************************************************//
     //                                     8: Key method logs(6+0)                                                     //
     //***************************************************************************************************************//
-    public void enableLogCache(K key, boolean enable) throws Exception {
-        pool.enableLogCache(key, enable);
+    public void enableBucketLogCache(K key, boolean enable) throws Exception {
+        pool.enableBucketLogCache(key, enable);
     }
 
-    public void changeLogListener(K key, BeeMethodLogListener<K> listener) throws Exception {
-        pool.changeLogListener(key, listener);
+    public void changeBucketLogListener(K key, BeeMethodLogListener<K> listener) throws Exception {
+        pool.changeBucketLogListener(key, listener);
     }
 
-    public void clearKeyLogs(K key) throws Exception {
-        pool.clearKeyLogs(key);
+    public void clearBucketLogs(K key) throws Exception {
+        pool.clearBucketLogs(key);
     }
 
-    public List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception {
-        return pool.getKeyLogs(key);
+    public List<BeeMethodLog<K>> getBucketLogs(K key) throws Exception {
+        return pool.getBucketLogs(key);
     }
 
-    public void clearKeyObjectLogs(K key) throws Exception {
-        pool.clearKeyObjectLogs(key);
+    public void clearBucketObjectLogs(K key) throws Exception {
+        pool.clearBucketObjectLogs(key);
     }
 
-    public List<BeeMethodLog<K>> getKeyObjectLogs(K key) throws Exception {
-        return pool.getKeyObjectLogs(key);
+    public List<BeeMethodLog<K>> getBucketObjectLogs(K key) throws Exception {
+        return pool.getBucketObjectLogs(key);
     }
 
     //***************************************************************************************************************//

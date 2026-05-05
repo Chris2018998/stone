@@ -122,7 +122,7 @@ abstract class MethodLogCache<K> {
         }
     }
 
-    protected void clearTimeoutLogsByQueue(long timeout, long slowThreshold, LinkedBlockingQueue<MethodLog<K>> logsQueue) {
+    protected void clearTimeoutLogsByQueue(long timeout, long slowThreshold, boolean interruptLongLogs, LinkedBlockingQueue<MethodLog<K>> logsQueue) {
         List<MethodLog<K>> pendingRemovalLogList = null;
         List<BeeMethodLog<K>> longRunningLogList = null;
         long currentTime = System.currentTimeMillis();
@@ -134,7 +134,7 @@ abstract class MethodLogCache<K> {
                 pendingRemovalLogList.add(log);
             }
 
-            log.setAsSlow(currentTime, slowThreshold);
+            log.setAsSlow(currentTime, slowThreshold, interruptLongLogs);
             if (listener != null && log.isLongRunning() && !log.hasHandledByListener()) {
                 if (longRunningLogList == null) longRunningLogList = new LinkedList<>();
                 longRunningLogList.add(log);

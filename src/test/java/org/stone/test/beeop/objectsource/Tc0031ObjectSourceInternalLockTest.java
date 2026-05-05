@@ -54,7 +54,7 @@ public class Tc0031ObjectSourceInternalLockTest {
                 secondThread.start();
                 secondThread.join();
                 Assertions.assertEquals("Timeout on waiting for pool ready", secondThread.getFailureCause().getMessage());
-                List<Thread> interruptedThreadList = os.interruptWaitingThreads();
+                List<Thread> interruptedThreadList = os.interruptWaitingThreadsInBuckets();
                 Assertions.assertTrue(interruptedThreadList.contains(firstThread));
             }
         }
@@ -113,7 +113,7 @@ public class Tc0031ObjectSourceInternalLockTest {
                 secondThread.join();//wait state
                 Assertions.assertInstanceOf(BeePooledObjectGetInterruptedException.class, secondThread.getFailureCause());
 
-                os.interruptWaitingThreads();
+                os.interruptWaitingThreadsInBuckets();
                 firstThread.join();//wait state
             }
         }

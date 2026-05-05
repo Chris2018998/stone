@@ -36,98 +36,101 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean {
     //An atomic integer to generate sequence value as suffix of a pool name,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger();
-    //A map stores some properties of object factory,these properties injected to factory during pool initialization
-    private final Map<String, Object> objectFactoryProperties = new HashMap<>();
 
-    //1: Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} for it
+    //********************************************** 1: Configuration of Pool(8) *************************************//
+    //1: Pool name,default is none; if not set,a name generated with {@code PoolNameIndex} to it
     private String poolName;
-    //2: Object getting mode in pool
-    private boolean fairMode;
-    //3: Object creation size during pool initialization,default is zero
-    private int initialSize;
-    //4: Max reachable size of object categories in pool,default is 10
+    //2: Max size of poolable keys(a pooled key matches an object bucket) ,default is 10
     private int maxKeySize = 10;
-    //5: Max reachable size of pooled objects of per category,pool total capacity = maxKeySize * maxActive
-    private int maxActive = Math.min(Math.max(10, NCPU), 50);
-    //6: Permit size of semaphore for per object category
-    private int semaphoreSize = Math.min(this.maxActive / 2, NCPU);
-    //7: A flag,true is that pool use a threadLocal to store used object for borrowers(false can be used to support virtual threads)
-    private boolean useThreadLocal = true;
-    //8: Milliseconds,max wait time for a borrower to get an object from pool,default is 8000 milliseconds(8 seconds)
-    private long maxWait = 8000L;
-    //9: A flag of object creation,true that pool use a thread to create initial objects during initialization,default is false
-    private boolean asyncCreateInitObjects;
-    //10: Milliseconds,max idle time of pooled objects stay in pool,default is 18000 milliseconds(3 minutes)
-    private long idleTimeout = 180000L;
-    //11: Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
-    private long holdTimeout;
-    //12: Milliseconds: an interval time of pool thread to find out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
-    private long intervalOfClearTimeout = 180000L;
-    //15: Seconds,max wait time to get alive test result on borrowed objects,default is 3 seconds.
-    private int aliveTestTimeout = 3;
-    //16: Milliseconds,a threshold time of alive since from last test,if gap time is less than it,assume objects are alive,and skip test,default is 500 milliseconds
-    private long aliveAssumeTime = 500L;
-    //17: A flag that how to close borrowed objects when pool close or pool clean,true is that pool recycles them immediately,false that pool wait them return to pool,default is false.
-    private boolean forceRecycleBorrowedOnClose;
-    //18: Milliseconds,wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
-    private long parkTimeForRetry = 3000L;
-    //19: A flag to enable Jmx registration,default is false
+    //3: A flag to enable Jmx registration,default is false
     private boolean registerMbeans;
-    //20: A flag to register a jvm hook to close pool when JVM exits
+    //4: A flag to register a jvm hook to close pool when JVM exits
     private boolean registerJvmHook = true;
-    //21: A flag to enable runtime log print in pool,default is false
+    //5: A flag to enable runtime log printer of pool and log printer of buckets,default is false
     private boolean printRuntimeLogs;
-    //22: A flag to enable configuration log print during pool initializes,default is false
+    //6: A flag to enable configuration log print during pool initializes,default is false
     private boolean printConfiguration;
-    //23: An exclusion list of configuration print,default is null
+    //7: An exclusion list of configuration print,default is null
     private List<String> exclusionListOfPrint;
-    //24: A list of names of methods when them be called(last access time update,exception eviction test,method execution logs)
-    private List<String> objectMethodNameList;
-
-    //25: Class name of pool implementation,default is {@code KeyedObjectPool}
+    //8: Class name of pool implementation,default is {@code KeyedObjectPool}
     private String poolImplementClassName;
 
-    //26: Object factory,priority order: instance > class > class name
-    private BeeObjectFactory<K, V> objectFactory;
-    //27: Class of object factory
-    private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
-    //28: Class name of object factory
-    private String objectFactoryClassName;
+    //********************************************** 2: Configuration of Bucket(14) ***********************************//
+    //9: Object getting mode in pool
+    private boolean fairMode;
+    //10: Object creation size during pool initialization,default is zero
+    private int initialSize;
+    //11: Max reachable size of pooled objects of per category,pool total capacity = maxKeySize * maxActive
+    private int maxActive = Math.min(Math.max(10, NCPU), 50);
+    //12: Permit size of semaphore for per object category
+    private int semaphoreSize = Math.min(this.maxActive / 2, NCPU);
+    //13: A flag,true is that pool use a threadLocal to store used object for borrowers(false can be used to support virtual threads)
+    private boolean useThreadLocal = true;
+    //14: Milliseconds,max wait time for a borrower to get an object from pool,default is 8000 milliseconds(8 seconds)
+    private long maxWait = 8000L;
+    //15: A flag of object creation,true that pool use a thread to create initial objects during initialization,default is false
+    private boolean asyncCreateInitObjects;
+    //16: Milliseconds,max idle time of pooled objects stay in pool,default is 18000 milliseconds(3 minutes)
+    private long idleTimeout = 180000L;
+    //17: Milliseconds: max inactive time of borrowed objects,which are recycled when timeout;default is zero,this parameter disabled
+    private long holdTimeout;
+    //18: Milliseconds: an interval time of pool thread to find out timeout objects(idle timeout and hold timeout),default is 18000 milliseconds(3 minutes)
+    private long intervalOfClearTimeout = 180000L;
+    //19: Seconds,max wait time to get alive test result on borrowed objects,default is 3 seconds.
+    private int aliveTestTimeout = 3;
+    //20: Milliseconds,a threshold time of alive since from last test,if gap time is less than it,assume objects are alive,and skip test,default is 500 milliseconds
+    private long aliveAssumeTime = 500L;
+    //21: A flag that how to close borrowed objects when pool close or pool clean,true is that pool recycles them immediately,false that pool wait them return to pool,default is false.
+    private boolean forceRecycleBorrowedOnClose;
+    //22: Milliseconds,wait time for pool to wait borrowed objects return to pool during pool close or pool clear,default is 3000 milliseconds
+    private long parkTimeForRetry = 3000L;
 
-    //29: Predicate to do eviction test on exception objects,priority order: instance > class > class name
+    //********************************************** 3: Configuration of Pooled Objects(8) ****************************//
+    //23: A list of names of methods when them be called(last access time update,exception eviction test,method execution logs)
+    private List<String> objectMethodNameList;
+    //24: Object factory,priority order: instance > class > class name
+    private BeeObjectFactory<K, V> objectFactory;
+    //25: Class of object factory
+    private Class<? extends BeeObjectFactory<K, V>> objectFactoryClass;
+    //26: Class name of object factory
+    private String objectFactoryClassName;
+    //27: A map stores some properties of object factory,these properties injected to factory during pool initialization
+    private Map<String, Object> objectFactoryProperties;
+
+    //28: Predicate to do eviction test on exception objects,priority order: instance > class > class name
     private BeeObjectPredicate predicate;
-    //30: Class of predicate
+    //29: Class of predicate
     private Class<? extends BeeObjectPredicate> predicateClass;
-    //31: Class name of predicate
+    //30: Class name of predicate
     private String predicateClassName;
 
-    //********************************************** method Execution logs ********************************************//
-    //32: A flag to enable method log cache
+    //********************************************** 4: Configuration of method log Cache(12) *************************//
+    //31: A flag to enable method log cache
     private boolean enableLogCache;
-    //33: Capacity of method logs cache，default is 1000
+    //32: Capacity of method logs cache，default is 1000
     private int logCacheSize = 1000;
-    //34: Log timeout in manager,default is 3 minutes
+    //33: Log timeout in manager,default is 3 minutes
     private long logTimeout = 180000L;
-    //35: Timer interval to clear timeout logs,default is 3 minutes
+    //34: Timer interval to clear timeout logs,default is 3 minutes
     private long intervalOfClearTimeoutLogs = logTimeout;
 
-    //36: Slow threshold value of object get,default is 30 seconds,time unit:milliseconds
-    private long slowGetThreshold = 30000L;
-    //37: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    //35: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
     private long slowCallThreshold = 30000L;
+    //36: A flag to interrupt threads of slow call,default is false(not interrupted)
+    private boolean interruptSlowCall;
 
-    //38: method execution listener: instance > class > class name
+    //37: method execution listener: instance > class > class name
     private BeeMethodLogListener<K> logListener;
-    //39: Class of method execution listener,default is none
+    //38: Class of method execution listener,default is none
     private Class<? extends BeeMethodLogListener<K>> logListenerClass;
-    //40: Class name of method execution listener,default is none
+    //39: Class name of method execution listener,default is none
     private String logListenerClassName;
 
-    //41: method execution listener factory: instance > class > class name
+    //40: method execution listener factory: instance > class > class name
     private BeeMethodLogListenerFactory<K> logListenerFactory;
-    //42: Class of method execution listener factory ,default is none
+    //41: Class of method execution listener factory ,default is none
     private Class<? extends BeeMethodLogListenerFactory<K>> logListenerFactoryClass;
-    //43: Class name of method execution listener factory,default is none
+    //42: Class name of method execution listener factory,default is none
     private String logListenerFactoryClassName;
 
     //***************************************************************************************************************//
@@ -149,7 +152,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //***************************************************************************************************************//
-    //                                     2:  Pool control setting(46)[1 --- 24]                                     //
+    //                                     2: Pool Configuration [1-8](18)                                           //
     //***************************************************************************************************************//
     @Override
     public String getPoolName() {
@@ -161,158 +164,14 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     @Override
-    public boolean isFairMode() {
-        return fairMode;
-    }
-
-    public void setFairMode(boolean fairMode) {
-        this.fairMode = fairMode;
-    }
-
-    @Override
-    public int getInitialSize() {
-        return initialSize;
-    }
-
-    public void setInitialSize(int initialSize) {
-        if (initialSize < 0)
-            throw new BeeObjectSourceConfigException("The given value for the configuration item 'initial-size' cannot be less than zero");
-        this.initialSize = initialSize;
-    }
-
     public int getMaxKeySize() {
         return maxKeySize;
     }
 
     public void setMaxKeySize(int maxKeySize) {
         if (maxKeySize <= 0)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'max-key-size' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value of 'max-key-size' must be greater than zero");
         this.maxKeySize = maxKeySize;
-    }
-
-    @Override
-    public int getMaxActive() {
-        return maxActive;
-    }
-
-    public void setMaxActive(int maxActive) {
-        if (maxActive <= 0)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'max-active' must be greater than zero");
-        this.maxActive = maxActive;
-        this.semaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, NCPU) : 1;
-    }
-
-    @Override
-    public int getSemaphoreSize() {
-        return semaphoreSize;
-    }
-
-    public void setSemaphoreSize(int semaphoreSize) {
-        if (semaphoreSize <= 0)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'borrow-semaphore-size' must be greater than zero");
-        this.semaphoreSize = semaphoreSize;
-    }
-
-    public boolean isUseThreadLocal() {
-        return useThreadLocal;
-    }
-
-    public void setUseThreadLocal(boolean useThreadLocal) {
-        this.useThreadLocal = useThreadLocal;
-    }
-
-    @Override
-    public long getMaxWait() {
-        return maxWait;
-    }
-
-    public void setMaxWait(long maxWait) {
-        if (maxWait <= 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'max-wait' must be greater than zero");
-        this.maxWait = maxWait;
-    }
-
-    public boolean isAsyncCreateInitObjects() {
-        return asyncCreateInitObjects;
-    }
-
-    public void setAsyncCreateInitObjects(boolean asyncCreateInitObjects) {
-        this.asyncCreateInitObjects = asyncCreateInitObjects;
-    }
-
-    @Override
-    public long getIdleTimeout() {
-        return idleTimeout;
-    }
-
-    public void setIdleTimeout(long idleTimeout) {
-        if (idleTimeout <= 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'idle-timeout' must be greater than zero");
-        this.idleTimeout = idleTimeout;
-    }
-
-    @Override
-    public long getHoldTimeout() {
-        return holdTimeout;
-    }
-
-    public void setHoldTimeout(long holdTimeout) {
-        if (holdTimeout < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'hold-timeout' cannot be less than zero");
-        this.holdTimeout = holdTimeout;
-    }
-
-    @Override
-    public long getIntervalOfClearTimeout() {
-        return intervalOfClearTimeout;
-    }
-
-    public void setIntervalOfClearTimeout(long intervalOfClearTimeout) {
-        if (intervalOfClearTimeout <= 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'interval-of-clear-timeout' must be greater than zero");
-        this.intervalOfClearTimeout = intervalOfClearTimeout;
-    }
-
-    @Override
-    public int getAliveTestTimeout() {
-        return aliveTestTimeout;
-    }
-
-    public void setAliveTestTimeout(int aliveTestTimeout) {
-        if (aliveTestTimeout < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'alive-test-timeout' cannot  be less than zero");
-        this.aliveTestTimeout = aliveTestTimeout;
-    }
-
-    @Override
-    public long getAliveAssumeTime() {
-        return aliveAssumeTime;
-    }
-
-    public void setAliveAssumeTime(long aliveAssumeTime) {
-        if (aliveAssumeTime < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'alive-assume-time' cannot be less than zero");
-        this.aliveAssumeTime = aliveAssumeTime;
-    }
-
-    @Override
-    public boolean isForceRecycleBorrowedOnClose() {
-        return forceRecycleBorrowedOnClose;
-    }
-
-    public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
-        this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
-    }
-
-    @Override
-    public long getParkTimeForRetry() {
-        return parkTimeForRetry;
-    }
-
-    public void setParkTimeForRetry(long parkTimeForRetry) {
-        if (parkTimeForRetry < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'park-time-for-retry' cannot be less than zero");
-        this.parkTimeForRetry = parkTimeForRetry;
     }
 
     @Override
@@ -356,10 +215,6 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
             this.exclusionListOfPrint.add(fieldName);
     }
 
-    public void clearExclusionListOfPrint() {
-        if (exclusionListOfPrint != null) this.exclusionListOfPrint.clear();
-    }
-
     public boolean removeExclusionNameOfPrint(String fieldName) {
         return exclusionListOfPrint != null && exclusionListOfPrint.remove(fieldName);
     }
@@ -368,19 +223,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         return exclusionListOfPrint != null && exclusionListOfPrint.contains(fieldName);
     }
 
-    public void addObjectMethodName(String methodName) {
-        if (isBlank(methodName))
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'method-name' can't be null or blank");
-        if (this.objectMethodNameList == null) this.objectMethodNameList = new ArrayList<>(1);
-        if (!objectMethodNameList.contains(methodName)) objectMethodNameList.add(methodName);
-    }
-
-    public void removeObjectMethodName(String methodName) {
-        if (this.objectMethodNameList != null) objectMethodNameList.remove(methodName);
-    }
-
-    public List<String> getObjectMethodNameList() {
-        return this.objectMethodNameList;
+    public void clearExclusionListOfPrint() {
+        if (exclusionListOfPrint != null) this.exclusionListOfPrint.clear();
     }
 
     @Override
@@ -393,8 +237,171 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //***************************************************************************************************************//
-    //                                     3: creation configuration(20)                                             //
+    //                                     3: Bucket Configuration[9-22](28)                                         //
     //***************************************************************************************************************//
+    @Override
+    public boolean isFairMode() {
+        return fairMode;
+    }
+
+    public void setFairMode(boolean fairMode) {
+        this.fairMode = fairMode;
+    }
+
+    @Override
+    public int getInitialSize() {
+        return initialSize;
+    }
+
+    public void setInitialSize(int initialSize) {
+        if (initialSize < 0)
+            throw new BeeObjectSourceConfigException("The given value of 'initial-size' cannot be less than zero");
+        this.initialSize = initialSize;
+    }
+
+    @Override
+    public int getMaxActive() {
+        return maxActive;
+    }
+
+    public void setMaxActive(int maxActive) {
+        if (maxActive <= 0)
+            throw new BeeObjectSourceConfigException("The given value of 'max-active' must be greater than zero");
+        this.maxActive = maxActive;
+        this.semaphoreSize = (maxActive > 1) ? Math.min(maxActive / 2, NCPU) : 1;
+    }
+
+    @Override
+    public int getSemaphoreSize() {
+        return semaphoreSize;
+    }
+
+    public void setSemaphoreSize(int semaphoreSize) {
+        if (semaphoreSize <= 0)
+            throw new BeeObjectSourceConfigException("The given value of 'borrow-semaphore-size' must be greater than zero");
+        this.semaphoreSize = semaphoreSize;
+    }
+
+    public boolean isUseThreadLocal() {
+        return useThreadLocal;
+    }
+
+    public void setUseThreadLocal(boolean useThreadLocal) {
+        this.useThreadLocal = useThreadLocal;
+    }
+
+    @Override
+    public long getMaxWait() {
+        return maxWait;
+    }
+
+    public void setMaxWait(long maxWait) {
+        if (maxWait <= 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'max-wait' must be greater than zero");
+        this.maxWait = maxWait;
+    }
+
+    public boolean isAsyncCreateInitObjects() {
+        return asyncCreateInitObjects;
+    }
+
+    public void setAsyncCreateInitObjects(boolean asyncCreateInitObjects) {
+        this.asyncCreateInitObjects = asyncCreateInitObjects;
+    }
+
+    @Override
+    public long getIdleTimeout() {
+        return idleTimeout;
+    }
+
+    public void setIdleTimeout(long idleTimeout) {
+        if (idleTimeout <= 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'idle-timeout' must be greater than zero");
+        this.idleTimeout = idleTimeout;
+    }
+
+    @Override
+    public long getHoldTimeout() {
+        return holdTimeout;
+    }
+
+    public void setHoldTimeout(long holdTimeout) {
+        if (holdTimeout < 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'hold-timeout' cannot be less than zero");
+        this.holdTimeout = holdTimeout;
+    }
+
+    @Override
+    public long getIntervalOfClearTimeout() {
+        return intervalOfClearTimeout;
+    }
+
+    public void setIntervalOfClearTimeout(long intervalOfClearTimeout) {
+        if (intervalOfClearTimeout <= 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'interval-of-clear-timeout' must be greater than zero");
+        this.intervalOfClearTimeout = intervalOfClearTimeout;
+    }
+
+    @Override
+    public int getAliveTestTimeout() {
+        return aliveTestTimeout;
+    }
+
+    public void setAliveTestTimeout(int aliveTestTimeout) {
+        if (aliveTestTimeout < 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'alive-test-timeout' cannot  be less than zero");
+        this.aliveTestTimeout = aliveTestTimeout;
+    }
+
+    @Override
+    public long getAliveAssumeTime() {
+        return aliveAssumeTime;
+    }
+
+    public void setAliveAssumeTime(long aliveAssumeTime) {
+        if (aliveAssumeTime < 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'alive-assume-time' cannot be less than zero");
+        this.aliveAssumeTime = aliveAssumeTime;
+    }
+
+    @Override
+    public boolean isForceRecycleBorrowedOnClose() {
+        return forceRecycleBorrowedOnClose;
+    }
+
+    public void setForceRecycleBorrowedOnClose(boolean forceRecycleBorrowedOnClose) {
+        this.forceRecycleBorrowedOnClose = forceRecycleBorrowedOnClose;
+    }
+
+    @Override
+    public long getParkTimeForRetry() {
+        return parkTimeForRetry;
+    }
+
+    public void setParkTimeForRetry(long parkTimeForRetry) {
+        if (parkTimeForRetry < 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'park-time-for-retry' cannot be less than zero");
+        this.parkTimeForRetry = parkTimeForRetry;
+    }
+
+    //***************************************************************************************************************//
+    //                                     4: Configuration of Pooled Objects[23-30](19)                             //
+    //***************************************************************************************************************//
+    public List<String> getObjectMethodNameList() {
+        return this.objectMethodNameList;
+    }
+
+    public void removeObjectMethodName(String methodName) {
+        if (this.objectMethodNameList != null) objectMethodNameList.remove(methodName);
+    }
+
+    public void addObjectMethodName(String methodName) {
+        if (isBlank(methodName))
+            throw new BeeObjectSourceConfigException("The given value of 'method-name' can't be null or blank");
+        if (this.objectMethodNameList == null) this.objectMethodNameList = new ArrayList<>(1);
+        if (!objectMethodNameList.contains(methodName)) objectMethodNameList.add(methodName);
+    }
+
     public BeeObjectFactory<K, V> getObjectFactory() {
         return this.objectFactory;
     }
@@ -444,19 +451,23 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     public Object getObjectFactoryProperty(String key) {
-        return this.objectFactoryProperties.get(key);
+        return objectFactoryProperties != null ? this.objectFactoryProperties.get(key) : null;
     }
 
     public Object removeObjectFactoryProperty(String key) {
-        return this.objectFactoryProperties.remove(key);
+        return objectFactoryProperties != null ? this.objectFactoryProperties.remove(key) : null;
     }
 
     public void addObjectFactoryProperty(String key, Object value) {
-        if (isNotBlank(key) && value != null) this.objectFactoryProperties.put(key, value);
+        if (isNotBlank(key) && value != null) {
+            if (objectFactoryProperties == null) objectFactoryProperties = new HashMap<>(1);
+            this.objectFactoryProperties.put(key, value);
+        }
     }
 
     public void addObjectFactoryProperty(String propertyText) {
         if (isNotBlank(propertyText)) {
+            if (objectFactoryProperties == null) objectFactoryProperties = new HashMap<>(1);
             String[] attributeArray = propertyText.split("&");
             for (String attribute : attributeArray) {
                 String[] pair = attribute.split("=");
@@ -473,7 +484,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //****************************************************************************************************************//
-    //                                    5: method execution logs (24)                                               //
+    //                                    5: Configuration of method log Cache[31-42](24)                             //
     //****************************************************************************************************************//
     public boolean isEnableLogCache() {
         return enableLogCache;
@@ -489,19 +500,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setLogCacheSize(int logCacheSize) {
         if (logCacheSize <= 0)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'log-cache-size' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value of 'log-cache-size' must be greater than zero");
         this.logCacheSize = logCacheSize;
-    }
-
-    public long getSlowGetThreshold() {
-        return slowGetThreshold;
-    }
-
-    public void setSlowGetThreshold(long slowGetThreshold) {
-        if (slowGetThreshold < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-get-threshold' must be greater than zero");
-
-        this.slowGetThreshold = slowGetThreshold;
     }
 
     public long getSlowCallThreshold() {
@@ -510,9 +510,17 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setSlowCallThreshold(long slowCallThreshold) {
         if (slowCallThreshold < 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'slow-call-threshold' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value of 'slow-call-threshold' must be greater than zero");
 
         this.slowCallThreshold = slowCallThreshold;
+    }
+
+    public boolean isInterruptSlowCall() {
+        return interruptSlowCall;
+    }
+
+    public void setInterruptSlowCall(boolean interruptSlowCall) {
+        this.interruptSlowCall = interruptSlowCall;
     }
 
     public long getLogTimeout() {
@@ -521,7 +529,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setLogTimeout(long logTimeout) {
         if (logTimeout <= 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'log-timeout' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value of 'log-timeout' must be greater than zero");
         this.logTimeout = logTimeout;
     }
 
@@ -531,7 +539,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
 
     public void setIntervalOfClearTimeoutLogs(long intervalOfClearTimeoutLogs) {
         if (intervalOfClearTimeoutLogs <= 0L)
-            throw new BeeObjectSourceConfigException("The given value for configuration item 'interval-of-clear-timeout-execution-logs' must be greater than zero");
+            throw new BeeObjectSourceConfigException("The given value of 'interval-of-clear-timeout-execution-logs' must be greater than zero");
         this.intervalOfClearTimeoutLogs = intervalOfClearTimeoutLogs;
     }
 
@@ -584,7 +592,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //***************************************************************************************************************//
-    //                                     6: configuration file load(6)                                             //
+    //                                     6: configuration load(6)                                                  //
     //***************************************************************************************************************//
     public void loadFromPropertiesFile(String filename) {
         loadFromPropertiesFile(filename, null);
@@ -692,7 +700,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //***************************************************************************************************************//
-    //                                     7: configuration check and object factory create methods(4)               //
+    //                                     7: configuration check and object factory creation(1+4)                   //
     //***************************************************************************************************************//
     //check pool configuration
     public BeeObjectSourceConfig<K, V> check() {
@@ -728,7 +736,14 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                     case CONFIG_POOL_NAME_INDEX:
                         break;
                     case CONFIG_FACTORY_PROP:
-                        config.objectFactoryProperties.putAll(objectFactoryProperties);
+                        if (objectFactoryProperties != null && !objectFactoryProperties.isEmpty()) {
+                            if (config.objectFactoryProperties == null) {
+                                config.objectFactoryProperties = new HashMap<>(objectFactoryProperties);
+                            } else {
+                                config.objectFactoryProperties.clear();
+                                config.objectFactoryProperties.putAll(objectFactoryProperties);
+                            }
+                        }
                         break;
                     case CONFIG_EXCLUSION_LIST_OF_PRINT:
                         if (exclusionListOfPrint != null && !exclusionListOfPrint.isEmpty())
@@ -743,7 +758,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 }
             }
         } catch (Throwable e) {
-            throw new BeeObjectSourceConfigException("Failed to filled value on field[" + fieldName + "]", e);
+            throw new BeeObjectSourceConfigException("Failed to set value on field[" + fieldName + "]", e);
         }
     }
 
@@ -772,7 +787,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
             throw new BeeObjectSourceConfigException("Object factory must provide a non null default pooled key");
 
         //5: Injects properties to factory
-        if (!objectFactoryProperties.isEmpty())
+        if (objectFactoryProperties != null && !objectFactoryProperties.isEmpty())
             try {
                 setPropertiesValue(objectFactory, objectFactoryProperties);
             } catch (BeanException e) {
@@ -854,21 +869,26 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     private void printConfiguration(BeeObjectSourceConfig<K, V> checkedConfig) {
         String poolName = checkedConfig.poolName;
         List<String> exclusionList = checkedConfig.exclusionListOfPrint;
+        if (exclusionList == null) exclusionList = Collections.emptyList();
         DefaultLogPrinter.info("................................................BeeOP({})-configuration[start]................................................", poolName);
 
         try {
             for (Field field : BeeObjectSourceConfig.class.getDeclaredFields()) {
                 String fieldName = field.getName();
-                boolean infoPrint = exclusionList == null || !exclusionList.contains(fieldName);
+                boolean infoPrint = !exclusionList.contains(fieldName);
 
                 switch (fieldName) {
                     case CONFIG_POOL_NAME_INDEX, CONFIG_EXCLUSION_LIST_OF_PRINT:
                         break;
                     case CONFIG_FACTORY_PROP: {
-                        if (!this.objectFactoryProperties.isEmpty()) {
+                        if (this.objectFactoryProperties != null && !this.objectFactoryProperties.isEmpty()) {
                             if (infoPrint) {
                                 for (Map.Entry<String, Object> entry : checkedConfig.objectFactoryProperties.entrySet())
-                                    DefaultLogPrinter.info("BeeOP({})-config.objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    if (!exclusionList.contains(entry.getKey())) {
+                                        DefaultLogPrinter.info("BeeOP({})-config.objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    } else {
+                                        DefaultLogPrinter.debug("BeeOP({})-config.objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());
+                                    }
                             } else {
                                 for (Map.Entry<String, Object> entry : checkedConfig.objectFactoryProperties.entrySet())
                                     DefaultLogPrinter.debug("BeeOP({})-config.objectFactoryProperties.{}={}", poolName, entry.getKey(), entry.getValue());

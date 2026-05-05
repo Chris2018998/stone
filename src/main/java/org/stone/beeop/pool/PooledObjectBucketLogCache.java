@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static org.stone.beeop.BeeMethodLog.Type_Key_Log;
+import static org.stone.beeop.BeeMethodLog.Type_Bucket_Log;
 import static org.stone.beeop.BeeMethodLog.Type_Object_Log;
 
 /**
@@ -30,6 +30,8 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     private long getSlowThreshold;
     //Slow Threshold of pooled object call
     private long callSlowThreshold;
+    //Flag to interrupt slow call logs
+    private boolean interruptSlowCall;
 
     //queue store logs of pooled object get
     private LinkedBlockingQueue<MethodLog<K>> objectGetLogQueue;
@@ -39,6 +41,8 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     //***************************************************************************************************************//
     //                                         1: initialization(1+0)                                                //
     //***************************************************************************************************************//
+
+
     public void init(String poolName, int logCacheSize, BeeMethodLogListener<K> listener) {
         super.init(poolName, logCacheSize, listener);
         this.objectGetLogQueue = new LinkedBlockingQueue<>(logCacheSize);
@@ -48,8 +52,12 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     //***************************************************************************************************************//
     //                                         2: set(1+0)                                                           //
     //***************************************************************************************************************//
+    public void setInterruptSlowCall(boolean interruptSlowCall) {
+        this.interruptSlowCall = interruptSlowCall;
+    }
+
     public void setSlowThreshold(int logType, long slowThreshold) {
-        if (logType == Type_Key_Log) {
+        if (logType == Type_Bucket_Log) {
             this.getSlowThreshold = slowThreshold;
         } else if (logType == Type_Object_Log) {
             this.callSlowThreshold = slowThreshold;
@@ -61,7 +69,7 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     //***************************************************************************************************************//
     public BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception {
         MethodLog<K> log = new MethodLog<>(poolName, key, logType, method, parameters, startTime);
-        if (logType == Type_Key_Log) {
+        if (logType == Type_Bucket_Log) {
             this.offerQueue(log, objectGetLogQueue);
         } else if (logType == Type_Object_Log) {
             this.offerQueue(log, objectCallLogQueue);
@@ -78,17 +86,17 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
 
         if (defaultTypeLog.isRemoved()) {
             defaultTypeLog.setRemoved(false);
-            if (logType == Type_Key_Log) {
+            if (logType == Type_Bucket_Log) {
                 this.offerQueue(defaultTypeLog, objectGetLogQueue);
             } else if (logType == Type_Object_Log) {
                 this.offerQueue(defaultTypeLog, objectCallLogQueue);
             }
         }
 
-        if (logType == Type_Key_Log) {
-            defaultTypeLog.setAsSlow(0L, getSlowThreshold);
+        if (logType == Type_Bucket_Log) {
+            defaultTypeLog.setAsSlow(0L, getSlowThreshold, false);
         } else if (logType == Type_Object_Log) {
-            defaultTypeLog.setAsSlow(0L, callSlowThreshold);
+            defaultTypeLog.setAsSlow(0L, callSlowThreshold, false);
         }
         if (listener != null) listener.onMethodEnd(log);
     }
@@ -97,7 +105,7 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     //                                         4: Logs maintain(3+0)                                                 //
     //***************************************************************************************************************//
     public List<BeeMethodLog<K>> getLogs(int logType) {
-        if (logType == Type_Key_Log) {
+        if (logType == Type_Bucket_Log) {
             return new ArrayList<>(this.objectGetLogQueue);
         } else if (logType == Type_Object_Log) {
             return new ArrayList<>(this.objectCallLogQueue);
@@ -107,7 +115,7 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     }
 
     public void clearLogs(int logType) {
-        if (logType == Type_Key_Log) {
+        if (logType == Type_Bucket_Log) {
             this.objectGetLogQueue.clear();
         } else if (logType == Type_Object_Log) {
             this.objectCallLogQueue.clear();
@@ -115,7 +123,7 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     }
 
     public void clearTimeoutLogs(long timeout) {
-        clearTimeoutLogsByQueue(timeout, getSlowThreshold, objectGetLogQueue);
-        clearTimeoutLogsByQueue(timeout, callSlowThreshold, objectCallLogQueue);
+        clearTimeoutLogsByQueue(timeout, getSlowThreshold, false, objectGetLogQueue);
+        clearTimeoutLogsByQueue(timeout, callSlowThreshold, interruptSlowCall, objectCallLogQueue);
     }
 }

@@ -78,7 +78,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     //***************************************************************************************************************//
 
     /**
-     * Attempts to get an object of default category from pool.
+     * Attempts to get an object of default bucket from pool.
      *
      * @return handle of borrowed object
      * @throws BeePooledObjectCreationException       when fail to create an object instance
@@ -88,11 +88,11 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     BeeObjectHandle<K, V> getObjectHandle() throws Exception;
 
     /**
-     * Attempts to get an object from pool with a given category key.
+     * Attempts to get an object from pool with a given bucket key.
      *
-     * @param key is a category key which maybe mapping to a pooled objects or a group of objects
+     * @param key is a bucket key which maybe mapping to a pooled objects or a group of objects
      * @return handle of borrowed object
-     * @throws BeePooledObjectKeyException            when key is null or invalid, or category capacity is full
+     * @throws BeePooledObjectKeyException            when key is null or invalid, or bucket capacity is full
      * @throws BeePooledObjectCreationException       when fail to create an object instance
      * @throws BeePooledObjectGetTimeoutException     when wait timeout in pool
      * @throws BeePooledObjectGetInterruptedException while waiting is interrupted
@@ -108,7 +108,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @return an integer number
      */
-    int keySize() throws Exception;
+    int bucketSize() throws Exception;
 
     /**
      * Query given key whether exists in pool.
@@ -116,21 +116,21 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @param key to locate related pooled objects
      * @return a keys array
      */
-    boolean existsKey(K key) throws Exception;
+    boolean existsBucket(K key) throws Exception;
 
     /**
      * Suspend key when it is ready, pool rejects all borrow requests to key
      *
      * @return true when suspend successful
      */
-    boolean suspendKey(K key) throws Exception;
+    boolean suspendBucket(K key) throws Exception;
 
     /**
      * Resume key when it is suspended
      *
      * @return true when success
      */
-    boolean resumeKey(K key) throws Exception;
+    boolean resumeBucket(K key) throws Exception;
 
     /**
      * Clears pooled objects mapping to given key.
@@ -138,7 +138,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @param key is a key to search related pooled objects
      * @throws BeePooledObjectKeyException if key is null
      */
-    void clearKeyObjects(K key) throws Exception;
+    void clearBucketObjects(K key) throws Exception;
 
     /**
      * Clears pooled objects mapping to given key.
@@ -147,7 +147,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @param forceRecycleBorrowed is true,close using objects directly;false that pool waiting using objects return to pool and then close it by physically.
      * @throws BeePooledObjectKeyException if key is null or default
      */
-    void clearKeyObjects(K key, boolean forceRecycleBorrowed) throws Exception;
+    void clearBucketObjects(K key, boolean forceRecycleBorrowed) throws Exception;
 
     /**
      * Deletes given pooled key from pool.
@@ -156,7 +156,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @return true when delete successful,otherwise return false
      * @throws BeePooledObjectKeyException if key is null or default
      */
-    boolean deleteKey(K key) throws Exception;
+    boolean deleteBucket(K key) throws Exception;
 
     /**
      * Deletes given pooled key from pool.
@@ -166,26 +166,26 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @return true when delete successful,otherwise return false
      * @throws BeePooledObjectKeyException if key is null or default
      */
-    boolean deleteKey(K key, boolean forceRecycleBorrowed) throws Exception;
+    boolean deleteBucket(K key, boolean forceRecycleBorrowed) throws Exception;
 
     //***************************************************************************************************************//
     //                                     4: Pool Log Print(2)                                                      //
     //***************************************************************************************************************//
 
     /**
-     * A switch method to enable or disable logs print of pool and apply change on all pooled category keys.
+     * A switch method to enable or disable logs print of pool and apply change on all pooled buckets.
      *
      * @param enable is true that print, false not print
      */
     void enableLogPrinter(boolean enable) throws Exception;
 
     /**
-     * A switch method to enable or disable logs print flag in target pooled key.
+     * A switch method to enable or disable logs print flag in target pooled bucket.
      *
      * @param key    is target pooled key
      * @param enable is true that print, false disable print
      */
-    void enableLogPrinter(K key, boolean enable) throws Exception;
+    void enableBucketLogPrinter(K key, boolean enable) throws Exception;
 
     //***************************************************************************************************************//
     //                                     5: Pool Monitoring(2)                                                     //
@@ -199,7 +199,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
     boolean isClosed();
 
     /**
-     * Gets runtime monitoring object of pool,refer to {@link BeeObjectKeyMonitorVo}.
+     * Gets runtime monitoring object of pool,refer to {@link BeeObjectBucketMonitorVo}.
      *
      * @param includeKeys is true,include keys monitor info
      * @return monitor of pool
@@ -213,7 +213,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @return monitor of an object group
      * @throws Exception when key is null or not exist key in pool
      */
-    BeeObjectKeyMonitorVo getKeyMonitorVo(K key) throws Exception;
+    BeeObjectBucketMonitorVo getBucketMonitorVo(K key) throws Exception;
 
     //***************************************************************************************************************//
     //                                     6: Pool blocking interrupts(2)                                            //
@@ -224,7 +224,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @return interrupted threads
      */
-    List<Thread> interruptWaitingThreads() throws Exception;
+    List<Thread> interruptWaitingThreadsInBuckets() throws Exception;
 
     /**
      * Interrupts waiting threads on given pooled key.
@@ -233,7 +233,7 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      * @return interrupted threads
      * @throws Exception when key is null or not exist key in pool
      */
-    List<Thread> interruptWaitingThreads(K key) throws Exception;
+    List<Thread> interruptWaitingThreadsInBucket(K key) throws Exception;
 
     //***************************************************************************************************************//
     //                                     7: Pool method logs(4)                                                    //
@@ -244,14 +244,14 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @param enable is true that cache collect method logs;false that cache stop works
      */
-    void enableLogCache(boolean enable) throws Exception;
+    void enablePoolLogCache(boolean enable) throws Exception;
 
     /**
      * Set a new log listener to pool,null listener is acceptable.
      *
      * @param listener to handle method logs
      */
-    void changeLogListener(BeeMethodLogListener<K> listener) throws Exception;
+    void changePoolLogListener(BeeMethodLogListener<K> listener) throws Exception;
 
     /**
      * Clears logs of pool
@@ -275,36 +275,36 @@ public interface BeeObjectPool<K, V> extends AutoCloseable {
      *
      * @param enable is true that cache collect method logs;false that cache stop works
      */
-    void enableLogCache(K key, boolean enable) throws Exception;
+    void enableBucketLogCache(K key, boolean enable) throws Exception;
 
     /**
      * Set a new log listener to pool,null listener is acceptable.
      *
      * @param listener to handle method logs
      */
-    void changeLogListener(K key, BeeMethodLogListener<K> listener) throws Exception;
+    void changeBucketLogListener(K key, BeeMethodLogListener<K> listener) throws Exception;
 
     /**
      * Clears logs of given pooled key
      **/
-    void clearKeyLogs(K key) throws Exception;
+    void clearBucketLogs(K key) throws Exception;
 
     /**
      * Gets logs of given pooled key
      *
      * @return a result list
      */
-    List<BeeMethodLog<K>> getKeyLogs(K key) throws Exception;
+    List<BeeMethodLog<K>> getBucketLogs(K key) throws Exception;
 
     /**
      * Clears object call logs of given key.
      **/
-    void clearKeyObjectLogs(K key) throws Exception;
+    void clearBucketObjectLogs(K key) throws Exception;
 
     /**
      * Gets object call logs of given key.
      *
      * @return a result list
      */
-    List<BeeMethodLog<K>> getKeyObjectLogs(K key) throws Exception;
+    List<BeeMethodLog<K>> getBucketObjectLogs(K key) throws Exception;
 }

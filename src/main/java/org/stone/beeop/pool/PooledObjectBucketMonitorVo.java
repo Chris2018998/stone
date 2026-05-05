@@ -9,7 +9,7 @@
  */
 package org.stone.beeop.pool;
 
-import org.stone.beeop.BeeObjectKeyMonitorVo;
+import org.stone.beeop.BeeObjectBucketMonitorVo;
 
 import static org.stone.beecp.pool.ConnectionPoolStatics.POOL_RESTART_FAILED;
 import static org.stone.beeop.pool.ObjectPoolStatics.*;
@@ -21,7 +21,7 @@ import static org.stone.beeop.pool.ObjectPoolStatics.*;
  * @version 1.0
  */
 
-public final class PooledObjectBucketMonitorVo implements BeeObjectKeyMonitorVo {
+public final class PooledObjectBucketMonitorVo implements BeeObjectBucketMonitorVo {
     private final String keyName;
     private final int keyState;
     private final int idleSize;

@@ -113,14 +113,6 @@ public class ObjectPoolStatics {
     //***************************************************************************************************************//
     //                               1: Handle close methods(1)                                                  //
     //***************************************************************************************************************//
-    static <K, V> void tryCloseObjectHandle(BeeObjectHandle<K, V> handle) {
-        try {
-            handle.close();
-        } catch (Throwable e) {
-            //do nothing
-        }
-    }
-
     public static <K, V> void oclose(BeeObjectHandle<K, V> h) {
         try {
             h.close();

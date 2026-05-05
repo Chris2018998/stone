@@ -9,79 +9,20 @@
  */
 package org.stone.test.beeop.objects.book;
 
+import org.stone.test.beeop.objects.factory.TextBookFactory;
+
 /**
  * Book Impl
  *
  * @author Chris Liao
  */
-public class TextBook implements Book, BookBorrowInfo {
-    private String title;
-    private String author;
+public class TextBook extends BaseBook {
 
-    private String borrower;
-    private long borrowedTime;
-
-    private long sleepTimeMs;
-    private Exception failException;
-
-    public TextBook() {
+    public TextBook(TextBookFactory bookFactory) {
+        super(bookFactory);
     }
 
-    public TextBook(String title, String author) {
-        this.title = title;
-        this.author = author;
-    }
-
-    public void setSleepTimeMs(long sleepTimeMs) {
-        this.sleepTimeMs = sleepTimeMs;
-    }
-
-    public void setFailException(Exception failException) {
-        this.failException = failException;
-    }
-
-    private void block() throws Exception {
-        if (this.failException != null) throw failException;
-        if (sleepTimeMs > 0) Thread.sleep(sleepTimeMs);
-    }
-
-    @Override
-    public String getTitle() throws Exception {
-        this.block();
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    @Override
-    public String getAuthor() throws Exception {
-        this.block();
-        return author;
-    }
-
-    @Override
-    public void setAuthor(String author) throws Exception {
-        this.block();
-        this.author = author;
-    }
-
-    @Override
-    public String getBorrower() {
-        return borrower;
-    }
-
-    public void setBorrower(String borrower) {
-        this.borrower = borrower;
-    }
-
-    @Override
-    public long getBorrowedTime() {
-        return borrowedTime;
-    }
-
-    public void setBorrowedTime(long borrowedTime) {
-        this.borrowedTime = borrowedTime;
+    public TextBook(String title, String author, TextBookFactory bookFactory) {
+        super(title, author, bookFactory);
     }
 }

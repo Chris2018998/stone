@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * @author Chris Liao
  */
-public class Tc0067KeyMethodLogTest {
+public class Tc0068PooledBucketMethodLogTest {
 
     @Test
     public void testSuccessLog() throws Exception {
@@ -37,7 +37,7 @@ public class Tc0067KeyMethodLogTest {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 Assertions.assertNotNull(ignored);
             }
-            List<BeeMethodLog<String>> Loglist = os.getKeyLogs(objectFactory.getDefaultKey());
+            List<BeeMethodLog<String>> Loglist = os.getBucketLogs(objectFactory.getDefaultKey());
             Assertions.assertEquals(1, Loglist.size());
             Assertions.assertTrue(Loglist.get(0).isSuccessful());
         }
@@ -49,22 +49,22 @@ public class Tc0067KeyMethodLogTest {
         config.setEnableLogCache(true);
         config.setInitialSize(0);
         TextBookFactory bookFactory = new TextBookFactory();
-        bookFactory.setCreationException(new Exception("Paper is not enough"));
+        bookFactory.addFactoryMethodException("create", new Exception("Paper is not enough"));
         config.setObjectFactory(bookFactory);
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
-                Assertions.fail("[Tc0067KeyMethodLogTest.testExceptionLog]failed");
+                Assertions.fail("[Tc0068PooledBucketMethodLogTest.testExceptionLog]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectCreationException.class, e);
                 Assertions.assertEquals("Paper is not enough", e.getCause().getMessage());
             }
-            List<BeeMethodLog<String>> Loglist = os.getKeyLogs(bookFactory.getDefaultKey());
+            List<BeeMethodLog<String>> Loglist = os.getBucketLogs(bookFactory.getDefaultKey());
             Assertions.assertEquals(1, Loglist.size());
             Assertions.assertTrue(Loglist.get(0).isException());
 
-            os.clearKeyLogs(bookFactory.getDefaultKey());
-            Assertions.assertEquals(0, os.getKeyLogs(bookFactory.getDefaultKey()).size());
+            os.clearBucketLogs(bookFactory.getDefaultKey());
+            Assertions.assertEquals(0, os.getBucketLogs(bookFactory.getDefaultKey()).size());
         }
     }
 
@@ -80,16 +80,16 @@ public class Tc0067KeyMethodLogTest {
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 Assertions.assertNotNull(ignored);
             }
-            Assertions.assertEquals(1, os.getKeyLogs(config.getObjectFactory().getDefaultKey()).size());
-            os.clearKeyLogs(config.getObjectFactory().getDefaultKey());
-            Assertions.assertEquals(0, os.getKeyLogs(config.getObjectFactory().getDefaultKey()).size());
+            Assertions.assertEquals(1, os.getBucketLogs(config.getObjectFactory().getDefaultKey()).size());
+            os.clearBucketLogs(config.getObjectFactory().getDefaultKey());
+            Assertions.assertEquals(0, os.getBucketLogs(config.getObjectFactory().getDefaultKey()).size());
 
             //disable LogCache
-            os.enableLogCache(config.getObjectFactory().getDefaultKey(), false);
+            os.enableBucketLogCache(config.getObjectFactory().getDefaultKey(), false);
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 Assertions.assertNotNull(ignored);
             }
-            Assertions.assertEquals(0, os.getKeyLogs(config.getObjectFactory().getDefaultKey()).size());
+            Assertions.assertEquals(0, os.getBucketLogs(config.getObjectFactory().getDefaultKey()).size());
         }
     }
 
@@ -114,7 +114,7 @@ public class Tc0067KeyMethodLogTest {
             Assertions.assertTrue(logbackContent.contains("LogListener1.onMethodEnd"));
 
             //change to new listener
-            os.changeLogListener(defaultKey, new LogListener3());
+            os.changeBucketLogListener(defaultKey, new LogListener3());
             LogCollector logCollector1 = LogCollector.startLogCollector();
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
                 String logbackContent1 = logCollector1.endLogCollector();

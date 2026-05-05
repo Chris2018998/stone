@@ -54,8 +54,8 @@ public interface BeeObjectPoolMonitorVo extends Serializable {
     //***************************************************************************************************************//
     //                                     4: key MonitorVo                                                          //
     //***************************************************************************************************************//
-    Map<String, BeeObjectKeyMonitorVo> getKeyMonitorVos();
+    Map<String, BeeObjectBucketMonitorVo> getBucketMonitorVos();
 
-    BeeObjectKeyMonitorVo getKeyMonitorVo(String keyName);
+    BeeObjectBucketMonitorVo getBucketMonitorVo(String keyName);
 
 }

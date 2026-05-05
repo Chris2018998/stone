@@ -20,7 +20,7 @@ import org.stone.test.beeop.objects.factory.TextBookFactory;
 /**
  * @author Chris Liao
  */
-public class Tc0051PoolKeyDeletionTest {
+public class Tc0061PooledBucketDeletionTest {
 
     @Test
     public void testDeleteDefaultKey() {
@@ -30,19 +30,19 @@ public class Tc0051PoolKeyDeletionTest {
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             try {
-                os.deleteKey(factory.getDefaultKey());
+                os.deleteBucket(factory.getDefaultKey());
                 Assertions.fail("[Tc0049DefaultKeyTest.testDeleteDefaultKey]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
-                Assertions.assertEquals("Default key is forbidden to delete", e.getMessage());
+                Assertions.assertEquals("Default bucket is forbidden to delete", e.getMessage());
             }
 
             try {
-                os.deleteKey(factory.getDefaultKey(), true);
+                os.deleteBucket(factory.getDefaultKey(), true);
                 Assertions.fail("[Tc0049DefaultKeyTest.testDeleteDefaultKey]failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
-                Assertions.assertEquals("Default key is forbidden to delete", e.getMessage());
+                Assertions.assertEquals("Default bucket is forbidden to delete", e.getMessage());
             }
         }
     }
@@ -58,12 +58,12 @@ public class Tc0051PoolKeyDeletionTest {
 
         String defaultKey = objectFactory.getDefaultKey();
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertEquals(1, os.keySize());
-            Assertions.assertTrue(os.existsKey(defaultKey));
+            Assertions.assertEquals(1, os.bucketSize());
+            Assertions.assertTrue(os.existsBucket(defaultKey));
 
             //1:delete null key
             try {
-                os.deleteKey(null);//null key
+                os.deleteBucket(null);//null key
                 Assertions.fail("Failed to run testcase:[testDeletePooledKey)");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
@@ -72,36 +72,36 @@ public class Tc0051PoolKeyDeletionTest {
 
             //2: Key not in
             try {
-                os.deleteKey(defaultKey);
+                os.deleteBucket(defaultKey);
                 Assertions.fail("Failed to run testcase:[testDeletePooledKey)");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
-                Assertions.assertEquals("Default key is forbidden to delete", e.getMessage());
+                Assertions.assertEquals("Default bucket is forbidden to delete", e.getMessage());
             }
 
             //delete key
             String key2 = "Thanking in Rust";
-            Assertions.assertFalse(os.existsKey(key2));
-            Assertions.assertFalse(os.deleteKey(key2));
+            Assertions.assertFalse(os.existsBucket(key2));
+            Assertions.assertFalse(os.deleteBucket(key2));
 
             //2: add a new pooled key
             BeeObjectHandle<String, Book> rustBookHandle = os.getObjectHandle(key2);
             rustBookHandle.close();
-            Assertions.assertEquals(2, os.keySize());
-            Assertions.assertTrue(os.existsKey(key2));
-            Assertions.assertTrue(os.deleteKey(key2));
-            Assertions.assertEquals(1, os.keySize());
-            Assertions.assertFalse(os.existsKey(key2));
+            Assertions.assertEquals(2, os.bucketSize());
+            Assertions.assertTrue(os.existsBucket(key2));
+            Assertions.assertTrue(os.deleteBucket(key2));
+            Assertions.assertEquals(1, os.bucketSize());
+            Assertions.assertFalse(os.existsBucket(key2));
 
             //3: test delete key by force
             os.getObjectHandle(key2);
-            Assertions.assertTrue(os.existsKey(key2));
-            BeeObjectKeyMonitorVo rustKeyMonitorVo = os.getKeyMonitorVo(key2);
+            Assertions.assertTrue(os.existsBucket(key2));
+            BeeObjectBucketMonitorVo rustKeyMonitorVo = os.getBucketMonitorVo(key2);
             Assertions.assertTrue(rustKeyMonitorVo.isReady());
             Assertions.assertEquals(0, rustKeyMonitorVo.getIdleSize());
             Assertions.assertEquals(1, rustKeyMonitorVo.getBorrowedSize());
-            Assertions.assertTrue(os.deleteKey(key2, true));
-            Assertions.assertFalse(os.existsKey(key2));
+            Assertions.assertTrue(os.deleteBucket(key2, true));
+            Assertions.assertFalse(os.existsBucket(key2));
         }
     }
 }

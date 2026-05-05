@@ -34,13 +34,13 @@ public class Tc0003PooledObjectSizeTest {
             config.setMaxKeySize(-1);
             fail("Setting test failed on configuration item[max-key-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'max-key-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'max-key-size' must be greater than zero", e.getMessage());
         }
         try {
             config.setMaxKeySize(0);
             fail("Setting test failed on configuration item[max-key-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'max-key-size' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'max-key-size' must be greater than zero", e.getMessage());
         }
 
         //logTimeout
@@ -48,7 +48,7 @@ public class Tc0003PooledObjectSizeTest {
             config.setInitialSize(-1);
             fail("Setting test failed on configuration item[initial-size]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for the configuration item 'initial-size' cannot be less than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'initial-size' cannot be less than zero", e.getMessage());
         }
         config.setInitialSize(0);
         Assertions.assertEquals(0, config.getInitialSize());
@@ -60,13 +60,13 @@ public class Tc0003PooledObjectSizeTest {
             config.setMaxActive(-1);
             fail("Setting test failed on configuration item[max-active]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'max-active' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'max-active' must be greater than zero", e.getMessage());
         }
         try {
             config.setMaxActive(0);
             fail("Setting test failed on configuration item[max-active]");
         } catch (BeeObjectSourceConfigException e) {
-            Assertions.assertEquals("The given value for configuration item 'max-active' must be greater than zero", e.getMessage());
+            Assertions.assertEquals("The given value of 'max-active' must be greater than zero", e.getMessage());
         }
 
         config.setMaxActive(1);

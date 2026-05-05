@@ -11,6 +11,7 @@ package org.stone.test.beeop.objectsource;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.stone.beeop.BeeObjectHandle;
 import org.stone.beeop.BeeObjectSource;
 import org.stone.beeop.BeeObjectSourceConfig;
 import org.stone.test.beeop.config.OsConfigFactory;
@@ -38,6 +39,13 @@ public class Tc0038ObjectSourcePoolCloseTest {
         close1.join();
         close2.join();
         Assertions.assertTrue(os.isClosed());
+        Assertions.assertEquals("Pool has closed", os.toString());
+
+        try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+            Assertions.fail("[Tc0038ObjectSourcePoolCloseTest.test]failed");
+        } catch (Exception e) {
+            Assertions.assertEquals("No operations allowed on closed pool", e.getMessage());
+        }
     }
 
     private static class CloseThread extends Thread {

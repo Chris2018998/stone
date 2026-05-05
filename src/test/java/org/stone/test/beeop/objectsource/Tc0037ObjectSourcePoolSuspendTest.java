@@ -22,7 +22,7 @@ import org.stone.test.beeop.objects.book.Book;
 /**
  * @author Chris Liao
  */
-public class Tc0036ObjectSourcePoolSuspendTest {
+public class Tc0037ObjectSourcePoolSuspendTest {
 
     @Test
     public void testSuspended() throws Exception {
@@ -32,6 +32,7 @@ public class Tc0036ObjectSourcePoolSuspendTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Assertions.assertTrue(os.suspend());
             Assertions.assertTrue(os.getPoolMonitorVo(false).isSuspended());
+            Assertions.assertEquals("Pool has suspended", os.toString());
 
             //check1: getObjectHandle
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
@@ -42,7 +43,7 @@ public class Tc0036ObjectSourcePoolSuspendTest {
 
             //check2: getKeyMonitorVo
             try {
-                os.getKeyMonitorVo(bookObjectFactory.getDefaultKey());
+                os.getBucketMonitorVo(bookObjectFactory.getDefaultKey());
                 Assertions.fail("Suspended test failed");
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeeObjectSourcePoolNotReadyException.class, e);
@@ -63,11 +64,11 @@ public class Tc0036ObjectSourcePoolSuspendTest {
         BeeObjectFactory<String, Book> bookObjectFactory = config.getObjectFactory();
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            Assertions.assertTrue(os.suspendKey(bookObjectFactory.getDefaultKey()));
-            Assertions.assertTrue(os.getKeyMonitorVo(bookObjectFactory.getDefaultKey()).isSuspended());
+            Assertions.assertTrue(os.suspendBucket(bookObjectFactory.getDefaultKey()));
+            Assertions.assertTrue(os.getBucketMonitorVo(bookObjectFactory.getDefaultKey()).isSuspended());
 
-            Assertions.assertTrue(os.resumeKey(bookObjectFactory.getDefaultKey()));
-            Assertions.assertFalse(os.getKeyMonitorVo(bookObjectFactory.getDefaultKey()).isSuspended());
+            Assertions.assertTrue(os.resumeBucket(bookObjectFactory.getDefaultKey()));
+            Assertions.assertFalse(os.getBucketMonitorVo(bookObjectFactory.getDefaultKey()).isSuspended());
         }
     }
 }

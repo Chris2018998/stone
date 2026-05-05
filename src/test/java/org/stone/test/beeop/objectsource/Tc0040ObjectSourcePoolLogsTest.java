@@ -25,10 +25,12 @@ import org.stone.test.beeop.objects.methodLog.LogListener3;
 
 import java.util.Objects;
 
+import static org.stone.beeop.BeeMethodLog.Type_Pool_Log;
+
 /**
  * @author Chris Liao
  */
-public class Tc0039ObjectSourcePoolLogsTest {
+public class Tc0040ObjectSourcePoolLogsTest {
 
     @Test
     public void testSuccessLogOnNewKey() throws Exception {
@@ -71,7 +73,7 @@ public class Tc0039ObjectSourcePoolLogsTest {
 
             String newKey = "Thanking in Rust";
             Exception failureException = new Exception("unknown error");
-            bookFactory.setCreationException(failureException);
+            bookFactory.addFactoryMethodException("create", failureException);
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey)) {
                 for (BeeMethodLog<String> log : os.getPoolLogs()) {
                     if (Objects.equals(newKey, log.getKey())) {
@@ -102,21 +104,21 @@ public class Tc0039ObjectSourcePoolLogsTest {
             Assertions.assertEquals(0, os.getPoolLogs().size());//default key
 
             //2: disable method log cache
-            os.enableLogCache(false);
+            os.enablePoolLogCache(false);
             Assertions.assertFalse(os.getPoolMonitorVo(false).isEnabledMethodLogCache());
             String newKey1 = "Thanking in C++";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
-                Assertions.assertTrue(os.existsKey(newKey1));
+                Assertions.assertTrue(os.existsBucket(newKey1));
                 Assertions.assertEquals(0, os.getPoolLogs().size());//no log generated
             }
 
             //3: re-enable log cache
-            os.enableLogCache(true);
-            os.enableLogCache(true);
+            os.enablePoolLogCache(true);
+            os.enablePoolLogCache(true);
             Assertions.assertTrue(os.getPoolMonitorVo(false).isEnabledMethodLogCache());
             String newKey2 = "Thanking in Rust";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey2)) {
-                Assertions.assertTrue(os.existsKey(newKey2));
+                Assertions.assertTrue(os.existsBucket(newKey2));
                 Assertions.assertEquals(1, os.getPoolLogs().size());//one log generated
             }
         }
@@ -135,14 +137,14 @@ public class Tc0039ObjectSourcePoolLogsTest {
 
             String newKey1 = "Thanking in Rust";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
-                Assertions.assertTrue(os.existsKey(newKey1));
+                Assertions.assertTrue(os.existsBucket(newKey1));
                 Assertions.assertEquals(1, os.getPoolLogs().size());//no log generated
                 Assertions.assertEquals(newKey1, os.getPoolLogs().get(0).getKey());
 
             }
             String newKey2 = "Thanking in C++";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey2)) {
-                Assertions.assertTrue(os.existsKey(newKey2));
+                Assertions.assertTrue(os.existsBucket(newKey2));
                 Assertions.assertEquals(1, os.getPoolLogs().size());//no log generated
                 Assertions.assertEquals(newKey2, os.getPoolLogs().get(0).getKey());
 
@@ -153,13 +155,13 @@ public class Tc0039ObjectSourcePoolLogsTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             String newKey1 = "Thanking in Rust";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
-                Assertions.assertTrue(os.existsKey(newKey1));
+                Assertions.assertTrue(os.existsBucket(newKey1));
                 Assertions.assertEquals(2, os.getPoolLogs().size());//no log generated
             }
 
             String newKey2 = "Thanking in C++";
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey2)) {
-                Assertions.assertTrue(os.existsKey(newKey2));
+                Assertions.assertTrue(os.existsBucket(newKey2));
                 Assertions.assertEquals(3, os.getPoolLogs().size());//no log generated
             }
         }
@@ -173,7 +175,9 @@ public class Tc0039ObjectSourcePoolLogsTest {
         config.setMaxActive(1);
         config.setPrintRuntimeLogs(true);
         config.setEnableLogCache(true);//enable log cache
-        config.setLogListener(new LogListener1());
+        LogListener1 listener = new LogListener1();
+        listener.setTargetLogType(Type_Pool_Log);
+        config.setLogListener(listener);
 
         LogCollector logCollector = LogCollector.startLogCollector();
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
@@ -183,7 +187,7 @@ public class Tc0039ObjectSourcePoolLogsTest {
             Assertions.assertTrue(logbackContent.contains("LogListener1.onMethodEnd"));
 
             //change to new listener
-            os.changeLogListener(new LogListener3());
+            os.changePoolLogListener(new LogListener3());
             String newKey1 = "Thanking in C++";
             LogCollector logCollector1 = LogCollector.startLogCollector();
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle(newKey1)) {
