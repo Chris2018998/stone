@@ -1,11 +1,18 @@
 stone changes
 
+stone-2.2.1
+-----------------------------------------------------
+[beecp]
+1: improve structure of source code
+[beeop]
+1: improve structure of source code
+
 stone-2.2.0
 -----------------------------------------------------
 [beecp]
 1: change exception messages of configuration
 2: enhance method log feature (get thread of method call)
-3: fix issue of method log feature(error parameter value£©
+3: fix issue of method log feature(error parameter valueï¼‰
 [beeop]
 1: change exception messages of configuration
 2: change some methods in BeeObjectSource

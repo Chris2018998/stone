@@ -55,7 +55,7 @@ public class Tc0030ObjectSourcePoolStartTest {
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>()) {
             //1: check state of pool
             Assertions.assertTrue(os.isLazy());
-            Assertions.assertEquals("Pool is lazy and it can be initialized by calling getObjectHandle method of objectSource", os.toString());
+            Assertions.assertEquals("Pool is lazy", os.toString());
 
             //2: monitor vo check
             BeeObjectPoolMonitorVo poolMonitorVo = os.getPoolMonitorVo(true);

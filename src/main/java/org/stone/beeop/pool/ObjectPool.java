@@ -257,13 +257,17 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     private PooledObjectBucket<K, V> startBucket(K key, long startTime) throws Exception {
         if (this.enabledLogCache) {
             BeeMethodLog<K> log = this.poolLogCache.beforeCall(startTime, key, Type_Pool_Log, "ObjectPool.startKeybucket", null);
+
+            Object result = null;
             try {
                 PooledObjectBucket<K, V> bucket = this.createBucket(key);
-                this.poolLogCache.afterCall(System.currentTimeMillis(), bucket, log);
+                result = bucket;
                 return bucket;
             } catch (Throwable e) {
-                this.poolLogCache.afterCall(System.currentTimeMillis(), e, log);
+                result = e;
                 throw e;
+            } finally {
+                this.poolLogCache.afterCall(System.currentTimeMillis(), result, log);
             }
         } else {
             return this.createBucket(key);

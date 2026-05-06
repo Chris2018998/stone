@@ -76,8 +76,9 @@ final class MethodExecutionLogCache {
     //***************************************************************************************************************//
     public BeeMethodLog beforeCall(int type, String method, Object[] parameters, String sql, Statement statement) throws SQLException {
         MethodExecutionLog log = new MethodExecutionLog(poolName, type, method, parameters, statement);
-        this.offerQueue(log, type, parameters, sql);
         if (listener != null) listener.onMethodStart(log);//can put sql check,sql parse....
+
+        this.offerQueue(log, type, parameters, sql);
         return log;
     }
 

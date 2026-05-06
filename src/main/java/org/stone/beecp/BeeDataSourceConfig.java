@@ -97,7 +97,6 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     private String poolImplementClassName;
 
 
-
     //25: Test sql on borrowed connections to check them whether alive,default is "SELECT 1"
     private String aliveTestSql = "SELECT 1";
     //26: Seconds,max wait time of pool to get alive test result from borrowed connections,default is 3 seconds.

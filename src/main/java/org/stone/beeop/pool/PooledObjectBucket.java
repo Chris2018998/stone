@@ -305,13 +305,17 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
         if (this.collectMethodLogs) {
             BeeMethodLog<K> log = this.beforeCall(startTime, this.key, Type_Bucket_Log, "PooledObjectBucket.getObjectHandle()", new Object[]{startTime});
+
+            Object result = null;
             try {
                 BeeObjectHandle<K, V> handle = this.getObjectHandleInternal(startTime);
-                this.afterCall(System.currentTimeMillis(), handle, log);
+                result = handle;
                 return handle;
             } catch (Throwable e) {
-                this.afterCall(System.currentTimeMillis(), e, log);
+                result = e;
                 throw e;
+            } finally {
+                this.afterCall(System.currentTimeMillis(), result, log);
             }
         } else {
             return this.getObjectHandleInternal(startTime);

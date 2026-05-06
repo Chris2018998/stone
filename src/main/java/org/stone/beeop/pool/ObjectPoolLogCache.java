@@ -48,8 +48,9 @@ final class ObjectPoolLogCache<K> extends MethodLogCache<K> {
     //***************************************************************************************************************//
     public BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception {
         MethodLog<K> log = new MethodLog<>(poolName, key, logType, method, parameters, startTime);
-        this.offerQueue(log, logsQueue);
         if (listener != null) listener.onMethodStart(log);
+
+        this.offerQueue(log, logsQueue);
         return log;
     }
 

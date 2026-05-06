@@ -131,7 +131,7 @@ public final class ConnectionPoolStatics {
     static final int PS_CATALOG = 3;
     static final int PS_SCHEMA = 4;
     static final int PS_NETWORK = 5;
-    //eviction status
+    //removal desc of connections
     static final String DESC_RM_POOL_START = "pool_init";
     static final String DESC_RM_CON_BAD = "bad";
     static final String DESC_RM_CON_ABORT = "abort";
@@ -177,8 +177,7 @@ public final class ConnectionPoolStatics {
 
     static String getPoolStateDesc(int state) {
         return switch (state) {
-            case POOL_LAZY ->
-                    "Pool is lazy and initialized by calling one of its methods:getObjectHandle or getXAConnection";
+            case POOL_LAZY -> "Pool is lazy";
             case POOL_NEW -> "Pool is new";
             case POOL_STARTING -> "Pool is starting";
             case POOL_READY -> "Pool is ready";

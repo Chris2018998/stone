@@ -96,8 +96,7 @@ public class ObjectPoolStatics {
 
     static String getPoolStateDesc(int state) {
         return switch (state) {
-            case POOL_LAZY ->
-                    "Pool is lazy and it can be initialized by calling getObjectHandle method of objectSource";
+            case POOL_LAZY -> "Pool is lazy";
             case POOL_NEW -> "Pool is new";
             case POOL_STARTING -> "Pool is starting";
             case POOL_READY -> "Pool is ready";

@@ -550,13 +550,17 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     public Connection getConnection() throws SQLException {
         if (this.collectMethodLogs) {
             BeeMethodLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getConnection()", null, null, null);
+
+            Object result = null;
             try {
                 Connection con = this.conProxyFactory.createProxyConnection(this.getPooledConnection());
-                methodLogCache.afterCall(con, 0L, null, log);
+                result = con;
                 return con;
             } catch (SQLException e) {
-                methodLogCache.afterCall(e, 0L, null, log);
+                result = e;
                 throw e;
+            } finally {
+                methodLogCache.afterCall(result, 0L, null, log);
             }
         } else {
             return this.conProxyFactory.createProxyConnection(this.getPooledConnection());
@@ -566,16 +570,20 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     public XAConnection getXAConnection() throws SQLException {
         if (this.collectMethodLogs) {
             BeeMethodLog log = methodLogCache.beforeCall(Type_Pool_Log, "FastConnectionPool.getXAConnection()", null, null, null);
+
+            Object result = null;
             try {
                 PooledConnection p = this.getPooledConnection();
                 ProxyConnectionBase proxyConn = this.conProxyFactory.createProxyConnection(p);
                 XAResource proxyResource = this.isRawXaConnFactory ? new XaProxyResource(p.rawXaRes, proxyConn) : new XaResourceLocalImpl(proxyConn);
                 XAConnection xaConn = new XaProxyConnection(proxyConn, proxyResource);
-                methodLogCache.afterCall(xaConn, 0L, null, log);
+                result = xaConn;
                 return xaConn;
             } catch (SQLException e) {
-                methodLogCache.afterCall(e, 0L, null, log);
+                result = e;
                 throw e;
+            } finally {
+                methodLogCache.afterCall(result, 0L, null, log);
             }
         } else {
             PooledConnection p = this.getPooledConnection();

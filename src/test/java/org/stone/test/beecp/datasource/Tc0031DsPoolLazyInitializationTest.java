@@ -35,7 +35,7 @@ public class Tc0031DsPoolLazyInitializationTest {
 
         String poolReadyDesc = "Pool is ready";
         String poolLazyExceptionMsg = "No operations allowed on lazy pool";
-        String poolLazyDesc = "Pool is lazy and initialized by calling one of its methods:getObjectHandle or getXAConnection";
+        String poolLazyDesc = "Pool is lazy";
 
         try (BeeDataSource ds = new BeeDataSource(driver, url, user, password)) {
             Assertions.assertTrue(ds.isLazy());
