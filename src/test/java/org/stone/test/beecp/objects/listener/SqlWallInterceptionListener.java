@@ -36,13 +36,14 @@ public class SqlWallInterceptionListener implements BeeMethodLogListener {
     public void onMethodStart(BeeMethodLog log) throws SQLException {
         //Connection.prepareXXX
         if (log.getType() == BeeMethodLog.Type_Connection_Log) {
+            Object[] parameters = log.getParameters();
             if (log.getMethod().startsWith("Connection.prepare")) {
-                checkSQL(log.getSql());
+                checkSQL((String)parameters[0]);
             }
         } else if (log.getType() == BeeMethodLog.Type_Statement_Log) {
             Object[] parameters = log.getParameters();
             if (log.getMethod().startsWith("Statement.execute") && parameters != null && parameters.length > 0) {
-                checkSQL(log.getSql());
+                checkSQL((String)parameters[0]);
             }
         }
     }

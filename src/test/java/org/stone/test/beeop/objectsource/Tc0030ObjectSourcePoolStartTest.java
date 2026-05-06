@@ -71,7 +71,7 @@ public class Tc0030ObjectSourcePoolStartTest {
             } catch (Exception e) {
                 Assertions.assertInstanceOf(BeeObjectSourcePoolLazyInitializationException.class, e);
                 Assertions.assertEquals("No operations allowed on lazy pool", e.getMessage());
-                Assertions.assertEquals("Pool is lazy and it can be initialized by calling getObjectHandle method of objectSource", os.toString());
+                Assertions.assertEquals("Pool is lazy", os.toString());
             }
 
             //4: attempt to call getObjectHandle() when not fill Object factory
