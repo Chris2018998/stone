@@ -43,10 +43,8 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     //An atomic integer to generate sequence value append to pool name as suffix,its value starts with 1
     private static final AtomicInteger PoolNameIndex = new AtomicInteger();
-    //A list of field name,not be log print during pool initialization, default that five field names in list
-    private static final List<String> DefaultExclusionList = Arrays.asList("username", "password", "jdbcUrl", "user", "url");
     //23: An exclusion list of configuration print,default is copies from {@code DefaultExclusionList}
-    private final List<String> exclusionListOfPrint = new ArrayList<>(DefaultExclusionList);
+    private final List<String> exclusionListOfPrint = new ArrayList<>(Arrays.asList("username", "password", "jdbcUrl", "user", "url"));
     //24: A map stores some properties of connection provider,these properties are injected to provider during pool initialization
     private final Map<String, Object> connectionFactoryProperties = new HashMap<>(0);
 

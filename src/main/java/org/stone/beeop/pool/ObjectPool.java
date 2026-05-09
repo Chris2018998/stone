@@ -570,7 +570,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         }
     }
 
-    public BeeObjectBucketMonitorVo getBucketMonitorVoByName(String keyName) throws Exception {
+    public BeeObjectBucketMonitorVo getBucketMonitorVoByName(String keyName) {
         for (PooledObjectBucket<K, V> bucket : this.objectBucketMap.values()) {
             if (bucket.getKeyName().equals(keyName)) {
                 return bucket.getBucketMonitorVo();

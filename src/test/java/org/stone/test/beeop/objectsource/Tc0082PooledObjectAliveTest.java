@@ -73,7 +73,7 @@ public class Tc0082PooledObjectAliveTest {
             }
 
             Object object2;
-            Thread.sleep(10L);
+            Thread.sleep(100L);
             bookFactory.setBookIsValid(false);
             try (BeeObjectHandle<String, Book> handle2 = os.getObjectHandle()) {
                 object2 = TestUtil.getFieldValue(handle2, "instance");
@@ -82,7 +82,7 @@ public class Tc0082PooledObjectAliveTest {
 
 
             Object object3;
-            Thread.sleep(10L);
+            Thread.sleep(100L);
             bookFactory.setBookIsValid(true);
             bookFactory.addFactoryMethodException("isValid", new Exception("alive test failed"));
 

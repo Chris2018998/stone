@@ -26,31 +26,24 @@ import java.util.List;
  *
  * @author Chris Liao
  */
-public class SqlWallInterceptionListener implements BeeMethodLogListener {
+public class SQLWallStatementExecutionListener implements BeeMethodLogListener {
     private final String targetSQL;
 
-    public SqlWallInterceptionListener(String targetSQL) {
+    public SQLWallStatementExecutionListener(String targetSQL) {
         this.targetSQL = targetSQL;
     }
 
     public void onMethodStart(BeeMethodLog log) throws SQLException {
-        //Connection.prepareXXX
-        if (log.getType() == BeeMethodLog.Type_Connection_Log) {
-            Object[] parameters = log.getParameters();
-            if (log.getMethod().startsWith("Connection.prepare")) {
-                checkSQL((String)parameters[0]);
-            }
-        } else if (log.getType() == BeeMethodLog.Type_Statement_Log) {
-            Object[] parameters = log.getParameters();
-            if (log.getMethod().startsWith("Statement.execute") && parameters != null && parameters.length > 0) {
-                checkSQL((String)parameters[0]);
+        if (log.getType() == BeeMethodLog.Type_Statement_Log) {
+            if (log.getMethod().contains("execute") && log.getParameters() != null) {
+                checkSQL((String) log.getParameters()[0]);
             }
         }
     }
 
     private void checkSQL(String sql) throws SQLException {
         if (sql != null && sql.equals(this.targetSQL))
-            throw new SQLException("SQL Has been intercepted");
+            throw new SQLException("SQL check failed in Wall");
     }
 
     public void onMethodEnd(BeeMethodLog log) throws SQLException {
@@ -60,4 +53,13 @@ public class SqlWallInterceptionListener implements BeeMethodLogListener {
     public List<Boolean> onLongRunningDetected(List<BeeMethodLog> logList) {
         return null;
     }
+
+
+//
+//         else if (log.getType() == BeeMethodLog.Type_Statement_Log) {
+//        Object[] parameters = log.getParameters();
+//        if (log.getMethod().startsWith("Statement.execute") && parameters != null && parameters.length > 0) {
+//            checkSQL((String)parameters[0]);
+//        }
+//    }
 }

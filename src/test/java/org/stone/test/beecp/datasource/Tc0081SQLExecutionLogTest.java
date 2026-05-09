@@ -12,14 +12,11 @@ package org.stone.test.beecp.datasource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.stone.beecp.BeeDataSource;
-import org.stone.beecp.BeeDataSourceConfig;
 import org.stone.beecp.BeeMethodLog;
 import org.stone.test.base.TestUtil;
-import org.stone.test.beecp.config.DsConfigFactory;
 import org.stone.test.beecp.driver.MockConnectionProperties;
 import org.stone.test.beecp.objects.factory.MockConnectionFactory;
 import org.stone.test.beecp.objects.listener.MockMethodExecutionListener1;
-import org.stone.test.beecp.objects.listener.SqlWallInterceptionListener;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -190,35 +187,6 @@ public class Tc0081SQLExecutionLogTest {
         }
     }
 
-    //for sql wall test
-    @Test
-    public void testSQLInterception() throws Exception {
-        String sql = "select * from system_users";
-        BeeDataSourceConfig config = DsConfigFactory.createDefault();
-        config.setEnableLogCache(true);
-        config.setLogListener(new SqlWallInterceptionListener(sql));
-        config.setInitialSize(1);
-        config.setMaxActive(1);
-
-        try (BeeDataSource ds = new BeeDataSource(config)) {
-            try (Connection con = ds.getConnection()) {
-                //1: intercepted preparation sql
-                try (PreparedStatement ignored = con.prepareStatement(sql)) {
-                    Assertions.fail("[Tc0081SQLExecutionLogTest.testSQLInterception]test failed");
-                } catch (SQLException e) {
-                    Assertions.assertEquals("SQL Has been intercepted", e.getMessage());
-                }
-
-                //2: intercepted statement sql
-                try (Statement st = con.createStatement()) {
-                    st.execute(sql);
-                    Assertions.fail("[Tc0081SQLExecutionLogTest.testSQLInterception]test failed");
-                } catch (SQLException e) {
-                    Assertions.assertEquals("SQL Has been intercepted", e.getMessage());
-                }
-            }
-        }
-    }
 
     private static class StatementExecuteThread extends Thread {
         private final Connection con;

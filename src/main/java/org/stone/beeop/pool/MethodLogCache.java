@@ -115,10 +115,8 @@ abstract class MethodLogCache<K> {
     //***************************************************************************************************************//
     protected void offerQueue(MethodLog<K> log, LinkedBlockingQueue<MethodLog<K>> logsQueue) {
         while (!logsQueue.offer(log)) {
-            if (logsQueue.size() == this.logCacheSize) {
-                MethodLog<K> firstLog = logsQueue.poll();
-                if (firstLog != null) firstLog.setRemoved(true);
-            }
+            MethodLog<K> firstLog = logsQueue.poll();
+            if (firstLog != null) firstLog.setRemoved(true);
         }
     }
 
