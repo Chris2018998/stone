@@ -29,6 +29,7 @@ public class Tc0089PooledObjectTransferTest {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         config.setInitialSize(1);
         config.setMaxActive(1);
+        config.setFairMode(true);
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             ObjectBorrowThread borrowThread = new ObjectBorrowThread(os);

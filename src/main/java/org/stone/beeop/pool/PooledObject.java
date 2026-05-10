@@ -146,7 +146,7 @@ public final class PooledObject<K, V> {
 
         if (!this.hasConfiguredMethodNames || isInConfiguredMethodNames(name)) {
             BeeMethodLog<K> log = null;
-            if (bucket.collectMethodLogs)
+            if (bucket.isEnabledMethodLogCache())
                 log = bucket.beforeCall(System.currentTimeMillis(), key, Type_Object_Log, name, params);
 
             long updateTime = 0L;

@@ -25,12 +25,12 @@ import org.stone.test.beeop.objects.book.Book;
 public class Tc0062PooledBucketSuspensionTest {
 
     @Test
-    public void testSuspendKey() throws Exception {
+    public void testSuspendBucket() throws Exception {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
         BeeObjectFactory<String, Book> bookFactory = config.getObjectFactory();
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
-            //1: suspend key
+            //1: suspend bucket
             os.suspendBucket(bookFactory.getDefaultKey());
             Assertions.assertTrue(os.getBucketMonitorVo(bookFactory.getDefaultKey()).isSuspended());
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
@@ -40,7 +40,7 @@ public class Tc0062PooledBucketSuspensionTest {
                 Assertions.assertEquals("Object bucket was not ready", e.getMessage());
             }
 
-            //2: resume key
+            //2: resume bucket
             os.resumeBucket(bookFactory.getDefaultKey());
             Assertions.assertFalse(os.getBucketMonitorVo(bookFactory.getDefaultKey()).isSuspended());
             try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {

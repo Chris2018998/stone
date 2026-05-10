@@ -31,9 +31,9 @@ final class ObjectPoolLogCache<K> extends MethodLogCache<K> {
     //***************************************************************************************************************//
     //                                         1: initialization(1+0)                                                //
     //***************************************************************************************************************//
-    public void init(String poolName, int logCacheSize, BeeMethodLogListener<K> listener) {
-        super.init(poolName, logCacheSize, listener);
-        this.logsQueue = new LinkedBlockingQueue<>(logCacheSize);
+    public void init(String name, int cacheSize, BeeMethodLogListener<K> listener, boolean enabled) {
+        super.init(name, listener, enabled);
+        this.logsQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
     //***************************************************************************************************************//

@@ -24,6 +24,20 @@ public interface BeeMethodLog extends Serializable {
     int Type_Statement_Log = 3;
 
     /**
+     * Get Log id.
+     *
+     * @return log id
+     */
+    String getId();
+
+    /**
+     * Get log type.
+     *
+     * @return type value,which is one of [Pool_Logs,Connection_Logs,Statement_Logs]
+     */
+    int getType();
+
+    /**
      * Get pool name of current log
      *
      * @return pool name
@@ -36,20 +50,6 @@ public interface BeeMethodLog extends Serializable {
      * @return call thread
      */
     Thread getCallThread();
-
-    /**
-     * Get log type.
-     *
-     * @return type value,which is one of [Pool_Logs,Connection_Logs,Statement_Logs]
-     */
-    int getType();
-
-    /**
-     * Get Log id.
-     *
-     * @return log id
-     */
-    String getId();
 
     /**
      * Get method name of method call

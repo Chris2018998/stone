@@ -36,14 +36,28 @@ public class Tc0087PooledObjectCallLogsTest {
         //1: All calls to log cache
         BeeObjectSourceConfig<String, Book> config1 = new BeeObjectSourceConfig<>();
         config1.setEnableLogCache(true);
+        config1.setPoolName("KeyPool1");
         TextBookFactory bookFactory = new TextBookFactory();
         config1.setObjectFactory(bookFactory);
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config1)) {
             try (BeeObjectHandle<String, Book> bookHandle = os.getObjectHandle()) {
-                bookHandle.call("getTitle");
+                Object callResult = bookHandle.call("getTitle");
+
                 List<BeeMethodLog<String>> logList = os.getBucketObjectLogs(bookFactory.getDefaultKey());
                 Assertions.assertEquals(1, logList.size());
-                Assertions.assertTrue(logList.get(0).isSuccessful());
+                BeeMethodLog<String> log = logList.get(0);
+                Assertions.assertNotNull(log.getId());
+                Assertions.assertTrue(log.getStartTime() > 0L);
+                Assertions.assertTrue(log.getEndTime() > 0L);
+                Assertions.assertTrue(log.getEndTime() >= log.getStartTime());
+                Assertions.assertNull(log.getParameters());
+                Assertions.assertEquals(config1.getPoolName(), log.getPoolName());
+                Assertions.assertEquals(bookFactory.getDefaultKey(), log.getKey());
+                Assertions.assertEquals("getTitle", log.getMethod());
+                Assertions.assertEquals(Thread.currentThread(), log.getCallThread());
+                Assertions.assertTrue(log.isSuccessful());
+                Assertions.assertFalse(log.isException());
+                Assertions.assertEquals(callResult, log.getResult());
 
                 bookHandle.call("getAuthor");
                 Assertions.assertEquals(2, os.getBucketObjectLogs(bookFactory.getDefaultKey()).size());
@@ -94,6 +108,7 @@ public class Tc0087PooledObjectCallLogsTest {
                 List<BeeMethodLog<String>> logList = os.getBucketObjectLogs(bookFactory.getDefaultKey());
                 Assertions.assertEquals(1, logList.size());
                 Assertions.assertTrue(logList.get(0).isException());
+                Assertions.assertFalse(logList.get(0).isSuccessful());
                 Assertions.assertEquals(callException, logList.get(0).getFailureCause());
             }
         }

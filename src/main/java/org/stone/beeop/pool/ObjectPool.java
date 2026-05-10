@@ -58,11 +58,8 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     private volatile int poolState;
     //3: key counter(decreasing)
     private AtomicInteger bucketCounter;
-
-    //4: Initialization size of objects during bucket pool starting
-    private int initialSizeOfKey;
-    //5: Creation mode of initial objects for bucket pools
-    private boolean asyncCreateInitObjectsOfKey;
+    //4: configuration of pool
+    private BeeObjectSourceConfig<K, V> poolConfig;
 
     //6: Policy flag to recycle borrowed objects when pool close
     private boolean forceRecycleBorrowedOnClose;
@@ -71,8 +68,6 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //8: A global thread executor pool to run timed tasks(timeout objects clear,timeout method logs clear)
     private ScheduledThreadPoolExecutor scheduledService;
 
-    //9: Flag of pool logs cache
-    private boolean enabledLogCache;
     //10: Log cache of pool
     private ObjectPoolLogCache<K> poolLogCache;
     //11: Timeout value of method logs
@@ -93,7 +88,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //17: Default Key
     private K defaultKey;
     //18: Default bucket to default key
-    private PooledObjectBucket<K, V> defaultObjectBucket;
+    private PooledObjectBucket<K, V> defaultBucket;
 
     //***************************************************************************************************************//
     //                                     1: Pool start(1+1)                                                        //
@@ -118,11 +113,12 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //Internal method to start pool
     private void startupInternal(BeeObjectSourceConfig<K, V> config) throws Exception {
         //step1: set log printer
-        this.poolName = config.getPoolName();
-        this.logPrinter = getLogPrinter(ObjectPool.class, config.isPrintRuntimeLogs());
+        this.poolConfig = config;
+        this.poolName = poolConfig.getPoolName();
+        this.logPrinter = getLogPrinter(ObjectPool.class, poolConfig.isPrintRuntimeLogs());
 
         //step3: Create pool schedule executor(** schedule a task on default bucket pool, the task can interrupt possible block during startup **)
-        int maxKeySize = config.getMaxKeySize();
+        int maxKeySize = poolConfig.getMaxKeySize();
         int coreThreadSizeOfScheduledThreadPool = Math.min(NCPU, (maxKeySize << 1) + 1);//1 is for clear timeout logs of key pool
         PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
         this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSizeOfScheduledThreadPool, poolThreadFactory);
@@ -131,19 +127,16 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.scheduledService.setKeepAliveTime(10L, TimeUnit.SECONDS);
 
         //step4: Create Pool logs cache
-        this.enabledLogCache = config.isEnableLogCache();
         this.poolLogCache = new ObjectPoolLogCache<>();
-        this.poolLogCache.init(this.poolName, config.getLogCacheSize(), config.getLogListener());
-        this.poolLogCache.setSlowThreshold(Type_Pool_Log, config.getMaxWait());
+        this.poolLogCache.init(this.poolName, poolConfig.getLogCacheSize(), poolConfig.getLogListener(), poolConfig.isEnableLogCache());
+        this.poolLogCache.setSlowThreshold(Type_Pool_Log, poolConfig.getMaxWait());
 
         //step5: Create default bucket and start it
         this.bucketCounter = new AtomicInteger(maxKeySize);
-        this.initialSizeOfKey = config.getInitialSize();
-        this.asyncCreateInitObjectsOfKey = config.isAsyncCreateInitObjects();
-        this.forceRecycleBorrowedOnClose = config.isForceRecycleBorrowedOnClose();
-        this.defaultObjectBucket = new PooledObjectBucket<>(this, config, this.scheduledService);
-        this.defaultKey = config.getObjectFactory().getDefaultKey();
-        this.defaultObjectBucket = this.startBucket(defaultKey, System.currentTimeMillis());
+        this.forceRecycleBorrowedOnClose = poolConfig.isForceRecycleBorrowedOnClose();
+        this.defaultBucket = new PooledObjectBucket<>(this, poolConfig, this.scheduledService);
+        this.defaultKey = poolConfig.getObjectFactory().getDefaultKey();
+        this.defaultBucket = this.startBucket(defaultKey, System.currentTimeMillis());
 
         //step6: Create thread executor pool to run servant tasks to get pooled objects
         int threadPoolCoreThreadSize = Math.min(NCPU, maxKeySize);
@@ -152,18 +145,18 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.servantService.allowCoreThreadTimeOut(true);
 
         //step7: Create a timed task to clear timeout logs of pool
-        this.methodLogsTimeout = config.getLogTimeout();
-        this.intervalOfMethodLogsClearTask = config.getIntervalOfClearTimeoutLogs();
-        if (enabledLogCache) {
+        this.methodLogsTimeout = poolConfig.getLogTimeout();
+        this.intervalOfMethodLogsClearTask = poolConfig.getIntervalOfClearTimeoutLogs();
+        if (poolLogCache.isEnabledMethodLogCache()) {
             this.poolLogsScheduledFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsOfPoolClearTask<>(this.poolLogCache, methodLogsTimeout, this),
                     intervalOfMethodLogsClearTask, intervalOfMethodLogsClearTask, MILLISECONDS);
         }
 
         //step8: Register configuration object and pool to JMX Platform
-        if (config.isRegisterMbeans()) registerMBeans(config);
+        if (poolConfig.isRegisterMbeans()) registerMBeans(poolConfig);
 
         //step9: Register JVM Hook
-        if (config.isRegisterJvmHook()) {
+        if (poolConfig.isRegisterJvmHook()) {
             this.jvmExitHook = new ObjectPoolHook<>(this);
             Runtime.getRuntime().addShutdownHook(this.jvmExitHook);
         }
@@ -193,7 +186,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                     BeeObjectSourceConfig<K, V> checkedConfig = config.check();
 
                     //1: close bucket pools and remove them, reset some fields
-                    this.clearPoolInternalMembers(forceRecycleBorrowed);
+                    this.clearPoolInternalFields(forceRecycleBorrowed);
 
                     //2: startup pool
                     hasRunToStartupInternal = true;
@@ -224,7 +217,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         if (this.poolState != POOL_READY)
             throw new BeeObjectSourcePoolNotReadyException("Object pool was not ready");
 
-        return defaultObjectBucket.getObjectHandle(0L);
+        return defaultBucket.getObjectHandle(0L);
     }
 
     public BeeObjectHandle<K, V> getObjectHandle(K key) throws Exception {
@@ -255,7 +248,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
 
     //Attempt to start bucket pool by key
     private PooledObjectBucket<K, V> startBucket(K key, long startTime) throws Exception {
-        if (this.enabledLogCache) {
+        if (this.poolLogCache.isEnabledMethodLogCache()) {
             BeeMethodLog<K> log = this.poolLogCache.beforeCall(startTime, key, Type_Pool_Log, "ObjectPool.startKeybucket", null);
 
             Object result = null;
@@ -285,11 +278,11 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         } while (!bucketCounter.compareAndSet(cur, cur - 1));
 
         //2: Create a bucket pool(Object instances pool) by clone
-        PooledObjectBucket<K, V> bucket = defaultObjectBucket.createByClone();
+        PooledObjectBucket<K, V> bucket = defaultBucket.createByClone();
 
-        //3: Startup the created bucket pool()
+        //3: Startup the created bucket
         try {
-            bucket.startup(key, this.initialSizeOfKey, this.asyncCreateInitObjectsOfKey, logPrinter.isEnableLogOutput());
+            bucket.startup(key, poolConfig);
         } catch (Throwable e) {
             bucketCounter.incrementAndGet();
             throw e;
@@ -362,7 +355,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 poolName,
                 this.poolState,
                 this.logPrinter.isEnableLogOutput(),
-                this.enabledLogCache);
+                this.poolLogCache.isEnabledMethodLogCache());
         if (includeKeys) {
             for (PooledObjectBucket<K, V> pool : objectBucketMap.values()) {
                 PooledObjectBucketMonitorVo bucketMonitorVo = pool.getBucketMonitorVo();
@@ -392,7 +385,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     }
 
     public void close() {
-        final long parkTimeForRetryNs = defaultObjectBucket != null ? defaultObjectBucket.getParkTimeForRetryNs() : MILLISECONDS.toNanos(10L);
+        final long parkTimeForRetryNs = defaultBucket != null ? defaultBucket.getParkTimeForRetryNs() : MILLISECONDS.toNanos(10L);
 
         do {
             int poolStateCode = this.poolState;
@@ -405,7 +398,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
                 logPrinter.info("BeeOP({})-begin to shutdown", this.poolName);
 
                 //1: Clear some fields of pool
-                this.clearPoolInternalMembers(this.forceRecycleBorrowedOnClose);
+                this.clearPoolInternalFields(this.forceRecycleBorrowedOnClose);
 
                 //2: Set pool state to closed
                 this.poolState = POOL_CLOSED;
@@ -418,7 +411,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         } while (true);
     }
 
-    private void clearPoolInternalMembers(boolean forceRecycleBorrowed) {
+    private void clearPoolInternalFields(boolean forceRecycleBorrowed) {
         //NOTE: Safe shut down on pool,make sure pool threads dead before clear other fields
 
         //1: Clear log cache
@@ -449,7 +442,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         this.objectBucketMap.clear();
         this.bucketCounter = null;
         this.defaultKey = null;
-        this.defaultObjectBucket = null;
+        this.defaultBucket = null;
 
         //5: Unregister MBeans
         if (isNotBlank(this.poolNameOfRegisteredMBean))
@@ -485,8 +478,8 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //                                    7: method execution logs(4+0)                                              //
     //***************************************************************************************************************//
     public void enablePoolLogCache(boolean enable) {
-        if (this.enabledLogCache != enable) {
-            this.enabledLogCache = enable;
+        if (this.poolLogCache.isEnabledMethodLogCache() != enable) {
+            this.poolLogCache.enableMethodLogCache(enable);
             if (enable) {
                 this.poolLogsScheduledFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsOfPoolClearTask<>(this.poolLogCache, methodLogsTimeout, this),
                         intervalOfMethodLogsClearTask, intervalOfMethodLogsClearTask, MILLISECONDS);
@@ -643,7 +636,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     private PooledObjectBucket<K, V> getObjectInstancePool(K key) throws Exception {
         checkKey(key);
 
-        if (isDefaultKey(key)) return defaultObjectBucket;
+        if (isDefaultKey(key)) return defaultBucket;
         PooledObjectBucket<K, V> bucket = objectBucketMap.get(key);
         if (bucket == null)
             throw new BeePooledObjectKeyNotFoundException("Not found bucket with key(" + key + ")");

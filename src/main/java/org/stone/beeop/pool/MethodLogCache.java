@@ -22,25 +22,43 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @author Chris Liao
  */
 abstract class MethodLogCache<K> {
-    //name of key pool
+    //name of cache
     protected String poolName;
-    //log cache size
-    protected int logCacheSize;
     //listener of method execution logs
     protected BeeMethodLogListener<K> listener;
+    //enabled flag of cache
+    private boolean enabled;
 
     //***************************************************************************************************************//
     //                                         1: initialization(1+0)                                                //
     //***************************************************************************************************************//
-    public void init(String poolName, int logCacheSize, BeeMethodLogListener<K> listener) {
+    public void init(String poolName, BeeMethodLogListener<K> listener, boolean enabled) {
         this.poolName = poolName;
-        this.logCacheSize = logCacheSize;
+        this.enabled = enabled;
         this.listener = listener;
     }
 
     //***************************************************************************************************************//
-    //                                         2: field change(2+0)                                                  //
+    //                                         2: field change(4+0)                                                  //
     //***************************************************************************************************************//
+
+    /**
+     * Query enabled flag of cache.
+     *
+     * @return enabled flag of cache
+     */
+    public boolean isEnabledMethodLogCache() {
+        return this.enabled;
+    }
+
+    /**
+     * set enabled flag of cache.
+     *
+     * @param enable is a boolean flag
+     */
+    public void enableMethodLogCache(boolean enable) {
+        this.enabled = enable;
+    }
 
     /**
      * Set a new log listener to cache.

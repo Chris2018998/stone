@@ -41,16 +41,14 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     //***************************************************************************************************************//
     //                                         1: initialization(1+0)                                                //
     //***************************************************************************************************************//
-
-
-    public void init(String poolName, int logCacheSize, BeeMethodLogListener<K> listener) {
-        super.init(poolName, logCacheSize, listener);
-        this.objectGetLogQueue = new LinkedBlockingQueue<>(logCacheSize);
-        this.objectCallLogQueue = new LinkedBlockingQueue<>(logCacheSize);
+    public void init(String name, int cacheSize, BeeMethodLogListener<K> listener, boolean enabled) {
+        super.init(name, listener, enabled);
+        this.objectGetLogQueue = new LinkedBlockingQueue<>(cacheSize);
+        this.objectCallLogQueue = new LinkedBlockingQueue<>(cacheSize);
     }
 
     //***************************************************************************************************************//
-    //                                         2: set(1+0)                                                           //
+    //                                         2: set(2+0)                                                           //
     //***************************************************************************************************************//
     public void setInterruptSlowCall(boolean interruptSlowCall) {
         this.interruptSlowCall = interruptSlowCall;
@@ -65,38 +63,37 @@ class PooledObjectBucketLogCache<K> extends MethodLogCache<K> {
     }
 
     //***************************************************************************************************************//
-    //                                         3: Logs records(2+1)                                                  //
+    //                                         3: Logs records(2+0)                                                  //
     //***************************************************************************************************************//
     public BeeMethodLog<K> beforeCall(long startTime, K key, int logType, String method, Object[] parameters) throws Exception {
         MethodLog<K> log = new MethodLog<>(poolName, key, logType, method, parameters, startTime);
+        if (listener != null) listener.onMethodStart(log);
         if (logType == Type_Bucket_Log) {
             this.offerQueue(log, objectGetLogQueue);
         } else if (logType == Type_Object_Log) {
             this.offerQueue(log, objectCallLogQueue);
         }
-
-        if (listener != null) listener.onMethodStart(log);
         return log;
     }
 
     public void afterCall(long endTime, Object callResult, BeeMethodLog<K> log) throws Exception {
-        MethodLog<K> defaultTypeLog = (MethodLog<K>) log;
-        defaultTypeLog.setResult(callResult, endTime);
+        MethodLog<K> logImpl = (MethodLog<K>) log;
+        logImpl.setResult(callResult, endTime);
         int logType = log.getType();
 
-        if (defaultTypeLog.isRemoved()) {
-            defaultTypeLog.setRemoved(false);
+        if (logImpl.isRemoved()) {
+            logImpl.setRemoved(false);
             if (logType == Type_Bucket_Log) {
-                this.offerQueue(defaultTypeLog, objectGetLogQueue);
+                this.offerQueue(logImpl, objectGetLogQueue);
             } else if (logType == Type_Object_Log) {
-                this.offerQueue(defaultTypeLog, objectCallLogQueue);
+                this.offerQueue(logImpl, objectCallLogQueue);
             }
         }
 
         if (logType == Type_Bucket_Log) {
-            defaultTypeLog.setAsSlow(0L, getSlowThreshold, false);
+            logImpl.setAsSlow(0L, getSlowThreshold, false);
         } else if (logType == Type_Object_Log) {
-            defaultTypeLog.setAsSlow(0L, callSlowThreshold, false);
+            logImpl.setAsSlow(0L, callSlowThreshold, false);
         }
         if (listener != null) listener.onMethodEnd(log);
     }

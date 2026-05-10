@@ -30,14 +30,24 @@ public class Tc0082PooledObjectAliveTest {
         config.setInitialSize(1);
         config.setMaxActive(1);
         config.setMaxWait(1L);
-        config.setAliveAssumeTime(Long.MAX_VALUE);//---- TEST POINT
-        config.setAliveTestTimeout(1);
-        config.setParkTimeForRetry(1L);
-        config.setUseThreadLocal(false);
         TextBookFactory bookFactory = new TextBookFactory("Java Concurrent", "DougLee");
         config.setObjectFactory(bookFactory);
-        bookFactory.setBookIsValid(true);
 
+        config.setAliveAssumeTime(0L);//---- TEST POINT
+        try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
+            Object object1;
+            try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
+                object1 = TestUtil.getFieldValue(handle1, "instance");
+            }
+
+            Object object2;
+            try (BeeObjectHandle<String, Book> handle2 = os.getObjectHandle()) {
+                object2 = TestUtil.getFieldValue(handle2, "instance");
+            }
+            Assertions.assertEquals(object1, object2);
+        }
+
+        config.setAliveAssumeTime(Long.MAX_VALUE);//---- TEST POINT
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object object1;
             try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
@@ -53,28 +63,24 @@ public class Tc0082PooledObjectAliveTest {
     }
 
     @Test
-    public void testAliveTestFailure() throws Exception {
+    public void testFactoryValidTest() throws Exception {
         BeeObjectSourceConfig<String, Book> config = new BeeObjectSourceConfig<>();
         config.setInitialSize(1);
         config.setMaxActive(1);
         config.setMaxWait(1L);
-        config.setAliveAssumeTime(1L);
-        config.setAliveTestTimeout(1);
-        config.setParkTimeForRetry(1L);
-        config.setUseThreadLocal(false);
+        config.setAliveAssumeTime(0L);
         TextBookFactory bookFactory = new TextBookFactory("Java Concurrent", "DougLee");
         config.setObjectFactory(bookFactory);
-        bookFactory.setBookIsValid(true);
+        bookFactory.setBookIsValid(true);//---- TEST POINT
 
         try (BeeObjectSource<String, Book> os = new BeeObjectSource<>(config)) {
             Object object1;
             try (BeeObjectHandle<String, Book> handle1 = os.getObjectHandle()) {
                 object1 = TestUtil.getFieldValue(handle1, "instance");
             }
-
             Object object2;
             Thread.sleep(100L);
-            bookFactory.setBookIsValid(false);
+            bookFactory.setBookIsValid(false);//---- TEST POINT
             try (BeeObjectHandle<String, Book> handle2 = os.getObjectHandle()) {
                 object2 = TestUtil.getFieldValue(handle2, "instance");
             }
@@ -83,9 +89,7 @@ public class Tc0082PooledObjectAliveTest {
 
             Object object3;
             Thread.sleep(100L);
-            bookFactory.setBookIsValid(true);
             bookFactory.addFactoryMethodException("isValid", new Exception("alive test failed"));
-
             try (BeeObjectHandle<String, Book> handle3 = os.getObjectHandle()) {
                 object3 = TestUtil.getFieldValue(handle3, "instance");
                 Assertions.assertNotEquals(object2, object3);

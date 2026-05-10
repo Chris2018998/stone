@@ -67,8 +67,8 @@ public class MethodLog<K> implements BeeMethodLog<K> {
     public MethodLog(String poolName, K key, int type,
                      String method, Object[] parameters, long startTime) {
 
-        this.key = key;
         this.poolName = poolName;
+        this.key = key;
         this.type = type;
         this.method = method;
         this.parameters = parameters;

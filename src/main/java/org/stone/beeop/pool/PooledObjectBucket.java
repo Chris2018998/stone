@@ -31,7 +31,7 @@ import static org.stone.tools.LogPrinter.DefaultLogPrinter;
 import static org.stone.tools.LogPrinter.getLogPrinter;
 
 /**
- * A pool impl to maintain pooled objects
+ * Object Bucket related with pooled keys
  *
  * @author Chris Liao
  * @version 1.0
@@ -39,7 +39,7 @@ import static org.stone.tools.LogPrinter.getLogPrinter;
 final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> implements Runnable, Cloneable {
     private static final VarHandle ObjStUpd;
     private static final VarHandle BorrowStUpd;
-    private static final VarHandle PoolStateUpd;
+    private static final VarHandle BucketStateUpd;
     private static final VarHandle ServantStateUpd;
     private static final VarHandle ServantTryCountUpd;
 
@@ -48,7 +48,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             MethodHandles.Lookup l = MethodHandles.lookup();
             ObjStUpd = l.findVarHandle(PooledObject.class, "state", int.class);
             BorrowStUpd = l.findVarHandle(Borrower.class, "state", Object.class);
-            PoolStateUpd = l.findVarHandle(PooledObjectBucket.class, "poolState", int.class);
+            BucketStateUpd = l.findVarHandle(PooledObjectBucket.class, "bucketState", int.class);
             ServantStateUpd = l.findVarHandle(PooledObjectBucket.class, "servantState", int.class);
             ServantTryCountUpd = l.findVarHandle(PooledObjectBucket.class, "servantTryCount", int.class);
         } catch (Throwable e) {
@@ -72,48 +72,37 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     private final long validAssumeTime;//milliseconds
     private final int validTestTimeout;//seconds
     private final long parkTimeForRetryNs;//nanoseconds
+
     private final boolean useThreadLocal;
     private final long methodLogsTimeoutMs;
-    private final long intervalOfMethodLogsClearTaskMs;
-    private final long intervalOfObjectsClearTask;
+    private final long intervalOfMethodLogsClearTaskMs;//clear timeout method logs
+    private final long intervalOfObjectsClearTask;//clear timeout pooled objects
 
-    private final String[] configuredMethodNames;
-    private final boolean hasConfiguredMethodNames;
-
-    private final BeeObjectPredicate objectPredicate;
-    private final BeeObjectFactory<K, V> objectFactory;//create objects to be pooled
-    private final ObjectTransferPolicy<K, V> transferPolicy;//transfer objects to waiters
-    private final Map<MethodKey, MethodHandle> objectMethodCacheMap;//cache called methods
+    private final BeeObjectFactory<K, V> objectFactory;
+    private final ObjectTransferPolicy<K, V> transferPolicy;
+    private final Map<MethodKey, MethodHandle> objectHandleMap;
     private final ScheduledThreadPoolExecutor scheduledService;
-    private final int methodLogCacheSize;
-    private final BeeMethodLogListener<K> methodLogListener;//changeable
-    private final long getSlowThreshold;
-    private final long callSlowThreshold;
-    private final boolean interruptSlowCall;
-
-    LogPrinter logPrinter = DefaultLogPrinter;
-    boolean collectMethodLogs;//changeable
     //Clone end
+    LogPrinter logPrinter = DefaultLogPrinter;
 
-    //category key
+    //bucket key
     private K key;
-    //key name
+    //bucket key name
     private String keyName;
-    //Category pool state
-    private volatile int poolState;
-    //State of category servant
+    //bucket state
+    private volatile int bucketState;
+    //State of bucket servant
     private volatile int servantState;
     //Retry count to get idle object
     private volatile int servantTryCount;
-    //Semaphore of category pool
+    //Semaphore of bucket pool
     private InterruptableSemaphore semaphore;
-    //Array store pooled objects
+    //Array store bucketed objects
     private PooledObject<K, V>[] objectArray;
     //Wait queue
     private ConcurrentLinkedQueue<Borrower<K, V>> waitQueue;
     //ThreadLocal caches last used pooled objects for borrowers
     private ThreadLocal<WeakReference<Borrower<K, V>>> threadLocal;
-
     //Handle of scheduled task clear timeout logs
     private ScheduledFuture<?> timeoutLogsClearTaskFuture;
     //Handle of scheduled task clear timeout objects
@@ -127,7 +116,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
         //step1: copy  primitive type field
         this.parentPool = parentPool;
-        this.poolState = POOL_NEW;
+        this.bucketState = POOL_NEW;
 
         this.useThreadLocal = config.isUseThreadLocal();
         this.semaphoreSize = config.getSemaphoreSize();
@@ -147,20 +136,9 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         this.intervalOfObjectsClearTask = config.getIntervalOfClearTimeout();
 
         //step2:object type field setting
-        this.objectPredicate = config.getPredicate();
         this.objectFactory = config.getObjectFactory();
-        List<String> methodNameList = config.getObjectMethodNameList();
-        this.configuredMethodNames = methodNameList == null || methodNameList.isEmpty() ? null : methodNameList.toArray(new String[0]);
-        this.hasConfiguredMethodNames = configuredMethodNames != null;
-
-        this.objectMethodCacheMap = new ConcurrentHashMap<>(1);
+        this.objectHandleMap = new ConcurrentHashMap<>(1);
         this.scheduledService = scheduledService;
-        this.collectMethodLogs = config.isEnableLogCache();
-        this.methodLogCacheSize = config.getLogCacheSize();
-        this.methodLogListener = config.getLogListener();
-        this.getSlowThreshold = config.getMaxWait();
-        this.callSlowThreshold = config.getSlowCallThreshold();
-        this.interruptSlowCall = config.isInterruptSlowCall();
 
         this.isFairMode = config.isFairMode();
         this.isCompeteMode = !isFairMode;
@@ -177,12 +155,16 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //                                     2: Pool start(0+1)                                                        //
     //***************************************************************************************************************//
     @SuppressWarnings("uncheck")
-    void startup(K key, int initSize, boolean asyncCreateInitObjects, boolean isPrintRuntimeLogs) throws Exception {
+    void startup(K key, BeeObjectSourceConfig<K, V> poolConfig) throws Exception {
         try {
             //step1: set key and log printer
             this.key = key;
             this.keyName = key.toString();
-            this.logPrinter = getLogPrinter(PooledObjectBucket.class, isPrintRuntimeLogs);
+            this.logPrinter = getLogPrinter(PooledObjectBucket.class, poolConfig.isPrintRuntimeLogs());
+
+            List<String> methodNameList = poolConfig.getObjectMethodNameList();
+            String[] objectMethodNames = methodNameList == null || methodNameList.isEmpty() ? null : methodNameList.toArray(new String[0]);
+            boolean configuredObjectMethodNames = objectMethodNames != null;
 
             //step2: Create array of pool objects and fill 'empty state' objects
             this.objectArray = new PooledObject[maxActiveSize];
@@ -190,16 +172,18 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                 objectArray[i] = new PooledObject<>(key,
                         this,
                         this.objectFactory,
-                        this.objectPredicate,
-                        this.hasConfiguredMethodNames,
-                        this.configuredMethodNames,
-                        this.objectMethodCacheMap);
+                        poolConfig.getPredicate(),
+                        configuredObjectMethodNames,
+                        objectMethodNames,
+                        this.objectHandleMap);
 
             //step3: Schedule task to clear timeout objects(this task can interrupt blocking of objects creation)
             this.timeoutObjectsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutObjectsClearTask<>(this),
                     intervalOfObjectsClearTask, intervalOfObjectsClearTask, MILLISECONDS);
 
             //step4: Create initial objects
+            int initSize = poolConfig.getInitialSize();
+            boolean asyncCreateInitObjects = poolConfig.isAsyncCreateInitObjects();
             if (initSize > 0 && !asyncCreateInitObjects) this.createInitObjects(initSize, true);
 
             //step5: Creates pool some internal objects
@@ -213,12 +197,12 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             if (initSize > 0 && asyncCreateInitObjects) new PoolInitAsyncCreateThread<>(initSize, this).start();
 
             //step7: log cache initialize
-            super.init(keyName, this.methodLogCacheSize, this.methodLogListener);
-            super.setSlowThreshold(Type_Bucket_Log, this.getSlowThreshold);
-            super.setSlowThreshold(Type_Object_Log, this.callSlowThreshold);
-            super.setInterruptSlowCall(this.interruptSlowCall);
+            super.init(poolConfig.getPoolName(), poolConfig.getLogCacheSize(), poolConfig.getLogListener(), poolConfig.isEnableLogCache());
+            super.setSlowThreshold(Type_Bucket_Log, poolConfig.getMaxWait());
+            super.setSlowThreshold(Type_Object_Log, poolConfig.getSlowCallThreshold());
+            super.setInterruptSlowCall(poolConfig.isInterruptSlowCall());
 
-            if (this.collectMethodLogs) {
+            if (this.isEnabledMethodLogCache()) {
                 this.timeoutLogsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(this, methodLogsTimeoutMs),
                         intervalOfMethodLogsClearTaskMs, intervalOfMethodLogsClearTaskMs, MILLISECONDS);
             }
@@ -233,7 +217,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     this.semaphoreSize,
                     this.maxWaitMs);
 
-            this.poolState = POOL_READY;
+            this.bucketState = POOL_READY;
         } catch (Throwable e) {
             if (timeoutObjectsClearTaskFuture != null) {
                 timeoutObjectsClearTaskFuture.cancel(true);
@@ -303,7 +287,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //                                         4: Pooled objects get(1+4)                                            //                                                                                  //
     //***************************************************************************************************************//
     public BeeObjectHandle<K, V> getObjectHandle(long startTime) throws Exception {
-        if (this.collectMethodLogs) {
+        if (this.isEnabledMethodLogCache()) {
             BeeMethodLog<K> log = this.beforeCall(startTime, this.key, Type_Bucket_Log, "PooledObjectBucket.getObjectHandle()", new Object[]{startTime});
 
             Object result = null;
@@ -324,7 +308,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
     //*** Core method for get *****
     private BeeObjectHandle<K, V> getObjectHandleInternal(long startTime) throws Exception {
-        if (this.poolState != POOL_READY)
+        if (this.bucketState != POOL_READY)
             throw new BeePooledObjectKeyException("Object bucket was not ready");
 
         //1: try to reuse object in thread local
@@ -526,11 +510,11 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //                                         6: Pool restart(0+2)                                                  //                                                                                  //
     //***************************************************************************************************************//
     boolean restart(boolean forceRecycleBorrowed) {
-        if (PoolStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
+        if (BucketStateUpd.compareAndSet(this, POOL_READY, POOL_RESTARTING)) {
             logPrinter.info("BeeOP({})-begin to clear all objects", this.keyName);
             this.removeAllObjects(forceRecycleBorrowed, DESC_RM_POOL_CLEAR);
             logPrinter.info("BeeOP({})-has clear all objects", this.keyName);
-            this.poolState = POOL_READY;// restore state;
+            this.bucketState = POOL_READY;// restore state;
             logPrinter.info("BeeOP({})-pool has cleared all objects", this.keyName);
             return true;
         } else {
@@ -578,28 +562,28 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //                                         6: Pool Suspend (2+0)                                                 //
     //***************************************************************************************************************//
     public boolean suspendKey() {
-        return PoolStateUpd.compareAndSet(this, POOL_READY, POOL_SUSPENDED);
+        return BucketStateUpd.compareAndSet(this, POOL_READY, POOL_SUSPENDED);
     }
 
     public boolean resumeKey() {
-        return PoolStateUpd.compareAndSet(this, POOL_SUSPENDED, POOL_READY);
+        return BucketStateUpd.compareAndSet(this, POOL_SUSPENDED, POOL_READY);
     }
 
     //***************************************************************************************************************//
     //                                         7: Pool Close(2+0)                                                    //
     //***************************************************************************************************************//
     public boolean isClosed() {
-        return this.poolState == POOL_CLOSED;
+        return this.bucketState == POOL_CLOSED;
     }
 
     public void close(boolean forceRecycleBorrowed) {
         do {
-            int poolStateCode = this.poolState;
+            int poolStateCode = this.bucketState;
             if (poolStateCode == POOL_CLOSED || poolStateCode == POOL_CLOSING) return;
-            if (poolStateCode == POOL_NEW && PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
+            if (poolStateCode == POOL_NEW && BucketStateUpd.compareAndSet(this, POOL_NEW, POOL_CLOSED)) return;
             if (poolStateCode == POOL_STARTING || poolStateCode == POOL_RESTARTING) {
                 LockSupport.parkNanos(this.parkTimeForRetryNs);//delay and retry
-            } else if (PoolStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
+            } else if (BucketStateUpd.compareAndSet(this, poolStateCode, POOL_CLOSING)) {//poolStateCode == POOL_NEW || poolStateCode == POOL_READY
                 logPrinter.info("BeeOP({})-begin to shutdown", this.keyName);
                 this.removeAllObjects(forceRecycleBorrowed, DESC_RM_POOL_SHUTDOWN);
 
@@ -613,7 +597,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     timeoutLogsClearTaskFuture = null;
                 }
 
-                this.poolState = POOL_CLOSED;
+                this.bucketState = POOL_CLOSED;
                 logPrinter.info("BeeOP({})-has shutdown", this.keyName);
                 break;
             } else {//pool State == POOL_CLOSING
@@ -627,8 +611,8 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     //                                         8: Key method logs (2+0)                                              //
     //***************************************************************************************************************//
     public synchronized void enableLogCache(boolean enable) {
-        if (this.collectMethodLogs != enable) {
-            this.collectMethodLogs = enable;
+        if (this.isEnabledMethodLogCache() != enable) {
+            this.enableMethodLogCache(enable);
             if (enable) {
                 this.timeoutLogsClearTaskFuture = this.scheduledService.scheduleWithFixedDelay(new TimeoutMethodLogsClearTask<>(this, methodLogsTimeoutMs),
                         intervalOfMethodLogsClearTaskMs, intervalOfMethodLogsClearTaskMs, MILLISECONDS);
@@ -712,10 +696,10 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                 if (borrower.state == null) transferWaitingSize++;
         }
 
-        return new PooledObjectBucketMonitorVo(this.keyName, poolState,
+        return new PooledObjectBucketMonitorVo(this.keyName, bucketState,
                 idleSize, borrowedSize, creatingCount, creatingTimeoutCount,
                 semaphoreRemainSize, semaphoreWaitingSize, transferWaitingSize,
-                this.logPrinter.isEnableLogOutput(), this.collectMethodLogs);
+                this.logPrinter.isEnableLogOutput(), this.isEnabledMethodLogCache());
     }
 
     //***************************************************************************************************************//
@@ -818,20 +802,20 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
     private static final class PoolInitAsyncCreateThread<K, V> extends Thread {
         private final int initialSize;
-        private final PooledObjectBucket<K, V> pool;
+        private final PooledObjectBucket<K, V> bucket;
 
-        PoolInitAsyncCreateThread(int initialSize, PooledObjectBucket<K, V> pool) {
+        PoolInitAsyncCreateThread(int initialSize, PooledObjectBucket<K, V> bucket) {
             this.initialSize = initialSize;
-            this.pool = pool;
+            this.bucket = bucket;
         }
 
         public void run() {
             try {
-                pool.createInitObjects(initialSize, false);
-                pool.servantTryCount = pool.objectArray.length;
+                bucket.createInitObjects(initialSize, false);
+                bucket.servantTryCount = bucket.objectArray.length;
 
-                if (!pool.waitQueue.isEmpty() && pool.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(pool, THREAD_WAITING, THREAD_WORKING)) {
-                    pool.parentPool.submitServantTask(pool);
+                if (!bucket.waitQueue.isEmpty() && bucket.servantState == THREAD_WAITING && ServantStateUpd.compareAndSet(bucket, THREAD_WAITING, THREAD_WORKING)) {
+                    bucket.parentPool.submitServantTask(bucket);
                 }
             } catch (Throwable e) {
                 //do nothing
@@ -839,25 +823,25 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         }
     }
 
-    private record TimeoutObjectsClearTask<K, V>(PooledObjectBucket<K, V> categoryPool) implements Runnable {
+    private record TimeoutObjectsClearTask<K, V>(PooledObjectBucket<K, V> bucket) implements Runnable {
 
         public void run() {
             try {
-                this.categoryPool.clearIdleTimeoutObjects();
+                this.bucket.clearIdleTimeoutObjects();
             } catch (Throwable e) {
-                categoryPool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.categoryPool.keyName, e);
+                bucket.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.bucket.keyName, e);
             }
         }
     }
 
-    private record TimeoutMethodLogsClearTask<K, V>(PooledObjectBucket<K, V> categoryPool,
+    private record TimeoutMethodLogsClearTask<K, V>(PooledObjectBucket<K, V> bucket,
                                                     long timeout) implements Runnable {
 
         public void run() {
             try {
-                categoryPool.clearTimeoutLogs(timeout);
+                bucket.clearTimeoutLogs(timeout);
             } catch (Throwable e) {
-                categoryPool.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.categoryPool.keyName, e);
+                bucket.logPrinter.warn("BeeOP({})-an exception occurred while scanning timeout method logs", this.bucket.keyName, e);
             }
         }
     }

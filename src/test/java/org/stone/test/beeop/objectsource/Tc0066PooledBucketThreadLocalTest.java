@@ -85,6 +85,10 @@ public class Tc0066PooledBucketThreadLocalTest {
             Object objectBucket = objectBucketMap.get(config.getObjectFactory().getDefaultKey());
             ThreadLocal<WeakReference<Object>> threadLocal = (ThreadLocal<WeakReference<Object>>) TestUtil.getFieldValue(objectBucket, "threadLocal");
             Assertions.assertNull(threadLocal);//no cached pooled object in ThreadLocal
+
+            try (BeeObjectHandle<String, Book> ignored = os.getObjectHandle()) {
+                Assertions.assertNotNull(ignored);
+            }
         }
     }
 }

@@ -170,10 +170,6 @@ public class MethodExecutionLog implements BeeMethodLog {
         return sql;
     }
 
-    void setSql(String sql) {
-        this.sql = sql;
-    }
-
     public long getSqlPreparedTime() {
         return sqlPreparedTime;
     }

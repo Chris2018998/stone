@@ -44,6 +44,14 @@ public class Tc0061PooledBucketDeletionTest {
                 Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
                 Assertions.assertEquals("Default bucket is forbidden to delete", e.getMessage());
             }
+
+            try {
+                os.deleteBucket(new String(factory.getDefaultKey().toCharArray()));
+                Assertions.fail("[Tc0049DefaultKeyTest.testDeleteDefaultKey]failed");
+            } catch (Exception e) {
+                Assertions.assertInstanceOf(BeePooledObjectKeyException.class, e);
+                Assertions.assertEquals("Default bucket is forbidden to delete", e.getMessage());
+            }
         }
     }
 
