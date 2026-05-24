@@ -10,7 +10,7 @@
 package org.stone.beecp.pool;
 
 import org.stone.beecp.BeeConnectionPredicate;
-import org.stone.beecp.exception.ConnectionRecycledException;
+import org.stone.beecp.exception.ConnectionRecycleException;
 
 import javax.transaction.xa.XAResource;
 import java.sql.Connection;
@@ -191,7 +191,7 @@ final class PooledConnection {
             this.pool.recycle(this);
         } catch (Throwable e) {
             this.pool.abort(this, DESC_RM_CON_BAD);
-            throw e instanceof SQLException ? (SQLException) e : new ConnectionRecycledException(e);
+            throw e instanceof SQLException ? (SQLException) e : new ConnectionRecycleException(e);
         }
     }
 

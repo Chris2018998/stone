@@ -129,7 +129,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         //step4: Create Pool logs cache
         this.poolLogCache = new ObjectPoolLogCache<>();
         this.poolLogCache.init(this.poolName, poolConfig.getLogCacheSize(), poolConfig.getLogListener(), poolConfig.isEnableLogCache());
-        this.poolLogCache.setSlowThreshold(Type_Pool_Log, poolConfig.getMaxWait());
+        this.poolLogCache.setSlowThreshold(Type_Pool_Log, poolConfig.getSlowGetThreshold());
 
         //step5: Create default bucket and start it
         this.bucketCounter = new AtomicInteger(maxKeySize);

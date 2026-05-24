@@ -114,23 +114,25 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     //34: Timer interval to clear timeout logs,default is 3 minutes
     private long intervalOfClearTimeoutLogs = logTimeout;
 
-    //35: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
+    //35: Slow threshold of pooled object get,default is 8000L,time unit:milliseconds,not greater than value of{@code maxWait}
+    private long slowGetThreshold = 8000L;
+    //36: Slow threshold of object call,default is 30 seconds,time unit:milliseconds
     private long slowCallThreshold = 30000L;
-    //36: A flag to interrupt threads of slow call,default is false(not interrupted)
+    //37: A flag to interrupt threads of slow call,default is false(not interrupted)
     private boolean interruptSlowCall;
 
-    //37: method execution listener: instance > class > class name
+    //38: method execution listener: instance > class > class name
     private BeeMethodLogListener<K> logListener;
-    //38: Class of method execution listener,default is none
+    //39: Class of method execution listener,default is none
     private Class<? extends BeeMethodLogListener<K>> logListenerClass;
-    //39: Class name of method execution listener,default is none
+    //40: Class name of method execution listener,default is none
     private String logListenerClassName;
 
-    //40: method execution listener factory: instance > class > class name
+    //41: method execution listener factory: instance > class > class name
     private BeeMethodLogListenerFactory<K> logListenerFactory;
-    //41: Class of method execution listener factory ,default is none
+    //42: Class of method execution listener factory ,default is none
     private Class<? extends BeeMethodLogListenerFactory<K>> logListenerFactoryClass;
-    //42: Class name of method execution listener factory,default is none
+    //43: Class name of method execution listener factory,default is none
     private String logListenerFactoryClassName;
 
     //***************************************************************************************************************//
@@ -299,6 +301,7 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         if (maxWait <= 0L)
             throw new BeeObjectSourceConfigException("The given value of 'max-wait' must be greater than zero");
         this.maxWait = maxWait;
+        if (this.slowGetThreshold > maxWait) this.slowGetThreshold = maxWait;
     }
 
     public boolean isAsyncCreateInitObjects() {
@@ -504,12 +507,25 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         this.logCacheSize = logCacheSize;
     }
 
+    public long getSlowGetThreshold() {
+        return slowGetThreshold;
+    }
+
+    public void setSlowGetThreshold(long slowGetThreshold) {
+        if (slowGetThreshold <= 0L)
+            throw new BeeObjectSourceConfigException("The given value of 'slow-get-threshold' must be greater than zero");
+        if (slowGetThreshold > this.maxWait)
+            throw new BeeObjectSourceConfigException("The given value of 'slow-get-threshold' cannot be greater than 'max-wait'");
+
+        this.slowGetThreshold = slowGetThreshold;
+    }
+
     public long getSlowCallThreshold() {
         return slowCallThreshold;
     }
 
     public void setSlowCallThreshold(long slowCallThreshold) {
-        if (slowCallThreshold < 0L)
+        if (slowCallThreshold <= 0L)
             throw new BeeObjectSourceConfigException("The given value of 'slow-call-threshold' must be greater than zero");
 
         this.slowCallThreshold = slowCallThreshold;

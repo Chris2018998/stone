@@ -48,32 +48,53 @@ public class Tc0020MethodExecutionLogCacheTest {
         Assertions.assertEquals(500, config.getLogCacheSize());//not changed check
 
         //slowConnectionGetThreshold
-        Assertions.assertEquals(30000L, config.getSlowConnectionThreshold());//default check
+        Assertions.assertEquals(8000L, config.getSlowConnectionThreshold());//default check
         config.setSlowConnectionThreshold(5000L);
         Assertions.assertEquals(5000L, config.getSlowConnectionThreshold());
-        config.setSlowConnectionThreshold(0L);
-        Assertions.assertEquals(0L, config.getSlowConnectionThreshold());
+
         try {
             config.setSlowConnectionThreshold(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
         } catch (BeeDataSourceConfigException e) {
             Assertions.assertEquals("The given value of 'slow-connection-threshold' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(0L, config.getSlowConnectionThreshold());//not changed check
+        try {
+            config.setSlowConnectionThreshold(0L);
+            fail("[testSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.assertEquals("The given value of 'slow-connection-threshold' must be greater than zero", e.getMessage());
+        }
+
+        try {
+            config.setSlowConnectionThreshold(config.getMaxWait() + 1L);
+            fail("[testSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.assertEquals("The given value of 'slow-connection-threshold' cannot be greater than 'max-wait'", e.getMessage());
+        }
+        try {
+            config.setSlowConnectionThreshold(config.getMaxWait());
+        } catch (BeeDataSourceConfigException e) {
+            fail("[testSetAndGet]Setting test failed on configuration item[slow-connection-get-threshold]");
+        }
 
         //slowSQLExecutionThreshold
         Assertions.assertEquals(30000L, config.getSlowSQLThreshold());//default check
         config.setSlowSQLThreshold(5000L);
         Assertions.assertEquals(5000L, config.getSlowSQLThreshold());
-        config.setSlowSQLThreshold(0L);
-        Assertions.assertEquals(0L, config.getSlowSQLThreshold());
+
         try {
             config.setSlowSQLThreshold(-1L);
             fail("[testSetAndGet]Setting test failed on configuration item[slow-SQL-execution-threshold]");
         } catch (BeeDataSourceConfigException e) {
             Assertions.assertEquals("The given value of 'slow-SQL-threshold' must be greater than zero", e.getMessage());
         }
-        Assertions.assertEquals(0L, config.getSlowSQLThreshold());//not changed check
+
+        try {
+            config.setSlowSQLThreshold(0L);
+            fail("[testSetAndGet]Setting test failed on configuration item[slow-SQL-execution-threshold]");
+        } catch (BeeDataSourceConfigException e) {
+            Assertions.assertEquals("The given value of 'slow-SQL-threshold' must be greater than zero", e.getMessage());
+        }
 
         //jdbcCallLogTimeout
         Assertions.assertEquals(180000L, config.getLogTimeout());//default check

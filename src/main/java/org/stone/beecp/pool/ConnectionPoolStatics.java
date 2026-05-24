@@ -13,7 +13,7 @@ import org.stone.beecp.BeeConnectionPool;
 import org.stone.beecp.exception.BeeDataSourceConfigException;
 import org.stone.beecp.exception.BeeDataSourcePoolHasClosedException;
 import org.stone.beecp.exception.BeeDataSourcePoolLazyInitializationException;
-import org.stone.beecp.exception.ConnectionTestSqlExecutedException;
+import org.stone.beecp.exception.ConnectionValiditySqlException;
 
 import javax.sql.CommonDataSource;
 import javax.sql.XAConnection;
@@ -294,7 +294,7 @@ public final class ConnectionPoolStatics {
             try {
                 st.execute(testSql);
             } catch (Throwable e) {
-                throw new ConnectionTestSqlExecutedException("Invalid test sql:" + testSql, e);
+                throw new ConnectionValiditySqlException("Invalid test sql:" + testSql, e);
             } finally {
                 rawCon.rollback();//why? maybe store procedure in test sql
             }

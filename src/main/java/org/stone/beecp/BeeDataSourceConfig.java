@@ -171,8 +171,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     //55: Interval time to clear timeout logs,default is 180000 milliseconds(3 minutes)
     private long intervalOfClearTimeoutLogs = logTimeout;
 
-    //56: Milliseconds,slow threshold for connection acquisition,default is 30000(30 seconds)
-    private long slowConnectionThreshold = 30000L;
+    //56: Milliseconds,slow threshold for connection acquisition,default is 8000L(8 seconds)
+    private long slowConnectionThreshold = 8000L;
     //57: Milliseconds,slow threshold for sql execution,default is 30000(30 seconds)
     private long slowSQLThreshold = 30000L;
 
@@ -336,7 +336,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     public void setMaxWait(long maxWait) {
         if (maxWait <= 0L)
             throw new BeeDataSourceConfigException("The given value of 'max-wait' must be greater than zero");
+
         this.maxWait = maxWait;
+        if (this.slowConnectionThreshold > maxWait) this.slowConnectionThreshold = maxWait;
     }
 
     public long getIdleTimeout() {
@@ -784,8 +786,10 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     }
 
     public void setSlowConnectionThreshold(long slowConnectionThreshold) {
-        if (slowConnectionThreshold < 0L)
+        if (slowConnectionThreshold <= 0L)
             throw new BeeDataSourceConfigException("The given value of 'slow-connection-threshold' must be greater than zero");
+        if (slowConnectionThreshold > this.maxWait)
+            throw new BeeDataSourceConfigException("The given value of 'slow-connection-threshold' cannot be greater than 'max-wait'");
         this.slowConnectionThreshold = slowConnectionThreshold;
     }
 
@@ -794,7 +798,7 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     }
 
     public void setSlowSQLThreshold(long slowSQLThreshold) {
-        if (slowSQLThreshold < 0L)
+        if (slowSQLThreshold <= 0L)
             throw new BeeDataSourceConfigException("The given value of 'slow-SQL-threshold' must be greater than zero");
         this.slowSQLThreshold = slowSQLThreshold;
     }

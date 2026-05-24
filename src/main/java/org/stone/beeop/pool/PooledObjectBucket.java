@@ -198,7 +198,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
 
             //step7: log cache initialize
             super.init(poolConfig.getPoolName(), poolConfig.getLogCacheSize(), poolConfig.getLogListener(), poolConfig.isEnableLogCache());
-            super.setSlowThreshold(Type_Bucket_Log, poolConfig.getMaxWait());
+            super.setSlowThreshold(Type_Bucket_Log, poolConfig.getSlowGetThreshold());
             super.setSlowThreshold(Type_Object_Log, poolConfig.getSlowCallThreshold());
             super.setInterruptSlowCall(poolConfig.isInterruptSlowCall());
 

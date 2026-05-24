@@ -10,14 +10,18 @@
 package org.stone.beecp.exception;
 
 /**
- * if test sql execute failed,then throws this exception
+ * connection creation exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public class ConnectionTestSqlExecutedException extends BeeSQLException {
+public class ConnectionCreationException extends BeeSQLException {
 
-    public ConnectionTestSqlExecutedException(String message, Throwable cause) {
-        super(message, cause);
+    public ConnectionCreationException(String message) {
+        super(message);
+    }
+
+    public ConnectionCreationException(Throwable cause) {
+        super(cause);
     }
 }

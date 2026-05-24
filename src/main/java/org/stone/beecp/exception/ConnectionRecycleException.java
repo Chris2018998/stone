@@ -10,14 +10,15 @@
 package org.stone.beecp.exception;
 
 /**
- * Throws this exception when failed to create Bee-DataSource
+ * connection exception
  *
  * @author Chris Liao
  * @version 1.0
  */
-public final class BeeDataSourceCreatedException extends RuntimeException {
 
-    public BeeDataSourceCreatedException(Throwable cause) {
+public class ConnectionRecycleException extends BeeSQLException {
+
+    public ConnectionRecycleException(Throwable cause) {
         super(cause);
     }
 }

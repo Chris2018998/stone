@@ -116,7 +116,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
     //***************************************************************************************************************//
     public void start(BeeDataSourceConfig config) throws SQLException {
         if (config == null)
-            throw new BeeDataSourcePoolStartedFailureException("Data source configuration can't be null");
+            throw new BeeDataSourcePoolStartFailedException("Data source configuration can't be null");
         if (PoolStateUpd.compareAndSet(this, POOL_NEW, POOL_STARTING)) {//initializes after cas success to change pool state
             try {
                 checkJdbcProxyClass();
@@ -126,10 +126,10 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 logPrinter.info("BeeCP({})-started failure", this.poolName, e);
                 this.shutdownInternalThreads(false);//clear some internal member
                 this.poolState = POOL_NEW;//reset state to new after failure
-                throw new BeeDataSourcePoolStartedFailureException("Data source pool started failure", e);
+                throw new BeeDataSourcePoolStartFailedException("Data source pool started failure", e);
             }
         } else {
-            throw new BeeDataSourcePoolStartedFailureException("Data source pool is starting up or already has started");
+            throw new BeeDataSourcePoolStartFailedException("Data source pool is starting up or already has started");
         }
     }
 
@@ -326,7 +326,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 if (rawXaConn == null) {
                     if (creatingThread.isInterrupted() && Thread.interrupted())
                         throw new ConnectionGetInterruptedException("An interruption occurred during creating an XA connection");
-                    throw new XaConnectionCreatedException("XA connection created failed,null returned from XAConnection factory");
+                    throw new XaConnectionCreationException("XA connection created failed,null returned from XAConnection factory");
                 }
                 rawConn = rawXaConn.getConnection();
                 rawXaRes = rawXaConn.getXAResource();
@@ -335,7 +335,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 if (rawConn == null) {
                     if (creatingThread.isInterrupted() && Thread.interrupted())
                         throw new ConnectionGetInterruptedException("An interruption occurred during creating a connection");
-                    throw new ConnectionCreatedException("Connection created failed,null returned from connection factory");
+                    throw new ConnectionCreationException("Connection created failed,null returned from connection factory");
                 }
             }
 
@@ -357,7 +357,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
             p.state = CON_CLOSED;//reset to closed state
             if (rawConn != null) oclose(rawConn);
             else if (rawXaConn != null) oclose(rawXaConn);
-            throw e instanceof SQLException ? (SQLException) e : new ConnectionCreatedException(e);
+            throw e instanceof SQLException ? (SQLException) e : new ConnectionCreationException(e);
         } finally {
             p.creatingInfo = null;//clear filling of pooled connection
         }
@@ -858,11 +858,11 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
                 if (e instanceof BeeDataSourcePoolException) {
                     throw (BeeDataSourcePoolException) e;
                 } else {
-                    throw new BeeDataSourcePoolRestartedFailureException("Data source pool restarted failure", e);
+                    throw new BeeDataSourcePoolRestartFailedException("Data source pool restarted failure", e);
                 }
             }
         } else {
-            throw new BeeDataSourcePoolRestartedFailureException("Pool has been closed or is restarting");
+            throw new BeeDataSourcePoolRestartFailedException("Pool has been closed or is restarting");
         }
     }
 
@@ -1094,7 +1094,7 @@ public class FastConnectionPool extends Thread implements BeeConnectionPool, Fas
 
         //2: transfer exception to waiter in queue
         if (this.waitQueue != null && !this.waitQueue.isEmpty()) {
-            BeeDataSourcePoolRestartedFailureException exception = new BeeDataSourcePoolRestartedFailureException("Pool has been closed or is restarting");
+            BeeDataSourcePoolRestartFailedException exception = new BeeDataSourcePoolRestartFailedException("Pool has been closed or is restarting");
             while (!this.waitQueue.isEmpty()) this.transferException(exception);
         }
 
