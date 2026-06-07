@@ -7,7 +7,7 @@
 ![license](https://img.shields.io/github/license/Chris2018998/BeeCP.svg)
 [![README-English](https://shields.io/badge/README-English-blue)](beecp_readme_eng.md)
 
-BeeCP是一款轻量级JDBC连接池，具有体积小(Jar约95K)，依赖少(仅需slf4j包），性能高(对标行业标杆)，测试覆盖率高(86%)等特点。
+BeeCP是一款轻量级JDBC连接池，具有体积小(Jar约95KB)，依赖少(仅需slf4j包），性能高(对标行业标杆)，测试覆盖率高(86%)等特点。
 
 ## 功能特性
 

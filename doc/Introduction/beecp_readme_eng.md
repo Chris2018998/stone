@@ -5,7 +5,7 @@
 ![](https://img.shields.io/maven-central/v/com.github.chris2018998/beecp?logo=apache-maven)
 ![](https://img.shields.io/badge/Java-7+-green.svg)
 ![license](https://img.shields.io/github/license/Chris2018998/BeeCP.svg)
-[![README-??](https://shields.io/badge/README-English-blue)](beecp_readme_cn.md)
+[![README-中文](https://shields.io/badge/README-中文-blue)](beecp_readme_cn.md)
 
 BeeCP is a lightweight JDBC connection pool, small jar size (about 95KB), few dependencies (only the slf4j package is required), high performance (benchmarked against the industry-leading benchmark), and high test coverage (86%).
 
