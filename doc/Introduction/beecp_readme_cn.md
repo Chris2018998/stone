@@ -52,7 +52,7 @@ public DataSource beecpDataSrouce(){
 
 ```
 
-__方式二：__ 启动器方式(__推荐__)
+__方式二：__ [启动器方式](https://github.com/Chris2018998/beecp-starter)(__推荐__)
 
 ```yml
 
@@ -91,11 +91,10 @@ public class MyService{
 
 ```
 
-__方式三：__ 动态数据源(__推荐__)
+__方式三：__ [动态数据源](https://github.com/baomidou/dynamic-datasource)(__推荐__)
 
-[dynamic-datasource](https://github.com/baomidou/dynamic-datasource) 是一款基于Springboot平台的数据源管理工具，目前支持多种数据源（其中也包括BeeCP），在中国Java领域广泛应用。
-
-
+它是一款基于Springboot平台的数据源管理工具，在中国被广泛应用。
+ 
 ## 常用属性
 
 | 属性名                           | 描述                                                                 | 默认值                         |

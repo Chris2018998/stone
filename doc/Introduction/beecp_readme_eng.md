@@ -7,17 +7,16 @@
 ![license](https://img.shields.io/github/license/Chris2018998/BeeCP.svg)
 [![README-中文](https://shields.io/badge/README-中文-blue)](beecp_readme_cn.md)
 
-BeeCP is a lightweight JDBC connection pool, small jar size (about 95KB), few dependencies (only the slf4j package is required), high performance (benchmarked against the industry-leading benchmark), and high test coverage (86%).
+BeeCP is a lightweight JDBC connection pool, small jar size (about 95KB), few dependencies (only slf4j), high performance (benchmarked against the industry-leading benchmark), and high test coverage (86%).
 
 ## ‌Features
 
 | ‌Category                          | Desc                                                                                                                       |
 |---------------------------------- |----------------------------------------------------------------------------------------------------------------------------|
-| Base Function                     |Property configuration, quantity control, timeout control, reclamation processing, liveness detection, eviction application, runtime monitoring, restart and reload, interrupt blocking and XA connection support. |
-| Extensible Interfaces             |Connection Factory‌, ‌Connection Eviction Predicate‌, ‌Connection Information Decoder‌, etc.|
-| Method Logs                       |Connection request logging, SQL execution logging; reserved Listener interface to be extended|
-| Related App                       | Provide [datasource starter](https://github.com/Chris2018998/beecp-starter) (Base on springboot,‌And it has a built-in web monitoring page.）|
-
+| Base Function                     |Property configuration, quantity control, timeout control, reclamation processing, liveness detection, connection eviction, runtime monitoring, restart and reload, interrupt blocking and XA connection support. |
+| Extensible Interfaces             |Connection Factory‌, ‌Connection Eviction Predicate‌, ‌JDBC Link Information Decoder‌, etc.|
+| Method Log                        |Connection request logging, SQL execution logging; Provide Listener interface to be extended.|
+| Related App                       |Provide [datasource starter](https://github.com/Chris2018998/beecp-starter) (Base on springboot,‌And it has a built-in web monitor.）|
 
 ## Artifacts
 
@@ -40,7 +39,7 @@ Java7+
 
 ## Quick Start
 
-__Approach 1：__ Direct approach
+__Approach 1：__ Direct Usage
 
 ```java
 @Bean
@@ -51,7 +50,7 @@ public DataSource beecpDataSrouce(){
 
 ```
 
-__Approach 2：__ ‌Starter approach (recommended)
+__Approach 2：__ ‌[BeeCP-Starter](https://github.com/Chris2018998/beecp-starter) (__recommended__)
 
 ```yml
 
@@ -90,10 +89,9 @@ public class MyService{
 
 ```
 
+__Approach 3：__ ‌[Dynamic-datasource](https://github.com/baomidou/dynamic-datasource)(__recommended__)
 
-__Approach 3：__ ‌Dynamic-datasource approach(recommended)
-
-[dynamic-datasource](https://github.com/baomidou/dynamic-datasource) is a data source management tool based on the Spring Boot platform. It currently supports multiple data sources (including Druid) and is widely used in China's Java development community.
+‌It is a data source management tool based on the Spring Boot platform, which is widely used in China.
 
 ## Frequently Used Properties‌
 
