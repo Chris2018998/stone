@@ -66,12 +66,6 @@
     </distributionManagement>
 
     <dependencies>
-        <dependency><!-- generate jdbc proxy objects -->
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>${javassist.version}</version>
-            <scope>compile</scope>
-        </dependency>
         <dependency>
             <groupId>jakarta.transaction</groupId>
             <artifactId>jakarta.transaction-api</artifactId>
@@ -83,6 +77,12 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency><!-- generate jdbc proxy objects -->
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>${javassist.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -165,11 +165,12 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <classpathScope>provided</classpathScope>
                     <includeProjectDependencies>true</includeProjectDependencies>
                     <includePluginDependencies>true</includePluginDependencies>
                     <mainClass>org.stone.beecp.pool.ProxyClassesGenerator</mainClass>
                     <arguments>
-                        <argument>${project.basedir}/target/classes</argument>
+                        <argument>${pom.basedir}/target/classes</argument>
                     </arguments>
                 </configuration>
             </plugin>
