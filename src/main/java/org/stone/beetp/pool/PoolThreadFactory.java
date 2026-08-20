@@ -9,7 +9,7 @@
  */
 package org.stone.beetp.pool;
 
-import org.stone.beetp.TaskPoolThreadFactory;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Task worker thread factory
@@ -17,7 +17,7 @@ import org.stone.beetp.TaskPoolThreadFactory;
  * @author Chris Liao
  * @version 1.0
  */
-public final class PoolThreadFactory implements TaskPoolThreadFactory {
+public final class PoolThreadFactory implements ThreadFactory {
 
     public Thread newThread(Runnable r) {
         return new Thread(r, "beetp-thread");

@@ -145,6 +145,7 @@ public class Tc0009ObjectFactoryTest {
     public void testOnAddProperty() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createEmpty();
         config.addObjectFactoryProperty(null, null);
+        config.addObjectFactoryProperty("", null);
         Assertions.assertNull(config.getObjectFactoryProperty(null));
         config.addObjectFactoryProperty(null, "value");
         Assertions.assertNull(config.getObjectFactoryProperty(null));
@@ -192,7 +193,7 @@ public class Tc0009ObjectFactoryTest {
         BeeObjectSourceConfig<String, Book> config1 = OsConfigFactory.createEmpty();
         Properties prop1 = new Properties();
         prop1.setProperty("objectFactoryProperties", "prop1=value1&prop2=value2&prop3=value3");
-        config1.loadFromProperties(prop1);
+        config1.load(prop1);
         Assertions.assertEquals("value1", config1.getObjectFactoryProperty("prop1"));
         Assertions.assertEquals("value2", config1.getObjectFactoryProperty("prop2"));
         Assertions.assertEquals("value3", config1.getObjectFactoryProperty("prop3"));
@@ -200,7 +201,7 @@ public class Tc0009ObjectFactoryTest {
         BeeObjectSourceConfig<String, Book> config2 = OsConfigFactory.createEmpty();
         Properties prop2 = new Properties();
         prop2.setProperty("objectFactoryProperties", "prop1:value1&prop2:value2&prop3:value3");
-        config2.loadFromProperties(prop2);
+        config2.load(prop2);
         Assertions.assertEquals("value1", config2.getObjectFactoryProperty("prop1"));
         Assertions.assertEquals("value2", config2.getObjectFactoryProperty("prop2"));
         Assertions.assertEquals("value3", config2.getObjectFactoryProperty("prop3"));
@@ -211,7 +212,7 @@ public class Tc0009ObjectFactoryTest {
         prop3.setProperty("objectFactoryProperties.1", "prop1=value1");
         prop3.setProperty("objectFactoryProperties.2", "prop2:value2");
         prop3.setProperty("objectFactoryProperties.3", "prop3=value3");
-        config3.loadFromProperties(prop3);
+        config3.load(prop3);
         Assertions.assertEquals("value1", config3.getObjectFactoryProperty("prop1"));
         Assertions.assertEquals("value2", config3.getObjectFactoryProperty("prop2"));
         Assertions.assertEquals("value3", config3.getObjectFactoryProperty("prop3"));

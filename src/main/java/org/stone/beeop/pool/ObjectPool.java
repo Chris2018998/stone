@@ -120,7 +120,7 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         //step3: Create pool schedule executor(** schedule a task on default bucket pool, the task can interrupt possible block during startup **)
         int maxKeySize = poolConfig.getMaxKeySize();
         int coreThreadSizeOfScheduledThreadPool = Math.min(NCPU, (maxKeySize << 1) + 1);//1 is for clear timeout logs of key pool
-        PoolThreadFactory poolThreadFactory = new PoolThreadFactory(poolName);
+        ThreadFactory poolThreadFactory = new PoolThreadThreadFactory(poolName);
         this.scheduledService = new ScheduledThreadPoolExecutor(coreThreadSizeOfScheduledThreadPool, poolThreadFactory);
         this.scheduledService.setMaximumPoolSize(coreThreadSizeOfScheduledThreadPool);
         this.scheduledService.allowCoreThreadTimeOut(true);
@@ -646,11 +646,16 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
     //***************************************************************************************************************//
     //                                    11: Internal classes(3)                                                    //                                                                                  //
     //***************************************************************************************************************//
-    private record PoolThreadFactory(String threadName) implements ThreadFactory {
+    private static class PoolThreadThreadFactory implements ThreadFactory {
+        private final String poolName;
+
+        PoolThreadThreadFactory(String poolName) {
+            this.poolName = poolName;
+        }
 
         @Override
-        public Thread newThread(@Nonnull Runnable runnable) {
-            return new Thread(runnable, threadName);
+        public Thread newThread(@Nonnull Runnable r) {
+            return new Thread(r, poolName);
         }
     }
 
@@ -671,9 +676,17 @@ public final class ObjectPool<K, V> implements BeeObjectPool<K, V>, ObjectPoolMX
         }
     }
 
-    private record TimeoutMethodLogsOfPoolClearTask<K, V>(ObjectPoolLogCache<K> newKeysLogCache,
-                                                          long timeout,
-                                                          ObjectPool<K, V> objectPool) implements Runnable {
+    private static class TimeoutMethodLogsOfPoolClearTask<K, V> implements Runnable {
+        private final ObjectPoolLogCache<K> newKeysLogCache;
+        private final long timeout;
+        private final ObjectPool<K, V> objectPool;
+
+        TimeoutMethodLogsOfPoolClearTask(ObjectPoolLogCache<K> newKeysLogCache, long timeout,
+                                         ObjectPool<K, V> objectPool) {
+            this.newKeysLogCache = newKeysLogCache;
+            this.timeout = timeout;
+            this.objectPool = objectPool;
+        }
 
         public void run() {
             try {

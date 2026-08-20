@@ -9,6 +9,7 @@
  */
 package org.stone.beeop;
 
+
 import org.stone.beeop.exception.BeeObjectSourceConfigException;
 import org.stone.tools.exception.BeanException;
 
@@ -142,15 +143,15 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     public BeeObjectSourceConfig(File propertiesFile) {
-        loadFromPropertiesFile(propertiesFile);
+        load(propertiesFile);
     }
 
     public BeeObjectSourceConfig(String propertiesFileName) {
-        loadFromPropertiesFile(propertiesFileName);
+        load(propertiesFileName);
     }
 
     public BeeObjectSourceConfig(Properties configProperties) {
-        loadFromProperties(configProperties);
+        load(configProperties);
     }
 
     //***************************************************************************************************************//
@@ -608,21 +609,13 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
     }
 
     //***************************************************************************************************************//
-    //                                     6: configuration load(6)                                                  //
+    //                                     6: load from file                                                         //
     //***************************************************************************************************************//
-    public void loadFromPropertiesFile(String filename) {
-        loadFromPropertiesFile(filename, null);
+    public void load(String filename) {
+        load(filename, null);
     }
 
-    public void loadFromPropertiesFile(File file) {
-        loadFromPropertiesFile(file, null);
-    }
-
-    public void loadFromProperties(Properties configProperties) {
-        loadFromProperties(configProperties, null);
-    }
-
-    public void loadFromPropertiesFile(String filename, String keyPrefix) {
+    public void load(String filename, String keyPrefix) {
         if (isBlank(filename))
             throw new BeeObjectSourceConfigException("Load file name cannot be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
@@ -632,17 +625,24 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
-            loadFromProperties(fileProperties, keyPrefix);
+            load(fileProperties, keyPrefix);
         } else if (fileLowerCaseName.startsWith("classpath:")) {//2:'classpath:' prefix
             String cpFileName = fileLowerCaseName.substring("classpath:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
-            loadFromProperties(fileProperties, keyPrefix);
+            load(fileProperties, keyPrefix);
         } else {
-            loadFromPropertiesFile(new File(filename), keyPrefix);
+            load(new File(filename), keyPrefix);
         }
     }
 
-    public void loadFromPropertiesFile(File file, String keyPrefix) {
+    //***************************************************************************************************************//
+    //                                     7: load from file                                                         //
+    //***************************************************************************************************************//
+    public void load(File file) {
+        load(file, null);
+    }
+
+    public void load(File file, String keyPrefix) {
         if (file == null) throw new BeeObjectSourceConfigException("Load file cannot be null");
         if (!file.exists()) throw new BeeObjectSourceConfigException("Load file not found:(" + file + ")");
         if (!file.isFile()) throw new BeeObjectSourceConfigException("Load file cannot be a folder:(" + file + ")");
@@ -652,37 +652,63 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         try (InputStream stream = Files.newInputStream(file.toPath())) {
             Properties configProperties = new Properties();
             configProperties.load(stream);
-            this.loadFromProperties(configProperties, keyPrefix);
+            this.load(configProperties, keyPrefix);
         } catch (IOException e) {
             throw new BeeObjectSourceConfigException("Failed to load configuration file:" + file, e);
         }
     }
 
-    public void loadFromProperties(Properties configProperties, String keyPrefix) {
+    //***************************************************************************************************************//
+    //                                     8: load from map                                                          //
+    //***************************************************************************************************************//
+    public void load(Properties configProperties) {
+        load(configProperties, null);
+    }
+
+    public void load(Properties configProperties, String keyPrefix) {
         if (configProperties == null || configProperties.isEmpty())
             throw new BeeObjectSourceConfigException("Load properties cannot be null or empty");
 
+        Map<String, Object> configMap = new HashMap<>(configProperties.size());
+        for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
+            if (entry.getKey() instanceof String) {
+                configMap.put((String) entry.getKey(), entry.getValue());
+            }
+        }
+        load(configMap, keyPrefix);
+    }
+
+    //***************************************************************************************************************//
+    //                                     9: load from map                                                          //
+    //***************************************************************************************************************//
+    public void load(Map<String, Object> configMap) {
+        load(configMap, null);
+    }
+
+    public void load(Map<String, Object> configMap, String keyPrefix) {
+        if (configMap == null || configMap.isEmpty())
+            throw new BeeObjectSourceConfigException("Load map cannot be null or empty");
+
         //1: load configuration item values from outside properties
-        HashMap<String, String> setValueMap;
+        HashMap<String, Object> setValueMap;
         if (isNotBlank(keyPrefix)) {
             if (keyPrefix.charAt(keyPrefix.length() - 1) != '.') keyPrefix = keyPrefix + ".";
             final int keyPrefixLen = keyPrefix.length();
-            setValueMap = new HashMap<>(configProperties.size());
-            for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
-                String key = (String) entry.getKey();
-                if (key.startsWith(keyPrefix)) {
-                    setValueMap.put(key.substring(keyPrefixLen), (String) entry.getValue());
+            setValueMap = new HashMap<>(configMap.size());
+            for (Map.Entry<String, Object> entry : configMap.entrySet()) {
+                if (entry.getKey().startsWith(keyPrefix)) {
+                    setValueMap.put(entry.getKey().substring(keyPrefixLen), entry.getValue());
                 }
             }
         } else {
-            setValueMap = new HashMap(configProperties);
+            setValueMap = new HashMap<>(configMap);
         }
 
         //2: remove some special keys in setValueMap
-        String factoryPropertiesText = setValueMap.remove(CONFIG_FACTORY_PROP);
-        String factoryPropertiesSizeText = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);
-        String exclusionListText = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
-        String objectMethodNameList = setValueMap.remove(CONFIG_OBJECT_METHOD_LIST);
+        Object factoryPropertiesValue = setValueMap.remove(CONFIG_FACTORY_PROP);
+        Object factoryPropertiesSizeValue = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);
+        Object exclusionListOfPrintValue = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
+        Object objectMethodNameValue = setValueMap.remove(CONFIG_OBJECT_METHOD_LIST);
 
         //3:inject item value from map to this dataSource config object
         try {
@@ -692,24 +718,33 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
         }
 
         //4:try to find 'factoryProperties' config value
-        this.addObjectFactoryProperty(factoryPropertiesText);
-        if (isNotBlank(factoryPropertiesSizeText)) {
-            int size = Integer.parseInt(factoryPropertiesSizeText.trim());
-            for (int i = 1; i <= size; i++)//properties index begin with 1
-                this.addObjectFactoryProperty(getPropertyValue(setValueMap, CONFIG_FACTORY_PROP_KEY_PREFIX + i));
+        if (factoryPropertiesValue instanceof String)
+            this.addObjectFactoryProperty((String) factoryPropertiesValue);
+        int factoryPropertiesSize = 0;
+        if (factoryPropertiesSizeValue instanceof String) {
+            factoryPropertiesSize = Integer.parseInt(((String) factoryPropertiesSizeValue).trim());
+        } else if (factoryPropertiesSizeValue instanceof Number) {
+            factoryPropertiesSize = ((Number) factoryPropertiesSizeValue).intValue();
+        }
+        if (factoryPropertiesSize > 0) {
+            for (int i = 1; i <= factoryPropertiesSize; i++) {//properties index begin with 1
+                Object factoryProperty = getPropertyValue(setValueMap, CONFIG_FACTORY_PROP_KEY_PREFIX + i);
+                if (factoryProperty instanceof String)
+                    this.addObjectFactoryProperty((String) factoryProperty);
+            }
         }
 
-        //7:try to load exclusion list on config print
-        if (isNotBlank(exclusionListText)) {
+        //5:try to load exclusion list on config print
+        if (exclusionListOfPrintValue instanceof String) {
             this.clearExclusionListOfPrint();//remove existed exclusion
-            for (String exclusion : exclusionListText.trim().split(",")) {
+            for (String exclusion : ((String) exclusionListOfPrintValue).trim().split(",")) {
                 this.addExclusionNameOfPrint(exclusion);
             }
         }
 
-        //8:object method name list
-        if (isNotBlank(objectMethodNameList)) {
-            for (String methodName : objectMethodNameList.trim().split(",")) {
+        //6:object method name list
+        if (objectMethodNameValue instanceof String) {
+            for (String methodName : ((String) objectMethodNameValue).trim().split(",")) {
                 this.addObjectMethodName(methodName);
             }
         }
@@ -894,7 +929,8 @@ public class BeeObjectSourceConfig<K, V> implements BeeObjectSourceConfigMXBean 
                 boolean infoPrint = !exclusionList.contains(fieldName);
 
                 switch (fieldName) {
-                    case CONFIG_POOL_NAME_INDEX, CONFIG_EXCLUSION_LIST_OF_PRINT:
+                    case CONFIG_POOL_NAME_INDEX:
+                    case CONFIG_EXCLUSION_LIST_OF_PRINT:
                         break;
                     case CONFIG_FACTORY_PROP: {
                         if (this.objectFactoryProperties != null && !this.objectFactoryProperties.isEmpty()) {

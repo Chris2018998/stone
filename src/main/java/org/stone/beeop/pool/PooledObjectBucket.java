@@ -247,7 +247,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         } catch (Throwable e) {
             if (syn) {
                 for (int i = 0; i < index; i++)
-                    objectArray[i].onRemove(DESC_RM_POOL_INIT);
+                    objectArray[i].destroy(DESC_RM_POOL_INIT);
                 throw e;
             } else {
                 logPrinter.warn("Failed to create initial objects during async mode", e);
@@ -323,6 +323,8 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                     if (state == OBJECT_IDLE) {
                         if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
                             if (this.testOnBorrow(p)) return new ObjectHandleImpl<>(p);
+                            return new ObjectHandleImpl<>(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
+
                         } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
                             return new ObjectHandleImpl<>(this.fillObjectInstance(p, OBJECT_BORROWED, b.thread));
                         }
@@ -367,10 +369,17 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                         final Object s = b.state;//possible values: PooledObject,Throwable,null
                         if (s instanceof PooledObject) {
                             p = (PooledObject) s;
-                            if (this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)) {
-                                this.waitQueue.remove(b);
-                                b.lastUsed = p;
-                                return new ObjectHandleImpl<>(p);
+                            if (this.transferPolicy.tryCatch(p)) {
+                                try {
+                                    if (this.testOnBorrow(p)) {
+                                        b.lastUsed = p;
+                                    } else {
+                                        b.lastUsed = this.fillObjectInstance(p, OBJECT_BORROWED, b.thread);
+                                    }
+                                    return new ObjectHandleImpl<>(p);
+                                } finally {
+                                    this.waitQueue.remove(b);
+                                }
                             }
                         } else if (s instanceof Throwable) {//here: s must be throwable object
                             this.waitQueue.remove(b);
@@ -407,6 +416,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             if (state == OBJECT_IDLE) {
                 if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_BORROWED)) {
                     if (this.testOnBorrow(p)) return p;
+                    return this.fillObjectInstance(p, OBJECT_BORROWED, creatingThread);
                 } else if (p.state == OBJECT_CLOSED && ObjStUpd.compareAndSet(p, OBJECT_CLOSED, OBJECT_CREATING)) {
                     return this.fillObjectInstance(p, OBJECT_BORROWED, creatingThread);
                 }
@@ -421,16 +431,14 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     private boolean testOnBorrow(PooledObject<K, V> p) {
         try {
             if (System.currentTimeMillis() - p.lastAccessTime - this.validAssumeTime >= 0L && !this.objectFactory.isValid(key, p.objectInstance, this.validTestTimeout)) {
-                p.onRemove(DESC_RM_BAD);
-                this.tryWakeupServantThread();
+                p.clean(DESC_RM_BAD);
                 return false;
             } else {
                 return true;
             }
         } catch (Throwable e) {
             logPrinter.warn("BeeOP({})-An exception thrown when alive test failed on a borrowed object", this.keyName, e);
-            p.onRemove(DESC_RM_BAD);
-            this.tryWakeupServantThread();
+            p.clean(DESC_RM_BAD);
             return false;
         }
     }
@@ -444,8 +452,12 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             s = b.state;
             if (s instanceof PooledObject) {
                 p = (PooledObject) s;
-                if (!(this.transferPolicy.tryCatch(p) && this.testOnBorrow(p)))
+                if (this.transferPolicy.tryCatch(p)) {
+                    if (!this.testOnBorrow(p))
+                        this.fillObjectInstance(p, OBJECT_BORROWED, b.thread);
+                } else {
                     p = null;
+                }
             } else if (s instanceof Throwable) {
                 throw s instanceof Exception ? (Exception) s : new BeePooledObjectGetException((Throwable) s);
             }
@@ -491,7 +503,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
     }
 
     void abort(PooledObject<K, V> p, String reason) {
-        p.onRemove(reason);
+        p.destroy(reason);
         this.tryWakeupServantThread();
     }
 
@@ -534,7 +546,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
                 if (state == OBJECT_IDLE) {
                     if (ObjStUpd.compareAndSet(p, OBJECT_IDLE, OBJECT_CLOSED)) {
                         closedCount++;
-                        p.onRemove(removeReason);
+                        p.destroy(removeReason);
                     }
                 } else if (state == OBJECT_BORROWED) {
                     BeeObjectHandle<K, V> handleInUsing = p.handleInUsing;
@@ -721,7 +733,7 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
             if (state == OBJECT_IDLE && this.semaphore.availablePermits() == this.semaphoreSize) {//no borrowers on semaphore
                 boolean isTimeoutInIdle = System.currentTimeMillis() - p.lastAccessTime - this.idleTimeoutMs >= 0L;
                 if (isTimeoutInIdle && ObjStUpd.compareAndSet(p, state, OBJECT_CLOSED)) {//need close idle
-                    p.onRemove(DESC_RM_IDLE);
+                    p.destroy(DESC_RM_IDLE);
                     this.tryWakeupServantThread();
                 }
             } else if (state == OBJECT_BORROWED && supportHoldTimeout) {
@@ -823,7 +835,12 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         }
     }
 
-    private record TimeoutObjectsClearTask<K, V>(PooledObjectBucket<K, V> bucket) implements Runnable {
+    private static final class TimeoutObjectsClearTask<K, V> implements Runnable {
+        private final PooledObjectBucket<K, V> bucket;
+
+        TimeoutObjectsClearTask(PooledObjectBucket<K, V> bucket) {
+            this.bucket = bucket;
+        }
 
         public void run() {
             try {
@@ -834,8 +851,14 @@ final class PooledObjectBucket<K, V> extends PooledObjectBucketLogCache<K> imple
         }
     }
 
-    private record TimeoutMethodLogsClearTask<K, V>(PooledObjectBucket<K, V> bucket,
-                                                    long timeout) implements Runnable {
+    private static final class TimeoutMethodLogsClearTask<K, V> implements Runnable {
+        private final PooledObjectBucket<K, V> bucket;
+        private final long timeout;
+
+        TimeoutMethodLogsClearTask(PooledObjectBucket<K, V> bucket, long timeout) {
+            this.bucket = bucket;
+            this.timeout = timeout;
+        }
 
         public void run() {
             try {

@@ -25,16 +25,14 @@ public class Tc0000CopyRightTest {
     @Test
     public void testOnPrintRightInfo() {
 
-        String buf = """
-                *********************************************************************************
-                *                                                                               *
-                *                            BeeCP Test                                         *
-                *                                                                               *
-                *                                                     Author:Chris2018998       *
-                *                                                     All rights reserved       *
-                ********************************************************************************
-                """;
-
+        String buf =
+                "*********************************************************************************\n"
+                        + "*                                                                               *\n"
+                        + "*                            BeeCP Test                                         *\n"
+                        + "*                                                                               *\n"
+                        + "*                                                     Author:Chris2018998       *\n"
+                        + "*                                                     All rights reserved       *\n"
+                        + "********************************************************************************\n";
         try {
             InitTest.switchToSystemOut();
             System.out.print(buf);

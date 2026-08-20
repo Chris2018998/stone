@@ -1,4 +1,4 @@
-![](https://img.shields.io/badge/Java-17+-green.svg)
+![](https://img.shields.io/badge/Java-11+-green.svg)
 ![](https://img.shields.io/maven-central/v/io.github.chris2018998/stone?logo=apache-maven)
 ![](https://img.shields.io/github/license/Chris2018998/stone)
 
@@ -17,6 +17,6 @@ Stone is a Java toolkit package integrates three Java pools
 <dependency>
     <groupId>io.github.chris2018998</groupId>
     <artifactId>stone</artifactId>
-    <version>2.2.2</version>
+    <version>2.2.3</version>
 </dependency>
 ```

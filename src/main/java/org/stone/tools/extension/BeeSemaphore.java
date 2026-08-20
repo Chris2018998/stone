@@ -175,7 +175,8 @@ public final class BeeSemaphore implements BeeInterruptable {
             do {
                 //3.1: read value which maybe filled by a releaser
                 Object value = node.item;//(value maybe an exception)
-                if (value instanceof BeeSemaphorePermit permit) {
+                if (value instanceof BeeSemaphorePermit) {
+                    BeeSemaphorePermit permit = (BeeSemaphorePermit) value;
                     if (hold(permit)) {
                         this.waitQueue.remove(node);
                         return permit;
@@ -191,7 +192,8 @@ public final class BeeSemaphore implements BeeInterruptable {
                         this.waitQueue.remove(node);//remove first.
 
                         value = node.item;
-                        if (value instanceof BeeSemaphorePermit permit) {
+                        if (value instanceof BeeSemaphorePermit) {
+                            BeeSemaphorePermit permit = (BeeSemaphorePermit) value;
                             if (permitStateHandle.compareAndSet(permit, 0, 1)) {
                                 release(permit);
                             }
@@ -206,7 +208,8 @@ public final class BeeSemaphore implements BeeInterruptable {
                     if (value != null) return null;//if value read out at step3.1,so can't be filled by releaser
 
                     value = node.item;//read value
-                    if (value instanceof BeeSemaphorePermit permit) {//OK,I got a released permit,so cas it
+                    if (value instanceof BeeSemaphorePermit) {//OK,I got a released permit,so cas it
+                        BeeSemaphorePermit permit = (BeeSemaphorePermit) value;
                         if (permitStateHandle.compareAndSet(permit, 0, 1)) {
                             return permit;
                         }

@@ -158,7 +158,7 @@ public class BeeTransaction implements Transaction {
 
     private XAResourceHolder getResourceHolder(XAResource rs) {
         for (XAResourceHolder holder : resourceHolderList) {
-            if (holder.resource() == rs) return holder;
+            if (holder.getResource() == rs) return holder;
         }
         return null;
     }

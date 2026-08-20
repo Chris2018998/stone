@@ -84,22 +84,22 @@ public class Tc0013ConfigLoadFromFileTest {
         //2: load configuration by methods
         //2.1: load file from class path
         BeeObjectSourceConfig<String, Book> config1 = OsConfigFactory.createEmpty();
-        config1.loadFromPropertiesFile(classPathFilename1);
+        config1.load(classPathFilename1);
         Assertions.assertTrue(check(config1));
         config1 = OsConfigFactory.createEmpty();
-        config1.loadFromPropertiesFile(classPathFilename1);
+        config1.load(classPathFilename1);
         Assertions.assertTrue(check(config1));
         //2.2: load file from absolution path
         BeeObjectSourceConfig<String, Book> config2 = OsConfigFactory.createEmpty();
-        config2.loadFromPropertiesFile(fileFile);
+        config2.load(fileFile);
         Assertions.assertTrue(check(config2));
         config2 = OsConfigFactory.createEmpty();
-        config2.loadFromPropertiesFile(absolutePathFileName);
+        config2.load(absolutePathFileName);
         Assertions.assertTrue(check(config2));
 
         //2.3: load file from absolution path
         BeeObjectSourceConfig<String, Book> config3 = OsConfigFactory.createEmpty();
-        config3.loadFromProperties(properties);
+        config3.load(properties);
         Assertions.assertTrue(check(config3));
     }
 
@@ -107,21 +107,21 @@ public class Tc0013ConfigLoadFromFileTest {
     public void testInvalidFileName() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createEmpty();
         try {//null filename
-            config.loadFromPropertiesFile((String) null);
+            config.load((String) null);
             fail("[testInvalidFileName]failed");
         } catch (Exception e) {
             Assertions.assertEquals("Load file name cannot be null or empty", e.getMessage());
         }
 
         try {//blank filename
-            config.loadFromPropertiesFile("");
+            config.load("");
             fail("[testInvalidFileName]failed");
         } catch (Exception e) {
             Assertions.assertEquals("Load file name cannot be null or empty", e.getMessage());
         }
 
         try {//file extension name test
-            config.loadFromPropertiesFile(beeopResourceAbsolutePath + File.separator + "invalidProperties");
+            config.load(beeopResourceAbsolutePath + File.separator + "invalidProperties");
             fail("[testInvalidFileName]failed");
         } catch (Exception e) {
             String message = e.getMessage();
@@ -133,14 +133,14 @@ public class Tc0013ConfigLoadFromFileTest {
     public void testInvalidFile() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createEmpty();
         try {//null filename
-            config.loadFromPropertiesFile((File) null);
+            config.load((File) null);
             fail("[testInvalidFile]failed");
         } catch (Exception e) {
             Assertions.assertEquals("Load file cannot be null", e.getMessage());
         }
 
         try {//file not found test
-            config.loadFromPropertiesFile(new File(beeopResourceAbsolutePath + File.separator + "not_found.properties"));
+            config.load(new File(beeopResourceAbsolutePath + File.separator + "not_found.properties"));
             fail("[testInvalidFile]failed");
         } catch (Exception e) {
             String message = e.getMessage();
@@ -148,7 +148,7 @@ public class Tc0013ConfigLoadFromFileTest {
         }
 
         try {//test file is a folder
-            config.loadFromPropertiesFile(new File(beeopResourceAbsolutePath + File.separator + "empty"));
+            config.load(new File(beeopResourceAbsolutePath + File.separator + "empty"));
             fail("[testInvalidFile]failed");
         } catch (Exception e) {
             String message = e.getMessage();
@@ -156,7 +156,7 @@ public class Tc0013ConfigLoadFromFileTest {
         }
 
         try {//file extension name test
-            config.loadFromPropertiesFile(new File(beeopResourceAbsolutePath + File.separator + "invalidProperties"));
+            config.load(new File(beeopResourceAbsolutePath + File.separator + "invalidProperties"));
             fail("[testInvalidFile]failed");
         } catch (Exception e) {
             String message = e.getMessage();
@@ -168,7 +168,7 @@ public class Tc0013ConfigLoadFromFileTest {
     public void testLoadProperties() {
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createEmpty();
         try {
-            config.loadFromProperties(null);
+            config.load((Properties) null);
             fail("[testLoadProperties]not threw exception when loading null properties file");
         } catch (Exception e) {
             String message = e.getMessage();
@@ -176,7 +176,7 @@ public class Tc0013ConfigLoadFromFileTest {
         }
 
         try {//correct
-            config.loadFromProperties(new Properties());
+            config.load(new Properties());
             fail("[testLoadProperties]not threw exception when loading empty properties");
         } catch (Exception e) {
             String message = e.getMessage();
@@ -186,7 +186,7 @@ public class Tc0013ConfigLoadFromFileTest {
         try {//correct
             Properties properties = new Properties();
             properties.put("maxActive", "oooo");
-            config.loadFromProperties(properties);
+            config.load(properties);
             fail("[testLoadProperties]not threw exception when loading invalid properties item");
         } catch (BeeObjectSourceConfigException e) {
             String message = e.getMessage();

@@ -292,7 +292,14 @@ public class MockConnection extends MockBase implements Connection {
         return null;
     }
 
-    private record ResetNetworkTimeoutTask(MockConnectionProperties properties, int milliseconds) implements Runnable {
+    private static class ResetNetworkTimeoutTask implements Runnable {
+        private final MockConnectionProperties properties;
+        private final int milliseconds;
+
+        ResetNetworkTimeoutTask(MockConnectionProperties properties, int milliseconds) {
+            this.properties = properties;
+            this.milliseconds = milliseconds;
+        }
 
         public void run() {
             try {

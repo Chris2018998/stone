@@ -1,5 +1,15 @@
 stone changes
 
+stone-2.2.3
+-----------------------------------------------------
+[beecp]
+1: support load configuration from map
+2: Create new one when bad pooled connection borrowed
+[beeop]
+1: support load configuration from map
+2: Create new one when bad pooled object borrowed
+
+
 stone-2.2.2
 -----------------------------------------------------
 [beecp]

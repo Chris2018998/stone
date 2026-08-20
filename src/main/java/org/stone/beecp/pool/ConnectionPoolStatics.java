@@ -176,18 +176,28 @@ public final class ConnectionPoolStatics {
     );
 
     static String getPoolStateDesc(int state) {
-        return switch (state) {
-            case POOL_LAZY -> "Pool is lazy";
-            case POOL_NEW -> "Pool is new";
-            case POOL_STARTING -> "Pool is starting";
-            case POOL_READY -> "Pool is ready";
-            case POOL_CLOSING -> "Pool is closing";
-            case POOL_CLOSED -> "Pool has been closed";
-            case POOL_RESTARTING -> "Pool is restarting";
-            case POOL_RESTART_FAILED -> "Pool has restarted failed";
-            case POOL_SUSPENDED -> "Pool has been suspended";
-            default -> "Unknown state of pool";
-        };
+        switch (state) {
+            case POOL_LAZY:
+                return "Pool is lazy";
+            case POOL_NEW:
+                return "Pool is new";
+            case POOL_STARTING:
+                return "Pool is starting";
+            case POOL_READY:
+                return "Pool is ready";
+            case POOL_CLOSING:
+                return "Pool is closing";
+            case POOL_CLOSED:
+                return "Pool has been closed";
+            case POOL_RESTARTING:
+                return "Pool is restarting";
+            case POOL_RESTART_FAILED:
+                return "Pool has restarted failed";
+            case POOL_SUSPENDED:
+                return "Pool has been suspended";
+            default:
+                return "Unknown state of pool";
+        }
     }
 
     //***************************************************************************************************************//

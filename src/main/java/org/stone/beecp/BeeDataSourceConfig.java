@@ -198,17 +198,17 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
 
     //read configuration from properties file
     public BeeDataSourceConfig(File propertiesFile) {
-        loadFromPropertiesFile(propertiesFile);
+        load(propertiesFile);
     }
 
     //read configuration from properties file
     public BeeDataSourceConfig(String propertiesFileName) {
-        loadFromPropertiesFile(propertiesFileName);
+        load(propertiesFileName);
     }
 
     //read configuration from properties
     public BeeDataSourceConfig(Properties configProperties) {
-        loadFromProperties(configProperties);
+        load(configProperties);
     }
 
     public BeeDataSourceConfig(String driver, String url, String user, String password) {
@@ -853,21 +853,13 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
     }
 
     //****************************************************************************************************************//
-    //                                     10: properties configuration(3)                                             //
+    //                                     10: load from file                                                         //
     //****************************************************************************************************************//
-    public void loadFromPropertiesFile(String filename) {
-        loadFromPropertiesFile(filename, null);
+    public void load(String filename) {
+        load(filename, null);
     }
 
-    public void loadFromPropertiesFile(File file) {
-        loadFromPropertiesFile(file, null);
-    }
-
-    public void loadFromProperties(Properties configProperties) {
-        loadFromProperties(configProperties, null);
-    }
-
-    public void loadFromPropertiesFile(String filename, String keyPrefix) {
+    public void load(String filename, String keyPrefix) {
         if (isBlank(filename))
             throw new BeeDataSourceConfigException("Load file name cannot be null or empty");
         String fileLowerCaseName = filename.toLowerCase(Locale.US);
@@ -877,17 +869,24 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         if (fileLowerCaseName.startsWith("cp:")) {//1:'cp:' prefix
             String cpFileName = fileLowerCaseName.substring("cp:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
-            loadFromProperties(fileProperties, keyPrefix);
+            load(fileProperties, keyPrefix);
         } else if (fileLowerCaseName.startsWith("classpath:")) {//2:'classpath:' prefix
             String cpFileName = fileLowerCaseName.substring("classpath:".length());
             Properties fileProperties = loadPropertiesFromClassPathFile(cpFileName);
-            loadFromProperties(fileProperties, keyPrefix);
+            load(fileProperties, keyPrefix);
         } else {//load a real path
-            loadFromPropertiesFile(new File(filename), keyPrefix);
+            load(new File(filename), keyPrefix);
         }
     }
 
-    public void loadFromPropertiesFile(File file, String keyPrefix) {
+    //****************************************************************************************************************//
+    //                                     11: load from file                                                         //
+    //****************************************************************************************************************//
+    public void load(File file) {
+        load(file, null);
+    }
+
+    public void load(File file, String keyPrefix) {
         if (file == null) throw new BeeDataSourceConfigException("Load file cannot be null");
         if (!file.exists()) throw new BeeDataSourceConfigException("Load file not found:(" + file + ")");
         if (!file.isFile()) throw new BeeDataSourceConfigException("Load file cannot be a folder:(" + file + ")");
@@ -898,38 +897,65 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
             Properties configProperties = new Properties();
             configProperties.load(stream);
 
-            this.loadFromProperties(configProperties, keyPrefix);
+            this.load(configProperties, keyPrefix);
         } catch (IOException e) {
             throw new BeeDataSourceConfigException("Failed to load configuration file:" + file, e);
         }
     }
 
-    public void loadFromProperties(Properties configProperties, String keyPrefix) {
+    //****************************************************************************************************************//
+    //                                     12: load from Properties                                                          //
+    //****************************************************************************************************************//
+    public void load(Properties configProperties) {
+        load(configProperties, null);
+    }
+
+    public void load(Properties configProperties, String keyPrefix) {
         if (configProperties == null || configProperties.isEmpty())
             throw new BeeDataSourceConfigException("Load properties cannot be null or empty");
 
+        Map<String, Object> configMap = new HashMap<>(configProperties.size());
+        for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
+            if (entry.getKey() instanceof String) {
+                configMap.put((String) entry.getKey(), entry.getValue());
+            }
+        }
+        load(configMap, keyPrefix);
+    }
+
+    //****************************************************************************************************************//
+    //                                     13: load from Map                                                          //
+    //****************************************************************************************************************//
+    public void load(Map<String, Object> valueMap) {
+        load(valueMap, null);
+    }
+
+    public void load(Map<String, Object> valueMap, String keyPrefix) {
+        if (valueMap == null || valueMap.isEmpty())
+            throw new BeeDataSourceConfigException("Load map cannot be null or empty");
+
         //1:load configuration item values from outside properties
-        HashMap<String, String> setValueMap;
+        HashMap<String, Object> setValueMap;
         if (isNotBlank(keyPrefix)) {
             if (keyPrefix.charAt(keyPrefix.length() - 1) != '.') keyPrefix = keyPrefix + ".";
             final int keyPrefixLen = keyPrefix.length();
-            setValueMap = new HashMap<>(configProperties.size());
-            for (Map.Entry<Object, Object> entry : configProperties.entrySet()) {
-                String key = (String) entry.getKey();
+            setValueMap = new HashMap<>(valueMap.size());
+            for (Map.Entry<String, Object> entry : valueMap.entrySet()) {
+                String key = entry.getKey();
                 if (key.startsWith(keyPrefix)) {
-                    setValueMap.put(key.substring(keyPrefixLen), (String) entry.getValue());
+                    setValueMap.put(key.substring(keyPrefixLen), entry.getValue());
                 }
             }
         } else {
-            setValueMap = new HashMap(configProperties);
+            setValueMap = new HashMap<>(valueMap);
         }
 
         //2: exclude some special keys in setValueMap
-        String connectPropertiesText = setValueMap.remove(CONFIG_FACTORY_PROP);//remove item if exists in properties file before injection
-        String connectPropertiesSize = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);//remove item if exists in properties file before injection
-        String sqlExceptionCode = setValueMap.remove(CONFIG_SQL_EXCEPTION_CODE);//remove item if exists in properties file before injection
-        String sqlExceptionState = setValueMap.remove(CONFIG_SQL_EXCEPTION_STATE);//remove item if exists in properties file before injection
-        String exclusionListText = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
+        Object connectionFactoryPropValue = setValueMap.remove(CONFIG_FACTORY_PROP);//remove item if exists in properties file before injection
+        Object connectionFactoryPropSizeValue = setValueMap.remove(CONFIG_FACTORY_PROP_SIZE);//remove item if exists in properties file before injection
+        Object sqlExceptionCodeValue = setValueMap.remove(CONFIG_SQL_EXCEPTION_CODE);//remove item if exists in properties file before injection
+        Object sqlExceptionStateValue = setValueMap.remove(CONFIG_SQL_EXCEPTION_STATE);//remove item if exists in properties file before injection
+        Object exclusionListOfPrintValue = setValueMap.remove(CONFIG_EXCLUSION_LIST_OF_PRINT);
 
         try {
             setPropertiesValue(this, setValueMap);
@@ -938,16 +964,25 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         }
 
         //3:try to find 'connectProperties' config value and put to ds config object
-        this.addConnectionFactoryProperty(connectPropertiesText);
-        if (isNotBlank(connectPropertiesSize)) {
-            int size = Integer.parseInt(connectPropertiesSize.trim());
-            for (int i = 1; i <= size; i++)//properties index begin with 1
-                this.addConnectionFactoryProperty(getPropertyValue(setValueMap, CONFIG_FACTORY_PROP_KEY_PREFIX + i));
+        if (connectionFactoryPropValue instanceof String)
+            this.addConnectionFactoryProperty((String) connectionFactoryPropValue);
+        int connectPropertiesSize = 0;
+        if (connectionFactoryPropSizeValue instanceof String) {
+            connectPropertiesSize = Integer.parseInt(((String) connectionFactoryPropSizeValue).trim());
+        } else if (connectionFactoryPropSizeValue instanceof Number) {
+            connectPropertiesSize = ((Number) connectionFactoryPropSizeValue).intValue();
+        }
+        if (connectPropertiesSize > 0) {
+            for (int i = 1; i <= connectPropertiesSize; i++) {//properties index begin with 1
+                Object connectionFactoryProperty = getPropertyValue(setValueMap, CONFIG_FACTORY_PROP_KEY_PREFIX + i);
+                if (connectionFactoryProperty instanceof String)
+                    this.addConnectionFactoryProperty((String) connectionFactoryProperty);
+            }
         }
 
         //4: add error codes if not null and not empty
-        if (isNotBlank(sqlExceptionCode)) {
-            for (String code : sqlExceptionCode.trim().split(",")) {
+        if (sqlExceptionCodeValue instanceof String) {
+            for (String code : ((String) sqlExceptionCodeValue).trim().split(",")) {
                 try {
                     this.addSqlExceptionCode(Integer.parseInt(code));
                 } catch (NumberFormatException e) {
@@ -957,23 +992,23 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
         }
 
         //5: add sql states if not null and not empty
-        if (isNotBlank(sqlExceptionState)) {
-            for (String state : sqlExceptionState.trim().split(",")) {
+        if (sqlExceptionStateValue instanceof String) {
+            for (String state : ((String) sqlExceptionStateValue).trim().split(",")) {
                 this.addSqlExceptionState(state);
             }
         }
 
         //6:try to load exclusion list on config print
-        if (isNotBlank(exclusionListText)) {
+        if (exclusionListOfPrintValue instanceof String) {
             this.clearExclusionListOfPrint();//remove existed exclusion
-            for (String exclusion : exclusionListText.trim().split(",")) {
+            for (String exclusion : ((String) exclusionListOfPrintValue).trim().split(",")) {
                 this.addExclusionNameOfPrint(exclusion);
             }
         }
     }
 
     //****************************************************************************************************************//
-    //                                   11: configuration check and connection factory create methods(8)             //
+    //                                   14: configuration check and connection factory create methods(8)             //
     //****************************************************************************************************************//
 
     /**
@@ -1021,7 +1056,8 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
             for (Field field : BeeDataSourceConfig.class.getDeclaredFields()) {
                 fieldName = field.getName();
                 switch (fieldName) {
-                    case CONFIG_POOL_NAME_INDEX, CONFIG_DEFAULT_EXCLUSION_LIST:
+                    case CONFIG_POOL_NAME_INDEX:
+                    case CONFIG_DEFAULT_EXCLUSION_LIST:
                         break;
                     case CONFIG_FACTORY_PROP: //copy 'connectProperties'
                         config.connectionFactoryProperties.putAll(connectionFactoryProperties);
@@ -1307,8 +1343,9 @@ public class BeeDataSourceConfig implements BeeDataSourceConfigMXBean {
                 String fieldName = field.getName();
                 boolean infoPrint = !checkedConfig.exclusionListOfPrint.contains(fieldName);
                 switch (fieldName) {
-                    case CONFIG_POOL_NAME_INDEX, CONFIG_DEFAULT_EXCLUSION_LIST,
-                         CONFIG_EXCLUSION_LIST_OF_PRINT: //copy 'exclusionConfigPrintList'
+                    case CONFIG_POOL_NAME_INDEX:
+                    case CONFIG_DEFAULT_EXCLUSION_LIST:
+                    case CONFIG_EXCLUSION_LIST_OF_PRINT: //copy 'exclusionConfigPrintList'
                         break;
                     case CONFIG_FACTORY_PROP: //copy 'connectionFactoryProperties'
                         if (!connectionFactoryProperties.isEmpty()) {

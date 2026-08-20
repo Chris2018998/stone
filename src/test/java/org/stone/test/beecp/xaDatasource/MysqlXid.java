@@ -16,7 +16,8 @@ public class MysqlXid implements Xid {
     }
 
     public boolean equals(Object another) {
-        if (another instanceof Xid anotherAsXid) {
+        if (another instanceof Xid) {
+            Xid anotherAsXid = (Xid) another;
             if (this.myFormatId != anotherAsXid.getFormatId()) {
                 return false;
             }

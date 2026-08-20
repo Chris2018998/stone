@@ -17,6 +17,33 @@ import java.util.List;
  * @author Chris Liao
  * @version 1.0
  */
-public record TaskPoolTerminatedVo(List<Task<?>> onceTaskList, List<Task<?>> scheduledTaskList,
-                                   List<Task<?>> joinTaskList, List<TreeLayerTask<?>> treeTaskList) {
+public class TaskPoolTerminatedVo {
+    private final List<Task<?>> onceTaskList;
+    private final List<Task<?>> scheduledTaskList;
+    private final List<Task<?>> joinTaskList;
+    private final List<TreeLayerTask<?>> treeTaskList;
+
+    public TaskPoolTerminatedVo(List<Task<?>> onceTaskList, List<Task<?>> scheduledTaskList,
+                                List<Task<?>> joinTaskList, List<TreeLayerTask<?>> treeTaskList) {
+        this.onceTaskList = onceTaskList;
+        this.scheduledTaskList = scheduledTaskList;
+        this.joinTaskList = joinTaskList;
+        this.treeTaskList = treeTaskList;
+    }
+
+    public List<Task<?>> getOnceTaskList() {
+        return onceTaskList;
+    }
+
+    public List<Task<?>> getScheduledTaskList() {
+        return scheduledTaskList;
+    }
+
+    public List<Task<?>> getJoinTaskList() {
+        return joinTaskList;
+    }
+
+    public List<TreeLayerTask<?>> getTreeTaskList() {
+        return treeTaskList;
+    }
 }

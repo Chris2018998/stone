@@ -50,7 +50,7 @@ public class Tc0005ConfigPrintExclusionTest {
         prop.put("exclusionListOfPrint", "username,password,poolName");
 
         BeeObjectSourceConfig<String, Book> config = OsConfigFactory.createDefault();
-        config.loadFromProperties(prop);
+        config.load(prop);
         Assertions.assertTrue(config.existExclusionNameOfPrint("username"));
         Assertions.assertTrue(config.existExclusionNameOfPrint("password"));
         Assertions.assertTrue(config.existExclusionNameOfPrint("poolName"));

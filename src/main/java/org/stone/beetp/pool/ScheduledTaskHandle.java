@@ -102,7 +102,8 @@ public final class ScheduledTaskHandle<V> extends PoolTaskHandle<V> implements T
         //2: interrupt process
         if (mayInterruptIfRunning) {//if set CANCELLED state on periodic task then not be scheduled for next execution
             Object curState = state;
-            if (curState instanceof TaskExecutionWorker worker) {//in being executed
+            if (curState instanceof TaskExecutionWorker) {//in being executed
+                TaskExecutionWorker worker = (TaskExecutionWorker) curState;
                 this.pendingCancel = true;//set cancelled state after this execution
                 worker.interrupt();//thread interruption can't ensure process exit in time
             }

@@ -118,10 +118,9 @@ public final class PooledObject<K, V> {
         }
     }
 
-    //Clear pooled object before it is removed from pool
-    void onRemove(String cause) {
-        bucket.logPrinter.info("BeeOP({})-begin to remove a pooled object:{} for cause:{}", bucket.getKeyName(), this, cause);
-
+    //called in borrow test
+    void clean(String cause) {
+        bucket.logPrinter.info("BeeOP({})-begin to clean a pooled object:{} for cause:{}", bucket.getKeyName(), this, cause);
         try {
             this.objectFactory.reset(key, objectInstance);
         } catch (Throwable e) {
@@ -130,11 +129,15 @@ public final class PooledObject<K, V> {
             try {
                 this.objectFactory.destroy(key, objectInstance);
             } catch (Throwable e) {
-                bucket.logPrinter.warn("BeeOP({})-an error occurred when destroyed object", bucket.getKeyName(), e);
+                bucket.logPrinter.warn("BeeOP({})-an error occurred when clean object", bucket.getKeyName(), e);
             }
-
-            this.state = OBJECT_CLOSED;
         }
+    }
+
+    //called when idle-timeout or pool shutdown
+    void destroy(String cause) {
+        clean(cause);
+        this.state = OBJECT_CLOSED;
     }
 
     //***************************************************************************************************************//

@@ -117,7 +117,8 @@ class PoolTaskHandle<V> implements TaskHandle<V> {
         //2: interrupt process
         if (mayInterruptIfRunning) {
             Object curState = state;
-            if (curState instanceof TaskExecutionWorker worker) {//in being executed
+            if (curState instanceof TaskExecutionWorker) {//in being executed
+                TaskExecutionWorker worker = (TaskExecutionWorker) curState;
                 worker.interrupt();//thread interruption can't ensure process exit in time
             }
         }
